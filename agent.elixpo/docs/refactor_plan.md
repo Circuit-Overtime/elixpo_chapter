@@ -1,0 +1,350 @@
+# elixpoo — Preliminary Plan
+
+> Autonomous GitHub contributor agent. Runs entirely inside the GitHub ecosystem as a GitHub App. Picks up 4–5 community issues per day, forks, solves, opens PRs, and shepherds them through review until merge or graceful close.
+
+---
+
+## 1. Operating principles
+
+These are hard rules. The system is designed around them, not bolted on after.
+
+1. **No spam.** Hard cap of 4–5 PRs per day, global. Max 1 open PR per upstream repo at a time.
+2. **Quality over volume.** Never submit a PR unless the project's existing tests pass *and* we've added at least one test that fails without our change.
+3. **Honest disclosure.** Every comment and PR is posted by `elixpoo[bot]`. PR bodies explicitly say it's an autonomous contributor. No hiding.
+4. **Respect opt-out.** Scout checks each repo for `elixpoo-opt-out` topic, `no-ai-contributions` files, and CONTRIBUTING signals. Once blocked, blocked forever.
+5. **Community issues only.** Strict scorer — see §4.
+6. **Graceful failure.** If we can't solve, we post a polite "releasing this back" comment and unclaim. No abandoned ghost-claims.
+7. **Everything in GitHub.** No external databases, no dashboards we have to host. The control repo *is* the system.
+
+---
+
+## 2. Architecture overview
+
+One private control repo: `elixpoo-ops`. One GitHub App: `elixpoo`. One optional Cloudflare Worker for webhook ingress (stateless, ~50 lines).
+
+The control repo holds:
+- **Workflows** — squad runtimes under `.github/workflows/`
+- **Tracking issues** — one per external PR, title format `[owner/repo#NNN] short description`, labels carry state
+- **Candidate issues** — opened by Triage with full context, promoted by Pick
+- **Project board** — kanban over the issues, columns = state labels. This is the live dashboard.
+- **Discussions** — daily summaries, weekly retros
+- **`state/` directory** — JSON ledgers committed back by workflows (blocklist, persona profiles, token spend log)
+- **Public Gist** owned by elixpoo — world-readable transparency log
+
+The control repo's git history *is* the audit trail of the entire system.
+
+---
+
+## 3. The squads
+
+Six squads, each one or more GitHub Actions workflows, chained via `workflow_run`, `repository_dispatch`, or label changes.
+
+### Scout — Discovery
+- **Trigger:** cron, daily
+- **Budget:** 10 min
+- **Job:** Sweep GitHub for candidate repos. Filters: 100–50k stars, active in last 30 days, has CONTRIBUTING.md, accepts PRs, language whitelist, not in blocklist.
+- **Agents:** trending-crawler, topic-crawler, language-specialist, repo-health-scorer, blocklist-checker, opt-out-checker
+- **Output:** ~20 candidate repos written to `state/candidates.json`
+
+### Triage — Issue selection
+- **Trigger:** on Scout completion
+- **Budget:** 15 min
+- **Job:** Pull issues from approved repos, score them, open candidate issues in control repo
+- **Agents:** label-classifier, complexity-estimator, reproducibility-checker, claim-checker (has anyone already said "I'll take this"?), priority-ranker
+- **Output:** ≤10 issues opened in control repo, labelled `triaged`, with full context in the body
+
+### Pick — Final selection
+- **Trigger:** cron, separate window from Scout
+- **Budget:** 5 min
+- **Job:** Select top 4–5 from `triaged` queue by score, post the "picking this up" comment on the upstream issue, label control-repo issue `claimed`
+- **Output:** 4–5 claimed issues, comments posted upstream
+
+### Comprehend — Context loading
+*(Runs as the first step of Solve, not a separate workflow.)*
+- **Job:** Build a tight context bundle for the coding squad
+- **Agents:** repo-mapper (AST/symbol index), relevance-pruner (only files touched by stack trace or referenced symbols), history-miner (related closed PRs/issues), test-locator
+- **Target:** context bundle under 30k tokens
+
+### Solve — Coding
+- **Trigger:** on `claimed` label
+- **Budget:** up to 60 min per task, matrix-parallelized across the 4–5 picks
+- **Agents:** claimer (forks repo), planner, implementer, self-reviewer, test-runner, iterator
+- **Sandbox:** GitHub Actions runner is the sandbox. One matrix job per task = full isolation.
+- **Escalation rule:** qwen-coder-large first. If tests fail or self-review flags issues, escalate to claude. If still failing after 2 attempts, abort and trigger graceful unclaim.
+
+### Submit — PR creation
+- **Trigger:** on Solve success
+- **Budget:** 5 min
+- **Agents:** branch-namer, commit-message-writer (conventional commits), pr-body-writer (links issue, lists tests, includes bot disclosure), label-applier
+- **Output:** PR opened upstream, tracking issue opened in control repo, ledger updated
+
+### Steward — Follow-through
+Three workflows triggered by webhooks (via the Cloudflare Worker forwarding to `repository_dispatch`):
+
+- **`steward-respond.yml`** — fires on `issue_comment` or `pull_request_review`. Parses intent (change request? question? rejection?), drafts a reply, runs it through the safety gate, posts it.
+- **`steward-fix.yml`** — fires on `check_suite` failure. Reads the CI failure, attempts a fix commit on the fork's branch.
+- **`celebrate.yml`** — fires on `pull_request` merged. Generates the celebration image via gptimage, posts to Discussions, updates ledger.
+
+Plus a slow cron `steward-poll.yml` as a webhook-loss safety net (runs 2×/day, catches anything missed).
+
+---
+
+## 4. The "community issues only" scorer
+
+A scored decision, not a single rule. An issue qualifies if total ≥ threshold:
+
+| Signal | Score |
+|---|---|
+| Labelled `good first issue` / `help wanted` / `up-for-grabs` / `hacktoberfest` | +5 |
+| Labelled `bug` with reproducible steps | +3 |
+| No assignee | +2 |
+| No comment from a maintainer claiming it | +2 |
+| Has a clear acceptance criterion in description | +2 |
+| Issue older than 7 days (not under active triage) | +1 |
+| Labelled `triage` / `needs-design` / `discussion` / `question` | −5 |
+| OP is a core maintainer (likely a self-note) | −5 |
+| Someone in comments said "I'll take this" within 14 days | −10 |
+| Touches `internal/` or `private/` paths | −10 |
+| Repo's CONTRIBUTING says "discuss first" and no discussion exists | −5 |
+
+Threshold: ≥ 8 to enter the queue. Tunable based on early merge-rate data.
+
+---
+
+## 5. Model routing (Pollinations)
+
+Roles map to models, not the other way around. Agents request `model: "code"`, the router resolves it. Swappable without touching agent code.
+
+| Role | Model | Notes |
+|---|---|---|
+| Repo crawling, label classification | `nova-fast` | Cheapest tool-capable model |
+| Issue scoring, triage reasoning | `gemini-fast` | Cheap, fast |
+| Repo mapping & summarization | `gemini-flash-lite-3.1` | 1M context fits whole small repos |
+| Planning (what to change) | `kimi` | Strong agentic reasoning, mid-cost |
+| **Code generation — primary** | `qwen-coder-large` | First attempt always |
+| **Code generation — escalation** | `claude` (Sonnet 4.6) | Only after qwen self-review fails twice |
+| Self-review of diffs | `claude-fast` (Haiku) | Cheap, sharp critic |
+| PR body, commit messages | `mistral` | Natural prose, cheap |
+| Steward replies | `kimi` | Good at conversational follow-ups + tool use |
+| Web search (when needed) | `gemini-search` | Built-in grounding |
+| Safety gate before posting | `qwen-safety` | Costs ~nothing, blocks problematic outputs |
+| Celebration image | `gptimage` | On merge only |
+
+Rough budget per PR: 50k–150k tokens. Well under $1 in pollen per PR even with Claude escalation.
+
+---
+
+## 6. The token layer ("RTK")
+
+A thin module (`rtk/`) imported by every workflow. Wraps the Pollinations client.
+
+**Responsibilities:**
+- Pre-call token count via tiktoken
+- Per-task budget enforcement — refuse the call if it'd blow the ceiling
+- Context compression — strip comments, collapse whitespace, drop irrelevant imports
+- Prompt prefix caching — hash the prefix, route to `promptCachedTokens` pricing (10× cheaper) where supported
+- Per-task ledger — every call writes one line to `state/token_log.jsonl`
+- Kill switch — task auto-aborts at 3× its budget
+
+**Per-task default budget:** 100k tokens, ceiling 300k.
+
+**Interface sketch:**
+```python
+from rtk import Router
+
+router = Router(task_id="elixpoo-ops#42", budget=100_000)
+response = router.call(role="code", messages=[...])
+# Logs to state/token_log.jsonl, enforces budget, handles caching
+```
+
+---
+
+## 7. State model — no database needed
+
+Everything that would normally go in Postgres lives in the control repo.
+
+### `state/ledger.json`
+```json
+{
+  "prs": {
+    "owner/repo#123": {
+      "issue_url": "https://github.com/owner/repo/issues/45",
+      "pr_url": "https://github.com/owner/repo/pull/123",
+      "tracking_issue": "https://github.com/me/elixpoo-ops/issues/87",
+      "status": "awaiting_review",
+      "opened_at": "2026-06-20T10:30:00Z",
+      "last_event": "2026-06-21T14:12:00Z",
+      "token_spend": 47213,
+      "model_cascade": ["qwen-coder-large", "claude"],
+      "fork_url": "https://github.com/elixpoo/repo"
+    }
+  },
+  "blocklist": ["owner/repo", "..."],
+  "daily_count": { "2026-06-20": 4 }
+}
+```
+
+### `state/candidates.json`
+Output of Scout. Consumed by Triage. Overwritten daily.
+
+### `state/token_log.jsonl`
+One JSON object per model call. Append-only. Summed into Gist daily.
+
+### `state/personas.json`
+*(Skipped for v1 — we run as single identity `elixpoo[bot]`.)*
+
+### Concurrency
+Workflows that mutate `state/` use Actions' `concurrency:` key to serialize. With 4–5 tasks/day, conflicts are rare.
+
+---
+
+## 8. GitHub App config — `elixpoo`
+
+Register at `github.com/settings/apps/new`.
+
+### Permissions
+
+**On control repo (elixpoo-ops):**
+- Contents: read & write
+- Issues: read & write
+- Pull requests: read & write
+- Discussions: read & write
+- Actions: read & write
+- Metadata: read
+
+**On forked target repos (under elixpoo account):**
+- Contents: read & write
+- Pull requests: read & write
+
+**On upstream target repos:**
+- Issues: read & write (for comments only)
+- Pull requests: read & write (for opening PRs)
+- Metadata: read
+- *No code write access on upstreams, ever.*
+
+### Webhook events to subscribe
+- `issue_comment`
+- `pull_request_review`
+- `pull_request_review_comment`
+- `pull_request` (for merge/close on our PRs)
+- `check_suite` (for CI status on our PRs)
+- `installation` (for opt-in/opt-out tracking)
+
+### Webhook receiver
+Cloudflare Worker, ~50 lines:
+1. Verify HMAC signature
+2. Map event → `event_type` for `repository_dispatch`
+3. `POST /repos/elixpoo/elixpoo-ops/dispatches` with the payload
+
+---
+
+## 9. Repo layout
+
+```
+elixpoo-ops/
+├── .github/
+│   └── workflows/
+│       ├── scout.yml
+│       ├── triage.yml
+│       ├── pick.yml
+│       ├── solve.yml
+│       ├── submit.yml
+│       ├── steward-respond.yml
+│       ├── steward-fix.yml
+│       ├── steward-poll.yml
+│       ├── celebrate.yml
+│       └── daily-summary.yml
+├── agents/
+│   ├── scout/
+│   ├── triage/
+│   ├── comprehend/
+│   ├── solve/
+│   ├── submit/
+│   └── steward/
+├── rtk/
+│   ├── __init__.py
+│   ├── router.py
+│   ├── budget.py
+│   ├── compress.py
+│   └── cache.py
+├── prompts/
+│   ├── planner.md
+│   ├── implementer.md
+│   ├── self_reviewer.md
+│   ├── pr_body.md
+│   ├── steward_respond.md
+│   └── celebration.md
+├── config/
+│   ├── models.yaml          # role → model mapping
+│   ├── languages.yaml       # whitelist + lint configs
+│   └── budgets.yaml         # per-task token ceilings
+├── state/
+│   ├── ledger.json
+│   ├── candidates.json
+│   ├── token_log.jsonl
+│   └── blocklist.json
+└── README.md
+```
+
+---
+
+## 10. Human-mimicry checklist
+
+For every public-facing action:
+
+- [ ] Stagger actions with realistic delays (no comment+fork+PR in 4 seconds)
+- [ ] Read related issues/PRs before commenting on an issue (signals homework)
+- [ ] PR body always discloses elixpoo is autonomous
+- [ ] Never open more than 1 PR per repo while one is open
+- [ ] If maintainer says "no AI PRs," add repo to blocklist forever
+- [ ] Vary commit message style slightly (within conventional-commits format)
+- [ ] If we can't solve, post graceful unclaim within 4 hours of claiming
+- [ ] Respond to maintainer comments within 1 working hour (webhooks make this easy)
+
+---
+
+## 11. Phased build
+
+### Phase 0 — Steward only
+Hand-submit a PR to a friendly repo. Wire up webhooks. Prove the follow-up loop (respond to comments, fix on CI failure, celebrate on merge). No autonomy yet.
+
+### Phase 1 — Scout + Triage (read-only)
+Run Scout and Triage on cron. Triaged issues open in control repo, nothing posted upstream. You review the queue manually for a week.
+
+### Phase 2 — Comprehend + Solve (on your own repos)
+Add the coding squad. Point it at throwaway repos you own. Iterate on Solve until merge rate on your own repos is acceptable.
+
+### Phase 3 — Submit, with 3–5 pre-coordinated repos
+Reach out to a few maintainers, get explicit permission, let elixpoo loose on those repos only.
+
+### Phase 4 — Expand cautiously
+Open the gates to the full Scout filter. Watch merge rate. Tune the scorer.
+
+### Phase 5 — Celebration pipeline + branding
+Wire up gptimage on merge. Post to Discussions. Update public Gist.
+
+---
+
+## 12. Open decisions
+
+These should be settled before scaffolding the repo:
+
+1. **Control repo name** — `elixpoo-ops`?
+2. **First-language target for Solve** — Python or TypeScript? Affects test runners and lint configs in the sandbox.
+3. **Webhook receiver** — Cloudflare Worker, or pure polling via `steward-poll.yml`?
+4. **Per-task token ceiling** — 100k default, 300k max — confirm or revise.
+5. **Daily PR cap** — 4 or 5?
+6. **RTK** — is this a specific library I should know about, or is the name yours for our token-tracking module?
+7. **Gist visibility** — public daily-summary Gist yes/no?
+
+---
+
+## 13. Next deliverables
+
+Once the decisions in §12 are settled:
+
+1. Exact GitHub App creation form values (permissions, events, manifest YAML)
+2. Control repo skeleton (all workflow files, `rtk/` module interface, ledger schemas)
+3. First-pass prompts for planner, implementer, self-reviewer, PR body, steward responder
+4. Cloudflare Worker code for the webhook ingress
+5. The opt-out detection logic for Scout
