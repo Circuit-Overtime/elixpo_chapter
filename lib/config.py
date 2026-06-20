@@ -1,157 +1,70 @@
-"""Global configuration loaded from environment variables."""
+"""Configuration for elixpoo. Secrets load from .env.local at the repo root.
+
+Clean-slate naming — no legacy aliases. See .env.example for the full var list.
+No database, no server: the squad system is stateless beyond GitHub issues, the
+Project board, and state/*.json. Only Pollinations + GitHub App creds + paths.
+"""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import BaseModel
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Auto-load .env file from project root
-_env_file = Path(__file__).resolve().parents[2] / ".env"
-if _env_file.exists():
-    load_dotenv(_env_file)
-else:
-    # Try current working directory
-    load_dotenv()
+# repo root = parent of lib/
+ROOT = Path(__file__).resolve().parents[1]
+
+# .env.local is the working secret file (gitignored). The tracked .env is the
+# SOPS-encrypted copy and is not read directly.
+_envfile = ROOT / ".env.local"
+if _envfile.exists():
+    load_dotenv(_envfile, override=False)
 
 
-class ModelProfile(BaseModel):
-    """Configuration for a single LLM provider."""
-    name: str
-    api_url: str
+class PollinationsSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="POLLINATIONS_", extra="ignore")
+
     api_key: str = ""
-    model: str
-    max_context_tokens: int = 128_000
-    temperature: float = 0.0
-    supports_tools: bool = True
-    role: str = "general"  # "general" | "research"
-
-
-class LLMSettings(BaseSettings):
-    model_config = {"env_prefix": "ELIXPO_LLM_"}
-
-    # Legacy single-model fallback
-    api_url: str = "https://gen.pollinations.ai/v1"
-    api_key: str = ""
-    model: str = "openai"
-    max_context_tokens: int = 128_000
-    temperature: float = 0.0
-
-
-class KimiSettings(BaseSettings):
-    model_config = {"env_prefix": "ELIXPO_KIMI_"}
-
-    api_url: str = "https://gen.pollinations.ai/v1"
-    api_key: str = ""
-    model: str = "openai"
-    max_context_tokens: int = 128_000
-
-
-class PerplexitySettings(BaseSettings):
-    model_config = {"env_prefix": "ELIXPO_PERPLEXITY_"}
-
-    api_url: str = "https://gen.pollinations.ai/v1"
-    api_key: str = ""
-    model: str = "searchgpt"
-    max_context_tokens: int = 128_000
+    base_url: str = "https://gen.pollinations.ai/v1"
 
 
 class GitHubSettings(BaseSettings):
-    model_config = {"env_prefix": "ELIXPO_GITHUB_"}
+    model_config = SettingsConfigDict(env_prefix="ELIXPO_GH_", extra="ignore")
 
     app_id: str = ""
+    # PEM contents (preferred — paste into the CI secret). Path is the local-dev input.
+    private_key: str = ""
     private_key_path: str = ""
     webhook_secret: str = ""
     bot_username: str = "elixpoo"
+    # Control repo holding state/, candidate issues, and the Project board (owner/name).
+    control_repo: str = ""
+    # Token for plain REST when not minting an App installation token (Actions sets GITHUB_TOKEN).
+    token: str = Field(default="", validation_alias="GITHUB_TOKEN")
 
-
-class AgentSettings(BaseSettings):
-    model_config = {"env_prefix": "ELIXPO_"}
-
-    max_agent_steps: int = 50
-    max_tokens_per_session: int = 500_000
-    max_concurrent_sessions: int = 5
-    session_storage_path: str = "/data/sessions"
-    workspace_path: str = "/data/workspaces"
-    default_reasoning_effort: str = "medium"  # "low" | "medium" | "high"
-
-
-class SandboxSettings(BaseSettings):
-    model_config = {"env_prefix": "ELIXPO_SANDBOX_"}
-
-    mode: str = "none"  # "none", "nsjail", "docker"
-    timeout: int = 120
-    memory_limit: str = "512M"
-
-
-class CloudflareSettings(BaseSettings):
-    model_config = {"env_prefix": "ELIXPO_CF_"}
-
-    account_id: str = ""
-    d1_database_id: str = "4c028188-932f-4808-81ba-67e67a832be7"
-    kv_namespace_id: str = "8e440b0aebbe4961a655915469da98df"
-    api_token: str = ""
+    def resolved_private_key(self) -> str:
+        """PEM contents: the env string wins; otherwise read the file path."""
+        if self.private_key.strip():
+            return self.private_key
+        if self.private_key_path and Path(self.private_key_path).exists():
+            return Path(self.private_key_path).read_text()
+        return ""
 
 
 class Settings(BaseSettings):
-    llm: LLMSettings = LLMSettings()
-    kimi: KimiSettings = KimiSettings()
-    perplexity: PerplexitySettings = PerplexitySettings()
+    model_config = SettingsConfigDict(env_prefix="ELIXPO_", extra="ignore")
+
+    pollinations: PollinationsSettings = PollinationsSettings()
     github: GitHubSettings = GitHubSettings()
-    agent: AgentSettings = AgentSettings()
-    sandbox: SandboxSettings = SandboxSettings()
-    cloudflare: CloudflareSettings = CloudflareSettings()
 
-    api_secret_key: str = "dev-secret-change-me"
-    cors_origins: list[str] = ["http://localhost:3000"]
+    root: Path = ROOT
+    config_dir: Path = ROOT / "config"
+    state_dir: Path = ROOT / "state"
+    prompts_dir: Path = ROOT / "prompts"
+
     debug: bool = False
-
-    model_config = {"env_prefix": "ELIXPO_"}
-
-    def build_model_profiles(self) -> dict[str, ModelProfile]:
-        """Build model profiles from settings, using Kimi/Perplexity env vars or falling back to LLM defaults."""
-        profiles = {}
-
-        # Kimi profile (main workhorse for tool calls)
-        kimi_key = self.kimi.api_key or self.llm.api_key
-        if kimi_key:
-            profiles["kimi"] = ModelProfile(
-                name="kimi",
-                api_url=self.kimi.api_url,
-                api_key=kimi_key,
-                model=self.kimi.model,
-                max_context_tokens=self.kimi.max_context_tokens,
-                supports_tools=True,
-                role="general",
-            )
-
-        # Perplexity profile (web search/research)
-        if self.perplexity.api_key:
-            profiles["perplexity"] = ModelProfile(
-                name="perplexity",
-                api_url=self.perplexity.api_url,
-                api_key=self.perplexity.api_key,
-                model=self.perplexity.model,
-                max_context_tokens=self.perplexity.max_context_tokens,
-                supports_tools=False,
-                role="research",
-            )
-
-        # Fallback: if no kimi profile, use legacy LLM settings
-        if "kimi" not in profiles and self.llm.api_key:
-            profiles["kimi"] = ModelProfile(
-                name="kimi",
-                api_url=self.llm.api_url,
-                api_key=self.llm.api_key,
-                model=self.llm.model,
-                max_context_tokens=self.llm.max_context_tokens,
-                supports_tools=True,
-                role="general",
-            )
-
-        return profiles
 
 
 settings = Settings()

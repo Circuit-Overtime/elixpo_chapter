@@ -1,137 +1,153 @@
-"""Model router — routes LLM requests to Kimi (tools) or Perplexity (research)."""
+"""Role → model router over Pollinations, with budget + ledger built in.
+
+Squads ask for a ROLE ("code", "triage", ...); the router resolves the model
+from config/models.yaml, calls Pollinations, charges the budget, and records the
+real usage to the ledger. Every model call in the system goes through here.
+
+Designed for injection so each squad is testable in isolation:
+
+    router = Router(task_id="t", models={"roles": {"code": {"model": "x"}}},
+                    client_factory=fake_factory, ledger=fake_ledger)
+
+With no injection it builds itself from global settings + config/models.yaml.
+"""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
 import structlog
+import yaml
 
-from elixpo.config import ModelProfile, settings
-from elixpo.llm.client import LLMClient
-from elixpo.llm.models import ChatCompletionResponse, Message, ToolDef
+from rtk.budget import Budget
+from rtk.client import LLMClient
+from rtk.count import count_messages
+from rtk.ledger import TokenLedger
+from rtk.models import ChatCompletionResponse, Message, ToolDef
 
 log = structlog.get_logger()
 
 
-class ModelRole(str, Enum):
-    GENERAL = "general"        # Kimi — default for tool calls
-    RESEARCH = "research"      # Perplexity — web search
-    VALIDATION = "validation"  # Kimi with validation framing
-
-
-class ReasoningEffort(str, Enum):
+class Effort(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
 
 
-# Maps reasoning effort to temperature
-EFFORT_TEMPERATURE: dict[ReasoningEffort, float] = {
-    ReasoningEffort.LOW: 0.1,
-    ReasoningEffort.MEDIUM: 0.3,
-    ReasoningEffort.HIGH: 0.7,
-}
-
-# Maps model roles to profile names
-ROLE_TO_PROFILE: dict[ModelRole, str] = {
-    ModelRole.GENERAL: "kimi",
-    ModelRole.RESEARCH: "perplexity",
-    ModelRole.VALIDATION: "kimi",
+EFFORT_TEMPERATURE: dict[Effort, float] = {
+    Effort.LOW: 0.1,
+    Effort.MEDIUM: 0.3,
+    Effort.HIGH: 0.7,
 }
 
 
-class ModelRouter:
-    """Routes LLM requests to the appropriate model based on task role."""
+class RoleNotFound(KeyError):
+    """The requested role is not defined in models.yaml."""
 
-    def __init__(self, profiles: dict[str, ModelProfile]):
-        self._profiles = profiles
-        self._clients: dict[str, LLMClient] = {}
-        for name, profile in profiles.items():
-            self._clients[name] = LLMClient(
-                api_url=profile.api_url,
-                api_key=profile.api_key,
-                model=profile.model,
-            )
-        log.info("router.init", models=list(self._clients.keys()))
 
-    @classmethod
-    def from_settings(cls) -> ModelRouter:
-        """Create a router from the global settings."""
-        return cls(settings.build_model_profiles())
+ClientFactory = Callable[[str, str, str], LLMClient]  # (base_url, api_key, model) -> client
 
-    @classmethod
-    def from_keys(
-        cls,
-        api_key: str,
-        api_url: str | None = None,
-        model: str | None = None,
-        perplexity_key: str | None = None,
-    ) -> ModelRouter:
-        """Create a router from explicit keys (for CLI usage)."""
-        profiles: dict[str, ModelProfile] = {
-            "kimi": ModelProfile(
-                name="kimi",
-                api_url=api_url or settings.llm.api_url,
-                api_key=api_key,
-                model=model or settings.llm.model,
-                supports_tools=True,
-                role="general",
-            ),
-        }
-        if perplexity_key:
-            profiles["perplexity"] = ModelProfile(
-                name="perplexity",
-                api_url=settings.perplexity.api_url,
-                api_key=perplexity_key,
-                model=settings.perplexity.model,
-                supports_tools=False,
-                role="research",
-            )
-        return cls(profiles)
 
-    def get_client(self, role: ModelRole = ModelRole.GENERAL) -> LLMClient:
-        """Get the LLM client for a given role, falling back to kimi."""
-        profile_name = ROLE_TO_PROFILE.get(role, "kimi")
-        client = self._clients.get(profile_name)
-        if client is None:
-            # Fallback to first available client
-            client = next(iter(self._clients.values()))
-        return client
+def load_models_config(path: str | Path) -> dict[str, Any]:
+    return yaml.safe_load(Path(path).read_text())
 
-    def has_profile(self, name: str) -> bool:
-        return name in self._clients
 
-    async def chat(
+class Router:
+    def __init__(
         self,
+        task_id: str,
+        *,
+        models: dict[str, Any],
+        api_key: str,
+        budget: Budget | None = None,
+        client_factory: ClientFactory | None = None,
+        ledger: TokenLedger | None = None,
+        default_effort: Effort = Effort.MEDIUM,
+    ):
+        self.task_id = task_id
+        self._models = models
+        self._roles: dict[str, dict] = models.get("roles", {})
+        self._base_url = models.get("base_url", "https://gen.pollinations.ai/v1")
+        self._api_key = api_key
+        self.budget = budget or Budget(task_id)
+        self._factory: ClientFactory = client_factory or (
+            lambda base, key, model: LLMClient(api_url=base, api_key=key, model=model)
+        )
+        self.ledger = ledger
+        self._default_effort = default_effort
+        self._clients: dict[str, LLMClient] = {}
+
+    # --- construction from global config ---
+
+    @classmethod
+    def from_settings(cls, task_id: str, budget: Budget | None = None, **kw) -> Router:
+        from lib.config import settings  # local import keeps rtk importable without config
+
+        models = load_models_config(settings.config_dir / "models.yaml")
+        ledger = TokenLedger(settings.state_dir / "token_log.jsonl")
+        return cls(
+            task_id,
+            models=models,
+            api_key=settings.pollinations.api_key,
+            budget=budget,
+            ledger=ledger,
+            **kw,
+        )
+
+    # --- resolution ---
+
+    def resolve(self, role: str) -> dict[str, Any]:
+        spec = self._roles.get(role)
+        if spec is None:
+            raise RoleNotFound(f"role {role!r} not in models.yaml (have: {sorted(self._roles)})")
+        return spec
+
+    def _client(self, model: str) -> LLMClient:
+        if model not in self._clients:
+            self._clients[model] = self._factory(self._base_url, self._api_key, model)
+        return self._clients[model]
+
+    # --- the one entrypoint ---
+
+    async def call(
+        self,
+        role: str,
         messages: list[Message],
         tools: list[ToolDef] | None = None,
-        role: ModelRole = ModelRole.GENERAL,
-        reasoning_effort: ReasoningEffort = ReasoningEffort.MEDIUM,
+        effort: Effort | str | None = None,
         max_tokens: int | None = None,
     ) -> ChatCompletionResponse:
-        """Send a chat request routed to the appropriate model."""
-        client = self.get_client(role)
-        temperature = EFFORT_TEMPERATURE[reasoning_effort]
-
-        # Perplexity doesn't support tool calls
-        if role == ModelRole.RESEARCH:
+        spec = self.resolve(role)
+        model = spec["model"]
+        if spec.get("tools") is False:
             tools = None
 
+        eff = Effort(effort) if effort else Effort(self._models.get("defaults", {}).get("effort", self._default_effort))
+        temperature = EFFORT_TEMPERATURE[eff]
+
+        # pre-call budget gate (estimate)
+        est = count_messages(messages)
+        self.budget.check(est)
+
+        resp = await self._client(model).chat(
+            messages=messages, tools=tools, temperature=temperature, max_tokens=max_tokens
+        )
+
+        # charge real usage (fall back to estimate if the provider omits usage)
+        used = resp.usage.total_tokens or est
+        self.budget.charge(used)
+        if self.ledger is not None:
+            self.ledger.record(task_id=self.task_id, role=role, model=model, usage=resp.usage)
+
         log.debug(
-            "router.chat",
-            role=role.value,
-            effort=reasoning_effort.value,
-            temperature=temperature,
-            model=client.model,
+            "rtk.call", role=role, model=model, effort=eff.value,
+            used=used, spent=self.budget.spent, remaining=self.budget.remaining(),
         )
+        return resp
 
-        return await client.chat(
-            messages=messages,
-            tools=tools,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-
-    async def close(self):
-        for client in self._clients.values():
-            await client.close()
+    async def aclose(self) -> None:
+        for c in self._clients.values():
+            await c.close()
