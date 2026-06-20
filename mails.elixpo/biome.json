@@ -1,0 +1,21 @@
+{
+    "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+    "organizeImports": { "enabled": true },
+    "files": {
+        "ignore": ["node_modules", ".next", ".vercel", ".wrangler", "spike"]
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 100
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "suspicious": { "noExplicitAny": "off" },
+            "style": { "useNodejsImportProtocol": "off" }
+        }
+    }
+}

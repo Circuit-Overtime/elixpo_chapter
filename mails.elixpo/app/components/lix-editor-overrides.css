@@ -1,0 +1,34 @@
+/* Elixpo Mails — dark-theme fixes for the BlockNote/lixeditor surface.
+   Imported AFTER the package styles in lix-editor-inner.tsx so these win. */
+
+/* 1. Visible, blinking text caret (the BlockNote dark theme washed it out). */
+.lix-editor,
+.lix-editor .ProseMirror,
+.lix-editor-wrapper [contenteditable="true"] {
+    caret-color: #f5f5f4 !important;
+}
+
+/* 2. Horizontal rule (the `---` divider) — lift contrast on the dark canvas. */
+.lix-editor hr,
+.lix-editor-wrapper hr,
+.lix-divider,
+.bn-block-content[data-content-type="divider"] {
+    border: none !important;
+    border-top: 2px solid rgba(255, 255, 255, 0.24) !important;
+    background: transparent !important;
+    opacity: 1 !important;
+}
+
+/* 3. Slash (/) command menu + editor toolbars must sit ABOVE body content
+      (and our sticky top nav). BlockNote portals these to <body>. */
+.bn-suggestion-menu,
+[class*="bn-suggestion-menu"],
+.bn-formatting-toolbar,
+.bn-side-menu,
+.bn-link-toolbar,
+.bn-color-picker-dropdown,
+.mantine-Menu-dropdown,
+.mantine-Popover-dropdown,
+.bn-mantine .mantine-Popover-dropdown {
+    z-index: 6000 !important;
+}
