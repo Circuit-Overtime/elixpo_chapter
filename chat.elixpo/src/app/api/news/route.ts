@@ -3,8 +3,6 @@ import { getTodaysNews } from "@/lib/db";
 import { getCached, setCache } from "@/lib/kv";
 import type { News } from "@/lib/types";
 
-export const runtime = "edge";
-
 export async function GET() {
   try {
     const cached = await getCached<News>("news:latest");

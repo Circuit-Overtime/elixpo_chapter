@@ -39,7 +39,10 @@ export async function getStructuredWeather(
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&daily=temperature_2m_max,temperature_2m_min,weathercode&current_weather=true&timezone=auto`;
     const res = await fetch(url);
-    const data = await res.json();
+    const data = await res.json() as {
+      current_weather: any;
+      daily: any;
+    };
 
     const current = data.current_weather;
     const daily = data.daily;
@@ -104,8 +107,15 @@ export async function generateAISummary(
     }),
   });
 
-  const result = await res.json();
-  return result.choices?.[0]?.message?.content || "No summary available.";
+  const result = await res.json() as {
+    choices?: {
+      message?: {
+        content?: string;
+      };
+    }[];
+  };
+
+return result.choices?.[0]?.message?.content ?? "No summary available.";
 }
 
 export function generateAIImage(condition: string, token: string): string {

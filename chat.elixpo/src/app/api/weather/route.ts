@@ -4,8 +4,6 @@ import { getCached, setCache } from "@/lib/kv";
 import type { WeatherResponse } from "@/lib/types";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-export const runtime = "edge";
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

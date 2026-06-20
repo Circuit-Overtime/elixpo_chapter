@@ -14,12 +14,28 @@ import { BookmarkedMessagesPanel } from "@/components/chat/BookmarkedMessagesPan
 import ChatSkeleton from "@/components/skeletons/ChatSkeleton";
 import PollinationsBadge from "@/components/chat/PollinationsBadge";
 
+
+function SkeletonMessages() {
+  return (
+    <div className="max-w-3xl mx-auto space-y-6 animate-pulse">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className={`flex ${i % 2 === 1 ? "justify-end" : "justify-start"}`}>
+          <div className={`rounded-2xl ${i % 2 === 1 ? "bg-neutral-100 w-48" : "bg-neutral-50 w-80"} h-12`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user, loading: authLoading, login } = useAuth();
   
-  const [sessionId] = useState(() => id === "new" ? crypto.randomUUID().slice(0, 11) : id);
+  const [sessionId, setSessionId] = useState(
+    id === "new" ? undefined : id
+  );
   const [chatTitle, setChatTitle] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [model, setModel] = useState("openai");
@@ -27,18 +43,20 @@ export default function ChatPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-
   const { messages, sendMessage, stop, status, setMessages, regenerate } = useChat({
-    id: sessionId,
+    id: sessionId ?? "new",
     transport: new DefaultChatTransport({
       api: "/api/chat",
       body: { model, id: sessionId },
+      fetch: async (url, options) => {
+        const res = await fetch(url, options);
+        const convId = res.headers.get("x-conversation-id");
+        if (convId && convId !== sessionId) {
+          setSessionId(convId);
+        }
+        return res;
+      },
     }),
-    onFinish: () => {
-      if (id === "new") {
-        window.history.replaceState(null, "", `/chat/${sessionId}`);
-      }
-    }
   });
 
   const isLoading = status === "streaming" || status === "submitted";

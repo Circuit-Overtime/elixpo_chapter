@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthorizationUrl, getRedirectUri } from "@/lib/auth";
 
-export const runtime = "edge";
-
 export async function GET(request: Request) {
   const redirectUri = getRedirectUri(request);
   // Generate a random state for CSRF protection

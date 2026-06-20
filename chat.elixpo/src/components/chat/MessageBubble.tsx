@@ -1,7 +1,7 @@
 "use client";
 
 import { marked } from "marked";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, memo} from "react";
 import { toast } from "sonner";
 import TaskGroup from "./TaskBlock";
 import { BookmarkButton } from "./BookmarkButton";
