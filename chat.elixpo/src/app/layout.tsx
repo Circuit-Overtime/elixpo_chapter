@@ -52,6 +52,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
+      <body className="antialiased"><AuthProvider>{children}</AuthProvider><Toaster position="bottom-right" richColors /></body>
       <body className="antialiased">
         <AuthProvider>
           {children}
