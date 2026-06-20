@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 
 import pytest
-
 from rtk import Budget, BudgetExceeded, Effort, RoleNotFound, Router, TokenLedger
 from rtk.cache import prefix_hash
 from rtk.count import count_messages, count_text

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from mcp_server import build_server
 from mcp_server.tools import (
     directory_tree,

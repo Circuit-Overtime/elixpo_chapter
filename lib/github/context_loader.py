@@ -108,7 +108,7 @@ async def load_issue_context(
     ctx.title = issue.get("title", "")
     ctx.body = issue.get("body", "") or ""
     ctx.author = issue.get("user", {}).get("login", "")
-    ctx.labels = [l["name"] for l in issue.get("labels", [])]
+    ctx.labels = [lb["name"] for lb in issue.get("labels", [])]
 
     # Load comments
     comments = await api.get_issue_comments(owner, repo, issue_number)
@@ -151,7 +151,7 @@ async def load_pr_context(
     ctx.title = pr.get("title", "")
     ctx.body = pr.get("body", "") or ""
     ctx.author = pr.get("user", {}).get("login", "")
-    ctx.labels = [l["name"] for l in pr.get("labels", [])]
+    ctx.labels = [lb["name"] for lb in pr.get("labels", [])]
     ctx.default_branch = pr.get("base", {}).get("ref", "main")
 
     # Load diff

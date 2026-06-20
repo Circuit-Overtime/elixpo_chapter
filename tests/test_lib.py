@@ -6,7 +6,6 @@ from lib.scorer import THRESHOLD, IssueSignals, qualifies, score
 from lib.state.ledger import DAILY_PR_CAP, Ledger, PRRecord
 from lib.state.store import StateStore
 
-
 # --- scorer ---
 
 def test_scorer_good_first_issue_qualifies():

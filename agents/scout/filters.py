@@ -1,0 +1,99 @@
+"""Scout's pure filter + health-scoring logic (docs/refactor_plan.md section 3).
+
+No I/O — operates on plain repo dicts (GitHub search API shape), so it's fully
+unit-testable. The fetching lives in agents.scout.discover.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+
+from pydantic import BaseModel, Field
+
+MIN_STARS = 100
+MAX_STARS = 50_000
+ACTIVE_DAYS = 30
+
+# A repo carrying any of these topics has opted out — permanently skip it.
+OPT_OUT_TOPICS = {"elixpoo-opt-out", "no-ai-contributions", "no-ai", "no-ai-prs"}
+
+
+class RepoCandidate(BaseModel):
+    full_name: str
+    stars: int = 0
+    language: str | None = None
+    pushed_at: str = ""
+    topics: list[str] = Field(default_factory=list)
+    has_contributing: bool = False
+    archived: bool = False
+    open_issues: int = 0
+    url: str = ""
+    score: int = 0
+    reasons: list[str] = Field(default_factory=list)
+
+
+def _parse_ts(ts: str) -> datetime | None:
+    if not ts:
+        return None
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def is_active(pushed_at: str, now: datetime, days: int = ACTIVE_DAYS) -> bool:
+    ts = _parse_ts(pushed_at)
+    return ts is not None and ts >= now - timedelta(days=days)
+
+
+def opted_out(topics: list[str]) -> bool:
+    return bool(OPT_OUT_TOPICS & {t.lower() for t in topics})
+
+
+def passes_filters(
+    repo: dict,
+    languages: set[str],
+    blocklist: set[str],
+    now: datetime | None = None,
+) -> tuple[bool, list[str]]:
+    """Return (eligible, reasons). reasons explains a rejection or the green-lights."""
+    now = now or datetime.now(timezone.utc)
+    name = repo.get("full_name", "")
+    reasons: list[str] = []
+
+    if name in blocklist:
+        return False, ["blocklisted"]
+    if repo.get("archived") or repo.get("disabled"):
+        return False, ["archived/disabled"]
+    if opted_out(repo.get("topics", [])):
+        return False, ["opted_out"]
+
+    stars = repo.get("stargazers_count", 0)
+    if not (MIN_STARS <= stars <= MAX_STARS):
+        return False, [f"stars {stars} out of [{MIN_STARS},{MAX_STARS}]"]
+
+    lang = (repo.get("language") or "").lower()
+    if languages and lang not in languages:
+        return False, [f"language {lang or '?'} not whitelisted"]
+
+    if not is_active(repo.get("pushed_at", ""), now):
+        return False, [f"inactive >{ACTIVE_DAYS}d"]
+
+    reasons.append(f"{stars}★ {lang} active")
+    return True, reasons
+
+
+def health_score(repo: dict, has_contributing: bool) -> int:
+    """Cheap 0-100ish health signal for ranking candidates."""
+    score = 0
+    stars = repo.get("stargazers_count", 0)
+    score += min(40, stars // 250)            # popularity, capped
+    if has_contributing:
+        score += 20                           # accepts contributions explicitly
+    if repo.get("has_issues", True):
+        score += 10
+    if repo.get("license"):
+        score += 10
+    open_issues = repo.get("open_issues_count", 0)
+    score += min(20, open_issues)             # active issue surface = work to do
+    return score

@@ -125,7 +125,10 @@ class Router:
         if spec.get("tools") is False:
             tools = None
 
-        eff = Effort(effort) if effort else Effort(self._models.get("defaults", {}).get("effort", self._default_effort))
+        if effort:
+            eff = Effort(effort)
+        else:
+            eff = Effort(self._models.get("defaults", {}).get("effort", self._default_effort))
         temperature = EFFORT_TEMPERATURE[eff]
 
         # pre-call budget gate (estimate)
