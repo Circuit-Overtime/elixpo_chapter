@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "elixpo-core"
+name = "elixpoo"
 version = "0.1.0"
-description = "Elixpo — Autonomous AI Agent Engine"
+description = "elixpoo — autonomous GitHub-contributor agent (modular squads over Pollinations)"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
@@ -13,16 +13,15 @@ authors = [
     { name = "elixpo", email = "elixpoo@gmail.com" },
 ]
 dependencies = [
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.32.0",
     "httpx>=0.28.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.7.0",
     "PyJWT>=2.10.0",
     "cryptography>=44.0.0",
     "structlog>=24.4.0",
-    "websockets>=14.0",
     "python-dotenv>=1.0.0",
+    "PyYAML>=6.0",
+    "tiktoken>=0.8.0",
 ]
 
 [project.optional-dependencies]
@@ -33,11 +32,12 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["elixpo"]
+packages = ["agents", "rtk", "lib"]
 
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+src = ["agents", "rtk", "lib", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
