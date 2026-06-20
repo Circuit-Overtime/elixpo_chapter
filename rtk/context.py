@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from elixpo.llm.models import Message
+from rtk.models import Message
 
 
 def estimate_tokens(text: str) -> int:
