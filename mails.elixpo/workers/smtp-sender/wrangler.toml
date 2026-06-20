@@ -1,0 +1,22 @@
+name = "elixpo-mail-smtp-sender"
+main = "src/index.js"
+compatibility_date = "2025-09-23"
+# cloudflare:sockets is a native Workers API — no flags needed.
+
+# Secret (set via `wrangler secret put SMTP_SENDER_SECRET`, or .dev.vars locally):
+#   SMTP_SENDER_SECRET — shared secret the Pages app sends as X-Sender-Secret.
+#
+# Step 5 will add the Cloudflare Queue consumer binding here so this Worker also
+# drains the elixpo-mail-send queue.
+
+# Observability — capture invocation + console logs of each send so failures are
+# visible (dashboard → Worker → Logs, or `wrangler tail`). Takes effect on the
+# next `wrangler deploy`; applies to the deployed Worker, not `wrangler dev`.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+head_sampling_rate = 1
