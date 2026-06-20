@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 import structlog
 
-from elixpo.github.app import GitHubApp
+from lib.github.app import GitHubApp
 
 log = structlog.get_logger()
 
@@ -15,16 +15,39 @@ GITHUB_API = "https://api.github.com"
 
 
 class GitHubAPI:
-    """Authenticated GitHub API client for a specific installation."""
+    """Authenticated GitHub API client.
 
-    def __init__(self, github_app: GitHubApp, installation_id: int):
+    Two auth modes:
+      - App installation: pass a GitHubApp + installation_id (acts as elixpoo[bot]).
+      - Static token: GitHubAPI.from_token(GITHUB_TOKEN) for control-repo ops in CI.
+    """
+
+    def __init__(
+        self,
+        github_app: GitHubApp | None = None,
+        installation_id: int | None = None,
+        token: str | None = None,
+    ):
         self._app = github_app
         self._installation_id = installation_id
+        self._static_token = token
         self._client: httpx.AsyncClient | None = None
+
+    @classmethod
+    def from_token(cls, token: str) -> GitHubAPI:
+        """Build a client from a plain token (e.g. Actions GITHUB_TOKEN)."""
+        return cls(token=token)
+
+    async def _token(self) -> str:
+        if self._static_token:
+            return self._static_token
+        if self._app is None or self._installation_id is None:
+            raise RuntimeError("GitHubAPI needs either a token or an app+installation_id")
+        return await self._app.get_installation_token(self._installation_id)
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create an authenticated HTTP client."""
-        token = await self._app.get_installation_token(self._installation_id)
+        token = await self._token()
         if self._client is not None:
             await self._client.aclose()
         self._client = httpx.AsyncClient(
@@ -91,7 +114,7 @@ class GitHubAPI:
 
     async def get_pull_diff(self, owner: str, repo: str, pr_number: int) -> str:
         """Get PR diff as text."""
-        token = await self._app.get_installation_token(self._installation_id)
+        token = await self._token()
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.get(
                 f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}",

@@ -6,10 +6,9 @@ from enum import Enum
 from typing import Any
 
 import structlog
-from pydantic import BaseModel
-
 from elixpo.llm.models import Message
 from elixpo.llm.router import ModelRole, ModelRouter, ReasoningEffort
+from pydantic import BaseModel
 
 log = structlog.get_logger()
 
@@ -79,9 +78,9 @@ class SubAgent:
     def _create_validation_tools(self):
         """Create a minimal tool registry for validation."""
         from elixpo.mcp.registry import ToolRegistry
-        from elixpo.mcp.tools.shell import ShellExecTool
         from elixpo.mcp.tools.file_read import FileReadTool
         from elixpo.mcp.tools.grep import GrepTool
+        from elixpo.mcp.tools.shell import ShellExecTool
         from elixpo.mcp.tools.task_validate import TaskValidateTool
 
         registry = ToolRegistry()
