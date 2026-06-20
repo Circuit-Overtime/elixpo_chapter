@@ -52,10 +52,19 @@ class Choice(BaseModel):
     finish_reason: str | None = None
 
 
+class PromptTokensDetails(BaseModel):
+    cached_tokens: int = 0
+
+
 class Usage(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
+    prompt_tokens_details: PromptTokensDetails | None = None
+
+    @property
+    def cached_tokens(self) -> int:
+        return self.prompt_tokens_details.cached_tokens if self.prompt_tokens_details else 0
 
 
 class ChatCompletionResponse(BaseModel):
