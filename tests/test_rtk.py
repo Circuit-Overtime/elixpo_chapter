@@ -134,3 +134,41 @@ async def test_router_writes_ledger(tmp_path):
     assert rows[0]["model"] == "qwen-coder-large"
     assert rows[0]["cached_tokens"] == 10
     assert rows[0]["total_tokens"] == 120
+
+
+# --- savers: truncate / diff / cache backends ---
+
+def test_truncate_preserves_head_and_tail():
+    from rtk.truncate import truncate_text
+
+    text = "HEAD " + ("noise " * 5000) + "TAIL"
+    out = truncate_text(text, max_tokens=100)
+    assert out.startswith("HEAD")
+    assert out.rstrip().endswith("TAIL")
+    assert "elided" in out
+    assert len(out) < len(text)
+
+
+def test_diff_cheaper_than_full():
+    from rtk.diff_context import cheaper_as_diff
+
+    old = "\n".join(f"line {i}" for i in range(200))
+    new = old.replace("line 5", "line 5 CHANGED")
+    use_diff, payload = cheaper_as_diff(old, new, "f.py")
+    assert use_diff is True
+    assert "CHANGED" in payload and payload.startswith("---")
+
+
+def test_cache_backends():
+    from rtk.cache import MemoryCache, NullCache, cache_key
+
+    n = NullCache()
+    n.set("k", "v")
+    assert n.get("k") is None
+
+    m = MemoryCache()
+    m.set("k", "v")
+    assert m.get("k") == "v"
+
+    assert cache_key("emb", "abc") == cache_key("emb", "abc")
+    assert cache_key("emb", "abc") != cache_key("emb", "xyz")

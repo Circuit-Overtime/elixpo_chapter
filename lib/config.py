@@ -53,11 +53,21 @@ class GitHubSettings(BaseSettings):
         return ""
 
 
+class UpstashSettings(BaseSettings):
+    """Optional Redis cache (HTTP/REST). Absent → in-memory cache. Never state."""
+
+    model_config = SettingsConfigDict(env_prefix="ELIXPO_UPSTASH_", extra="ignore")
+
+    url: str = ""
+    token: str = ""
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="ELIXPO_", extra="ignore")
 
     pollinations: PollinationsSettings = PollinationsSettings()
     github: GitHubSettings = GitHubSettings()
+    upstash: UpstashSettings = UpstashSettings()
 
     root: Path = ROOT
     config_dir: Path = ROOT / "config"
