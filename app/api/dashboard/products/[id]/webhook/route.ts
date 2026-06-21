@@ -1,15 +1,15 @@
 export const runtime = "edge";
 
+import type { D1Database } from "@cloudflare/workers-types";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireDashboard } from "@/lib/dashboard-auth";
 import { resolveGrace } from "@/lib/grace";
 import { newId } from "@/lib/ids";
 import {
-    WEBHOOK_EVENT_TYPES,
     normaliseEvents,
     parseEvents,
+    WEBHOOK_EVENT_TYPES,
 } from "@/lib/webhooks";
-import type { D1Database } from "@cloudflare/workers-types";
-import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * Webhook endpoint management for a product's app (1 app = 1 product).

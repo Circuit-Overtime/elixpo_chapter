@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-import { buildAuthorizeUrl } from "@/lib/sso";
 import { type NextRequest, NextResponse } from "next/server";
+import { buildAuthorizeUrl } from "@/lib/sso";
 
 const STATE_COOKIE = "pay_oauth_state";
 

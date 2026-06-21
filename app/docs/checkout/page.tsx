@@ -1,5 +1,6 @@
 "use client";
 
+import { Box } from "@mui/material";
 import {
     Code,
     DocH2,
@@ -8,7 +9,6 @@ import {
     DocP,
     DocTitle,
 } from "@/components/docs-prose";
-import { Box } from "@mui/material";
 import CodeBlock from "../../components/code-block";
 
 const CREATE = `POST https://payouts.elixpo.com/v1/checkout/sessions
@@ -83,11 +83,8 @@ export default function CheckoutDocs() {
             <DocH2>What happens next</DocH2>
             <DocList
                 items={[
-                    "The hosted page loads the session, lazily creates a
-                        Razorpay order, and opens Razorpay Checkout.",
-                    "On success the client signature is verified and we
-                        fulfill immediately; the Razorpay webhook re-confirms
-                        authoritatively (idempotent — never double-grants).",
+                    "The hosted page loads the session, lazily creates a Razorpay order, and opens Razorpay Checkout.",
+                    "On success the client signature is verified and we fulfill immediately; the Razorpay webhook re-confirms authoritatively (idempotent — never double-grants).",
                     <>
                         We grant the entitlement, then notify your app (see
                         Webhooks) and redirect the buyer to{" "}

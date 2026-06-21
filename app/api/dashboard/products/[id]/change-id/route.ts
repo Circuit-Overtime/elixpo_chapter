@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-import { requireDashboard } from "@/lib/dashboard-auth";
 import { type NextRequest, NextResponse } from "next/server";
+import { requireDashboard } from "@/lib/dashboard-auth";
 
 /** Hours the previous client_id keeps resolving after a change. */
 const GRACE_HOURS = 5;

@@ -1,10 +1,10 @@
 export const runtime = "edge";
 
+import { type NextRequest, NextResponse } from "next/server";
 import { sha256Hex, timingSafeEqual } from "@/lib/crypto";
 import { getDatabase } from "@/lib/d1-client";
 import { getEntitlement, toView } from "@/lib/entitlements";
 import { getAppBySlug } from "@/lib/repo";
-import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /v1/entitlements?app=<slug>&uid=<external uid>

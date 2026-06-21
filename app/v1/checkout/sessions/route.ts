@@ -1,5 +1,6 @@
 export const runtime = "edge";
 
+import { type NextRequest, NextResponse } from "next/server";
 import { appFromApiKey } from "@/lib/api-auth";
 import { getDatabase } from "@/lib/d1-client";
 import {
@@ -7,7 +8,6 @@ import {
     resolveProductAndPrice,
     upsertCustomer,
 } from "@/lib/repo";
-import { type NextRequest, NextResponse } from "next/server";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
 

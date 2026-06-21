@@ -1,8 +1,8 @@
 export const runtime = "edge";
 
-import { requireDashboard } from "@/lib/dashboard-auth";
 import type { D1Database } from "@cloudflare/workers-types";
 import { type NextRequest, NextResponse } from "next/server";
+import { requireDashboard } from "@/lib/dashboard-auth";
 
 async function ownsProduct(
     db: D1Database,
@@ -69,7 +69,10 @@ export async function GET(
     ).results ?? []) as any[];
 
     const pricesByTier: Record<string, any[]> = {};
-    for (const pr of allPrices) (pricesByTier[pr.product_id] ||= []).push(pr);
+    for (const pr of allPrices) {
+        if (!pricesByTier[pr.product_id]) pricesByTier[pr.product_id] = [];
+        pricesByTier[pr.product_id].push(pr);
+    }
     const tiers = tierRows.map((t) => ({
         ...t,
         prices: pricesByTier[t.id] ?? [],

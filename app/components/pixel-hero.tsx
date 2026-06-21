@@ -564,6 +564,7 @@ export default function PixelHero() {
                                 {PAY_BRANDS.map((b) => (
                                     <span
                                         key={`${dup}-${b.name}`}
+                                        role="img"
                                         aria-label={b.name}
                                         style={{
                                             display: "inline-flex",

@@ -1,5 +1,6 @@
 export const runtime = "edge";
 
+import { type NextRequest, NextResponse } from "next/server";
 import { sha256Hex, timingSafeEqual } from "@/lib/crypto";
 import { getDatabase } from "@/lib/d1-client";
 import {
@@ -10,7 +11,6 @@ import {
 import { getEnv } from "@/lib/env";
 import { getWebhookEndpoint } from "@/lib/repo";
 import { fireEntitlementUpdated } from "@/lib/webhooks";
-import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * Entitlement expiry sweep. Find active entitlements whose 30-day window has

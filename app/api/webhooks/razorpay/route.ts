@@ -1,11 +1,11 @@
 export const runtime = "edge";
 
+import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { fulfillPayment } from "@/lib/fulfill";
 import { razorpayFromEnv } from "@/lib/providers/razorpay";
 import { getCheckoutSessionByOrder, recordProviderEvent } from "@/lib/repo";
-import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/webhooks/razorpay
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    let event;
+    let event: any;
     try {
         event = razorpay.parseWebhook(rawBody, request.headers);
     } catch (err) {

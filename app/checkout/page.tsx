@@ -405,7 +405,10 @@ function CheckoutInner() {
 function SummaryPanel({
     session,
     startedAt,
-}: { session: SessionData; startedAt: Date }) {
+}: {
+    session: SessionData;
+    startedAt: Date;
+}) {
     const ref = session.order_id || session.session_id;
     const returnHost = hostOf(session.return_url);
     return (
@@ -679,7 +682,11 @@ function Meta({
     label,
     value,
     mono,
-}: { label: string; value: string; mono?: boolean }) {
+}: {
+    label: string;
+    value: string;
+    mono?: boolean;
+}) {
     return (
         <Stack
             direction="row"

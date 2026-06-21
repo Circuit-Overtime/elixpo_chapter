@@ -1,5 +1,6 @@
 "use client";
 
+import { Box } from "@mui/material";
 import {
     Code,
     DocH2,
@@ -8,7 +9,6 @@ import {
     DocP,
     DocTitle,
 } from "@/components/docs-prose";
-import { Box } from "@mui/material";
 import CodeBlock from "../../components/code-block";
 
 const HEADERS = `POST <your endpoint>
@@ -149,9 +149,7 @@ export default function WebhooksDocs() {
                         Respond <Code>2xx</Code> quickly; non-2xx responses are
                         recorded as failed deliveries for retry/inspection.
                     </>,
-                    "The same grant may arrive from both the instant client
-                        confirmation and the provider webhook — fulfillment is
-                        idempotent on our side.",
+                    "The same grant may arrive from both the instant client confirmation and the provider webhook — fulfillment is idempotent on our side.",
                 ]}
             />
 
@@ -172,13 +170,8 @@ export default function WebhooksDocs() {
                         <Code>active: false</Code> — handle it like any
                         downgrade and drop the user to your free tier.
                     </>,
-                    "This is automatic; you don't call anything. It happens
-                        whether or not the buyer still has time left on the
-                        period.",
-                    "For one-time (P0) plans there's no recurring charge to
-                        stop — cancelling the subscription just prevents the
-                        next grant. For future recurring plans, the provider
-                        mandate is cancelled too.",
+                    "This is automatic; you don't call anything. It happens whether or not the buyer still has time left on the period.",
+                    "For one-time (P0) plans there's no recurring charge to stop — cancelling the subscription just prevents the next grant. For future recurring plans, the provider mandate is cancelled too.",
                 ]}
             />
         </Box>

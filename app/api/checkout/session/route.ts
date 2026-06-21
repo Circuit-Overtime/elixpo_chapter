@@ -1,5 +1,7 @@
 export const runtime = "edge";
 
+import type { D1Database } from "@cloudflare/workers-types";
+import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { verifyHandoff } from "@/lib/handoff";
@@ -12,8 +14,6 @@ import {
     setSessionOrder,
     upsertCustomer,
 } from "@/lib/repo";
-import type { D1Database } from "@cloudflare/workers-types";
-import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/checkout/session

@@ -2,10 +2,6 @@
 
 export const runtime = "edge";
 
-import ChangeIdDialog from "@/components/change-id-dialog";
-import ConfirmDialog from "@/components/confirm-dialog";
-import { GlassCard, StatCard, formatMoney } from "@/components/dashboard-ui";
-import RotateDialog, { type GraceKey } from "@/components/rotate-dialog";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -25,6 +21,10 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import ChangeIdDialog from "@/components/change-id-dialog";
+import ConfirmDialog from "@/components/confirm-dialog";
+import { formatMoney, GlassCard, StatCard } from "@/components/dashboard-ui";
+import RotateDialog, { type GraceKey } from "@/components/rotate-dialog";
 
 export default function ProductDetailPage() {
     const id = String(useParams().id);

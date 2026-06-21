@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-import { SESSION_COOKIE } from "@/lib/session";
 import { NextResponse } from "next/server";
+import { SESSION_COOKIE } from "@/lib/session";
 
 function clear() {
     const res = NextResponse.json({ ok: true });

@@ -2,7 +2,6 @@
 
 export const runtime = "edge";
 
-import { dashboardTheme } from "@/components/dashboard-ui";
 import {
     ArrowBack as ArrowBackIcon,
     ArrowForward as ArrowForwardIcon,
@@ -31,6 +30,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
+import { dashboardTheme } from "@/components/dashboard-ui";
 import BackgroundAurora from "../components/background-aurora";
 
 const DOCS_NAV = [
@@ -44,7 +44,9 @@ const DOCS_NAV = [
 
 export default function DocsLayout({
     children,
-}: { children: React.ReactNode }) {
+}: {
+    children: React.ReactNode;
+}) {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [copied, setCopied] = useState(false);

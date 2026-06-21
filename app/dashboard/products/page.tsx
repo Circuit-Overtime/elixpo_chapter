@@ -2,7 +2,6 @@
 
 export const runtime = "edge";
 
-import { GlassCard, formatMoney } from "@/components/dashboard-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -23,6 +22,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { formatMoney, GlassCard } from "@/components/dashboard-ui";
 
 export default function ProductsPage() {
     const [loading, setLoading] = useState(true);
@@ -590,16 +590,19 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
 function groupByApp(products: any[]) {
     const acc: Record<string, any> = {};
     for (const p of products) {
-        const a = (acc[p.app_id] ||= {
-            app_id: p.app_id,
-            name: p.app_name || p.name,
-            client_id: p.client_id,
-            homepage_url: p.homepage_url,
-            active: false,
-            tierCount: 0,
-            prices: [] as any[],
-            firstProductId: p.id,
-        });
+        if (!acc[p.app_id]) {
+            acc[p.app_id] = {
+                app_id: p.app_id,
+                name: p.app_name || p.name,
+                client_id: p.client_id,
+                homepage_url: p.homepage_url,
+                active: false,
+                tierCount: 0,
+                prices: [] as any[],
+                firstProductId: p.id,
+            };
+        }
+        const a = acc[p.app_id];
         a.tierCount += 1;
         a.active = a.active || !!p.active;
         a.prices.push(...(p.prices || []));

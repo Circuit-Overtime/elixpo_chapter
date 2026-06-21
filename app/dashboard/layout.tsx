@@ -2,7 +2,6 @@
 
 export const runtime = "edge";
 
-import { dashboardTheme } from "@/components/dashboard-ui";
 import CardMembershipIcon from "@mui/icons-material/CardMembership";
 import CodeIcon from "@mui/icons-material/Code";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
@@ -33,6 +32,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { dashboardTheme } from "@/components/dashboard-ui";
 import BackgroundAurora from "../components/background-aurora";
 
 const NAV = [
@@ -61,7 +61,9 @@ const ACCOUNTS_PROFILE = "https://accounts.elixpo.com/dashboard/profile";
 
 export default function DashboardLayout({
     children,
-}: { children: React.ReactNode }) {
+}: {
+    children: React.ReactNode;
+}) {
     const pathname = usePathname();
     const [me, setMe] = useState<Me | null>(null);
     const [checked, setChecked] = useState(false);

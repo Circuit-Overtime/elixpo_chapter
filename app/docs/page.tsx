@@ -1,5 +1,6 @@
 "use client";
 
+import { Box } from "@mui/material";
 import {
     BaseUrlChip,
     Code,
@@ -9,7 +10,6 @@ import {
     DocP,
     DocTitle,
 } from "@/components/docs-prose";
-import { Box } from "@mui/material";
 
 export default function DocsOverview() {
     return (

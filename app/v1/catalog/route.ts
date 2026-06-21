@@ -1,8 +1,8 @@
 export const runtime = "edge";
 
+import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getAppBySlug } from "@/lib/repo";
-import { type NextRequest, NextResponse } from "next/server";
 
 // Public read endpoint — allow any origin so a consuming app can render its
 // pricing page client-side.

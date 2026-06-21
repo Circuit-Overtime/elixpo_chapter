@@ -7,7 +7,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "./d1-client";
-import { type SessionData, getSession } from "./session";
+import { getSession, type SessionData } from "./session";
 
 export interface DashboardCtx {
     db: D1Database;

@@ -1,9 +1,9 @@
 export const runtime = "edge";
 
+import { type NextRequest, NextResponse } from "next/server";
 import { sha256Hex } from "@/lib/crypto";
 import { requireDashboard } from "@/lib/dashboard-auth";
 import { resolveGrace } from "@/lib/grace";
-import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/dashboard/products/:id/regenerate-secret

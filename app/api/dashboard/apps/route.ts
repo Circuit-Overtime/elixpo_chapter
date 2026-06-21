@@ -1,10 +1,10 @@
 export const runtime = "edge";
 
+import type { D1Database } from "@cloudflare/workers-types";
+import { type NextRequest, NextResponse } from "next/server";
 import { sha256Hex } from "@/lib/crypto";
 import { requireDashboard } from "@/lib/dashboard-auth";
 import { newId } from "@/lib/ids";
-import type { D1Database } from "@cloudflare/workers-types";
-import { type NextRequest, NextResponse } from "next/server";
 
 /** GET /api/dashboard/apps — list the merchant's apps. */
 export async function GET(request: NextRequest) {

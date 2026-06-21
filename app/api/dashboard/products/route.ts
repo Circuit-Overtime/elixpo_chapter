@@ -1,8 +1,8 @@
 export const runtime = "edge";
 
+import { type NextRequest, NextResponse } from "next/server";
 import { merchantOwnsApp, requireDashboard } from "@/lib/dashboard-auth";
 import { newId } from "@/lib/ids";
-import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/dashboard/products — products (with nested prices) for the merchant.
@@ -41,7 +41,9 @@ export async function GET(request: NextRequest) {
 
     const byProduct: Record<string, any[]> = {};
     for (const pr of prices.results ?? []) {
-        (byProduct[(pr as any).product_id] ||= []).push(pr);
+        const pid = (pr as any).product_id;
+        if (!byProduct[pid]) byProduct[pid] = [];
+        byProduct[pid].push(pr);
     }
 
     const out = (products.results ?? []).map((p: any) => ({

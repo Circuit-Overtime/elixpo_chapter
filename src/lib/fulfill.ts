@@ -6,7 +6,7 @@
  */
 
 import type { D1Database } from "@cloudflare/workers-types";
-import { type EntitlementView, applyGrant, toView } from "./entitlements";
+import { applyGrant, type EntitlementView, toView } from "./entitlements";
 import {
     completeSession,
     getWebhookEndpoint,

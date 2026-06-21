@@ -1,9 +1,9 @@
 export const runtime = "edge";
 
+import { type NextRequest, NextResponse } from "next/server";
 import { appFromApiKey } from "@/lib/api-auth";
 import { SyncError, syncProduct } from "@/lib/catalog-sync";
 import { getDatabase } from "@/lib/d1-client";
-import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /v1/products

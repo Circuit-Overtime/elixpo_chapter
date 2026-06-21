@@ -1,5 +1,6 @@
 "use client";
 
+import { Box } from "@mui/material";
 import {
     Code,
     DocH2,
@@ -8,7 +9,6 @@ import {
     DocP,
     DocTitle,
 } from "@/components/docs-prose";
-import { Box } from "@mui/material";
 import CodeBlock from "../../components/code-block";
 
 const FILE = `{
