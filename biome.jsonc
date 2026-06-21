@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
     "formatter": {
         "indentStyle": "space",
         "indentWidth": 4
@@ -31,12 +31,13 @@
         }
     },
     "files": {
-        "ignore": [
-            "**/node_modules/**",
-            "**/.next/**",
-            "**/.vercel/**",
-            "**/.wrangler/**",
-            "**/*.css"
+        "includes": [
+            "**",
+            "!**/node_modules/**",
+            "!**/.next/**",
+            "!**/.vercel/**",
+            "!**/.wrangler/**",
+            "!**/*.css"
         ]
     },
     "css": {
