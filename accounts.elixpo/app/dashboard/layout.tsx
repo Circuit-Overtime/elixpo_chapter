@@ -270,7 +270,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
                             <IconButton
                                 component="a"
-                                href="https://github.com/elixpo/elixpoaccounts"
+                                href="https://github.com/elixpo/accounts.elixpo"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title="GitHub"

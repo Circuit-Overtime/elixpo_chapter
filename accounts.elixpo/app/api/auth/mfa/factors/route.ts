@@ -52,14 +52,33 @@ export async function GET(request: NextRequest) {
             .bind(auth.sub),
     ]);
 
-    const factors = (factorsRes.results || []).map((f: any) => ({
-        id: f.id,
-        kind: f.kind,
-        name: f.name,
-        created_at: f.created_at,
-        confirmed: !!f.confirmed_at,
-        last_used_at: f.last_used_at,
-    }));
+    // Dedupe pending duplicates: if a confirmed row exists for a given
+    // kind (TOTP / email_otp), drop any pending rows of the same kind
+    // from the response. They're remnants of half-finished enrollments
+    // and would otherwise show as "pending confirmation" rows the user
+    // can't action — clicking Resend just hits the already_confirmed
+    // branch and silently no-ops.
+    const rawFactors = (factorsRes.results || []) as Array<{
+        id: string;
+        kind: string;
+        name: string | null;
+        created_at: string;
+        confirmed_at: string | null;
+        last_used_at: string | null;
+    }>;
+    const confirmedKinds = new Set(
+        rawFactors.filter((f) => f.confirmed_at).map((f) => f.kind),
+    );
+    const factors = rawFactors
+        .filter((f) => f.confirmed_at || !confirmedKinds.has(f.kind))
+        .map((f) => ({
+            id: f.id,
+            kind: f.kind,
+            name: f.name,
+            created_at: f.created_at,
+            confirmed: !!f.confirmed_at,
+            last_used_at: f.last_used_at,
+        }));
     const mfaEnabled = !!((userRes.results || [])[0] as any)?.mfa_enabled;
     const unusedBackupCodes = ((backupRes.results || [])[0] as any)?.n ?? 0;
     const ownedAppsCount = ((appsRes.results || [])[0] as any)?.n ?? 0;

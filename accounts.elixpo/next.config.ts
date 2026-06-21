@@ -41,4 +41,14 @@ const nextConfig: NextConfig = {
     },
 };
 
+// Wire up the Cloudflare Pages dev shim so getRequestContext().env
+// (KV, D1) works under `next dev`. Without this, any route that calls
+// getRequestContext() throws "Failed to retrieve the Cloudflare request
+// context" — production via next-on-pages has the binding plumbed
+// automatically, dev needs this explicit call.
+if (process.env.NODE_ENV === "development") {
+    const { setupDevPlatform } = require("@cloudflare/next-on-pages/next-dev");
+    setupDevPlatform();
+}
+
 export default nextConfig;
