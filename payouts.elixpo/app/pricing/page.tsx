@@ -73,25 +73,59 @@ const FEES: { label: string; value: string }[] = [
     { label: "Per successful charge", value: "1.5–2.0% + ₹3 (by plan)" },
     { label: "Payouts to creators / sellers", value: "0.25% + ₹5 per payout" },
     { label: "Refunds & disputes", value: "No Elixpo fee" },
-    { label: "Cross-currency conversion", value: "+1% on the converted amount" },
+    {
+        label: "Cross-currency conversion",
+        value: "+1% on the converted amount",
+    },
 ];
 
 export default function PricingPage() {
     return (
         <PageShell>
-            <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 9 }, pb: { xs: 6, md: 10 } }}>
+            <Container
+                maxWidth="lg"
+                sx={{ pt: { xs: 6, md: 9 }, pb: { xs: 6, md: 10 } }}
+            >
                 {/* Header */}
-                <Stack alignItems="center" textAlign="center" spacing={2} sx={{ mb: { xs: 5, md: 7 } }}>
-                    <Typography sx={{ color: "#b69aff", fontWeight: 700, fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                <Stack
+                    alignItems="center"
+                    textAlign="center"
+                    spacing={2}
+                    sx={{ mb: { xs: 5, md: 7 } }}
+                >
+                    <Typography
+                        sx={{
+                            color: "#b69aff",
+                            fontWeight: 700,
+                            fontSize: "0.8rem",
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                        }}
+                    >
                         Pricing
                     </Typography>
-                    <Typography sx={{ fontWeight: 800, fontSize: { xs: "2.2rem", md: "3rem" }, letterSpacing: "-0.02em", lineHeight: 1.05, color: "#f5f5f4" }}>
+                    <Typography
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: { xs: "2.2rem", md: "3rem" },
+                            letterSpacing: "-0.02em",
+                            lineHeight: 1.05,
+                            color: "#f5f5f4",
+                        }}
+                    >
                         Pay only when you get paid
                     </Typography>
-                    <Typography sx={{ maxWidth: 600, color: "rgba(245,245,244,0.65)", fontSize: "1.05rem", lineHeight: 1.7 }}>
-                        A flat platform fee on each successful transaction, on top of
-                        your provider's fees. No setup cost, no monthly minimum to
-                        start — Elixpo Pay only earns when you do.
+                    <Typography
+                        sx={{
+                            maxWidth: 600,
+                            color: "rgba(245,245,244,0.65)",
+                            fontSize: "1.05rem",
+                            lineHeight: 1.7,
+                        }}
+                    >
+                        A flat platform fee on each successful transaction, on
+                        top of your provider's fees. No setup cost, no monthly
+                        minimum to start — Elixpo Pay only earns when you do.
                     </Typography>
                 </Stack>
 
@@ -100,7 +134,10 @@ export default function PricingPage() {
                     sx={{
                         display: "grid",
                         gap: 2.5,
-                        gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
+                        gridTemplateColumns: {
+                            xs: "1fr",
+                            md: "repeat(3, 1fr)",
+                        },
                         alignItems: "stretch",
                     }}
                 >
@@ -143,30 +180,82 @@ export default function PricingPage() {
                                     Most popular
                                 </Box>
                             )}
-                            <Typography sx={{ fontWeight: 700, fontSize: "1.2rem", color: "#f5f5f4" }}>
+                            <Typography
+                                sx={{
+                                    fontWeight: 700,
+                                    fontSize: "1.2rem",
+                                    color: "#f5f5f4",
+                                }}
+                            >
                                 {t.name}
                             </Typography>
-                            <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.88rem", mb: 2 }}>
+                            <Typography
+                                sx={{
+                                    color: "rgba(245,245,244,0.55)",
+                                    fontSize: "0.88rem",
+                                    mb: 2,
+                                }}
+                            >
                                 {t.blurb}
                             </Typography>
 
-                            <Stack direction="row" alignItems="baseline" spacing={1}>
-                                <Typography sx={{ fontWeight: 800, fontSize: "2.2rem", color: "#f5f5f4" }}>
+                            <Stack
+                                direction="row"
+                                alignItems="baseline"
+                                spacing={1}
+                            >
+                                <Typography
+                                    sx={{
+                                        fontWeight: 800,
+                                        fontSize: "2.2rem",
+                                        color: "#f5f5f4",
+                                    }}
+                                >
                                     {t.price}
                                 </Typography>
-                                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.9rem" }}>
+                                <Typography
+                                    sx={{
+                                        color: "rgba(245,245,244,0.5)",
+                                        fontSize: "0.9rem",
+                                    }}
+                                >
                                     {t.unit}
                                 </Typography>
                             </Stack>
-                            <Typography sx={{ color: "#86efac", fontSize: "0.9rem", fontWeight: 600, mt: 0.5, mb: 2.5 }}>
+                            <Typography
+                                sx={{
+                                    color: "#86efac",
+                                    fontSize: "0.9rem",
+                                    fontWeight: 600,
+                                    mt: 0.5,
+                                    mb: 2.5,
+                                }}
+                            >
                                 {t.rate} per transaction
                             </Typography>
 
                             <Stack spacing={1.2} sx={{ mb: 3 }}>
                                 {t.features.map((f) => (
-                                    <Stack key={f} direction="row" spacing={1.2} alignItems="flex-start">
-                                        <CheckIcon sx={{ fontSize: 18, color: "#86efac", mt: "1px" }} />
-                                        <Typography sx={{ color: "rgba(245,245,244,0.75)", fontSize: "0.9rem", lineHeight: 1.5 }}>
+                                    <Stack
+                                        key={f}
+                                        direction="row"
+                                        spacing={1.2}
+                                        alignItems="flex-start"
+                                    >
+                                        <CheckIcon
+                                            sx={{
+                                                fontSize: 18,
+                                                color: "#86efac",
+                                                mt: "1px",
+                                            }}
+                                        />
+                                        <Typography
+                                            sx={{
+                                                color: "rgba(245,245,244,0.75)",
+                                                fontSize: "0.9rem",
+                                                lineHeight: 1.5,
+                                            }}
+                                        >
                                             {f}
                                         </Typography>
                                     </Stack>
@@ -174,7 +263,9 @@ export default function PricingPage() {
                             </Stack>
 
                             <Button
-                                component={t.href.startsWith("mailto:") ? "a" : Link}
+                                component={
+                                    t.href.startsWith("mailto:") ? "a" : Link
+                                }
                                 href={t.href}
                                 sx={{
                                     mt: "auto",
@@ -187,7 +278,9 @@ export default function PricingPage() {
                                     background: t.popular
                                         ? "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)"
                                         : "rgba(255,255,255,0.05)",
-                                    border: t.popular ? "none" : "1px solid rgba(255,255,255,0.14)",
+                                    border: t.popular
+                                        ? "none"
+                                        : "1px solid rgba(255,255,255,0.14)",
                                     "&:hover": {
                                         background: t.popular
                                             ? "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)"
@@ -209,13 +302,30 @@ export default function PricingPage() {
                         borderRadius: "20px",
                         background: "#0e1117",
                         border: "1px solid rgba(255,255,255,0.05)",
-                        boxShadow: "8px 8px 26px rgba(0,0,0,0.45), -6px -6px 18px rgba(255,255,255,0.02)",
+                        boxShadow:
+                            "8px 8px 26px rgba(0,0,0,0.45), -6px -6px 18px rgba(255,255,255,0.02)",
                     }}
                 >
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.2rem", mb: 2, color: "#f5f5f4" }}>
+                    <Typography
+                        sx={{
+                            fontWeight: 700,
+                            fontSize: "1.2rem",
+                            mb: 2,
+                            color: "#f5f5f4",
+                        }}
+                    >
                         What you pay, line by line
                     </Typography>
-                    <Stack divider={<Box sx={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} />}>
+                    <Stack
+                        divider={
+                            <Box
+                                sx={{
+                                    borderTop:
+                                        "1px solid rgba(255,255,255,0.06)",
+                                }}
+                            />
+                        }
+                    >
                         {FEES.map((row) => (
                             <Stack
                                 key={row.label}
@@ -224,25 +334,56 @@ export default function PricingPage() {
                                 alignItems="center"
                                 sx={{ py: 1.4, gap: 2 }}
                             >
-                                <Typography sx={{ color: "rgba(245,245,244,0.72)", fontSize: "0.95rem" }}>
+                                <Typography
+                                    sx={{
+                                        color: "rgba(245,245,244,0.72)",
+                                        fontSize: "0.95rem",
+                                    }}
+                                >
                                     {row.label}
                                 </Typography>
-                                <Typography sx={{ color: "#f5f5f4", fontWeight: 600, fontSize: "0.95rem", textAlign: "right" }}>
+                                <Typography
+                                    sx={{
+                                        color: "#f5f5f4",
+                                        fontWeight: 600,
+                                        fontSize: "0.95rem",
+                                        textAlign: "right",
+                                    }}
+                                >
                                     {row.value}
                                 </Typography>
                             </Stack>
                         ))}
                     </Stack>
-                    <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem", mt: 2.5, lineHeight: 1.6 }}>
-                        Provider fees (Razorpay, Stripe, PayPal) are charged by the
-                        provider and are separate from Elixpo Pay's platform fee. GST
-                        and applicable taxes are added per local regulation.
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.45)",
+                            fontSize: "0.82rem",
+                            mt: 2.5,
+                            lineHeight: 1.6,
+                        }}
+                    >
+                        Provider fees (Razorpay, Stripe, PayPal) are charged by
+                        the provider and are separate from Elixpo Pay's platform
+                        fee. GST and applicable taxes are added per local
+                        regulation.
                     </Typography>
                 </Box>
 
-                <Typography sx={{ textAlign: "center", color: "rgba(245,245,244,0.5)", fontSize: "0.9rem", mt: 4 }}>
+                <Typography
+                    sx={{
+                        textAlign: "center",
+                        color: "rgba(245,245,244,0.5)",
+                        fontSize: "0.9rem",
+                        mt: 4,
+                    }}
+                >
                     Questions about volume pricing?{" "}
-                    <Box component="a" href="mailto:hello@elixpo.com" sx={{ color: "#9b7bf7", textDecoration: "none" }}>
+                    <Box
+                        component="a"
+                        href="mailto:hello@elixpo.com"
+                        sx={{ color: "#9b7bf7", textDecoration: "none" }}
+                    >
                         Talk to us →
                     </Box>
                 </Typography>

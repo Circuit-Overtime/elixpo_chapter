@@ -65,13 +65,14 @@
         "@mui/icons-material": "7.0.2",
         "@mui/material": "7.0.2",
         "@mui/system": "7.0.2",
+        "biome": "^0.3.3",
         "jose": "^5.9.6",
         "next": "15.2.4",
         "react": "19.2.3",
         "react-dom": "19.2.3"
     },
     "devDependencies": {
-        "@biomejs/biome": "^1.9.4",
+        "@biomejs/biome": "^2.5.0",
         "@cloudflare/next-on-pages": "^1.13.16",
         "@cloudflare/workers-types": "^4.20240905.0",
         "@tailwindcss/postcss": "^4",

@@ -16,7 +16,9 @@ export default function TransactionsPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/dashboard/transactions?limit=100", { credentials: "include" })
+        fetch("/api/dashboard/transactions?limit=100", {
+            credentials: "include",
+        })
             .then((r) => (r.ok ? r.json() : { transactions: [] }))
             .then((d: any) => {
                 setRows(d.transactions || []);
@@ -28,10 +30,21 @@ export default function TransactionsPage() {
     return (
         <Box>
             <Box sx={{ mb: 3 }}>
-                <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.02em" }}>
+                <Typography
+                    sx={{
+                        fontWeight: 800,
+                        fontSize: "1.7rem",
+                        letterSpacing: "-0.02em",
+                    }}
+                >
                     Transactions
                 </Typography>
-                <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.92rem" }}>
+                <Typography
+                    sx={{
+                        color: "rgba(245,245,244,0.55)",
+                        fontSize: "0.92rem",
+                    }}
+                >
                     Every charge across your apps, newest first.
                 </Typography>
             </Box>
@@ -49,7 +62,14 @@ export default function TransactionsPage() {
                     </Box>
                 ) : (
                     <Box sx={{ overflowX: "auto" }}>
-                        <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
+                        <Box
+                            component="table"
+                            sx={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                                minWidth: 700,
+                            }}
+                        >
                             <Box component="thead">
                                 <Box
                                     component="tr"
@@ -80,33 +100,66 @@ export default function TransactionsPage() {
                                         component="tr"
                                         key={t.id}
                                         sx={{
-                                            borderTop: "1px solid rgba(255,255,255,0.06)",
-                                            "& td": { py: 1.3, px: 1, fontSize: "0.88rem" },
+                                            borderTop:
+                                                "1px solid rgba(255,255,255,0.06)",
+                                            "& td": {
+                                                py: 1.3,
+                                                px: 1,
+                                                fontSize: "0.88rem",
+                                            },
                                         }}
                                     >
                                         <td>
-                                            <Box component="span" sx={{ color: "#c4b5fd" }}>
+                                            <Box
+                                                component="span"
+                                                sx={{ color: "#c4b5fd" }}
+                                            >
                                                 {t.app_slug}
                                             </Box>
                                         </td>
                                         <td>
-                                            <Box component="span" sx={{ fontFamily: "var(--font-geist-mono)", color: "rgba(245,245,244,0.7)" }}>
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    fontFamily:
+                                                        "var(--font-geist-mono)",
+                                                    color: "rgba(245,245,244,0.7)",
+                                                }}
+                                            >
                                                 {t.uid || "—"}
                                             </Box>
                                         </td>
                                         <td>
-                                            <strong>{formatMoney(t.amount, t.currency)}</strong>
+                                            <strong>
+                                                {formatMoney(
+                                                    t.amount,
+                                                    t.currency,
+                                                )}
+                                            </strong>
                                         </td>
                                         <td>
                                             <StatusChip status={t.status} />
                                         </td>
                                         <td>
-                                            <Box component="span" sx={{ fontFamily: "var(--font-geist-mono)", color: "rgba(245,245,244,0.45)", fontSize: "0.78rem" }}>
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    fontFamily:
+                                                        "var(--font-geist-mono)",
+                                                    color: "rgba(245,245,244,0.45)",
+                                                    fontSize: "0.78rem",
+                                                }}
+                                            >
                                                 {t.provider_payment_id || "—"}
                                             </Box>
                                         </td>
                                         <td>
-                                            <Box component="span" sx={{ color: "rgba(245,245,244,0.5)" }}>
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    color: "rgba(245,245,244,0.5)",
+                                                }}
+                                            >
                                                 {fmtDate(t.created_at)}
                                             </Box>
                                         </td>

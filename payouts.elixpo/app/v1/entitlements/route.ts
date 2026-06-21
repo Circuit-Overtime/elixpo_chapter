@@ -32,10 +32,9 @@ export async function GET(request: NextRequest) {
         }
 
         const authHeader = request.headers.get("authorization");
-        const key =
-            authHeader?.startsWith("Bearer ")
-                ? authHeader.slice(7)
-                : request.headers.get("x-elixpo-pay-key");
+        const key = authHeader?.startsWith("Bearer ")
+            ? authHeader.slice(7)
+            : request.headers.get("x-elixpo-pay-key");
 
         if (!key) {
             return NextResponse.json(
@@ -47,10 +46,7 @@ export async function GET(request: NextRequest) {
         const db = await getDatabase();
         const app = await getAppBySlug(db, appSlug);
         if (!app || !app.api_key_hash) {
-            return NextResponse.json(
-                { error: "unknown_app" },
-                { status: 404 },
-            );
+            return NextResponse.json({ error: "unknown_app" }, { status: 404 });
         }
 
         const presentedHash = await sha256Hex(key);
@@ -69,9 +65,6 @@ export async function GET(request: NextRequest) {
         });
     } catch (err: any) {
         console.error("[v1/entitlements] error:", err);
-        return NextResponse.json(
-            { error: "server_error" },
-            { status: 500 },
-        );
+        return NextResponse.json({ error: "server_error" }, { status: 500 });
     }
 }

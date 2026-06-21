@@ -63,7 +63,8 @@ export function toView(
         };
     }
     const notExpired =
-        !row.expires_at || new Date(row.expires_at.replace(" ", "T") + "Z") > new Date();
+        !row.expires_at ||
+        new Date(`${row.expires_at.replace(" ", "T")}Z`) > new Date();
     return {
         app: appSlug,
         uid: row.external_uid,

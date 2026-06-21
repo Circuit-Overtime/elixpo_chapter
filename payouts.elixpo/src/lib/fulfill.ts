@@ -89,9 +89,7 @@ export async function fulfillPayment(
     }
     if (session.price_id) {
         const price = (await db
-            .prepare(
-                "SELECT interval, interval_count FROM prices WHERE id = ?",
-            )
+            .prepare("SELECT interval, interval_count FROM prices WHERE id = ?")
             .bind(session.price_id)
             .first()) as { interval: string; interval_count: number } | null;
         if (price)

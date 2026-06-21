@@ -39,16 +39,24 @@ export async function POST(request: NextRequest) {
         const app = await appFromApiKey(db, request);
         if (!app) {
             return NextResponse.json(
-                { error: "unauthorized", error_description: "Invalid or missing secret key" },
+                {
+                    error: "unauthorized",
+                    error_description: "Invalid or missing secret key",
+                },
                 { status: 401 },
             );
         }
 
         const body: any = await request.json().catch(() => ({}));
-        const tier = String(body.tier || "").trim().toLowerCase();
+        const tier = String(body.tier || "")
+            .trim()
+            .toLowerCase();
         if (!tier) {
             return NextResponse.json(
-                { error: "invalid_request", error_description: "tier is required" },
+                {
+                    error: "invalid_request",
+                    error_description: "tier is required",
+                },
                 { status: 400 },
             );
         }
@@ -58,7 +66,10 @@ export async function POST(request: NextRequest) {
         const email = customer.email ? String(customer.email) : null;
         if (!uid) {
             return NextResponse.json(
-                { error: "invalid_request", error_description: "customer.uid is required" },
+                {
+                    error: "invalid_request",
+                    error_description: "customer.uid is required",
+                },
                 { status: 400 },
             );
         }
@@ -66,16 +77,27 @@ export async function POST(request: NextRequest) {
         const currency = String(body.currency || "INR").toUpperCase();
         if (!CURRENCIES.includes(currency)) {
             return NextResponse.json(
-                { error: "invalid_currency", error_description: `Unsupported currency '${currency}'` },
+                {
+                    error: "invalid_currency",
+                    error_description: `Unsupported currency '${currency}'`,
+                },
                 { status: 400 },
             );
         }
 
         // Price is resolved from OUR catalog — never trusted from the caller.
-        const resolved = await resolveProductAndPrice(db, app.id, tier, currency);
+        const resolved = await resolveProductAndPrice(
+            db,
+            app.id,
+            tier,
+            currency,
+        );
         if (!resolved) {
             return NextResponse.json(
-                { error: "unknown_plan", error_description: `No active product for tier '${tier}'` },
+                {
+                    error: "unknown_plan",
+                    error_description: `No active product for tier '${tier}'`,
+                },
                 { status: 404 },
             );
         }
@@ -133,7 +155,10 @@ export async function POST(request: NextRequest) {
     } catch (err: any) {
         console.error("[v1/checkout/sessions] error:", err);
         return NextResponse.json(
-            { error: "server_error", error_description: String(err?.message || err) },
+            {
+                error: "server_error",
+                error_description: String(err?.message || err),
+            },
             { status: 500 },
         );
     }

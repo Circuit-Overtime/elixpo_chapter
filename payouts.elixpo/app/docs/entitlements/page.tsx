@@ -1,8 +1,15 @@
 "use client";
 
 import { Box } from "@mui/material";
+import {
+    Code,
+    DocH2,
+    DocLead,
+    DocList,
+    DocP,
+    DocTitle,
+} from "@/components/docs-prose";
 import CodeBlock from "../../components/code-block";
-import { Code, DocH2, DocLead, DocList, DocP, DocTitle } from "@/components/docs-prose";
 
 const REQ = `GET /v1/entitlements?app=lixblogs&uid=u_123
 Authorization: Bearer <ELIXPO_PAY_API_KEY>
@@ -33,15 +40,16 @@ export default function EntitlementsDocs() {
         <Box>
             <DocTitle>Entitlements API</DocTitle>
             <DocLead>
-                A server-to-server endpoint to read a customer's current tier. Use
-                it to gate features without trusting client state, or to reconcile
-                if a webhook was missed.
+                A server-to-server endpoint to read a customer's current tier.
+                Use it to gate features without trusting client state, or to
+                reconcile if a webhook was missed.
             </DocLead>
 
             <DocH2>Request</DocH2>
             <CodeBlock code={REQ} language="http" />
             <DocP>
-                Authenticate with your app's secret key (the <Code>pay_sk_…</Code>
+                Authenticate with your app's secret key (the{" "}
+                <Code>pay_sk_…</Code>
                 shown once on app creation). It's SHA-256 compared server-side —
                 keep it server-only.
             </DocP>
@@ -54,9 +62,18 @@ export default function EntitlementsDocs() {
             <DocH2>Notes</DocH2>
             <DocList
                 items={[
-                    <><Code>active</Code> is the field to gate on — it already accounts for expiry.</>,
-                    <>Responses are <Code>no-store</Code>; always reflect the latest grant.</>,
-                    <>A missing or wrong key returns <Code>401</Code>; an unknown app returns <Code>404</Code>.</>,
+                    <>
+                        <Code>active</Code> is the field to gate on — it already
+                        accounts for expiry.
+                    </>,
+                    <>
+                        Responses are <Code>no-store</Code>; always reflect the
+                        latest grant.
+                    </>,
+                    <>
+                        A missing or wrong key returns <Code>401</Code>; an
+                        unknown app returns <Code>404</Code>.
+                    </>,
                 ]}
             />
         </Box>

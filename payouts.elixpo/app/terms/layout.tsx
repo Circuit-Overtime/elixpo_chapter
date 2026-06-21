@@ -8,7 +8,8 @@ export const metadata: Metadata = {
     alternates: { canonical: "/terms" },
     openGraph: {
         title: "Terms of Service | Elixpo Pay",
-        description: "Terms governing Elixpo Pay's payments and payouts platform.",
+        description:
+            "Terms governing Elixpo Pay's payments and payouts platform.",
         url: "https://payouts.elixpo.com/terms",
     },
 };

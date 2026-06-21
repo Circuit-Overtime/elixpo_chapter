@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import type { D1Database } from "@cloudflare/workers-types";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireDashboard } from "@/lib/dashboard-auth";
 
 async function ownsProduct(
@@ -69,8 +69,14 @@ export async function GET(
     ).results ?? []) as any[];
 
     const pricesByTier: Record<string, any[]> = {};
-    for (const pr of allPrices) (pricesByTier[pr.product_id] ||= []).push(pr);
-    const tiers = tierRows.map((t) => ({ ...t, prices: pricesByTier[t.id] ?? [] }));
+    for (const pr of allPrices) {
+        if (!pricesByTier[pr.product_id]) pricesByTier[pr.product_id] = [];
+        pricesByTier[pr.product_id].push(pr);
+    }
+    const tiers = tierRows.map((t) => ({
+        ...t,
+        prices: pricesByTier[t.id] ?? [],
+    }));
 
     // The representative product's own prices (kept for backward compatibility).
     const prices = pricesByTier[id] ?? [];
@@ -166,7 +172,10 @@ export async function PATCH(
     }
     if (sets.length) {
         vals.push(id);
-        await db.prepare(`UPDATE products SET ${sets.join(", ")} WHERE id = ?`).bind(...vals).run();
+        await db
+            .prepare(`UPDATE products SET ${sets.join(", ")} WHERE id = ?`)
+            .bind(...vals)
+            .run();
         touched = true;
     }
 

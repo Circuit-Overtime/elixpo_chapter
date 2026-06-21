@@ -1,10 +1,10 @@
 "use client";
 
+import type { SvgIconComponent } from "@mui/icons-material";
 import BoltIcon from "@mui/icons-material/Bolt";
 import LoginIcon from "@mui/icons-material/Login";
 import SellIcon from "@mui/icons-material/Sell";
 import { Box, Container, Stack, Typography } from "@mui/material";
-import type { SvgIconComponent } from "@mui/icons-material";
 
 interface Step {
     icon: SvgIconComponent;
@@ -85,7 +85,13 @@ export default function RoadmapSteps() {
                         }}
                     >
                         <defs>
-                            <linearGradient id="rm-grad" x1="0" y1="0" x2="1" y2="0">
+                            <linearGradient
+                                id="rm-grad"
+                                x1="0"
+                                y1="0"
+                                x2="1"
+                                y2="0"
+                            >
                                 <stop offset="0%" stopColor="#9b7bf7" />
                                 <stop offset="50%" stopColor="#86efac" />
                                 <stop offset="100%" stopColor="#fbbf24" />
@@ -137,10 +143,15 @@ export default function RoadmapSteps() {
                                 >
                                     <s.icon sx={{ fontSize: 24 }} />
                                 </Box>
-                                <Stack direction="row" spacing={0.8} alignItems="center">
+                                <Stack
+                                    direction="row"
+                                    spacing={0.8}
+                                    alignItems="center"
+                                >
                                     <Typography
                                         sx={{
-                                            fontFamily: "var(--font-geist-mono)",
+                                            fontFamily:
+                                                "var(--font-geist-mono)",
                                             fontSize: "0.8rem",
                                             fontWeight: 700,
                                             color: s.accent,
@@ -148,7 +159,13 @@ export default function RoadmapSteps() {
                                     >
                                         {s.n}
                                     </Typography>
-                                    <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: "#f5f5f4" }}>
+                                    <Typography
+                                        sx={{
+                                            fontWeight: 700,
+                                            fontSize: "1.05rem",
+                                            color: "#f5f5f4",
+                                        }}
+                                    >
                                         {s.t}
                                     </Typography>
                                 </Stack>

@@ -5,9 +5,17 @@
  */
 
 export const GRACE_OPTIONS = {
-    immediate: { label: "Rotate immediately", sql: null as string | null, minutes: 0 },
+    immediate: {
+        label: "Rotate immediately",
+        sql: null as string | null,
+        minutes: 0,
+    },
     "5m": { label: "Keep old valid 5 minutes", sql: "+5 minutes", minutes: 5 },
-    "10m": { label: "Keep old valid 10 minutes", sql: "+10 minutes", minutes: 10 },
+    "10m": {
+        label: "Keep old valid 10 minutes",
+        sql: "+10 minutes",
+        minutes: 10,
+    },
     "1h": { label: "Keep old valid 1 hour", sql: "+1 hour", minutes: 60 },
 } as const;
 
@@ -19,9 +27,9 @@ export function resolveGrace(opt: unknown): {
     sql: string | null;
     minutes: number;
 } {
-    const key = (typeof opt === "string" && opt in GRACE_OPTIONS
-        ? opt
-        : "immediate") as GraceOption;
+    const key = (
+        typeof opt === "string" && opt in GRACE_OPTIONS ? opt : "immediate"
+    ) as GraceOption;
     const g = GRACE_OPTIONS[key];
     return { key, sql: g.sql, minutes: g.minutes };
 }

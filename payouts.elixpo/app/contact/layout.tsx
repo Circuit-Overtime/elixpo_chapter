@@ -8,7 +8,8 @@ export const metadata: Metadata = {
     alternates: { canonical: "/contact" },
     openGraph: {
         title: "Contact | Elixpo Pay",
-        description: "Reach Elixpo Pay for billing, payments, and integration support.",
+        description:
+            "Reach Elixpo Pay for billing, payments, and integration support.",
         url: "https://payouts.elixpo.com/contact",
     },
 };

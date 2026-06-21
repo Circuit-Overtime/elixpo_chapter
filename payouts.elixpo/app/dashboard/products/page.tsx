@@ -32,7 +32,10 @@ export default function ProductsPage() {
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState("");
 
-    const [creds, setCreds] = useState<{ clientId: string; secret: string } | null>(null);
+    const [creds, setCreds] = useState<{
+        clientId: string;
+        secret: string;
+    } | null>(null);
     const [copied, setCopied] = useState(false);
     const [secretHidden, setSecretHidden] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -41,14 +44,19 @@ export default function ProductsPage() {
         try {
             await navigator.clipboard.writeText(clientId);
             setCopiedId(clientId);
-            setTimeout(() => setCopiedId((c) => (c === clientId ? null : c)), 1500);
+            setTimeout(
+                () => setCopiedId((c) => (c === clientId ? null : c)),
+                1500,
+            );
         } catch {
             // ignore
         }
     };
 
     const load = async () => {
-        const p: any = await fetch("/api/dashboard/products", { credentials: "include" }).then((r) => r.json());
+        const p: any = await fetch("/api/dashboard/products", {
+            credentials: "include",
+        }).then((r) => r.json());
         setProducts(p.products || []);
         setLoading(false);
     };
@@ -57,7 +65,12 @@ export default function ProductsPage() {
         load();
     }, []);
 
-    const register = async (form: { name: string; description: string; homepage_url: string; pricing_url: string }) => {
+    const register = async (form: {
+        name: string;
+        description: string;
+        homepage_url: string;
+        pricing_url: string;
+    }) => {
         setBusy(true);
         setErr("");
         try {
@@ -115,11 +128,23 @@ export default function ProductsPage() {
                 sx={{ mb: 3 }}
             >
                 <Box>
-                    <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.02em" }}>
+                    <Typography
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: "1.7rem",
+                            letterSpacing: "-0.02em",
+                        }}
+                    >
                         Products
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.92rem" }}>
-                        Register a product to get its Client ID + secret, then add pricing tiers inside it.
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.55)",
+                            fontSize: "0.92rem",
+                        }}
+                    >
+                        Register a product to get its Client ID + secret, then
+                        add pricing tiers inside it.
                     </Typography>
                 </Box>
                 <Button
@@ -135,29 +160,83 @@ export default function ProductsPage() {
             </Stack>
 
             {creds && (
-                <GlassCard sx={{ mb: 3, border: "1px solid rgba(134,239,172,0.35)" }}>
-                    <Typography sx={{ fontWeight: 700, color: "#86efac", mb: 1.2 }}>
+                <GlassCard
+                    sx={{ mb: 3, border: "1px solid rgba(134,239,172,0.35)" }}
+                >
+                    <Typography
+                        sx={{ fontWeight: 700, color: "#86efac", mb: 1.2 }}
+                    >
                         Product registered — copy your client secret now
                     </Typography>
-                    <Typography sx={{ fontSize: "0.72rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                    <Typography
+                        sx={{
+                            fontSize: "0.72rem",
+                            color: "rgba(245,245,244,0.45)",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                            mb: 0.5,
+                        }}
+                    >
                         Client ID
                     </Typography>
-                    <Box sx={{ ...mono, mb: 2, color: "#c4b5fd" }}>{creds.clientId}</Box>
-                    <Typography sx={{ fontSize: "0.72rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                    <Box sx={{ ...mono, mb: 2, color: "#c4b5fd" }}>
+                        {creds.clientId}
+                    </Box>
+                    <Typography
+                        sx={{
+                            fontSize: "0.72rem",
+                            color: "rgba(245,245,244,0.45)",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                            mb: 0.5,
+                        }}
+                    >
                         Client secret
                     </Typography>
                     {secretHidden ? (
-                        <Box sx={{ ...mono, display: "flex", alignItems: "center", gap: 1, color: "rgba(245,245,244,0.5)" }}>
-                            <CheckCircleIcon sx={{ fontSize: 16, color: "#86efac" }} />
-                            Copied & hidden — for your security it won't be shown again.
+                        <Box
+                            sx={{
+                                ...mono,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                color: "rgba(245,245,244,0.5)",
+                            }}
+                        >
+                            <CheckCircleIcon
+                                sx={{ fontSize: 16, color: "#86efac" }}
+                            />
+                            Copied & hidden — for your security it won't be
+                            shown again.
                         </Box>
                     ) : (
                         <Stack direction="row" spacing={1} alignItems="center">
-                            <Box sx={{ ...mono, flexGrow: 1, overflowX: "auto", whiteSpace: "nowrap" }}>{creds.secret}</Box>
+                            <Box
+                                sx={{
+                                    ...mono,
+                                    flexGrow: 1,
+                                    overflowX: "auto",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {creds.secret}
+                            </Box>
                             <Button
                                 onClick={copySecret}
-                                startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
-                                sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2, background: "#7c5cff", borderRadius: "10px", "&:hover": { background: "#8a6dff" } }}
+                                startIcon={
+                                    <ContentCopyIcon
+                                        sx={{ fontSize: "1rem !important" }}
+                                    />
+                                }
+                                sx={{
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    color: "#fff",
+                                    px: 2,
+                                    background: "#7c5cff",
+                                    borderRadius: "10px",
+                                    "&:hover": { background: "#8a6dff" },
+                                }}
                             >
                                 Copy
                             </Button>
@@ -168,11 +247,26 @@ export default function ProductsPage() {
 
             {products.length === 0 ? (
                 <GlassCard sx={{ textAlign: "center", py: 6 }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 1 }}>No products yet</Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.55)", mb: 3, fontSize: "0.9rem" }}>
-                        Register your first product to receive a Client ID and secret, then add pricing tiers.
+                    <Typography
+                        sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 1 }}
+                    >
+                        No products yet
                     </Typography>
-                    <Button startIcon={<AddIcon />} onClick={() => setRegisterDlg(true)} sx={primaryBtn}>
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.55)",
+                            mb: 3,
+                            fontSize: "0.9rem",
+                        }}
+                    >
+                        Register your first product to receive a Client ID and
+                        secret, then add pricing tiers.
+                    </Typography>
+                    <Button
+                        startIcon={<AddIcon />}
+                        onClick={() => setRegisterDlg(true)}
+                        sx={primaryBtn}
+                    >
                         Register product
                     </Button>
                 </GlassCard>
@@ -180,7 +274,9 @@ export default function ProductsPage() {
                 <Stack spacing={2}>
                     {groupByApp(products).map((app) => {
                         const minPrice = app.prices.length
-                            ? app.prices.reduce((m: any, x: any) => (x.unit_amount < m.unit_amount ? x : m))
+                            ? app.prices.reduce((m: any, x: any) =>
+                                  x.unit_amount < m.unit_amount ? x : m,
+                              )
                             : null;
                         return (
                             <GlassCard
@@ -188,17 +284,27 @@ export default function ProductsPage() {
                                 sx={{
                                     opacity: app.active ? 1 : 0.55,
                                     transition: "border-color 0.2s ease",
-                                    "&:hover": { borderColor: "rgba(155,123,247,0.4)" },
+                                    "&:hover": {
+                                        borderColor: "rgba(155,123,247,0.4)",
+                                    },
                                 }}
                             >
                                 <Stack
                                     direction={{ xs: "column", sm: "row" }}
                                     justifyContent="space-between"
-                                    alignItems={{ xs: "flex-start", sm: "center" }}
+                                    alignItems={{
+                                        xs: "flex-start",
+                                        sm: "center",
+                                    }}
                                     spacing={1.5}
                                 >
                                     <Box sx={{ minWidth: 0 }}>
-                                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                            flexWrap="wrap"
+                                        >
                                             <Typography
                                                 component={Link}
                                                 href={`/dashboard/products/${app.firstProductId}`}
@@ -207,39 +313,82 @@ export default function ProductsPage() {
                                                     fontSize: "1.15rem",
                                                     color: "#f5f5f4",
                                                     textDecoration: "none",
-                                                    "&:hover": { color: "#c4b5fd", textDecoration: "underline", textUnderlineOffset: "3px" },
+                                                    "&:hover": {
+                                                        color: "#c4b5fd",
+                                                        textDecoration:
+                                                            "underline",
+                                                        textUnderlineOffset:
+                                                            "3px",
+                                                    },
                                                 }}
                                             >
                                                 {app.name}
                                             </Typography>
                                             <Chip
-                                                label={app.active ? "Active" : "Archived"}
+                                                label={
+                                                    app.active
+                                                        ? "Active"
+                                                        : "Archived"
+                                                }
                                                 size="small"
                                                 sx={{
                                                     height: 22,
                                                     fontSize: "0.7rem",
-                                                    color: app.active ? "#4ade80" : "#9ca3af",
-                                                    bgcolor: app.active ? "rgba(34,197,94,0.1)" : "rgba(156,163,175,0.1)",
+                                                    color: app.active
+                                                        ? "#4ade80"
+                                                        : "#9ca3af",
+                                                    bgcolor: app.active
+                                                        ? "rgba(34,197,94,0.1)"
+                                                        : "rgba(156,163,175,0.1)",
                                                     border: `1px solid ${app.active ? "rgba(34,197,94,0.25)" : "rgba(156,163,175,0.2)"}`,
                                                 }}
                                             />
                                         </Stack>
-                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.9 }} flexWrap="wrap">
-                                            <Box sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.78rem", color: "#c4b5fd" }}>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                            sx={{ mt: 0.9 }}
+                                            flexWrap="wrap"
+                                        >
+                                            <Box
+                                                sx={{
+                                                    fontFamily:
+                                                        "var(--font-geist-mono)",
+                                                    fontSize: "0.78rem",
+                                                    color: "#c4b5fd",
+                                                }}
+                                            >
                                                 {app.client_id}
                                             </Box>
                                             <Button
-                                                onClick={() => copyId(app.client_id)}
+                                                onClick={() =>
+                                                    copyId(app.client_id)
+                                                }
                                                 startIcon={
-                                                    copiedId === app.client_id ? (
-                                                        <CheckCircleIcon sx={{ fontSize: "0.9rem !important", color: "#86efac" }} />
+                                                    copiedId ===
+                                                    app.client_id ? (
+                                                        <CheckCircleIcon
+                                                            sx={{
+                                                                fontSize:
+                                                                    "0.9rem !important",
+                                                                color: "#86efac",
+                                                            }}
+                                                        />
                                                     ) : (
-                                                        <ContentCopyIcon sx={{ fontSize: "0.9rem !important" }} />
+                                                        <ContentCopyIcon
+                                                            sx={{
+                                                                fontSize:
+                                                                    "0.9rem !important",
+                                                            }}
+                                                        />
                                                     )
                                                 }
                                                 sx={chipBtn}
                                             >
-                                                {copiedId === app.client_id ? "Copied" : "Copy ID"}
+                                                {copiedId === app.client_id
+                                                    ? "Copied"
+                                                    : "Copy ID"}
                                             </Button>
                                             {app.homepage_url && (
                                                 <Button
@@ -247,14 +396,27 @@ export default function ProductsPage() {
                                                     href={app.homepage_url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    startIcon={<LaunchIcon sx={{ fontSize: "0.9rem !important" }} />}
+                                                    startIcon={
+                                                        <LaunchIcon
+                                                            sx={{
+                                                                fontSize:
+                                                                    "0.9rem !important",
+                                                            }}
+                                                        />
+                                                    }
                                                     sx={chipBtn}
                                                 >
                                                     Homepage
                                                 </Button>
                                             )}
                                         </Stack>
-                                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.85rem", mt: 0.9 }}>
+                                        <Typography
+                                            sx={{
+                                                color: "rgba(245,245,244,0.5)",
+                                                fontSize: "0.85rem",
+                                                mt: 0.9,
+                                            }}
+                                        >
                                             {app.tierCount === 0
                                                 ? "No pricing tiers yet — sync them from code"
                                                 : `${app.tierCount} tier${app.tierCount === 1 ? "" : "s"}${minPrice ? ` · from ${formatMoney(minPrice.unit_amount, minPrice.currency)}` : ""}`}
@@ -263,7 +425,17 @@ export default function ProductsPage() {
                                     <Button
                                         component={Link}
                                         href={`/dashboard/products/${app.firstProductId}`}
-                                        sx={{ textTransform: "none", color: "#9b7bf7", fontWeight: 700, fontSize: "0.9rem", whiteSpace: "nowrap", "&:hover": { background: "rgba(155,123,247,0.06)" } }}
+                                        sx={{
+                                            textTransform: "none",
+                                            color: "#9b7bf7",
+                                            fontWeight: 700,
+                                            fontSize: "0.9rem",
+                                            whiteSpace: "nowrap",
+                                            "&:hover": {
+                                                background:
+                                                    "rgba(155,123,247,0.06)",
+                                            },
+                                        }}
                                     >
                                         Manage →
                                     </Button>
@@ -278,7 +450,9 @@ export default function ProductsPage() {
                 <Button
                     component={Link}
                     href="/docs/quickstart"
-                    startIcon={<MenuBookIcon sx={{ fontSize: "1.1rem !important" }} />}
+                    startIcon={
+                        <MenuBookIcon sx={{ fontSize: "1.1rem !important" }} />
+                    }
                     sx={{
                         textTransform: "none",
                         fontWeight: 700,
@@ -288,14 +462,23 @@ export default function ProductsPage() {
                         py: 1.2,
                         borderRadius: "12px",
                         border: "1px solid rgba(255,255,255,0.14)",
-                        "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+                        "&:hover": {
+                            borderColor: "rgba(155,123,247,0.5)",
+                            background: "rgba(155,123,247,0.06)",
+                        },
                     }}
                 >
                     Read Integration Docs
                 </Button>
             </Stack>
 
-            <RegisterDialog open={registerDlg} busy={busy} err={err} onClose={() => setRegisterDlg(false)} onSubmit={register} />
+            <RegisterDialog
+                open={registerDlg}
+                busy={busy}
+                err={err}
+                onClose={() => setRegisterDlg(false)}
+                onSubmit={register}
+            />
         </Box>
     );
 }
@@ -307,7 +490,13 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
     const [pricing, setPricing] = useState("");
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: dialogPaper }}>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{ sx: dialogPaper }}
+        >
             <DialogTitle sx={{ fontWeight: 700 }}>Register product</DialogTitle>
             <DialogContent>
                 <Stack spacing={2.2} sx={{ mt: 1 }}>
@@ -316,24 +505,78 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
                         placeholder="My App"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        helperText={name.trim().length >= 2 ? `Client ID: ${slugPreview(name)}` : "We derive a stable Client ID from this"}
+                        helperText={
+                            name.trim().length >= 2
+                                ? `Client ID: ${slugPreview(name)}`
+                                : "We derive a stable Client ID from this"
+                        }
                         sx={field}
                         fullWidth
                     />
-                    <TextField label="Description" multiline minRows={2} value={description} onChange={(e) => setDescription(e.target.value)} sx={field} fullWidth />
-                    <TextField label="Homepage URL" placeholder="http://localhost:3000 or https://myapp.com" value={homepage} onChange={(e) => setHomepage(e.target.value)} sx={field} fullWidth />
-                    <TextField label="Pricing page URL" placeholder="https://myapp.com/pricing" helperText="Must be https and return 200, else left empty" value={pricing} onChange={(e) => setPricing(e.target.value)} sx={field} fullWidth />
-                    <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem" }}>
-                        You'll add pricing tiers after registering, inside the product.
+                    <TextField
+                        label="Description"
+                        multiline
+                        minRows={2}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        sx={field}
+                        fullWidth
+                    />
+                    <TextField
+                        label="Homepage URL"
+                        placeholder="http://localhost:3000 or https://myapp.com"
+                        value={homepage}
+                        onChange={(e) => setHomepage(e.target.value)}
+                        sx={field}
+                        fullWidth
+                    />
+                    <TextField
+                        label="Pricing page URL"
+                        placeholder="https://myapp.com/pricing"
+                        helperText="Must be https and return 200, else left empty"
+                        value={pricing}
+                        onChange={(e) => setPricing(e.target.value)}
+                        sx={field}
+                        fullWidth
+                    />
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.45)",
+                            fontSize: "0.82rem",
+                        }}
+                    >
+                        You'll add pricing tiers after registering, inside the
+                        product.
                     </Typography>
-                    {err && <Typography sx={{ color: "#f87171", fontSize: "0.85rem" }}>{err}</Typography>}
+                    {err && (
+                        <Typography
+                            sx={{ color: "#f87171", fontSize: "0.85rem" }}
+                        >
+                            {err}
+                        </Typography>
+                    )}
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>Cancel</Button>
+                <Button
+                    onClick={onClose}
+                    sx={{
+                        textTransform: "none",
+                        color: "rgba(255,255,255,0.6)",
+                    }}
+                >
+                    Cancel
+                </Button>
                 <Button
                     disabled={busy || name.trim().length < 2}
-                    onClick={() => onSubmit({ name, description, homepage_url: homepage, pricing_url: pricing })}
+                    onClick={() =>
+                        onSubmit({
+                            name,
+                            description,
+                            homepage_url: homepage,
+                            pricing_url: pricing,
+                        })
+                    }
                     sx={primaryBtn}
                 >
                     {busy ? "Registering…" : "Register product"}
@@ -347,16 +590,19 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
 function groupByApp(products: any[]) {
     const acc: Record<string, any> = {};
     for (const p of products) {
-        const a = (acc[p.app_id] ||= {
-            app_id: p.app_id,
-            name: p.app_name || p.name,
-            client_id: p.client_id,
-            homepage_url: p.homepage_url,
-            active: false,
-            tierCount: 0,
-            prices: [] as any[],
-            firstProductId: p.id,
-        });
+        if (!acc[p.app_id]) {
+            acc[p.app_id] = {
+                app_id: p.app_id,
+                name: p.app_name || p.name,
+                client_id: p.client_id,
+                homepage_url: p.homepage_url,
+                active: false,
+                tierCount: 0,
+                prices: [] as any[],
+                firstProductId: p.id,
+            };
+        }
+        const a = acc[p.app_id];
         a.tierCount += 1;
         a.active = a.active || !!p.active;
         a.prices.push(...(p.prices || []));
@@ -405,7 +651,11 @@ const chipBtn = {
     py: 0.2,
     borderRadius: "8px",
     border: "1px solid rgba(255,255,255,0.12)",
-    "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)", color: "#fff" },
+    "&:hover": {
+        borderColor: "rgba(155,123,247,0.5)",
+        background: "rgba(155,123,247,0.06)",
+        color: "#fff",
+    },
 };
 
 const dialogPaper = {

@@ -147,8 +147,8 @@ function flattenMessages(messages) {
 
     for (const m of merged) {
         if (m && typeof m === "object") {
-            delete m.tool_calls;
-            delete m.tool_call_id;
+            m.tool_calls = undefined;
+            m.tool_call_id = undefined;
         }
     }
     return merged;

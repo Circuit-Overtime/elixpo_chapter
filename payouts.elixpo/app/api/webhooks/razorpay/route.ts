@@ -28,15 +28,21 @@ export async function POST(request: NextRequest) {
     const razorpay = await razorpayFromEnv(getEnv);
     if (!razorpay) {
         console.error("[webhook/razorpay] provider unconfigured");
-        return NextResponse.json({ error: "provider_unconfigured" }, { status: 503 });
+        return NextResponse.json(
+            { error: "provider_unconfigured" },
+            { status: 503 },
+        );
     }
 
     const valid = await razorpay.verifyWebhookSignature(rawBody, signature);
     if (!valid) {
-        return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
+        return NextResponse.json(
+            { error: "invalid_signature" },
+            { status: 401 },
+        );
     }
 
-    let event;
+    let event: any;
     try {
         event = razorpay.parseWebhook(rawBody, request.headers);
     } catch (err) {
@@ -67,7 +73,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ ok: true, ignored: "no_order_id" });
         }
 
-        const session = await getCheckoutSessionByOrder(db, event.providerOrderId);
+        const session = await getCheckoutSessionByOrder(
+            db,
+            event.providerOrderId,
+        );
         if (!session) {
             console.warn(
                 `[webhook/razorpay] no session for order ${event.providerOrderId}`,
