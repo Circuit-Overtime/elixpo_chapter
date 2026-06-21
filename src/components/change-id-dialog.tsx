@@ -35,7 +35,9 @@ export default function ChangeIdDialog({
     onClose: () => void;
 }) {
     const [next, setNext] = useState("");
-    const valid = /^[a-z][a-z0-9-]{1,38}[a-z0-9]$/.test(next.trim()) && next.trim() !== currentId;
+    const valid =
+        /^[a-z][a-z0-9-]{1,38}[a-z0-9]$/.test(next.trim()) &&
+        next.trim() !== currentId;
 
     return (
         <Dialog
@@ -54,7 +56,12 @@ export default function ChangeIdDialog({
             }}
         >
             <DialogContent sx={{ pt: 3 }}>
-                <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ mb: 2 }}>
+                <Stack
+                    direction="row"
+                    spacing={1.5}
+                    alignItems="flex-start"
+                    sx={{ mb: 2 }}
+                >
                     <Box
                         sx={{
                             flexShrink: 0,
@@ -71,11 +78,26 @@ export default function ChangeIdDialog({
                         <WarningAmberIcon sx={{ fontSize: 22 }} />
                     </Box>
                     <Box>
-                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 0.5 }}>Change client ID?</Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.65)", fontSize: "0.88rem", lineHeight: 1.6 }}>
-                            Update the new ID in your app <strong>first</strong>. The old ID{" "}
-                            <strong>{currentId}</strong> keeps working for{" "}
-                            <strong>{graceHours} hours</strong> as a backtrack window, then stops.
+                        <Typography
+                            sx={{
+                                fontWeight: 700,
+                                fontSize: "1.1rem",
+                                mb: 0.5,
+                            }}
+                        >
+                            Change client ID?
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.65)",
+                                fontSize: "0.88rem",
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            Update the new ID in your app <strong>first</strong>
+                            . The old ID <strong>{currentId}</strong> keeps
+                            working for <strong>{graceHours} hours</strong> as a
+                            backtrack window, then stops.
                         </Typography>
                     </Box>
                 </Stack>
@@ -92,20 +114,48 @@ export default function ChangeIdDialog({
                         "& .MuiOutlinedInput-root": {
                             color: "#e5e7eb",
                             background: "rgba(255,255,255,0.02)",
-                            "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-                            "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
-                            "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
+                            "& fieldset": {
+                                borderColor: "rgba(255,255,255,0.12)",
+                            },
+                            "&:hover fieldset": {
+                                borderColor: "rgba(155,123,247,0.4)",
+                            },
+                            "&.Mui-focused fieldset": {
+                                borderColor: "#9b7bf7",
+                            },
                         },
-                        "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+                        "& .MuiInputLabel-root": {
+                            color: "rgba(255,255,255,0.5)",
+                        },
                     }}
                 />
-                <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.74rem", mt: 0.8 }}>
-                    3–40 chars · lowercase letters, digits, hyphens · starts with a letter.
+                <Typography
+                    sx={{
+                        color: "rgba(245,245,244,0.45)",
+                        fontSize: "0.74rem",
+                        mt: 0.8,
+                    }}
+                >
+                    3–40 chars · lowercase letters, digits, hyphens · starts
+                    with a letter.
                 </Typography>
-                {error && <Typography sx={{ color: "#f87171", fontSize: "0.82rem", mt: 1 }}>{error}</Typography>}
+                {error && (
+                    <Typography
+                        sx={{ color: "#f87171", fontSize: "0.82rem", mt: 1 }}
+                    >
+                        {error}
+                    </Typography>
+                )}
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} disabled={busy} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>
+                <Button
+                    onClick={onClose}
+                    disabled={busy}
+                    sx={{
+                        textTransform: "none",
+                        color: "rgba(255,255,255,0.6)",
+                    }}
+                >
                     Cancel
                 </Button>
                 <Button
@@ -117,8 +167,12 @@ export default function ChangeIdDialog({
                         color: "#fff",
                         px: 2.4,
                         borderRadius: "10px",
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+                        background:
+                            "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                        "&:hover": {
+                            background:
+                                "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                        },
                         "&.Mui-disabled": { opacity: 0.45, color: "#fff" },
                     }}
                 >

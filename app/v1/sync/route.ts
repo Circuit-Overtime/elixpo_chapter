@@ -1,6 +1,5 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { appFromApiKey } from "@/lib/api-auth";
 import {
     type CatalogProductInput,
@@ -8,6 +7,7 @@ import {
     syncProduct,
 } from "@/lib/catalog-sync";
 import { getDatabase } from "@/lib/d1-client";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /v1/sync
@@ -45,7 +45,10 @@ export async function POST(request: NextRequest) {
         const app = await appFromApiKey(db, request);
         if (!app) {
             return NextResponse.json(
-                { error: "unauthorized", error_description: "Invalid or missing secret key" },
+                {
+                    error: "unauthorized",
+                    error_description: "Invalid or missing secret key",
+                },
                 { status: 401 },
             );
         }
@@ -59,7 +62,10 @@ export async function POST(request: NextRequest) {
 
         if (products.length === 0) {
             return NextResponse.json(
-                { error: "invalid_request", error_description: "products[] is required" },
+                {
+                    error: "invalid_request",
+                    error_description: "products[] is required",
+                },
                 { status: 400 },
             );
         }
@@ -71,7 +77,9 @@ export async function POST(request: NextRequest) {
             const sets: string[] = [];
             const vals: any[] = [];
             const httpsUrl = (v: unknown) =>
-                typeof v === "string" && /^https:\/\/.+/i.test(v.trim()) ? v.trim() : null;
+                typeof v === "string" && /^https:\/\/.+/i.test(v.trim())
+                    ? v.trim()
+                    : null;
             if ("homepage_url" in body.app) {
                 sets.push("homepage_url = ?");
                 vals.push(httpsUrl(body.app.homepage_url));
@@ -97,7 +105,11 @@ export async function POST(request: NextRequest) {
                 synced.push(await syncProduct(db, app.id, p));
             } catch (err: any) {
                 if (err instanceof SyncError) {
-                    errors.push({ tier: p?.tier ?? null, error: err.code, error_description: err.message });
+                    errors.push({
+                        tier: p?.tier ?? null,
+                        error: err.code,
+                        error_description: err.message,
+                    });
                 } else {
                     throw err;
                 }
@@ -114,7 +126,10 @@ export async function POST(request: NextRequest) {
     } catch (err: any) {
         console.error("[v1/sync] error:", err);
         return NextResponse.json(
-            { error: "server_error", error_description: String(err?.message || err) },
+            {
+                error: "server_error",
+                error_description: String(err?.message || err),
+            },
             { status: 500 },
         );
     }

@@ -1,8 +1,15 @@
 "use client";
 
+import {
+    Code,
+    DocH2,
+    DocLead,
+    DocList,
+    DocP,
+    DocTitle,
+} from "@/components/docs-prose";
 import { Box } from "@mui/material";
 import CodeBlock from "../../components/code-block";
-import { Code, DocH2, DocLead, DocList, DocP, DocTitle } from "@/components/docs-prose";
 
 const CREATE = `POST https://payouts.elixpo.com/v1/checkout/sessions
 Authorization: Bearer <ELIXPO_PAY_API_KEY>
@@ -51,19 +58,20 @@ export default function CheckoutDocs() {
         <Box>
             <DocTitle>Checkout sessions</DocTitle>
             <DocLead>
-                Checkout starts when your server asks Elixpo Pay to create a session
-                with your secret key. We resolve the price from your catalog, return
-                a hosted checkout URL, and you redirect the buyer there. Your app
-                never sees card data and never signs an amount.
+                Checkout starts when your server asks Elixpo Pay to create a
+                session with your secret key. We resolve the price from your
+                catalog, return a hosted checkout URL, and you redirect the
+                buyer there. Your app never sees card data and never signs an
+                amount.
             </DocLead>
 
             <DocH2>Create a session</DocH2>
             <CodeBlock code={CREATE} language="http" />
             <DocP>
-                Authenticate with your <Code>ELIXPO_PAY_API_KEY</Code> (secret key).
-                The <Code>amount</Code> is never sent by you — Elixpo Pay looks up the
-                active price for <Code>(tier, currency)</Code> in your catalog, so a
-                user can't tamper with the price.
+                Authenticate with your <Code>ELIXPO_PAY_API_KEY</Code> (secret
+                key). The <Code>amount</Code> is never sent by you — Elixpo Pay
+                looks up the active price for <Code>(tier, currency)</Code> in
+                your catalog, so a user can't tamper with the price.
             </DocP>
 
             <DocH2>Response</DocH2>
@@ -75,9 +83,16 @@ export default function CheckoutDocs() {
             <DocH2>What happens next</DocH2>
             <DocList
                 items={[
-                    <>The hosted page loads the session, lazily creates a Razorpay order, and opens Razorpay Checkout.</>,
-                    <>On success the client signature is verified and we fulfill immediately; the Razorpay webhook re-confirms authoritatively (idempotent — never double-grants).</>,
-                    <>We grant the entitlement, then notify your app (see Webhooks) and redirect the buyer to <Code>success_url</Code>.</>,
+                    "The hosted page loads the session, lazily creates a
+                        Razorpay order, and opens Razorpay Checkout.",
+                    "On success the client signature is verified and we
+                        fulfill immediately; the Razorpay webhook re-confirms
+                        authoritatively (idempotent — never double-grants).",
+                    <>
+                        We grant the entitlement, then notify your app (see
+                        Webhooks) and redirect the buyer to{" "}
+                        <Code>success_url</Code>.
+                    </>,
                 ]}
             />
         </Box>

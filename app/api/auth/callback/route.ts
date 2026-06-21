@@ -1,10 +1,10 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getOrBootstrapMerchant } from "@/lib/merchant";
 import { SESSION_COOKIE, signSession } from "@/lib/session";
 import { exchangeCodeForUser } from "@/lib/sso";
+import { type NextRequest, NextResponse } from "next/server";
 
 const STATE_COOKIE = "pay_oauth_state";
 
@@ -17,7 +17,9 @@ export async function GET(request: NextRequest) {
     const origin = request.nextUrl.origin;
 
     if (err) {
-        return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(err)}`);
+        return NextResponse.redirect(
+            `${origin}/login?error=${encodeURIComponent(err)}`,
+        );
     }
     if (!code || !state) {
         return NextResponse.redirect(`${origin}/login?error=missing_code`);

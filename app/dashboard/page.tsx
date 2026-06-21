@@ -2,16 +2,22 @@
 
 export const runtime = "edge";
 
-import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
-    fmtDate,
-    formatMoney,
     GlassCard,
     StatCard,
     StatusChip,
+    fmtDate,
+    formatMoney,
 } from "@/components/dashboard-ui";
+import {
+    Box,
+    Button,
+    CircularProgress,
+    Stack,
+    Typography,
+} from "@mui/material";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface Overview {
     counts: {
@@ -58,11 +64,23 @@ export default function OverviewPage() {
                 sx={{ mb: 3 }}
             >
                 <Box>
-                    <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.02em" }}>
+                    <Typography
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: "1.7rem",
+                            letterSpacing: "-0.02em",
+                        }}
+                    >
                         Overview
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.92rem" }}>
-                        Live revenue, entitlements, and activity across your apps.
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.55)",
+                            fontSize: "0.92rem",
+                        }}
+                    >
+                        Live revenue, entitlements, and activity across your
+                        apps.
                     </Typography>
                 </Box>
                 <Button
@@ -75,8 +93,12 @@ export default function OverviewPage() {
                         px: 2.4,
                         py: 1,
                         borderRadius: "10px",
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+                        background:
+                            "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                        "&:hover": {
+                            background:
+                                "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                        },
                     }}
                 >
                     Manage products
@@ -87,13 +109,20 @@ export default function OverviewPage() {
                 sx={{
                     display: "grid",
                     gap: 2,
-                    gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" },
+                    gridTemplateColumns: {
+                        xs: "1fr 1fr",
+                        md: "repeat(4, 1fr)",
+                    },
                     mb: 3,
                 }}
             >
                 <StatCard
                     label="Revenue"
-                    value={primary ? formatMoney(primary.total, primary.currency) : "—"}
+                    value={
+                        primary
+                            ? formatMoney(primary.total, primary.currency)
+                            : "—"
+                    }
                     sub={
                         data && data.revenue.length > 1
                             ? `+${data.revenue.length - 1} more currency`
@@ -123,14 +152,19 @@ export default function OverviewPage() {
 
             {data && data.revenue.length > 0 && (
                 <GlassCard sx={{ mb: 3 }}>
-                    <Typography sx={{ fontWeight: 700, mb: 2, fontSize: "1.05rem" }}>
+                    <Typography
+                        sx={{ fontWeight: 700, mb: 2, fontSize: "1.05rem" }}
+                    >
                         Revenue by currency
                     </Typography>
                     <Box
                         sx={{
                             display: "grid",
                             gap: 2,
-                            gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(180px, 1fr))" },
+                            gridTemplateColumns: {
+                                xs: "1fr",
+                                sm: "repeat(auto-fill, minmax(180px, 1fr))",
+                            },
                         }}
                     >
                         {data.revenue.map((r) => (
@@ -143,10 +177,18 @@ export default function OverviewPage() {
                                     background: "rgba(255,255,255,0.02)",
                                 }}
                             >
-                                <Typography sx={{ fontSize: "0.78rem", color: "rgba(245,245,244,0.5)" }}>
-                                    {r.currency} · {r.count} txn{r.count === 1 ? "" : "s"}
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.78rem",
+                                        color: "rgba(245,245,244,0.5)",
+                                    }}
+                                >
+                                    {r.currency} · {r.count} txn
+                                    {r.count === 1 ? "" : "s"}
                                 </Typography>
-                                <Typography sx={{ fontWeight: 800, fontSize: "1.4rem" }}>
+                                <Typography
+                                    sx={{ fontWeight: 800, fontSize: "1.4rem" }}
+                                >
                                     {formatMoney(r.total, r.currency)}
                                 </Typography>
                             </Box>
@@ -156,14 +198,24 @@ export default function OverviewPage() {
             )}
 
             <GlassCard>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mb: 2 }}
+                >
                     <Typography sx={{ fontWeight: 700, fontSize: "1.05rem" }}>
                         Recent activity
                     </Typography>
                     <Typography
                         component={Link}
                         href="/dashboard/transactions"
-                        sx={{ color: "#9b7bf7", textDecoration: "none", fontSize: "0.85rem", fontWeight: 600 }}
+                        sx={{
+                            color: "#9b7bf7",
+                            textDecoration: "none",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                        }}
                     >
                         View all →
                     </Typography>
@@ -171,18 +223,47 @@ export default function OverviewPage() {
 
                 {!data?.recentTransactions?.length ? (
                     <Box sx={{ py: 5, textAlign: "center" }}>
-                        <Typography sx={{ color: "rgba(245,245,244,0.55)", mb: 0.5 }}>
+                        <Typography
+                            sx={{ color: "rgba(245,245,244,0.55)", mb: 0.5 }}
+                        >
                             No transactions yet
                         </Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.85rem" }}>
-                            Once a customer checks out, payments appear here in real time.
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.4)",
+                                fontSize: "0.85rem",
+                            }}
+                        >
+                            Once a customer checks out, payments appear here in
+                            real time.
                         </Typography>
                     </Box>
                 ) : (
                     <Box sx={{ overflowX: "auto" }}>
-                        <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+                        <Box
+                            component="table"
+                            sx={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                                minWidth: 520,
+                            }}
+                        >
                             <Box component="thead">
-                                <Box component="tr" sx={{ "& th": { textAlign: "left", py: 1, px: 1, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(245,245,244,0.4)", fontWeight: 600 } }}>
+                                <Box
+                                    component="tr"
+                                    sx={{
+                                        "& th": {
+                                            textAlign: "left",
+                                            py: 1,
+                                            px: 1,
+                                            fontSize: "0.72rem",
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.05em",
+                                            color: "rgba(245,245,244,0.4)",
+                                            fontWeight: 600,
+                                        },
+                                    }}
+                                >
                                     <th>App</th>
                                     <th>Customer</th>
                                     <th>Amount</th>
@@ -196,15 +277,56 @@ export default function OverviewPage() {
                                         component="tr"
                                         key={t.id}
                                         sx={{
-                                            borderTop: "1px solid rgba(255,255,255,0.06)",
-                                            "& td": { py: 1.2, px: 1, fontSize: "0.88rem" },
+                                            borderTop:
+                                                "1px solid rgba(255,255,255,0.06)",
+                                            "& td": {
+                                                py: 1.2,
+                                                px: 1,
+                                                fontSize: "0.88rem",
+                                            },
                                         }}
                                     >
-                                        <td><Box component="span" sx={{ color: "#c4b5fd" }}>{t.app_slug}</Box></td>
-                                        <td><Box component="span" sx={{ fontFamily: "var(--font-geist-mono)", color: "rgba(245,245,244,0.7)" }}>{t.uid || "—"}</Box></td>
-                                        <td><strong>{formatMoney(t.amount, t.currency)}</strong></td>
-                                        <td><StatusChip status={t.status} /></td>
-                                        <td><Box component="span" sx={{ color: "rgba(245,245,244,0.5)" }}>{fmtDate(t.created_at)}</Box></td>
+                                        <td>
+                                            <Box
+                                                component="span"
+                                                sx={{ color: "#c4b5fd" }}
+                                            >
+                                                {t.app_slug}
+                                            </Box>
+                                        </td>
+                                        <td>
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    fontFamily:
+                                                        "var(--font-geist-mono)",
+                                                    color: "rgba(245,245,244,0.7)",
+                                                }}
+                                            >
+                                                {t.uid || "—"}
+                                            </Box>
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                {formatMoney(
+                                                    t.amount,
+                                                    t.currency,
+                                                )}
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <StatusChip status={t.status} />
+                                        </td>
+                                        <td>
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    color: "rgba(245,245,244,0.5)",
+                                                }}
+                                            >
+                                                {fmtDate(t.created_at)}
+                                            </Box>
+                                        </td>
                                     </Box>
                                 ))}
                             </Box>

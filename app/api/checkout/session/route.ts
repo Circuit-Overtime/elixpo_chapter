@@ -1,7 +1,5 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
-import type { D1Database } from "@cloudflare/workers-types";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { verifyHandoff } from "@/lib/handoff";
@@ -14,6 +12,8 @@ import {
     setSessionOrder,
     upsertCustomer,
 } from "@/lib/repo";
+import type { D1Database } from "@cloudflare/workers-types";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/checkout/session
@@ -48,7 +48,10 @@ export async function POST(request: NextRequest) {
 
         if (!sessionId) {
             return NextResponse.json(
-                { error: "invalid_request", error_description: "session_id is required" },
+                {
+                    error: "invalid_request",
+                    error_description: "session_id is required",
+                },
                 { status: 400 },
             );
         }
@@ -56,19 +59,31 @@ export async function POST(request: NextRequest) {
         const session = (await getCheckoutSession(db, sessionId)) as any;
         if (!session) {
             return NextResponse.json(
-                { error: "unknown_session", error_description: "No such checkout session" },
+                {
+                    error: "unknown_session",
+                    error_description: "No such checkout session",
+                },
                 { status: 404 },
             );
         }
         if (session.status === "completed") {
             return NextResponse.json(
-                { error: "session_completed", error_description: "This checkout is already paid." },
+                {
+                    error: "session_completed",
+                    error_description: "This checkout is already paid.",
+                },
                 { status: 409 },
             );
         }
-        if (session.expires_at && new Date(session.expires_at.replace(" ", "T") + "Z") < new Date()) {
+        if (
+            session.expires_at &&
+            new Date(`${session.expires_at.replace(" ", "T")}Z`) < new Date()
+        ) {
             return NextResponse.json(
-                { error: "session_expired", error_description: "This checkout link has expired." },
+                {
+                    error: "session_expired",
+                    error_description: "This checkout link has expired.",
+                },
                 { status: 410 },
             );
         }
@@ -77,7 +92,10 @@ export async function POST(request: NextRequest) {
     } catch (err: any) {
         console.error("[checkout/session] error:", err);
         return NextResponse.json(
-            { error: "server_error", error_description: String(err?.message || err) },
+            {
+                error: "server_error",
+                error_description: String(err?.message || err),
+            },
             { status: 500 },
         );
     }
@@ -87,7 +105,10 @@ export async function POST(request: NextRequest) {
  * Build the order details for a session, lazily creating the Razorpay order,
  * and return the JSON the hosted checkout page consumes.
  */
-async function finalizeSession(db: D1Database, session: any): Promise<NextResponse> {
+async function finalizeSession(
+    db: D1Database,
+    session: any,
+): Promise<NextResponse> {
     const app = (await db
         .prepare("SELECT id, slug, name, return_url FROM apps WHERE id = ?")
         .bind(session.app_id)
@@ -101,7 +122,9 @@ async function finalizeSession(db: D1Database, session: any): Promise<NextRespon
         : null;
     const price = session.price_id
         ? ((await db
-              .prepare("SELECT interval, interval_count FROM prices WHERE id = ?")
+              .prepare(
+                  "SELECT interval, interval_count FROM prices WHERE id = ?",
+              )
               .bind(session.price_id)
               .first()) as any)
         : null;
@@ -158,7 +181,11 @@ async function finalizeSession(db: D1Database, session: any): Promise<NextRespon
             amount: session.amount,
             currency: session.currency,
             receipt: session.id,
-            notes: { app: app?.slug, uid: session.external_uid, tier: details.tier },
+            notes: {
+                app: app?.slug,
+                uid: session.external_uid,
+                tier: details.tier,
+            },
         });
         orderId = order.providerOrderId;
         await setSessionOrder(db, session.id, orderId);
@@ -185,7 +212,10 @@ async function materialiseFromToken(
     const secret = await getEnv("ELIXPO_PAY_HANDOFF_SECRET");
     if (!secret) {
         return NextResponse.json(
-            { error: "legacy_disabled", error_description: "Handoff tokens are no longer accepted." },
+            {
+                error: "legacy_disabled",
+                error_description: "Handoff tokens are no longer accepted.",
+            },
             { status: 410 },
         );
     }
@@ -206,10 +236,18 @@ async function materialiseFromToken(
         );
     }
 
-    const resolved = await resolveProductAndPrice(db, app.id, p.plan, p.currency);
+    const resolved = await resolveProductAndPrice(
+        db,
+        app.id,
+        p.plan,
+        p.currency,
+    );
     if (!resolved) {
         return NextResponse.json(
-            { error: "unknown_plan", error_description: `No product for tier '${p.plan}'` },
+            {
+                error: "unknown_plan",
+                error_description: `No product for tier '${p.plan}'`,
+            },
             { status: 404 },
         );
     }

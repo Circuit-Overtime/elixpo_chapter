@@ -1,8 +1,8 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getSession } from "@/lib/session";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/account/subscriptions
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     const now = Date.now();
     const subscriptions = rows.map((r) => {
         const end = r.current_period_end
-            ? new Date(r.current_period_end.replace(" ", "T") + "Z").getTime()
+            ? new Date(`${r.current_period_end.replace(" ", "T")}Z`).getTime()
             : null;
         const active = r.status === "active" && (end === null || end > now);
         return {

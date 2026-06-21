@@ -1,12 +1,16 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { verifyHmacSha256Hex } from "@/lib/crypto";
 import { getDatabase } from "@/lib/d1-client";
-import { type EntitlementRow, revokeEntitlement, toView } from "@/lib/entitlements";
+import {
+    type EntitlementRow,
+    revokeEntitlement,
+    toView,
+} from "@/lib/entitlements";
 import { getEnv } from "@/lib/env";
 import { getWebhookEndpoint } from "@/lib/repo";
 import { fireEntitlementUpdated } from "@/lib/webhooks";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/webhooks/account-revoked
@@ -26,13 +30,19 @@ import { fireEntitlementUpdated } from "@/lib/webhooks";
  * accounts.elixpo user id === the external_uid apps bill against.
  */
 
-const ACCEPTED_EVENTS = new Set(["user.deleted", "user.revoked", "app.revoked"]);
+const ACCEPTED_EVENTS = new Set([
+    "user.deleted",
+    "user.revoked",
+    "app.revoked",
+]);
 const MAX_SKEW_MS = 5 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
     const secret = await getEnv("ACCOUNTS_WEBHOOK_SECRET");
     if (!secret) {
-        console.error("[account-revoked] ACCOUNTS_WEBHOOK_SECRET not configured");
+        console.error(
+            "[account-revoked] ACCOUNTS_WEBHOOK_SECRET not configured",
+        );
         return NextResponse.json({ error: "not_configured" }, { status: 503 });
     }
 
@@ -41,7 +51,7 @@ export async function POST(request: NextRequest) {
     const event = request.headers.get("x-webhook-event") || "";
     const tsHeader = request.headers.get("x-webhook-timestamp");
 
-    const ts = tsHeader ? Date.parse(tsHeader) : NaN;
+    const ts = tsHeader ? Date.parse(tsHeader) : Number.NaN;
     if (!Number.isFinite(ts) || Math.abs(Date.now() - ts) > MAX_SKEW_MS) {
         return NextResponse.json({ error: "stale_timestamp" }, { status: 401 });
     }
@@ -62,7 +72,11 @@ export async function POST(request: NextRequest) {
         body = {};
     }
     const userId =
-        body.user_id || body.userId || body.sub || body.id || body.data?.user_id;
+        body.user_id ||
+        body.userId ||
+        body.sub ||
+        body.id ||
+        body.data?.user_id;
     if (!userId) {
         return NextResponse.json({ error: "missing_user_id" }, { status: 400 });
     }
@@ -93,7 +107,9 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        console.log(`[account-revoked] event=${event} user=${userId} revoked=${revoked}`);
+        console.log(
+            `[account-revoked] event=${event} user=${userId} revoked=${revoked}`,
+        );
         return NextResponse.json({ ok: true, revoked });
     } catch (e: any) {
         // Non-2xx tells accounts to retry (revocation is idempotent — already

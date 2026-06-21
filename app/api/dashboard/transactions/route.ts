@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { requireDashboard } from "@/lib/dashboard-auth";
+import { type NextRequest, NextResponse } from "next/server";
 
 /** GET /api/dashboard/transactions — recent transactions for the merchant. */
 export async function GET(request: NextRequest) {

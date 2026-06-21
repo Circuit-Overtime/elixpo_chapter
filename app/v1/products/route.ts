@@ -1,9 +1,9 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { appFromApiKey } from "@/lib/api-auth";
 import { SyncError, syncProduct } from "@/lib/catalog-sync";
 import { getDatabase } from "@/lib/d1-client";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /v1/products
@@ -26,7 +26,10 @@ export async function POST(request: NextRequest) {
         const db = await getDatabase();
         const app = await appFromApiKey(db, request);
         if (!app) {
-            return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { error: "unauthorized" },
+                { status: 401 },
+            );
         }
 
         const body: any = await request.json().catch(() => ({}));
@@ -54,7 +57,10 @@ export async function POST(request: NextRequest) {
         }
         console.error("[v1/products] error:", err);
         return NextResponse.json(
-            { error: "server_error", error_description: String(err?.message || err) },
+            {
+                error: "server_error",
+                error_description: String(err?.message || err),
+            },
             { status: 500 },
         );
     }

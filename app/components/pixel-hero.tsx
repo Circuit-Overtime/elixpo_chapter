@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+    type CSSProperties,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 
 /* -----------------------------------------------------------------------------
  * Staggered pixel-field physics engine (vanilla canvas — no deps).
@@ -38,7 +45,8 @@ function createPixel(
     baseSpeed: number,
     delay: number,
 ): Pixel {
-    const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+    const rand = (min: number, max: number) =>
+        Math.random() * (max - min) + min;
     const p: Pixel = {
         x,
         y,
@@ -110,8 +118,12 @@ function PixelCanvas({ colors, gap = 6 }: { colors: string[]; gap?: number }) {
                 const color = colors[Math.floor(Math.random() * colors.length)];
                 const dx = x - w / 2;
                 const dy = y - h / 2;
-                const delay = reducedRef.current ? 0 : Math.sqrt(dx * dx + dy * dy) * 0.65;
-                pixels.push(createPixel(ctx, canvas, x, y, color, speed, delay));
+                const delay = reducedRef.current
+                    ? 0
+                    : Math.sqrt(dx * dx + dy * dy) * 0.65;
+                pixels.push(
+                    createPixel(ctx, canvas, x, y, color, speed, delay),
+                );
             }
         }
         pixelsRef.current = pixels;
@@ -132,13 +144,16 @@ function PixelCanvas({ colors, gap = 6 }: { colors: string[]; gap?: number }) {
             if (!canvas || !ctx) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (const pixel of pixelsRef.current) pixel.appear();
-            if (pixelsRef.current.every((p) => p.isIdle)) cancelAnimationFrame(rafRef.current);
+            if (pixelsRef.current.every((p) => p.isIdle))
+                cancelAnimationFrame(rafRef.current);
         };
         rafRef.current = requestAnimationFrame(loop);
     }, []);
 
     useEffect(() => {
-        reducedRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        reducedRef.current = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
         init();
         const ro = new ResizeObserver(() => init());
         if (wrapRef.current) ro.observe(wrapRef.current);
@@ -150,8 +165,14 @@ function PixelCanvas({ colors, gap = 6 }: { colors: string[]; gap?: number }) {
     }, [init, animate]);
 
     return (
-        <div ref={wrapRef} style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-            <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
+        <div
+            ref={wrapRef}
+            style={{ position: "absolute", inset: 0, overflow: "hidden" }}
+        >
+            <canvas
+                ref={canvasRef}
+                style={{ display: "block", width: "100%", height: "100%" }}
+            />
         </div>
     );
 }
@@ -185,18 +206,47 @@ const tint = (color: string): CSSProperties => ({ ...wordmark, color });
 
 function MastercardMark() {
     return (
-        <svg width="42" height="26" viewBox="0 0 42 26" aria-hidden="true" style={{ display: "block" }}>
+        <svg
+            width="42"
+            height="26"
+            viewBox="0 0 42 26"
+            aria-hidden="true"
+            style={{ display: "block" }}
+        >
             <circle cx="16" cy="13" r="11" fill="#eb001b" />
             <circle cx="26" cy="13" r="11" fill="#f79e1b" />
-            <path d="M21 4.6a11 11 0 0 1 0 16.8 11 11 0 0 1 0-16.8z" fill="#ff5f00" />
+            <path
+                d="M21 4.6a11 11 0 0 1 0 16.8 11 11 0 0 1 0-16.8z"
+                fill="#ff5f00"
+            />
         </svg>
     );
 }
 
 const PAY_BRANDS: { name: string; node: ReactNode }[] = [
     { name: "Razorpay", node: <span style={tint("#5b9bff")}>Razorpay</span> },
-    { name: "Stripe", node: <span style={{ ...tint("#8b85ff"), letterSpacing: "-0.04em" }}>stripe</span> },
-    { name: "Visa", node: <span style={{ ...tint("#eef1ff"), fontStyle: "italic", letterSpacing: "0.04em" }}>VISA</span> },
+    {
+        name: "Stripe",
+        node: (
+            <span style={{ ...tint("#8b85ff"), letterSpacing: "-0.04em" }}>
+                stripe
+            </span>
+        ),
+    },
+    {
+        name: "Visa",
+        node: (
+            <span
+                style={{
+                    ...tint("#eef1ff"),
+                    fontStyle: "italic",
+                    letterSpacing: "0.04em",
+                }}
+            >
+                VISA
+            </span>
+        ),
+    },
     { name: "Mastercard", node: <MastercardMark /> },
     {
         name: "UPI",
@@ -230,8 +280,20 @@ const PAY_BRANDS: { name: string; node: ReactNode }[] = [
 ];
 
 const ArrowRight = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+    >
+        <path
+            d="M5 12h14M13 6l6 6-6 6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
     </svg>
 );
 
@@ -265,7 +327,14 @@ export default function PixelHero() {
             `}</style>
 
             {/* pixel field + vignette */}
-            <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+            <div
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 0,
+                    pointerEvents: "none",
+                }}
+            >
                 <PixelCanvas colors={PIXELS} gap={7} />
                 <div
                     style={{
@@ -284,7 +353,8 @@ export default function PixelHero() {
                         width: "60vmax",
                         height: "40vmax",
                         transform: "translate(-50%, -50%)",
-                        background: "radial-gradient(circle, rgba(155,123,247,0.16) 0%, transparent 60%)",
+                        background:
+                            "radial-gradient(circle, rgba(155,123,247,0.16) 0%, transparent 60%)",
                         filter: "blur(40px)",
                     }}
                 />
@@ -331,7 +401,9 @@ export default function PixelHero() {
                     gap: "0 0.4em",
                     fontSize: "clamp(2.8rem, 8vw, 6rem)",
                     opacity: mounted ? 1 : 0,
-                    animation: mounted ? "pay-rise 0.8s ease 0.05s both" : undefined,
+                    animation: mounted
+                        ? "pay-rise 0.8s ease 0.05s both"
+                        : undefined,
                 }}
             >
                 <span
@@ -370,11 +442,13 @@ export default function PixelHero() {
                     lineHeight: 1.7,
                     color: "rgba(245,245,244,0.72)",
                     opacity: mounted ? 1 : 0,
-                    animation: mounted ? "pay-rise 0.8s ease 0.15s both" : undefined,
+                    animation: mounted
+                        ? "pay-rise 0.8s ease 0.15s both"
+                        : undefined,
                 }}
             >
-                Accept payments, grant entitlements, and settle payouts — one API
-                and one dashboard for every product you ship.
+                Accept payments, grant entitlements, and settle payouts — one
+                API and one dashboard for every product you ship.
             </p>
 
             {/* CTAs — Tahoe glass buttons */}
@@ -406,7 +480,8 @@ export default function PixelHero() {
                         fontWeight: 700,
                         color: "#fff",
                         textDecoration: "none",
-                        background: "linear-gradient(180deg, #a98cff 0%, #7c5cff 100%)",
+                        background:
+                            "linear-gradient(180deg, #a98cff 0%, #7c5cff 100%)",
                         boxShadow:
                             "inset 0 1px 1px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.2), 0 14px 30px rgba(124,92,255,0.35)",
                     }}
@@ -427,7 +502,8 @@ export default function PixelHero() {
                         fontWeight: 700,
                         color: "#f5f5f4",
                         textDecoration: "none",
-                        background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)",
+                        background:
+                            "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)",
                         border: "1px solid rgba(255,255,255,0.14)",
                         backdropFilter: "blur(12px)",
                         boxShadow: "inset 0 1px 1px rgba(255,255,255,0.1)",
@@ -466,11 +542,34 @@ export default function PixelHero() {
                             "linear-gradient(to right, transparent, white 15%, white 85%, transparent)",
                     }}
                 >
-                    <div className="pay-marquee" style={{ display: "flex", width: "max-content", gap: 52, padding: "4px 0" }}>
+                    <div
+                        className="pay-marquee"
+                        style={{
+                            display: "flex",
+                            width: "max-content",
+                            gap: 52,
+                            padding: "4px 0",
+                        }}
+                    >
                         {[0, 1].map((dup) => (
-                            <div key={dup} style={{ display: "flex", gap: 52, alignItems: "center" }} aria-hidden={dup === 1}>
+                            <div
+                                key={dup}
+                                style={{
+                                    display: "flex",
+                                    gap: 52,
+                                    alignItems: "center",
+                                }}
+                                aria-hidden={dup === 1}
+                            >
                                 {PAY_BRANDS.map((b) => (
-                                    <span key={`${dup}-${b.name}`} aria-label={b.name} style={{ display: "inline-flex", alignItems: "center" }}>
+                                    <span
+                                        key={`${dup}-${b.name}`}
+                                        aria-label={b.name}
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                        }}
+                                    >
                                         {b.node}
                                     </span>
                                 ))}

@@ -1,10 +1,10 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { sha256Hex } from "@/lib/crypto";
 import { requireDashboard } from "@/lib/dashboard-auth";
 import { newId } from "@/lib/ids";
 import type { D1Database } from "@cloudflare/workers-types";
+import { type NextRequest, NextResponse } from "next/server";
 
 /** GET /api/dashboard/apps — list the merchant's apps. */
 export async function GET(request: NextRequest) {
@@ -74,11 +74,16 @@ export async function POST(request: NextRequest) {
 
     const body: any = await request.json().catch(() => ({}));
     const name = String(body.name || "").trim();
-    const description = body.description ? String(body.description).trim().slice(0, 280) : null;
+    const description = body.description
+        ? String(body.description).trim().slice(0, 280)
+        : null;
 
     if (name.length < 2) {
         return NextResponse.json(
-            { error: "invalid_name", error_description: "App name must be at least 2 characters." },
+            {
+                error: "invalid_name",
+                error_description: "App name must be at least 2 characters.",
+            },
             { status: 400 },
         );
     }
@@ -86,7 +91,10 @@ export async function POST(request: NextRequest) {
     // Homepage may be http (app not deployed yet) or https — just well-formed.
     const homepageUrl = validUrl(body.homepage_url);
     if (body.homepage_url && !homepageUrl) {
-        return NextResponse.json({ error: "invalid_homepage_url" }, { status: 400 });
+        return NextResponse.json(
+            { error: "invalid_homepage_url" },
+            { status: 400 },
+        );
     }
 
     // Pricing page must be https AND actually reachable (2xx). Otherwise we
@@ -105,7 +113,17 @@ export async function POST(request: NextRequest) {
             `INSERT INTO apps (id, merchant_id, slug, name, description, homepage_url, pricing_url, api_key_hash, return_url, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
         )
-        .bind(id, merchantId, slug, name, description, homepageUrl, pricingUrl, secretHash, pricingUrl)
+        .bind(
+            id,
+            merchantId,
+            slug,
+            name,
+            description,
+            homepageUrl,
+            pricingUrl,
+            secretHash,
+            pricingUrl,
+        )
         .run();
 
     // 1 app = 1 product: auto-create the app's product so it's sellable at once.
@@ -120,7 +138,12 @@ export async function POST(request: NextRequest) {
     // Optional initial price (the product's sell price).
     let price: any = null;
     const p = body.price;
-    if (p && CURRENCIES.includes(String(p.currency).toUpperCase()) && Number.isInteger(p.unit_amount) && p.unit_amount > 0) {
+    if (
+        p &&
+        CURRENCIES.includes(String(p.currency).toUpperCase()) &&
+        Number.isInteger(p.unit_amount) &&
+        p.unit_amount > 0
+    ) {
         const interval = INTERVALS.includes(p.interval) ? p.interval : "month";
         const intervalCount = Math.max(1, Number(p.interval_count || 1));
         const priceId = newId("price");
@@ -129,13 +152,33 @@ export async function POST(request: NextRequest) {
                 `INSERT INTO prices (id, product_id, currency, unit_amount, type, interval, interval_count, provider, active)
                  VALUES (?, ?, ?, ?, 'one_time', ?, ?, 'razorpay', 1)`,
             )
-            .bind(priceId, productId, String(p.currency).toUpperCase(), p.unit_amount, interval, intervalCount)
+            .bind(
+                priceId,
+                productId,
+                String(p.currency).toUpperCase(),
+                p.unit_amount,
+                interval,
+                intervalCount,
+            )
             .run();
-        price = { id: priceId, currency: String(p.currency).toUpperCase(), unit_amount: p.unit_amount, interval, interval_count: intervalCount };
+        price = {
+            id: priceId,
+            currency: String(p.currency).toUpperCase(),
+            unit_amount: p.unit_amount,
+            interval,
+            interval_count: intervalCount,
+        };
     }
 
     return NextResponse.json({
-        app: { id, slug, name, description, homepage_url: homepageUrl, pricing_url: pricingUrl },
+        app: {
+            id,
+            slug,
+            name,
+            description,
+            homepage_url: homepageUrl,
+            pricing_url: pricingUrl,
+        },
         product_id: productId,
         price,
         client_id: slug,

@@ -2,6 +2,10 @@
 
 export const runtime = "edge";
 
+import ChangeIdDialog from "@/components/change-id-dialog";
+import ConfirmDialog from "@/components/confirm-dialog";
+import { GlassCard, StatCard, formatMoney } from "@/components/dashboard-ui";
+import RotateDialog, { type GraceKey } from "@/components/rotate-dialog";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -21,10 +25,6 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import ChangeIdDialog from "@/components/change-id-dialog";
-import ConfirmDialog from "@/components/confirm-dialog";
-import RotateDialog, { type GraceKey } from "@/components/rotate-dialog";
-import { formatMoney, GlassCard, StatCard } from "@/components/dashboard-ui";
 
 export default function ProductDetailPage() {
     const id = String(useParams().id);
@@ -32,7 +32,10 @@ export default function ProductDetailPage() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
     const [err, setErr] = useState("");
-    const [creds, setCreds] = useState<{ clientId: string; secret: string } | null>(null);
+    const [creds, setCreds] = useState<{
+        clientId: string;
+        secret: string;
+    } | null>(null);
     const [secretHidden, setSecretHidden] = useState(false);
     const [regenBusy, setRegenBusy] = useState(false);
     const [confirmArchive, setConfirmArchive] = useState(false);
@@ -42,7 +45,9 @@ export default function ProductDetailPage() {
     const [webhookUrl, setWebhookUrl] = useState("");
     const [availableEvents, setAvailableEvents] = useState<any[]>([]);
     const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
-    const [webhookSecretOnce, setWebhookSecretOnce] = useState<string | null>(null);
+    const [webhookSecretOnce, setWebhookSecretOnce] = useState<string | null>(
+        null,
+    );
     const [webhookSecretHidden, setWebhookSecretHidden] = useState(false);
     const [webhookBusy, setWebhookBusy] = useState(false);
     const [confirmWebhookRegen, setConfirmWebhookRegen] = useState(false);
@@ -66,7 +71,9 @@ export default function ProductDetailPage() {
     };
 
     const load = async () => {
-        const r = await fetch(`/api/dashboard/products/${id}`, { credentials: "include" });
+        const r = await fetch(`/api/dashboard/products/${id}`, {
+            credentials: "include",
+        });
         if (!r.ok) {
             setData(null);
             setLoading(false);
@@ -77,7 +84,9 @@ export default function ProductDetailPage() {
     };
 
     const loadWebhook = async () => {
-        const r = await fetch(`/api/dashboard/products/${id}/webhook`, { credentials: "include" });
+        const r = await fetch(`/api/dashboard/products/${id}/webhook`, {
+            credentials: "include",
+        });
         if (!r.ok) return;
         const d: any = await r.json();
         setWebhook(d.endpoint);
@@ -85,7 +94,9 @@ export default function ProductDetailPage() {
         setAvailableEvents(d.available_events || []);
         setWebhookEvents(
             d.endpoint?.events ||
-                (d.available_events || []).filter((e: any) => e.required).map((e: any) => e.type),
+                (d.available_events || [])
+                    .filter((e: any) => e.required)
+                    .map((e: any) => e.type),
         );
     };
 
@@ -103,10 +114,14 @@ export default function ProductDetailPage() {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ url: webhookUrl.trim(), events: webhookEvents }),
+                body: JSON.stringify({
+                    url: webhookUrl.trim(),
+                    events: webhookEvents,
+                }),
             });
             const d: any = await r.json();
-            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            if (!r.ok)
+                throw new Error(d.error_description || d.error || "failed");
             if (d.signing_secret) {
                 setWebhookSecretHidden(false);
                 setWebhookSecretOnce(d.signing_secret);
@@ -130,7 +145,8 @@ export default function ProductDetailPage() {
                 body: JSON.stringify({ grace }),
             });
             const d: any = await r.json();
-            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            if (!r.ok)
+                throw new Error(d.error_description || d.error || "failed");
             setWebhookSecretHidden(false);
             setWebhookSecretOnce(d.signing_secret);
             await loadWebhook();
@@ -177,7 +193,8 @@ export default function ProductDetailPage() {
                 body: JSON.stringify({ client_id: next }),
             });
             const d: any = await r.json();
-            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            if (!r.ok)
+                throw new Error(d.error_description || d.error || "failed");
             setChangeIdOpen(false);
             await load();
             await loadWebhook();
@@ -196,7 +213,10 @@ export default function ProductDetailPage() {
 
     const doArchive = async () => {
         setArchiveBusy(true);
-        await fetch(`/api/dashboard/products/${id}`, { method: "DELETE", credentials: "include" });
+        await fetch(`/api/dashboard/products/${id}`, {
+            method: "DELETE",
+            credentials: "include",
+        });
         setArchiveBusy(false);
         setConfirmArchive(false);
         await load();
@@ -218,14 +238,18 @@ export default function ProductDetailPage() {
         setRegenBusy(true);
         setErr("");
         try {
-            const r = await fetch(`/api/dashboard/products/${id}/regenerate-secret`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ grace }),
-            });
+            const r = await fetch(
+                `/api/dashboard/products/${id}/regenerate-secret`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ grace }),
+                },
+            );
             const d: any = await r.json();
-            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            if (!r.ok)
+                throw new Error(d.error_description || d.error || "failed");
             setSecretHidden(false);
             setCreds({ clientId: d.client_id, secret: d.client_secret });
         } catch (e: any) {
@@ -256,8 +280,14 @@ export default function ProductDetailPage() {
     if (!data) {
         return (
             <GlassCard sx={{ textAlign: "center", py: 6 }}>
-                <Typography sx={{ color: "rgba(245,245,244,0.6)" }}>Product not found.</Typography>
-                <Button component={Link} href="/dashboard/products" sx={{ mt: 2, textTransform: "none", color: "#9b7bf7" }}>
+                <Typography sx={{ color: "rgba(245,245,244,0.6)" }}>
+                    Product not found.
+                </Typography>
+                <Button
+                    component={Link}
+                    href="/dashboard/products"
+                    sx={{ mt: 2, textTransform: "none", color: "#9b7bf7" }}
+                >
                     ← Back to products
                 </Button>
             </GlassCard>
@@ -270,9 +300,12 @@ export default function ProductDetailPage() {
 
     const graceUntil = (s?: string | null) => {
         if (!s) return null;
-        const d = new Date(s.replace(" ", "T") + "Z");
+        const d = new Date(`${s.replace(" ", "T")}Z`);
         if (d <= new Date()) return null;
-        return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+        return d.toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+        });
     };
     const slugGrace = graceUntil(product.prev_slug_expires_at);
     const keyGrace = graceUntil(product.prev_api_key_expires_at);
@@ -283,8 +316,16 @@ export default function ProductDetailPage() {
             <Button
                 component={Link}
                 href="/dashboard/products"
-                startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />}
-                sx={{ textTransform: "none", color: "rgba(245,245,244,0.6)", mb: 2, px: 0, "&:hover": { color: "#fff", background: "transparent" } }}
+                startIcon={
+                    <ArrowBackIcon sx={{ fontSize: "1rem !important" }} />
+                }
+                sx={{
+                    textTransform: "none",
+                    color: "rgba(245,245,244,0.6)",
+                    mb: 2,
+                    px: 0,
+                    "&:hover": { color: "#fff", background: "transparent" },
+                }}
             >
                 Products
             </Button>
@@ -298,30 +339,72 @@ export default function ProductDetailPage() {
                 sx={{ mb: 3 }}
             >
                 <Box>
-                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        flexWrap="wrap"
+                    >
                         {editingName ? (
-                            <Stack direction="row" spacing={1} alignItems="center">
+                            <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                            >
                                 <TextField
                                     value={nameDraft}
-                                    onChange={(e) => setNameDraft(e.target.value)}
+                                    onChange={(e) =>
+                                        setNameDraft(e.target.value)
+                                    }
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter") saveName();
-                                        if (e.key === "Escape") setEditingName(false);
+                                        if (e.key === "Escape")
+                                            setEditingName(false);
                                     }}
                                     size="small"
                                     autoFocus
-                                    sx={{ ...field, "& .MuiOutlinedInput-input": { fontSize: "1.3rem", fontWeight: 800, py: 0.6 } }}
+                                    sx={{
+                                        ...field,
+                                        "& .MuiOutlinedInput-input": {
+                                            fontSize: "1.3rem",
+                                            fontWeight: 800,
+                                            py: 0.6,
+                                        },
+                                    }}
                                 />
-                                <Button onClick={saveName} disabled={nameBusy} sx={{ minWidth: 0, textTransform: "none", fontWeight: 700, color: "#c4b5fd" }}>
+                                <Button
+                                    onClick={saveName}
+                                    disabled={nameBusy}
+                                    sx={{
+                                        minWidth: 0,
+                                        textTransform: "none",
+                                        fontWeight: 700,
+                                        color: "#c4b5fd",
+                                    }}
+                                >
                                     {nameBusy ? "…" : "Save"}
                                 </Button>
-                                <Button onClick={() => setEditingName(false)} disabled={nameBusy} sx={{ minWidth: 0, textTransform: "none", color: "rgba(255,255,255,0.5)" }}>
+                                <Button
+                                    onClick={() => setEditingName(false)}
+                                    disabled={nameBusy}
+                                    sx={{
+                                        minWidth: 0,
+                                        textTransform: "none",
+                                        color: "rgba(255,255,255,0.5)",
+                                    }}
+                                >
                                     Cancel
                                 </Button>
                             </Stack>
                         ) : (
                             <>
-                                <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.02em" }}>
+                                <Typography
+                                    sx={{
+                                        fontWeight: 800,
+                                        fontSize: "1.7rem",
+                                        letterSpacing: "-0.02em",
+                                    }}
+                                >
                                     {product.app_name}
                                 </Typography>
                                 <Box
@@ -341,7 +424,11 @@ export default function ProductDetailPage() {
                                         cursor: "pointer",
                                         color: "rgba(245,245,244,0.5)",
                                         background: "transparent",
-                                        "&:hover": { color: "#c4b5fd", background: "rgba(155,123,247,0.08)" },
+                                        "&:hover": {
+                                            color: "#c4b5fd",
+                                            background:
+                                                "rgba(155,123,247,0.08)",
+                                        },
                                     }}
                                 >
                                     <EditIcon sx={{ fontSize: 16 }} />
@@ -355,13 +442,27 @@ export default function ProductDetailPage() {
                                 height: 22,
                                 fontSize: "0.7rem",
                                 color: product.active ? "#4ade80" : "#9ca3af",
-                                bgcolor: product.active ? "rgba(34,197,94,0.1)" : "rgba(156,163,175,0.1)",
+                                bgcolor: product.active
+                                    ? "rgba(34,197,94,0.1)"
+                                    : "rgba(156,163,175,0.1)",
                                 border: `1px solid ${product.active ? "rgba(34,197,94,0.25)" : "rgba(156,163,175,0.2)"}`,
                             }}
                         />
                     </Stack>
-                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 0.6 }} flexWrap="wrap">
-                        <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.8rem", color: "#c4b5fd" }}>
+                    <Stack
+                        direction="row"
+                        spacing={1.5}
+                        alignItems="center"
+                        sx={{ mt: 0.6 }}
+                        flexWrap="wrap"
+                    >
+                        <Typography
+                            sx={{
+                                fontFamily: "var(--font-geist-mono)",
+                                fontSize: "0.8rem",
+                                color: "#c4b5fd",
+                            }}
+                        >
                             Client ID: {product.client_id}
                         </Typography>
                         <Box
@@ -384,25 +485,47 @@ export default function ProductDetailPage() {
                             Change ID
                         </Box>
                         {slugGrace && (
-                            <Typography sx={{ fontSize: "0.72rem", color: "#fbbf24" }}>
-                                old ID <strong>{product.prev_slug}</strong> works until {slugGrace}
+                            <Typography
+                                sx={{ fontSize: "0.72rem", color: "#fbbf24" }}
+                            >
+                                old ID <strong>{product.prev_slug}</strong>{" "}
+                                works until {slugGrace}
                             </Typography>
                         )}
                     </Stack>
                     {product.description && (
-                        <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.9rem", mt: 1, maxWidth: 620 }}>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.55)",
+                                fontSize: "0.9rem",
+                                mt: 1,
+                                maxWidth: 620,
+                            }}
+                        >
                             {product.description}
                         </Typography>
                     )}
                 </Box>
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ justifyContent: { xs: "flex-start", sm: "flex-end" } }}>
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    flexWrap="wrap"
+                    sx={{
+                        justifyContent: { xs: "flex-start", sm: "flex-end" },
+                    }}
+                >
                     {product.homepage_url && (
                         <Button
                             component="a"
                             href={product.homepage_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            startIcon={<LaunchIcon sx={{ fontSize: "0.95rem !important" }} />}
+                            startIcon={
+                                <LaunchIcon
+                                    sx={{ fontSize: "0.95rem !important" }}
+                                />
+                            }
                             sx={purpleOutlineBtn}
                         >
                             Homepage
@@ -414,7 +537,11 @@ export default function ProductDetailPage() {
                             href={product.pricing_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            startIcon={<LaunchIcon sx={{ fontSize: "0.95rem !important" }} />}
+                            startIcon={
+                                <LaunchIcon
+                                    sx={{ fontSize: "0.95rem !important" }}
+                                />
+                            }
                             sx={purpleOutlineBtn}
                         >
                             Pricing
@@ -423,7 +550,14 @@ export default function ProductDetailPage() {
                     {product.active === 1 ? (
                         <Button
                             onClick={() => setConfirmArchive(true)}
-                            sx={{ textTransform: "none", fontWeight: 600, color: "rgba(248,113,113,0.85)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "10px", px: 2 }}
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 600,
+                                color: "rgba(248,113,113,0.85)",
+                                border: "1px solid rgba(239,68,68,0.25)",
+                                borderRadius: "10px",
+                                px: 2,
+                            }}
                         >
                             Archive
                         </Button>
@@ -431,7 +565,23 @@ export default function ProductDetailPage() {
                         <Button
                             onClick={doUnarchive}
                             disabled={archiveBusy}
-                            sx={{ textTransform: "none", fontWeight: 700, color: "#fff", borderRadius: "10px", px: 2.2, background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)", "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" }, "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 700,
+                                color: "#fff",
+                                borderRadius: "10px",
+                                px: 2.2,
+                                background:
+                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                "&:hover": {
+                                    background:
+                                        "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                },
+                                "&.Mui-disabled": {
+                                    opacity: 0.5,
+                                    color: "#fff",
+                                },
+                            }}
                         >
                             {archiveBusy ? "Unarchiving…" : "Unarchive"}
                         </Button>
@@ -452,29 +602,86 @@ export default function ProductDetailPage() {
                         fontSize: "0.88rem",
                     }}
                 >
-                    <strong>This product is archived — payments are paused.</strong> Checkout
-                    can't resolve it and entitlements won't be granted. Click{" "}
-                    <strong>Unarchive</strong> to resume.
+                    <strong>
+                        This product is archived — payments are paused.
+                    </strong>{" "}
+                    Checkout can't resolve it and entitlements won't be granted.
+                    Click <strong>Unarchive</strong> to resume.
                 </Box>
             )}
 
             {/* Stats */}
-            <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(3, 1fr)" }, mb: 3 }}>
-                <StatCard label="Revenue" value={primary ? formatMoney(primary.total, primary.currency) : "—"} sub={stats.revenue.length > 1 ? `+${stats.revenue.length - 1} more currency` : "captured"} accent="#86efac" />
-                <StatCard label="Active members" value={String(stats.activeMembers)} sub="entitlements live" accent="#9b7bf7" />
-                <StatCard label="Paid txns" value={String(stats.paidTransactions)} sub="lifetime" accent="#fbbf24" />
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: {
+                        xs: "1fr 1fr",
+                        md: "repeat(3, 1fr)",
+                    },
+                    mb: 3,
+                }}
+            >
+                <StatCard
+                    label="Revenue"
+                    value={
+                        primary
+                            ? formatMoney(primary.total, primary.currency)
+                            : "—"
+                    }
+                    sub={
+                        stats.revenue.length > 1
+                            ? `+${stats.revenue.length - 1} more currency`
+                            : "captured"
+                    }
+                    accent="#86efac"
+                />
+                <StatCard
+                    label="Active members"
+                    value={String(stats.activeMembers)}
+                    sub="entitlements live"
+                    accent="#9b7bf7"
+                />
+                <StatCard
+                    label="Paid txns"
+                    value={String(stats.paidTransactions)}
+                    sub="lifetime"
+                    accent="#fbbf24"
+                />
             </Box>
 
             {/* Developer credentials */}
             <GlassCard sx={{ mb: 2 }}>
-                <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ mb: 1.5 }}>
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: "flex-start", sm: "center" }}
+                    spacing={1.5}
+                    sx={{ mb: 1.5 }}
+                >
                     <Box>
-                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Developer credentials</Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
-                            Use the Client ID + secret to call the entitlements API.
+                        <Typography
+                            sx={{ fontWeight: 700, fontSize: "1.1rem" }}
+                        >
+                            Developer credentials
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.5)",
+                                fontSize: "0.82rem",
+                            }}
+                        >
+                            Use the Client ID + secret to call the entitlements
+                            API.
                         </Typography>
                         {keyGrace && (
-                            <Typography sx={{ fontSize: "0.74rem", color: "#fbbf24", mt: 0.4 }}>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.74rem",
+                                    color: "#fbbf24",
+                                    mt: 0.4,
+                                }}
+                            >
                                 Previous key still works until {keyGrace}.
                             </Typography>
                         )}
@@ -482,35 +689,101 @@ export default function ProductDetailPage() {
                     <Button
                         onClick={() => setConfirmRegen(true)}
                         disabled={regenBusy}
-                        startIcon={<AutorenewIcon sx={{ fontSize: "1rem !important" }} />}
-                        sx={{ textTransform: "none", fontWeight: 600, color: "#c4b5fd", border: "1px solid rgba(155,123,247,0.3)", borderRadius: "10px", px: 1.8, "&.Mui-disabled": { opacity: 0.5 } }}
+                        startIcon={
+                            <AutorenewIcon
+                                sx={{ fontSize: "1rem !important" }}
+                            />
+                        }
+                        sx={{
+                            textTransform: "none",
+                            fontWeight: 600,
+                            color: "#c4b5fd",
+                            border: "1px solid rgba(155,123,247,0.3)",
+                            borderRadius: "10px",
+                            px: 1.8,
+                            "&.Mui-disabled": { opacity: 0.5 },
+                        }}
                     >
                         {regenBusy ? "Regenerating…" : "Regenerate secret"}
                     </Button>
                 </Stack>
 
-                <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                <Typography
+                    sx={{
+                        fontSize: "0.7rem",
+                        color: "rgba(245,245,244,0.45)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        mb: 0.5,
+                    }}
+                >
                     Client ID
                 </Typography>
-                <Box sx={{ ...mono, color: "#c4b5fd", mb: creds ? 2 : 0 }}>{product.client_id}</Box>
+                <Box sx={{ ...mono, color: "#c4b5fd", mb: creds ? 2 : 0 }}>
+                    {product.client_id}
+                </Box>
 
                 {creds && (
                     <>
-                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        <Typography
+                            sx={{
+                                fontSize: "0.7rem",
+                                color: "rgba(245,245,244,0.45)",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.06em",
+                                mb: 0.5,
+                            }}
+                        >
                             New client secret
                         </Typography>
                         {secretHidden ? (
-                            <Box sx={{ ...mono, display: "flex", alignItems: "center", gap: 1, color: "rgba(245,245,244,0.5)" }}>
-                                <CheckCircleIcon sx={{ fontSize: 16, color: "#86efac" }} />
-                                Copied & hidden — the old secret no longer works. Store this as ELIXPO_PAY_API_KEY.
+                            <Box
+                                sx={{
+                                    ...mono,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    color: "rgba(245,245,244,0.5)",
+                                }}
+                            >
+                                <CheckCircleIcon
+                                    sx={{ fontSize: 16, color: "#86efac" }}
+                                />
+                                Copied & hidden — the old secret no longer
+                                works. Store this as ELIXPO_PAY_API_KEY.
                             </Box>
                         ) : (
-                            <Stack direction="row" spacing={1} alignItems="center">
-                                <Box sx={{ ...mono, flexGrow: 1, overflowX: "auto", whiteSpace: "nowrap" }}>{creds.secret}</Box>
+                            <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                            >
+                                <Box
+                                    sx={{
+                                        ...mono,
+                                        flexGrow: 1,
+                                        overflowX: "auto",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
+                                    {creds.secret}
+                                </Box>
                                 <Button
                                     onClick={copySecret}
-                                    startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
-                                    sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2, background: "#7c5cff", borderRadius: "10px", "&:hover": { background: "#8a6dff" } }}
+                                    startIcon={
+                                        <ContentCopyIcon
+                                            sx={{ fontSize: "1rem !important" }}
+                                        />
+                                    }
+                                    sx={{
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        color: "#fff",
+                                        px: 2,
+                                        background: "#7c5cff",
+                                        borderRadius: "10px",
+                                        "&:hover": { background: "#8a6dff" },
+                                    }}
                                 >
                                     Copy
                                 </Button>
@@ -518,34 +791,81 @@ export default function ProductDetailPage() {
                         )}
                     </>
                 )}
-                {err && <Typography sx={{ color: "#f87171", fontSize: "0.85rem", mt: 1 }}>{err}</Typography>}
+                {err && (
+                    <Typography
+                        sx={{ color: "#f87171", fontSize: "0.85rem", mt: 1 }}
+                    >
+                        {err}
+                    </Typography>
+                )}
             </GlassCard>
 
             {/* Entitlement webhook */}
             <GlassCard sx={{ mb: 2 }}>
-                <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ mb: 1.5 }}>
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: "flex-start", sm: "center" }}
+                    spacing={1.5}
+                    sx={{ mb: 1.5 }}
+                >
                     <Box>
-                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Entitlement webhook</Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
-                            We POST <code>entitlement.updated</code> here after each payment. Your app verifies it with the signing secret.
+                        <Typography
+                            sx={{ fontWeight: 700, fontSize: "1.1rem" }}
+                        >
+                            Entitlement webhook
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.5)",
+                                fontSize: "0.82rem",
+                            }}
+                        >
+                            We POST <code>entitlement.updated</code> here after
+                            each payment. Your app verifies it with the signing
+                            secret.
                         </Typography>
                     </Box>
                     {webhook?.has_secret && (
                         <Button
                             onClick={() => setConfirmWebhookRegen(true)}
                             disabled={webhookBusy}
-                            startIcon={<AutorenewIcon sx={{ fontSize: "1rem !important" }} />}
-                            sx={{ textTransform: "none", fontWeight: 600, color: "#c4b5fd", border: "1px solid rgba(155,123,247,0.3)", borderRadius: "10px", px: 1.8, "&.Mui-disabled": { opacity: 0.5 } }}
+                            startIcon={
+                                <AutorenewIcon
+                                    sx={{ fontSize: "1rem !important" }}
+                                />
+                            }
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 600,
+                                color: "#c4b5fd",
+                                border: "1px solid rgba(155,123,247,0.3)",
+                                borderRadius: "10px",
+                                px: 1.8,
+                                "&.Mui-disabled": { opacity: 0.5 },
+                            }}
                         >
                             Roll secret
                         </Button>
                     )}
                 </Stack>
 
-                <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                <Typography
+                    sx={{
+                        fontSize: "0.7rem",
+                        color: "rgba(245,245,244,0.45)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        mb: 0.5,
+                    }}
+                >
                     Endpoint URL
                 </Typography>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ xs: "stretch", sm: "center" }}>
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    alignItems={{ xs: "stretch", sm: "center" }}
+                >
                     <TextField
                         value={webhookUrl}
                         onChange={(e) => setWebhookUrl(e.target.value)}
@@ -561,9 +881,22 @@ export default function ProductDetailPage() {
                             !webhookUrl.trim() ||
                             (webhookUrl.trim() === webhook?.url &&
                                 JSON.stringify([...webhookEvents].sort()) ===
-                                    JSON.stringify([...(webhook?.events || [])].sort()))
+                                    JSON.stringify(
+                                        [...(webhook?.events || [])].sort(),
+                                    ))
                         }
-                        sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2.4, py: 0.9, borderRadius: "10px", background: "#7c5cff", whiteSpace: "nowrap", "&:hover": { background: "#8a6dff" }, "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
+                        sx={{
+                            textTransform: "none",
+                            fontWeight: 600,
+                            color: "#fff",
+                            px: 2.4,
+                            py: 0.9,
+                            borderRadius: "10px",
+                            background: "#7c5cff",
+                            whiteSpace: "nowrap",
+                            "&:hover": { background: "#8a6dff" },
+                            "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
+                        }}
                     >
                         {webhookBusy ? "Saving…" : webhook ? "Update" : "Save"}
                     </Button>
@@ -571,12 +904,22 @@ export default function ProductDetailPage() {
 
                 {availableEvents.length > 0 && (
                     <Box sx={{ mt: 2.5 }}>
-                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 1 }}>
+                        <Typography
+                            sx={{
+                                fontSize: "0.7rem",
+                                color: "rgba(245,245,244,0.45)",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.06em",
+                                mb: 1,
+                            }}
+                        >
                             Events to send
                         </Typography>
                         <Stack spacing={1}>
                             {availableEvents.map((ev: any) => {
-                                const on = ev.required || webhookEvents.includes(ev.type);
+                                const on =
+                                    ev.required ||
+                                    webhookEvents.includes(ev.type);
                                 return (
                                     <Stack
                                         key={ev.type}
@@ -584,18 +927,54 @@ export default function ProductDetailPage() {
                                         alignItems="flex-start"
                                         justifyContent="space-between"
                                         spacing={1.5}
-                                        sx={{ p: 1.4, borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+                                        sx={{
+                                            p: 1.4,
+                                            borderRadius: "12px",
+                                            border: "1px solid rgba(255,255,255,0.08)",
+                                            background:
+                                                "rgba(255,255,255,0.02)",
+                                        }}
                                     >
                                         <Box sx={{ minWidth: 0 }}>
-                                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.2 }}>
-                                                <Box component="code" sx={{ ...mono, fontSize: "0.8rem", color: "#c4b5fd", p: 0, background: "none", border: "none" }}>
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                alignItems="center"
+                                                sx={{ mb: 0.2 }}
+                                            >
+                                                <Box
+                                                    component="code"
+                                                    sx={{
+                                                        ...mono,
+                                                        fontSize: "0.8rem",
+                                                        color: "#c4b5fd",
+                                                        p: 0,
+                                                        background: "none",
+                                                        border: "none",
+                                                    }}
+                                                >
                                                     {ev.type}
                                                 </Box>
                                                 {ev.required && (
-                                                    <Chip label="required" size="small" sx={{ height: 18, fontSize: "0.6rem", color: "rgba(245,245,244,0.6)", bgcolor: "rgba(255,255,255,0.06)" }} />
+                                                    <Chip
+                                                        label="required"
+                                                        size="small"
+                                                        sx={{
+                                                            height: 18,
+                                                            fontSize: "0.6rem",
+                                                            color: "rgba(245,245,244,0.6)",
+                                                            bgcolor:
+                                                                "rgba(255,255,255,0.06)",
+                                                        }}
+                                                    />
                                                 )}
                                             </Stack>
-                                            <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.8rem" }}>
+                                            <Typography
+                                                sx={{
+                                                    color: "rgba(245,245,244,0.5)",
+                                                    fontSize: "0.8rem",
+                                                }}
+                                            >
                                                 {ev.description}
                                             </Typography>
                                         </Box>
@@ -603,7 +982,12 @@ export default function ProductDetailPage() {
                                             size="small"
                                             checked={on}
                                             disabled={ev.required}
-                                            onChange={(e) => toggleWebhookEvent(ev.type, e.target.checked)}
+                                            onChange={(e) =>
+                                                toggleWebhookEvent(
+                                                    ev.type,
+                                                    e.target.checked,
+                                                )
+                                            }
                                         />
                                     </Stack>
                                 );
@@ -614,68 +998,177 @@ export default function ProductDetailPage() {
 
                 {webhookSecretOnce ? (
                     <Box sx={{ mt: 2 }}>
-                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        <Typography
+                            sx={{
+                                fontSize: "0.7rem",
+                                color: "rgba(245,245,244,0.45)",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.06em",
+                                mb: 0.5,
+                            }}
+                        >
                             Signing secret — shown once
                         </Typography>
                         {webhookSecretHidden ? (
-                            <Box sx={{ ...mono, display: "flex", alignItems: "center", gap: 1, color: "rgba(245,245,244,0.5)" }}>
-                                <CheckCircleIcon sx={{ fontSize: 16, color: "#86efac" }} />
-                                Copied &amp; hidden — store it as ELIXPO_PAY_WEBHOOK_SECRET. It won't be shown again.
+                            <Box
+                                sx={{
+                                    ...mono,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    color: "rgba(245,245,244,0.5)",
+                                }}
+                            >
+                                <CheckCircleIcon
+                                    sx={{ fontSize: 16, color: "#86efac" }}
+                                />
+                                Copied &amp; hidden — store it as
+                                ELIXPO_PAY_WEBHOOK_SECRET. It won't be shown
+                                again.
                             </Box>
                         ) : (
                             <>
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <Box sx={{ ...mono, flexGrow: 1, overflowX: "auto", whiteSpace: "nowrap" }}>{webhookSecretOnce}</Box>
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                >
+                                    <Box
+                                        sx={{
+                                            ...mono,
+                                            flexGrow: 1,
+                                            overflowX: "auto",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {webhookSecretOnce}
+                                    </Box>
                                     <Button
                                         onClick={copyWebhookSecret}
-                                        startIcon={<ContentCopyIcon sx={{ fontSize: "1rem !important" }} />}
-                                        sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2, background: "#7c5cff", borderRadius: "10px", "&:hover": { background: "#8a6dff" } }}
+                                        startIcon={
+                                            <ContentCopyIcon
+                                                sx={{
+                                                    fontSize: "1rem !important",
+                                                }}
+                                            />
+                                        }
+                                        sx={{
+                                            textTransform: "none",
+                                            fontWeight: 600,
+                                            color: "#fff",
+                                            px: 2,
+                                            background: "#7c5cff",
+                                            borderRadius: "10px",
+                                            "&:hover": {
+                                                background: "#8a6dff",
+                                            },
+                                        }}
                                     >
                                         Copy
                                     </Button>
                                 </Stack>
-                                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.78rem", mt: 0.8 }}>
-                                    Store this as <code>ELIXPO_PAY_WEBHOOK_SECRET</code> in your app. It won't be shown again.
+                                <Typography
+                                    sx={{
+                                        color: "rgba(245,245,244,0.5)",
+                                        fontSize: "0.78rem",
+                                        mt: 0.8,
+                                    }}
+                                >
+                                    Store this as{" "}
+                                    <code>ELIXPO_PAY_WEBHOOK_SECRET</code> in
+                                    your app. It won't be shown again.
                                 </Typography>
                             </>
                         )}
                     </Box>
                 ) : webhook?.secret_preview ? (
-                    <Typography sx={{ ...mono, color: "rgba(245,245,244,0.5)", mt: 1.5 }}>
+                    <Typography
+                        sx={{
+                            ...mono,
+                            color: "rgba(245,245,244,0.5)",
+                            mt: 1.5,
+                        }}
+                    >
                         Signing secret: {webhook.secret_preview}
                     </Typography>
                 ) : null}
                 {webhookGrace && (
-                    <Typography sx={{ fontSize: "0.74rem", color: "#fbbf24", mt: 1 }}>
-                        Dual-signing with the previous secret until {webhookGrace}.
+                    <Typography
+                        sx={{ fontSize: "0.74rem", color: "#fbbf24", mt: 1 }}
+                    >
+                        Dual-signing with the previous secret until{" "}
+                        {webhookGrace}.
                     </Typography>
                 )}
             </GlassCard>
 
             {/* Tiers (read-only — managed from code via the sync API) */}
             <GlassCard>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="flex-start"
+                    sx={{ mb: 2 }}
+                >
                     <Box>
-                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Tiers</Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem" }}>
-                            Each tier and its regional prices, managed from your code. They
-                            can't be edited here.
+                        <Typography
+                            sx={{ fontWeight: 700, fontSize: "1.1rem" }}
+                        >
+                            Tiers
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.5)",
+                                fontSize: "0.82rem",
+                            }}
+                        >
+                            Each tier and its regional prices, managed from your
+                            code. They can't be edited here.
                         </Typography>
                     </Box>
                     {tiers.length > 0 && (
                         <Chip
                             label={`${tiers.length} tier${tiers.length === 1 ? "" : "s"}`}
                             size="small"
-                            sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600, color: "#c4b5fd", bgcolor: "rgba(155,123,247,0.12)", border: "1px solid rgba(155,123,247,0.25)" }}
+                            sx={{
+                                height: 22,
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                                color: "#c4b5fd",
+                                bgcolor: "rgba(155,123,247,0.12)",
+                                border: "1px solid rgba(155,123,247,0.25)",
+                            }}
                         />
                     )}
                 </Stack>
 
                 {tiers.length === 0 ? (
-                    <Box sx={{ borderRadius: "12px", border: "1px dashed rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.02)", p: 2.5, textAlign: "center" }}>
-                        <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.9rem", mb: 0.5 }}>No tiers yet.</Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem" }}>
-                            Define them in your catalog file and run the sync (below) so they can be sold.
+                    <Box
+                        sx={{
+                            borderRadius: "12px",
+                            border: "1px dashed rgba(255,255,255,0.14)",
+                            background: "rgba(255,255,255,0.02)",
+                            p: 2.5,
+                            textAlign: "center",
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.6)",
+                                fontSize: "0.9rem",
+                                mb: 0.5,
+                            }}
+                        >
+                            No tiers yet.
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.45)",
+                                fontSize: "0.82rem",
+                            }}
+                        >
+                            Define them in your catalog file and run the sync
+                            (below) so they can be sold.
                         </Typography>
                     </Box>
                 ) : (
@@ -691,10 +1184,41 @@ export default function ProductDetailPage() {
                                     opacity: t.active ? 1 : 0.5,
                                 }}
                             >
-                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.4 }}>
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                                        <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#f5f5f4" }}>{t.name}</Typography>
-                                        <Box component="code" sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.72rem", color: "#c4b5fd", px: 0.8, py: 0.2, borderRadius: "6px", background: "rgba(155,123,247,0.1)" }}>
+                                <Stack
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                    sx={{ mb: 1.4 }}
+                                >
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        alignItems="center"
+                                        flexWrap="wrap"
+                                    >
+                                        <Typography
+                                            sx={{
+                                                fontWeight: 700,
+                                                fontSize: "1rem",
+                                                color: "#f5f5f4",
+                                            }}
+                                        >
+                                            {t.name}
+                                        </Typography>
+                                        <Box
+                                            component="code"
+                                            sx={{
+                                                fontFamily:
+                                                    "var(--font-geist-mono)",
+                                                fontSize: "0.72rem",
+                                                color: "#c4b5fd",
+                                                px: 0.8,
+                                                py: 0.2,
+                                                borderRadius: "6px",
+                                                background:
+                                                    "rgba(155,123,247,0.1)",
+                                            }}
+                                        >
                                             {t.tier}
                                         </Box>
                                     </Stack>
@@ -705,19 +1229,37 @@ export default function ProductDetailPage() {
                                             height: 20,
                                             fontSize: "0.62rem",
                                             fontWeight: 700,
-                                            color: t.active ? "#86efac" : "#9ca3af",
-                                            bgcolor: t.active ? "rgba(134,239,172,0.12)" : "rgba(156,163,175,0.12)",
+                                            color: t.active
+                                                ? "#86efac"
+                                                : "#9ca3af",
+                                            bgcolor: t.active
+                                                ? "rgba(134,239,172,0.12)"
+                                                : "rgba(156,163,175,0.12)",
                                             border: `1px solid ${t.active ? "rgba(134,239,172,0.3)" : "rgba(156,163,175,0.25)"}`,
                                         }}
                                     />
                                 </Stack>
 
                                 {t.prices.length === 0 ? (
-                                    <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem" }}>
+                                    <Typography
+                                        sx={{
+                                            color: "rgba(245,245,244,0.45)",
+                                            fontSize: "0.82rem",
+                                        }}
+                                    >
                                         No prices on this tier yet.
                                     </Typography>
                                 ) : (
-                                    <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(180px, 1fr))" } }}>
+                                    <Box
+                                        sx={{
+                                            display: "grid",
+                                            gap: 1,
+                                            gridTemplateColumns: {
+                                                xs: "1fr",
+                                                sm: "repeat(auto-fill, minmax(180px, 1fr))",
+                                            },
+                                        }}
+                                    >
                                         {t.prices.map((pr: any) => (
                                             <Box
                                                 key={pr.id}
@@ -725,23 +1267,62 @@ export default function ProductDetailPage() {
                                                     p: 1.4,
                                                     borderRadius: "10px",
                                                     border: "1px solid rgba(255,255,255,0.07)",
-                                                    background: "rgba(0,0,0,0.18)",
-                                                    opacity: pr.active ? 1 : 0.5,
+                                                    background:
+                                                        "rgba(0,0,0,0.18)",
+                                                    opacity: pr.active
+                                                        ? 1
+                                                        : 0.5,
                                                 }}
                                             >
-                                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                                    <Typography sx={{ fontWeight: 800, fontSize: "1.25rem" }}>
-                                                        {formatMoney(pr.unit_amount, pr.currency)}
+                                                <Stack
+                                                    direction="row"
+                                                    justifyContent="space-between"
+                                                    alignItems="center"
+                                                >
+                                                    <Typography
+                                                        sx={{
+                                                            fontWeight: 800,
+                                                            fontSize: "1.25rem",
+                                                        }}
+                                                    >
+                                                        {formatMoney(
+                                                            pr.unit_amount,
+                                                            pr.currency,
+                                                        )}
                                                     </Typography>
                                                     {pr.region && (
-                                                        <Box sx={{ fontSize: "0.66rem", fontWeight: 700, color: "rgba(245,245,244,0.6)", px: 0.7, py: 0.15, borderRadius: "6px", border: "1px solid rgba(255,255,255,0.12)" }}>
+                                                        <Box
+                                                            sx={{
+                                                                fontSize:
+                                                                    "0.66rem",
+                                                                fontWeight: 700,
+                                                                color: "rgba(245,245,244,0.6)",
+                                                                px: 0.7,
+                                                                py: 0.15,
+                                                                borderRadius:
+                                                                    "6px",
+                                                                border: "1px solid rgba(255,255,255,0.12)",
+                                                            }}
+                                                        >
                                                             {pr.region}
                                                         </Box>
                                                     )}
                                                 </Stack>
-                                                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.76rem", mt: 0.2 }}>
-                                                    {pr.nickname ? `${pr.nickname} · ` : ""}
-                                                    per {pr.interval_count > 1 ? `${pr.interval_count} ` : ""}{pr.interval}
+                                                <Typography
+                                                    sx={{
+                                                        color: "rgba(245,245,244,0.5)",
+                                                        fontSize: "0.76rem",
+                                                        mt: 0.2,
+                                                    }}
+                                                >
+                                                    {pr.nickname
+                                                        ? `${pr.nickname} · `
+                                                        : ""}
+                                                    per{" "}
+                                                    {pr.interval_count > 1
+                                                        ? `${pr.interval_count} `
+                                                        : ""}
+                                                    {pr.interval}
                                                 </Typography>
                                             </Box>
                                         ))}
@@ -759,7 +1340,9 @@ export default function ProductDetailPage() {
                     component={Link}
                     href="/docs/catalog"
                     target="_blank"
-                    endIcon={<LaunchIcon sx={{ fontSize: "1rem !important" }} />}
+                    endIcon={
+                        <LaunchIcon sx={{ fontSize: "1rem !important" }} />
+                    }
                     sx={{
                         textTransform: "none",
                         fontWeight: 600,
@@ -768,7 +1351,10 @@ export default function ProductDetailPage() {
                         borderRadius: "12px",
                         px: 3,
                         py: 1.1,
-                        "&:hover": { borderColor: "rgba(155,123,247,0.6)", background: "rgba(155,123,247,0.06)" },
+                        "&:hover": {
+                            borderColor: "rgba(155,123,247,0.6)",
+                            background: "rgba(155,123,247,0.06)",
+                        },
                     }}
                 >
                     Sync tiers from code — developer guide
@@ -784,9 +1370,10 @@ export default function ProductDetailPage() {
                 message={
                     <>
                         This <strong>pauses all payments</strong> for{" "}
-                        <strong>{product.app_name}</strong> — checkout stops working and no new
-                        entitlements are granted. Existing members keep their access until it
-                        expires. You can unarchive anytime to resume.
+                        <strong>{product.app_name}</strong> — checkout stops
+                        working and no new entitlements are granted. Existing
+                        members keep their access until it expires. You can
+                        unarchive anytime to resume.
                     </>
                 }
                 onConfirm={doArchive}
@@ -802,7 +1389,8 @@ export default function ProductDetailPage() {
                     <>
                         A new secret key is issued. Pick how long the{" "}
                         <strong>current key</strong> keeps working so your app
-                        (checkout + entitlements API) can redeploy without failures.
+                        (checkout + entitlements API) can redeploy without
+                        failures.
                     </>
                 }
                 onConfirm={doRegenerate}
@@ -816,9 +1404,9 @@ export default function ProductDetailPage() {
                 confirmLabel="Roll secret"
                 message={
                     <>
-                        A new <code>whsec_</code> is issued. During the grace window we
-                        sign each delivery with <strong>both</strong> secrets, so your app
-                        keeps verifying while you update{" "}
+                        A new <code>whsec_</code> is issued. During the grace
+                        window we sign each delivery with <strong>both</strong>{" "}
+                        secrets, so your app keeps verifying while you update{" "}
                         <code>ELIXPO_PAY_WEBHOOK_SECRET</code>.
                     </>
                 }
@@ -871,5 +1459,8 @@ const purpleOutlineBtn = {
     border: "1px solid rgba(155,123,247,0.3)",
     borderRadius: "10px",
     px: 2,
-    "&:hover": { borderColor: "rgba(155,123,247,0.6)", background: "rgba(155,123,247,0.06)" },
+    "&:hover": {
+        borderColor: "rgba(155,123,247,0.6)",
+        background: "rgba(155,123,247,0.06)",
+    },
 };

@@ -1,8 +1,15 @@
 "use client";
 
+import {
+    Code,
+    DocH2,
+    DocLead,
+    DocList,
+    DocP,
+    DocTitle,
+} from "@/components/docs-prose";
 import { Box } from "@mui/material";
 import CodeBlock from "../../components/code-block";
-import { Code, DocH2, DocLead, DocList, DocP, DocTitle } from "@/components/docs-prose";
 
 const HEADERS = `POST <your endpoint>
 Content-Type: application/json
@@ -76,17 +83,25 @@ export default function WebhooksDocs() {
         <Box>
             <DocTitle>Webhooks</DocTitle>
             <DocLead>
-                Elixpo Pay POSTs signed events to your app's webhook endpoint. Set
-                the URL and choose which events to receive under{" "}
-                <strong>Entitlement webhook</strong> on your product's page; verify
-                each delivery with your per-app signing secret.
+                Elixpo Pay POSTs signed events to your app's webhook endpoint.
+                Set the URL and choose which events to receive under{" "}
+                <strong>Entitlement webhook</strong> on your product's page;
+                verify each delivery with your per-app signing secret.
             </DocLead>
 
             <DocH2>Events you can subscribe to</DocH2>
             <DocList
                 items={[
-                    <><Code>entitlement.updated</Code> — a buyer's access was granted, changed, or expired. <strong>Required</strong> — this is how you fulfill purchases.</>,
-                    <><Code>payment.captured</Code> — a payment succeeded. Optional; useful for receipts, analytics, or your own ledger.</>,
+                    <>
+                        <Code>entitlement.updated</Code> — a buyer's access was
+                        granted, changed, or expired. <strong>Required</strong>{" "}
+                        — this is how you fulfill purchases.
+                    </>,
+                    <>
+                        <Code>payment.captured</Code> — a payment succeeded.
+                        Optional; useful for receipts, analytics, or your own
+                        ledger.
+                    </>,
                 ]}
             />
             <DocP>
@@ -108,39 +123,62 @@ export default function WebhooksDocs() {
 
             <DocH2>Verifying</DocH2>
             <DocP>
-                Recompute the HMAC over <Code>{"`${timestamp}.${rawBody}`"}</Code>
+                Recompute the HMAC over{" "}
+                <Code>{"`${timestamp}.${rawBody}`"}</Code>
                 using your <Code>ELIXPO_PAY_WEBHOOK_SECRET</Code> (the{" "}
-                <Code>whsec_…</Code> from the dashboard) and compare in constant time.
-                Reject stale timestamps. Branch on <Code>type</Code> since one
-                endpoint may receive several event types. When you roll the secret
-                with a grace window, the signature header carries{" "}
-                <strong>several comma-separated values</strong> (new + old) — accept
-                if any matches, so you can redeploy without dropping deliveries.
+                <Code>whsec_…</Code> from the dashboard) and compare in constant
+                time. Reject stale timestamps. Branch on <Code>type</Code> since
+                one endpoint may receive several event types. When you roll the
+                secret with a grace window, the signature header carries{" "}
+                <strong>several comma-separated values</strong> (new + old) —
+                accept if any matches, so you can redeploy without dropping
+                deliveries.
             </DocP>
             <CodeBlock code={VERIFY} language="javascript" />
 
             <DocH2>Idempotency & ordering</DocH2>
             <DocList
                 items={[
-                    <>Each entitlement carries a monotonic <Code>version</Code> — ignore any <Code>entitlement.updated</Code> whose version is ≤ the one you've already applied.</>,
-                    <>Respond <Code>2xx</Code> quickly; non-2xx responses are recorded as failed deliveries for retry/inspection.</>,
-                    <>The same grant may arrive from both the instant client confirmation and the provider webhook — fulfillment is idempotent on our side.</>,
+                    <>
+                        Each entitlement carries a monotonic{" "}
+                        <Code>version</Code> — ignore any{" "}
+                        <Code>entitlement.updated</Code> whose version is ≤ the
+                        one you've already applied.
+                    </>,
+                    <>
+                        Respond <Code>2xx</Code> quickly; non-2xx responses are
+                        recorded as failed deliveries for retry/inspection.
+                    </>,
+                    "The same grant may arrive from both the instant client
+                        confirmation and the provider webhook — fulfillment is
+                        idempotent on our side.",
                 ]}
             />
 
             <DocH2>Revocation & account deletion</DocH2>
             <DocP>
-                Elixpo Pay is wired to <strong>Elixpo Accounts</strong> (the identity
-                source of truth). When a buyer <strong>deletes their account</strong> or
-                revokes your app there, Elixpo Pay automatically <strong>cancels their
-                subscription</strong> (it never renews — billing stops) and <strong>revokes
-                the entitlement</strong>.
+                Elixpo Pay is wired to <strong>Elixpo Accounts</strong> (the
+                identity source of truth). When a buyer{" "}
+                <strong>deletes their account</strong> or revokes your app
+                there, Elixpo Pay automatically{" "}
+                <strong>cancels their subscription</strong> (it never renews —
+                billing stops) and <strong>revokes the entitlement</strong>.
             </DocP>
             <DocList
                 items={[
-                    <>You receive a final <Code>entitlement.updated</Code> with <Code>status: "revoked"</Code> and <Code>active: false</Code> — handle it like any downgrade and drop the user to your free tier.</>,
-                    <>This is automatic; you don't call anything. It happens whether or not the buyer still has time left on the period.</>,
-                    <>For one-time (P0) plans there's no recurring charge to stop — cancelling the subscription just prevents the next grant. For future recurring plans, the provider mandate is cancelled too.</>,
+                    <>
+                        You receive a final <Code>entitlement.updated</Code>{" "}
+                        with <Code>status: "revoked"</Code> and{" "}
+                        <Code>active: false</Code> — handle it like any
+                        downgrade and drop the user to your free tier.
+                    </>,
+                    "This is automatic; you don't call anything. It happens
+                        whether or not the buyer still has time left on the
+                        period.",
+                    "For one-time (P0) plans there's no recurring charge to
+                        stop — cancelling the subscription just prevents the
+                        next grant. For future recurring plans, the provider
+                        mandate is cancelled too.",
                 ]}
             />
         </Box>

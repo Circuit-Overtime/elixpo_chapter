@@ -37,7 +37,12 @@ const BLOCKS: { title: string; body: string; accent: string }[] = [
     },
 ];
 
-const ROADMAP: { phase: string; title: string; body: string; done?: boolean }[] = [
+const ROADMAP: {
+    phase: string;
+    title: string;
+    body: string;
+    done?: boolean;
+}[] = [
     {
         phase: "P0",
         title: "First-party billing",
@@ -64,19 +69,51 @@ const ROADMAP: { phase: string; title: string; body: string; done?: boolean }[] 
 export default function AboutPage() {
     return (
         <PageShell>
-            <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 9 }, pb: { xs: 6, md: 10 } }}>
-                <Stack alignItems="center" textAlign="center" spacing={2} sx={{ mb: { xs: 5, md: 8 } }}>
-                    <Typography sx={{ color: "#b69aff", fontWeight: 700, fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            <Container
+                maxWidth="lg"
+                sx={{ pt: { xs: 6, md: 9 }, pb: { xs: 6, md: 10 } }}
+            >
+                <Stack
+                    alignItems="center"
+                    textAlign="center"
+                    spacing={2}
+                    sx={{ mb: { xs: 5, md: 8 } }}
+                >
+                    <Typography
+                        sx={{
+                            color: "#b69aff",
+                            fontWeight: 700,
+                            fontSize: "0.8rem",
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                        }}
+                    >
                         The platform
                     </Typography>
-                    <Typography sx={{ fontWeight: 800, fontSize: { xs: "2.2rem", md: "3rem" }, letterSpacing: "-0.02em", lineHeight: 1.05, color: "#f5f5f4" }}>
+                    <Typography
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: { xs: "2.2rem", md: "3rem" },
+                            letterSpacing: "-0.02em",
+                            lineHeight: 1.05,
+                            color: "#f5f5f4",
+                        }}
+                    >
                         One money stack, six building blocks
                     </Typography>
-                    <Typography sx={{ maxWidth: 640, color: "rgba(245,245,244,0.65)", fontSize: "1.05rem", lineHeight: 1.7 }}>
-                        Elixpo Pay abstracts providers and rails behind one API, ledger
-                        and dashboard — built end to end on Cloudflare's edge with D1,
-                        KV and Workers, so money moves reliably for every Elixpo product
-                        and every business building on it.
+                    <Typography
+                        sx={{
+                            maxWidth: 640,
+                            color: "rgba(245,245,244,0.65)",
+                            fontSize: "1.05rem",
+                            lineHeight: 1.7,
+                        }}
+                    >
+                        Elixpo Pay abstracts providers and rails behind one API,
+                        ledger and dashboard — built end to end on Cloudflare's
+                        edge with D1, KV and Workers, so money moves reliably
+                        for every Elixpo product and every business building on
+                        it.
                     </Typography>
                 </Stack>
 
@@ -85,7 +122,10 @@ export default function AboutPage() {
                     sx={{
                         display: "grid",
                         gap: 2,
-                        gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" },
+                        gridTemplateColumns: {
+                            xs: "1fr",
+                            md: "repeat(2, 1fr)",
+                        },
                         mb: { xs: 6, md: 9 },
                     }}
                 >
@@ -97,16 +137,42 @@ export default function AboutPage() {
                                 borderRadius: "18px",
                                 background: "#0e1117",
                                 border: "1px solid rgba(255,255,255,0.05)",
-                                boxShadow: "8px 8px 24px rgba(0,0,0,0.45), -6px -6px 18px rgba(255,255,255,0.02)",
+                                boxShadow:
+                                    "8px 8px 24px rgba(0,0,0,0.45), -6px -6px 18px rgba(255,255,255,0.02)",
                             }}
                         >
-                            <Stack direction="row" spacing={1.4} alignItems="center" sx={{ mb: 1 }}>
-                                <Box sx={{ width: 10, height: 10, borderRadius: "3px", background: b.accent, boxShadow: `0 0 10px ${b.accent}aa` }} />
-                                <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#f5f5f4" }}>
+                            <Stack
+                                direction="row"
+                                spacing={1.4}
+                                alignItems="center"
+                                sx={{ mb: 1 }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: 10,
+                                        height: 10,
+                                        borderRadius: "3px",
+                                        background: b.accent,
+                                        boxShadow: `0 0 10px ${b.accent}aa`,
+                                    }}
+                                />
+                                <Typography
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "1.1rem",
+                                        color: "#f5f5f4",
+                                    }}
+                                >
                                     {b.title}
                                 </Typography>
                             </Stack>
-                            <Typography sx={{ color: "rgba(245,245,244,0.62)", fontSize: "0.92rem", lineHeight: 1.65 }}>
+                            <Typography
+                                sx={{
+                                    color: "rgba(245,245,244,0.62)",
+                                    fontSize: "0.92rem",
+                                    lineHeight: 1.65,
+                                }}
+                            >
                                 {b.body}
                             </Typography>
                         </Box>
@@ -114,7 +180,16 @@ export default function AboutPage() {
                 </Box>
 
                 {/* Roadmap */}
-                <Typography sx={{ textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", md: "2.2rem" }, letterSpacing: "-0.02em", color: "#f5f5f4", mb: { xs: 4, md: 6 } }}>
+                <Typography
+                    sx={{
+                        textAlign: "center",
+                        fontWeight: 800,
+                        fontSize: { xs: "1.7rem", md: "2.2rem" },
+                        letterSpacing: "-0.02em",
+                        color: "#f5f5f4",
+                        mb: { xs: 4, md: 6 },
+                    }}
+                >
                     Where it's headed
                 </Typography>
                 <Stack spacing={2}>
@@ -127,24 +202,64 @@ export default function AboutPage() {
                                 p: { xs: 2.6, md: 3 },
                                 borderRadius: "16px",
                                 background: "#0e1117",
-                                border: r.done ? "1px solid rgba(134,239,172,0.3)" : "1px solid rgba(255,255,255,0.05)",
-                                boxShadow: "8px 8px 24px rgba(0,0,0,0.4), -6px -6px 16px rgba(255,255,255,0.02)",
+                                border: r.done
+                                    ? "1px solid rgba(134,239,172,0.3)"
+                                    : "1px solid rgba(255,255,255,0.05)",
+                                boxShadow:
+                                    "8px 8px 24px rgba(0,0,0,0.4), -6px -6px 16px rgba(255,255,255,0.02)",
                             }}
                         >
-                            <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 140 }}>
-                                <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontWeight: 800, fontSize: "1.1rem", color: r.done ? "#86efac" : "#9b7bf7" }}>
+                            <Stack
+                                direction="row"
+                                spacing={1.2}
+                                alignItems="center"
+                                sx={{ minWidth: 140 }}
+                            >
+                                <Typography
+                                    sx={{
+                                        fontFamily: "var(--font-geist-mono)",
+                                        fontWeight: 800,
+                                        fontSize: "1.1rem",
+                                        color: r.done ? "#86efac" : "#9b7bf7",
+                                    }}
+                                >
                                     {r.phase}
                                 </Typography>
-                                <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: "#f5f5f4" }}>
+                                <Typography
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "1.05rem",
+                                        color: "#f5f5f4",
+                                    }}
+                                >
                                     {r.title}
                                 </Typography>
                                 {r.done && (
-                                    <Box sx={{ px: 0.9, py: 0.2, borderRadius: "999px", fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", color: "#86efac", background: "rgba(134,239,172,0.12)", border: "1px solid rgba(134,239,172,0.3)" }}>
+                                    <Box
+                                        sx={{
+                                            px: 0.9,
+                                            py: 0.2,
+                                            borderRadius: "999px",
+                                            fontSize: "0.62rem",
+                                            fontWeight: 700,
+                                            textTransform: "uppercase",
+                                            color: "#86efac",
+                                            background:
+                                                "rgba(134,239,172,0.12)",
+                                            border: "1px solid rgba(134,239,172,0.3)",
+                                        }}
+                                    >
                                         Live
                                     </Box>
                                 )}
                             </Stack>
-                            <Typography sx={{ color: "rgba(245,245,244,0.62)", fontSize: "0.92rem", lineHeight: 1.65 }}>
+                            <Typography
+                                sx={{
+                                    color: "rgba(245,245,244,0.62)",
+                                    fontSize: "0.92rem",
+                                    lineHeight: 1.65,
+                                }}
+                            >
                                 {r.body}
                             </Typography>
                         </Stack>
@@ -152,8 +267,19 @@ export default function AboutPage() {
                 </Stack>
 
                 {/* CTA */}
-                <Stack alignItems="center" spacing={2} sx={{ mt: { xs: 6, md: 9 } }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.4rem", color: "#f5f5f4", textAlign: "center" }}>
+                <Stack
+                    alignItems="center"
+                    spacing={2}
+                    sx={{ mt: { xs: 6, md: 9 } }}
+                >
+                    <Typography
+                        sx={{
+                            fontWeight: 700,
+                            fontSize: "1.4rem",
+                            color: "#f5f5f4",
+                            textAlign: "center",
+                        }}
+                    >
                         Ready to start charging?
                     </Typography>
                     <Stack direction="row" spacing={2}>
@@ -167,7 +293,8 @@ export default function AboutPage() {
                                 px: 3,
                                 py: 1.2,
                                 borderRadius: "12px",
-                                background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                background:
+                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
                             }}
                         >
                             Start building

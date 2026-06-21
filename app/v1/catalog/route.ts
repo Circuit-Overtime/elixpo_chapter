@@ -1,8 +1,8 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getAppBySlug } from "@/lib/repo";
+import { type NextRequest, NextResponse } from "next/server";
 
 // Public read endpoint — allow any origin so a consuming app can render its
 // pricing page client-side.
@@ -28,7 +28,10 @@ export async function GET(request: NextRequest) {
         const appSlug = request.nextUrl.searchParams.get("app");
         if (!appSlug) {
             return NextResponse.json(
-                { error: "invalid_request", error_description: "app is required" },
+                {
+                    error: "invalid_request",
+                    error_description: "app is required",
+                },
                 { status: 400 },
             );
         }
@@ -47,7 +50,11 @@ export async function GET(request: NextRequest) {
             .first()) as any;
 
         if (!product) {
-            return NextResponse.json({ app: appSlug, product: null, tiers: [] });
+            return NextResponse.json({
+                app: appSlug,
+                product: null,
+                tiers: [],
+            });
         }
 
         const tiers = await db
@@ -62,7 +69,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
             {
                 app: appSlug,
-                product: { name: product.name, tier: product.tier, description: product.description },
+                product: {
+                    name: product.name,
+                    tier: product.tier,
+                    description: product.description,
+                },
                 tiers: (tiers.results ?? []).map((t: any) => ({
                     id: t.id,
                     name: t.nickname,
@@ -77,6 +88,9 @@ export async function GET(request: NextRequest) {
         );
     } catch (err: any) {
         console.error("[v1/catalog] error:", err);
-        return NextResponse.json({ error: "server_error" }, { status: 500, headers: CORS });
+        return NextResponse.json(
+            { error: "server_error" },
+            { status: 500, headers: CORS },
+        );
     }
 }
