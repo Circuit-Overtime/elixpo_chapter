@@ -1,494 +1,558 @@
 [
   {
     "archived": false,
-    "full_name": "huggingface/trl",
+    "band": "small",
+    "full_name": "mlco2/codecarbon",
+    "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 510,
-    "pushed_at": "2026-06-21T04:11:09Z",
+    "open_issues": 133,
+    "pushed_at": "2026-06-21T09:28:38Z",
     "reasons": [
-      "18678\u2605 python active"
+      "1863\u2605 python active",
+      "has good-first issues"
     ],
-    "score": 80,
-    "stars": 18678,
-    "topics": [],
-    "url": "https://github.com/huggingface/trl"
+    "score": 32,
+    "stars": 1863,
+    "topics": [
+      "ai-ethics",
+      "carbon-emissions",
+      "carbon-footprint",
+      "co2-emissions",
+      "energy-consumption",
+      "energy-efficiency",
+      "fairness",
+      "sustainability"
+    ],
+    "url": "https://github.com/mlco2/codecarbon"
   },
   {
     "archived": false,
-    "full_name": "davila7/claude-code-templates",
+    "band": "mid",
+    "full_name": "scipy/scipy",
+    "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 178,
-    "pushed_at": "2026-06-21T04:08:49Z",
+    "open_issues": 1818,
+    "pushed_at": "2026-06-21T08:59:48Z",
     "reasons": [
-      "28204\u2605 python active"
+      "14764\u2605 python active",
+      "has good-first issues"
     ],
-    "score": 80,
-    "stars": 28204,
+    "score": 45,
+    "stars": 14764,
     "topics": [
-      "anthropic",
-      "anthropic-claude",
-      "claude",
-      "claude-code"
-    ],
-    "url": "https://github.com/davila7/claude-code-templates"
-  },
-  {
-    "archived": false,
-    "full_name": "EvanLi/Github-Ranking",
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 32,
-    "pushed_at": "2026-06-21T04:07:15Z",
-    "reasons": [
-      "11416\u2605 python active"
-    ],
-    "score": 80,
-    "stars": 11416,
-    "topics": [
-      "forks",
-      "github-rank",
-      "github-stars",
+      "algorithms",
+      "closember",
       "python",
-      "ranking",
-      "stars"
+      "scientific-computing",
+      "scipy"
     ],
-    "url": "https://github.com/EvanLi/Github-Ranking"
+    "url": "https://github.com/scipy/scipy"
   },
   {
     "archived": false,
-    "full_name": "tinygrad/tinygrad",
+    "band": "large",
+    "full_name": "huggingface/lerobot",
+    "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 161,
-    "pushed_at": "2026-06-21T04:06:40Z",
+    "open_issues": 821,
+    "pushed_at": "2026-06-21T09:48:48Z",
     "reasons": [
-      "33134\u2605 python active"
+      "25150\u2605 python active",
+      "has good-first issues"
     ],
-    "score": 80,
-    "stars": 33134,
+    "score": 45,
+    "stars": 25150,
     "topics": [],
-    "url": "https://github.com/tinygrad/tinygrad"
+    "url": "https://github.com/huggingface/lerobot"
   },
   {
     "archived": false,
-    "full_name": "python-pillow/Pillow",
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 135,
-    "pushed_at": "2026-06-21T04:06:24Z",
-    "reasons": [
-      "13634\u2605 python active"
-    ],
-    "score": 80,
-    "stars": 13634,
-    "topics": [
-      "c",
-      "cross-platform",
-      "image",
-      "image-processing",
-      "pil",
-      "pillow",
-      "python",
-      "python-3"
-    ],
-    "url": "https://github.com/python-pillow/Pillow"
-  },
-  {
-    "archived": false,
-    "full_name": "elizaOS/eliza",
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 35,
-    "pushed_at": "2026-06-21T04:10:19Z",
-    "reasons": [
-      "18608\u2605 typescript active"
-    ],
-    "score": 80,
-    "stars": 18608,
-    "topics": [
-      "agent",
-      "agentic",
-      "ai",
-      "autonomous",
-      "chatbot",
-      "crypto",
-      "discord",
-      "eliza",
-      "elizaos",
-      "framework",
-      "plugins",
-      "rag",
-      "slack",
-      "swarm",
-      "telegram"
-    ],
-    "url": "https://github.com/elizaOS/eliza"
-  },
-  {
-    "archived": false,
-    "full_name": "can1357/oh-my-pi",
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 312,
-    "pushed_at": "2026-06-21T04:04:35Z",
-    "reasons": [
-      "13687\u2605 typescript active"
-    ],
-    "score": 80,
-    "stars": 13687,
-    "topics": [
-      "ai-agent",
-      "ai-coding-agent",
-      "anthropic",
-      "bun",
-      "claude",
-      "cli",
-      "coding-assistant",
-      "llm",
-      "mcp",
-      "multi-provider",
-      "openai",
-      "rust",
-      "terminal",
-      "tui",
-      "typescript"
-    ],
-    "url": "https://github.com/can1357/oh-my-pi"
-  },
-  {
-    "archived": false,
-    "full_name": "quic-go/quic-go",
+    "band": "small",
+    "full_name": "koordinator-sh/koordinator",
+    "good_first_issues": 1,
     "has_contributing": false,
     "language": "Go",
-    "open_issues": 206,
-    "pushed_at": "2026-06-21T04:09:02Z",
+    "open_issues": 272,
+    "pushed_at": "2026-06-21T07:33:45Z",
     "reasons": [
-      "11658\u2605 go active"
+      "1706\u2605 go active",
+      "has good-first issues"
     ],
-    "score": 80,
-    "stars": 11658,
+    "score": 32,
+    "stars": 1706,
     "topics": [
-      "go",
-      "golang",
-      "http3",
-      "protocol",
-      "qlog",
-      "quic",
-      "quic-client",
-      "quic-server"
-    ],
-    "url": "https://github.com/quic-go/quic-go"
-  },
-  {
-    "archived": false,
-    "full_name": "QuantumNous/new-api",
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 846,
-    "pushed_at": "2026-06-21T04:07:31Z",
-    "reasons": [
-      "39463\u2605 go active"
-    ],
-    "score": 80,
-    "stars": 39463,
-    "topics": [
-      "ai-gateway",
-      "claude",
-      "deepseek",
-      "gemini",
-      "newapi",
-      "openai",
-      "rerank"
-    ],
-    "url": "https://github.com/QuantumNous/new-api"
-  },
-  {
-    "archived": false,
-    "full_name": "ethereum/EIPs",
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 461,
-    "pushed_at": "2026-06-21T04:00:36Z",
-    "reasons": [
-      "13897\u2605 go active"
-    ],
-    "score": 80,
-    "stars": 13897,
-    "topics": [],
-    "url": "https://github.com/ethereum/EIPs"
-  },
-  {
-    "archived": false,
-    "full_name": "SagerNet/sing-box",
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 265,
-    "pushed_at": "2026-06-21T03:54:14Z",
-    "reasons": [
-      "35193\u2605 go active"
-    ],
-    "score": 80,
-    "stars": 35193,
-    "topics": [],
-    "url": "https://github.com/SagerNet/sing-box"
-  },
-  {
-    "archived": false,
-    "full_name": "temporalio/temporal",
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 783,
-    "pushed_at": "2026-06-21T03:51:58Z",
-    "reasons": [
-      "21106\u2605 go active"
-    ],
-    "score": 80,
-    "stars": 21106,
-    "topics": [
-      "cronjob-scheduler",
-      "distributed-cron",
-      "distributed-systems",
-      "durable-execution",
-      "golang",
-      "microservice-framework",
-      "microservice-orchestration",
-      "microservices-architecture",
-      "orchestrator",
-      "service-bus",
-      "service-fabric",
-      "workflow-automation",
-      "workflow-engine",
-      "workflow-management",
-      "workflow-management-system",
-      "workflows"
-    ],
-    "url": "https://github.com/temporalio/temporal"
-  },
-  {
-    "archived": false,
-    "full_name": "gastownhall/beads",
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 468,
-    "pushed_at": "2026-06-21T03:44:15Z",
-    "reasons": [
-      "24652\u2605 go active"
-    ],
-    "score": 80,
-    "stars": 24652,
-    "topics": [
-      "agents",
-      "claude-code",
-      "coding"
-    ],
-    "url": "https://github.com/gastownhall/beads"
-  },
-  {
-    "archived": false,
-    "full_name": "eythaann/Seelen-UI",
-    "has_contributing": false,
-    "language": "Rust",
-    "open_issues": 60,
-    "pushed_at": "2026-06-21T04:03:37Z",
-    "reasons": [
-      "17113\u2605 rust active"
-    ],
-    "score": 80,
-    "stars": 17113,
-    "topics": [
-      "app-launcher",
-      "desktop-application",
-      "dock",
-      "finder",
-      "multilanguage",
-      "seelen",
-      "seelen-ui",
-      "taskbar",
-      "tauri",
-      "tauri-app",
-      "tiling-window-manager",
-      "toolbar",
-      "tools",
-      "topbar",
-      "wallpaper",
-      "web",
-      "web-technologies",
-      "windows",
-      "windows-11"
-    ],
-    "url": "https://github.com/eythaann/Seelen-UI"
-  },
-  {
-    "archived": false,
-    "full_name": "astral-sh/ruff",
-    "has_contributing": false,
-    "language": "Rust",
-    "open_issues": 2034,
-    "pushed_at": "2026-06-21T03:59:45Z",
-    "reasons": [
-      "48120\u2605 rust active"
-    ],
-    "score": 80,
-    "stars": 48120,
-    "topics": [
-      "linter",
-      "pep8",
-      "python",
-      "python3",
-      "ruff",
-      "rust",
-      "rustpython",
-      "static-analysis",
-      "static-code-analysis",
-      "style-guide",
-      "styleguide"
-    ],
-    "url": "https://github.com/astral-sh/ruff"
-  },
-  {
-    "archived": false,
-    "full_name": "rustfs/rustfs",
-    "has_contributing": false,
-    "language": "Rust",
-    "open_issues": 70,
-    "pushed_at": "2026-06-21T03:56:53Z",
-    "reasons": [
-      "29026\u2605 rust active"
-    ],
-    "score": 80,
-    "stars": 29026,
-    "topics": [
-      "ai-native",
-      "ai-storage",
-      "amazon-s3",
-      "bigdata",
       "cloud-native",
-      "filesystem",
-      "minio",
-      "multi-cloud",
-      "object-storage",
-      "objectstorage",
-      "rust",
-      "s3"
+      "colocation",
+      "cost-optimization",
+      "kubernetes",
+      "scheduling",
+      "workload-consolidation"
     ],
-    "url": "https://github.com/rustfs/rustfs"
+    "url": "https://github.com/koordinator-sh/koordinator"
   },
   {
     "archived": false,
-    "full_name": "nautechsystems/nautilus_trader",
+    "band": "mid",
+    "full_name": "web-infra-dev/rspack",
+    "good_first_issues": 1,
     "has_contributing": false,
     "language": "Rust",
-    "open_issues": 65,
-    "pushed_at": "2026-06-21T03:49:47Z",
+    "open_issues": 188,
+    "pushed_at": "2026-06-21T09:47:24Z",
     "reasons": [
-      "24062\u2605 rust active"
+      "12769\u2605 rust active",
+      "has good-first issues"
     ],
-    "score": 80,
-    "stars": 24062,
+    "score": 45,
+    "stars": 12769,
     "topics": [
-      "algorithmic-trading-engine",
-      "artificial-intelligence",
-      "crypto-trading",
-      "equity-trading",
-      "forex",
-      "futures-trading",
-      "machine-learning",
-      "options-trading",
-      "python",
+      "build-tool",
+      "bundler",
+      "compiler",
+      "esm",
+      "javascript",
+      "jsx",
+      "loaders",
+      "module-bundler",
+      "rspack",
+      "rstack",
       "rust",
-      "sports-betting",
-      "trading",
-      "trading-platform"
+      "typescript",
+      "web",
+      "web-performance",
+      "webpack"
     ],
-    "url": "https://github.com/nautechsystems/nautilus_trader"
+    "url": "https://github.com/web-infra-dev/rspack"
   },
   {
     "archived": false,
-    "full_name": "v2fly/domain-list-community",
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 62,
-    "pushed_at": "2026-06-21T03:58:27Z",
-    "reasons": [
-      "8931\u2605 go active"
-    ],
-    "score": 75,
-    "stars": 8931,
-    "topics": [
-      "geosite",
-      "v2ray"
-    ],
-    "url": "https://github.com/v2fly/domain-list-community"
-  },
-  {
-    "archived": false,
-    "full_name": "modelscope/FunASR",
+    "band": "large",
+    "full_name": "frappe/erpnext",
+    "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 14,
-    "pushed_at": "2026-06-21T04:10:22Z",
+    "open_issues": 2055,
+    "pushed_at": "2026-06-21T09:48:00Z",
     "reasons": [
-      "18382\u2605 python active"
+      "35892\u2605 python active",
+      "has good-first issues"
     ],
-    "score": 74,
-    "stars": 18382,
+    "score": 45,
+    "stars": 35892,
     "topics": [
-      "asr",
-      "audio",
-      "chinese",
-      "emotion-recognition",
-      "funasr",
-      "mcp-server",
-      "multilingual-asr",
-      "openai-compatible-api",
-      "paraformer",
-      "punctuation",
-      "pytorch",
-      "real-time",
-      "speaker-diarization",
-      "speech-recognition",
-      "speech-to-text",
-      "streaming-asr",
-      "transcription",
-      "vllm",
-      "voice-activity-detection",
-      "whisper-alternative"
+      "accounting",
+      "asset-management",
+      "crm",
+      "distribution",
+      "erp",
+      "erpnext",
+      "frappe",
+      "healthcare",
+      "hrms",
+      "manufacturing",
+      "point-of-sale",
+      "procurement",
+      "project-management",
+      "python",
+      "retail",
+      "support"
     ],
-    "url": "https://github.com/modelscope/FunASR"
+    "url": "https://github.com/frappe/erpnext"
   },
   {
     "archived": false,
-    "full_name": "xanderfrangos/twinkle-tray",
+    "band": "small",
+    "full_name": "collective/icalendar",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 108,
+    "pushed_at": "2026-06-21T09:37:43Z",
+    "reasons": [
+      "1146\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1146,
+    "topics": [
+      "alarm",
+      "event",
+      "generator",
+      "hacktoberfest",
+      "icalendar",
+      "ics",
+      "journal",
+      "parser",
+      "rfc5545",
+      "todo"
+    ],
+    "url": "https://github.com/collective/icalendar"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "WordPress/gutenberg",
+    "good_first_issues": 1,
     "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 581,
-    "pushed_at": "2026-06-21T03:58:55Z",
+    "open_issues": 8015,
+    "pushed_at": "2026-06-21T03:49:08Z",
     "reasons": [
-      "8681\u2605 javascript active"
+      "11700\u2605 javascript active",
+      "has good-first issues"
     ],
-    "score": 74,
-    "stars": 8681,
+    "score": 44,
+    "stars": 11700,
     "topics": [
-      "backlight",
-      "backlight-brightness",
-      "brightness",
-      "brightness-control",
-      "brightness-level",
-      "brightness-levels",
-      "brightness-slider",
-      "ddc-ic",
-      "electron-app",
-      "monitors",
-      "multiple-monitors",
-      "nodejs",
-      "react",
-      "reactjs",
-      "windows",
-      "windows-10",
-      "windows-11"
+      "gutenberg",
+      "wordpress",
+      "wordpress-plugin"
     ],
-    "url": "https://github.com/xanderfrangos/twinkle-tray"
+    "url": "https://github.com/WordPress/gutenberg"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "PostHog/posthog",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 3902,
+    "pushed_at": "2026-06-21T09:45:54Z",
+    "reasons": [
+      "35108\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 35108,
+    "topics": [
+      "ab-testing",
+      "ai-analytics",
+      "analytics",
+      "cdp",
+      "data-warehouse",
+      "experiments",
+      "feature-flags",
+      "javascript",
+      "product-analytics",
+      "python",
+      "react",
+      "session-replay",
+      "surveys",
+      "typescript",
+      "web-analytics"
+    ],
+    "url": "https://github.com/PostHog/posthog"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "PyTables/PyTables",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 154,
+    "pushed_at": "2026-06-21T09:29:09Z",
+    "reasons": [
+      "1366\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1366,
+    "topics": [],
+    "url": "https://github.com/PyTables/PyTables"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "facebookresearch/hydra",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 301,
+    "pushed_at": "2026-06-21T09:46:34Z",
+    "reasons": [
+      "10453\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 43,
+    "stars": 10453,
+    "topics": [],
+    "url": "https://github.com/facebookresearch/hydra"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "kvcache-ai/ktransformers",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 453,
+    "pushed_at": "2026-06-21T09:40:28Z",
+    "reasons": [
+      "17315\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 17315,
+    "topics": [],
+    "url": "https://github.com/kvcache-ai/ktransformers"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "aeon-toolkit/aeon",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 246,
+    "pushed_at": "2026-06-21T09:06:10Z",
+    "reasons": [
+      "1395\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1395,
+    "topics": [
+      "aeon",
+      "ai",
+      "artificial-intelligence",
+      "data-mining",
+      "data-science",
+      "deep-learning",
+      "forecasting",
+      "machine-learning",
+      "neural-network",
+      "scikit-learn",
+      "time-series",
+      "time-series-analysis",
+      "time-series-anomaly-detection",
+      "time-series-classification",
+      "time-series-clustering",
+      "time-series-regression",
+      "time-series-segmentation"
+    ],
+    "url": "https://github.com/aeon-toolkit/aeon"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "LMCache/LMCache",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 326,
+    "pushed_at": "2026-06-21T09:27:59Z",
+    "reasons": [
+      "9500\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 41,
+    "stars": 9500,
+    "topics": [
+      "amd",
+      "cuda",
+      "fast",
+      "inference",
+      "kv-cache",
+      "llm",
+      "pytorch",
+      "rocm",
+      "speed",
+      "vllm"
+    ],
+    "url": "https://github.com/LMCache/LMCache"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "sgl-project/sglang",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 3577,
+    "pushed_at": "2026-06-21T09:44:41Z",
+    "reasons": [
+      "29471\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 29471,
+    "topics": [
+      "attention",
+      "blackwell",
+      "cuda",
+      "deepseek",
+      "diffusion",
+      "glm",
+      "gpt-oss",
+      "inference",
+      "llama",
+      "llm",
+      "minimax",
+      "moe",
+      "qwen",
+      "qwen-image",
+      "reinforcement-learning",
+      "transformer",
+      "vlm",
+      "wan"
+    ],
+    "url": "https://github.com/sgl-project/sglang"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "globaleaks/globaleaks-whistleblowing-software",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 610,
+    "pushed_at": "2026-06-21T08:47:18Z",
+    "reasons": [
+      "1488\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1488,
+    "topics": [
+      "accessibility",
+      "angular",
+      "anonymity",
+      "anticorruption",
+      "bootstrap",
+      "debian",
+      "digital-human-rights",
+      "digital-public-goods",
+      "dompurify",
+      "free-software",
+      "libsodium",
+      "open-source",
+      "privacy",
+      "python",
+      "security",
+      "sqlalchemy",
+      "tor",
+      "twisted",
+      "typescript",
+      "whistleblowing"
+    ],
+    "url": "https://github.com/globaleaks/globaleaks-whistleblowing-software"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "getpaseo/paseo",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 685,
+    "pushed_at": "2026-06-21T08:40:15Z",
+    "reasons": [
+      "8923\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 41,
+    "stars": 8923,
+    "topics": [
+      "ade",
+      "agents",
+      "claude-code",
+      "codex",
+      "copilot",
+      "developer-tools",
+      "gemini",
+      "mobile",
+      "opencode",
+      "orchestration",
+      "pi"
+    ],
+    "url": "https://github.com/getpaseo/paseo"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "HKUDS/nanobot",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 870,
+    "pushed_at": "2026-06-21T09:14:55Z",
+    "reasons": [
+      "44495\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 44495,
+    "topics": [
+      "ai",
+      "ai-agent",
+      "ai-agents",
+      "anthropic",
+      "chatgpt",
+      "claude",
+      "claude-code",
+      "codex",
+      "codex-cli",
+      "llm",
+      "nanobot",
+      "openai",
+      "openclaw"
+    ],
+    "url": "https://github.com/HKUDS/nanobot"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "GenericMappingTools/pygmt",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 183,
+    "pushed_at": "2026-06-21T08:42:12Z",
+    "reasons": [
+      "863\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 863,
+    "topics": [
+      "earth-science",
+      "geophysics",
+      "geoscience",
+      "hacktoberfest",
+      "maps",
+      "python",
+      "seismology"
+    ],
+    "url": "https://github.com/GenericMappingTools/pygmt"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "beautifier/js-beautify",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 438,
+    "pushed_at": "2026-06-21T05:00:43Z",
+    "reasons": [
+      "8975\u2605 javascript active",
+      "has good-first issues"
+    ],
+    "score": 41,
+    "stars": 8975,
+    "topics": [
+      "css",
+      "hacktoberfest",
+      "html",
+      "javascript",
+      "nodejs",
+      "python"
+    ],
+    "url": "https://github.com/beautifier/js-beautify"
   }
 ]
