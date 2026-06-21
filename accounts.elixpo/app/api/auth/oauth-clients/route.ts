@@ -3,8 +3,8 @@ export const runtime = "edge";
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { createOAuthClient, getOAuthClientById, getUserById } from "@/lib/db";
-import { sendAppRegisteredEmail } from "@/lib/email";
 import { verifyJWT } from "@/lib/jwt";
+import { sendMail } from "@/lib/mails";
 import { generateRandomString, hashString } from "@/lib/webcrypto";
 
 async function getAuth(request: NextRequest) {
@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        // Enforce email verification
         const db = await getDatabase();
         const user = (await getUserById(db, auth.sub)) as any;
         if (user && !user.email_verified) {
@@ -62,6 +61,31 @@ export async function POST(request: NextRequest) {
                 },
                 { status: 403 },
             );
+        }
+
+        // 2FA gate. The platform policy mandates 2FA for any account
+        // owning ≥3 OAuth apps. We enforce at creation time of the 3rd
+        // app: if the user has 2 apps and !mfa_enabled, block here with
+        // a hint that points them to /dashboard/security.
+        if (user && !user.mfa_enabled) {
+            const countRow = (await db
+                .prepare(
+                    `SELECT COUNT(*) AS n FROM oauth_clients
+                     WHERE owner_id = ? AND is_active = 1`,
+                )
+                .bind(auth.sub)
+                .first()) as { n: number } | null;
+            const activeCount = countRow?.n ?? 0;
+            if (activeCount >= 2) {
+                return NextResponse.json(
+                    {
+                        error: "Enable 2FA before registering a 3rd OAuth app.",
+                        mfa_required: true,
+                        setup_url: "/dashboard/security",
+                    },
+                    { status: 403 },
+                );
+            }
         }
 
         const body: any = await request.json();
@@ -162,7 +186,7 @@ export async function POST(request: NextRequest) {
                 webhookSecretHash: null,
                 webhookEvents: null,
             });
-            console.log(`[OAuth Client] Registered: ${name} (${clientId})`);
+            console.log("[OAuth Client] Registered: %s (%s)", name, clientId);
 
             // Notify owner via email (fire-and-forget)
             try {
@@ -170,12 +194,15 @@ export async function POST(request: NextRequest) {
                 if (owner?.email) {
                     const ownerName =
                         owner.display_name || owner.email.split("@")[0];
-                    await sendAppRegisteredEmail(
-                        owner.email,
-                        ownerName,
-                        name,
-                        clientId,
-                    );
+                    const APP_URL =
+                        process.env.NEXT_PUBLIC_APP_URL ||
+                        "https://accounts.elixpo.com";
+                    await sendMail("oauth_app_register", owner.email, {
+                        name: ownerName,
+                        app_name: name,
+                        client_id_short: clientId.slice(0, 20),
+                        dashboard_url: `${APP_URL}/dashboard/oauth-apps/${clientId}`,
+                    });
                 }
             } catch (emailError) {
                 console.error(

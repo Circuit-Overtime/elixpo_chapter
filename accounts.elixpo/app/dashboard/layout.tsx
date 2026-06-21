@@ -5,7 +5,9 @@ import {
     DevicesOther,
     GitHub,
     Logout,
+    MenuBook,
     Person,
+    Security,
     Webhook,
 } from "@mui/icons-material";
 import {
@@ -105,6 +107,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     window.location.replace("/setup-name");
                     return;
                 }
+                // 2FA hard wall: users with ≥3 OAuth apps must have MFA
+                // enabled to keep using the dashboard. `mfa_setup_required`
+                // is set server-side in /api/auth/me. /dashboard/security
+                // is the ONE page allowed past the wall — that's where
+                // they enroll a factor and flip the flag. Without this
+                // exception we'd infinite-loop the redirect.
+                if (
+                    data.mfa_setup_required &&
+                    pathname !== "/dashboard/security"
+                ) {
+                    window.location.replace("/mfa/setup-required");
+                    return;
+                }
                 if (data.email) setUserEmail(data.email);
                 if (data.displayName) setDisplayName(data.displayName);
                 if (data.avatar) setUserAvatar(data.avatar);
@@ -113,7 +128,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             .catch(() => {
                 window.location.assign("/login");
             });
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pathname]);
 
     const handleLogout = async () => {
         setAnchorEl(null);
@@ -363,37 +379,125 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                         borderColor: "rgba(255,255,255,0.08)",
                                     }}
                                 />
-                                <MenuItem
-                                    component={Link}
-                                    href="/dashboard/profile"
-                                    onClick={() => setAnchorEl(null)}
-                                    sx={{
-                                        py: 1.25,
-                                        color: "rgba(255,255,255,0.7)",
-                                        "&:hover": {
-                                            bgcolor: "rgba(255,255,255,0.05)",
-                                            color: "#f5f5f4",
-                                        },
-                                    }}
-                                >
-                                    <ListItemIcon
-                                        sx={{ color: "inherit", minWidth: 36 }}
-                                    >
-                                        <Person fontSize="small" />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primaryTypographyProps={{
-                                            fontSize: "0.875rem",
+                                {/* Account group */}
+                                {[
+                                    {
+                                        href: "/dashboard/profile",
+                                        icon: <Person fontSize="small" />,
+                                        label: "Profile",
+                                    },
+                                    {
+                                        href: "/dashboard/security",
+                                        icon: <Security fontSize="small" />,
+                                        label: "Security & 2FA",
+                                    },
+                                    {
+                                        href: "/dashboard/services",
+                                        icon: <DevicesOther fontSize="small" />,
+                                        label: "Connected services",
+                                    },
+                                ].map((item) => (
+                                    <MenuItem
+                                        key={item.href}
+                                        component={Link}
+                                        href={item.href}
+                                        onClick={() => setAnchorEl(null)}
+                                        sx={{
+                                            py: 1.25,
+                                            color: "rgba(255,255,255,0.7)",
+                                            "&:hover": {
+                                                bgcolor:
+                                                    "rgba(255,255,255,0.05)",
+                                                color: "#f5f5f4",
+                                            },
                                         }}
                                     >
-                                        Profile
-                                    </ListItemText>
-                                </MenuItem>
+                                        <ListItemIcon
+                                            sx={{
+                                                color: "inherit",
+                                                minWidth: 36,
+                                            }}
+                                        >
+                                            {item.icon}
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primaryTypographyProps={{
+                                                fontSize: "0.875rem",
+                                            }}
+                                        >
+                                            {item.label}
+                                        </ListItemText>
+                                    </MenuItem>
+                                ))}
+
                                 <Divider
                                     sx={{
                                         borderColor: "rgba(255,255,255,0.08)",
                                     }}
                                 />
+
+                                {/* Developer group — opens in same tab for
+                                    internal pages, new tab for the external
+                                    docs link. */}
+                                {[
+                                    {
+                                        href: "/dashboard/oauth-apps",
+                                        icon: <Apps fontSize="small" />,
+                                        label: "OAuth apps",
+                                        external: false,
+                                    },
+                                    {
+                                        href: "/dashboard/webhooks",
+                                        icon: <Webhook fontSize="small" />,
+                                        label: "Webhooks",
+                                        external: false,
+                                    },
+                                    {
+                                        href: "/docs",
+                                        icon: <MenuBook fontSize="small" />,
+                                        label: "API docs",
+                                        external: false,
+                                    },
+                                ].map((item) => (
+                                    <MenuItem
+                                        key={item.href}
+                                        component={Link}
+                                        href={item.href}
+                                        onClick={() => setAnchorEl(null)}
+                                        sx={{
+                                            py: 1.25,
+                                            color: "rgba(255,255,255,0.7)",
+                                            "&:hover": {
+                                                bgcolor:
+                                                    "rgba(255,255,255,0.05)",
+                                                color: "#f5f5f4",
+                                            },
+                                        }}
+                                    >
+                                        <ListItemIcon
+                                            sx={{
+                                                color: "inherit",
+                                                minWidth: 36,
+                                            }}
+                                        >
+                                            {item.icon}
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primaryTypographyProps={{
+                                                fontSize: "0.875rem",
+                                            }}
+                                        >
+                                            {item.label}
+                                        </ListItemText>
+                                    </MenuItem>
+                                ))}
+
+                                <Divider
+                                    sx={{
+                                        borderColor: "rgba(255,255,255,0.08)",
+                                    }}
+                                />
+
                                 <MenuItem
                                     onClick={handleLogout}
                                     sx={{
@@ -415,7 +519,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                             fontSize: "0.875rem",
                                         }}
                                     >
-                                        Logout
+                                        Sign out
                                     </ListItemText>
                                 </MenuItem>
                             </Menu>

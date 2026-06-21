@@ -223,6 +223,39 @@ export async function dispatchAppEvent(
                     .run(),
             ),
         );
+
+        // Update the KV consecutive-failure counters and fire the
+        // webhook_fail email when an endpoint crosses the threshold.
+        // Done after stamping so the row reflects the latest attempt
+        // when the email goes out.
+        try {
+            const { recordEndpointSuccess, recordEndpointFailure } =
+                await import("./webhook-fail-alert");
+            await Promise.allSettled(
+                stamps.map((s, i) => {
+                    const target = targets[i];
+                    const okStatus =
+                        s.statusCode !== null &&
+                        s.statusCode >= 200 &&
+                        s.statusCode < 300;
+                    if (okStatus) {
+                        return recordEndpointSuccess(s.endpointId);
+                    }
+                    return recordEndpointFailure(
+                        s.endpointId,
+                        s.statusCode,
+                        s.error,
+                        target.url,
+                        target.clientId,
+                    );
+                }),
+            );
+        } catch (err) {
+            console.error(
+                "[app-webhooks] failure-counter update failed:",
+                err instanceof Error ? err.message : err,
+            );
+        }
     }
 
     return { attempted: targets.length, delivered, failed, skipped };
@@ -263,7 +296,11 @@ async function deliverOne(
         };
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        console.warn(`[app-webhooks] delivery to ${target.url} failed:`, msg);
+        console.warn(
+            "[app-webhooks] delivery to %s failed: %s",
+            target.url,
+            msg,
+        );
         return { ok: false, statusCode: null, error: msg.slice(0, 500) };
     } finally {
         clearTimeout(tm);

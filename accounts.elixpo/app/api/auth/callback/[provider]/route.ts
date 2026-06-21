@@ -333,7 +333,11 @@ export async function GET(
             userAgent,
         );
     } catch (err) {
-        console.error(`OAuth callback error for ${provider}:`, err);
+        console.error(
+            "OAuth callback error for %s: %s",
+            provider,
+            err instanceof Error ? err.message : String(err),
+        );
         return NextResponse.redirect(
             new URL(
                 "/error?error=server_error&description=An+unexpected+error+occurred+during+authentication",
@@ -369,6 +373,44 @@ async function buildSuccessResponse(
         /* non-critical */
     }
 
+    // ── MFA gate (mirrors /api/auth/login) ─────────────────────────────
+    // If the user has MFA enabled and this device isn't trusted, do NOT
+    // mint tokens. Instead, redirect the browser to /mfa?mfaToken=...
+    // The challenge page POSTs to /api/auth/mfa/challenge/verify which
+    // issues the real tokens after the second factor succeeds.
+    if ((user as any).mfa_enabled === 1) {
+        const {
+            TRUSTED_DEVICE_COOKIE_NAME,
+            verifyTrustedDeviceCookie,
+            isDeviceTrusted,
+        } = await import("@/lib/trusted-devices");
+        const tdCookie = request.cookies.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
+        let trustedSkip = false;
+        if (tdCookie) {
+            const decoded = await verifyTrustedDeviceCookie(tdCookie);
+            if (
+                decoded &&
+                decoded.userId === user.id &&
+                (await isDeviceTrusted(db, user.id, decoded.deviceUuid))
+            ) {
+                trustedSkip = true;
+            }
+        }
+
+        if (!trustedSkip) {
+            const { mintMfaChallengeToken } = await import("@/lib/mfa-utils");
+            const oauthNext = request.cookies.get("oauth_next")?.value;
+            const next = oauthNext || "/dashboard/oauth-apps";
+            const mfaToken = await mintMfaChallengeToken(user.id, next);
+            return NextResponse.redirect(
+                new URL(
+                    `/mfa?token=${encodeURIComponent(mfaToken)}`,
+                    request.url,
+                ),
+            );
+        }
+    }
+
     const accessToken = await createAccessToken(
         user.id,
         email,
@@ -383,6 +425,9 @@ async function buildSuccessResponse(
 
     try {
         const refreshTokenHash = await hashString(refreshToken);
+        const { hashIpForSession, shortUaForSession } = await import(
+            "@/lib/db"
+        );
         await createRefreshToken(db, {
             id: generateUUID(),
             userId: user.id,
@@ -398,6 +443,8 @@ async function buildSuccessResponse(
                         60 *
                         1000,
             ),
+            ipHash: await hashIpForSession(ipAddress || ""),
+            uaShort: shortUaForSession(userAgent || ""),
         });
 
         await updateUserLastLogin(db, user.id);
@@ -413,6 +460,20 @@ async function buildSuccessResponse(
         });
     } catch (dbError) {
         console.error("Failed to store tokens/audit log:", dbError);
+    }
+
+    // New-device alert (throttled per (user, IP, UA) in KV).
+    try {
+        const { notifyNewDeviceSignIn } = await import("@/lib/sign-in-alert");
+        await notifyNewDeviceSignIn({
+            userId: user.id,
+            email: user.email || email,
+            displayName: (user as any).display_name || null,
+            ipAddress: ipAddress || "unknown",
+            userAgent: userAgent || "unknown",
+        });
+    } catch {
+        /* non-fatal */
     }
 
     // If there's a pending ?next= redirect (e.g. from OAuth authorize flow), use it

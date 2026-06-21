@@ -2,6 +2,7 @@ export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
+
 const SAFE_AVATAR_HOSTS = [
     "lh3.googleusercontent.com", // Google
     "avatars.githubusercontent.com", // GitHub

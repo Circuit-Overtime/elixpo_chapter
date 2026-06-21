@@ -206,21 +206,71 @@ export async function createRefreshToken(
         tokenHash,
         clientId,
         expiresAt,
+        ipHash,
+        uaShort,
     }: {
         id: string;
         userId: string;
         tokenHash: string;
         clientId?: string;
         expiresAt: Date;
+        // Per-session metadata for /dashboard/security listings. Both
+        // optional so old callers compile, but every login/callback path
+        // should populate them.
+        ipHash?: string | null;
+        uaShort?: string | null;
     },
 ) {
     const stmt = db.prepare(
-        `INSERT INTO refresh_tokens (id, user_id, token_hash, client_id, expires_at)
-     VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO refresh_tokens
+            (id, user_id, token_hash, client_id, expires_at,
+             ip_hash, ua_short, last_used_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
     );
     return await stmt
-        .bind(id, userId, tokenHash, clientId || null, expiresAt.toISOString())
+        .bind(
+            id,
+            userId,
+            tokenHash,
+            clientId || null,
+            expiresAt.toISOString(),
+            ipHash ?? null,
+            uaShort ?? null,
+        )
         .run();
+}
+
+/**
+ * Privacy-friendly fingerprint helpers shared with trusted-devices.ts.
+ * Truncated SHA-256 is plenty for uniqueness without leaking the raw IP
+ * into KV/audit logs.
+ */
+export async function hashIpForSession(ip: string): Promise<string | null> {
+    if (!ip || ip === "unknown") return null;
+    const buf = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(ip),
+    );
+    let hex = "";
+    for (const b of new Uint8Array(buf)) hex += b.toString(16).padStart(2, "0");
+    return hex.slice(0, 32);
+}
+
+export function shortUaForSession(ua: string): string | null {
+    if (!ua || ua === "unknown") return null;
+    let browser = "Unknown browser";
+    if (ua.includes("Edg/")) browser = "Edge";
+    else if (ua.includes("OPR/")) browser = "Opera";
+    else if (ua.includes("Chrome/")) browser = "Chrome";
+    else if (ua.includes("Firefox/")) browser = "Firefox";
+    else if (ua.includes("Safari/")) browser = "Safari";
+    let os = "Unknown OS";
+    if (/iPhone|iPad/.test(ua)) os = "iOS";
+    else if (/Android/.test(ua)) os = "Android";
+    else if (/Mac OS X/.test(ua)) os = "macOS";
+    else if (/Windows/.test(ua)) os = "Windows";
+    else if (/Linux/.test(ua)) os = "Linux";
+    return `${browser} on ${os}`;
 }
 
 export async function getRefreshTokenByHash(db: D1Database, tokenHash: string) {

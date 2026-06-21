@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         // Delete the user
         await db.prepare("DELETE FROM users WHERE id = ?").bind(userId).run();
 
-        console.log(`[Account] Deleted user: ${userId}`);
+        console.log("[Account] Deleted user: %s", userId);
 
         // Notify connected first-party apps to hard-purge the user's data.
         // App-scoped webhook dispatch — the new model. Targets any OAuth
