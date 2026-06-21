@@ -27,6 +27,8 @@ class RepoCandidate(BaseModel):
     has_contributing: bool = False
     archived: bool = False
     open_issues: int = 0
+    good_first_issues: int = 0  # from the search qualifier — guaranteed > 0
+    band: str = ""              # small | mid | large — for size-diverse selection
     url: str = ""
     score: int = 0
     reasons: list[str] = Field(default_factory=list)
@@ -84,16 +86,19 @@ def passes_filters(
 
 
 def health_score(repo: dict, has_contributing: bool) -> int:
-    """Cheap 0-100ish health signal for ranking candidates."""
+    """Cheap health signal for ranking WITHIN a band.
+
+    Star weight is deliberately small — size diversity comes from band selection,
+    not from popularity. Approachable work is guaranteed by the search query
+    (good-first-issues:>0), so it's a hard filter, not a score term. Here we just
+    rank by available issue surface + recency among repos that already qualify.
+    """
     score = 0
     stars = repo.get("stargazers_count", 0)
-    score += min(40, stars // 250)            # popularity, capped
+    score += min(15, stars // 800)               # popularity, lightly weighted
+    score += min(25, repo.get("open_issues_count", 0) // 4)  # more open work to pick from
     if has_contributing:
-        score += 20                           # accepts contributions explicitly
-    if repo.get("has_issues", True):
-        score += 10
+        score += 15                              # documents how to contribute
     if repo.get("license"):
-        score += 10
-    open_issues = repo.get("open_issues_count", 0)
-    score += min(20, open_issues)             # active issue surface = work to do
+        score += 5
     return score

@@ -20,9 +20,16 @@ async def search_repos(
     max_stars: int,
     pushed_after: str,
     per_page: int = 30,
+    require_good_first: bool = True,
 ) -> list[dict]:
-    """One GitHub repo-search page for a language, sorted by recent activity."""
+    """One GitHub repo-search page for a language in a star range.
+
+    `require_good_first` adds `good-first-issues:>0`, so every returned repo
+    provably has approachable open issues — no wasted tokens on dead repos.
+    """
     q = f"language:{language} stars:{min_stars}..{max_stars} pushed:>={pushed_after} archived:false"
+    if require_good_first:
+        q += " good-first-issues:>0"
     data = await api._request(
         "GET",
         "/search/repositories",

@@ -1,6 +1,10 @@
 # Role -> Pollinations model. Squads request a ROLE; the rtk router resolves the
 # model. Swap models here without touching squad code. Names validated against
 # docs/model.txt (Pollinations /v1/models). See docs/refactor_plan.md section 5.
+#
+# DEFAULTS ARE FREE-TIER (no paid_only models) so the system runs without pollen
+# balance. The stronger paid model for each role is noted inline — swap it in for
+# production quality once the account is funded.
 
 base_url: https://gen.pollinations.ai/v1
 
@@ -13,31 +17,31 @@ roles:
   classify:      { model: nova-fast }
 
   # triage / scoring reasoning
-  triage:        { model: gemini-fast }                # cheap, fast
+  triage:        { model: deepseek }                   # free; paid: gemini-fast
 
-  # repo mapping & summarization (1M context fits small repos whole)
-  map:           { model: gemini-flash-lite-3.1 }
-  summarize:     { model: gemini-flash-lite-3.1 }
+  # repo mapping & summarization (large context fits small repos whole)
+  map:           { model: nova }                       # free, 1M ctx; paid: gemini-flash-lite-3.1
+  summarize:     { model: nova }                       # free, 1M ctx; paid: gemini-flash-lite-3.1
 
-  # planning — strong agentic reasoning, mid cost
-  plan:          { model: kimi }
+  # planning — strong agentic reasoning
+  plan:          { model: kimi }                       # free
 
   # code generation — primary, always tried first
-  code:          { model: qwen-coder-large }
+  code:          { model: kimi-code }                  # free agentic coder; paid: qwen-coder-large
   # code generation — escalation, only after self-review fails twice
-  code_escalate: { model: claude }                     # Sonnet 4.6
+  code_escalate: { model: deepseek-pro }               # free; paid: claude (Sonnet 4.6)
 
-  # self-review of diffs — cheap sharp critic
-  review:        { model: claude-fast }                # Haiku 4.5
+  # self-review of diffs — sharp critic
+  review:        { model: gpt-5.4-mini }               # free; paid: claude-fast (Haiku)
 
   # natural prose: PR bodies, commit messages
-  prose:         { model: mistral }
+  prose:         { model: mistral }                    # free
 
   # steward replies — conversational follow-ups + tool use
-  steward:       { model: kimi }
+  steward:       { model: kimi }                       # free
 
   # web search — built-in grounding (no tool calling)
-  search:        { model: gemini-search, tools: false }
+  search:        { model: perplexity-fast, tools: false }  # free sonar; paid: gemini-search
 
   # safety gate before any public post — costs ~nothing
   safety:        { model: qwen-safety, tools: false }
@@ -45,5 +49,5 @@ roles:
   # embeddings for retrieval (rtk.retrieve)
   embed:         { model: openai-3-small, kind: embedding }
 
-  # celebration image on merge only
-  image:         { model: gptimage, kind: image }
+  # celebration / summary image
+  image:         { model: flux, kind: image }          # free; richer text: gptimage

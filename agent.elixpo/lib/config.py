@@ -1,8 +1,8 @@
 """Configuration for elixpoo. Secrets load from .env.local at the repo root.
 
-Clean-slate naming — no legacy aliases. See .env.example for the full var list.
-No database, no server: the squad system is stateless beyond GitHub issues, the
-Project board, and state/*.json. Only Pollinations + GitHub App creds + paths.
+Var names match the existing .env.local (ELIXPO_LLM_*, ELIXPO_GITHUB_*). No
+database, no server: state lives in GitHub issues, the Project board, and
+state/*.json. See .env.example for the full list.
 """
 
 from __future__ import annotations
@@ -24,46 +24,55 @@ if _envfile.exists():
 
 
 class PollinationsSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="POLLINATIONS_", extra="ignore")
+    """One key for all of Pollinations — text, image, embeddings."""
 
-    api_key: str = ""
-    base_url: str = "https://gen.pollinations.ai/v1"
+    model_config = SettingsConfigDict(extra="ignore")
+
+    api_key: str = Field(default="", validation_alias="ELIXPO_POLLINATIONS_API_KEY")
+    base_url: str = Field(default="https://gen.pollinations.ai/v1", validation_alias="ELIXPO_POLLINATIONS_BASE_URL")
 
 
 class GitHubSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ELIXPO_GH_", extra="ignore")
+    model_config = SettingsConfigDict(extra="ignore")
 
-    app_id: str = ""
-    # PEM contents (preferred — paste into the CI secret). Path is the local-dev input.
-    private_key: str = ""
-    private_key_path: str = ""
-    webhook_secret: str = ""
-    bot_username: str = "elixpoo"
-    # Control repo holding state/, candidate issues, and the Project board (owner/name).
-    control_repo: str = ""
-    # Token for plain REST when not minting an App installation token (Actions sets GITHUB_TOKEN).
+    app_id: str = Field(default="", validation_alias="ELIXPO_GITHUB_APP_ID")
+    # PEM contents (preferred for CI); path is the local-dev fallback.
+    private_key: str = Field(default="", validation_alias="ELIXPO_GITHUB_PRIVATE_KEY")
+    private_key_path: str = Field(default="", validation_alias="ELIXPO_GITHUB_PRIVATE_KEY_PATH")
+    webhook_secret: str = Field(default="", validation_alias="ELIXPO_GITHUB_WEBHOOK_SECRET")
+    bot_username: str = Field(default="elixpoo", validation_alias="ELIXPO_GITHUB_BOT_USERNAME")
+    # Control repo holding state/, candidate issues, the Project board (owner/name).
+    control_repo: str = Field(default="", validation_alias="ELIXPO_GITHUB_CONTROL_REPO")
+    # Plain token for REST/search; Actions sets GITHUB_TOKEN. For local runs, a PAT.
     token: str = Field(default="", validation_alias="GITHUB_TOKEN")
+    # OAuth App (BYOP / login flows) — not needed by squads, kept for completeness.
+    client_id: str = Field(default="", validation_alias="ELIXPO_GITHUB_CLIENT_ID")
+    client_secret: str = Field(default="", validation_alias="ELIXPO_GITHUB_CLIENT_SECRET")
 
     def resolved_private_key(self) -> str:
-        """PEM contents: the env string wins; otherwise read the file path."""
+        """PEM contents: the env string wins; otherwise read the file path (relative to repo root)."""
         if self.private_key.strip():
             return self.private_key
-        if self.private_key_path and Path(self.private_key_path).exists():
-            return Path(self.private_key_path).read_text()
+        if self.private_key_path:
+            p = Path(self.private_key_path)
+            if not p.is_absolute():
+                p = ROOT / p
+            if p.exists():
+                return p.read_text()
         return ""
 
 
 class UpstashSettings(BaseSettings):
     """Optional Redis cache (HTTP/REST). Absent → in-memory cache. Never state."""
 
-    model_config = SettingsConfigDict(env_prefix="ELIXPO_UPSTASH_", extra="ignore")
+    model_config = SettingsConfigDict(extra="ignore")
 
-    url: str = ""
-    token: str = ""
+    url: str = Field(default="", validation_alias="ELIXPO_UPSTASH_URL")
+    token: str = Field(default="", validation_alias="ELIXPO_UPSTASH_TOKEN")
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ELIXPO_", extra="ignore")
+    model_config = SettingsConfigDict(extra="ignore")
 
     pollinations: PollinationsSettings = PollinationsSettings()
     github: GitHubSettings = GitHubSettings()
@@ -74,7 +83,7 @@ class Settings(BaseSettings):
     state_dir: Path = ROOT / "state"
     prompts_dir: Path = ROOT / "prompts"
 
-    debug: bool = False
+    debug: bool = Field(default=False, validation_alias="ELIXPO_DEBUG")
 
 
 settings = Settings()

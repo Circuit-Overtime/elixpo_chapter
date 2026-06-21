@@ -34,6 +34,22 @@ def build_server(workspace: str | Path | None = None) -> FastMCP:
     def edit_file(path: str, old: str, new: str, replace_all: bool = False) -> str:
         return tools.edit_file(root, path, old, new, replace_all)
 
+    @mcp.tool(description="Apply many {old,new} edits to one file atomically (all-or-nothing).")
+    def multi_edit(path: str, edits: list[dict]) -> str:
+        return tools.multi_edit(root, path, edits)
+
+    @mcp.tool(description="Apply a unified diff to the workspace (multi-file, via git apply).")
+    def apply_patch(diff: str) -> str:
+        return tools.apply_patch(root, diff)
+
+    @mcp.tool(description="Delete a file.")
+    def delete_file(path: str) -> str:
+        return tools.delete_file(root, path)
+
+    @mcp.tool(description="Move/rename a file within the workspace.")
+    def move_file(src: str, dst: str) -> str:
+        return tools.move_file(root, src, dst)
+
     @mcp.tool(description="List a directory.")
     def list_dir(path: str = ".") -> str:
         return tools.list_dir(root, path)

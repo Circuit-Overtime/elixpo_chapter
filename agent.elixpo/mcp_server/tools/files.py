@@ -53,3 +53,45 @@ def list_dir(workspace: Path, path: str = ".") -> str:
         return f"error: {path} is not a directory"
     entries = sorted(p.iterdir(), key=lambda e: (e.is_file(), e.name))
     return "\n".join(f"{'  ' if e.is_file() else '/ '}{e.name}" for e in entries) or "(empty)"
+
+
+def multi_edit(workspace: Path, path: str, edits: list[dict]) -> str:
+    """Apply a list of {old, new} edits to one file atomically.
+
+    All edits must match (each `old` exactly once) or nothing is written — avoids
+    a half-applied file. `edits` is [{"old": "...", "new": "..."}, ...].
+    """
+    p = safe_path(workspace, path)
+    if not p.exists():
+        return f"error: {path} not found"
+    text = p.read_text()
+    for i, e in enumerate(edits):
+        old, new = e.get("old", ""), e.get("new", "")
+        c = text.count(old)
+        if c == 0:
+            return f"error: edit {i}: old_string not found in {path}"
+        if c > 1:
+            return f"error: edit {i}: old_string occurs {c}x; add context to disambiguate"
+        text = text.replace(old, new, 1)
+    p.write_text(text)
+    return f"applied {len(edits)} edits to {path}"
+
+
+def delete_file(workspace: Path, path: str) -> str:
+    p = safe_path(workspace, path)
+    if not p.exists():
+        return f"error: {path} not found"
+    if p.is_dir():
+        return f"error: {path} is a directory (refusing to recurse)"
+    p.unlink()
+    return f"deleted {path}"
+
+
+def move_file(workspace: Path, src: str, dst: str) -> str:
+    sp = safe_path(workspace, src)
+    dp = safe_path(workspace, dst)
+    if not sp.exists():
+        return f"error: {src} not found"
+    dp.parent.mkdir(parents=True, exist_ok=True)
+    sp.rename(dp)
+    return f"moved {src} -> {dst}"
