@@ -344,7 +344,7 @@ const OAuthAppsPage = () => {
                     </Box>
                     <Button
                         variant="contained"
-                        startIcon={<AddIcon />}
+                        aria-label="New OAuth App"
                         onClick={() => {
                             if (emailVerified === false) {
                                 showToast(
@@ -355,20 +355,32 @@ const OAuthAppsPage = () => {
                             }
                             setOpenDialog(true);
                         }}
+                        // Below sm: collapse to a square icon-only FAB-style
+                        // button to reclaim header width on phones. The
+                        // label content stays the same; only the surface
+                        // changes via responsive sx.
                         sx={{
                             background: "rgba(155, 123, 247, 0.15)",
                             color: "#9b7bf7",
                             border: "1px solid rgba(155, 123, 247, 0.3)",
                             fontWeight: 600,
                             textTransform: "none",
-                            fontSize: "1rem",
-                            py: 1.2,
-                            px: 3,
                             "&:hover": {
                                 background: "rgba(155, 123, 247, 0.25)",
                                 borderColor: "rgba(155, 123, 247, 0.5)",
                             },
+                            minWidth: { xs: 44, sm: "auto" },
+                            width: { xs: 44, sm: "auto" },
+                            height: { xs: 44, sm: "auto" },
+                            p: { xs: 0, sm: undefined },
+                            px: { xs: 0, sm: 3 },
+                            py: { xs: 0, sm: 1.2 },
+                            fontSize: { xs: 0, sm: "1rem" },
+                            "& .MuiButton-startIcon": {
+                                m: { xs: 0, sm: undefined },
+                            },
                         }}
+                        startIcon={<AddIcon />}
                     >
                         New OAuth App
                     </Button>

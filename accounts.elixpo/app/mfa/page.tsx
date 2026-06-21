@@ -17,6 +17,9 @@ import {
 import { startAuthentication } from "@simplewebauthn/browser";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { useCooldown } from "@/lib/hooks/useCooldown";
+
+const EMAIL_OTP_RESEND_COOLDOWN_S = 60;
 
 type Method = "passkey" | "totp" | "email_otp" | "backup_code";
 
@@ -57,6 +60,8 @@ function ChallengeInner() {
     const [emailSent, setEmailSent] = useState(false);
     const [trustDevice, setTrustDevice] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Matches the server-side cooldown floor (60s — KV minimum TTL).
+    const emailResendCd = useCooldown();
 
     useEffect(() => {
         // Source of truth = the server, because the OAuth-callback flow
@@ -205,12 +210,30 @@ function ChallengeInner() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ mfaToken }),
             });
-            const data: any = await res.json();
+            // Read once as text so CF edge HTML 5xx pages still surface.
+            const rawText = await res.text().catch(() => "");
+            let data: any = {};
+            try {
+                data = rawText ? JSON.parse(rawText) : {};
+            } catch {
+                /* non-JSON body */
+            }
             if (!res.ok) {
-                setError(data.error || "Failed to send code");
+                const detail =
+                    data.error ||
+                    (rawText
+                        ? `HTTP ${res.status}: ${rawText.slice(0, 200)}`
+                        : `HTTP ${res.status} with empty body`);
+                console.error(
+                    "[mfa challenge send-email-otp] failed — status=%s body=%s",
+                    String(res.status),
+                    rawText.slice(0, 500),
+                );
+                setError(detail);
                 return;
             }
             setEmailSent(true);
+            emailResendCd.start(EMAIL_OTP_RESEND_COOLDOWN_S);
         } finally {
             setBusy(false);
         }
@@ -411,6 +434,24 @@ function ChallengeInner() {
                                 }}
                             >
                                 {busy ? "Verifying…" : "Verify"}
+                            </Button>
+                            <Button
+                                size="small"
+                                onClick={sendEmailOtp}
+                                disabled={busy || emailResendCd.active}
+                                sx={{
+                                    mt: 1,
+                                    color: "rgba(255,255,255,0.5)",
+                                    textTransform: "none",
+                                    fontSize: "0.8rem",
+                                    "&.Mui-disabled": {
+                                        color: "rgba(255,255,255,0.3)",
+                                    },
+                                }}
+                            >
+                                {emailResendCd.active
+                                    ? `Resend in ${emailResendCd.secondsLeft}s`
+                                    : "Resend code"}
                             </Button>
                         </>
                     )

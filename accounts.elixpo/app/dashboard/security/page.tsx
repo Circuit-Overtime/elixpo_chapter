@@ -304,20 +304,29 @@ export default function SecurityPage() {
                 method: "POST",
                 credentials: "include",
             });
-            // 500-without-JSON happens when the route crashes before
-            // serializing a response (e.g. KV binding missing on CF).
-            // Surface the HTTP status so the user sees something actionable.
+            // Read the body once as text, then try JSON. Lets us surface
+            // a non-JSON 5xx (CF custom error page, function crash, etc.)
+            // verbatim instead of swallowing it with a generic toast.
+            const rawText = await res.text().catch(() => "");
             let data: any = {};
             try {
-                data = await res.json();
+                data = rawText ? JSON.parse(rawText) : {};
             } catch {
-                /* not JSON */
+                /* not JSON — keep rawText for the toast */
             }
             if (!res.ok) {
+                const detail =
+                    data.error ||
+                    (rawText
+                        ? `HTTP ${res.status}: ${rawText.slice(0, 240)}`
+                        : `HTTP ${res.status} with empty body — check CF Pages logs.`);
+                console.error(
+                    "[email-otp enroll] failed — status=%s body=%s",
+                    String(res.status),
+                    rawText.slice(0, 500),
+                );
                 setMsg({
-                    text:
-                        data.error ||
-                        `Couldn't start enrollment (HTTP ${res.status}). Check that the email-OTP route is deployed and KV is bound.`,
+                    text: `Couldn't start enrollment. ${detail}`,
                     type: "error",
                 });
                 return;
