@@ -7,7 +7,12 @@
  */
 
 import type { NextRequest } from "next/server";
-import { base64url, base64urlDecode, hmacSha256Hex, timingSafeEqual } from "./crypto";
+import {
+    base64url,
+    base64urlDecode,
+    hmacSha256Hex,
+    timingSafeEqual,
+} from "./crypto";
 import { getEnv, requireEnv } from "./env";
 
 export const SESSION_COOKIE = "pay_session";

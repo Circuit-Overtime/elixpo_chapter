@@ -30,7 +30,11 @@ export async function POST(
              WHERE p.id = ? AND a.merchant_id = ?`,
         )
         .bind(id, merchantId)
-        .first()) as { id: string; slug: string; api_key_hash: string | null } | null;
+        .first()) as {
+        id: string;
+        slug: string;
+        api_key_hash: string | null;
+    } | null;
     if (!app) {
         return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }

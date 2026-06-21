@@ -3,7 +3,11 @@ export const runtime = "edge";
 import { type NextRequest, NextResponse } from "next/server";
 import { sha256Hex, timingSafeEqual } from "@/lib/crypto";
 import { getDatabase } from "@/lib/d1-client";
-import { type EntitlementRow, expireEntitlement, toView } from "@/lib/entitlements";
+import {
+    type EntitlementRow,
+    expireEntitlement,
+    toView,
+} from "@/lib/entitlements";
 import { getEnv } from "@/lib/env";
 import { getWebhookEndpoint } from "@/lib/repo";
 import { fireEntitlementUpdated } from "@/lib/webhooks";
@@ -21,14 +25,20 @@ import { fireEntitlementUpdated } from "@/lib/webhooks";
 async function handle(request: NextRequest) {
     const secret = await getEnv("CRON_SECRET");
     if (!secret) {
-        return NextResponse.json({ error: "cron_unconfigured" }, { status: 500 });
+        return NextResponse.json(
+            { error: "cron_unconfigured" },
+            { status: 500 },
+        );
     }
     const presented =
         request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ||
         request.nextUrl.searchParams.get("key") ||
         "";
     // Constant-time compare on hashes (presented may be empty / wrong length).
-    const ok = timingSafeEqual(await sha256Hex(presented), await sha256Hex(secret));
+    const ok = timingSafeEqual(
+        await sha256Hex(presented),
+        await sha256Hex(secret),
+    );
     if (!ok) {
         return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }

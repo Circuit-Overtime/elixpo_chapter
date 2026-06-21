@@ -17,18 +17,31 @@ export default function LegalShell({
     children: React.ReactNode;
 }) {
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
+        <Box
+            sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}
+        >
             <BackgroundAurora variant="docs" />
             <Box sx={{ position: "relative", zIndex: 1 }}>
                 <Navbar />
                 <Container maxWidth="md" sx={{ pt: { xs: 6, md: 9 }, pb: 6 }}>
                     <Typography
                         component="h1"
-                        sx={{ fontWeight: 800, fontSize: { xs: "2rem", md: "2.6rem" }, letterSpacing: "-0.02em" }}
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: { xs: "2rem", md: "2.6rem" },
+                            letterSpacing: "-0.02em",
+                        }}
                     >
                         {title}
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.45)", mt: 1, mb: 4, fontSize: "0.9rem" }}>
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.45)",
+                            mt: 1,
+                            mb: 4,
+                            fontSize: "0.9rem",
+                        }}
+                    >
                         Last updated {updated}
                     </Typography>
                     <Box
@@ -46,7 +59,12 @@ export default function LegalShell({
                                 mb: 1.5,
                                 fontSize: "0.98rem",
                             },
-                            "& ul": { color: "rgba(245,245,244,0.7)", lineHeight: 1.75, pl: 3, mb: 1.5 },
+                            "& ul": {
+                                color: "rgba(245,245,244,0.7)",
+                                lineHeight: 1.75,
+                                pl: 3,
+                                mb: 1.5,
+                            },
                             "& li": { mb: 0.6 },
                             "& a": { color: "#9b7bf7" },
                             "& code": {

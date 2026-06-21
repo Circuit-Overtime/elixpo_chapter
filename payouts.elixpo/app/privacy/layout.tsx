@@ -8,7 +8,8 @@ export const metadata: Metadata = {
     alternates: { canonical: "/privacy" },
     openGraph: {
         title: "Privacy Policy | Elixpo Pay",
-        description: "How Elixpo Pay handles your data across payments and payouts.",
+        description:
+            "How Elixpo Pay handles your data across payments and payouts.",
         url: "https://payouts.elixpo.com/privacy",
     },
 };

@@ -42,7 +42,10 @@ export interface PaymentProvider {
         signature: string,
     ): Promise<boolean>;
     /** Verify an inbound webhook's raw body against its signature header. */
-    verifyWebhookSignature(rawBody: string, signature: string): Promise<boolean>;
+    verifyWebhookSignature(
+        rawBody: string,
+        signature: string,
+    ): Promise<boolean>;
     /** Parse a verified webhook body into a normalized event. */
     parseWebhook(rawBody: string, headers: Headers): NormalizedWebhookEvent;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import type { SvgIconComponent } from "@mui/icons-material";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import HubIcon from "@mui/icons-material/Hub";
@@ -7,7 +8,6 @@ import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
 import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
-import type { SvgIconComponent } from "@mui/icons-material";
 import Link from "next/link";
 import BackgroundAurora from "./components/background-aurora";
 import Footer from "./components/footer";
@@ -63,7 +63,9 @@ const TILES: Tile[] = [
 
 export default function Home() {
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
+        <Box
+            sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}
+        >
             <BackgroundAurora variant="default" />
             <Box sx={{ position: "relative", zIndex: 1 }}>
                 <Box sx={{ position: "sticky", top: 0, zIndex: 1000 }}>
@@ -76,9 +78,21 @@ export default function Home() {
                 <RoadmapSteps />
 
                 {/* ── Section 3: The platform ─────────────────────────────────── */}
-                <Box id="platform" sx={{ position: "relative", py: { xs: 7, md: 11 }, scrollMarginTop: "80px" }}>
+                <Box
+                    id="platform"
+                    sx={{
+                        position: "relative",
+                        py: { xs: 7, md: 11 },
+                        scrollMarginTop: "80px",
+                    }}
+                >
                     <Container maxWidth="lg" sx={{ position: "relative" }}>
-                        <Stack alignItems="center" textAlign="center" spacing={1.5} sx={{ mb: { xs: 4, md: 6 } }}>
+                        <Stack
+                            alignItems="center"
+                            textAlign="center"
+                            spacing={1.5}
+                            sx={{ mb: { xs: 4, md: 6 } }}
+                        >
                             <Typography
                                 sx={{
                                     fontWeight: 800,
@@ -90,10 +104,17 @@ export default function Home() {
                             >
                                 The platform
                             </Typography>
-                            <Typography sx={{ maxWidth: 600, color: "rgba(245,245,244,0.65)", fontSize: "1.05rem", lineHeight: 1.7 }}>
-                                Charge-in and pay-out, abstracted behind a single API,
-                                ledger and dashboard — so you ship monetization instead
-                                of plumbing.
+                            <Typography
+                                sx={{
+                                    maxWidth: 600,
+                                    color: "rgba(245,245,244,0.65)",
+                                    fontSize: "1.05rem",
+                                    lineHeight: 1.7,
+                                }}
+                            >
+                                Charge-in and pay-out, abstracted behind a
+                                single API, ledger and dashboard — so you ship
+                                monetization instead of plumbing.
                             </Typography>
                         </Stack>
 
@@ -114,7 +135,11 @@ export default function Home() {
                                     key={tile.title}
                                     alignItems="center"
                                     spacing={1.4}
-                                    sx={{ textAlign: "center", maxWidth: 280, mx: "auto" }}
+                                    sx={{
+                                        textAlign: "center",
+                                        maxWidth: 280,
+                                        mx: "auto",
+                                    }}
                                 >
                                     <Box
                                         sx={{
@@ -131,10 +156,22 @@ export default function Home() {
                                     >
                                         <tile.icon sx={{ fontSize: 26 }} />
                                     </Box>
-                                    <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: "#f5f5f4" }}>
+                                    <Typography
+                                        sx={{
+                                            fontWeight: 700,
+                                            fontSize: "1.05rem",
+                                            color: "#f5f5f4",
+                                        }}
+                                    >
                                         {tile.title}
                                     </Typography>
-                                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.88rem", lineHeight: 1.6 }}>
+                                    <Typography
+                                        sx={{
+                                            color: "rgba(245,245,244,0.6)",
+                                            fontSize: "0.88rem",
+                                            lineHeight: 1.6,
+                                        }}
+                                    >
                                         {tile.body}
                                     </Typography>
                                 </Stack>
@@ -152,20 +189,41 @@ export default function Home() {
                                 gap: { xs: 3, md: 6 },
                             }}
                         >
-                            <Box sx={{ maxWidth: 380, textAlign: { xs: "center", md: "left" } }}>
-                                <Typography sx={{ fontWeight: 700, fontSize: "1.3rem", mb: 1 }}>
+                            <Box
+                                sx={{
+                                    maxWidth: 380,
+                                    textAlign: { xs: "center", md: "left" },
+                                }}
+                            >
+                                <Typography
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "1.3rem",
+                                        mb: 1,
+                                    }}
+                                >
                                     A checkout your customers trust
                                 </Typography>
-                                <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.92rem", lineHeight: 1.65 }}>
-                                    Branded, edge-served, and PCI-light — the buyer sees
-                                    your plan and pays in two taps, while you receive a
-                                    signed grant the moment money clears.
+                                <Typography
+                                    sx={{
+                                        color: "rgba(245,245,244,0.6)",
+                                        fontSize: "0.92rem",
+                                        lineHeight: 1.65,
+                                    }}
+                                >
+                                    Branded, edge-served, and PCI-light — the
+                                    buyer sees your plan and pays in two taps,
+                                    while you receive a signed grant the moment
+                                    money clears.
                                 </Typography>
                             </Box>
                             <MockCheckout />
                         </Box>
 
-                        <Stack alignItems="center" sx={{ mt: { xs: 5, md: 7 } }}>
+                        <Stack
+                            alignItems="center"
+                            sx={{ mt: { xs: 5, md: 7 } }}
+                        >
                             <Button
                                 component={Link}
                                 href="/about"
@@ -178,7 +236,10 @@ export default function Home() {
                                     py: 1.2,
                                     borderRadius: "12px",
                                     border: "1px solid rgba(255,255,255,0.16)",
-                                    "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+                                    "&:hover": {
+                                        borderColor: "rgba(155,123,247,0.5)",
+                                        background: "rgba(155,123,247,0.06)",
+                                    },
                                 }}
                             >
                                 Explore the full platform →
@@ -228,7 +289,16 @@ function MockCheckout() {
             >
                 <Box sx={{ display: "flex", gap: 0.6 }}>
                     {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
-                        <Box key={c} sx={{ width: 9, height: 9, borderRadius: "50%", background: c, opacity: 0.55 }} />
+                        <Box
+                            key={c}
+                            sx={{
+                                width: 9,
+                                height: 9,
+                                borderRadius: "50%",
+                                background: c,
+                                opacity: 0.55,
+                            }}
+                        />
                     ))}
                 </Box>
                 <Box
@@ -273,15 +343,61 @@ function MockCheckout() {
             </Box>
 
             <Box sx={{ p: 2.2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-                    <Box sx={{ width: 20, height: 20, borderRadius: "6px", background: "linear-gradient(135deg, #9b7bf7, #7c5cff)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 800, color: "#fff" }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 1.5,
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: "6px",
+                            background:
+                                "linear-gradient(135deg, #9b7bf7, #7c5cff)",
+                            display: "grid",
+                            placeItems: "center",
+                            fontSize: 12,
+                            fontWeight: 800,
+                            color: "#fff",
+                        }}
+                    >
                         ₹
                     </Box>
-                    <Typography sx={{ fontSize: "0.8rem", color: "rgba(245,245,244,0.6)" }}>Elixpo Pay</Typography>
+                    <Typography
+                        sx={{
+                            fontSize: "0.8rem",
+                            color: "rgba(245,245,244,0.6)",
+                        }}
+                    >
+                        Elixpo Pay
+                    </Typography>
                 </Box>
-                <Typography sx={{ fontSize: "0.75rem", color: "rgba(245,245,244,0.45)" }}>Blogs Member</Typography>
-                <Typography sx={{ fontWeight: 800, fontSize: "1.6rem", mt: 0.2 }}>
-                    ₹199 <Box component="span" sx={{ fontSize: "0.8rem", fontWeight: 400, color: "rgba(245,245,244,0.45)" }}>/ 30 days</Box>
+                <Typography
+                    sx={{
+                        fontSize: "0.75rem",
+                        color: "rgba(245,245,244,0.45)",
+                    }}
+                >
+                    Blogs Member
+                </Typography>
+                <Typography
+                    sx={{ fontWeight: 800, fontSize: "1.6rem", mt: 0.2 }}
+                >
+                    ₹199{" "}
+                    <Box
+                        component="span"
+                        sx={{
+                            fontSize: "0.8rem",
+                            fontWeight: 400,
+                            color: "rgba(245,245,244,0.45)",
+                        }}
+                    >
+                        / 30 days
+                    </Box>
                 </Typography>
                 <Box
                     sx={{
@@ -293,7 +409,8 @@ function MockCheckout() {
                         fontSize: "0.85rem",
                         fontWeight: 700,
                         color: "#fff",
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                        background:
+                            "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
                         opacity: 0.92,
                     }}
                 >

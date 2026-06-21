@@ -26,7 +26,12 @@
  * }
  */
 
-import { base64url, base64urlDecode, hmacSha256Hex, timingSafeEqual } from "./crypto";
+import {
+    base64url,
+    base64urlDecode,
+    hmacSha256Hex,
+    timingSafeEqual,
+} from "./crypto";
 
 export interface HandoffPayload {
     app: string;
@@ -46,7 +51,11 @@ export async function signHandoff(
     ttlSeconds = 1800,
 ): Promise<string> {
     const now = Math.floor(Date.now() / 1000);
-    const full: HandoffPayload = { ...payload, iat: now, exp: now + ttlSeconds };
+    const full: HandoffPayload = {
+        ...payload,
+        iat: now,
+        exp: now + ttlSeconds,
+    };
     const body = base64url(JSON.stringify(full));
     const sig = await hmacSha256Hex(secret, body);
     return `${body}.${sig}`;

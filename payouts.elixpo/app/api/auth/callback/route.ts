@@ -17,7 +17,9 @@ export async function GET(request: NextRequest) {
     const origin = request.nextUrl.origin;
 
     if (err) {
-        return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(err)}`);
+        return NextResponse.redirect(
+            `${origin}/login?error=${encodeURIComponent(err)}`,
+        );
     }
     if (!code || !state) {
         return NextResponse.redirect(`${origin}/login?error=missing_code`);

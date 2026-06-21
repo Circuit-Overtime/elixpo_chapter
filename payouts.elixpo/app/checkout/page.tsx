@@ -14,8 +14,8 @@ import {
     Stack,
     Typography,
 } from "@mui/material";
-import { type ReactNode, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { type ReactNode, Suspense, useEffect, useState } from "react";
 import BackgroundAurora from "../components/background-aurora";
 
 declare global {
@@ -45,7 +45,12 @@ interface SessionData {
 type Toast = { msg: string; severity: "error" | "info" | "success" } | null;
 type Phase = "loading" | "ready" | "paying" | "success" | "error";
 
-const SYMBOLS: Record<string, string> = { INR: "₹", USD: "$", EUR: "€", GBP: "£" };
+const SYMBOLS: Record<string, string> = {
+    INR: "₹",
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+};
 
 function formatAmount(minor: number, currency: string): string {
     const symbol = SYMBOLS[currency] ?? `${currency} `;
@@ -57,7 +62,11 @@ function formatAmount(minor: number, currency: string): string {
 
 function periodLabel(interval = "month", count = 1): string {
     if (count > 1) return `every ${count} ${interval}s`;
-    return { day: "daily", week: "weekly", month: "monthly", year: "yearly" }[interval] ?? `per ${interval}`;
+    return (
+        { day: "daily", week: "weekly", month: "monthly", year: "yearly" }[
+            interval
+        ] ?? `per ${interval}`
+    );
 }
 
 function periodShort(interval = "month", count = 1): string {
@@ -103,11 +112,15 @@ function CheckoutInner() {
         let cancelled = false;
         (async () => {
             if (!handle) {
-                setError("This checkout link is missing or has already been used.");
+                setError(
+                    "This checkout link is missing or has already been used.",
+                );
                 setPhase("error");
                 return;
             }
-            const reqBody = sessionParam ? { session_id: sessionParam } : { token };
+            const reqBody = sessionParam
+                ? { session_id: sessionParam }
+                : { token };
             try {
                 const [res] = await Promise.all([
                     fetch("/api/checkout/session", {
@@ -118,13 +131,17 @@ function CheckoutInner() {
                     loadRazorpayScript(),
                 ]);
                 const data: any = await res.json();
-                if (!res.ok) throw new Error(data.error_description || data.error);
+                if (!res.ok)
+                    throw new Error(data.error_description || data.error);
                 if (cancelled) return;
                 setSession(data);
                 setPhase("ready");
             } catch (e: any) {
                 if (cancelled) return;
-                setError(e?.message || "We couldn't start your checkout. Please go back and try again.");
+                setError(
+                    e?.message ||
+                        "We couldn't start your checkout. Please go back and try again.",
+                );
                 setPhase("error");
             }
         })();
@@ -160,7 +177,10 @@ function CheckoutInner() {
             if (!v.ok) throw new Error(vd.error || "test_failed");
             finishSuccess(vd.return_url);
         } catch (e: any) {
-            setToast({ msg: e?.message || "Test payment failed. Try again.", severity: "error" });
+            setToast({
+                msg: e?.message || "Test payment failed. Try again.",
+                severity: "error",
+            });
             setPhase("ready");
         }
     };
@@ -169,7 +189,10 @@ function CheckoutInner() {
         if (!session) return;
         if (session.test_mode) return payTest();
         if (!window.Razorpay) {
-            setToast({ msg: "Payment library failed to load. Check your connection and retry.", severity: "error" });
+            setToast({
+                msg: "Payment library failed to load. Check your connection and retry.",
+                severity: "error",
+            });
             return;
         }
         setPhase("paying");
@@ -202,7 +225,8 @@ function CheckoutInner() {
                         }),
                     });
                     const vd: any = await v.json();
-                    if (!v.ok) throw new Error(vd.error || "verification_failed");
+                    if (!v.ok)
+                        throw new Error(vd.error || "verification_failed");
                     finishSuccess(vd.return_url);
                 } catch {
                     setToast({
@@ -215,12 +239,20 @@ function CheckoutInner() {
             modal: {
                 ondismiss: () => {
                     setPhase("ready");
-                    setToast({ msg: "Payment cancelled — you can try again.", severity: "info" });
+                    setToast({
+                        msg: "Payment cancelled — you can try again.",
+                        severity: "info",
+                    });
                 },
             },
         });
         rzp.on("payment.failed", (resp: any) => {
-            setToast({ msg: resp?.error?.description || "Payment failed. Please try another method.", severity: "error" });
+            setToast({
+                msg:
+                    resp?.error?.description ||
+                    "Payment failed. Please try another method.",
+                severity: "error",
+            });
             setPhase("ready");
         });
         rzp.open();
@@ -242,13 +274,28 @@ function CheckoutInner() {
             {phase === "error" && (
                 <Centered>
                     <Typography sx={{ fontSize: "2rem" }}>⚠️</Typography>
-                    <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", mt: 1 }}>
+                    <Typography
+                        sx={{ fontWeight: 700, fontSize: "1.15rem", mt: 1 }}
+                    >
                         Checkout unavailable
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.6)", textAlign: "center", fontSize: "0.9rem", lineHeight: 1.6, mt: 1, maxWidth: 360 }}>
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.6)",
+                            textAlign: "center",
+                            fontSize: "0.9rem",
+                            lineHeight: 1.6,
+                            mt: 1,
+                            maxWidth: 360,
+                        }}
+                    >
                         {error}
                     </Typography>
-                    <Button onClick={goBack} startIcon={<ArrowBackIcon />} sx={{ ...ghostBtn, mt: 2.5 }}>
+                    <Button
+                        onClick={goBack}
+                        startIcon={<ArrowBackIcon />}
+                        sx={{ ...ghostBtn, mt: 2.5 }}
+                    >
                         Go back
                     </Button>
                 </Centered>
@@ -256,23 +303,65 @@ function CheckoutInner() {
 
             {phase === "success" && (
                 <Centered>
-                    <Box sx={{ width: 64, height: 64, borderRadius: "50%", display: "grid", placeItems: "center", background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.3)", mb: 0.5 }}>
-                        <CheckCircleIcon sx={{ fontSize: 40, color: "#4ade80" }} />
+                    <Box
+                        sx={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: "50%",
+                            display: "grid",
+                            placeItems: "center",
+                            background: "rgba(74,222,128,0.12)",
+                            border: "1px solid rgba(74,222,128,0.3)",
+                            mb: 0.5,
+                        }}
+                    >
+                        <CheckCircleIcon
+                            sx={{ fontSize: 40, color: "#4ade80" }}
+                        />
                     </Box>
-                    <Typography sx={{ fontWeight: 800, fontSize: "1.35rem", mt: 1 }}>
+                    <Typography
+                        sx={{ fontWeight: 800, fontSize: "1.35rem", mt: 1 }}
+                    >
                         You're all set
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.7)", textAlign: "center", fontSize: "0.95rem", mt: 1, maxWidth: 360, lineHeight: 1.6 }}>
-                        Your <strong>{session?.product_name || session?.tier}</strong>
-                        {session?.app_name ? <> on <strong>{session.app_name}</strong></> : null} is now active.
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.7)",
+                            textAlign: "center",
+                            fontSize: "0.95rem",
+                            mt: 1,
+                            maxWidth: 360,
+                            lineHeight: 1.6,
+                        }}
+                    >
+                        Your{" "}
+                        <strong>
+                            {session?.product_name || session?.tier}
+                        </strong>
+                        {session?.app_name ? (
+                            <>
+                                {" "}
+                                on <strong>{session.app_name}</strong>
+                            </>
+                        ) : null}{" "}
+                        is now active.
                     </Typography>
                     {hostOf(session?.return_url) && (
-                        <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.82rem", mt: 1 }}>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.45)",
+                                fontSize: "0.82rem",
+                                mt: 1,
+                            }}
+                        >
                             Taking you back to {hostOf(session?.return_url)}…
                         </Typography>
                     )}
                     {session?.return_url && (
-                        <Button onClick={goBack} sx={{ ...primaryBtn, mt: 2.5, px: 4 }}>
+                        <Button
+                            onClick={goBack}
+                            sx={{ ...primaryBtn, mt: 2.5, px: 4 }}
+                        >
                             Continue
                         </Button>
                     )}
@@ -282,7 +371,12 @@ function CheckoutInner() {
             {split && session && (
                 <>
                     <SummaryPanel session={session} startedAt={startedAt} />
-                    <ActionPanel session={session} phase={phase} onPay={pay} onCancel={goBack} />
+                    <ActionPanel
+                        session={session}
+                        phase={phase}
+                        onPay={pay}
+                        onCancel={goBack}
+                    />
                 </>
             )}
 
@@ -293,7 +387,12 @@ function CheckoutInner() {
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >
                 {toast ? (
-                    <Alert onClose={() => setToast(null)} severity={toast.severity} variant="filled" sx={{ borderRadius: "12px", alignItems: "center" }}>
+                    <Alert
+                        onClose={() => setToast(null)}
+                        severity={toast.severity}
+                        variant="filled"
+                        sx={{ borderRadius: "12px", alignItems: "center" }}
+                    >
                         {toast.msg}
                     </Alert>
                 ) : undefined}
@@ -303,7 +402,13 @@ function CheckoutInner() {
 }
 
 /* ── Left: branded order summary + official details ────────────────────────── */
-function SummaryPanel({ session, startedAt }: { session: SessionData; startedAt: Date }) {
+function SummaryPanel({
+    session,
+    startedAt,
+}: {
+    session: SessionData;
+    startedAt: Date;
+}) {
     const ref = session.order_id || session.session_id;
     const returnHost = hostOf(session.return_url);
     return (
@@ -314,57 +419,163 @@ function SummaryPanel({ session, startedAt }: { session: SessionData; startedAt:
                 background:
                     "linear-gradient(160deg, rgba(155,123,247,0.22) 0%, rgba(124,92,255,0.10) 45%, rgba(255,255,255,0.02) 100%)",
                 borderRight: { md: "1px solid rgba(255,255,255,0.08)" },
-                borderBottom: { xs: "1px solid rgba(255,255,255,0.08)", md: "none" },
+                borderBottom: {
+                    xs: "1px solid rgba(255,255,255,0.08)",
+                    md: "none",
+                },
                 display: "flex",
                 flexDirection: "column",
             }}
         >
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
+            <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 2.5 }}
+            >
                 <Stack direction="row" spacing={1.2} alignItems="center">
-                    <Box component="img" src="/mark.png" alt="Elixpo Pay" sx={{ height: 28, width: 28, borderRadius: "8px", display: "block" }} />
+                    <Box
+                        component="img"
+                        src="/mark.png"
+                        alt="Elixpo Pay"
+                        sx={{
+                            height: 28,
+                            width: 28,
+                            borderRadius: "8px",
+                            display: "block",
+                        }}
+                    />
                     <Typography sx={{ fontWeight: 700 }}>
-                        Elixpo <Box component="span" sx={{ color: "#c4b5fd" }}>Pay</Box>
+                        Elixpo{" "}
+                        <Box component="span" sx={{ color: "#c4b5fd" }}>
+                            Pay
+                        </Box>
                     </Typography>
                 </Stack>
                 {(session.test_mode || session.mode === "test") && (
-                    <Chip label="TEST" size="small" sx={{ height: 20, fontSize: "0.6rem", fontWeight: 700, color: "#fbbf24", bgcolor: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)" }} />
+                    <Chip
+                        label="TEST"
+                        size="small"
+                        sx={{
+                            height: 20,
+                            fontSize: "0.6rem",
+                            fontWeight: 700,
+                            color: "#fbbf24",
+                            bgcolor: "rgba(251,191,36,0.12)",
+                            border: "1px solid rgba(251,191,36,0.3)",
+                        }}
+                    />
                 )}
             </Stack>
 
             {session.app_name && (
-                <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mb: 1.5 }}>
-                    <StorefrontIcon sx={{ fontSize: 14, color: "rgba(245,245,244,0.5)" }} />
-                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.8rem" }}>
-                        Payment for <strong style={{ color: "#f5f5f4" }}>{session.app_name}</strong>
+                <Stack
+                    direction="row"
+                    spacing={0.7}
+                    alignItems="center"
+                    sx={{ mb: 1.5 }}
+                >
+                    <StorefrontIcon
+                        sx={{ fontSize: 14, color: "rgba(245,245,244,0.5)" }}
+                    />
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.6)",
+                            fontSize: "0.8rem",
+                        }}
+                    >
+                        Payment for{" "}
+                        <strong style={{ color: "#f5f5f4" }}>
+                            {session.app_name}
+                        </strong>
                     </Typography>
                 </Stack>
             )}
 
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mb: 0.5 }}>
-                <Typography sx={{ fontWeight: 700, fontSize: "1.3rem" }}>{session.product_name}</Typography>
-                <Chip label={session.tier} size="small" sx={{ height: 22, fontSize: "0.7rem", color: "#86efac", bgcolor: "rgba(134,239,172,0.12)", border: "1px solid rgba(134,239,172,0.3)" }} />
+            <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                flexWrap="wrap"
+                sx={{ mb: 0.5 }}
+            >
+                <Typography sx={{ fontWeight: 700, fontSize: "1.3rem" }}>
+                    {session.product_name}
+                </Typography>
+                <Chip
+                    label={session.tier}
+                    size="small"
+                    sx={{
+                        height: 22,
+                        fontSize: "0.7rem",
+                        color: "#86efac",
+                        bgcolor: "rgba(134,239,172,0.12)",
+                        border: "1px solid rgba(134,239,172,0.3)",
+                    }}
+                />
             </Stack>
 
-            <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.7, mt: 1.5, mb: 2.5 }}>
-                <Typography sx={{ fontWeight: 800, fontSize: "2.4rem", lineHeight: 1 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 0.7,
+                    mt: 1.5,
+                    mb: 2.5,
+                }}
+            >
+                <Typography
+                    sx={{ fontWeight: 800, fontSize: "2.4rem", lineHeight: 1 }}
+                >
                     {formatAmount(session.amount, session.currency)}
                 </Typography>
-                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.9rem" }}>
+                <Typography
+                    sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.9rem" }}
+                >
                     {periodShort(session.interval, session.interval_count)}
                 </Typography>
             </Box>
 
-            <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.08)", pt: 2, mt: "auto" }}>
-                <Meta label="Billing" value={periodLabel(session.interval, session.interval_count)} />
-                {session.prefill?.email && <Meta label="Account" value={session.prefill.email} />}
-                <Meta label="Date" value={startedAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} />
+            <Box
+                sx={{
+                    borderTop: "1px solid rgba(255,255,255,0.08)",
+                    pt: 2,
+                    mt: "auto",
+                }}
+            >
+                <Meta
+                    label="Billing"
+                    value={periodLabel(
+                        session.interval,
+                        session.interval_count,
+                    )}
+                />
+                {session.prefill?.email && (
+                    <Meta label="Account" value={session.prefill.email} />
+                )}
+                <Meta
+                    label="Date"
+                    value={startedAt.toLocaleString(undefined, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                    })}
+                />
                 <Meta label="Order ref" value={ref} mono />
                 {returnHost && <Meta label="Returns to" value={returnHost} />}
             </Box>
 
-            <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mt: 2.5 }}>
-                <LockIcon sx={{ fontSize: 13, color: "rgba(245,245,244,0.4)" }} />
-                <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.74rem" }}>
+            <Stack
+                direction="row"
+                spacing={0.7}
+                alignItems="center"
+                sx={{ mt: 2.5 }}
+            >
+                <LockIcon
+                    sx={{ fontSize: 13, color: "rgba(245,245,244,0.4)" }}
+                />
+                <Typography
+                    sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.74rem" }}
+                >
                     Secured by Razorpay
                 </Typography>
             </Stack>
@@ -386,15 +597,34 @@ function ActionPanel({
 }) {
     const paying = phase === "paying";
     return (
-        <Box sx={{ flex: "1 1 auto", p: { xs: 3, md: 4 }, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <Box
+            sx={{
+                flex: "1 1 auto",
+                p: { xs: 3, md: 4 },
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+            }}
+        >
             <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", mb: 0.5 }}>
                 Complete your payment
             </Typography>
-            <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.9rem", mb: 3 }}>
+            <Typography
+                sx={{
+                    color: "rgba(245,245,244,0.55)",
+                    fontSize: "0.9rem",
+                    mb: 3,
+                }}
+            >
                 You'll be charged{" "}
-                <strong style={{ color: "#f5f5f4" }}>{formatAmount(session.amount, session.currency)}</strong>{" "}
-                {periodLabel(session.interval, session.interval_count)}, you can cancel anytime.
-                {session.test_mode || session.mode === "test" ? " (Test mode — no real charge.)" : ""}
+                <strong style={{ color: "#f5f5f4" }}>
+                    {formatAmount(session.amount, session.currency)}
+                </strong>{" "}
+                {periodLabel(session.interval, session.interval_count)}, you can
+                cancel anytime.
+                {session.test_mode || session.mode === "test"
+                    ? " (Test mode — no real charge.)"
+                    : ""}
             </Typography>
 
             <Button onClick={onPay} disabled={paying} sx={primaryBtn}>
@@ -405,24 +635,74 @@ function ActionPanel({
                     : `${session.test_mode ? "Simulate payment · " : "Pay "}${formatAmount(session.amount, session.currency)}`}
             </Button>
 
-            <Button onClick={onCancel} disabled={paying} startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />} sx={{ ...cancelBtn, mt: 1.2 }}>
+            <Button
+                onClick={onCancel}
+                disabled={paying}
+                startIcon={
+                    <ArrowBackIcon sx={{ fontSize: "1rem !important" }} />
+                }
+                sx={{ ...cancelBtn, mt: 1.2 }}
+            >
                 Cancel and go back
             </Button>
 
-            <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.76rem", textAlign: "center", mt: 2.5 }}>
+            <Typography
+                sx={{
+                    color: "rgba(245,245,244,0.4)",
+                    fontSize: "0.76rem",
+                    textAlign: "center",
+                    mt: 2.5,
+                }}
+            >
                 By paying you agree to our{" "}
-                <Box component="a" href="/terms" target="_blank" sx={{ color: "#9b7bf7", textDecoration: "none" }}>Terms</Box>{" "}
+                <Box
+                    component="a"
+                    href="/terms"
+                    target="_blank"
+                    sx={{ color: "#9b7bf7", textDecoration: "none" }}
+                >
+                    Terms
+                </Box>{" "}
                 &{" "}
-                <Box component="a" href="/refunds" target="_blank" sx={{ color: "#9b7bf7", textDecoration: "none" }}>Refund policy</Box>.
+                <Box
+                    component="a"
+                    href="/refunds"
+                    target="_blank"
+                    sx={{ color: "#9b7bf7", textDecoration: "none" }}
+                >
+                    Refund policy
+                </Box>
+                .
             </Typography>
         </Box>
     );
 }
 
-function Meta({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Meta({
+    label,
+    value,
+    mono,
+}: {
+    label: string;
+    value: string;
+    mono?: boolean;
+}) {
     return (
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.45, gap: 2 }}>
-            <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.78rem", flexShrink: 0 }}>{label}</Typography>
+        <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ py: 0.45, gap: 2 }}
+        >
+            <Typography
+                sx={{
+                    color: "rgba(245,245,244,0.45)",
+                    fontSize: "0.78rem",
+                    flexShrink: 0,
+                }}
+            >
+                {label}
+            </Typography>
             <Typography
                 sx={{
                     color: "rgba(245,245,244,0.8)",
@@ -443,7 +723,17 @@ function Meta({ label, value, mono }: { label: string; value: string; mono?: boo
 
 function Centered({ children }: { children: ReactNode }) {
     return (
-        <Box sx={{ flex: "1 1 auto", p: { xs: 4, md: 6 }, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 280 }}>
+        <Box
+            sx={{
+                flex: "1 1 auto",
+                p: { xs: 4, md: 6 },
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 280,
+            }}
+        >
             {children}
         </Box>
     );
@@ -451,7 +741,16 @@ function Centered({ children }: { children: ReactNode }) {
 
 function Shell({ children, split }: { children: ReactNode; split: boolean }) {
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", display: "grid", placeItems: "center", p: 2, color: "#f5f5f4" }}>
+        <Box
+            sx={{
+                position: "relative",
+                minHeight: "100vh",
+                display: "grid",
+                placeItems: "center",
+                p: 2,
+                color: "#f5f5f4",
+            }}
+        >
             <BackgroundAurora variant="auth" />
             <Box
                 sx={{
@@ -461,12 +760,16 @@ function Shell({ children, split }: { children: ReactNode; split: boolean }) {
                     maxWidth: split ? { xs: 440, md: 760 } : 460,
                     borderRadius: "20px",
                     overflow: "hidden",
-                    background: "linear-gradient(135deg, rgba(20,23,30,0.92) 0%, rgba(14,17,23,0.94) 100%)",
+                    background:
+                        "linear-gradient(135deg, rgba(20,23,30,0.92) 0%, rgba(14,17,23,0.94) 100%)",
                     backdropFilter: "blur(24px)",
                     border: "1px solid rgba(255,255,255,0.12)",
                     boxShadow: "0 24px 60px rgba(0,0,0,0.55)",
                     display: "flex",
-                    flexDirection: { xs: "column", md: split ? "row" : "column" },
+                    flexDirection: {
+                        xs: "column",
+                        md: split ? "row" : "column",
+                    },
                 }}
             >
                 {children}
@@ -484,7 +787,9 @@ const primaryBtn = {
     borderRadius: "12px",
     background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
     boxShadow: "0 6px 20px rgba(155,123,247,0.4)",
-    "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+    "&:hover": {
+        background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+    },
     "&.Mui-disabled": { opacity: 0.6, color: "#fff" },
 };
 
@@ -507,14 +812,24 @@ const ghostBtn = {
     py: 1,
     borderRadius: "12px",
     border: "1px solid rgba(255,255,255,0.16)",
-    "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+    "&:hover": {
+        borderColor: "rgba(155,123,247,0.5)",
+        background: "rgba(155,123,247,0.06)",
+    },
 };
 
 export default function CheckoutPage() {
     return (
         <Suspense
             fallback={
-                <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", bgcolor: "#0b0d12" }}>
+                <Box
+                    sx={{
+                        minHeight: "100vh",
+                        display: "grid",
+                        placeItems: "center",
+                        bgcolor: "#0b0d12",
+                    }}
+                >
                     <CircularProgress sx={{ color: "#9b7bf7" }} />
                 </Box>
             }

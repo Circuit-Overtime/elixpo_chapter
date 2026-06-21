@@ -53,8 +53,10 @@ export async function appFromApiKey(
         .first()) as ApiKeyApp | null;
     if (!app) return null;
     // Belt-and-suspenders constant-time compare against whichever value matched.
-    const matchesCurrent = !!app.api_key_hash && timingSafeEqual(hash, app.api_key_hash);
-    const matchesPrev = !!app.prev_api_key_hash && timingSafeEqual(hash, app.prev_api_key_hash);
+    const matchesCurrent =
+        !!app.api_key_hash && timingSafeEqual(hash, app.api_key_hash);
+    const matchesPrev =
+        !!app.prev_api_key_hash && timingSafeEqual(hash, app.prev_api_key_hash);
     if (!matchesCurrent && !matchesPrev) return null;
     return app;
 }

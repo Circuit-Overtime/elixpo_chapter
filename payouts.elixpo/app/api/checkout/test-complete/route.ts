@@ -16,20 +16,29 @@ import { getCheckoutSession } from "@/lib/repo";
 export async function POST(request: NextRequest) {
     const environment = await getEnv("ENVIRONMENT");
     if (environment === "production") {
-        return NextResponse.json({ error: "disabled_in_production" }, { status: 403 });
+        return NextResponse.json(
+            { error: "disabled_in_production" },
+            { status: 403 },
+        );
     }
 
     try {
         const body: any = await request.json().catch(() => ({}));
         const sessionId = body.session_id;
         if (!sessionId) {
-            return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+            return NextResponse.json(
+                { error: "invalid_request" },
+                { status: 400 },
+            );
         }
 
         const db = await getDatabase();
         const session = await getCheckoutSession(db, sessionId);
         if (!session) {
-            return NextResponse.json({ error: "unknown_session" }, { status: 404 });
+            return NextResponse.json(
+                { error: "unknown_session" },
+                { status: 404 },
+            );
         }
 
         const appSlug = (await db
@@ -59,7 +68,10 @@ export async function POST(request: NextRequest) {
     } catch (err: any) {
         console.error("[checkout/test-complete] error:", err);
         return NextResponse.json(
-            { error: "server_error", error_description: String(err?.message || err) },
+            {
+                error: "server_error",
+                error_description: String(err?.message || err),
+            },
             { status: 500 },
         );
     }

@@ -41,7 +41,9 @@ export async function GET(request: NextRequest) {
 
     const byProduct: Record<string, any[]> = {};
     for (const pr of prices.results ?? []) {
-        (byProduct[(pr as any).product_id] ||= []).push(pr);
+        const pid = (pr as any).product_id;
+        if (!byProduct[pid]) byProduct[pid] = [];
+        byProduct[pid].push(pr);
     }
 
     const out = (products.results ?? []).map((p: any) => ({
@@ -61,18 +63,28 @@ export async function POST(request: NextRequest) {
     const body: any = await request.json().catch(() => ({}));
     const appId = String(body.app_id || "");
     const name = String(body.name || "").trim();
-    const tier = String(body.tier || "").trim().toLowerCase();
-    const description = body.description ? String(body.description).trim() : null;
+    const tier = String(body.tier || "")
+        .trim()
+        .toLowerCase();
+    const description = body.description
+        ? String(body.description).trim()
+        : null;
 
     if (!appId || !name || !tier) {
         return NextResponse.json(
-            { error: "invalid_request", error_description: "app_id, name, tier required" },
+            {
+                error: "invalid_request",
+                error_description: "app_id, name, tier required",
+            },
             { status: 400 },
         );
     }
     if (!/^[a-z0-9_]{2,32}$/.test(tier)) {
         return NextResponse.json(
-            { error: "invalid_tier", error_description: "2-32 chars, a-z 0-9 _" },
+            {
+                error: "invalid_tier",
+                error_description: "2-32 chars, a-z 0-9 _",
+            },
             { status: 400 },
         );
     }
@@ -91,6 +103,14 @@ export async function POST(request: NextRequest) {
         .run();
 
     return NextResponse.json({
-        product: { id, app_id: appId, name, tier, description, active: 1, prices: [] },
+        product: {
+            id,
+            app_id: appId,
+            name,
+            tier,
+            description,
+            active: 1,
+            prices: [],
+        },
     });
 }

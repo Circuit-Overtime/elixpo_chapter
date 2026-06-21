@@ -34,7 +34,12 @@ export interface CatalogProductInput {
 }
 
 export interface SyncedProduct {
-    product: { id: string; name: string; tier: string; description: string | null };
+    product: {
+        id: string;
+        name: string;
+        tier: string;
+        description: string | null;
+    };
     prices: any[];
     deactivated: number;
 }
@@ -51,11 +56,18 @@ export async function syncProduct(
     appId: string,
     input: CatalogProductInput,
 ): Promise<SyncedProduct> {
-    const tier = String(input.tier || "").trim().toLowerCase();
+    const tier = String(input.tier || "")
+        .trim()
+        .toLowerCase();
     if (!/^[a-z0-9_]{2,32}$/.test(tier)) {
-        throw new SyncError("invalid_tier", "product.tier required (a-z 0-9 _)");
+        throw new SyncError(
+            "invalid_tier",
+            "product.tier required (a-z 0-9 _)",
+        );
     }
-    const name = String(input.name || tier).trim().slice(0, 80);
+    const name = String(input.name || tier)
+        .trim()
+        .slice(0, 80);
     const description = input.description
         ? String(input.description).trim().slice(0, 280)
         : null;
@@ -71,7 +83,9 @@ export async function syncProduct(
     if (existingProduct) {
         productId = existingProduct.id;
         await db
-            .prepare("UPDATE products SET name = ?, description = ?, active = 1 WHERE id = ?")
+            .prepare(
+                "UPDATE products SET name = ?, description = ?, active = 1 WHERE id = ?",
+            )
             .bind(name, description, productId)
             .run();
     } else {
@@ -104,9 +118,17 @@ export async function syncProduct(
             ? (t.interval as string)
             : "month";
         const intervalCount = Math.max(1, Number(t.interval_count || 1));
-        const region = t.region ? String(t.region).toUpperCase().slice(0, 2) : null;
-        const nickname = t.nickname ? String(t.nickname).trim().slice(0, 40) : null;
-        if (!SYNC_CURRENCIES.includes(currency) || !Number.isInteger(unit) || unit <= 0) {
+        const region = t.region
+            ? String(t.region).toUpperCase().slice(0, 2)
+            : null;
+        const nickname = t.nickname
+            ? String(t.nickname).trim().slice(0, 40)
+            : null;
+        if (
+            !SYNC_CURRENCIES.includes(currency) ||
+            !Number.isInteger(unit) ||
+            unit <= 0
+        ) {
             continue; // skip invalid price rows
         }
         const k = priceKey(currency, region, interval);
@@ -121,7 +143,14 @@ export async function syncProduct(
                 )
                 .bind(unit, nickname, intervalCount, match.id)
                 .run();
-            out.push({ id: match.id, currency, unit_amount: unit, interval, region, updated: true });
+            out.push({
+                id: match.id,
+                currency,
+                unit_amount: unit,
+                interval,
+                region,
+                updated: true,
+            });
         } else {
             const pid = newId("price");
             await db
@@ -129,9 +158,25 @@ export async function syncProduct(
                     `INSERT INTO prices (id, product_id, nickname, currency, unit_amount, type, interval, interval_count, region, provider, active)
                      VALUES (?, ?, ?, ?, ?, 'one_time', ?, ?, ?, 'razorpay', 1)`,
                 )
-                .bind(pid, productId, nickname, currency, unit, interval, intervalCount, region)
+                .bind(
+                    pid,
+                    productId,
+                    nickname,
+                    currency,
+                    unit,
+                    interval,
+                    intervalCount,
+                    region,
+                )
                 .run();
-            out.push({ id: pid, currency, unit_amount: unit, interval, region, created: true });
+            out.push({
+                id: pid,
+                currency,
+                unit_amount: unit,
+                interval,
+                region,
+                created: true,
+            });
         }
     }
 
@@ -139,7 +184,10 @@ export async function syncProduct(
     let deactivated = 0;
     for (const e of existing) {
         if (e.active && !seen.has(priceKey(e.currency, e.region, e.interval))) {
-            await db.prepare("UPDATE prices SET active = 0 WHERE id = ?").bind(e.id).run();
+            await db
+                .prepare("UPDATE prices SET active = 0 WHERE id = ?")
+                .bind(e.id)
+                .run();
             deactivated++;
         }
     }

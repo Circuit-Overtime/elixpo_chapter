@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import type { D1Database } from "@cloudflare/workers-types";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireDashboard } from "@/lib/dashboard-auth";
 import { resolveGrace } from "@/lib/grace";
 import { newId } from "@/lib/ids";
@@ -84,7 +84,12 @@ export async function GET(
                       prev_secret_expires_at:
                           ep.prev_signing_secret &&
                           ep.prev_signing_secret_expires_at &&
-                          new Date(ep.prev_signing_secret_expires_at.replace(" ", "T") + "Z") > new Date()
+                          new Date(
+                              `${ep.prev_signing_secret_expires_at.replace(
+                                  " ",
+                                  "T",
+                              )}Z`,
+                          ) > new Date()
                               ? ep.prev_signing_secret_expires_at
                               : null,
                   }
@@ -110,7 +115,10 @@ export async function PUT(
     const url = String(body.url || "").trim();
     if (!/^https:\/\/.+/i.test(url)) {
         return NextResponse.json(
-            { error: "invalid_url", error_description: "A https:// URL is required" },
+            {
+                error: "invalid_url",
+                error_description: "A https:// URL is required",
+            },
             { status: 400 },
         );
     }
@@ -121,14 +129,18 @@ export async function PUT(
     let secretOnce: string | null = null;
     if (ep) {
         await db
-            .prepare("UPDATE webhook_endpoints SET url = ?, events = ?, status = 'active' WHERE id = ?")
+            .prepare(
+                "UPDATE webhook_endpoints SET url = ?, events = ?, status = 'active' WHERE id = ?",
+            )
             .bind(url, events, ep.id)
             .run();
         // Mint a secret if this endpoint somehow never had one.
         if (!ep.signing_secret) {
             secretOnce = genSigningSecret();
             await db
-                .prepare("UPDATE webhook_endpoints SET signing_secret = ? WHERE id = ?")
+                .prepare(
+                    "UPDATE webhook_endpoints SET signing_secret = ? WHERE id = ?",
+                )
                 .bind(secretOnce, ep.id)
                 .run();
         }
@@ -166,7 +178,10 @@ export async function POST(
     const ep = await getEndpoint(db, app.id);
     if (!ep) {
         return NextResponse.json(
-            { error: "no_endpoint", error_description: "Set a webhook URL first." },
+            {
+                error: "no_endpoint",
+                error_description: "Set a webhook URL first.",
+            },
             { status: 400 },
         );
     }
