@@ -80,7 +80,6 @@ export function DocList({ items }: { items: React.ReactNode[] }) {
             }}
         >
             {items.map((it, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: static docs list
                 <li key={i}>{it}</li>
             ))}
         </Box>
