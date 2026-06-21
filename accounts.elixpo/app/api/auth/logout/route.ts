@@ -20,12 +20,37 @@ import { hashString } from "@/lib/webcrypto";
  *   "logout_redirect_uri": "https://app.example.com/logged-out"
  * }
  */
+// Only echo a logout-redirect URL back to the client if it points to an
+// allowed destination. The SSO flow expects redirects only to first-party
+// hosts (elixpo.com + subdomains). Anything else is dropped — silently —
+// to prevent us from being abused as an open-redirect oracle for phishing.
+function safeRedirectFor(input: unknown): string | undefined {
+    if (typeof input !== "string" || input.length === 0) return undefined;
+    try {
+        const u = new URL(input);
+        if (u.protocol !== "https:" && u.protocol !== "http:") return undefined;
+        if (u.hostname === "elixpo.com" || u.hostname.endsWith(".elixpo.com")) {
+            return input;
+        }
+        // localhost is permitted in dev only, never in prod responses.
+        if (
+            process.env.NODE_ENV !== "production" &&
+            (u.hostname === "localhost" || u.hostname === "127.0.0.1")
+        ) {
+            return input;
+        }
+        return undefined;
+    } catch {
+        return undefined;
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         const body: any = await request.json().catch(() => ({}));
         const refreshToken =
             body.refresh_token || request.cookies.get("refresh_token")?.value;
-        const logoutRedirectUri = body.logout_redirect_uri;
+        const logoutRedirectUri = safeRedirectFor(body.logout_redirect_uri);
 
         // Revoke refresh token in database if available
         if (refreshToken) {

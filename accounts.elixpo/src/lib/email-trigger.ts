@@ -4,9 +4,7 @@ export type EmailType =
     | "signup_confirmation"
     | "signin_notification"
     | "api_key_created"
-    | "account_suspended"
-    | "admin_notification"
-    | "admin_digest";
+    | "account_suspended";
 
 export async function triggerEmail(
     type: EmailType,

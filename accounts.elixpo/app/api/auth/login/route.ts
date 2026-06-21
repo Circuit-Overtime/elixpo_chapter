@@ -207,19 +207,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get full user for isAdmin flag
-        const isAdminUser = !!user.is_admin;
-
         // Session duration: 30 days default, 90 days with "remember me"
         const refreshDays = rememberMe ? 90 : 30;
 
-        // Create tokens (include isAdmin in access token)
         const accessToken = await createAccessToken(
             user.id,
             email,
             provider as any,
             parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
-            isAdminUser,
         );
         const refreshTokenJWT = await createRefreshToken(
             user.id,
@@ -263,7 +258,6 @@ export async function POST(request: NextRequest) {
                 id: user.id,
                 email,
                 provider,
-                isAdmin: isAdminUser,
                 displayName: user.display_name || null,
             },
             tokens: {

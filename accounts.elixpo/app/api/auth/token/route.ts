@@ -170,7 +170,6 @@ export async function POST(request: NextRequest) {
                     user.email,
                     "email",
                     parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
-                    !!user.is_admin,
                 );
                 const refreshTokenJWT = await createRefreshToken(
                     userId,
@@ -283,7 +282,6 @@ export async function POST(request: NextRequest) {
 
                 // Get fresh user data
                 const user = (await getUserById(db, payload.sub)) as any;
-                const isAdmin = user ? !!user.is_admin : false;
                 const email = user ? user.email : payload.email;
 
                 const newAccessToken = await createAccessToken(
@@ -291,7 +289,6 @@ export async function POST(request: NextRequest) {
                     email,
                     payload.provider,
                     parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
-                    isAdmin,
                 );
 
                 const newRefreshToken = await createRefreshToken(

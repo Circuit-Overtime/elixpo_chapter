@@ -70,15 +70,6 @@ export async function POST(request: NextRequest) {
                 });
                 break;
             }
-            case "admin_notification":
-                await sendAdminNotificationEmail(
-                    to,
-                    data.subject,
-                    data.message,
-                    data.resourceType,
-                    data.resourceName,
-                );
-                break;
             default:
                 return NextResponse.json(
                     { error: `Unknown email type: ${type}` },
@@ -87,41 +78,12 @@ export async function POST(request: NextRequest) {
         }
         return NextResponse.json({ success: true });
     } catch (err: any) {
+        // Log details server-side; return a generic message to callers so
+        // we don't leak SMTP/transport internals to a misbehaving client.
         console.error("[send-email]", err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        return NextResponse.json(
+            { error: "Failed to send email" },
+            { status: 500 },
+        );
     }
-}
-
-async function sendAdminNotificationEmail(
-    to: string,
-    subject: string,
-    message: string,
-    resourceType: string,
-    resourceName: string,
-) {
-    const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #f1f5f9; padding: 32px; border-radius: 8px;">
-      <div style="margin-bottom: 24px;">
-        <span style="background: #22c55e; color: #000; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700; text-transform: uppercase;">Admin Alert</span>
-      </div>
-      <h2 style="color: #f1f5f9; margin-bottom: 8px;">${subject}</h2>
-      <p style="color: #94a3b8; line-height: 1.6;">${message}</p>
-      ${
-          resourceType
-              ? `<div style="background: #1e293b; padding: 16px; border-radius: 6px; margin-top: 16px;">
-        <span style="color: #64748b; font-size: 12px;">${resourceType}</span>
-        <p style="color: #f1f5f9; margin: 4px 0; font-weight: 600;">${resourceName}</p>
-      </div>`
-              : ""
-}
-      <hr style="border-color: #1e293b; margin: 24px 0;" />
-      <p style="color: #475569; font-size: 12px;">Elixpo Accounts — Admin Notifications</p>
-    </div>
-  `;
-
-    await sendEmail({
-        to,
-        subject: `[Elixpo Admin] ${subject}`,
-        html,
-    });
 }

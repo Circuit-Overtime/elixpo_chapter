@@ -43,63 +43,13 @@ services:
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://accounts.elixpo.com}
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/metrics > /dev/null || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/health > /dev/null || exit 1']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
     networks:
       - elixpo-net
-
-  # ─── Prometheus ─────────────────────────────────────────────────────────────
-  prometheus:
-    image: prom/prometheus:v2.52.0
-    container_name: elixpo-prometheus
-    restart: unless-stopped
-    ports:
-      - '9090:9090'
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
-    networks:
-      - elixpo-net
-    depends_on:
-      - app
-
-  # ─── Grafana ────────────────────────────────────────────────────────────────
-  grafana:
-    image: grafana/grafana:11.1.0
-    container_name: elixpo-grafana
-    restart: unless-stopped
-    ports:
-      - '3001:3000'
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
-      GF_USERS_ALLOW_SIGN_UP: 'false'
-      GF_SERVER_DOMAIN: ${GRAFANA_DOMAIN:-localhost}
-      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3001}
-      GF_ANALYTICS_REPORTING_ENABLED: 'false'
-      GF_ANALYTICS_CHECK_FOR_UPDATES: 'false'
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    networks:
-      - elixpo-net
-    depends_on:
-      - prometheus
-
-volumes:
-  prometheus-data:
-  grafana-data:
 
 networks:
   elixpo-net:

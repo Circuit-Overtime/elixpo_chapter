@@ -1,6 +1,5 @@
 "use client";
 
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import BlockIcon from "@mui/icons-material/Block";
 import DevicesOtherIcon from "@mui/icons-material/DevicesOther";
@@ -33,7 +32,6 @@ import { generatePixelAvatar } from "@/lib/pixel-avatar";
 interface UserProfile {
     email: string;
     id: string;
-    isAdmin: boolean;
     provider: string;
     avatar?: string | null;
     emailVerified?: boolean;
@@ -1353,28 +1351,6 @@ const ProfilePage = () => {
                                             textTransform: "capitalize",
                                         }}
                                     />
-                                    {profile.isAdmin && (
-                                        <Chip
-                                            icon={
-                                                <AdminPanelSettingsIcon
-                                                    sx={{
-                                                        fontSize:
-                                                            "0.9rem !important",
-                                                        color: "#fbbf24 !important",
-                                                    }}
-                                                />
-                                            }
-                                            label="Admin"
-                                            size="small"
-                                            sx={{
-                                                backgroundColor:
-                                                    "rgba(251,191,36,0.12)",
-                                                color: "#fbbf24",
-                                                border: "1px solid rgba(251,191,36,0.3)",
-                                                fontWeight: 600,
-                                            }}
-                                        />
-                                    )}
                                 </Box>
                             </Box>
                         </Box>

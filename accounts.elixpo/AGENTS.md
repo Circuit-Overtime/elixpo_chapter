@@ -20,15 +20,13 @@ app/
   setup-name/                - Post-register display name setup
   authorize/ + oauth/        - OAuth consent + authorization
   dashboard/                 - Developer portal (sidebar layout)
-    oauth-apps/  profile/  webhooks/
-  admin/                     - Admin panel (RBAC-gated)
+    oauth-apps/  profile/  webhooks/  services/
   verify/  about/  docs/     - Public pages
   api/auth/                  - Public auth surface (login/register/token/me/...)
-  api/admin/                 - Admin-only (RBAC-guarded)
   api/sso/                   - Third-party SSO callbacks
   api/avatar/                - Avatar generation (pixel-avatar)
-  api/metrics/               - Prometheus scraping endpoint
   api/internal/              - Service-to-service (shared-secret)
+  api/health/                - Public health check
 src/lib/
   db.ts                      - D1 helpers (queries, transactions)
   jwt.ts                     - JWT sign/verify (Web Crypto, HS256)
@@ -37,15 +35,12 @@ src/lib/
   smtp-client.ts             - cloudflare:sockets SMTP
   oauth-config.ts            - Client registration + scope validation
   api-auth-middleware.ts     - Bearer + session auth for API routes
-  rbac-middleware.ts         - Role-based gating
   rate-limit.ts + rate-limit-middleware.ts  - KV-backed rate limiting
   webhook-service.ts         - Outbound webhook dispatch + retries
   api-key-service.ts         - API key CRUD + hashing
-  prometheus-metrics.ts      - Metrics registry
 src/workers/migrations/      - D1 schema migrations (wrangler d1 migrations)
 types/                       - Shared TS types
-monitoring/                  - Grafana/Prom dashboards + alerts
-scripts/                     - One-off maintenance (seed-admin, etc.)
+scripts/                     - One-off maintenance scripts
 ```
 
 External consumers of the OAuth API: see `docs/OAUTH_INTEGRATION.md`.
@@ -154,6 +149,5 @@ Agent voice specifically: **never say "Claude", "Claude Code", "AI", "LLM", "ana
 
 ## Monitoring
 
-- Prometheus metrics at `/api/metrics` (internal auth required).
-- Grafana dashboards + alert rules in `monitoring/`.
-- Admin notifications via `src/lib/admin-notifications.ts` (fires on RBAC events, mass failures, suspicious activity).
+- Health check at `/api/health` for uptime probing.
+- Cloudflare Pages provides request analytics out of the box.

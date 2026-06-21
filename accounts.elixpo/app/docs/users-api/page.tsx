@@ -19,7 +19,6 @@ const USER_API_RES = `{
   "id": "u_9b7bf7c2-866e-ee9d-3e48-ee9d3e488297",
   "email": "developer@elixpo.com",
   "displayName": "swift-falcon",
-  "isAdmin": false,
   "provider": "email",
   "emailVerified": true
 }`;
@@ -231,36 +230,6 @@ export default function UsersApiPage() {
                             >
                                 The user's username/nickname (e.g.{" "}
                                 <code>swift-falcon</code>).
-                            </TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell
-                                sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
-                                }}
-                            >
-                                <code>isAdmin</code>
-                            </TableCell>
-                            <TableCell
-                                sx={{
-                                    color: "#9b7bf7",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
-                                }}
-                            >
-                                Boolean
-                            </TableCell>
-                            <TableCell
-                                sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
-                                }}
-                            >
-                                Indicates if the user has administrator
-                                privileges on the platform.
                             </TableCell>
                         </TableRow>
                         <TableRow>
