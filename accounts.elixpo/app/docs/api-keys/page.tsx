@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import CodeBlock from "../../components/code-block";
 
-const API_KEY_HEADER = `GET https://accounts.elixpo.com/api/admin/users
+const API_KEY_HEADER = `GET https://accounts.elixpo.com/api/auth/me
 Authorization: Bearer elx_live_9b7bf7c2866eee9d3e488297`;
 
 export default function ApiKeysDocsPage() {

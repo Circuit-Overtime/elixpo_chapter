@@ -322,7 +322,7 @@ export async function GET(
             );
         }
 
-        const newUser = { id: userId, email, is_admin: 0 };
+        const newUser = { id: userId, email };
         return await buildSuccessResponse(
             request,
             db,
@@ -374,7 +374,6 @@ async function buildSuccessResponse(
         email,
         provider.toLowerCase() as "google" | "github",
         parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
-        !!user.is_admin,
     );
 
     const refreshToken = await createRefreshTokenJWT(
@@ -418,8 +417,7 @@ async function buildSuccessResponse(
 
     // If there's a pending ?next= redirect (e.g. from OAuth authorize flow), use it
     const oauthNext = request.cookies.get("oauth_next")?.value;
-    const intendedDest =
-        oauthNext || (user.is_admin ? "/admin" : "/dashboard/oauth-apps");
+    const intendedDest = oauthNext || "/dashboard/oauth-apps";
     // A username (handle) is mandatory. Until one is set, force /setup-name and
     // preserve the intended destination so the SSO flow resumes afterward.
     const needsUsername = !(user as { username?: string }).username;

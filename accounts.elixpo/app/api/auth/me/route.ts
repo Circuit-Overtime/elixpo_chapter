@@ -60,7 +60,6 @@ async function tryAutoRefresh(_request: NextRequest, refreshToken: string) {
             );
         }
 
-        const isAdmin = !!user.is_admin;
         const accessMaxAge =
             parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) * 60;
 
@@ -80,7 +79,6 @@ async function tryAutoRefresh(_request: NextRequest, refreshToken: string) {
             user.email,
             payload.provider,
             parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
-            isAdmin,
         );
         const newRefreshToken = await createRefreshToken(
             payload.sub,
@@ -105,7 +103,6 @@ async function tryAutoRefresh(_request: NextRequest, refreshToken: string) {
             userId: payload.sub,
             email: user.email,
             displayName: user.display_name || null,
-            isAdmin,
             provider:
                 payload.provider || (identity as any)?.provider || "email",
             avatar: (identity as any)?.provider_profile_url || null,
@@ -185,7 +182,6 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Fetch fresh user data from DB to ensure isAdmin is current
         try {
             const db = await getDatabase();
             const dbUser = await getUserById(db, payload.sub);
@@ -205,7 +201,6 @@ export async function GET(request: NextRequest) {
                 email: payload.email,
                 username: (dbUser as any).username || null,
                 displayName: (dbUser as any).display_name || null,
-                isAdmin: !!(dbUser as any).is_admin,
                 provider:
                     payload.provider || (identity as any)?.provider || "email",
                 avatar: (identity as any)?.provider_profile_url || null,
@@ -225,7 +220,6 @@ export async function GET(request: NextRequest) {
                 id: payload.sub,
                 userId: payload.sub,
                 email: payload.email,
-                isAdmin: payload.isAdmin ?? false,
                 provider: payload.provider,
                 expiresAt: new Date(payload.exp * 1000),
             });
@@ -512,7 +506,6 @@ export async function PATCH(request: NextRequest) {
                 country: (dbUser as any).country ?? null,
                 city: (dbUser as any).city ?? null,
                 location: (dbUser as any).freeform_location ?? null,
-                isAdmin: !!(dbUser as any).is_admin,
                 provider: payload.provider,
             });
         } catch (dbError) {

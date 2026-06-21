@@ -67,8 +67,6 @@ const LoginContent = () => {
                         window.location.href = next;
                     } else if (!data.displayName) {
                         window.location.href = "/setup-name";
-                    } else if (data.isAdmin) {
-                        window.location.href = "/admin";
                     } else {
                         window.location.href = "/dashboard/oauth-apps";
                     }
@@ -112,8 +110,6 @@ const LoginContent = () => {
                 window.location.href = next;
             } else if (data.needsDisplayName) {
                 window.location.href = "/setup-name";
-            } else if (data.user?.isAdmin) {
-                window.location.href = "/admin";
             } else {
                 window.location.href = "/dashboard/oauth-apps";
             }

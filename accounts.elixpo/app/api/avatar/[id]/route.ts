@@ -2,6 +2,22 @@ export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
+const SAFE_AVATAR_HOSTS = [
+    "lh3.googleusercontent.com", // Google
+    "avatars.githubusercontent.com", // GitHub
+];
+
+function isSafeAvatarUrl(input: string): boolean {
+    try {
+        const u = new URL(input);
+        if (u.protocol !== "https:") return false;
+        return SAFE_AVATAR_HOSTS.some(
+            (h) => u.hostname === h || u.hostname.endsWith(`.${h}`),
+        );
+    } catch {
+        return false;
+    }
+}
 
 export async function GET(
     _request: NextRequest,
@@ -20,7 +36,10 @@ export async function GET(
             .bind(id)
             .first<{ provider_profile_url: string | null }>();
 
-        if (identity?.provider_profile_url) {
+        if (
+            identity?.provider_profile_url &&
+            isSafeAvatarUrl(identity.provider_profile_url)
+        ) {
             return NextResponse.redirect(identity.provider_profile_url, 302);
         }
 
