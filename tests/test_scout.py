@@ -108,10 +108,22 @@ async def test_discover_candidates_filters_and_scores():
         _repo(full_name="o/ok", stargazers_count=300),
     ]
     api = FakeAPI(items)
-    cands = await discover_candidates(api, ["python"], blocklist=set(), now=NOW)
+    # check_contributing=True exercises the optional enrich path
+    cands = await discover_candidates(api, ["python"], blocklist=set(), now=NOW, check_contributing=True)
     names = [c.full_name for c in cands]
     assert "o/good" in names and "o/ok" in names
     assert "o/small" not in names and "o/optout" not in names
     # sorted by score desc
     assert cands[0].full_name == "o/good"
     assert all(c.has_contributing for c in cands)
+
+
+@pytest.mark.asyncio
+async def test_discover_search_only_is_fast_no_per_repo_calls():
+    """Default path does NO per-repo HTTP (no CONTRIBUTING fetch)."""
+    from agents.scout.__main__ import discover_candidates
+
+    api = FakeAPI([_repo(full_name="o/a", stargazers_count=500)])
+    cands = await discover_candidates(api, ["python"], blocklist=set(), now=NOW)
+    assert cands and cands[0].has_contributing is False
+    assert api.searches == 1  # one search, zero contents calls

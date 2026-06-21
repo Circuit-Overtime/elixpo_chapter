@@ -35,13 +35,15 @@ async def discover_candidates(
     now: datetime | None = None,
     *,
     max_candidates: int = MAX_CANDIDATES,
-    check_contributing: bool = True,
+    check_contributing: bool = False,
 ) -> list[RepoCandidate]:
-    """search → filter → rank → enrich. Injectable api for tests.
+    """search → filter → rank. Injectable api for tests.
 
-    Performance: searches run concurrently per language; the CONTRIBUTING check
-    (an HTTP call each) runs ONLY on the post-ranking shortlist, concurrently —
-    not on every repo. Keeps a full run to a few seconds + a couple dozen calls.
+    Scout is a CHEAP broad sweep: GitHub search + filter + score only, no
+    per-repo HTTP. Deep per-repo analysis (CONTRIBUTING, community signals, the
+    §4 scorer) is Triage's job — it reads each candidate anyway. The optional
+    `check_contributing` enrich path (concurrent, shortlist-only) is kept for
+    callers that want it, but it's off by default so Scout stays fast.
     """
     now = now or datetime.now(timezone.utc)
     pushed_after = (now - timedelta(days=ACTIVE_DAYS)).date().isoformat()

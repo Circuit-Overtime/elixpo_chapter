@@ -18,9 +18,9 @@ def apply_patch(workspace: Path, diff: str) -> str:
         f.write(diff if diff.endswith("\n") else diff + "\n")
         patch_path = f.name
     try:
-        # --3way lets it apply against drifted context; --whitespace=nowarn keeps output clean
+        # Apply to the working tree (no index needed). --whitespace=nowarn keeps output clean.
         proc = subprocess.run(
-            ["git", "apply", "--3way", "--whitespace=nowarn", patch_path],
+            ["git", "apply", "--whitespace=nowarn", patch_path],
             cwd=str(root),
             capture_output=True,
             text=True,
