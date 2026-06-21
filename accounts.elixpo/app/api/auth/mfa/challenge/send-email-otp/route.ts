@@ -101,16 +101,34 @@ export async function POST(request: NextRequest) {
     const ipAddress =
         typeof body?.ipAddress === "string" ? body.ipAddress : "unknown";
 
-    await sendMail("login_otp", user.email, {
+    // Surface delivery failures (mails.elixpo signature mismatch,
+    // missing hook key, network error, etc.) instead of returning 200
+    // with sent:true while the inbox stays empty — same pattern as the
+    // enrollment route.
+    const mailResult = await sendMail("login_otp", user.email, {
         name: user.display_name || user.email.split("@")[0],
         otp_code: code,
         expiry_minutes: Math.ceil(OTP_TTL_SECONDS / 60),
         device,
         ip_address: ipAddress,
     });
+    if (!mailResult.ok) {
+        // Burn the KV entries so the user can retry immediately without
+        // hitting the cooldown — the failed attempt shouldn't penalize
+        // them.
+        await kv.delete(`mfa_email_otp:${mfaToken.slice(-32)}`).catch(() => {});
+        await kv.delete(cooldownKey).catch(() => {});
+        return NextResponse.json(
+            {
+                error: `Couldn't send the verification email: ${mailResult.error ?? "unknown"}`,
+            },
+            { status: 502 },
+        );
+    }
 
     return NextResponse.json({
         sent: true,
         expires_in: OTP_TTL_SECONDS,
+        delivery_id: mailResult.delivery_id,
     });
 }
