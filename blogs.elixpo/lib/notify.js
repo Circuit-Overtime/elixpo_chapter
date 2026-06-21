@@ -28,16 +28,56 @@
  * @param {string} [opts.targetTitle] - Blog title, org name, etc.
  * @param {string} [opts.targetUrl]   - URL to navigate to
  */
+
+  const PREF_MAP = {
+    follow: 'follow_enabled',
+    comment: 'comment_enabled',
+    like: 'like_enabled',
+    mention: 'mention_enabled',
+    org_invite: 'org_invite_enabled',
+    blog_invite: 'blog_invite_enabled',
+    blog_published: 'blog_published_enabled',
+  };
+
+
 export async function notify(db, opts) {
   // Don't notify yourself
   if (opts.actorId && opts.actorId === opts.userId) return;
 
   try {
+// prefKey comes from the hardcoded PREF_MAP above
+// and is never user-controlled.
+    const prefKey = PREF_MAP[opts.type];
+    if (prefKey) {
+      const prefs = await db.prepare(`
+        SELECT ${prefKey}
+        FROM notification_prefs
+        WHERE user_id = ?
+      `)
+        .bind(opts.userId)
+        .first();
+
+      if (prefs && prefs[prefKey] === 0) {
+        return;
+      }
+    }
+
     const id = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
 
     await db.prepare(`
-      INSERT INTO notifications (id, user_id, type, actor_id, actor_name, actor_avatar, target_id, target_title, target_url, created_at)
+      INSERT INTO notifications (
+        id,
+        user_id,
+        type,
+        actor_id,
+        actor_name,
+        actor_avatar,
+        target_id,
+        target_title,
+        target_url,
+        created_at
+      )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
@@ -55,7 +95,6 @@ export async function notify(db, opts) {
     console.error('Failed to create notification:', e?.message || e);
   }
 }
-
 /**
  * Notify multiple users at once (e.g. all org members, all followers).
  */

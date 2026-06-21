@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
@@ -30,6 +30,7 @@ function timeAgo(ts) {
 
 function NotificationDropdown() {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -103,7 +104,7 @@ function NotificationDropdown() {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => router.push('/notifications')}
         className="relative flex items-center justify-center w-9 h-9 rounded-lg transition-colors"
         style={{ color: 'var(--text-muted)' }}
         onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
