@@ -1,5 +1,7 @@
 'use client';
 
+import Link from "next/link";
+
 export default function PublisherPage() {
     return  ( 
         <div className="container absolute flex flex-col h-full max-w-[2560px] bg-[#030712] box-border">
@@ -60,7 +62,12 @@ export default function PublisherPage() {
                 <div className="settingsNav flex flex-row w-full h-[10%] items-center justify-left gap-10 mt-2 border-b-2 border-[#1D202A]">
                     <p className="settingsNavItem text-[#888] text-lg cursor-pointer select-none">Account</p>
                     <p className="settingsNavItem text-[#888] text-lg cursor-pointer selected underline  select-none">Publisher</p>
-                    <p className="settingsNavItem text-[#888] text-lg cursor-pointer select-none">Notification</p>
+                    <Link
+                    href="/settings/notifications"
+                    className="settingsNavItem text-[#888] text-lg cursor-pointer select-none"
+                    >
+                    Notification
+                    </Link>
                     <p className="settingsNavItem text-[#888] text-lg cursor-pointer select-none">Organisation</p>
                 </div>
 

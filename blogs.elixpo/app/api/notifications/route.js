@@ -45,7 +45,7 @@ export async function PUT(request) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const { id, all } = await request.json();
+  const { id, all , read } = await request.json();
 
   try {
     const { getDB } = await import('../../../lib/cloudflare');
@@ -55,9 +55,14 @@ export async function PUT(request) {
       await db.prepare('UPDATE notifications SET read = 1 WHERE user_id = ? AND read = 0')
         .bind(session.userId).run();
     } else if (id) {
-      await db.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?')
-        .bind(id, session.userId).run();
-    }
+        const markRead = read === undefined ? true : read;
+
+        await db.prepare(
+          'UPDATE notifications SET read = ? WHERE id = ? AND user_id = ?'
+        )
+          .bind(markRead ? 1 : 0, id, session.userId)
+          .run();
+      }
 
     return NextResponse.json({ ok: true });
   } catch (e) {

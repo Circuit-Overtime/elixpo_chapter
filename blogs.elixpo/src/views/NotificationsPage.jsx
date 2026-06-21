@@ -133,6 +133,31 @@ export default function NotificationsPage() {
     setUnread(prev => Math.max(0, prev - 1));
   };
 
+  const toggleRead = async (id, read) => {
+  await fetch('/api/notifications', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id,
+      read,
+    }),
+  });
+
+  setNotifications(prev =>
+    prev.map(n =>
+      n.id === id
+        ? { ...n, read: read ? 1 : 0 }
+        : n
+    )
+  );
+
+  setUnread(prev =>
+    read
+      ? Math.max(0, prev - 1)
+      : prev + 1
+  );
+};
+
   if (authLoading) {
     return (
       <AppShell>
@@ -309,9 +334,24 @@ export default function NotificationsPage() {
                         </div>
 
                         {/* Unread indicator */}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleRead(n.id, !n.read);
+                          }}
+                          className="text-xs"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          {n.read ? 'Mark unread' : 'Mark read'}
+                        </button>
+                        <div className="flex flex-col items-end gap-2">
                         {!n.read && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-[#9b7bf7] mt-2 flex-shrink-0" />
+                          <>
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#9b7bf7]" />
+                          </>
                         )}
+                        </div>
                       </Link>
                     );
                   })}
