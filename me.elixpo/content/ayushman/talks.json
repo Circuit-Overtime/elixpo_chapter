@@ -2,13 +2,28 @@
   "heading": "Sessions & Talks",
   "description": "Selected highlights from talks, workshops, and community sessions on open source, DevOps, and building developer communities.",
   "sessions": [
-    
+    {
+      "title": "Know Your Terminal: Zero to Hero on Bash Programming",
+      "venue": "GDG on Campus, JIS University × GDG on Campus, UEM",
+      "date": "23rd June 2026",
+      "location": "Kolkata, India",
+      "status": "upcoming",
+      "link": "https://gdg.community.dev/events/details/google-gdg-on-campus-jis-university-kolkata-india-presents-know-your-terminal-zero-to-hero-on-bash-programming/cohost-gdg-on-campus-jis-university-kolkata-india/"
+    },
     {
       "title": "Building the Contributor Pipeline at Pollinations.ai",
       "venue": "GitHub Open Source Friday",
       "date": "10th July 2026",
       "location": "Remote",
       "status": "upcoming"
+    },
+    {
+      "title": "Understanding Prompt Injection Attacks in LLMs (organized — first offline cross-collab)",
+      "venue": "GDG on Campus JIS University × OWASP JIS University",
+      "date": "18th June 2026",
+      "location": "Kolkata, India",
+      "status": "past",
+      "link": "https://gdg.community.dev/events/details/google-gdg-on-campus-jis-university-kolkata-india-presents-understanding-prompt-injection-attacks-in-llms/"
     },
     {
       "title": "How to Be the Contributor Maintainers Actually Want",
