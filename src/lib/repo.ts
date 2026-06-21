@@ -376,7 +376,13 @@ export async function recordProviderEvent(
             `INSERT INTO provider_webhook_events (id, provider, provider_event_id, event_type, status, payload)
              VALUES (?, ?, ?, ?, 'received', ?)`,
         )
-        .bind(newId("providerWebhookEvent"), provider, providerEventId, eventType, payload)
+        .bind(
+            newId("providerWebhookEvent"),
+            provider,
+            providerEventId,
+            eventType,
+            payload,
+        )
         .run();
     return { alreadySeen: false };
 }

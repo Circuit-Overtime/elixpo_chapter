@@ -2,32 +2,40 @@
 
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
-import { Box, Button, Snackbar, Stack, Tooltip, Typography } from "@mui/material";
+import {
+    Box,
+    Button,
+    Snackbar,
+    Stack,
+    Tooltip,
+    Typography,
+} from "@mui/material";
 import Link from "next/link";
 import { useState } from "react";
 
 const ACCENT = "#9b7bf7";
 const EMAIL = "hello@elixpo.com";
 
-const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
-    {
-        heading: "Product",
-        links: [
-            { label: "Merchant sign in", href: "/login" },
-            { label: "Dashboard", href: "/dashboard" },
-            { label: "Docs", href: "/docs" },
-        ],
-    },
-    {
-        heading: "Legal",
-        links: [
-            { label: "Privacy", href: "/privacy" },
-            { label: "Terms", href: "/terms" },
-            { label: "Refunds", href: "/refunds" },
-            { label: "Contact", href: "/contact" },
-        ],
-    },
-];
+const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
+    [
+        {
+            heading: "Product",
+            links: [
+                { label: "Merchant sign in", href: "/login" },
+                { label: "Dashboard", href: "/dashboard" },
+                { label: "Docs", href: "/docs" },
+            ],
+        },
+        {
+            heading: "Legal",
+            links: [
+                { label: "Privacy", href: "/privacy" },
+                { label: "Terms", href: "/terms" },
+                { label: "Refunds", href: "/refunds" },
+                { label: "Contact", href: "/contact" },
+            ],
+        },
+    ];
 
 const Footer = () => {
     const [copied, setCopied] = useState(false);
@@ -54,36 +62,68 @@ const Footer = () => {
                 backdropFilter: "blur(12px)",
             }}
         >
-            <Box sx={{ maxWidth: "1200px", mx: "auto", px: { xs: 2.5, md: 4 }, py: { xs: 5, md: 6 } }}>
+            <Box
+                sx={{
+                    maxWidth: "1200px",
+                    mx: "auto",
+                    px: { xs: 2.5, md: 4 },
+                    py: { xs: 5, md: 6 },
+                }}
+            >
                 <Stack
                     direction={{ xs: "column", md: "row" }}
                     spacing={{ xs: 4, md: 6 }}
                     justifyContent="space-between"
                 >
                     <Box sx={{ maxWidth: 360 }}>
-                        <Stack direction="row" alignItems="center" spacing={1.2} sx={{ mb: 1.2 }}>
+                        <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1.2}
+                            sx={{ mb: 1.2 }}
+                        >
                             <Box
                                 component="img"
                                 src="/mark.png"
                                 alt="Elixpo Pay"
-                                sx={{ height: 28, width: 28, borderRadius: "7px", display: "block" }}
+                                sx={{
+                                    height: 28,
+                                    width: 28,
+                                    borderRadius: "7px",
+                                    display: "block",
+                                }}
                             />
-                            <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#f4f4f6" }}>
+                            <Typography
+                                sx={{
+                                    fontWeight: 700,
+                                    fontSize: "1rem",
+                                    color: "#f4f4f6",
+                                }}
+                            >
                                 Elixpo{" "}
                                 <Box component="span" sx={{ color: ACCENT }}>
                                     Pay
                                 </Box>
                             </Typography>
                         </Stack>
-                        <Typography sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", lineHeight: 1.6 }}>
-                            One payments + payouts API on the edge. Bring your own
-                            provider keys, run hosted checkout, and settle creator
-                            payouts — for Elixpo products and any developer building
-                            on us.
+                        <Typography
+                            sx={{
+                                color: "rgba(255,255,255,0.55)",
+                                fontSize: "0.88rem",
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            One payments + payouts API on the edge. Bring your
+                            own provider keys, run hosted checkout, and settle
+                            creator payouts — for Elixpo products and any
+                            developer building on us.
                         </Typography>
                     </Box>
 
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 3, sm: 6 }}>
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={{ xs: 3, sm: 6 }}
+                    >
                         {COLUMNS.map((col) => (
                             <Box key={col.heading}>
                                 <Typography
@@ -129,11 +169,25 @@ const Footer = () => {
                             >
                                 Contact
                             </Typography>
-                            <Tooltip title={copied ? "Copied!" : "Click to copy"} arrow>
+                            <Tooltip
+                                title={copied ? "Copied!" : "Click to copy"}
+                                arrow
+                            >
                                 <Button
                                     onClick={copyEmail}
-                                    startIcon={<MailOutlineIcon sx={{ fontSize: 18 }} />}
-                                    endIcon={<ContentCopyIcon sx={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }} />}
+                                    startIcon={
+                                        <MailOutlineIcon
+                                            sx={{ fontSize: 18 }}
+                                        />
+                                    }
+                                    endIcon={
+                                        <ContentCopyIcon
+                                            sx={{
+                                                fontSize: 14,
+                                                color: "rgba(255,255,255,0.5)",
+                                            }}
+                                        />
+                                    }
                                     sx={{
                                         textTransform: "none",
                                         color: "rgba(255,255,255,0.85)",
@@ -145,8 +199,10 @@ const Footer = () => {
                                         py: 0.6,
                                         "&:hover": {
                                             color: "#fff",
-                                            borderColor: "rgba(155,123,247,0.45)",
-                                            background: "rgba(155,123,247,0.08)",
+                                            borderColor:
+                                                "rgba(155,123,247,0.45)",
+                                            background:
+                                                "rgba(155,123,247,0.08)",
                                         },
                                     }}
                                 >
@@ -172,7 +228,8 @@ const Footer = () => {
                     }}
                 >
                     <Typography sx={{ fontSize: "inherit" }}>
-                        © {new Date().getFullYear()} Elixpo · Built on Cloudflare's edge
+                        © {new Date().getFullYear()} Elixpo · Built on
+                        Cloudflare's edge
                     </Typography>
                     <Typography sx={{ fontSize: "inherit" }}>
                         Payments infrastructure for the Elixpo ecosystem

@@ -10,7 +10,11 @@ let cachedKv: KVNamespace | null = null;
 
 interface KvLike {
     get(key: string): Promise<string | null>;
-    put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
+    put(
+        key: string,
+        value: string,
+        opts?: { expirationTtl?: number },
+    ): Promise<void>;
     delete(key: string): Promise<void>;
 }
 
@@ -42,15 +46,22 @@ export async function getKV(): Promise<KvLike> {
     );
 }
 
-function createRestKv(accountId: string, apiToken: string, nsId: string): KvLike {
+function createRestKv(
+    accountId: string,
+    apiToken: string,
+    nsId: string,
+): KvLike {
     const base = `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${nsId}`;
     const auth = { "Authorization": `Bearer ${apiToken}` };
 
     return {
         async get(key) {
-            const res = await fetch(`${base}/values/${encodeURIComponent(key)}`, {
-                headers: auth,
-            });
+            const res = await fetch(
+                `${base}/values/${encodeURIComponent(key)}`,
+                {
+                    headers: auth,
+                },
+            );
             if (res.status === 404) return null;
             if (!res.ok) throw new Error(`KV get failed: ${res.status}`);
             return res.text();
@@ -58,7 +69,10 @@ function createRestKv(accountId: string, apiToken: string, nsId: string): KvLike
         async put(key, value, opts) {
             const url = new URL(`${base}/values/${encodeURIComponent(key)}`);
             if (opts?.expirationTtl) {
-                url.searchParams.set("expiration_ttl", String(opts.expirationTtl));
+                url.searchParams.set(
+                    "expiration_ttl",
+                    String(opts.expirationTtl),
+                );
             }
             const res = await fetch(url, {
                 method: "PUT",

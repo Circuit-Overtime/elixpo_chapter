@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     const now = Date.now();
     const subscriptions = rows.map((r) => {
         const end = r.current_period_end
-            ? new Date(r.current_period_end.replace(" ", "T") + "Z").getTime()
+            ? new Date(`${r.current_period_end.replace(" ", "T")}Z`).getTime()
             : null;
         const active = r.status === "active" && (end === null || end > now);
         return {

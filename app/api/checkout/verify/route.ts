@@ -61,7 +61,10 @@ export async function POST(request: NextRequest) {
         const db = await getDatabase();
         const session = await getCheckoutSession(db, session_id);
         if (!session) {
-            return NextResponse.json({ error: "unknown_session" }, { status: 404 });
+            return NextResponse.json(
+                { error: "unknown_session" },
+                { status: 404 },
+            );
         }
         if (session.provider_order_id !== razorpay_order_id) {
             return NextResponse.json(
@@ -93,7 +96,10 @@ export async function POST(request: NextRequest) {
     } catch (err: any) {
         console.error("[checkout/verify] error:", err);
         return NextResponse.json(
-            { error: "server_error", error_description: String(err?.message || err) },
+            {
+                error: "server_error",
+                error_description: String(err?.message || err),
+            },
             { status: 500 },
         );
     }

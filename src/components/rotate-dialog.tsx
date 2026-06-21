@@ -15,10 +15,22 @@ import { type ReactNode, useState } from "react";
 export type GraceKey = "immediate" | "5m" | "10m" | "1h";
 
 const OPTIONS: { key: GraceKey; label: string; hint: string }[] = [
-    { key: "immediate", label: "Rotate immediately", hint: "Old value stops working at once" },
-    { key: "5m", label: "Keep old valid 5 min", hint: "Time for a quick redeploy" },
+    {
+        key: "immediate",
+        label: "Rotate immediately",
+        hint: "Old value stops working at once",
+    },
+    {
+        key: "5m",
+        label: "Keep old valid 5 min",
+        hint: "Time for a quick redeploy",
+    },
     { key: "10m", label: "Keep old valid 10 min", hint: "A bit more headroom" },
-    { key: "1h", label: "Keep old valid 1 hour", hint: "For slower CI pipelines" },
+    {
+        key: "1h",
+        label: "Keep old valid 1 hour",
+        hint: "For slower CI pipelines",
+    },
 ];
 
 /**
@@ -61,7 +73,12 @@ export default function RotateDialog({
             }}
         >
             <DialogContent sx={{ pt: 3 }}>
-                <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ mb: 2 }}>
+                <Stack
+                    direction="row"
+                    spacing={1.5}
+                    alignItems="flex-start"
+                    sx={{ mb: 2 }}
+                >
                     <Box
                         sx={{
                             flexShrink: 0,
@@ -78,8 +95,22 @@ export default function RotateDialog({
                         <AutorenewIcon sx={{ fontSize: 22 }} />
                     </Box>
                     <Box>
-                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 0.5 }}>{title}</Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.65)", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                        <Typography
+                            sx={{
+                                fontWeight: 700,
+                                fontSize: "1.1rem",
+                                mb: 0.5,
+                            }}
+                        >
+                            {title}
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.65)",
+                                fontSize: "0.9rem",
+                                lineHeight: 1.6,
+                            }}
+                        >
                             {message}
                         </Typography>
                     </Box>
@@ -98,11 +129,20 @@ export default function RotateDialog({
                                     p: 1.3,
                                     borderRadius: "12px",
                                     border: `1px solid ${on ? (danger ? "rgba(248,113,113,0.6)" : "rgba(155,123,247,0.6)") : "rgba(255,255,255,0.1)"}`,
-                                    background: on ? (danger ? "rgba(248,113,113,0.08)" : "rgba(155,123,247,0.08)") : "rgba(255,255,255,0.02)",
-                                    transition: "border-color .15s, background .15s",
+                                    background: on
+                                        ? danger
+                                            ? "rgba(248,113,113,0.08)"
+                                            : "rgba(155,123,247,0.08)"
+                                        : "rgba(255,255,255,0.02)",
+                                    transition:
+                                        "border-color .15s, background .15s",
                                 }}
                             >
-                                <Stack direction="row" alignItems="center" spacing={1.2}>
+                                <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    spacing={1.2}
+                                >
                                     <Box
                                         sx={{
                                             width: 16,
@@ -114,11 +154,36 @@ export default function RotateDialog({
                                             placeItems: "center",
                                         }}
                                     >
-                                        {on && <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: danger ? "#f87171" : "#9b7bf7" }} />}
+                                        {on && (
+                                            <Box
+                                                sx={{
+                                                    width: 8,
+                                                    height: 8,
+                                                    borderRadius: "50%",
+                                                    background: danger
+                                                        ? "#f87171"
+                                                        : "#9b7bf7",
+                                                }}
+                                            />
+                                        )}
                                     </Box>
                                     <Box>
-                                        <Typography sx={{ fontSize: "0.88rem", fontWeight: 600 }}>{o.label}</Typography>
-                                        <Typography sx={{ fontSize: "0.76rem", color: "rgba(245,245,244,0.5)" }}>{o.hint}</Typography>
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.88rem",
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            {o.label}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.76rem",
+                                                color: "rgba(245,245,244,0.5)",
+                                            }}
+                                        >
+                                            {o.hint}
+                                        </Typography>
                                     </Box>
                                 </Stack>
                             </Box>
@@ -127,7 +192,14 @@ export default function RotateDialog({
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} disabled={busy} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>
+                <Button
+                    onClick={onClose}
+                    disabled={busy}
+                    sx={{
+                        textTransform: "none",
+                        color: "rgba(255,255,255,0.6)",
+                    }}
+                >
                     Cancel
                 </Button>
                 <Button
@@ -139,8 +211,12 @@ export default function RotateDialog({
                         color: "#fff",
                         px: 2.4,
                         borderRadius: "10px",
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+                        background:
+                            "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                        "&:hover": {
+                            background:
+                                "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                        },
                         "&.Mui-disabled": { opacity: 0.5, color: "#fff" },
                     }}
                 >

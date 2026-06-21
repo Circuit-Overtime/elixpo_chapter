@@ -34,7 +34,9 @@ export async function POST(
     }
 
     const body: any = await request.json().catch(() => ({}));
-    const next = String(body.client_id || "").trim().toLowerCase();
+    const next = String(body.client_id || "")
+        .trim()
+        .toLowerCase();
     if (!/^[a-z][a-z0-9-]{1,38}[a-z0-9]$/.test(next)) {
         return NextResponse.json(
             {
@@ -47,7 +49,10 @@ export async function POST(
     }
     if (next === app.slug) {
         return NextResponse.json(
-            { error: "unchanged", error_description: "That's already the client id." },
+            {
+                error: "unchanged",
+                error_description: "That's already the client id.",
+            },
             { status: 400 },
         );
     }

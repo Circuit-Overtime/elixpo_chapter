@@ -38,8 +38,16 @@ import BackgroundAurora from "../components/background-aurora";
 const NAV = [
     { label: "Overview", icon: SpaceDashboardIcon, href: "/dashboard" },
     { label: "Products", icon: InventoryIcon, href: "/dashboard/products" },
-    { label: "Transactions", icon: ReceiptLongIcon, href: "/dashboard/transactions" },
-    { label: "My subscriptions", icon: CardMembershipIcon, href: "/dashboard/subscriptions" },
+    {
+        label: "Transactions",
+        icon: ReceiptLongIcon,
+        href: "/dashboard/transactions",
+    },
+    {
+        label: "My subscriptions",
+        icon: CardMembershipIcon,
+        href: "/dashboard/subscriptions",
+    },
 ];
 
 interface Me {
@@ -51,7 +59,11 @@ interface Me {
 
 const ACCOUNTS_PROFILE = "https://accounts.elixpo.com/dashboard/profile";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
     const pathname = usePathname();
     const [me, setMe] = useState<Me | null>(null);
     const [checked, setChecked] = useState(false);
@@ -75,7 +87,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const logout = async () => {
         setAnchorEl(null);
         try {
-            await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+            await fetch("/api/auth/logout", {
+                method: "POST",
+                credentials: "include",
+            });
         } catch {
             // silent
         }
@@ -87,7 +102,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     if (!checked) {
         return (
-            <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", bgcolor: "#0c0e13" }}>
+            <Box
+                sx={{
+                    minHeight: "100vh",
+                    display: "grid",
+                    placeItems: "center",
+                    bgcolor: "#0c0e13",
+                }}
+            >
                 <CircularProgress sx={{ color: "#9b7bf7" }} />
             </Box>
         );
@@ -103,7 +125,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             alt={me?.name ?? "Account"}
             referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
-            sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+            }}
         />
     ) : (
         <Box
@@ -123,7 +150,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <ThemeProvider theme={dashboardTheme}>
-            <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
+            <Box
+                sx={{
+                    position: "relative",
+                    minHeight: "100vh",
+                    color: "#f5f5f4",
+                }}
+            >
                 <BackgroundAurora variant="default" />
                 <Box sx={{ position: "relative", zIndex: 1 }}>
                     <AppBar
@@ -160,7 +193,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     component="img"
                                     src="/mark.png"
                                     alt="Elixpo Pay"
-                                    sx={{ height: 30, width: 30, borderRadius: "8px", display: "block" }}
+                                    sx={{
+                                        height: 30,
+                                        width: 30,
+                                        borderRadius: "8px",
+                                        display: "block",
+                                    }}
                                 />
                                 <Typography
                                     sx={{
@@ -174,7 +212,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 </Typography>
                             </Box>
 
-                            <Stack direction="row" spacing={0.5} sx={{ flexGrow: 1, overflowX: "auto" }}>
+                            <Stack
+                                direction="row"
+                                spacing={0.5}
+                                sx={{ flexGrow: 1, overflowX: "auto" }}
+                            >
                                 {NAV.map((item) => {
                                     const active = isActive(item.href);
                                     return (
@@ -182,7 +224,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             key={item.href}
                                             component={Link}
                                             href={item.href}
-                                            startIcon={<item.icon sx={{ fontSize: "1.1rem !important" }} />}
+                                            startIcon={
+                                                <item.icon
+                                                    sx={{
+                                                        fontSize:
+                                                            "1.1rem !important",
+                                                    }}
+                                                />
+                                            }
                                             sx={{
                                                 textTransform: "none",
                                                 fontWeight: 600,
@@ -190,15 +239,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                                 whiteSpace: "nowrap",
                                                 px: 1.6,
                                                 borderRadius: "8px",
-                                                color: active ? "#f5f5f4" : "rgba(255,255,255,0.5)",
-                                                bgcolor: active ? "rgba(255,255,255,0.07)" : "transparent",
+                                                color: active
+                                                    ? "#f5f5f4"
+                                                    : "rgba(255,255,255,0.5)",
+                                                bgcolor: active
+                                                    ? "rgba(255,255,255,0.07)"
+                                                    : "transparent",
                                                 "&:hover": {
-                                                    bgcolor: "rgba(255,255,255,0.05)",
+                                                    bgcolor:
+                                                        "rgba(255,255,255,0.05)",
                                                     color: "#fff",
                                                 },
                                             }}
                                         >
-                                            <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    display: {
+                                                        xs: "none",
+                                                        md: "inline",
+                                                    },
+                                                }}
+                                            >
                                                 {item.label}
                                             </Box>
                                         </Button>
@@ -228,8 +290,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 anchorEl={anchorEl}
                                 open={Boolean(anchorEl)}
                                 onClose={() => setAnchorEl(null)}
-                                transformOrigin={{ horizontal: "right", vertical: "top" }}
-                                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                                transformOrigin={{
+                                    horizontal: "right",
+                                    vertical: "top",
+                                }}
+                                anchorOrigin={{
+                                    horizontal: "right",
+                                    vertical: "bottom",
+                                }}
                                 slotProps={{
                                     paper: {
                                         sx: {
@@ -238,7 +306,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             bgcolor: "#13161d",
                                             border: "1px solid rgba(255,255,255,0.08)",
                                             borderRadius: "14px",
-                                            boxShadow: "0 16px 48px rgba(0,0,0,0.55)",
+                                            boxShadow:
+                                                "0 16px 48px rgba(0,0,0,0.55)",
                                             overflow: "hidden",
                                         },
                                     },
@@ -246,15 +315,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 MenuListProps={{ sx: { py: 0 } }}
                             >
                                 {/* account header */}
-                                <Box sx={{ px: 2, py: 1.8, display: "flex", gap: 1.4, alignItems: "center" }}>
-                                    <Box sx={{ width: 42, height: 42, borderRadius: "50%", overflow: "hidden", border: "1px solid rgba(255,255,255,0.14)", flexShrink: 0 }}>
+                                <Box
+                                    sx={{
+                                        px: 2,
+                                        py: 1.8,
+                                        display: "flex",
+                                        gap: 1.4,
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            width: 42,
+                                            height: 42,
+                                            borderRadius: "50%",
+                                            overflow: "hidden",
+                                            border: "1px solid rgba(255,255,255,0.14)",
+                                            flexShrink: 0,
+                                        }}
+                                    >
                                         {avatarNode}
                                     </Box>
                                     <Box sx={{ minWidth: 0 }}>
-                                        <Typography sx={{ fontWeight: 600, fontSize: "0.92rem", color: "#f5f5f4", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                        <Typography
+                                            sx={{
+                                                fontWeight: 600,
+                                                fontSize: "0.92rem",
+                                                color: "#f5f5f4",
+                                                whiteSpace: "nowrap",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                            }}
+                                        >
                                             {me?.name}
                                         </Typography>
-                                        <Typography sx={{ color: "rgba(255,255,255,0.45)", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <Typography
+                                            sx={{
+                                                color: "rgba(255,255,255,0.45)",
+                                                fontSize: "0.78rem",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
                                             {me?.email}
                                         </Typography>
                                     </Box>
@@ -268,48 +371,128 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             px: 1.4,
                                             py: 1,
                                             borderRadius: "10px",
-                                            background: "rgba(255,255,255,0.04)",
+                                            background:
+                                                "rgba(255,255,255,0.04)",
                                             border: "1px solid rgba(255,255,255,0.06)",
                                         }}
                                     >
                                         <Box sx={{ minWidth: 0 }}>
-                                            <Typography sx={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                                            <Typography
+                                                sx={{
+                                                    fontSize: "0.68rem",
+                                                    color: "rgba(255,255,255,0.4)",
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: "0.06em",
+                                                }}
+                                            >
                                                 Merchant
                                             </Typography>
-                                            <Typography sx={{ fontSize: "0.85rem", color: "#f5f5f4", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            <Typography
+                                                sx={{
+                                                    fontSize: "0.85rem",
+                                                    color: "#f5f5f4",
+                                                    fontWeight: 600,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
                                                 {me?.merchant.name}
                                             </Typography>
                                         </Box>
-                                        <Box sx={{ px: 1, py: 0.3, borderRadius: "999px", fontSize: "0.66rem", fontWeight: 700, color: "#c4b5fd", background: "rgba(155,123,247,0.12)", border: "1px solid rgba(155,123,247,0.3)", flexShrink: 0, ml: 1 }}>
+                                        <Box
+                                            sx={{
+                                                px: 1,
+                                                py: 0.3,
+                                                borderRadius: "999px",
+                                                fontSize: "0.66rem",
+                                                fontWeight: 700,
+                                                color: "#c4b5fd",
+                                                background:
+                                                    "rgba(155,123,247,0.12)",
+                                                border: "1px solid rgba(155,123,247,0.3)",
+                                                flexShrink: 0,
+                                                ml: 1,
+                                            }}
+                                        >
                                             Starter
                                         </Box>
                                     </Box>
                                 </Box>
 
-                                <Divider sx={{ borderColor: "rgba(255,255,255,0.07)" }} />
+                                <Divider
+                                    sx={{
+                                        borderColor: "rgba(255,255,255,0.07)",
+                                    }}
+                                />
                                 <SectionLabel>Account</SectionLabel>
-                                <AccountItem icon={<PersonIcon fontSize="small" />} label="Account settings" href={ACCOUNTS_PROFILE} external onClick={() => setAnchorEl(null)} />
-                                <AccountItem icon={<CodeIcon fontSize="small" />} label="Products & API keys" href="/dashboard/products" onClick={() => setAnchorEl(null)} />
-                                <AccountItem icon={<CreditCardIcon fontSize="small" />} label="Billing & plans" href="/pricing" onClick={() => setAnchorEl(null)} />
+                                <AccountItem
+                                    icon={<PersonIcon fontSize="small" />}
+                                    label="Account settings"
+                                    href={ACCOUNTS_PROFILE}
+                                    external
+                                    onClick={() => setAnchorEl(null)}
+                                />
+                                <AccountItem
+                                    icon={<CodeIcon fontSize="small" />}
+                                    label="Products & API keys"
+                                    href="/dashboard/products"
+                                    onClick={() => setAnchorEl(null)}
+                                />
+                                <AccountItem
+                                    icon={<CreditCardIcon fontSize="small" />}
+                                    label="Billing & plans"
+                                    href="/pricing"
+                                    onClick={() => setAnchorEl(null)}
+                                />
 
-                                <Divider sx={{ borderColor: "rgba(255,255,255,0.07)" }} />
+                                <Divider
+                                    sx={{
+                                        borderColor: "rgba(255,255,255,0.07)",
+                                    }}
+                                />
                                 <SectionLabel>Resources</SectionLabel>
-                                <AccountItem icon={<MenuBookIcon fontSize="small" />} label="Documentation" href="/docs" onClick={() => setAnchorEl(null)} />
-                                <AccountItem icon={<HelpOutlineIcon fontSize="small" />} label="Support" href="mailto:hello@elixpo.com" external onClick={() => setAnchorEl(null)} />
+                                <AccountItem
+                                    icon={<MenuBookIcon fontSize="small" />}
+                                    label="Documentation"
+                                    href="/docs"
+                                    onClick={() => setAnchorEl(null)}
+                                />
+                                <AccountItem
+                                    icon={<HelpOutlineIcon fontSize="small" />}
+                                    label="Support"
+                                    href="mailto:hello@elixpo.com"
+                                    external
+                                    onClick={() => setAnchorEl(null)}
+                                />
 
-                                <Divider sx={{ borderColor: "rgba(255,255,255,0.07)" }} />
+                                <Divider
+                                    sx={{
+                                        borderColor: "rgba(255,255,255,0.07)",
+                                    }}
+                                />
                                 <MenuItem
                                     onClick={logout}
                                     sx={{
                                         py: 1.25,
                                         color: "rgba(255,255,255,0.6)",
-                                        "&:hover": { bgcolor: "rgba(239,68,68,0.08)", color: "#ef4444" },
+                                        "&:hover": {
+                                            bgcolor: "rgba(239,68,68,0.08)",
+                                            color: "#ef4444",
+                                        },
                                     }}
                                 >
-                                    <ListItemIcon sx={{ color: "inherit", minWidth: 34 }}>
+                                    <ListItemIcon
+                                        sx={{ color: "inherit", minWidth: 34 }}
+                                    >
                                         <LogoutIcon fontSize="small" />
                                     </ListItemIcon>
-                                    <ListItemText primaryTypographyProps={{ fontSize: "0.875rem", fontWeight: 600 }}>
+                                    <ListItemText
+                                        primaryTypographyProps={{
+                                            fontSize: "0.875rem",
+                                            fontWeight: 600,
+                                        }}
+                                    >
                                         Sign out
                                     </ListItemText>
                                 </MenuItem>
@@ -317,7 +500,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </Toolbar>
                     </AppBar>
 
-                    <Box component="main" sx={{ maxWidth: "1280px", mx: "auto", px: { xs: 2, md: 3 }, py: { xs: 3, md: 4 } }}>
+                    <Box
+                        component="main"
+                        sx={{
+                            maxWidth: "1280px",
+                            mx: "auto",
+                            px: { xs: 2, md: 3 },
+                            py: { xs: 3, md: 4 },
+                        }}
+                    >
                         {children}
                     </Box>
                 </Box>
@@ -359,7 +550,12 @@ function AccountItem({
     onClick?: () => void;
 }) {
     const linkProps = external
-        ? { component: "a" as const, href, target: "_blank", rel: "noopener noreferrer" }
+        ? {
+              component: "a" as const,
+              href,
+              target: "_blank",
+              rel: "noopener noreferrer",
+          }
         : { component: Link, href };
     return (
         <MenuItem
@@ -371,8 +567,12 @@ function AccountItem({
                 "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "#fff" },
             }}
         >
-            <ListItemIcon sx={{ color: "inherit", minWidth: 34 }}>{icon}</ListItemIcon>
-            <ListItemText primaryTypographyProps={{ fontSize: "0.875rem" }}>{label}</ListItemText>
+            <ListItemIcon sx={{ color: "inherit", minWidth: 34 }}>
+                {icon}
+            </ListItemIcon>
+            <ListItemText primaryTypographyProps={{ fontSize: "0.875rem" }}>
+                {label}
+            </ListItemText>
         </MenuItem>
     );
 }

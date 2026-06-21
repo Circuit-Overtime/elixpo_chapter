@@ -15,7 +15,9 @@ export default function PageShell({
     variant?: "default" | "auth" | "warm" | "docs";
 }) {
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
+        <Box
+            sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}
+        >
             <BackgroundAurora variant={variant} />
             <Box sx={{ position: "relative", zIndex: 1 }}>
                 <Box sx={{ position: "sticky", top: 0, zIndex: 1000 }}>

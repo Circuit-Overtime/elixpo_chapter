@@ -69,17 +69,36 @@ export default function ConfirmDialog({
                         <WarningAmberIcon sx={{ fontSize: 22 }} />
                     </Box>
                     <Box>
-                        <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 0.5 }}>
+                        <Typography
+                            sx={{
+                                fontWeight: 700,
+                                fontSize: "1.1rem",
+                                mb: 0.5,
+                            }}
+                        >
                             {title}
                         </Typography>
-                        <Typography sx={{ color: "rgba(245,245,244,0.65)", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.65)",
+                                fontSize: "0.9rem",
+                                lineHeight: 1.6,
+                            }}
+                        >
                             {message}
                         </Typography>
                     </Box>
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} disabled={busy} sx={{ textTransform: "none", color: "rgba(255,255,255,0.6)" }}>
+                <Button
+                    onClick={onClose}
+                    disabled={busy}
+                    sx={{
+                        textTransform: "none",
+                        color: "rgba(255,255,255,0.6)",
+                    }}
+                >
                     {cancelLabel}
                 </Button>
                 <Button

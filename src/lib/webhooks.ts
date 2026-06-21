@@ -72,7 +72,10 @@ export function normaliseEvents(requested: unknown): string[] {
     const set = new Set<string>(REQUIRED_EVENTS);
     if (Array.isArray(requested)) {
         for (const e of requested) {
-            if (typeof e === "string" && KNOWN_EVENTS.has(e as WebhookEventType)) {
+            if (
+                typeof e === "string" &&
+                KNOWN_EVENTS.has(e as WebhookEventType)
+            ) {
                 set.add(e);
             }
         }
@@ -109,8 +112,9 @@ async function endpointSecrets(
     if (
         endpoint.prev_signing_secret &&
         endpoint.prev_signing_secret_expires_at &&
-        new Date(endpoint.prev_signing_secret_expires_at.replace(" ", "T") + "Z") >
-            new Date()
+        new Date(
+            `${endpoint.prev_signing_secret_expires_at.replace(" ", "T")}Z`,
+        ) > new Date()
     ) {
         out.push(endpoint.prev_signing_secret);
     }
@@ -151,7 +155,10 @@ export async function fireWebhook(
     // is a comma-separated list of `sha256=…`; the consumer accepts if ANY match.
     const signature = (
         await Promise.all(
-            secrets.map(async (s) => `sha256=${await hmacSha256Hex(s, `${timestamp}.${rawBody}`)}`),
+            secrets.map(
+                async (s) =>
+                    `sha256=${await hmacSha256Hex(s, `${timestamp}.${rawBody}`)}`,
+            ),
         )
     ).join(",");
 
