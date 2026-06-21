@@ -1,1 +1,494 @@
-[]
+[
+  {
+    "archived": false,
+    "full_name": "huggingface/trl",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 510,
+    "pushed_at": "2026-06-21T04:11:09Z",
+    "reasons": [
+      "18678\u2605 python active"
+    ],
+    "score": 80,
+    "stars": 18678,
+    "topics": [],
+    "url": "https://github.com/huggingface/trl"
+  },
+  {
+    "archived": false,
+    "full_name": "davila7/claude-code-templates",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 178,
+    "pushed_at": "2026-06-21T04:08:49Z",
+    "reasons": [
+      "28204\u2605 python active"
+    ],
+    "score": 80,
+    "stars": 28204,
+    "topics": [
+      "anthropic",
+      "anthropic-claude",
+      "claude",
+      "claude-code"
+    ],
+    "url": "https://github.com/davila7/claude-code-templates"
+  },
+  {
+    "archived": false,
+    "full_name": "EvanLi/Github-Ranking",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 32,
+    "pushed_at": "2026-06-21T04:07:15Z",
+    "reasons": [
+      "11416\u2605 python active"
+    ],
+    "score": 80,
+    "stars": 11416,
+    "topics": [
+      "forks",
+      "github-rank",
+      "github-stars",
+      "python",
+      "ranking",
+      "stars"
+    ],
+    "url": "https://github.com/EvanLi/Github-Ranking"
+  },
+  {
+    "archived": false,
+    "full_name": "tinygrad/tinygrad",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 161,
+    "pushed_at": "2026-06-21T04:06:40Z",
+    "reasons": [
+      "33134\u2605 python active"
+    ],
+    "score": 80,
+    "stars": 33134,
+    "topics": [],
+    "url": "https://github.com/tinygrad/tinygrad"
+  },
+  {
+    "archived": false,
+    "full_name": "python-pillow/Pillow",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 135,
+    "pushed_at": "2026-06-21T04:06:24Z",
+    "reasons": [
+      "13634\u2605 python active"
+    ],
+    "score": 80,
+    "stars": 13634,
+    "topics": [
+      "c",
+      "cross-platform",
+      "image",
+      "image-processing",
+      "pil",
+      "pillow",
+      "python",
+      "python-3"
+    ],
+    "url": "https://github.com/python-pillow/Pillow"
+  },
+  {
+    "archived": false,
+    "full_name": "elizaOS/eliza",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 35,
+    "pushed_at": "2026-06-21T04:10:19Z",
+    "reasons": [
+      "18608\u2605 typescript active"
+    ],
+    "score": 80,
+    "stars": 18608,
+    "topics": [
+      "agent",
+      "agentic",
+      "ai",
+      "autonomous",
+      "chatbot",
+      "crypto",
+      "discord",
+      "eliza",
+      "elizaos",
+      "framework",
+      "plugins",
+      "rag",
+      "slack",
+      "swarm",
+      "telegram"
+    ],
+    "url": "https://github.com/elizaOS/eliza"
+  },
+  {
+    "archived": false,
+    "full_name": "can1357/oh-my-pi",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 312,
+    "pushed_at": "2026-06-21T04:04:35Z",
+    "reasons": [
+      "13687\u2605 typescript active"
+    ],
+    "score": 80,
+    "stars": 13687,
+    "topics": [
+      "ai-agent",
+      "ai-coding-agent",
+      "anthropic",
+      "bun",
+      "claude",
+      "cli",
+      "coding-assistant",
+      "llm",
+      "mcp",
+      "multi-provider",
+      "openai",
+      "rust",
+      "terminal",
+      "tui",
+      "typescript"
+    ],
+    "url": "https://github.com/can1357/oh-my-pi"
+  },
+  {
+    "archived": false,
+    "full_name": "quic-go/quic-go",
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 206,
+    "pushed_at": "2026-06-21T04:09:02Z",
+    "reasons": [
+      "11658\u2605 go active"
+    ],
+    "score": 80,
+    "stars": 11658,
+    "topics": [
+      "go",
+      "golang",
+      "http3",
+      "protocol",
+      "qlog",
+      "quic",
+      "quic-client",
+      "quic-server"
+    ],
+    "url": "https://github.com/quic-go/quic-go"
+  },
+  {
+    "archived": false,
+    "full_name": "QuantumNous/new-api",
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 846,
+    "pushed_at": "2026-06-21T04:07:31Z",
+    "reasons": [
+      "39463\u2605 go active"
+    ],
+    "score": 80,
+    "stars": 39463,
+    "topics": [
+      "ai-gateway",
+      "claude",
+      "deepseek",
+      "gemini",
+      "newapi",
+      "openai",
+      "rerank"
+    ],
+    "url": "https://github.com/QuantumNous/new-api"
+  },
+  {
+    "archived": false,
+    "full_name": "ethereum/EIPs",
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 461,
+    "pushed_at": "2026-06-21T04:00:36Z",
+    "reasons": [
+      "13897\u2605 go active"
+    ],
+    "score": 80,
+    "stars": 13897,
+    "topics": [],
+    "url": "https://github.com/ethereum/EIPs"
+  },
+  {
+    "archived": false,
+    "full_name": "SagerNet/sing-box",
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 265,
+    "pushed_at": "2026-06-21T03:54:14Z",
+    "reasons": [
+      "35193\u2605 go active"
+    ],
+    "score": 80,
+    "stars": 35193,
+    "topics": [],
+    "url": "https://github.com/SagerNet/sing-box"
+  },
+  {
+    "archived": false,
+    "full_name": "temporalio/temporal",
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 783,
+    "pushed_at": "2026-06-21T03:51:58Z",
+    "reasons": [
+      "21106\u2605 go active"
+    ],
+    "score": 80,
+    "stars": 21106,
+    "topics": [
+      "cronjob-scheduler",
+      "distributed-cron",
+      "distributed-systems",
+      "durable-execution",
+      "golang",
+      "microservice-framework",
+      "microservice-orchestration",
+      "microservices-architecture",
+      "orchestrator",
+      "service-bus",
+      "service-fabric",
+      "workflow-automation",
+      "workflow-engine",
+      "workflow-management",
+      "workflow-management-system",
+      "workflows"
+    ],
+    "url": "https://github.com/temporalio/temporal"
+  },
+  {
+    "archived": false,
+    "full_name": "gastownhall/beads",
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 468,
+    "pushed_at": "2026-06-21T03:44:15Z",
+    "reasons": [
+      "24652\u2605 go active"
+    ],
+    "score": 80,
+    "stars": 24652,
+    "topics": [
+      "agents",
+      "claude-code",
+      "coding"
+    ],
+    "url": "https://github.com/gastownhall/beads"
+  },
+  {
+    "archived": false,
+    "full_name": "eythaann/Seelen-UI",
+    "has_contributing": false,
+    "language": "Rust",
+    "open_issues": 60,
+    "pushed_at": "2026-06-21T04:03:37Z",
+    "reasons": [
+      "17113\u2605 rust active"
+    ],
+    "score": 80,
+    "stars": 17113,
+    "topics": [
+      "app-launcher",
+      "desktop-application",
+      "dock",
+      "finder",
+      "multilanguage",
+      "seelen",
+      "seelen-ui",
+      "taskbar",
+      "tauri",
+      "tauri-app",
+      "tiling-window-manager",
+      "toolbar",
+      "tools",
+      "topbar",
+      "wallpaper",
+      "web",
+      "web-technologies",
+      "windows",
+      "windows-11"
+    ],
+    "url": "https://github.com/eythaann/Seelen-UI"
+  },
+  {
+    "archived": false,
+    "full_name": "astral-sh/ruff",
+    "has_contributing": false,
+    "language": "Rust",
+    "open_issues": 2034,
+    "pushed_at": "2026-06-21T03:59:45Z",
+    "reasons": [
+      "48120\u2605 rust active"
+    ],
+    "score": 80,
+    "stars": 48120,
+    "topics": [
+      "linter",
+      "pep8",
+      "python",
+      "python3",
+      "ruff",
+      "rust",
+      "rustpython",
+      "static-analysis",
+      "static-code-analysis",
+      "style-guide",
+      "styleguide"
+    ],
+    "url": "https://github.com/astral-sh/ruff"
+  },
+  {
+    "archived": false,
+    "full_name": "rustfs/rustfs",
+    "has_contributing": false,
+    "language": "Rust",
+    "open_issues": 70,
+    "pushed_at": "2026-06-21T03:56:53Z",
+    "reasons": [
+      "29026\u2605 rust active"
+    ],
+    "score": 80,
+    "stars": 29026,
+    "topics": [
+      "ai-native",
+      "ai-storage",
+      "amazon-s3",
+      "bigdata",
+      "cloud-native",
+      "filesystem",
+      "minio",
+      "multi-cloud",
+      "object-storage",
+      "objectstorage",
+      "rust",
+      "s3"
+    ],
+    "url": "https://github.com/rustfs/rustfs"
+  },
+  {
+    "archived": false,
+    "full_name": "nautechsystems/nautilus_trader",
+    "has_contributing": false,
+    "language": "Rust",
+    "open_issues": 65,
+    "pushed_at": "2026-06-21T03:49:47Z",
+    "reasons": [
+      "24062\u2605 rust active"
+    ],
+    "score": 80,
+    "stars": 24062,
+    "topics": [
+      "algorithmic-trading-engine",
+      "artificial-intelligence",
+      "crypto-trading",
+      "equity-trading",
+      "forex",
+      "futures-trading",
+      "machine-learning",
+      "options-trading",
+      "python",
+      "rust",
+      "sports-betting",
+      "trading",
+      "trading-platform"
+    ],
+    "url": "https://github.com/nautechsystems/nautilus_trader"
+  },
+  {
+    "archived": false,
+    "full_name": "v2fly/domain-list-community",
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 62,
+    "pushed_at": "2026-06-21T03:58:27Z",
+    "reasons": [
+      "8931\u2605 go active"
+    ],
+    "score": 75,
+    "stars": 8931,
+    "topics": [
+      "geosite",
+      "v2ray"
+    ],
+    "url": "https://github.com/v2fly/domain-list-community"
+  },
+  {
+    "archived": false,
+    "full_name": "modelscope/FunASR",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 14,
+    "pushed_at": "2026-06-21T04:10:22Z",
+    "reasons": [
+      "18382\u2605 python active"
+    ],
+    "score": 74,
+    "stars": 18382,
+    "topics": [
+      "asr",
+      "audio",
+      "chinese",
+      "emotion-recognition",
+      "funasr",
+      "mcp-server",
+      "multilingual-asr",
+      "openai-compatible-api",
+      "paraformer",
+      "punctuation",
+      "pytorch",
+      "real-time",
+      "speaker-diarization",
+      "speech-recognition",
+      "speech-to-text",
+      "streaming-asr",
+      "transcription",
+      "vllm",
+      "voice-activity-detection",
+      "whisper-alternative"
+    ],
+    "url": "https://github.com/modelscope/FunASR"
+  },
+  {
+    "archived": false,
+    "full_name": "xanderfrangos/twinkle-tray",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 581,
+    "pushed_at": "2026-06-21T03:58:55Z",
+    "reasons": [
+      "8681\u2605 javascript active"
+    ],
+    "score": 74,
+    "stars": 8681,
+    "topics": [
+      "backlight",
+      "backlight-brightness",
+      "brightness",
+      "brightness-control",
+      "brightness-level",
+      "brightness-levels",
+      "brightness-slider",
+      "ddc-ic",
+      "electron-app",
+      "monitors",
+      "multiple-monitors",
+      "nodejs",
+      "react",
+      "reactjs",
+      "windows",
+      "windows-10",
+      "windows-11"
+    ],
+    "url": "https://github.com/xanderfrangos/twinkle-tray"
+  }
+]

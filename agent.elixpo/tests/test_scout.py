@@ -65,18 +65,31 @@ def test_health_score_rewards_signals():
     assert high > low
 
 
-# --- discovery with a fake API ---
+# --- discovery with a band-aware fake API ---
+
+import re  # noqa: E402
+
 
 class FakeAPI:
+    """Band-aware fake: returns only items whose stars fall in the query's range,
+    so star-band searches behave like the real GitHub API. Records queries."""
+
     def __init__(self, items, contributing=True):
         self._items = items
         self._contributing = contributing
-        self.searches = 0
+        self.queries: list[str] = []
+
+    @property
+    def searches(self) -> int:
+        return len(self.queries)
 
     async def _request(self, method, path, **kwargs):
         if path == "/search/repositories":
-            self.searches += 1
-            return {"items": self._items}
+            q = kwargs.get("params", {}).get("q", "")
+            self.queries.append(q)
+            m = re.search(r"stars:(\d+)\.\.(\d+)", q)
+            lo, hi = (int(m.group(1)), int(m.group(2))) if m else (0, 10**9)
+            return {"items": [r for r in self._items if lo <= r.get("stargazers_count", 0) <= hi]}
         if "/contents/" in path:
             if self._contributing:
                 return {"path": path}
@@ -85,10 +98,12 @@ class FakeAPI:
 
 
 @pytest.mark.asyncio
-async def test_search_repos_builds_query():
+async def test_search_query_requires_good_first():
     api = FakeAPI([_repo()])
-    items = await search_repos(api, "python", 100, 50000, "2026-05-21")
-    assert items and api.searches == 1
+    await search_repos(api, "python", 100, 2000, "2026-05-21")
+    assert "good-first-issues:>0" in api.queries[0]
+    await search_repos(api, "python", 100, 2000, "2026-05-21", require_good_first=False)
+    assert "good-first-issues" not in api.queries[1]
 
 
 @pytest.mark.asyncio
@@ -98,20 +113,43 @@ async def test_has_contributing_true_false():
 
 
 @pytest.mark.asyncio
-async def test_discover_candidates_filters_and_scores():
+async def test_discover_filters_rejects_and_enriches():
     from agents.scout.__main__ import discover_candidates
 
     items = [
-        _repo(full_name="o/good", stargazers_count=8000, open_issues_count=20),
-        _repo(full_name="o/small", stargazers_count=10),          # rejected: stars
-        _repo(full_name="o/optout", topics=["no-ai"]),            # rejected: opt-out
-        _repo(full_name="o/ok", stargazers_count=300),
+        _repo(full_name="o/good", stargazers_count=8000, open_issues_count=20),  # mid
+        _repo(full_name="o/tiny", stargazers_count=10),                          # rejected: stars
+        _repo(full_name="o/optout", stargazers_count=500, topics=["no-ai"]),     # rejected: opt-out
+        _repo(full_name="o/ok", stargazers_count=300),                           # small
     ]
-    api = FakeAPI(items)
-    cands = await discover_candidates(api, ["python"], blocklist=set(), now=NOW)
-    names = [c.full_name for c in cands]
-    assert "o/good" in names and "o/ok" in names
-    assert "o/small" not in names and "o/optout" not in names
-    # sorted by score desc
-    assert cands[0].full_name == "o/good"
+    cands = await discover_candidates(FakeAPI(items), ["python"], blocklist=set(), now=NOW, check_contributing=True)
+    names = {c.full_name for c in cands}
+    assert {"o/good", "o/ok"} <= names
+    assert "o/tiny" not in names and "o/optout" not in names
     assert all(c.has_contributing for c in cands)
+    assert all(c.good_first_issues > 0 for c in cands)
+
+
+@pytest.mark.asyncio
+async def test_discover_mixes_star_bands():
+    """Round-robin selection represents small, mid AND large — not just giants."""
+    from agents.scout.__main__ import discover_candidates
+
+    items = [
+        _repo(full_name="o/small", stargazers_count=500),     # small band
+        _repo(full_name="o/mid", stargazers_count=6000),      # mid band
+        _repo(full_name="o/large", stargazers_count=30000),   # large band
+    ]
+    cands = await discover_candidates(FakeAPI(items), ["python"], blocklist=set(), now=NOW)
+    assert {c.band for c in cands} == {"small", "mid", "large"}
+
+
+@pytest.mark.asyncio
+async def test_discover_search_only_skips_contributing():
+    """Default path does NO per-repo CONTRIBUTING fetch; one search per band."""
+    from agents.scout.__main__ import BANDS, discover_candidates
+
+    api = FakeAPI([_repo(full_name="o/a", stargazers_count=500)])
+    cands = await discover_candidates(api, ["python"], blocklist=set(), now=NOW)
+    assert cands and cands[0].has_contributing is False
+    assert api.searches == len(BANDS)  # one search per star band, zero contents calls
