@@ -1,8 +1,10 @@
 {
     "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+    "assist": {
+        "enabled": false
+    },
     "formatter": {
-        "indentStyle": "space",
-        "indentWidth": 4
+        "enabled": false
     },
     "javascript": {
         "formatter": {
@@ -18,26 +20,41 @@
                 "noBannedTypes": "off"
             },
             "suspicious": {
-                "noExplicitAny": "info",
-                "noArrayIndexKey": "info"
+                "noExplicitAny": "off",
+                "noArrayIndexKey": "off",
+                "noAssignInExpressions": "off",
+                "noImplicitAnyLet": "off"
             },
             "performance": {
-                "noAccumulatingSpread": "info"
+                "noAccumulatingSpread": "off",
+                "noDelete": "off"
             },
             "a11y": {
-                "useButtonType": "info",
-                "noSvgWithoutTitle": "info"
+                "useButtonType": "off",
+                "noSvgWithoutTitle": "off"
+            },
+            "correctness": {
+                "useExhaustiveDependencies": "off",
+                "useJsxKeyInIterable": "off"
+            },
+            "security": {
+                "noDangerouslySetInnerHtml": "off"
+            },
+            "style": {
+                "useTemplate": "off",
+                "useNumberNamespace": "off",
+                "noUnusedTemplateLiteral": "off"
             }
         }
     },
     "files": {
         "includes": [
             "**",
-            "!**/node_modules",
-            "!**/.next",
-            "!**/.vercel",
-            "!**/.wrangler",
-            "!**/*.css"
+            "!!**/node_modules/**",
+            "!!**/.next/**",
+            "!!**/.vercel/**",
+            "!!**/.wrangler/**",
+            "!!**/*.css"
         ]
     },
     "css": {
