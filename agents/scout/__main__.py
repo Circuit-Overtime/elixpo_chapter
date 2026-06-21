@@ -37,15 +37,25 @@ async def discover_candidates(
     max_candidates: int = MAX_CANDIDATES,
     check_contributing: bool = True,
 ) -> list[RepoCandidate]:
-    """Pure-ish core: search → filter → score. Injectable api for tests."""
+    """search → filter → rank → enrich. Injectable api for tests.
+
+    Performance: searches run concurrently per language; the CONTRIBUTING check
+    (an HTTP call each) runs ONLY on the post-ranking shortlist, concurrently —
+    not on every repo. Keeps a full run to a few seconds + a couple dozen calls.
+    """
     now = now or datetime.now(timezone.utc)
     pushed_after = (now - timedelta(days=ACTIVE_DAYS)).date().isoformat()
     lang_set = {lang.lower() for lang in languages}
 
+    # 1. search all languages concurrently
+    results = await asyncio.gather(
+        *(search_repos(api, lang, MIN_STARS, MAX_STARS, pushed_after, PER_LANGUAGE) for lang in languages)
+    )
+
+    # 2. filter + dedupe + base score (no contributing yet)
     candidates: list[RepoCandidate] = []
     seen: set[str] = set()
-    for language in languages:
-        repos = await search_repos(api, language, MIN_STARS, MAX_STARS, pushed_after, PER_LANGUAGE)
+    for repos in results:
         for repo in repos:
             name = repo.get("full_name", "")
             if name in seen:
@@ -54,7 +64,6 @@ async def discover_candidates(
             if not ok:
                 continue
             seen.add(name)
-            contributing = await has_contributing(api, name) if check_contributing else False
             candidates.append(
                 RepoCandidate(
                     full_name=name,
@@ -62,17 +71,26 @@ async def discover_candidates(
                     language=repo.get("language"),
                     pushed_at=repo.get("pushed_at", ""),
                     topics=repo.get("topics", []),
-                    has_contributing=contributing,
                     archived=bool(repo.get("archived")),
                     open_issues=repo.get("open_issues_count", 0),
                     url=repo.get("html_url", ""),
-                    score=health_score(repo, contributing),
+                    score=health_score(repo, has_contributing=False),
                     reasons=reasons,
                 )
             )
 
+    # 3. shortlist by base score, then enrich just those with the CONTRIBUTING check
     candidates.sort(key=lambda c: c.score, reverse=True)
-    return candidates[:max_candidates]
+    shortlist = candidates[: max_candidates + 10]
+    if check_contributing and shortlist:
+        flags = await asyncio.gather(*(has_contributing(api, c.full_name) for c in shortlist))
+        for cand, has_c in zip(shortlist, flags, strict=True):
+            cand.has_contributing = has_c
+            if has_c:
+                cand.score += 20
+
+    shortlist.sort(key=lambda c: c.score, reverse=True)
+    return shortlist[:max_candidates]
 
 
 async def _run() -> int:
