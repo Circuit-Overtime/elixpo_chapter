@@ -40,7 +40,10 @@ function ClientIcon({
         if (!homepageUrl) return [] as string[];
         try {
             const u = new URL(homepageUrl);
-            return [`${u.origin}/favicon.ico`, `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=64`];
+            return [
+                `${u.origin}/favicon.ico`,
+                `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=64`,
+            ];
         } catch {
             return [] as string[];
         }
@@ -53,7 +56,11 @@ function ClientIcon({
                 alt=""
                 width={size}
                 height={size}
-                style={{ borderRadius: 10, flexShrink: 0, background: "rgba(255,255,255,0.04)" }}
+                style={{
+                    borderRadius: 10,
+                    flexShrink: 0,
+                    background: "rgba(255,255,255,0.04)",
+                }}
                 onError={() => setStage((s) => s + 1)}
             />
         );
@@ -82,7 +89,10 @@ function AuthorizeContent() {
     const [hasTimedOut, setHasTimedOut] = useState(false);
     // The signed-in user this authorization is for — shown so the person can
     // confirm which account they're authorizing with.
-    const [account, setAccount] = useState<{ email: string; displayName: string | null } | null>(null);
+    const [account, setAccount] = useState<{
+        email: string;
+        displayName: string | null;
+    } | null>(null);
 
     useEffect(() => {
         const load = async () => {
@@ -110,7 +120,10 @@ function AuthorizeContent() {
             try {
                 const meData: any = await meRes.clone().json();
                 if (meData?.email) {
-                    setAccount({ email: meData.email, displayName: meData.displayName ?? null });
+                    setAccount({
+                        email: meData.email,
+                        displayName: meData.displayName ?? null,
+                    });
                 }
             } catch {
                 // non-fatal — header just won't show the account line
@@ -490,10 +503,21 @@ function AuthorizeContent() {
                                 flexWrap: "wrap",
                             }}
                         >
-                            <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12.5 }}>
+                            <span
+                                style={{
+                                    color: "rgba(255,255,255,0.45)",
+                                    fontSize: 12.5,
+                                }}
+                            >
                                 Signing in as
                             </span>
-                            <span style={{ color: "#c4b5fd", fontSize: 12.5, fontWeight: 600 }}>
+                            <span
+                                style={{
+                                    color: "#c4b5fd",
+                                    fontSize: 12.5,
+                                    fontWeight: 600,
+                                }}
+                            >
                                 {account.displayName
                                     ? `${account.displayName} · ${account.email}`
                                     : account.email}
