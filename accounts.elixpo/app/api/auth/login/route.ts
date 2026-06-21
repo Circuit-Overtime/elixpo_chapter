@@ -207,6 +207,64 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // ── MFA gate ──────────────────────────────────────────────────
+        // Credentials are valid; before issuing tokens, decide whether
+        // the user must pass a second factor. The gate is skipped if:
+        //   - mfa_enabled is 0, OR
+        //   - the request carries a valid trusted_device cookie matching
+        //     an active row for this user.
+        // Otherwise we return { requiresMfa: true, mfaToken } and STOP —
+        // no access/refresh tokens issued. The client redirects to /mfa.
+        if (user.mfa_enabled === 1 || user.mfa_enabled === true) {
+            const {
+                TRUSTED_DEVICE_COOKIE_NAME,
+                verifyTrustedDeviceCookie,
+                isDeviceTrusted,
+            } = await import("@/lib/trusted-devices");
+            const tdCookie = request.cookies.get(
+                TRUSTED_DEVICE_COOKIE_NAME,
+            )?.value;
+            let trustedSkip = false;
+            if (tdCookie) {
+                const decoded = await verifyTrustedDeviceCookie(tdCookie);
+                if (
+                    decoded &&
+                    decoded.userId === user.id &&
+                    (await isDeviceTrusted(db, user.id, decoded.deviceUuid))
+                ) {
+                    trustedSkip = true;
+                }
+            }
+
+            if (!trustedSkip) {
+                const { mintMfaChallengeToken } = await import(
+                    "@/lib/mfa-utils"
+                );
+                const factorsRes = await db
+                    .prepare(
+                        `SELECT kind FROM user_mfa_factors
+                         WHERE user_id = ? AND confirmed_at IS NOT NULL`,
+                    )
+                    .bind(user.id)
+                    .all<{ kind: string }>();
+                const kinds = new Set(
+                    (factorsRes.results || []).map((r) => r.kind),
+                );
+                const availableMethods: string[] = [];
+                if (kinds.has("passkey")) availableMethods.push("passkey");
+                if (kinds.has("totp")) availableMethods.push("totp");
+                if (kinds.has("email_otp")) availableMethods.push("email_otp");
+                availableMethods.push("backup_code"); // always offered
+
+                const mfaToken = await mintMfaChallengeToken(user.id);
+                return NextResponse.json({
+                    requiresMfa: true,
+                    mfaToken,
+                    availableMethods,
+                });
+            }
+        }
+
         // Session duration: 30 days default, 90 days with "remember me"
         const refreshDays = rememberMe ? 90 : 30;
 
@@ -225,6 +283,9 @@ export async function POST(request: NextRequest) {
         // Store refresh token and log success
         try {
             const refreshTokenHash = await hashString(refreshTokenJWT);
+            const { hashIpForSession, shortUaForSession } = await import(
+                "@/lib/db"
+            );
             await storeRefreshToken(db, {
                 id: generateUUID(),
                 userId: user.id,
@@ -232,6 +293,8 @@ export async function POST(request: NextRequest) {
                 expiresAt: new Date(
                     Date.now() + refreshDays * 24 * 60 * 60 * 1000,
                 ),
+                ipHash: await hashIpForSession(ipAddress),
+                uaShort: shortUaForSession(userAgent),
             });
 
             await updateUserLastLogin(db, user.id);
@@ -247,6 +310,23 @@ export async function POST(request: NextRequest) {
             });
         } catch (dbError) {
             console.error("[Login] Database storage error:", dbError);
+        }
+
+        // Fire the new-device alert after audit log success. Throttled in
+        // KV per (user, IP, UA) so stable-device logins stay quiet.
+        try {
+            const { notifyNewDeviceSignIn } = await import(
+                "@/lib/sign-in-alert"
+            );
+            await notifyNewDeviceSignIn({
+                userId: user.id,
+                email: user.email,
+                displayName: user.display_name || null,
+                ipAddress,
+                userAgent,
+            });
+        } catch {
+            /* non-fatal */
         }
 
         const accessMaxAge =

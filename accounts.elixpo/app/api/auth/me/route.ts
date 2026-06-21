@@ -32,7 +32,7 @@ async function getUserIdentity(db: D1Database, userId: string) {
  * Auto-refresh: verify the refresh token, issue new access + refresh tokens,
  * set cookies, and return the user profile in one round-trip.
  */
-async function tryAutoRefresh(_request: NextRequest, refreshToken: string) {
+async function tryAutoRefresh(request: NextRequest, refreshToken: string) {
     try {
         const payload = await verifyJWT(refreshToken);
         if (payload?.type !== "refresh") {
@@ -87,13 +87,33 @@ async function tryAutoRefresh(_request: NextRequest, refreshToken: string) {
         );
         const newRefreshTokenHash = await hashString(newRefreshToken);
 
-        // Rotate refresh token
+        // Rotate refresh token. Carry the device fingerprint from the
+        // request through to the new row so the "Active sessions" list
+        // keeps showing the same device after rotation (otherwise every
+        // token refresh would create a row with NULL metadata).
+        const ipAddress =
+            request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+            request.headers.get("cf-connecting-ip") ||
+            "";
+        const userAgent = request.headers.get("user-agent") || "";
+        const { hashIpForSession, shortUaForSession } = await import(
+            "@/lib/db"
+        );
+
         await revokeRefreshToken(db, refreshTokenHash);
         await storeRefreshToken(db, {
             id: generateUUID(),
             userId: payload.sub,
             tokenHash: newRefreshTokenHash,
             expiresAt: new Date(Date.now() + refreshDays * 24 * 60 * 60 * 1000),
+            ipHash:
+                (await hashIpForSession(ipAddress)) ||
+                (tokenRecord as any).ip_hash ||
+                null,
+            uaShort:
+                shortUaForSession(userAgent) ||
+                (tokenRecord as any).ua_short ||
+                null,
         });
 
         const identity = await getUserIdentity(db, payload.sub);
@@ -133,7 +153,7 @@ async function tryAutoRefresh(_request: NextRequest, refreshToken: string) {
             path: "/",
         });
 
-        console.log(`[Me] Auto-refreshed session for user ${payload.sub}`);
+        console.log("[Me] Auto-refreshed session for user %s", payload.sub);
         return response;
     } catch (err) {
         console.error("[Me] Auto-refresh failed:", err);
@@ -195,6 +215,23 @@ export async function GET(request: NextRequest) {
 
             const identity = await getUserIdentity(db, payload.sub);
 
+            // MFA status + setup-required signal. mfa_setup_required is
+            // true when the user owns ≥3 OAuth apps but hasn't enabled
+            // 2FA — the dashboard layout uses this flag to redirect to
+            // /mfa/setup-required (hard wall per the platform policy).
+            const mfaEnabled =
+                (dbUser as any).mfa_enabled === 1 ||
+                (dbUser as any).mfa_enabled === true;
+            const appsCountRow = await db
+                .prepare(
+                    `SELECT COUNT(*) AS n FROM oauth_clients
+                     WHERE owner_id = ? AND is_active = 1`,
+                )
+                .bind(payload.sub)
+                .first<{ n: number }>();
+            const ownedAppsCount = appsCountRow?.n ?? 0;
+            const mfaSetupRequired = ownedAppsCount >= 3 && !mfaEnabled;
+
             return NextResponse.json({
                 id: payload.sub,
                 userId: payload.sub,
@@ -211,6 +248,9 @@ export async function GET(request: NextRequest) {
                 location: (dbUser as any).freeform_location || null,
                 locale: (dbUser as any).locale || null,
                 timezone: (dbUser as any).timezone || null,
+                mfa_enabled: mfaEnabled,
+                mfa_setup_required: mfaSetupRequired,
+                owned_apps_count: ownedAppsCount,
                 expiresAt: new Date(payload.exp * 1000),
             });
         } catch (dbError) {

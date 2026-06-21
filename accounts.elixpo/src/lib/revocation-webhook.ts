@@ -80,7 +80,11 @@ export async function fireRevocationWebhook(
         });
         clearTimeout(t);
         if (!res.ok) {
-            console.error(`[revocation-webhook] ${clientId} -> ${res.status}`);
+            console.error(
+                "[revocation-webhook] %s -> %s",
+                clientId,
+                String(res.status),
+            );
             return false;
         }
         return true;

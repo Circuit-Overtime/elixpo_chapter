@@ -104,6 +104,25 @@ const LoginContent = () => {
                 return;
             }
 
+            // MFA gate — credentials were valid but the user has 2FA
+            // enabled on an untrusted device. The server returned an
+            // mfaToken instead of auth tokens; bounce to /mfa to collect
+            // the second factor. Pass availableMethods in the URL so the
+            // challenge page can render only the buttons that actually
+            // work, and forward any ?next= so the post-2FA redirect lands
+            // in the right place.
+            if (data.requiresMfa && data.mfaToken) {
+                const params = new URLSearchParams({
+                    token: data.mfaToken,
+                });
+                if (Array.isArray(data.availableMethods)) {
+                    params.set("methods", data.availableMethods.join(","));
+                }
+                if (next) params.set("next", next);
+                window.location.href = `/mfa?${params.toString()}`;
+                return;
+            }
+
             // If there's a ?next= param (e.g. from /oauth/authorize redirect), go there.
             // Otherwise fall back to the default dashboard.
             if (next) {

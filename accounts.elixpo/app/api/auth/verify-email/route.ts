@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
             .bind(payload.sub)
             .run();
 
-        console.log(`[Verification] Email verified for user: ${payload.sub}`);
+        console.log("[Verification] Email verified for user: %s", payload.sub);
 
         return NextResponse.json({
             message: "Email verified successfully",

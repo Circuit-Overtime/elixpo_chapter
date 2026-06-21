@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
             .bind(user.id)
             .run();
 
-        console.log(`[ResetPassword] Password reset for user: ${user.id}`);
+        console.log("[ResetPassword] Password reset for user: %s", user.id);
 
         return NextResponse.json({
             message: "Password has been reset successfully",
