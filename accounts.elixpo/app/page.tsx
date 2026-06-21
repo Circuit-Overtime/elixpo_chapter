@@ -51,7 +51,7 @@ export default function LandingPage() {
         fetch("/api/auth/me", { credentials: "include" })
             .then((r) => (r.ok ? r.json() : null))
             .then((d: any) => {
-                if (!cancelled) setAuthed(!!(d && d.email));
+                if (!cancelled) setAuthed(!!d?.email);
             })
             .catch(() => {
                 if (!cancelled) setAuthed(false);
