@@ -18,18 +18,21 @@ set -euo pipefail
 PROJECT="admin"
 ENV_FILE=".env.local"
 
-# Vars NOT pushed as runtime secrets:
-#  - NEXT_PUBLIC_*  : baked into the build, not secrets
-#  - ENVIRONMENT    : defined in wrangler.toml [env.production]
-#  - CLOUDFLARE_*   : local REST-fallback creds only (prod uses bindings/CF_*)
+# Vars NOT pushed as runtime Pages secrets:
+#  - ENVIRONMENT / NODE_ENV : defined in wrangler.toml [env.production]
+#  - CLOUDFLARE_*           : local REST-fallback creds only (prod uses bindings/CF_*)
+#
+# ALL NEXT_PUBLIC_* are pushed as runtime secrets. This app reads them
+# SERVER-SIDE at runtime via dynamic env access (accounts URL, app URL, OAuth
+# redirect URI), which Next does NOT inline — so they must exist as runtime
+# Pages vars in production. Make sure .env.local holds the PROD values
+# (e.g. NEXT_PUBLIC_REDIRECT_URL=https://admin.elixpo.com/api/auth/callback)
+# before deploying.
 skip_var() {
   case "$1" in
-    # These NEXT_PUBLIC_* vars are read SERVER-SIDE at runtime (accounts base URL)
-    # via dynamic env access, which Next does NOT inline — push them so they exist
-    # as runtime Pages vars. (Same value local/prod.)
-    NEXT_PUBLIC_ACCOUNTS_URL|NEXT_PUBLIC_APP_URL)
+    NEXT_PUBLIC_*)
       return 1 ;;
-    NEXT_PUBLIC_*|ENVIRONMENT|NODE_ENV|\
+    ENVIRONMENT|NODE_ENV|\
     CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|CLOUDFLARE_KV_NAMESPACE_ID)
       return 0 ;;
     *) return 1 ;;
