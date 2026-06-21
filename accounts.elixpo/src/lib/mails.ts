@@ -24,6 +24,7 @@ export type MailTemplate =
     | "user_verify_otp"
     | "password_reset"
     | "login_otp"
+    | "mfa_email"
     | "oauth_app_register"
     | "oauth_app_delete"
     | "account_suspended"
@@ -34,6 +35,7 @@ const HOOK_ENV: Record<MailTemplate, string> = {
     user_verify_otp: "MAILS_HOOK_USER_VERIFY_OTP",
     password_reset: "MAILS_HOOK_PASSWORD_RESET",
     login_otp: "MAILS_HOOK_LOGIN_OTP",
+    mfa_email: "MAILS_HOOK_MFA_EMAIL",
     oauth_app_register: "MAILS_HOOK_OAUTH_APP_REGISTER",
     oauth_app_delete: "MAILS_HOOK_OAUTH_APP_DELETE",
     account_suspended: "MAILS_HOOK_ACCOUNT_SUSPENDED",
@@ -51,12 +53,22 @@ interface SendOptions {
     idempotencyKey?: string;
 }
 
+export interface SendMailResult {
+    ok: boolean;
+    /** Reason on failure / suppression. Safe to surface to callers. */
+    error?: string;
+    /** mails.elixpo delivery id when available. */
+    delivery_id?: string;
+    /** True if the recipient is on the suppression list. */
+    suppressed?: boolean;
+}
+
 export async function sendMail(
     template: MailTemplate,
     to: string,
     variables: Record<string, unknown>,
     options: SendOptions = {},
-): Promise<void> {
+): Promise<SendMailResult> {
     const secret = process.env.MAILS_SHARED_SECRET;
     if (!secret) {
         // Use printf-style placeholders so user-controlled values
@@ -67,7 +79,7 @@ export async function sendMail(
             template,
             to,
         );
-        return;
+        return { ok: false, error: "MAILS_SHARED_SECRET not configured" };
     }
     const endpointKey = process.env[HOOK_ENV[template]];
     if (!endpointKey) {
@@ -77,7 +89,10 @@ export async function sendMail(
             template,
             to,
         );
-        return;
+        return {
+            ok: false,
+            error: `${HOOK_ENV[template]} not configured`,
+        };
     }
 
     const payload: Record<string, unknown> = { to, variables };
@@ -115,13 +130,15 @@ export async function sendMail(
                 String(res.status),
                 text.slice(0, 200),
             );
-            return;
+            return {
+                ok: false,
+                error: `mails.elixpo returned HTTP ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}`,
+            };
         }
 
         // 200 can mean { ok: true, status: "sent" } OR
-        // { ok: false, status: "suppressed" } — both are successful from
-        // our perspective. Only log a warning on suppression so it's
-        // visible without making it look like an error.
+        // { ok: false, status: "suppressed" } — both are HTTP-successful
+        // from our perspective but semantically different. Surface both.
         try {
             const j: any = await res.json();
             if (j && j.ok === false && j.status === "suppressed") {
@@ -130,17 +147,30 @@ export async function sendMail(
                     template,
                     to,
                 );
+                return {
+                    ok: false,
+                    suppressed: true,
+                    error: "Recipient has unsubscribed from this address",
+                };
             }
+            if (j && j.id) {
+                return { ok: true, delivery_id: j.id };
+            }
+            return { ok: true };
         } catch {
             /* mails.elixpo always returns JSON; non-JSON 200 is OK to ignore */
+            return { ok: true };
         }
     } catch (err) {
+        const message =
+            err instanceof Error ? err.message : String(err);
         console.error(
             "[mails] %s to %s delivery error: %s",
             template,
             to,
-            err instanceof Error ? err.message : String(err),
+            message,
         );
+        return { ok: false, error: `Network error: ${message}` };
     } finally {
         clearTimeout(tm);
     }

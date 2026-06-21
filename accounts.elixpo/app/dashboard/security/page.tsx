@@ -28,6 +28,9 @@ import {
 } from "@simplewebauthn/browser";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useState } from "react";
+import { useCooldown } from "@/lib/hooks/useCooldown";
+
+const EMAIL_OTP_RESEND_COOLDOWN_S = 60;
 
 interface Factor {
     id: string;
@@ -104,12 +107,50 @@ export default function SecurityPage() {
     // Freshly minted backup codes (revealed once).
     const [revealedCodes, setRevealedCodes] = useState<string[] | null>(null);
 
-    // Regenerate-backup-codes confirmation modal — replaces native
-    // confirm() so it matches the rest of the dashboard styling and
-    // can show enough context (current unused count, consequences)
-    // for the user to make an informed call.
-    const [regenDialog, setRegenDialog] = useState(false);
-    const [regenBusy, setRegenBusy] = useState(false);
+    // Shared confirm-dialog. One state object drives any
+    // "are-you-sure?" prompt on this page — every action that used to
+    // call native confirm() (disable 2FA, revoke device, revoke
+    // session, regenerate backup codes, remove factor) now goes through
+    // askConfirm() so we get consistent styling, a busy state, and a
+    // single place to evolve the visual.
+    interface ConfirmCfg {
+        title: string;
+        icon?: React.ReactNode;
+        body: React.ReactNode;
+        confirmLabel: string;
+        destructive?: boolean;
+        onConfirm: () => Promise<void> | void;
+    }
+    const [confirmCfg, setConfirmCfg] = useState<ConfirmCfg | null>(null);
+    const [confirmBusy, setConfirmBusy] = useState(false);
+    const askConfirm = (cfg: ConfirmCfg) => setConfirmCfg(cfg);
+    const runConfirm = async () => {
+        if (!confirmCfg) return;
+        setConfirmBusy(true);
+        try {
+            await confirmCfg.onConfirm();
+        } finally {
+            setConfirmBusy(false);
+            setConfirmCfg(null);
+        }
+    };
+
+    // Email-OTP enrollment dialog. Verify-before-enable ceremony: enroll
+    // sends a 6-digit code to the user's email; they type it here and
+    // we only flip confirmed_at once it matches.
+    const [emailEnrollDialog, setEmailEnrollDialog] = useState(false);
+    const [emailEnrollData, setEmailEnrollData] = useState<{
+        factor_id: string;
+        sent_to: string;
+    } | null>(null);
+    const [emailEnrollCode, setEmailEnrollCode] = useState("");
+    const [emailEnrollBusy, setEmailEnrollBusy] = useState(false);
+    // Shared cooldown between the in-dialog "Resend code" and the
+    // pending-factor-row "Resend & enter code" — both call
+    // startEmailEnroll which hits the same rate-limited KV cooldown
+    // server-side. Without this the user could double-click and get a
+    // confusing 429.
+    const emailResendCd = useCooldown();
 
     const refresh = useCallback(async () => {
         try {
@@ -132,6 +173,22 @@ export default function SecurityPage() {
             }
         } finally {
             setLoading(false);
+        }
+    }, []);
+
+    const autoEnable = useCallback(async () => {
+        const res = await fetch("/api/auth/mfa/enable", {
+            method: "POST",
+            credentials: "include",
+        });
+        if (!res.ok) return;
+        const data: any = await res.json();
+        if (data.backup_codes && !data.already_enabled) {
+            setRevealedCodes(data.backup_codes);
+            setMsg({
+                text: "2FA enabled — save these backup codes now, they won't be shown again.",
+                type: "success",
+            });
         }
     }, []);
 
@@ -185,6 +242,9 @@ export default function SecurityPage() {
             setTotpDialog(false);
             setTotpData(null);
             setMsg({ text: "Authenticator app enrolled", type: "success" });
+            // First confirmed factor → idempotently flip mfa_enabled
+            // and surface backup codes. Re-confirms are silent no-ops.
+            await autoEnable();
             await refresh();
         } finally {
             setTotpBusy(false);
@@ -226,6 +286,7 @@ export default function SecurityPage() {
                 return;
             }
             setMsg({ text: "Passkey enrolled", type: "success" });
+            await autoEnable();
             await refresh();
         } catch (err: any) {
             setMsg({
@@ -235,34 +296,143 @@ export default function SecurityPage() {
         }
     };
 
-    const enrollEmailOtp = async () => {
+    const startEmailEnroll = async () => {
         setMsg(null);
-        const res = await fetch("/api/auth/mfa/email-otp/enable", {
-            method: "POST",
-            credentials: "include",
-        });
-        if (!res.ok) {
-            const e: any = await res.json();
-            setMsg({ text: e.error || "Failed to enable", type: "error" });
-            return;
+        setEmailEnrollBusy(true);
+        try {
+            const res = await fetch("/api/auth/mfa/email-otp/enroll", {
+                method: "POST",
+                credentials: "include",
+            });
+            // 500-without-JSON happens when the route crashes before
+            // serializing a response (e.g. KV binding missing on CF).
+            // Surface the HTTP status so the user sees something actionable.
+            let data: any = {};
+            try {
+                data = await res.json();
+            } catch {
+                /* not JSON */
+            }
+            if (!res.ok) {
+                setMsg({
+                    text:
+                        data.error ||
+                        `Couldn't start enrollment (HTTP ${res.status}). Check that the email-OTP route is deployed and KV is bound.`,
+                    type: "error",
+                });
+                return;
+            }
+            // Already-confirmed short-circuit from the API.
+            if (data.already_confirmed) {
+                setMsg({
+                    text: "Email code is already enabled.",
+                    type: "success",
+                });
+                await refresh();
+                return;
+            }
+            setEmailEnrollData({
+                factor_id: data.factor_id,
+                sent_to: data.sent_to,
+            });
+            setEmailEnrollCode("");
+            setEmailEnrollDialog(true);
+            emailResendCd.start(EMAIL_OTP_RESEND_COOLDOWN_S);
+        } finally {
+            setEmailEnrollBusy(false);
         }
-        setMsg({ text: "Email OTP enabled as a 2FA method", type: "success" });
-        await refresh();
     };
 
-    const removeFactor = async (id: string) => {
-        if (!confirm("Remove this 2FA method?")) return;
-        const res = await fetch(`/api/auth/mfa/factors/${id}`, {
-            method: "DELETE",
-            credentials: "include",
-        });
-        if (!res.ok) {
-            const e: any = await res.json();
-            setMsg({ text: e.error || "Remove failed", type: "error" });
-            return;
+    const confirmEmailEnroll = async () => {
+        if (!emailEnrollData) return;
+        setEmailEnrollBusy(true);
+        try {
+            const res = await fetch("/api/auth/mfa/email-otp/confirm", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    factor_id: emailEnrollData.factor_id,
+                    code: emailEnrollCode,
+                }),
+            });
+            const data: any = await res.json();
+            if (!res.ok) {
+                setMsg({ text: data.error || "Invalid code", type: "error" });
+                return;
+            }
+            setEmailEnrollDialog(false);
+            setEmailEnrollData(null);
+            setMsg({
+                text: "Email code enabled as a 2FA method",
+                type: "success",
+            });
+            await autoEnable();
+            await refresh();
+        } finally {
+            setEmailEnrollBusy(false);
         }
-        await refresh();
     };
+
+    const resendEmailEnroll = async () => {
+        // Same call as start — server side dedupes and reuses the
+        // pending factor id, so we don't accidentally orphan rows.
+        await startEmailEnroll();
+    };
+
+    const removeFactor = (target: Factor) =>
+        askConfirm({
+            title: "Remove this 2FA method?",
+            icon: <DeleteIcon sx={{ color: "#f87171" }} />,
+            body: (
+                <>
+                    <Typography sx={{ color: "rgba(255,255,255,0.7)", mb: 2 }}>
+                        You're about to remove{" "}
+                        <strong style={{ color: "#f5f5f4" }}>
+                            {target.name || kindLabel[target.kind]}
+                        </strong>{" "}
+                        from your 2FA methods.
+                    </Typography>
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            borderRadius: "8px",
+                            bgcolor: "rgba(239,68,68,0.08)",
+                            border: "1px solid rgba(239,68,68,0.25)",
+                            color: "#fca5a5",
+                            fontSize: "0.85rem",
+                        }}
+                    >
+                        <strong>This can't be undone.</strong> If this is your
+                        last method, 2FA will refuse the removal — enroll a
+                        replacement first.
+                    </Box>
+                </>
+            ),
+            confirmLabel: "Remove",
+            destructive: true,
+            onConfirm: async () => {
+                const res = await fetch(`/api/auth/mfa/factors/${target.id}`, {
+                    method: "DELETE",
+                    credentials: "include",
+                });
+                // 404 means already gone (double-click race / other tab).
+                // End-state matches the user's intent, so treat as success.
+                if (res.ok || res.status === 404) {
+                    setMsg({
+                        text: "2FA method removed",
+                        type: "success",
+                    });
+                    await refresh();
+                    return;
+                }
+                const e: any = await res.json();
+                setMsg({
+                    text: e.error || "Remove failed",
+                    type: "error",
+                });
+            },
+        });
 
     const enableMfa = async () => {
         const res = await fetch("/api/auth/mfa/enable", {
@@ -282,66 +452,114 @@ export default function SecurityPage() {
         await refresh();
     };
 
-    const disableMfa = async () => {
-        if (
-            !confirm(
-                "Disable 2FA? Your enrolled methods stay but won't be required at login.",
-            )
-        )
-            return;
-        const res = await fetch("/api/auth/mfa/disable", {
-            method: "POST",
-            credentials: "include",
-        });
-        if (!res.ok) {
-            const e: any = await res.json();
-            setMsg({ text: e.error || "Disable failed", type: "error" });
-            return;
-        }
-        setMsg({ text: "2FA disabled", type: "success" });
-        await refresh();
-    };
-
-    const regenerateBackupCodes = async () => {
-        setRegenBusy(true);
-        try {
-            const res = await fetch("/api/auth/mfa/backup-codes/regenerate", {
-                method: "POST",
-                credentials: "include",
-            });
-            const data: any = await res.json();
-            if (!res.ok) {
-                setMsg({
-                    text: data.error || "Regenerate failed",
-                    type: "error",
+    const disableMfa = () =>
+        askConfirm({
+            title: "Disable 2FA?",
+            icon: <SecurityIcon sx={{ color: "#fbbf24" }} />,
+            body: (
+                <Typography sx={{ color: "rgba(255,255,255,0.7)" }}>
+                    Your enrolled methods stay enrolled, but they won't be
+                    required at login. You can re-enable 2FA at any time.
+                </Typography>
+            ),
+            confirmLabel: "Disable",
+            destructive: true,
+            onConfirm: async () => {
+                const res = await fetch("/api/auth/mfa/disable", {
+                    method: "POST",
+                    credentials: "include",
                 });
-                return;
-            }
-            setRevealedCodes(data.backup_codes);
-            setRegenDialog(false);
-            await refresh();
-        } finally {
-            setRegenBusy(false);
-        }
-    };
-
-    const revokeDevice = async (id: string) => {
-        if (
-            !confirm(
-                "Revoke this device? It will be asked for 2FA on next login.",
-            )
-        )
-            return;
-        const res = await fetch(`/api/auth/devices/${id}`, {
-            method: "DELETE",
-            credentials: "include",
+                if (!res.ok) {
+                    const e: any = await res.json();
+                    setMsg({
+                        text: e.error || "Disable failed",
+                        type: "error",
+                    });
+                    return;
+                }
+                setMsg({ text: "2FA disabled", type: "success" });
+                await refresh();
+            },
         });
-        if (!res.ok) {
-            setMsg({ text: "Revoke failed", type: "error" });
-            return;
-        }
-        await refresh();
-    };
+
+    const regenerateBackupCodes = () =>
+        askConfirm({
+            title: "Regenerate backup codes?",
+            icon: <SecurityIcon sx={{ color: "#fbbf24" }} />,
+            body: (
+                <>
+                    <Typography sx={{ color: "rgba(255,255,255,0.7)", mb: 2 }}>
+                        A fresh set of 8 codes will be generated. You'll see
+                        them once — make sure you save them.
+                    </Typography>
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            borderRadius: "8px",
+                            bgcolor: "rgba(251,146,60,0.08)",
+                            border: "1px solid rgba(251,146,60,0.25)",
+                            color: "#fed7aa",
+                            fontSize: "0.85rem",
+                        }}
+                    >
+                        <strong>
+                            Your current codes will stop working immediately.
+                        </strong>
+                        {status?.unused_backup_codes ? (
+                            <>
+                                {" "}
+                                You have{" "}
+                                <strong>{status.unused_backup_codes}</strong>{" "}
+                                unused — these will be invalidated.
+                            </>
+                        ) : null}
+                    </Box>
+                </>
+            ),
+            confirmLabel: "Regenerate",
+            onConfirm: async () => {
+                const res = await fetch(
+                    "/api/auth/mfa/backup-codes/regenerate",
+                    { method: "POST", credentials: "include" },
+                );
+                const data: any = await res.json();
+                if (!res.ok) {
+                    setMsg({
+                        text: data.error || "Regenerate failed",
+                        type: "error",
+                    });
+                    return;
+                }
+                setRevealedCodes(data.backup_codes);
+                await refresh();
+            },
+        });
+
+    const revokeDevice = (id: string) =>
+        askConfirm({
+            title: "Revoke trusted device?",
+            icon: <LaptopIcon sx={{ color: "#fbbf24" }} />,
+            body: (
+                <Typography sx={{ color: "rgba(255,255,255,0.7)" }}>
+                    This device will be asked for 2FA on the next sign-in.
+                    Existing sessions on that device keep working until they
+                    expire.
+                </Typography>
+            ),
+            confirmLabel: "Revoke",
+            destructive: true,
+            onConfirm: async () => {
+                const res = await fetch(`/api/auth/devices/${id}`, {
+                    method: "DELETE",
+                    credentials: "include",
+                });
+                if (!res.ok) {
+                    setMsg({ text: "Revoke failed", type: "error" });
+                    return;
+                }
+                await refresh();
+            },
+        });
 
     // Build a plain-text dump of the codes with a short header so the
     // user opening the file later still knows what these are. ISO date
@@ -386,33 +604,42 @@ export default function SecurityPage() {
         }
     };
 
-    const revokeSession = async (s: Session) => {
-        const isCurrent = s.is_current;
-        const ok = confirm(
-            isCurrent
-                ? "Sign out from this device? You'll be returned to the login page."
-                : `Sign out the session on ${s.device}? That device will be signed out next time it tries to refresh.`,
-        );
-        if (!ok) return;
-        const res = await fetch(`/api/auth/sessions/${s.id}`, {
-            method: "DELETE",
-            credentials: "include",
+    const revokeSession = (s: Session) =>
+        askConfirm({
+            title: s.is_current
+                ? "Sign out from this device?"
+                : "Sign out other session?",
+            icon: <LaptopIcon sx={{ color: "#fbbf24" }} />,
+            body: (
+                <Typography sx={{ color: "rgba(255,255,255,0.7)" }}>
+                    {s.is_current
+                        ? "You'll be returned to the login page on this device."
+                        : `The session on ${s.device} will be signed out the next time it tries to refresh its token.`}
+                </Typography>
+            ),
+            confirmLabel: s.is_current ? "Sign out" : "Sign out session",
+            destructive: true,
+            onConfirm: async () => {
+                const res = await fetch(`/api/auth/sessions/${s.id}`, {
+                    method: "DELETE",
+                    credentials: "include",
+                });
+                if (!res.ok) {
+                    setMsg({ text: "Sign out failed", type: "error" });
+                    return;
+                }
+                if (s.is_current) {
+                    // Revoking the current session — clear cookies + bounce.
+                    await fetch("/api/auth/logout", {
+                        method: "POST",
+                        credentials: "include",
+                    }).catch(() => {});
+                    window.location.href = "/login";
+                    return;
+                }
+                await refresh();
+            },
         });
-        if (!res.ok) {
-            setMsg({ text: "Sign out failed", type: "error" });
-            return;
-        }
-        if (isCurrent) {
-            // Revoking the current session — clear cookies + bounce.
-            await fetch("/api/auth/logout", {
-                method: "POST",
-                credentials: "include",
-            }).catch(() => {});
-            window.location.href = "/login";
-            return;
-        }
-        await refresh();
-    };
 
     if (loading) {
         return (
@@ -562,9 +789,60 @@ export default function SecurityPage() {
                                             : ""}
                                     </Typography>
                                 </Box>
+                                {/* Pending factors need a resume action.
+                                    Without this the user is stuck — a
+                                    half-enrolled email_otp / totp row sits
+                                    in the list with no way to re-enter the
+                                    OTP. Reusing the same start handler
+                                    funnels back through the existing
+                                    enrollment flow (which is idempotent for
+                                    email_otp — resends the code and reuses
+                                    the row — and resets for totp). */}
+                                {!f.confirmed && f.kind === "email_otp" && (
+                                    <Button
+                                        size="small"
+                                        onClick={startEmailEnroll}
+                                        disabled={emailResendCd.active}
+                                        sx={{
+                                            color: "#c8b6ff",
+                                            textTransform: "none",
+                                            fontSize: "0.8rem",
+                                            mr: 0.5,
+                                            "&:hover": {
+                                                bgcolor:
+                                                    "rgba(155,123,247,0.08)",
+                                            },
+                                            "&.Mui-disabled": {
+                                                color: "rgba(255,255,255,0.35)",
+                                            },
+                                        }}
+                                    >
+                                        {emailResendCd.active
+                                            ? `Resend in ${emailResendCd.secondsLeft}s`
+                                            : "Resend & enter code"}
+                                    </Button>
+                                )}
+                                {!f.confirmed && f.kind === "totp" && (
+                                    <Button
+                                        size="small"
+                                        onClick={startTotp}
+                                        sx={{
+                                            color: "#c8b6ff",
+                                            textTransform: "none",
+                                            fontSize: "0.8rem",
+                                            mr: 0.5,
+                                            "&:hover": {
+                                                bgcolor:
+                                                    "rgba(155,123,247,0.08)",
+                                            },
+                                        }}
+                                    >
+                                        Continue setup
+                                    </Button>
+                                )}
                                 <IconButton
                                     size="small"
-                                    onClick={() => removeFactor(f.id)}
+                                    onClick={() => removeFactor(f)}
                                     sx={{ color: "#ef4444" }}
                                 >
                                     <DeleteIcon fontSize="small" />
@@ -574,56 +852,74 @@ export default function SecurityPage() {
                     </Box>
                 )}
 
-                <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
-                    <Button
-                        variant="outlined"
-                        startIcon={<PhoneAndroidIcon />}
-                        onClick={startTotp}
-                        sx={{
-                            color: "#c8b6ff",
-                            borderColor: "rgba(155,123,247,0.4)",
-                            textTransform: "none",
-                            "&:hover": {
-                                borderColor: "#9b7bf7",
-                                bgcolor: "rgba(155,123,247,0.06)",
-                            },
-                        }}
-                    >
-                        Add authenticator app
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        startIcon={<KeyIcon />}
-                        onClick={enrollPasskey}
-                        sx={{
-                            color: "#c8b6ff",
-                            borderColor: "rgba(155,123,247,0.4)",
-                            textTransform: "none",
-                            "&:hover": {
-                                borderColor: "#9b7bf7",
-                                bgcolor: "rgba(155,123,247,0.06)",
-                            },
-                        }}
-                    >
-                        Add passkey
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        startIcon={<MailOutlineIcon />}
-                        onClick={enrollEmailOtp}
-                        sx={{
-                            color: "#c8b6ff",
-                            borderColor: "rgba(155,123,247,0.4)",
-                            textTransform: "none",
-                            "&:hover": {
-                                borderColor: "#9b7bf7",
-                                bgcolor: "rgba(155,123,247,0.06)",
-                            },
-                        }}
-                    >
-                        Enable email code
-                    </Button>
-                </Box>
+                {(() => {
+                    // Derive per-kind enrollment state so we can grey out
+                    // buttons that point at factors the user already has.
+                    // TOTP and Email-OTP are single-row-per-user factors;
+                    // Passkey users can have multiple, so its button
+                    // stays enabled.
+                    const hasTotp = (status?.factors || []).some(
+                        (f) => f.kind === "totp" && f.confirmed,
+                    );
+                    const hasEmailOtp = (status?.factors || []).some(
+                        (f) => f.kind === "email_otp" && f.confirmed,
+                    );
+                    const enrollSx = {
+                        color: "#c8b6ff",
+                        borderColor: "rgba(155,123,247,0.4)",
+                        textTransform: "none" as const,
+                        "&:hover": {
+                            borderColor: "#9b7bf7",
+                            bgcolor: "rgba(155,123,247,0.06)",
+                        },
+                        "&.Mui-disabled": {
+                            color: "rgba(255,255,255,0.3)",
+                            borderColor: "rgba(255,255,255,0.08)",
+                        },
+                    };
+                    return (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 1.5,
+                                flexWrap: "wrap",
+                            }}
+                        >
+                            <Button
+                                variant="outlined"
+                                startIcon={<PhoneAndroidIcon />}
+                                onClick={startTotp}
+                                disabled={hasTotp}
+                                sx={enrollSx}
+                            >
+                                {hasTotp
+                                    ? "Authenticator added"
+                                    : "Add authenticator app"}
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                startIcon={<KeyIcon />}
+                                onClick={enrollPasskey}
+                                sx={enrollSx}
+                            >
+                                Add passkey
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                startIcon={<MailOutlineIcon />}
+                                onClick={startEmailEnroll}
+                                disabled={hasEmailOtp || emailEnrollBusy}
+                                sx={enrollSx}
+                            >
+                                {hasEmailOtp
+                                    ? "Email code enabled"
+                                    : emailEnrollBusy
+                                      ? "Sending code…"
+                                      : "Enable email code"}
+                            </Button>
+                        </Box>
+                    );
+                })()}
 
                 <Box
                     sx={{
@@ -804,7 +1100,7 @@ export default function SecurityPage() {
 
                     <Button
                         variant="outlined"
-                        onClick={() => setRegenDialog(true)}
+                        onClick={regenerateBackupCodes}
                         sx={{
                             color: "#c8b6ff",
                             borderColor: "rgba(155,123,247,0.4)",
@@ -1180,10 +1476,13 @@ export default function SecurityPage() {
                 </DialogActions>
             </Dialog>
 
-            {/* Regenerate backup codes confirmation */}
+            {/* Shared confirmation dialog — replaces native confirm()
+                for every "are-you-sure" prompt on this page. Title +
+                body + cancel + confirm. Destructive flag swaps the
+                confirm button gradient red. */}
             <Dialog
-                open={regenDialog}
-                onClose={() => !regenBusy && setRegenDialog(false)}
+                open={!!confirmCfg}
+                onClose={() => !confirmBusy && setConfirmCfg(null)}
                 PaperProps={{
                     sx: {
                         bgcolor: "rgba(22,28,24,0.97)",
@@ -1203,51 +1502,10 @@ export default function SecurityPage() {
                         gap: 1.5,
                     }}
                 >
-                    <SecurityIcon sx={{ color: "#fbbf24" }} />
-                    Regenerate backup codes?
+                    {confirmCfg?.icon}
+                    {confirmCfg?.title}
                 </DialogTitle>
-                <DialogContent>
-                    <Typography
-                        sx={{
-                            color: "rgba(255,255,255,0.7)",
-                            fontSize: "0.95rem",
-                            mb: 2,
-                        }}
-                    >
-                        A fresh set of 8 codes will be generated. You'll see
-                        them once — make sure you save them.
-                    </Typography>
-                    <Box
-                        sx={{
-                            p: 1.5,
-                            borderRadius: "8px",
-                            bgcolor: "rgba(251,146,60,0.08)",
-                            border: "1px solid rgba(251,146,60,0.25)",
-                            color: "#fed7aa",
-                            fontSize: "0.85rem",
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 1,
-                        }}
-                    >
-                        <Box>
-                            <strong>
-                                Your current codes will stop working
-                                immediately.
-                            </strong>
-                            {status?.unused_backup_codes ? (
-                                <>
-                                    {" "}
-                                    You have{" "}
-                                    <strong>
-                                        {status.unused_backup_codes}
-                                    </strong>{" "}
-                                    unused — these will be invalidated.
-                                </>
-                            ) : null}
-                        </Box>
-                    </Box>
-                </DialogContent>
+                <DialogContent>{confirmCfg?.body}</DialogContent>
                 <DialogActions
                     sx={{
                         borderTop: "1px solid rgba(255,255,255,0.1)",
@@ -1255,8 +1513,8 @@ export default function SecurityPage() {
                     }}
                 >
                     <Button
-                        onClick={() => setRegenDialog(false)}
-                        disabled={regenBusy}
+                        onClick={() => setConfirmCfg(null)}
+                        disabled={confirmBusy}
                         sx={{
                             color: "rgba(255,255,255,0.6)",
                             textTransform: "none",
@@ -1265,8 +1523,136 @@ export default function SecurityPage() {
                         Cancel
                     </Button>
                     <Button
-                        onClick={regenerateBackupCodes}
-                        disabled={regenBusy}
+                        onClick={runConfirm}
+                        disabled={confirmBusy}
+                        variant="contained"
+                        sx={{
+                            background: confirmCfg?.destructive
+                                ? "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)"
+                                : "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                            textTransform: "none",
+                            fontWeight: 600,
+                        }}
+                    >
+                        {confirmBusy ? "Working…" : confirmCfg?.confirmLabel}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Email-OTP enrollment dialog */}
+            <Dialog
+                open={emailEnrollDialog}
+                onClose={() => !emailEnrollBusy && setEmailEnrollDialog(false)}
+                PaperProps={{
+                    sx: {
+                        bgcolor: "rgba(22,28,24,0.97)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "16px",
+                        backdropFilter: "blur(20px)",
+                        maxWidth: 440,
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        color: "#f5f5f4",
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                    }}
+                >
+                    <MailOutlineIcon sx={{ color: "#9b7bf7" }} />
+                    Enable email code
+                </DialogTitle>
+                <DialogContent>
+                    <Typography
+                        sx={{
+                            color: "rgba(255,255,255,0.7)",
+                            fontSize: "0.9rem",
+                            mb: 2,
+                        }}
+                    >
+                        We sent a 6-digit verification code to{" "}
+                        <strong style={{ color: "#f5f5f4" }}>
+                            {emailEnrollData?.sent_to}
+                        </strong>
+                        . Enter it below to confirm you control this address.
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        value={emailEnrollCode}
+                        onChange={(e) =>
+                            setEmailEnrollCode(
+                                e.target.value.replace(/\D/g, "").slice(0, 6),
+                            )
+                        }
+                        placeholder="123456"
+                        inputProps={{
+                            inputMode: "numeric",
+                            style: {
+                                textAlign: "center",
+                                fontSize: "1.5rem",
+                                letterSpacing: "8px",
+                                fontFamily: "monospace",
+                            },
+                        }}
+                        sx={{
+                            "& .MuiOutlinedInput-root": {
+                                color: "#f5f5f4",
+                                "& fieldset": {
+                                    borderColor: "rgba(255,255,255,0.15)",
+                                },
+                                "&:hover fieldset": {
+                                    borderColor: "rgba(155,123,247,0.4)",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "#9b7bf7",
+                                },
+                            },
+                        }}
+                    />
+                    <Button
+                        size="small"
+                        onClick={resendEmailEnroll}
+                        disabled={emailEnrollBusy || emailResendCd.active}
+                        sx={{
+                            mt: 1,
+                            color: "rgba(255,255,255,0.5)",
+                            textTransform: "none",
+                            fontSize: "0.8rem",
+                            "&.Mui-disabled": {
+                                color: "rgba(255,255,255,0.3)",
+                            },
+                        }}
+                    >
+                        {emailResendCd.active
+                            ? `Resend in ${emailResendCd.secondsLeft}s`
+                            : "Resend code"}
+                    </Button>
+                </DialogContent>
+                <DialogActions
+                    sx={{
+                        borderTop: "1px solid rgba(255,255,255,0.1)",
+                        p: 2,
+                    }}
+                >
+                    <Button
+                        onClick={() => setEmailEnrollDialog(false)}
+                        disabled={emailEnrollBusy}
+                        sx={{
+                            color: "rgba(255,255,255,0.6)",
+                            textTransform: "none",
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={confirmEmailEnroll}
+                        disabled={
+                            emailEnrollBusy || emailEnrollCode.length !== 6
+                        }
                         variant="contained"
                         sx={{
                             background:
@@ -1275,7 +1661,7 @@ export default function SecurityPage() {
                             fontWeight: 600,
                         }}
                     >
-                        {regenBusy ? "Generating…" : "Regenerate"}
+                        {emailEnrollBusy ? "Verifying…" : "Verify & enable"}
                     </Button>
                 </DialogActions>
             </Dialog>

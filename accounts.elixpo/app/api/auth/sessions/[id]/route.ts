@@ -33,16 +33,35 @@ export async function DELETE(
 
     const { id } = await params;
     const db = await getDatabase();
+
+    // Look up the row's fingerprint so we can revoke EVERY session
+    // belonging to the same device (the UI shows one row per device;
+    // signing out that row should kill all underlying sessions, not
+    // just the representative one).
+    const target = await db
+        .prepare(
+            `SELECT ip_hash, ua_short FROM refresh_tokens
+             WHERE id = ? AND user_id = ?`,
+        )
+        .bind(id, auth.sub)
+        .first<{ ip_hash: string | null; ua_short: string | null }>();
+    if (!target) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    // NULL-safe comparison: `IS` works for both real values and NULLs,
+    // unlike `=` which never matches NULL.
     const r = await db
         .prepare(
             `UPDATE refresh_tokens
              SET revoked = 1, revoked_at = CURRENT_TIMESTAMP
-             WHERE id = ? AND user_id = ? AND revoked = 0`,
+             WHERE user_id = ? AND revoked = 0
+                AND ip_hash IS ? AND ua_short IS ?`,
         )
-        .bind(id, auth.sub)
+        .bind(auth.sub, target.ip_hash, target.ua_short)
         .run();
-    if ((r.meta?.changes ?? 0) === 0) {
-        return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-    return NextResponse.json({ revoked: true });
+    return NextResponse.json({
+        revoked: true,
+        sessions_revoked: r.meta?.changes ?? 0,
+    });
 }

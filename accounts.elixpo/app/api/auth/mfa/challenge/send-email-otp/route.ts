@@ -7,7 +7,10 @@ import { sendMail } from "@/lib/mails";
 import { verifyMfaChallengeToken } from "@/lib/mfa-utils";
 
 const OTP_TTL_SECONDS = 5 * 60;
-const COOLDOWN_SECONDS = 30;
+// Cloudflare KV's minimum expirationTtl is 60 seconds — anything lower
+// fails with HTTP 400. Bumping accordingly; also a reasonable floor for
+// a login-OTP resend cooldown.
+const COOLDOWN_SECONDS = 60;
 
 /**
  * POST /api/auth/mfa/challenge/send-email-otp

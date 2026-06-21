@@ -59,24 +59,60 @@ function ChallengeInner() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // We don't actually fetch methods — the /login response embeds
-        // them. To survive a refresh, accept ?methods=passkey,totp,...
-        const raw = params.get("methods");
-        if (raw) {
-            const parsed = raw
-                .split(",")
-                .filter((m): m is Method =>
-                    ["passkey", "totp", "email_otp", "backup_code"].includes(m),
+        // Source of truth = the server, because the OAuth-callback flow
+        // redirects here WITHOUT methods in the URL (the email-login
+        // flow does pass them as a hint). Either way we re-fetch the
+        // user's actually-enrolled list so we never render a button
+        // that would fail at verify time.
+        if (!mfaToken) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(
+                    `/api/auth/mfa/challenge/methods?token=${encodeURIComponent(mfaToken)}`,
                 );
-            setMethods(parsed);
-            if (parsed.length > 0) setSelected(parsed[0]);
-        } else {
-            // Default fallback: assume all are available; verify endpoint
-            // will reject methods the user hasn't enrolled.
-            setMethods(["passkey", "totp", "email_otp", "backup_code"]);
-            setSelected("passkey");
-        }
-    }, [params]);
+                if (!res.ok) {
+                    // mfaToken expired or invalid — fall back to whatever
+                    // URL hints we have so the page at least renders.
+                    if (cancelled) return;
+                    const raw = params.get("methods");
+                    const hint = raw
+                        ? (raw
+                              .split(",")
+                              .filter((m): m is Method =>
+                                  [
+                                      "passkey",
+                                      "totp",
+                                      "email_otp",
+                                      "backup_code",
+                                  ].includes(m),
+                              ) as Method[])
+                        : [];
+                    setMethods(hint);
+                    if (hint.length > 0) setSelected(hint[0]);
+                    return;
+                }
+                const data: any = await res.json();
+                const real = (data.methods || []).filter(
+                    (m: string): m is Method =>
+                        [
+                            "passkey",
+                            "totp",
+                            "email_otp",
+                            "backup_code",
+                        ].includes(m),
+                );
+                if (cancelled) return;
+                setMethods(real);
+                if (real.length > 0) setSelected(real[0]);
+            } catch {
+                /* network blip — leave list empty so the empty-state shows */
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [mfaToken, params]);
 
     if (!mfaToken) {
         return (

@@ -36,14 +36,26 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const db = await getDatabase();
-    const count = (await db
-        .prepare(
-            `SELECT COUNT(*) AS n FROM user_mfa_factors
-             WHERE user_id = ? AND confirmed_at IS NOT NULL`,
-        )
-        .bind(auth.sub)
-        .first()) as { n: number } | null;
-    if (!count || count.n < 1) {
+    const [factorCountRow, userRow, codeCountRow] = await db.batch([
+        db
+            .prepare(
+                `SELECT COUNT(*) AS n FROM user_mfa_factors
+                 WHERE user_id = ? AND confirmed_at IS NOT NULL`,
+            )
+            .bind(auth.sub),
+        db.prepare("SELECT mfa_enabled FROM users WHERE id = ?").bind(auth.sub),
+        db
+            .prepare(
+                `SELECT COUNT(*) AS n FROM user_mfa_backup_codes
+                 WHERE user_id = ? AND used_at IS NULL`,
+            )
+            .bind(auth.sub),
+    ]);
+
+    const factorCount =
+        ((factorCountRow.results || [])[0] as { n: number } | undefined)?.n ??
+        0;
+    if (factorCount < 1) {
         return NextResponse.json(
             {
                 error: "Enroll at least one 2FA method before enabling 2FA.",
@@ -52,7 +64,27 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    // Mint fresh codes; invalidate the old batch atomically with the flag flip.
+    // Idempotent: if 2FA is already on, return success WITHOUT rotating
+    // backup codes. Auto-enable (client-side, on first factor confirm)
+    // calls this on every confirm; without this short-circuit it would
+    // invalidate the user's saved codes every time they enroll a second
+    // method.
+    const alreadyEnabled = !!(
+        (userRow.results || [])[0] as { mfa_enabled: number } | undefined
+    )?.mfa_enabled;
+    if (alreadyEnabled) {
+        return NextResponse.json({
+            enabled: true,
+            already_enabled: true,
+            unused_backup_codes:
+                ((codeCountRow.results || [])[0] as { n: number } | undefined)
+                    ?.n ?? 0,
+        });
+    }
+
+    // First-time enable — mint fresh codes; invalidate any leftover
+    // batch (defensive — there shouldn't be any) atomically with the
+    // flag flip.
     const plain = generateBackupCodes();
     const hashes = await Promise.all(plain.map(hashBackupCode));
 
