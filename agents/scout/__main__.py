@@ -25,7 +25,15 @@ from agents.scout.filters import (
 log = structlog.get_logger()
 
 MAX_CANDIDATES = 20
-PER_LANGUAGE = 30
+PER_BAND_PAGE = 15
+
+# Star bands for size diversity — selection round-robins across these so small
+# and mid repos aren't drowned out by giants. (lo, hi) inclusive-ish ranges.
+BANDS: list[tuple[str, int, int]] = [
+    ("small", MIN_STARS, 2_000),
+    ("mid", 2_000, 15_000),
+    ("large", 15_000, MAX_STARS),
+]
 
 
 async def discover_candidates(
@@ -49,15 +57,19 @@ async def discover_candidates(
     pushed_after = (now - timedelta(days=ACTIVE_DAYS)).date().isoformat()
     lang_set = {lang.lower() for lang in languages}
 
-    # 1. search all languages concurrently
-    results = await asyncio.gather(
-        *(search_repos(api, lang, MIN_STARS, MAX_STARS, pushed_after, PER_LANGUAGE) for lang in languages)
-    )
+    # 1. search every (language × star band) concurrently — each query requires
+    #    good-first-issues:>0, so results are guaranteed to have contributable work
+    tasks, task_bands = [], []
+    for band, lo, hi in BANDS:
+        for lang in languages:
+            tasks.append(search_repos(api, lang, lo, hi, pushed_after, PER_BAND_PAGE))
+            task_bands.append(band)
+    results = await asyncio.gather(*tasks)
 
-    # 2. filter + dedupe + base score (no contributing yet)
-    candidates: list[RepoCandidate] = []
+    # 2. filter + dedupe + base score, keeping each candidate's band
+    by_band: dict[str, list[RepoCandidate]] = {b: [] for b, _, _ in BANDS}
     seen: set[str] = set()
-    for repos in results:
+    for band, repos in zip(task_bands, results, strict=True):
         for repo in repos:
             name = repo.get("full_name", "")
             if name in seen:
@@ -66,7 +78,7 @@ async def discover_candidates(
             if not ok:
                 continue
             seen.add(name)
-            candidates.append(
+            by_band[band].append(
                 RepoCandidate(
                     full_name=name,
                     stars=repo.get("stargazers_count", 0),
@@ -75,24 +87,38 @@ async def discover_candidates(
                     topics=repo.get("topics", []),
                     archived=bool(repo.get("archived")),
                     open_issues=repo.get("open_issues_count", 0),
+                    good_first_issues=1,  # guaranteed >0 by the query; exact count is Triage's job
+                    band=band,
                     url=repo.get("html_url", ""),
                     score=health_score(repo, has_contributing=False),
-                    reasons=reasons,
+                    reasons=[*reasons, "has good-first issues"],
                 )
             )
 
-    # 3. shortlist by base score, then enrich just those with the CONTRIBUTING check
-    candidates.sort(key=lambda c: c.score, reverse=True)
-    shortlist = candidates[: max_candidates + 10]
-    if check_contributing and shortlist:
-        flags = await asyncio.gather(*(has_contributing(api, c.full_name) for c in shortlist))
-        for cand, has_c in zip(shortlist, flags, strict=True):
+    for cands in by_band.values():
+        cands.sort(key=lambda c: c.score, reverse=True)
+
+    # 3. (optional) enrich the per-band leaders with the CONTRIBUTING check
+    if check_contributing:
+        head = [c for cands in by_band.values() for c in cands[: max_candidates]]
+        flags = await asyncio.gather(*(has_contributing(api, c.full_name) for c in head))
+        for cand, has_c in zip(head, flags, strict=True):
             cand.has_contributing = has_c
             if has_c:
-                cand.score += 20
+                cand.score += 15
+        for cands in by_band.values():
+            cands.sort(key=lambda c: c.score, reverse=True)
 
-    shortlist.sort(key=lambda c: c.score, reverse=True)
-    return shortlist[:max_candidates]
+    # 4. round-robin across bands → a size-diverse mix, not all giants
+    mixed: list[RepoCandidate] = []
+    queues = {b: list(cands) for b, cands in by_band.items()}
+    while len(mixed) < max_candidates and any(queues.values()):
+        for band, _, _ in BANDS:
+            if queues[band]:
+                mixed.append(queues[band].pop(0))
+                if len(mixed) >= max_candidates:
+                    break
+    return mixed
 
 
 async def _run() -> int:
