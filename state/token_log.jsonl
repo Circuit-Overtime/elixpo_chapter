@@ -1,0 +1,1 @@
+{"task_id": "smoke-test", "role": "crawl", "model": "nova-fast", "prompt_tokens": 8, "cached_tokens": 0, "completion_tokens": 5, "total_tokens": 13}

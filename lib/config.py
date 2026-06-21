@@ -24,10 +24,12 @@ if _envfile.exists():
 
 
 class PollinationsSettings(BaseSettings):
+    """One key for all of Pollinations — text, image, embeddings."""
+
     model_config = SettingsConfigDict(extra="ignore")
 
-    api_key: str = Field(default="", validation_alias="ELIXPO_LLM_API_KEY")
-    base_url: str = Field(default="https://gen.pollinations.ai/v1", validation_alias="ELIXPO_LLM_API_URL")
+    api_key: str = Field(default="", validation_alias="ELIXPO_POLLINATIONS_API_KEY")
+    base_url: str = Field(default="https://gen.pollinations.ai/v1", validation_alias="ELIXPO_POLLINATIONS_BASE_URL")
 
 
 class GitHubSettings(BaseSettings):
