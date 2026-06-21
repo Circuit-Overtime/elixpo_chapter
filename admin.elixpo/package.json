@@ -1,14 +1,27 @@
 {
     "name": "elixpo-admin",
-    "version": "0.1.0",
+    "version": "1.2.15",
     "private": true,
-    "description": "Elixpo Admin — the admin control plane for the Elixpo Cloudflare account. Auto-discovers every Pages project, Worker, D1, KV, Queue, Durable Object, Container and Workflow, and surfaces full Cloudflare observability. Gated to accounts.elixpo admins only.",
+    "description": "Elixpo Admin — the admin control plane for the Elixpo Cloudflare account. Auto-discovers every Pages project, Worker, D1, KV, Queue, Durable Object and Workflow, and surfaces full Cloudflare observability with a public status page. Gated to accounts.elixpo admins only.",
     "homepage": "https://admin.elixpo.com",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Circuit-Overtime/admin.elixpo.git"
+    },
+    "bugs": {
+        "url": "https://github.com/Circuit-Overtime/admin.elixpo/issues"
+    },
     "author": {
         "name": "Elixpo",
         "email": "hello@elixpo.com",
         "url": "https://elixpo.com"
     },
+    "contributors": [
+        {
+            "name": "Ayushman Bhattacharya",
+            "url": "https://github.com/Circuit-Overtime"
+        }
+    ],
     "license": "MIT",
     "engines": {
         "node": ">=22"
@@ -28,6 +41,8 @@
         "@mui/icons-material": "7.0.2",
         "@mui/material": "7.0.2",
         "@mui/system": "7.0.2",
+        "cobe": "^2.0.1",
+        "html-to-image": "^1.11.13",
         "jose": "^5.9.6",
         "next": "15.2.4",
         "react": "19.2.3",
