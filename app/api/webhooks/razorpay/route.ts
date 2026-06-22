@@ -307,6 +307,36 @@ async function fireGracefulCancelWebhook(
     const endpoint = await getWebhookEndpoint(db, sub.app_id);
     if (!endpoint) return;
 
+    // For halted events, distinguish UPI-mandate-revocation from
+    // exhausted-card-retries by looking at recent payment.failed
+    // events for the same subscription. Razorpay's webhook stream:
+    //   - Card declined: fires `payment.failed` (often multiple) BEFORE
+    //     the eventual `subscription.halted` once retries are exhausted.
+    //   - UPI mandate revoked from buyer's GPay/PhonePe app: bank
+    //     pushes mandate revocation to NPCI → Razorpay halts the sub
+    //     without any payment.failed (no charge was attempted because
+    //     the mandate itself is gone).
+    // We check provider_webhook_events for any payment.failed in the
+    // last 7 days mentioning this sub_id; if present we treat it as
+    // a charge failure (failed=true → consumer sends "update your card"
+    // mail), otherwise UPI revoke (failed=false → consumer sends a
+    // cancellation confirmation mail).
+    let failed = false;
+    if (status === "halted") {
+        const recentFail = (await db
+            .prepare(
+                `SELECT id FROM provider_webhook_events
+                 WHERE provider = 'razorpay'
+                   AND event_type = 'payment.failed'
+                   AND payload LIKE ?
+                   AND datetime(created_at) > datetime('now', '-7 days')
+                 LIMIT 1`,
+            )
+            .bind(`%${providerSubId}%`)
+            .first()) as { id: string } | null;
+        failed = !!recentFail;
+    }
+
     const { fireEntitlementUpdated } = await import("@/lib/webhooks");
     // The entitlement stays ACTIVE until period_end — the consumer
     // shouldn't downgrade until then. We surface `cancelled`/`halted`
@@ -320,10 +350,7 @@ async function fireGracefulCancelWebhook(
         status: status,
         expires_at: sub.current_period_end,
         provider_subscription_id: providerSubId,
-        // For halted, signal that a charge failed so the consumer can
-        // send the "update your card" email instead of the cancellation
-        // email.
-        failed: status === "halted",
+        failed,
     } as any);
 }
 
