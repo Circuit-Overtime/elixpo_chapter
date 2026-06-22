@@ -26,8 +26,23 @@ declare global {
 
 interface SessionData {
     session_id: string;
-    key_id: string;
-    order_id: string;
+    // One-time-order fields (billing_mode === 'one_time')
+    key_id?: string;
+    order_id?: string;
+    // Autopay fields (billing_mode === 'autopay'): Razorpay's hosted
+    // mandate-collection URL — we redirect there instead of opening
+    // Checkout JS, because subscriptions can't be driven by the modal
+    // (RBI eMandate flow needs the full-page UX).
+    billing_mode?: "one_time" | "autopay";
+    subscription_id?: string;
+    short_url?: string | null;
+    /**
+     * Set when a reload lands on a session whose autopay subscription
+     * has already moved past the mandate stage (active/cancelled/etc.)
+     * — there's nothing left for the buyer to do on Razorpay, so we
+     * just send them back to the merchant's return_url.
+     */
+    finished?: boolean;
     test_mode?: boolean;
     mode?: "test" | "live";
     amount: number;
@@ -135,6 +150,22 @@ function CheckoutInner() {
                     throw new Error(data.error_description || data.error);
                 if (cancelled) return;
                 setSession(data);
+                // If the autopay subscription has already moved past the
+                // mandate stage on Razorpay's side (e.g. the buyer hit
+                // back-button after activating), skip the action panel
+                // and send them to the return_url. Showing them a "pay"
+                // button at this point would just dead-end on "Hosted
+                // page is not available".
+                if (data.finished) {
+                    // Stale session — the autopay subscription is past
+                    // the mandate stage on Razorpay's side. Skip the
+                    // success ceremony and bounce immediately so the
+                    // buyer doesn't see a misleading "you're all set"
+                    // screen for a sub they may have cancelled.
+                    const back = data.return_url || "/";
+                    window.location.href = back;
+                    return;
+                }
                 setPhase("ready");
             } catch (e: any) {
                 if (cancelled) return;
@@ -188,9 +219,36 @@ function CheckoutInner() {
     const pay = async () => {
         if (!session) return;
         if (session.test_mode) return payTest();
+
+        // Autopay (subscription) path — hosted mandate collection on
+        // Razorpay's side. There is no JS modal flow for eMandates; we
+        // hand the browser off to short_url and Razorpay handles card
+        // collection, OTP, mandate registration, and the first charge.
+        // After completion they redirect back to our return_url; the
+        // entitlement flips on subscription.activated → entitlement.updated.
+        if (session.billing_mode === "autopay") {
+            if (!session.short_url) {
+                setToast({
+                    msg: "Autopay setup is missing the redirect URL. Refresh and try again.",
+                    severity: "error",
+                });
+                return;
+            }
+            setPhase("paying");
+            window.location.href = session.short_url;
+            return;
+        }
+
         if (!window.Razorpay) {
             setToast({
                 msg: "Payment library failed to load. Check your connection and retry.",
+                severity: "error",
+            });
+            return;
+        }
+        if (!session.key_id || !session.order_id) {
+            setToast({
+                msg: "Checkout session is missing payment details. Refresh and try again.",
                 severity: "error",
             });
             return;
@@ -631,8 +689,12 @@ function ActionPanel({
                 {paying
                     ? session.test_mode
                         ? "Completing…"
-                        : "Opening Razorpay…"
-                    : `${session.test_mode ? "Simulate payment · " : "Pay "}${formatAmount(session.amount, session.currency)}`}
+                        : session.billing_mode === "autopay"
+                          ? "Redirecting to Razorpay…"
+                          : "Opening Razorpay…"
+                    : session.billing_mode === "autopay"
+                      ? `Set up auto-pay · ${formatAmount(session.amount, session.currency)}/${session.interval ?? "month"}`
+                      : `${session.test_mode ? "Simulate payment · " : "Pay "}${formatAmount(session.amount, session.currency)}`}
             </Button>
 
             <Button

@@ -191,6 +191,33 @@ export async function setSessionOrder(
         .run();
 }
 
+/** Set the Razorpay subscription id on a recurring checkout session. */
+export async function setSessionSubscription(
+    db: D1Database,
+    sessionId: string,
+    providerSubscriptionId: string,
+): Promise<void> {
+    await db
+        .prepare(
+            "UPDATE checkout_sessions SET provider_subscription_id = ?, updated_at = datetime('now') WHERE id = ?",
+        )
+        .bind(providerSubscriptionId, sessionId)
+        .run();
+}
+
+/** Find a checkout session by the bound Razorpay subscription id. */
+export async function getCheckoutSessionBySubscription(
+    db: D1Database,
+    providerSubscriptionId: string,
+): Promise<any | null> {
+    return db
+        .prepare(
+            "SELECT * FROM checkout_sessions WHERE provider_subscription_id = ?",
+        )
+        .bind(providerSubscriptionId)
+        .first();
+}
+
 export async function completeSession(
     db: D1Database,
     sessionId: string,
@@ -341,6 +368,192 @@ export async function upsertOneTimeSubscription(
         )
         .run();
     return { id, periodEnd };
+}
+
+/**
+ * Upsert a recurring subscription bound to a provider subscription id.
+ *
+ * Different from `upsertOneTimeSubscription`:
+ *  - billing_mode is 'recurring'
+ *  - provider_subscription_id is the Razorpay sub id (used to dedupe webhooks)
+ *  - status starts 'pending' and flips to 'active' on subscription.activated
+ *
+ * Called twice in the lifecycle:
+ *  1. At checkout creation — status='pending', period dates null.
+ *  2. On subscription.activated / charged webhooks — status='active' and
+ *     current_period_start/end roll forward.
+ */
+export async function upsertRecurringSubscription(
+    db: D1Database,
+    params: {
+        appId: string;
+        customerId: string;
+        productId: string | null;
+        priceId: string | null;
+        tier: string;
+        providerSubscriptionId: string;
+        status?: "pending" | "active" | "past_due" | "cancelled" | "halted";
+        periodStart?: string | null;
+        periodEnd?: string | null;
+    },
+): Promise<{ id: string }> {
+    // Match by provider_subscription_id when present — that's the
+    // authoritative key across webhook re-deliveries.
+    const existing = (await db
+        .prepare(
+            "SELECT id FROM subscriptions WHERE provider_subscription_id = ?",
+        )
+        .bind(params.providerSubscriptionId)
+        .first()) as { id: string } | null;
+
+    if (existing) {
+        await db
+            .prepare(
+                `UPDATE subscriptions
+                 SET status = COALESCE(?, status),
+                     current_period_start = COALESCE(?, current_period_start),
+                     current_period_end = COALESCE(?, current_period_end),
+                     price_id = COALESCE(?, price_id),
+                     updated_at = datetime('now')
+                 WHERE id = ?`,
+            )
+            .bind(
+                params.status ?? null,
+                params.periodStart ?? null,
+                params.periodEnd ?? null,
+                params.priceId,
+                existing.id,
+            )
+            .run();
+        return { id: existing.id };
+    }
+
+    const id = newId("subscription");
+    await db
+        .prepare(
+            `INSERT INTO subscriptions
+             (id, app_id, customer_id, product_id, price_id, tier, status, billing_mode,
+              current_period_start, current_period_end, provider_subscription_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'recurring', ?, ?, ?)`,
+        )
+        .bind(
+            id,
+            params.appId,
+            params.customerId,
+            params.productId,
+            params.priceId,
+            params.tier,
+            params.status ?? "pending",
+            params.periodStart ?? null,
+            params.periodEnd ?? null,
+            params.providerSubscriptionId,
+        )
+        .run();
+    return { id };
+}
+
+/**
+ * Look up a price row by id, returning enough to drive the autopay flow.
+ */
+export async function getPriceById(
+    db: D1Database,
+    priceId: string,
+): Promise<{
+    id: string;
+    product_id: string;
+    currency: string;
+    unit_amount: number;
+    type: string;
+    interval: string;
+    interval_count: number;
+    provider_plan_id: string | null;
+} | null> {
+    return (await db
+        .prepare(
+            `SELECT id, product_id, currency, unit_amount, type, interval,
+                    interval_count, provider_plan_id
+             FROM prices WHERE id = ?`,
+        )
+        .bind(priceId)
+        .first()) as any;
+}
+
+/** Persist the provider plan id we just minted for a recurring price. */
+export async function setPricePlanId(
+    db: D1Database,
+    priceId: string,
+    providerPlanId: string,
+): Promise<void> {
+    await db
+        .prepare("UPDATE prices SET provider_plan_id = ? WHERE id = ?")
+        .bind(providerPlanId, priceId)
+        .run();
+}
+
+/**
+ * Read just the provider_customer_id cache cell for a given local
+ * customer. Used by the lazy-create helper to skip the upstream POST
+ * when we already minted a Razorpay customer for this row.
+ */
+export async function getCustomerProviderId(
+    db: D1Database,
+    customerId: string,
+): Promise<string | null> {
+    const row = (await db
+        .prepare(
+            "SELECT provider_customer_id, email, name FROM customers WHERE id = ?",
+        )
+        .bind(customerId)
+        .first()) as
+        | { provider_customer_id: string | null; email: string | null; name: string | null }
+        | null;
+    return row?.provider_customer_id ?? null;
+}
+
+/** Read enough of the customer row to seed a Razorpay customer create. */
+export async function getCustomerForProviderCreate(
+    db: D1Database,
+    customerId: string,
+): Promise<{
+    id: string;
+    email: string | null;
+    name: string | null;
+    external_uid: string;
+    provider_customer_id: string | null;
+} | null> {
+    return (await db
+        .prepare(
+            "SELECT id, email, name, external_uid, provider_customer_id FROM customers WHERE id = ?",
+        )
+        .bind(customerId)
+        .first()) as any;
+}
+
+/** Persist the Razorpay customer id once minted, so subsequent checkouts skip the POST. */
+export async function setCustomerProviderId(
+    db: D1Database,
+    customerId: string,
+    providerCustomerId: string,
+): Promise<void> {
+    await db
+        .prepare(
+            "UPDATE customers SET provider_customer_id = ? WHERE id = ?",
+        )
+        .bind(providerCustomerId, customerId)
+        .run();
+}
+
+/** Look up a subscription by provider id — used by the webhook handler. */
+export async function getSubscriptionByProviderId(
+    db: D1Database,
+    providerSubscriptionId: string,
+): Promise<any | null> {
+    return db
+        .prepare(
+            "SELECT * FROM subscriptions WHERE provider_subscription_id = ?",
+        )
+        .bind(providerSubscriptionId)
+        .first();
 }
 
 export async function getWebhookEndpoint(

@@ -121,6 +121,78 @@ export default function WebhooksDocs() {
             </DocP>
             <CodeBlock code={PAYMENT} language="json" />
 
+            <DocH2>Subscription lifecycle (autopay tiers)</DocH2>
+            <DocP>
+                For autopay (recurring) prices we still surface everything
+                through <Code>entitlement.updated</Code> — you do NOT
+                subscribe to separate subscription events. The status flag
+                on the payload tells you what changed:
+            </DocP>
+            <DocList
+                items={[
+                    <>
+                        <strong>First charge / renewal:</strong>{" "}
+                        <Code>{"{ active: true, status: 'active' }"}</Code>{" "}
+                        with a new <Code>expires_at</Code> pushed forward
+                        by one cycle. Treat the same as a one-time
+                        purchase — the entitlement is granted.
+                    </>,
+                    <>
+                        <strong>Buyer cancelled from your site:</strong>{" "}
+                        <Code>{"{ active: true, status: 'cancelled' }"}</Code>{" "}
+                        — fires immediately (we call this inline from{" "}
+                        <Code>POST /v1/subscriptions/cancel</Code>, not at
+                        period-end). Buyer keeps access until{" "}
+                        <Code>expires_at</Code>, then a second event
+                        arrives with <Code>active: false</Code>. Send the
+                        cancellation confirmation email on this first
+                        event; flip the tier in your DB on the second.
+                    </>,
+                    <>
+                        <strong>Mandate ended (UPI revoke from GPay /
+                        PhonePe, or repeated card failures):</strong>{" "}
+                        <Code>{"{ active: true, status: 'halted', failed: true }"}</Code>{" "}
+                        — Razorpay collapses both UPI mandate revocation
+                        AND exhausted-retry card failures into a single
+                        <Code>halted</Code> state. Treat as a cancellation
+                        for UI / tier-state purposes (the sub will not
+                        renew), AND surface "update payment to resume"
+                        copy in case it was a card problem. Recovery is
+                        possible if the buyer re-subscribes.
+                    </>,
+                ]}
+            />
+            <DocP>
+                <strong>Three terminal-ish states map to one user-facing
+                state:</strong>{" "}
+                <Code>status: 'cancelled'</Code> (cancel API called),{" "}
+                <Code>status: 'halted'</Code> (mandate broken — UPI
+                revoked OR card declined), and the eventual{" "}
+                <Code>active: false</Code> at period_end. All three
+                should result in your app showing the same "subscription
+                ended" UX with the buyer's access valid through{" "}
+                <Code>expires_at</Code> on the first two and stopped on
+                the third.
+            </DocP>
+            <CodeBlock
+                code={`// example: cancelled-but-still-active envelope
+{
+  "id": "evt_…",
+  "type": "entitlement.updated",
+  "created": 1734812345,
+  "data": {
+    "app": "blogs",
+    "uid": "u_123",
+    "tier": "member",
+    "active": true,
+    "status": "cancelled",
+    "expires_at": "2026-07-22 00:00:00",
+    "provider_subscription_id": "sub_…"
+  }
+}`}
+                language="json"
+            />
+
             <DocH2>Verifying</DocH2>
             <DocP>
                 Recompute the HMAC over{" "}
