@@ -3,12 +3,10 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useTheme } from '../../../src/context/ThemeContext';
 
 function SignInContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
-  const { isDark } = useTheme();
 
   function handleLogin() {
     // Server route generates the CSRF state + sets an httpOnly cookie, then redirects.
@@ -29,7 +27,7 @@ function SignInContent() {
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
-          <img src={isDark ? '/logo-light.png' : '/logo-dark.png'} alt="" className="h-14 w-14 mx-auto rounded-full mb-4" />
+          <img src="/logo-mark.png" alt="" className="h-14 w-14 mx-auto rounded-full mb-4" />
           <h1 className="text-2xl font-bold font-kanit" style={{ color: 'var(--text-primary)' }}>Welcome back</h1>
           <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>Sign in to your LixBlogs account</p>
         </div>

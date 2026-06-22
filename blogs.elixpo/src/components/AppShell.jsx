@@ -432,7 +432,7 @@ export default function AppShell({ children }) {
         <div className="max-w-[1400px] mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
-              <img src={isDark ? '/logo-light.png' : '/logo-dark.png'} alt="" className="h-8 w-8 rounded-full" />
+              <img src="/logo-mark.png" alt="" className="h-8 w-8 rounded-full" />
               <span className="hidden sm:inline text-xl font-bold tracking-tight font-kanit" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
             </Link>
           </div>

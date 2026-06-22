@@ -2760,7 +2760,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border-[1.5px] border-[rgba(196,181,253,0.3)]">
-                <img src="/base-logo.png" alt="Elixpo" className="w-full h-full object-cover" />
+                <img src="/logo-mark.png" alt="Elixpo" className="w-full h-full object-cover" />
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-[13px] font-semibold text-[#c4b5fd]">Elixpo</span>
@@ -2782,7 +2782,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       {aiGenerating && !aiStatusInline && (
         <div className="elixpo-typing-bar">
           <div className="elixpo-typing-bar-inner">
-            <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
+            <img src="/logo-mark.png" alt="Elixpo" className="elixpo-typing-avatar" />
             <div className="elixpo-typing-text">
               <span className="elixpo-typing-name">Elixpo</span>
               <span className="elixpo-typing-status">{aiStatusText || (
@@ -2806,7 +2806,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       {showAIActions && !aiGenerating && aiBlockIds.size > 0 && (
         <div className="elixpo-done-bar">
           <div className="elixpo-done-bar-inner">
-            <img src="/base-logo.png" alt="Elixpo" className="elixpo-typing-avatar" />
+            <img src="/logo-mark.png" alt="Elixpo" className="elixpo-typing-avatar" />
             <span className="elixpo-done-label">Elixpo finished writing</span>
             <div className="elixpo-done-actions">
               <button className="elixpo-done-keep" onClick={handleAIKeep} title="Keep">

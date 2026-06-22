@@ -26,7 +26,9 @@ export default function PricingPage() {
   const prices = pricing?.prices || { free: 0, member: 6, team: 5 };
   const currentTier = user?.tier || (user ? 'free' : null);
 
-  const startCheckout = (planId) => {
+  const startCheckout = (plan) => {
+    if (plan.comingSoon) return;
+    const planId = plan.id;
     if (planId === 'free') { window.location.href = user ? '/' : '/sign-in'; return; }
     if (!user) { window.location.href = '/sign-in'; return; }
     // Server route signs the handoff token (region price + buyer) and redirects
@@ -40,7 +42,7 @@ export default function PricingPage() {
         <div className="text-center mb-3">
           <h1 className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>Plans that grow with you</h1>
           <p className="text-[15px] mt-2" style={{ color: 'var(--text-muted)' }}>
-            Publish for free. Upgrade to unlock sub-pages, more AI, and member-only earnings.
+            Publish for free. Upgrade to unlock sub-pages, AI image generation, and member-only posts.
           </p>
         </div>
 
@@ -61,9 +63,11 @@ export default function PricingPage() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="text-[17px] font-bold" style={{ color: 'var(--text-primary)' }}>{plan.name}</h3>
-                  {highlighted && (
+                  {plan.comingSoon ? (
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>Coming soon</span>
+                  ) : highlighted ? (
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: '#9b7bf71f', color: '#9b7bf7' }}>Popular</span>
-                  )}
+                  ) : null}
                 </div>
                 <p className="text-[12px] mb-4" style={{ color: 'var(--text-muted)' }}>{plan.tagline}</p>
 
@@ -84,18 +88,18 @@ export default function PricingPage() {
                 </ul>
 
                 <button
-                  onClick={() => startCheckout(plan.id)}
-                  disabled={isCurrent}
+                  onClick={() => startCheckout(plan)}
+                  disabled={isCurrent || plan.comingSoon}
                   className="w-full py-2.5 rounded-xl text-[14px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-default"
                   style={
-                    isCurrent
+                    isCurrent || plan.comingSoon
                       ? { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }
                       : highlighted
                         ? { backgroundColor: '#9b7bf7', color: '#fff' }
                         : { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }
                   }
                 >
-                  {isCurrent ? 'Current plan' : plan.id === 'free' ? 'Get started' : `Upgrade to ${plan.name}`}
+                  {plan.comingSoon ? 'Coming soon' : isCurrent ? 'Current plan' : plan.id === 'free' ? 'Get started' : `Upgrade to ${plan.name}`}
                 </button>
               </div>
             );

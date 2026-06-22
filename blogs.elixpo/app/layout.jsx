@@ -15,14 +15,15 @@ export const metadata = {
   description: SITE_DESC,
   icons: {
     icon: [
-      // Adaptive SVG: embeds both logos and swaps via prefers-color-scheme inside the file,
-      // so it stays visible on both light and dark tab bars (Chrome/Firefox/Edge/Safari 16.4+).
+      // SVG favicon embedding the LixBlogs logo (logo.png).
       { url: '/favicon.svg', type: 'image/svg+xml' },
       // Fallback for browsers without SVG-favicon support, and the path crawlers request first.
       { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
     ],
     shortcut: '/favicon.ico',
-    apple: '/logo-dark.png',
+    apple: '/apple-touch-icon.png',
   },
   openGraph: {
     type: 'website',

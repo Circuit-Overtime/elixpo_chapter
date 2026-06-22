@@ -39,7 +39,7 @@ export default function AICommandMenu({ position, onSubmit, onClose }) {
       <div className="ai-inline-input-container">
         <div className="flex items-center gap-2.5 px-3 py-2">
           <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden opacity-60">
-            <img src="/base-logo.png" alt="AI" className="w-full h-full object-cover" />
+            <img src="/logo-mark.png" alt="AI" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 flex items-center gap-2">
             <span className="text-[14px] text-[var(--text-secondary)]">AI features are coming soon</span>
