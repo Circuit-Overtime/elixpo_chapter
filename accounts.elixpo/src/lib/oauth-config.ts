@@ -27,6 +27,10 @@ export function getOAuthConfig(
         GOOGLE_CLIENT_SECRET?: string;
         GITHUB_CLIENT_ID?: string;
         GITHUB_CLIENT_SECRET?: string;
+        DISCORD_CLIENT_ID?: string;
+        DISCORD_CLIENT_SECRET?: string;
+        MICROSOFT_CLIENT_ID?: string;
+        MICROSOFT_CLIENT_SECRET?: string;
     },
     /** Pass the request origin (e.g. https://accounts.elixpo.com) so the
      *  redirect_uri is always correct regardless of build-time env vars. */
@@ -60,6 +64,45 @@ export function getOAuthConfig(
                 tokenEndpoint: "https://github.com/login/oauth/access_token",
                 userInfoEndpoint: "https://api.github.com/user",
                 scopes: ["read:user", "user:email"],
+            };
+
+        case "microsoft":
+            return {
+                name: "microsoft",
+                clientId: env.MICROSOFT_CLIENT_ID || "",
+                clientSecret: env.MICROSOFT_CLIENT_SECRET || "",
+                redirectUri: `${baseUrl}/api/auth/callback/microsoft`,
+                // `common` tenant — accepts both work/school AAD accounts
+                // and personal MSAs (outlook.com/xbox/etc.). Switch to a
+                // specific GUID/domain if/when we go single-tenant for
+                // enterprise plans.
+                authorizationEndpoint:
+                    "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+                tokenEndpoint:
+                    "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+                // OIDC userinfo on Graph returns sub/name/email/picture in
+                // standard shape — no separate /me call needed for the
+                // basics. Picture comes back as a Graph URL that requires
+                // an auth header to fetch the binary; we don't store it.
+                userInfoEndpoint:
+                    "https://graph.microsoft.com/oidc/userinfo",
+                scopes: ["openid", "profile", "email"],
+            };
+
+        case "discord":
+            return {
+                name: "discord",
+                clientId: env.DISCORD_CLIENT_ID || "",
+                clientSecret: env.DISCORD_CLIENT_SECRET || "",
+                redirectUri: `${baseUrl}/api/auth/callback/discord`,
+                authorizationEndpoint: "https://discord.com/oauth2/authorize",
+                tokenEndpoint: "https://discord.com/api/oauth2/token",
+                userInfoEndpoint: "https://discord.com/api/users/@me",
+                // `identify` gives id/username/global_name/avatar; `email`
+                // gives verified email. We require both — same contract as
+                // Google + GitHub: a verified email is mandatory for account
+                // creation.
+                scopes: ["identify", "email"],
             };
 
         default:

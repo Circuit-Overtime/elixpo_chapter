@@ -7,6 +7,7 @@ import {
     Logout,
     MenuBook,
     Person,
+    Receipt,
     Security,
     Webhook,
 } from "@mui/icons-material";
@@ -390,6 +391,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                         href: "/dashboard/security",
                                         icon: <Security fontSize="small" />,
                                         label: "Security & 2FA",
+                                    },
+                                    {
+                                        href: "/dashboard/subscriptions",
+                                        icon: <Receipt fontSize="small" />,
+                                        label: "Subscriptions",
                                     },
                                     {
                                         href: "/dashboard/services",

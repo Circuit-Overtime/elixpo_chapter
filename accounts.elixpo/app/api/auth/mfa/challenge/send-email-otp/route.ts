@@ -25,6 +25,32 @@ const COOLDOWN_SECONDS = 60;
  * email body so the user can spot a phishing attempt).
  */
 export async function POST(request: NextRequest) {
+    try {
+        return await sendImpl(request);
+    } catch (err) {
+        // Catch-all so unhandled throws (KV outage, mails.elixpo network
+        // failure, getRequestContext misconfig) surface as a readable
+        // JSON error instead of a Cloudflare edge HTML 502 page that the
+        // client toast can't parse.
+        console.error(
+            "[mfa challenge send-email-otp] unhandled: %s",
+            err instanceof Error ? err.stack || err.message : String(err),
+        );
+        // 424 instead of 500 — see comment in the mail-failure branch
+        // about CF zone intercepting 5xx with an HTML error page.
+        return NextResponse.json(
+            {
+                error:
+                    err instanceof Error
+                        ? `Couldn't send code: ${err.message}`
+                        : "Couldn't send code (unknown error)",
+            },
+            { status: 424 },
+        );
+    }
+}
+
+async function sendImpl(request: NextRequest) {
     let body: any;
     try {
         body = await request.json();
@@ -71,7 +97,22 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    const kv = (getRequestContext().env as any).KV as KVNamespace;
+    let kv: KVNamespace;
+    try {
+        kv = (getRequestContext().env as any).KV as KVNamespace;
+        if (!kv) throw new Error("KV binding missing");
+    } catch (err) {
+        console.error(
+            "[mfa challenge send-email-otp] KV unavailable: %s",
+            err instanceof Error ? err.message : String(err),
+        );
+        return NextResponse.json(
+            {
+                error: "Verification service unavailable. Please try again in a moment.",
+            },
+            { status: 424 },
+        );
+    }
     const cooldownKey = `mfa_email_otp_cd:${mfaToken.slice(-32)}`;
     const cooled = await kv.get(cooldownKey);
     if (cooled) {
@@ -118,11 +159,15 @@ export async function POST(request: NextRequest) {
         // them.
         await kv.delete(`mfa_email_otp:${mfaToken.slice(-32)}`).catch(() => {});
         await kv.delete(cooldownKey).catch(() => {});
+        // 424 Failed Dependency — upstream mail provider failed. We
+        // return 4xx (not 5xx) because the elixpo.com Cloudflare zone
+        // intercepts 5xx responses and replaces the JSON body with its
+        // own HTML error page, which the client toast can't parse.
         return NextResponse.json(
             {
                 error: `Couldn't send the verification email: ${mailResult.error ?? "unknown"}`,
             },
-            { status: 502 },
+            { status: 424 },
         );
     }
 
