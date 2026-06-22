@@ -3,13 +3,15 @@
  *
  * 1. Validate the CSRF `state` against the cookie.
  * 2. Exchange the authorization code for tokens.
- * 3. Fetch the profile from /api/auth/me — the source of truth for `isAdmin`.
+ * 3. Fetch the profile from /api/auth/me, then check the `role` column in
+ *    elixpo_auth (role = 'admin') as the source of truth for admin access.
  * 4. Reject non-admins (redirect to /denied, no session issued).
  * 5. Issue the signed `admin_session` cookie and land on /dashboard.
  */
 
 export const runtime = "edge";
 
+import { isAdminByRole } from "@/lib/admin";
 import { exchangeCode, fetchMe } from "@/lib/oauth";
 import {
     SESSION_COOKIE,
@@ -55,7 +57,15 @@ export async function GET(request: NextRequest) {
     if (!profile) {
         return redirectTo(request, "/denied?reason=no_profile");
     }
-    if (profile.isAdmin !== true) {
+
+    // Admin = role 'admin' in elixpo_auth (source of truth), with the /me flag
+    // as a fallback if the DB lookup is unavailable.
+    const admin =
+        (await isAdminByRole({
+            id: String(profile.id || profile.userId || ""),
+            email: profile.email,
+        })) || profile.isAdmin === true;
+    if (!admin) {
         return redirectTo(request, "/denied?reason=not_admin");
     }
 
