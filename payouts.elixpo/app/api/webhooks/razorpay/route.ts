@@ -1,11 +1,18 @@
 export const runtime = "edge";
 
+import type { D1Database } from "@cloudflare/workers-types";
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { fulfillPayment } from "@/lib/fulfill";
 import { razorpayFromEnv } from "@/lib/providers/razorpay";
-import { getCheckoutSessionByOrder, recordProviderEvent } from "@/lib/repo";
+import {
+    getCheckoutSessionByOrder,
+    getCheckoutSessionBySubscription,
+    getSubscriptionByProviderId,
+    recordProviderEvent,
+    upsertRecurringSubscription,
+} from "@/lib/repo";
 
 /**
  * POST /api/webhooks/razorpay
@@ -65,6 +72,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ ok: true, duplicate: true });
         }
 
+        // ── Subscription lifecycle events ────────────────────────────
+        // Note: subscription.charged ALSO has isPaymentCaptured=true
+        // (it carries a payment.entity), so we handle it first to ensure
+        // the recurring-fulfillment path runs — extending entitlement,
+        // writing a ledger row, and firing the outbound webhook for each
+        // renewal charge, not just the first one.
+        if (event.providerSubscriptionId) {
+            const subResult = await handleSubscriptionEvent(db, event);
+            if (subResult) return subResult;
+        }
+
         if (!event.isPaymentCaptured) {
             return NextResponse.json({ ok: true, ignored: event.type });
         }
@@ -106,4 +124,201 @@ export async function POST(request: NextRequest) {
         console.error("[webhook/razorpay] fulfillment error:", err);
         return NextResponse.json({ ok: true, deferred: true });
     }
+}
+
+/**
+ * Handle subscription.* events. Returns a NextResponse to short-circuit the
+ * main handler when this event is purely a sub lifecycle event (no payment).
+ * Returns null when the event ALSO carries a payment.captured (i.e.
+ * subscription.charged) so the main handler can run `fulfillPayment` to
+ * extend the entitlement, write a ledger row, and fire outbound webhooks.
+ *
+ * Event semantics (Razorpay):
+ *  - subscription.activated  → first mandate accepted. The actual charge
+ *                              arrives separately as subscription.charged
+ *                              (or payment.captured carrying subscription_id).
+ *  - subscription.charged    → recurring charge succeeded. Falls through to
+ *                              fulfillPayment which is idempotent + extends
+ *                              the period.
+ *  - subscription.paused     → mandate paused. Existing entitlement keeps
+ *                              its current period; no further charges
+ *                              until resumed.
+ *  - subscription.cancelled  → buyer/merchant cancelled. Entitlement is
+ *                              left in place until period_end (graceful)
+ *                              and the cron expiry takes over.
+ *  - subscription.halted     → too many failures; buyer needs to update
+ *                              payment method. Entitlement stays active
+ *                              through the period they paid for.
+ *  - subscription.completed  → ran through `total_count` cycles. Same
+ *                              graceful expiry as cancelled.
+ */
+async function handleSubscriptionEvent(
+    db: D1Database,
+    event: any,
+): Promise<NextResponse | null> {
+    const providerSubId = event.providerSubscriptionId as string;
+    const status = event.subscriptionStatus as string | null;
+
+    // Resolve the subscription row + the session (for tier/app context).
+    const subRow = await getSubscriptionByProviderId(db, providerSubId);
+    const session = await getCheckoutSessionBySubscription(db, providerSubId);
+
+    // Update DB status for non-charge events. `charged` falls through to
+    // the main fulfillment path which writes status='active' via the
+    // upsert in fulfillPayment.
+    if (status && status !== "charged") {
+        const dbStatus = mapSubStatus(status);
+        if (subRow) {
+            await db
+                .prepare(
+                    `UPDATE subscriptions
+                     SET status = ?,
+                         cancel_at = CASE WHEN ? IN ('cancelled','completed') THEN datetime('now') ELSE cancel_at END,
+                         updated_at = datetime('now')
+                     WHERE id = ?`,
+                )
+                .bind(dbStatus, dbStatus, subRow.id)
+                .run();
+        }
+    }
+
+    // subscription.activated arrives with no payment.entity. The first
+    // charge comes as a separate subscription.charged / payment.captured
+    // event, so there's nothing to fulfill here — just acknowledge.
+    if (status === "activated") {
+        // Idempotent: subscription row may already be 'pending' from the
+        // checkout-session creation. Flip it to 'active' but don't roll
+        // the period until the charged event.
+        if (session) {
+            await upsertRecurringSubscription(db, {
+                appId: session.app_id,
+                customerId: session.customer_id,
+                productId: session.product_id,
+                priceId: session.price_id,
+                tier: deriveTier(session),
+                providerSubscriptionId: providerSubId,
+                status: "active",
+            });
+        }
+        return NextResponse.json({ ok: true, subscription: "activated" });
+    }
+
+    // Charge → defer to main handler. It calls fulfillPayment which
+    // upserts the subscription, extends entitlement, writes ledger, fires
+    // outbound webhooks. Returning null lets that path run.
+    if (status === "charged") {
+        return null;
+    }
+
+    // Non-charge non-activated event (paused/cancelled/halted/completed).
+    // Status already updated above. We also need to tell the consuming
+    // app that the subscription is winding down so it can email the
+    // buyer + start the graceful-downgrade UX.
+    //
+    // For 'cancelled': the entitlement stays ACTIVE until current_period_end
+    // (Razorpay was called with cancel_at_cycle_end=true). We fire
+    // entitlement.updated with active=true + the existing expires_at +
+    // a `cancelled=true` flag so the consumer can render "ends on X"
+    // and send the cancellation email immediately.
+    //
+    // For 'halted': payment failed too many times. Entitlement still
+    // active through period_end but the buyer needs to fix their card —
+    // we send a `failed=true` flag.
+    if (status === "cancelled" || status === "halted") {
+        await fireGracefulCancelWebhook(db, providerSubId, status);
+    }
+
+    return NextResponse.json({
+        ok: true,
+        subscription: status ?? "unknown",
+    });
+}
+
+/**
+ * Fire entitlement.updated to the consuming app on subscription wind-down
+ * (cancelled / halted). Uses the existing webhook plumbing — same envelope
+ * shape, same HMAC signing — so consumers only need to subscribe to one
+ * event type.
+ */
+async function fireGracefulCancelWebhook(
+    db: D1Database,
+    providerSubId: string,
+    status: "cancelled" | "halted",
+): Promise<void> {
+    const sub = (await db
+        .prepare(
+            `SELECT s.id, s.app_id, s.tier, s.current_period_end,
+                    c.external_uid, a.slug AS app_slug
+             FROM subscriptions s
+             JOIN customers c ON c.id = s.customer_id
+             JOIN apps a ON a.id = s.app_id
+             WHERE s.provider_subscription_id = ?`,
+        )
+        .bind(providerSubId)
+        .first()) as
+        | {
+              id: string;
+              app_id: string;
+              tier: string;
+              current_period_end: string | null;
+              external_uid: string;
+              app_slug: string;
+          }
+        | null;
+    if (!sub) return;
+
+    const { getWebhookEndpoint } = await import("@/lib/repo");
+    const endpoint = await getWebhookEndpoint(db, sub.app_id);
+    if (!endpoint) return;
+
+    const { fireEntitlementUpdated } = await import("@/lib/webhooks");
+    // The entitlement stays ACTIVE until period_end — the consumer
+    // shouldn't downgrade until then. We surface `cancelled`/`halted`
+    // as a status flag so the consumer can render "ending on X" and
+    // send the appropriate email.
+    await fireEntitlementUpdated(db, endpoint, {
+        app: sub.app_slug,
+        uid: sub.external_uid,
+        tier: sub.tier,
+        active: true,
+        status: status,
+        expires_at: sub.current_period_end,
+        provider_subscription_id: providerSubId,
+        // For halted, signal that a charge failed so the consumer can
+        // send the "update your card" email instead of the cancellation
+        // email.
+        failed: status === "halted",
+    } as any);
+}
+
+function mapSubStatus(razorpayStatus: string): string {
+    switch (razorpayStatus) {
+        case "activated":
+            return "active";
+        case "paused":
+            return "past_due";
+        case "halted":
+            return "past_due";
+        case "cancelled":
+            return "cancelled";
+        case "completed":
+            return "expired";
+        default:
+            return razorpayStatus;
+    }
+}
+
+function deriveTier(session: any): string {
+    // Fallback: 'member'. The proper tier is on the product row but we
+    // don't want a synchronous join here in the webhook hot path; the
+    // upsert keys on provider_subscription_id so the row already exists
+    // with the correct tier from checkout-session creation.
+    const meta = (() => {
+        try {
+            return session.metadata ? JSON.parse(session.metadata) : {};
+        } catch {
+            return {};
+        }
+    })();
+    return meta.plan || meta.tier || "member";
 }

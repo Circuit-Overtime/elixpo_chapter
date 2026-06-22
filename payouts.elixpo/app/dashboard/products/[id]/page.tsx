@@ -1290,23 +1290,53 @@ export default function ProductDetailPage() {
                                                             pr.currency,
                                                         )}
                                                     </Typography>
-                                                    {pr.region && (
-                                                        <Box
-                                                            sx={{
-                                                                fontSize:
-                                                                    "0.66rem",
-                                                                fontWeight: 700,
-                                                                color: "rgba(245,245,244,0.6)",
-                                                                px: 0.7,
-                                                                py: 0.15,
-                                                                borderRadius:
-                                                                    "6px",
-                                                                border: "1px solid rgba(255,255,255,0.12)",
-                                                            }}
-                                                        >
-                                                            {pr.region}
-                                                        </Box>
-                                                    )}
+                                                    <Stack
+                                                        direction="row"
+                                                        spacing={0.6}
+                                                        alignItems="center"
+                                                    >
+                                                        {pr.type ===
+                                                            "recurring" && (
+                                                            <Box
+                                                                sx={{
+                                                                    fontSize:
+                                                                        "0.62rem",
+                                                                    fontWeight: 700,
+                                                                    color: "#86efac",
+                                                                    textTransform:
+                                                                        "uppercase",
+                                                                    letterSpacing:
+                                                                        "0.06em",
+                                                                    px: 0.7,
+                                                                    py: 0.15,
+                                                                    borderRadius:
+                                                                        "6px",
+                                                                    background:
+                                                                        "rgba(134,239,172,0.1)",
+                                                                    border: "1px solid rgba(134,239,172,0.3)",
+                                                                }}
+                                                            >
+                                                                Auto-pay
+                                                            </Box>
+                                                        )}
+                                                        {pr.region && (
+                                                            <Box
+                                                                sx={{
+                                                                    fontSize:
+                                                                        "0.66rem",
+                                                                    fontWeight: 700,
+                                                                    color: "rgba(245,245,244,0.6)",
+                                                                    px: 0.7,
+                                                                    py: 0.15,
+                                                                    borderRadius:
+                                                                        "6px",
+                                                                    border: "1px solid rgba(255,255,255,0.12)",
+                                                                }}
+                                                            >
+                                                                {pr.region}
+                                                            </Box>
+                                                        )}
+                                                    </Stack>
                                                 </Stack>
                                                 <Typography
                                                     sx={{
@@ -1318,7 +1348,9 @@ export default function ProductDetailPage() {
                                                     {pr.nickname
                                                         ? `${pr.nickname} · `
                                                         : ""}
-                                                    per{" "}
+                                                    {pr.type === "recurring"
+                                                        ? "every "
+                                                        : "per "}
                                                     {pr.interval_count > 1
                                                         ? `${pr.interval_count} `
                                                         : ""}

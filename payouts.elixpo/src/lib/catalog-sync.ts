@@ -136,17 +136,28 @@ export async function syncProduct(
         const match = existing.find(
             (e) => priceKey(e.currency, e.region, e.interval) === k,
         );
+        // `type` may be 'recurring' on the input — supports per-price
+        // autopay opt-in from a sync catalog JSON. `billing_mode` is an
+        // alias accepted because that's the term the dashboard UI uses.
+        const priceType =
+            (t as any).type === "recurring" ||
+            (t as any).billing_mode === "autopay"
+                ? "recurring"
+                : "one_time";
         if (match) {
+            // Also reconcile `type` on existing rows so an owner can flip
+            // a price between one_time ↔ autopay by re-syncing the catalog.
             await db
                 .prepare(
-                    "UPDATE prices SET unit_amount = ?, nickname = ?, interval_count = ?, active = 1 WHERE id = ?",
+                    "UPDATE prices SET unit_amount = ?, nickname = ?, interval_count = ?, type = ?, active = 1 WHERE id = ?",
                 )
-                .bind(unit, nickname, intervalCount, match.id)
+                .bind(unit, nickname, intervalCount, priceType, match.id)
                 .run();
             out.push({
                 id: match.id,
                 currency,
                 unit_amount: unit,
+                type: priceType,
                 interval,
                 region,
                 updated: true,
@@ -156,7 +167,7 @@ export async function syncProduct(
             await db
                 .prepare(
                     `INSERT INTO prices (id, product_id, nickname, currency, unit_amount, type, interval, interval_count, region, provider, active)
-                     VALUES (?, ?, ?, ?, ?, 'one_time', ?, ?, ?, 'razorpay', 1)`,
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'razorpay', 1)`,
                 )
                 .bind(
                     pid,
@@ -164,6 +175,7 @@ export async function syncProduct(
                     nickname,
                     currency,
                     unit,
+                    priceType,
                     interval,
                     intervalCount,
                     region,

@@ -49,11 +49,27 @@ async function handle(request: NextRequest) {
     );
 
     const db = await getDatabase();
+    // Skip entitlements backed by an ACTIVE recurring subscription —
+    // Razorpay handles the renewal charge and our webhook handler will
+    // extend the period when `subscription.charged` arrives. Expiring them
+    // would race the renewal and briefly knock the buyer offline.
+    //
+    // If the recurring subscription was cancelled / halted / completed,
+    // the entitlement IS due to expire at period end (graceful downgrade),
+    // so those rows fall through to the normal path.
     const due = await db
         .prepare(
-            `SELECT * FROM entitlements
-             WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at < datetime('now')
-             ORDER BY expires_at LIMIT ?`,
+            `SELECT e.* FROM entitlements e
+             WHERE e.status = 'active'
+               AND e.expires_at IS NOT NULL
+               AND e.expires_at < datetime('now')
+               AND NOT EXISTS (
+                   SELECT 1 FROM subscriptions s
+                   WHERE s.id = e.subscription_id
+                     AND s.billing_mode = 'recurring'
+                     AND s.status = 'active'
+               )
+             ORDER BY e.expires_at LIMIT ?`,
         )
         .bind(limit)
         .all();

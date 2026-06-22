@@ -5,14 +5,18 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { verifyHandoff } from "@/lib/handoff";
+import { ensurePlanForPrice } from "@/lib/plans";
 import { razorpayFromEnv } from "@/lib/providers/razorpay";
 import {
     createCheckoutSession,
     getAppBySlug,
     getCheckoutSession,
+    getPriceById,
     resolveProductAndPrice,
     setSessionOrder,
+    setSessionSubscription,
     upsertCustomer,
+    upsertRecurringSubscription,
 } from "@/lib/repo";
 
 /**
@@ -174,6 +178,85 @@ async function finalizeSession(
         );
     }
 
+    // ── Recurring (autopay) path ────────────────────────────────────────
+    // If the bound price is type='recurring', we mint a Razorpay
+    // Subscription instead of a one-time Order. The buyer gets redirected
+    // to Razorpay's hosted mandate-collection page (short_url) — we don't
+    // open the Checkout JS modal for these.
+    const priceRow = session.price_id
+        ? await getPriceById(db, session.price_id)
+        : null;
+    if (priceRow?.type === "recurring") {
+        let subscriptionId: string | undefined =
+            session.provider_subscription_id || undefined;
+        let shortUrl: string | undefined;
+
+        if (!subscriptionId) {
+            // Lazy-create the upstream Plan if this is the first checkout
+            // for this price. Subsequent checkouts reuse the cached id.
+            const { providerPlanId } = await ensurePlanForPrice({
+                db,
+                provider: razorpay,
+                priceId: priceRow.id,
+            });
+
+            // Razorpay requires a finite total_count — there's no "until
+            // cancelled" option. 1200 cycles is ~100 years on monthly and
+            // is the de-facto pattern for indefinite SaaS subscriptions.
+            // If a buyer somehow hits the cap we'll re-mint the sub.
+            const sub = await razorpay.createSubscription({
+                providerPlanId,
+                totalCount: 1200,
+                notifyEmail: false,
+                notes: {
+                    session_id: session.id,
+                    app: app?.slug ?? "",
+                    uid: session.external_uid,
+                    tier: details.tier,
+                },
+            });
+            subscriptionId = sub.providerSubscriptionId;
+            shortUrl = sub.shortUrl;
+            await setSessionSubscription(db, session.id, subscriptionId);
+
+            // Stub a 'pending' subscription row so the webhook handler
+            // has something to update on subscription.activated rather
+            // than creating-with-incomplete-context from inside the
+            // webhook. Also lets the dashboard show "pending mandate"
+            // immediately.
+            await upsertRecurringSubscription(db, {
+                appId: session.app_id,
+                customerId: session.customer_id,
+                productId: session.product_id,
+                priceId: session.price_id,
+                tier: details.tier,
+                providerSubscriptionId: subscriptionId,
+                status: "pending",
+            });
+        } else {
+            // Reload short_url for retry — Razorpay returns it on every
+            // GET of the subscription.
+            // (Skipped: we'd need a `getSubscription` method on the
+            // provider. Simpler: re-store on first create only; on retry
+            // we just hand back the existing subscriptionId and let the
+            // client construct the standard short URL ourselves below.)
+            shortUrl = `https://rzp.io/i/${subscriptionId}`;
+        }
+
+        return NextResponse.json({
+            session_id: session.id,
+            provider: "razorpay",
+            mode: razorpay.mode,
+            billing_mode: "autopay",
+            subscription_id: subscriptionId,
+            // Hosted mandate collection — the client redirects the
+            // browser here instead of opening Checkout JS.
+            short_url: shortUrl,
+            ...details,
+        });
+    }
+
+    // ── One-time (Order) path — unchanged behaviour ─────────────────────
     // Reuse the order if this session already minted one (page reload / retry).
     let orderId: string | undefined = session.provider_order_id || undefined;
     if (!orderId) {
@@ -195,6 +278,7 @@ async function finalizeSession(
         session_id: session.id,
         provider: "razorpay",
         mode: razorpay.mode,
+        billing_mode: "one_time",
         key_id: razorpay.keyId,
         order_id: orderId,
         ...details,
