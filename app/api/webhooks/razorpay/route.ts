@@ -267,7 +267,7 @@ async function fireGracefulCancelWebhook(
 ): Promise<void> {
     const sub = (await db
         .prepare(
-            `SELECT s.id, s.app_id, s.tier, s.current_period_end,
+            `SELECT s.id, s.app_id, s.tier, s.current_period_end, s.cancel_at,
                     c.external_uid, a.slug AS app_slug
              FROM subscriptions s
              JOIN customers c ON c.id = s.customer_id
@@ -281,11 +281,27 @@ async function fireGracefulCancelWebhook(
               app_id: string;
               tier: string;
               current_period_end: string | null;
+              cancel_at: string | null;
               external_uid: string;
               app_slug: string;
           }
         | null;
     if (!sub) return;
+
+    // Dedup: if this is the `subscription.cancelled` webhook arriving at
+    // period_end for a buyer-initiated cancel we already notified about
+    // inline (from /v1/subscriptions/cancel), the local row's cancel_at
+    // is set. Skip the outbound — the consuming app already sent the
+    // cancellation email when the buyer clicked Cancel. Halt events
+    // (charge failures) still fire because they're a different signal.
+    if (status === "cancelled" && sub.cancel_at) {
+        console.log(
+            "[webhook/razorpay] skipping cancellation outbound for sub=%s — already notified inline at %s",
+            providerSubId,
+            sub.cancel_at,
+        );
+        return;
+    }
 
     const { getWebhookEndpoint } = await import("@/lib/repo");
     const endpoint = await getWebhookEndpoint(db, sub.app_id);
