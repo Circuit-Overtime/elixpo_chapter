@@ -5,7 +5,13 @@ import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { fulfillPayment } from "@/lib/fulfill";
 import { razorpayFromEnv } from "@/lib/providers/razorpay";
-import { getCheckoutSessionByOrder, recordProviderEvent } from "@/lib/repo";
+import {
+    getCheckoutSessionByOrder,
+    getCheckoutSessionBySubscription,
+    getSubscriptionByProviderId,
+    recordProviderEvent,
+    upsertRecurringSubscription,
+} from "@/lib/repo";
 
 /**
  * POST /api/webhooks/razorpay
@@ -63,6 +69,17 @@ export async function POST(request: NextRequest) {
         );
         if (seen.alreadySeen) {
             return NextResponse.json({ ok: true, duplicate: true });
+        }
+
+        // ── Subscription lifecycle events ────────────────────────────
+        // Note: subscription.charged ALSO has isPaymentCaptured=true
+        // (it carries a payment.entity), so we handle it first to ensure
+        // the recurring-fulfillment path runs — extending entitlement,
+        // writing a ledger row, and firing the outbound webhook for each
+        // renewal charge, not just the first one.
+        if (event.providerSubscriptionId) {
+            const subResult = await handleSubscriptionEvent(db, event);
+            if (subResult) return subResult;
         }
 
         if (!event.isPaymentCaptured) {

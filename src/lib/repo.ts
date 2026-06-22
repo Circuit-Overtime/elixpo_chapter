@@ -191,6 +191,33 @@ export async function setSessionOrder(
         .run();
 }
 
+/** Set the Razorpay subscription id on a recurring checkout session. */
+export async function setSessionSubscription(
+    db: D1Database,
+    sessionId: string,
+    providerSubscriptionId: string,
+): Promise<void> {
+    await db
+        .prepare(
+            "UPDATE checkout_sessions SET provider_subscription_id = ?, updated_at = datetime('now') WHERE id = ?",
+        )
+        .bind(providerSubscriptionId, sessionId)
+        .run();
+}
+
+/** Find a checkout session by the bound Razorpay subscription id. */
+export async function getCheckoutSessionBySubscription(
+    db: D1Database,
+    providerSubscriptionId: string,
+): Promise<any | null> {
+    return db
+        .prepare(
+            "SELECT * FROM checkout_sessions WHERE provider_subscription_id = ?",
+        )
+        .bind(providerSubscriptionId)
+        .first();
+}
+
 export async function completeSession(
     db: D1Database,
     sessionId: string,
