@@ -53,6 +53,13 @@ export default {
                 text: body.text,
                 attachments: Array.isArray(body.attachments) ? body.attachments : [],
                 listUnsubscribe: body.listUnsubscribe || null,
+                // Pass the Worker env through so the SMTP module can
+                // reach DKIM_PRIVATE_KEY / DKIM_DOMAIN / DKIM_SELECTOR
+                // and sign the message before transmission. When those
+                // aren't set on the env, signing is skipped and the
+                // unsigned message goes out — preserves current
+                // behaviour for unconfigured deployments.
+                env,
             });
             return json(result, 200);
         } catch (err) {
