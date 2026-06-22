@@ -87,17 +87,37 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ ok: true, ignored: event.type });
         }
 
-        if (!event.providerOrderId) {
-            return NextResponse.json({ ok: true, ignored: "no_order_id" });
+        // Resolve the checkout session this charge belongs to.
+        //
+        // Two routes here:
+        //   - One-time orders: session is bound to provider_order_id.
+        //   - Autopay subscriptions (subscription.charged): session is
+        //     bound to provider_subscription_id; there is NO order id on
+        //     our side (Razorpay creates orders internally per cycle but
+        //     we don't track them per-session).
+        //
+        // Prefer the subscription lookup when the event carries a sub id,
+        // otherwise fall back to the order id. Without this branching,
+        // recurring renewals returned "no_session" forever and the
+        // entitlement was never extended.
+        let session: any = null;
+        if (event.providerSubscriptionId) {
+            session = await getCheckoutSessionBySubscription(
+                db,
+                event.providerSubscriptionId,
+            );
         }
-
-        const session = await getCheckoutSessionByOrder(
-            db,
-            event.providerOrderId,
-        );
+        if (!session && event.providerOrderId) {
+            session = await getCheckoutSessionByOrder(
+                db,
+                event.providerOrderId,
+            );
+        }
         if (!session) {
             console.warn(
-                `[webhook/razorpay] no session for order ${event.providerOrderId}`,
+                "[webhook/razorpay] no session for sub=%s order=%s",
+                event.providerSubscriptionId ?? "—",
+                event.providerOrderId ?? "—",
             );
             return NextResponse.json({ ok: true, ignored: "no_session" });
         }

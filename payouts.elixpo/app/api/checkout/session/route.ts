@@ -5,6 +5,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { verifyHandoff } from "@/lib/handoff";
+// ensureProviderCustomer kept available in @/lib/customers for future use
+// once accounts.elixpo collects phone numbers — see the comment in the
+// recurring-checkout branch below.
 import { ensurePlanForPrice } from "@/lib/plans";
 import { razorpayFromEnv } from "@/lib/providers/razorpay";
 import {
@@ -200,13 +203,39 @@ async function finalizeSession(
                 priceId: priceRow.id,
             });
 
-            // Razorpay requires a finite total_count — there's no "until
-            // cancelled" option. 1200 cycles is ~100 years on monthly and
-            // is the de-facto pattern for indefinite SaaS subscriptions.
-            // If a buyer somehow hits the cap we'll re-mint the sub.
+            // Provider-customer binding is INTENTIONALLY disabled in v1.
+            //
+            // Background: Razorpay's hosted mandate page (rzp.io) won't
+            // compute start_at / end_at / charge_at when the bound
+            // customer is missing `contact` (Indian eMandate + UPI
+            // Autopay both require a phone number per RBI rules).
+            // Without a schedule the page renders "Hosted page is not
+            // available". accounts.elixpo doesn't collect phone numbers
+            // today, so binding a half-filled customer hurts more than
+            // it helps — Razorpay's own page collects contact + mandate
+            // in one go if no customer is bound.
+            //
+            // The customer record is still maintained in our DB and
+            // ready to bind once we add phone collection (then re-enable
+            // the line below and remove this comment).
+            //
+            // const { providerCustomerId } = await ensureProviderCustomer(
+            //     db, razorpay, session.customer_id,
+            // );
+
+            // Razorpay requires a finite total_count. RBI caps UPI
+            // Autopay + eMandate mandates at 30 years from creation, so
+            // 360 monthly cycles is the practical universal max
+            // (anything higher fails with "expire_at cannot be more
+            // than 30 years for upi"). Plenty for a SaaS subscription;
+            // buyers who run through 30 years of renewals can re-mint.
+            // RazorpayProvider.safeTotalCount() also clamps defensively.
             const sub = await razorpay.createSubscription({
                 providerPlanId,
-                totalCount: 1200,
+                // providerCustomerId intentionally omitted — see comment
+                // above about the contact-required schedule computation
+                // on Razorpay's hosted page.
+                totalCount: 360,
                 notifyEmail: false,
                 notes: {
                     session_id: session.id,
@@ -234,13 +263,44 @@ async function finalizeSession(
                 status: "pending",
             });
         } else {
-            // Reload short_url for retry — Razorpay returns it on every
-            // GET of the subscription.
-            // (Skipped: we'd need a `getSubscription` method on the
-            // provider. Simpler: re-store on first create only; on retry
-            // we just hand back the existing subscriptionId and let the
-            // client construct the standard short URL ourselves below.)
-            shortUrl = `https://rzp.io/i/${subscriptionId}`;
+            // Reload path — the buyer hit this checkout session before
+            // (page refresh, browser back, etc.). Fetch the live
+            // subscription from Razorpay to get the canonical short_url;
+            // do NOT construct a URL from the sub_id by string concat
+            // (Razorpay's short URL uses a different id namespace).
+            //
+            // If the sub is already past the mandate stage (active/
+            // cancelled/completed), the rzp.io hosted page returns
+            // "Hosted page is not available" — that's expected. We
+            // surface the URL anyway; the buyer's browser will land on
+            // the success page (via Razorpay's own redirect) once they
+            // visit a still-valid sub.
+            try {
+                const live = await razorpay.getSubscription(subscriptionId);
+                shortUrl = live.shortUrl ?? undefined;
+            } catch (err) {
+                console.error(
+                    "[checkout/session] getSubscription failed: %s",
+                    err instanceof Error ? err.message : String(err),
+                );
+            }
+            if (!shortUrl) {
+                // Fallback: if Razorpay can't return a URL (e.g. sub is
+                // in a non-mandate state), send the buyer to the
+                // app-side success/return URL instead of a broken page.
+                // `details` already carries return_url — spread first so
+                // our explicit fields win without TS duplicate-key warnings.
+                return NextResponse.json({
+                    ...details,
+                    session_id: session.id,
+                    provider: "razorpay",
+                    mode: razorpay.mode,
+                    billing_mode: "autopay",
+                    subscription_id: subscriptionId,
+                    short_url: null,
+                    finished: true,
+                });
+            }
         }
 
         return NextResponse.json({

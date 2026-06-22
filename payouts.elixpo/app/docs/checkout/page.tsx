@@ -34,7 +34,13 @@ const RESPONSE = `201 Created
   "currency": "INR",
   "tier": "member",
   "expires_at": "2026-06-17T12:30:00.000Z"
-}`;
+}
+
+// If the resolved price is a recurring tier (autopay), the hosted
+// checkout page redirects the buyer to Razorpay's mandate URL
+// (rzp.io/i/…) instead of opening the Checkout JS modal. You don't
+// need to do anything different on your side — the same /v1/checkout/
+// sessions call handles both modes; the price's "type" field decides.`;
 
 const REDIRECT = `// In your app (server-side), when a user upgrades:
 const res = await fetch("https://payouts.elixpo.com/v1/checkout/sessions", {
@@ -83,15 +89,58 @@ export default function CheckoutDocs() {
             <DocH2>What happens next</DocH2>
             <DocList
                 items={[
-                    "The hosted page loads the session, lazily creates a Razorpay order, and opens Razorpay Checkout.",
-                    "On success the client signature is verified and we fulfill immediately; the Razorpay webhook re-confirms authoritatively (idempotent — never double-grants).",
+                    "The hosted page loads the session, looks at the resolved price's billing mode (one-time or autopay), and runs the matching flow.",
                     <>
-                        We grant the entitlement, then notify your app (see
-                        Webhooks) and redirect the buyer to{" "}
-                        <Code>success_url</Code>.
+                        <strong>One-time</strong> — we lazily create a
+                        Razorpay Order and open Razorpay Checkout. The
+                        client signature is verified and we fulfill
+                        immediately; the Razorpay webhook re-confirms
+                        authoritatively (idempotent — never double-grants).
+                    </>,
+                    <>
+                        <strong>Autopay (recurring)</strong> — we lazily
+                        create a Razorpay Plan (cached per price) and a
+                        Subscription, then redirect the buyer to
+                        Razorpay's hosted mandate URL. Once they accept,{" "}
+                        <Code>subscription.activated</Code> +{" "}
+                        <Code>subscription.charged</Code> webhooks fire
+                        and the entitlement is granted.
+                    </>,
+                    <>
+                        We grant the entitlement, then notify your app
+                        (see Webhooks) and redirect the buyer to{" "}
+                        <Code>success_url</Code>. Each renewal charge
+                        re-fires <Code>entitlement.updated</Code> so
+                        your DB stays in sync.
                     </>,
                 ]}
             />
+
+            <DocH2>Cancelling a subscription</DocH2>
+            <DocP>
+                For autopay tiers your buyer can self-serve cancel from your
+                app, which calls our cancel endpoint:
+            </DocP>
+            <CodeBlock
+                code={`POST https://payouts.elixpo.com/v1/subscriptions/cancel
+Authorization: Bearer <ELIXPO_PAY_API_KEY>
+Content-Type: application/json
+
+{
+  "customer": { "uid": "u_123" },   // same uid passed at checkout
+  "cancel_at_cycle_end": true        // default. false = stop billing now
+}`}
+                language="http"
+            />
+            <DocP>
+                Graceful by default: the buyer keeps access through the
+                period they already paid for, then auto-downgrades when
+                the entitlement expires. We fire{" "}
+                <Code>entitlement.updated</Code> with{" "}
+                <Code>status: "cancelled"</Code> immediately so you can
+                email the buyer; and again with <Code>active: false</Code>{" "}
+                at period end so you can flip the tier.
+            </DocP>
         </Box>
     );
 }
