@@ -146,17 +146,25 @@ export async function POST(request: NextRequest) {
     ) {
         const interval = INTERVALS.includes(p.interval) ? p.interval : "month";
         const intervalCount = Math.max(1, Number(p.interval_count || 1));
+        // `type` selects one-time vs autopay. Accept 'recurring' as an
+        // alias for autopay so the JSON contract matches the underlying
+        // schema column. Default: 'one_time' (backward-compatible).
+        const priceType =
+            p.type === "recurring" || p.billing_mode === "autopay"
+                ? "recurring"
+                : "one_time";
         const priceId = newId("price");
         await db
             .prepare(
                 `INSERT INTO prices (id, product_id, currency, unit_amount, type, interval, interval_count, provider, active)
-                 VALUES (?, ?, ?, ?, 'one_time', ?, ?, 'razorpay', 1)`,
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'razorpay', 1)`,
             )
             .bind(
                 priceId,
                 productId,
                 String(p.currency).toUpperCase(),
                 p.unit_amount,
+                priceType,
                 interval,
                 intervalCount,
             )
@@ -165,6 +173,7 @@ export async function POST(request: NextRequest) {
             id: priceId,
             currency: String(p.currency).toUpperCase(),
             unit_amount: p.unit_amount,
+            type: priceType,
             interval,
             interval_count: intervalCount,
         };

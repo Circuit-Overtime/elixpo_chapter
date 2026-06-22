@@ -26,8 +26,16 @@ declare global {
 
 interface SessionData {
     session_id: string;
-    key_id: string;
-    order_id: string;
+    // One-time-order fields (billing_mode === 'one_time')
+    key_id?: string;
+    order_id?: string;
+    // Autopay fields (billing_mode === 'autopay'): Razorpay's hosted
+    // mandate-collection URL — we redirect there instead of opening
+    // Checkout JS, because subscriptions can't be driven by the modal
+    // (RBI eMandate flow needs the full-page UX).
+    billing_mode?: "one_time" | "autopay";
+    subscription_id?: string;
+    short_url?: string;
     test_mode?: boolean;
     mode?: "test" | "live";
     amount: number;
@@ -188,9 +196,36 @@ function CheckoutInner() {
     const pay = async () => {
         if (!session) return;
         if (session.test_mode) return payTest();
+
+        // Autopay (subscription) path — hosted mandate collection on
+        // Razorpay's side. There is no JS modal flow for eMandates; we
+        // hand the browser off to short_url and Razorpay handles card
+        // collection, OTP, mandate registration, and the first charge.
+        // After completion they redirect back to our return_url; the
+        // entitlement flips on subscription.activated → entitlement.updated.
+        if (session.billing_mode === "autopay") {
+            if (!session.short_url) {
+                setToast({
+                    msg: "Autopay setup is missing the redirect URL. Refresh and try again.",
+                    severity: "error",
+                });
+                return;
+            }
+            setPhase("paying");
+            window.location.href = session.short_url;
+            return;
+        }
+
         if (!window.Razorpay) {
             setToast({
                 msg: "Payment library failed to load. Check your connection and retry.",
+                severity: "error",
+            });
+            return;
+        }
+        if (!session.key_id || !session.order_id) {
+            setToast({
+                msg: "Checkout session is missing payment details. Refresh and try again.",
                 severity: "error",
             });
             return;
@@ -631,8 +666,12 @@ function ActionPanel({
                 {paying
                     ? session.test_mode
                         ? "Completing…"
-                        : "Opening Razorpay…"
-                    : `${session.test_mode ? "Simulate payment · " : "Pay "}${formatAmount(session.amount, session.currency)}`}
+                        : session.billing_mode === "autopay"
+                          ? "Redirecting to Razorpay…"
+                          : "Opening Razorpay…"
+                    : session.billing_mode === "autopay"
+                      ? `Set up auto-pay · ${formatAmount(session.amount, session.currency)}/${session.interval ?? "month"}`
+                      : `${session.test_mode ? "Simulate payment · " : "Pay "}${formatAmount(session.amount, session.currency)}`}
             </Button>
 
             <Button
