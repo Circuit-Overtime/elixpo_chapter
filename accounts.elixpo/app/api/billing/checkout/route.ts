@@ -89,14 +89,22 @@ export async function POST(request: NextRequest) {
             { status: 400 },
         );
     }
-    if (user.tier !== "hobby") {
+    if (user.tier === tier) {
+        // Same-tier checkout = no-op rather than a confusing duplicate sub.
         return NextResponse.json(
-            {
-                error: `You're already on the ${user.tier} plan. Cancel the existing subscription before starting a new one.`,
-            },
+            { error: `You're already on the ${tier} plan.` },
             { status: 409 },
         );
     }
+    // Plan-change path: user is on a different paid tier, switching to
+    // another paid tier. We let the new sub flow proceed AND fire-and-
+    // forget a graceful cancel on the existing sub so they aren't charged
+    // by both. The old sub stays active through its current period (any
+    // remaining time is forfeited — same as Stripe's default switch UX).
+    // If the cancel API call fails we still allow the new sub: a double
+    // charge is recoverable by the user (we'll refund), a stuck upgrade
+    // path is not.
+    const isPlanChange = user.tier !== "hobby";
 
     // Forward to payouts.elixpo. uid = our user id (becomes the
     // external_uid on Pay's side and comes back on every entitlement
@@ -115,6 +123,33 @@ export async function POST(request: NextRequest) {
             if (u.origin === requestOrigin) successUrl = u.toString();
         } catch {
             /* invalid URL — keep default */
+        }
+    }
+
+    // Best-effort graceful cancel of the existing sub before opening the
+    // new checkout. Race condition: if the old cancel webhook arrives
+    // after the new activated webhook, the user could see tier flicker.
+    // Acceptable for v1; in practice both webhooks arrive within seconds
+    // and our event-id dedup + last-write-wins on users.tier prevents
+    // permanent corruption.
+    if (isPlanChange) {
+        try {
+            await fetch(`${apiBase}/v1/subscriptions/cancel`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    customer: { uid: user.id },
+                    cancel_at_cycle_end: true,
+                }),
+            });
+        } catch (err) {
+            console.warn(
+                "[billing checkout] plan-change: old sub cancel failed (non-fatal): %s",
+                err instanceof Error ? err.message : String(err),
+            );
         }
     }
 

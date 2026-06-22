@@ -11,7 +11,9 @@ import {
     getUserByEmail,
     getUserById,
     logAuditEvent,
+    deriveSessionContext,
     updateUserLastLogin,
+    updateUserSessionContext,
 } from "@/lib/db";
 import {
     createAccessToken,
@@ -452,6 +454,16 @@ async function buildSuccessResponse(
         });
 
         await updateUserLastLogin(db, user.id);
+        // Populate session-context columns on first sign-in via this
+        // provider AND keep them fresh on every subsequent login. New
+        // accounts created seconds earlier in this same handler get
+        // their geo/device info backfilled here, so the users row
+        // never sits with NULLs after a real sign-in.
+        await updateUserSessionContext(
+            db,
+            user.id,
+            deriveSessionContext(request),
+        );
 
         await logAuditEvent(db, {
             id: generateUUID(),

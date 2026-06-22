@@ -63,29 +63,54 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Count owned apps once — used by both the 2FA gate and the
+        // tier-limit gate below.
+        const countRow = (await db
+            .prepare(
+                `SELECT COUNT(*) AS n FROM oauth_clients
+                 WHERE owner_id = ? AND is_active = 1`,
+            )
+            .bind(auth.sub)
+            .first()) as { n: number } | null;
+        const activeCount = countRow?.n ?? 0;
+
         // 2FA gate. The platform policy mandates 2FA for any account
         // owning ≥3 OAuth apps. We enforce at creation time of the 3rd
         // app: if the user has 2 apps and !mfa_enabled, block here with
         // a hint that points them to /dashboard/security.
-        if (user && !user.mfa_enabled) {
-            const countRow = (await db
-                .prepare(
-                    `SELECT COUNT(*) AS n FROM oauth_clients
-                     WHERE owner_id = ? AND is_active = 1`,
-                )
-                .bind(auth.sub)
-                .first()) as { n: number } | null;
-            const activeCount = countRow?.n ?? 0;
-            if (activeCount >= 2) {
-                return NextResponse.json(
-                    {
-                        error: "Enable 2FA before registering a 3rd OAuth app.",
-                        mfa_required: true,
-                        setup_url: "/dashboard/security",
-                    },
-                    { status: 403 },
-                );
-            }
+        if (user && !user.mfa_enabled && activeCount >= 2) {
+            return NextResponse.json(
+                {
+                    error: "Enable 2FA before registering a 3rd OAuth app.",
+                    mfa_required: true,
+                    setup_url: "/dashboard/security",
+                },
+                { status: 403 },
+            );
+        }
+
+        // Tier-limit gate. /pricing promises specific app counts per
+        // tier (3 / 10 / unlimited) — enforce them here so the promise
+        // is real. Pulls tier + is_internal off the users row (mirrored
+        // from payouts.elixpo entitlements).
+        const tierRow = (await db
+            .prepare("SELECT tier, is_internal FROM users WHERE id = ?")
+            .bind(auth.sub)
+            .first()) as { tier: string | null; is_internal: number } | null;
+        const { tierFromUserRow, TIER_LIMITS } = await import("@/lib/billing");
+        const tier = tierFromUserRow(tierRow);
+        const cap = TIER_LIMITS[tier].maxOAuthApps;
+        if (Number.isFinite(cap) && activeCount >= cap) {
+            return NextResponse.json(
+                {
+                    error: `Your ${tier} plan is limited to ${cap} OAuth apps. Upgrade to register more.`,
+                    tier_limit_exceeded: true,
+                    current_tier: tier,
+                    limit: cap,
+                    upgrade_url: "/pricing",
+                },
+                { status: 403 },
+            );
         }
 
         const body: any = await request.json();

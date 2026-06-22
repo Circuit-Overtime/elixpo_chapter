@@ -8,7 +8,9 @@ import {
     getUserByEmailWithPassword,
     logAuditEvent,
     createRefreshToken as storeRefreshToken,
+    deriveSessionContext,
     updateUserLastLogin,
+    updateUserSessionContext,
 } from "@/lib/db";
 import { createAccessToken, createRefreshToken } from "@/lib/jwt";
 import { verifyPassword } from "@/lib/password";
@@ -298,6 +300,14 @@ export async function POST(request: NextRequest) {
             });
 
             await updateUserLastLogin(db, user.id);
+            // Populate session-context columns (IP, country, browser,
+            // OS, locale) on the users row. COALESCE-based so a request
+            // missing some headers won't blank out previously-set values.
+            await updateUserSessionContext(
+                db,
+                user.id,
+                deriveSessionContext(request),
+            );
 
             await logAuditEvent(db, {
                 id: generateUUID(),

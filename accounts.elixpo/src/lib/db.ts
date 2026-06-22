@@ -294,6 +294,140 @@ export async function updateUserLastLogin(db: D1Database, userId: string) {
     return await stmt.bind(userId).run();
 }
 
+/**
+ * Parse the request's IP, User-Agent, and Cloudflare geo headers into the
+ * users-table session-context columns. Called from every authenticated
+ * entry point (login, OAuth callback) so the row reflects the buyer's
+ * latest known device and rough location.
+ *
+ * Privacy stance:
+ *  - We store the raw `ip_address` here (separately from the hashed-IP
+ *    used for session dedupe in refresh_tokens). The column existed in
+ *    the schema from day one; populating it is the explicit intent.
+ *  - Geo comes from `cf-ipcountry` only — no third-party lookup. City /
+ *    region populate only if Cloudflare's `cf-iplookupzone` or similar
+ *    headers are present (Workers pro-tier feature); otherwise stay null.
+ *  - User-Agent is parsed into coarse browser+OS labels, not stored raw.
+ */
+export function deriveSessionContext(request: Request | { headers: Headers }) {
+    const headers = request.headers;
+    const ipAddress =
+        headers.get("cf-connecting-ip") ||
+        headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+        null;
+    const ua = headers.get("user-agent") || "";
+
+    // Geo — populated by Cloudflare on the edge. `cf-ipcountry` is always
+    // present on a Pages request; the other two are best-effort.
+    const country = headers.get("cf-ipcountry") || null;
+    const city = headers.get("cf-ipcity") || null;
+    const region = headers.get("cf-region-code") || headers.get("cf-region") || null;
+
+    // Browser + version from UA — same logic as shortUaForSession but
+    // split out so we can persist the parts individually.
+    let browser: string | null = null;
+    let browserVersion: string | null = null;
+    if (ua.includes("Edg/")) {
+        browser = "Edge";
+        browserVersion = ua.match(/Edg\/([\d.]+)/)?.[1] ?? null;
+    } else if (ua.includes("OPR/")) {
+        browser = "Opera";
+        browserVersion = ua.match(/OPR\/([\d.]+)/)?.[1] ?? null;
+    } else if (ua.includes("Firefox/")) {
+        browser = "Firefox";
+        browserVersion = ua.match(/Firefox\/([\d.]+)/)?.[1] ?? null;
+    } else if (ua.includes("Chrome/")) {
+        browser = "Chrome";
+        browserVersion = ua.match(/Chrome\/([\d.]+)/)?.[1] ?? null;
+    } else if (ua.includes("Safari/") && ua.includes("Version/")) {
+        browser = "Safari";
+        browserVersion = ua.match(/Version\/([\d.]+)/)?.[1] ?? null;
+    }
+
+    let os: string | null = null;
+    let osVersion: string | null = null;
+    if (/iPhone|iPad/.test(ua)) {
+        os = "iOS";
+        osVersion = ua.match(/OS (\d[\d_]*)/)?.[1]?.replace(/_/g, ".") ?? null;
+    } else if (/Android/.test(ua)) {
+        os = "Android";
+        osVersion = ua.match(/Android (\d[\d.]*)/)?.[1] ?? null;
+    } else if (/Mac OS X/.test(ua)) {
+        os = "macOS";
+        osVersion = ua.match(/Mac OS X (\d[\d_]*)/)?.[1]?.replace(/_/g, ".") ?? null;
+    } else if (/Windows NT/.test(ua)) {
+        os = "Windows";
+        osVersion = ua.match(/Windows NT ([\d.]+)/)?.[1] ?? null;
+    } else if (/Linux/.test(ua)) {
+        os = "Linux";
+    }
+
+    let deviceType: string | null = null;
+    if (/Mobi|Android.*Mobile|iPhone/.test(ua)) deviceType = "mobile";
+    else if (/iPad|Tablet/.test(ua)) deviceType = "tablet";
+    else if (ua) deviceType = "desktop";
+
+    const locale =
+        headers.get("accept-language")?.split(",")[0]?.split(";")[0]?.trim() ||
+        null;
+
+    return {
+        ipAddress,
+        country,
+        city,
+        region,
+        browser,
+        browserVersion,
+        os,
+        osVersion,
+        deviceType,
+        locale,
+    };
+}
+
+/**
+ * Persist the session context onto the users row. Called from login +
+ * OAuth callback paths. Uses COALESCE so already-set fields aren't
+ * blanked out by a request that's missing a header (e.g. a server-side
+ * refresh where there's no UA on the request).
+ */
+export async function updateUserSessionContext(
+    db: D1Database,
+    userId: string,
+    ctx: ReturnType<typeof deriveSessionContext>,
+): Promise<void> {
+    await db
+        .prepare(
+            `UPDATE users SET
+                ip_address       = COALESCE(?, ip_address),
+                country          = COALESCE(?, country),
+                city             = COALESCE(?, city),
+                region           = COALESCE(?, region),
+                browser          = COALESCE(?, browser),
+                browser_version  = COALESCE(?, browser_version),
+                os               = COALESCE(?, os),
+                os_version       = COALESCE(?, os_version),
+                device_type      = COALESCE(?, device_type),
+                locale           = COALESCE(?, locale),
+                updated_at       = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+        )
+        .bind(
+            ctx.ipAddress,
+            ctx.country,
+            ctx.city,
+            ctx.region,
+            ctx.browser,
+            ctx.browserVersion,
+            ctx.os,
+            ctx.osVersion,
+            ctx.deviceType,
+            ctx.locale,
+            userId,
+        )
+        .run();
+}
+
 export async function logAuditEvent(
     db: D1Database,
     {

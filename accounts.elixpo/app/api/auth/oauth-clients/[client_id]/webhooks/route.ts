@@ -172,6 +172,40 @@ export async function POST(
             ? body.label
             : null;
 
+    // Tier cap: limit webhook endpoints per app by the OWNER's tier.
+    // /pricing promises 1 / 5 / unlimited endpoints per app on
+    // Hobby / Indie / Studio — enforce that here.
+    try {
+        const existing = await listAppWebhookEndpoints(db, client_id);
+        const currentCount = Array.isArray(existing) ? existing.length : 0;
+        const ownerRow = (await db
+            .prepare("SELECT tier, is_internal FROM users WHERE id = ?")
+            .bind(auth.sub)
+            .first()) as { tier: string | null; is_internal: number } | null;
+        const { tierFromUserRow, TIER_LIMITS } = await import("@/lib/billing");
+        const tier = tierFromUserRow(ownerRow);
+        const cap = TIER_LIMITS[tier].maxWebhookEndpointsPerApp;
+        if (Number.isFinite(cap) && currentCount >= cap) {
+            return NextResponse.json(
+                {
+                    error: `Your ${tier} plan is limited to ${cap} webhook endpoint${cap === 1 ? "" : "s"} per app. Upgrade to add more.`,
+                    tier_limit_exceeded: true,
+                    current_tier: tier,
+                    limit: cap,
+                    upgrade_url: "/pricing",
+                },
+                { status: 403 },
+            );
+        }
+    } catch (err) {
+        // Never block a legitimate endpoint create on a tier-lookup
+        // hiccup — log and proceed.
+        console.warn(
+            "[webhooks POST] tier-gate skipped due to lookup error: %s",
+            err instanceof Error ? err.message : String(err),
+        );
+    }
+
     // Mint, write KV first so the dispatcher can resolve the secret the
     // instant the D1 row is visible. If the D1 insert fails after the KV
     // write, the orphan KV entry is harmless (no row references it).

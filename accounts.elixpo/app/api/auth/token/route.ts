@@ -159,6 +159,17 @@ export async function POST(request: NextRequest) {
                     );
                 }
 
+                // MAU counter — fire-and-forget. Counted once per
+                // (client_id, user, calendar month). The helper itself
+                // dedupes and swallows errors so we never block the
+                // token grant on a counter blip.
+                try {
+                    const { recordMauHit } = await import("@/lib/mau");
+                    await recordMauHit(db, client_id, userId);
+                } catch {
+                    /* best-effort */
+                }
+
                 const scopes = (
                     scope ||
                     authRequest.scopes ||

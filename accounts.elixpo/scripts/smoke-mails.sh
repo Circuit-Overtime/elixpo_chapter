@@ -102,7 +102,23 @@ PAYLOADS_webhook_fail=$(cat <<JSON
 JSON
 )
 
-ALL=(user_verify_otp password_reset login_otp mfa_email oauth_app_register oauth_app_delete account_suspended sign_in_device webhook_fail)
+# Billing templates — variables must match the mails.elixpo template
+# declaration. Keep this set in sync with src/lib/mails.ts (MailTemplate
+# union) and the templates you've registered on mails.elixpo.
+PAYLOADS_billing_subscription_activated=$(cat <<JSON
+{"to":"${TO}","variables":{"name":"Ayush","plan_name":"Indie","amount":"1.00","currency":"INR","renews_at":"22 July 2026","manage_url":"https://accounts.elixpo.com/dashboard/subscriptions"}}
+JSON
+)
+PAYLOADS_billing_payment_failed=$(cat <<JSON
+{"to":"${TO}","variables":{"name":"Ayush","plan_name":"Indie","update_payment_url":"https://accounts.elixpo.com/dashboard/subscriptions","grace_until":"22 July 2026"}}
+JSON
+)
+PAYLOADS_billing_subscription_cancelled=$(cat <<JSON
+{"to":"${TO}","variables":{"name":"Ayush","plan_name":"Indie","access_until":"22 July 2026","restart_url":"https://accounts.elixpo.com/pricing"}}
+JSON
+)
+
+ALL=(user_verify_otp password_reset login_otp mfa_email oauth_app_register oauth_app_delete account_suspended sign_in_device webhook_fail billing_subscription_activated billing_payment_failed billing_subscription_cancelled)
 
 if [[ $# -gt 0 ]]; then
   TARGETS=("$@")
@@ -113,5 +129,13 @@ fi
 for t in "${TARGETS[@]}"; do
   hook_var="MAILS_HOOK_$(echo "$t" | tr '[:lower:]' '[:upper:]')"
   payload_var="PAYLOADS_${t}"
+  # Soft-check: if a caller asks for a template we don't have a payload
+  # for, fail with a clear message instead of bash's unbound-variable
+  # error (which is opaque under `set -u`).
+  if ! declare -p "$payload_var" >/dev/null 2>&1; then
+    echo "✗ No PAYLOADS_${t} payload defined in this script." >&2
+    echo "  Known: ${ALL[*]}" >&2
+    exit 1
+  fi
   fire "$t" "$hook_var" "${!payload_var}"
 done
