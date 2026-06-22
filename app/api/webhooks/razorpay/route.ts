@@ -211,11 +211,84 @@ async function handleSubscriptionEvent(
     }
 
     // Non-charge non-activated event (paused/cancelled/halted/completed).
-    // Status already updated above; nothing else to do.
+    // Status already updated above. We also need to tell the consuming
+    // app that the subscription is winding down so it can email the
+    // buyer + start the graceful-downgrade UX.
+    //
+    // For 'cancelled': the entitlement stays ACTIVE until current_period_end
+    // (Razorpay was called with cancel_at_cycle_end=true). We fire
+    // entitlement.updated with active=true + the existing expires_at +
+    // a `cancelled=true` flag so the consumer can render "ends on X"
+    // and send the cancellation email immediately.
+    //
+    // For 'halted': payment failed too many times. Entitlement still
+    // active through period_end but the buyer needs to fix their card —
+    // we send a `failed=true` flag.
+    if (status === "cancelled" || status === "halted") {
+        await fireGracefulCancelWebhook(db, providerSubId, status);
+    }
+
     return NextResponse.json({
         ok: true,
         subscription: status ?? "unknown",
     });
+}
+
+/**
+ * Fire entitlement.updated to the consuming app on subscription wind-down
+ * (cancelled / halted). Uses the existing webhook plumbing — same envelope
+ * shape, same HMAC signing — so consumers only need to subscribe to one
+ * event type.
+ */
+async function fireGracefulCancelWebhook(
+    db: D1Database,
+    providerSubId: string,
+    status: "cancelled" | "halted",
+): Promise<void> {
+    const sub = (await db
+        .prepare(
+            `SELECT s.id, s.app_id, s.tier, s.current_period_end,
+                    c.external_uid, a.slug AS app_slug
+             FROM subscriptions s
+             JOIN customers c ON c.id = s.customer_id
+             JOIN apps a ON a.id = s.app_id
+             WHERE s.provider_subscription_id = ?`,
+        )
+        .bind(providerSubId)
+        .first()) as
+        | {
+              id: string;
+              app_id: string;
+              tier: string;
+              current_period_end: string | null;
+              external_uid: string;
+              app_slug: string;
+          }
+        | null;
+    if (!sub) return;
+
+    const { getWebhookEndpoint } = await import("@/lib/repo");
+    const endpoint = await getWebhookEndpoint(db, sub.app_id);
+    if (!endpoint) return;
+
+    const { fireEntitlementUpdated } = await import("@/lib/webhooks");
+    // The entitlement stays ACTIVE until period_end — the consumer
+    // shouldn't downgrade until then. We surface `cancelled`/`halted`
+    // as a status flag so the consumer can render "ending on X" and
+    // send the appropriate email.
+    await fireEntitlementUpdated(db, endpoint, {
+        app: sub.app_slug,
+        uid: sub.external_uid,
+        tier: sub.tier,
+        active: true,
+        status: status,
+        expires_at: sub.current_period_end,
+        provider_subscription_id: providerSubId,
+        // For halted, signal that a charge failed so the consumer can
+        // send the "update your card" email instead of the cancellation
+        // email.
+        failed: status === "halted",
+    } as any);
 }
 
 function mapSubStatus(razorpayStatus: string): string {
