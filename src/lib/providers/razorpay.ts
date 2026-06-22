@@ -144,7 +144,19 @@ export class RazorpayProvider implements PaymentProvider {
         // make one plan per (price) row and reuse it for every
         // Subscription against that price.
         // Docs: https://razorpay.com/docs/api/payments/subscriptions/plans
-        const period = input.interval; // 'day' | 'week' | 'month' | 'year'
+        // Razorpay's Plans API expects the ADVERB form of the period —
+        // 'daily' | 'weekly' | 'monthly' | 'yearly' — NOT the singular
+        // noun like 'month'. Passing 'month' returns
+        // HTTP 400 "Invalid argument for period passed". Our internal
+        // schema uses the noun form (matches `prices.interval`), so we
+        // map it here at the provider boundary.
+        const PERIOD_MAP: Record<string, string> = {
+            day: "daily",
+            week: "weekly",
+            month: "monthly",
+            year: "yearly",
+        };
+        const period = PERIOD_MAP[input.interval] ?? "monthly";
         const interval = Math.max(1, input.intervalCount ?? 1);
         const res = await fetch(`${RAZORPAY_API}/plans`, {
             method: "POST",
