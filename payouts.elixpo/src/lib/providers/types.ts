@@ -70,12 +70,34 @@ export interface CreateSubscriptionInput {
      *  for "indefinite" (Razorpay's API maxes out — we re-create the sub
      *  if the user is still active when total_count is reached). */
     totalCount: number;
+    /** Provider customer id (e.g. cust_xxx for Razorpay). Optional for
+     *  Card eMandate, but REQUIRED for UPI Autopay — without it Razorpay's
+     *  hosted mandate page can't generate a valid UPI Intent and the QR
+     *  loops on "Refresh QR" forever. */
+    providerCustomerId?: string;
     /** Customer-facing notify channels — Razorpay can email/SMS the buyer.
      *  Default false to keep our own notification flow authoritative. */
     notifyEmail?: boolean;
     /** Free-form key/value notes that come back on subscription.* webhooks
      *  so we can reconcile to our checkout_session / subscription rows. */
     notes?: Record<string, string>;
+}
+
+export interface CreateCustomerInput {
+    /** Buyer's display name. Razorpay requires non-empty; we default to
+     *  the part of the email before '@' if no name is given. */
+    name: string;
+    email?: string;
+    /** E.164-formatted phone number. Optional; helpful for SMS receipts. */
+    contact?: string;
+    /** Internal reference id (e.g. our customer row id) — passed through
+     *  on notes so we can correlate if needed. */
+    referenceId?: string;
+}
+
+export interface CreateCustomerResult {
+    providerCustomerId: string;
+    raw: unknown;
 }
 
 export interface CreateSubscriptionResult {
@@ -127,4 +149,19 @@ export interface PaymentProvider {
         providerSubscriptionId: string,
         cancelAtCycleEnd?: boolean,
     ): Promise<{ status: string; raw: unknown }>;
+    /**
+     * Fetch a subscription. Returns its current status + the canonical
+     * short_url (Razorpay regenerates this on every GET, so it's safe to
+     * use for retries even after the buyer has interacted with the
+     * mandate page once).
+     */
+    getSubscription(
+        providerSubscriptionId: string,
+    ): Promise<{ status: string; shortUrl: string | null; raw: unknown }>;
+    /**
+     * Create a buyer record on the provider, used as the customer
+     * binding for subscription mandates. Lazily called once per local
+     * customer row — `provider_customer_id` is cached afterwards.
+     */
+    createCustomer(input: CreateCustomerInput): Promise<CreateCustomerResult>;
 }

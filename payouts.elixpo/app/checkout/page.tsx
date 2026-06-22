@@ -35,7 +35,14 @@ interface SessionData {
     // (RBI eMandate flow needs the full-page UX).
     billing_mode?: "one_time" | "autopay";
     subscription_id?: string;
-    short_url?: string;
+    short_url?: string | null;
+    /**
+     * Set when a reload lands on a session whose autopay subscription
+     * has already moved past the mandate stage (active/cancelled/etc.)
+     * — there's nothing left for the buyer to do on Razorpay, so we
+     * just send them back to the merchant's return_url.
+     */
+    finished?: boolean;
     test_mode?: boolean;
     mode?: "test" | "live";
     amount: number;
@@ -143,6 +150,22 @@ function CheckoutInner() {
                     throw new Error(data.error_description || data.error);
                 if (cancelled) return;
                 setSession(data);
+                // If the autopay subscription has already moved past the
+                // mandate stage on Razorpay's side (e.g. the buyer hit
+                // back-button after activating), skip the action panel
+                // and send them to the return_url. Showing them a "pay"
+                // button at this point would just dead-end on "Hosted
+                // page is not available".
+                if (data.finished) {
+                    // Stale session — the autopay subscription is past
+                    // the mandate stage on Razorpay's side. Skip the
+                    // success ceremony and bounce immediately so the
+                    // buyer doesn't see a misleading "you're all set"
+                    // screen for a sub they may have cancelled.
+                    const back = data.return_url || "/";
+                    window.location.href = back;
+                    return;
+                }
                 setPhase("ready");
             } catch (e: any) {
                 if (cancelled) return;

@@ -8,6 +8,8 @@
 
 import { hmacSha256Hex, timingSafeEqual, verifyHmacSha256Hex } from "../crypto";
 import type {
+    CreateCustomerInput,
+    CreateCustomerResult,
     CreateOrderInput,
     CreateOrderResult,
     CreatePlanInput,
@@ -188,6 +190,25 @@ export class RazorpayProvider implements PaymentProvider {
         return { providerPlanId: raw.id, raw };
     }
 
+    /**
+     * Razorpay enforces TWO ceilings on subscription length:
+     *  1. `end_time` ≤ 2120-12-25 (Unix 4765046400) — global cap.
+     *  2. UPI Autopay mandates ≤ 30 years from creation — RBI rule, the
+     *     stricter of the two. Returns:
+     *       "expire_at cannot be more than 30 years for upi"
+     *  Card eMandate and bank eMandate also cap at 30 years per RBI.
+     *
+     * So 30 years (= 360 monthly cycles) is the practical universal max.
+     * Plenty of headroom for any realistic SaaS subscription — buyers
+     * who somehow run through 30 years of renewals can re-mint a new
+     * subscription.
+     */
+    private safeTotalCount(input: CreateSubscriptionInput): number {
+        const MONTHLY_CEILING = 360; // 30 years, RBI/UPI Autopay limit
+        const requested = Math.max(1, input.totalCount);
+        return Math.min(requested, MONTHLY_CEILING);
+    }
+
     async createSubscription(
         input: CreateSubscriptionInput,
     ): Promise<CreateSubscriptionResult> {
@@ -204,7 +225,13 @@ export class RazorpayProvider implements PaymentProvider {
             },
             body: JSON.stringify({
                 plan_id: input.providerPlanId,
-                total_count: input.totalCount,
+                total_count: this.safeTotalCount(input),
+                // Binding a customer pre-mandate is required for UPI
+                // Autopay to work — without it the hosted page can't
+                // generate a valid UPI Intent and the QR loops forever.
+                ...(input.providerCustomerId
+                    ? { customer_id: input.providerCustomerId }
+                    : {}),
                 // We drive all notification copy ourselves through
                 // mails.elixpo (consistent branding + suppression list).
                 customer_notify: input.notifyEmail ? 1 : 0,
@@ -222,6 +249,38 @@ export class RazorpayProvider implements PaymentProvider {
             providerSubscriptionId: raw.id,
             shortUrl: raw.short_url,
             status: raw.status,
+            raw,
+        };
+    }
+
+    async getSubscription(
+        providerSubscriptionId: string,
+    ): Promise<{ status: string; shortUrl: string | null; raw: unknown }> {
+        // GET /v1/subscriptions/{id} — returns the live subscription
+        // including the canonical `short_url`. We use this for retries
+        // (page reload, browser back) where the original short_url from
+        // create-time wasn't persisted; constructing one from the sub_id
+        // by string concat doesn't work — Razorpay's short URL uses a
+        // separate ID namespace.
+        const res = await fetch(
+            `${RAZORPAY_API}/subscriptions/${encodeURIComponent(providerSubscriptionId)}`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: this.authHeader(),
+                    Accept: "application/json",
+                },
+            },
+        );
+        const raw: any = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(
+                `Razorpay subscription get failed (${res.status}): ${raw?.error?.description || res.statusText}`,
+            );
+        }
+        return {
+            status: raw.status,
+            shortUrl: raw.short_url ?? null,
             raw,
         };
     }
@@ -255,6 +314,41 @@ export class RazorpayProvider implements PaymentProvider {
             );
         }
         return { status: raw.status, raw };
+    }
+
+    async createCustomer(
+        input: CreateCustomerInput,
+    ): Promise<CreateCustomerResult> {
+        // POST /v1/customers — Razorpay enforces `fail_existing=0` semantics
+        // by default (returns the existing customer instead of 4xx if the
+        // contact/email already exists), which makes this safe to call
+        // repeatedly. We still cache the result ourselves to avoid the
+        // round-trip on every checkout.
+        // Docs: https://razorpay.com/docs/api/customers/create
+        const body: Record<string, unknown> = {
+            name: input.name,
+            fail_existing: 0,
+        };
+        if (input.email) body.email = input.email;
+        if (input.contact) body.contact = input.contact;
+        if (input.referenceId) body.notes = { reference_id: input.referenceId };
+
+        const res = await fetch(`${RAZORPAY_API}/customers`, {
+            method: "POST",
+            headers: {
+                Authorization: this.authHeader(),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+
+        const raw: any = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(
+                `Razorpay customer create failed (${res.status}): ${raw?.error?.description || res.statusText}`,
+            );
+        }
+        return { providerCustomerId: raw.id, raw };
     }
 }
 
