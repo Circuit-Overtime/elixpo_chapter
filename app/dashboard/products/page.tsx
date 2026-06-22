@@ -7,6 +7,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import LaunchIcon from "@mui/icons-material/Launch";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
+import SearchIcon from "@mui/icons-material/Search";
 import {
     Box,
     Button,
@@ -16,17 +17,19 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    InputAdornment,
     Stack,
     TextField,
     Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatMoney, GlassCard } from "@/components/dashboard-ui";
 
 export default function ProductsPage() {
     const [loading, setLoading] = useState(true);
     const [products, setProducts] = useState<any[]>([]);
+    const [search, setSearch] = useState("");
 
     const [registerDlg, setRegisterDlg] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -109,6 +112,24 @@ export default function ProductsPage() {
             // ignore
         }
     };
+
+    // Sort by time_created ascending, then filter by search
+    const filteredApps = useMemo(() => {
+        const apps = groupByApp(products);
+        // sort ascending by time_created (oldest first)
+        apps.sort((a, b) => {
+            const ta = new Date(a.time_created || 0).getTime();
+            const tb = new Date(b.time_created || 0).getTime();
+            return ta - tb;
+        });
+        if (!search.trim()) return apps;
+        const q = search.toLowerCase();
+        return apps.filter(
+            (a) =>
+                a.name?.toLowerCase().includes(q) ||
+                a.client_id?.toLowerCase().includes(q),
+        );
+    }, [products, search]);
 
     if (loading) {
         return (
@@ -245,6 +266,30 @@ export default function ProductsPage() {
                 </GlassCard>
             )}
 
+            {/* Search bar */}
+            {products.length > 0 && (
+                <TextField
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search products by name or client ID…"
+                    size="small"
+                    fullWidth
+                    sx={{ ...field, mb: 2.5 }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon
+                                    sx={{
+                                        fontSize: 18,
+                                        color: "rgba(245,245,244,0.4)",
+                                    }}
+                                />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+            )}
+
             {products.length === 0 ? (
                 <GlassCard sx={{ textAlign: "center", py: 6 }}>
                     <Typography
@@ -270,9 +315,20 @@ export default function ProductsPage() {
                         Register product
                     </Button>
                 </GlassCard>
+            ) : filteredApps.length === 0 ? (
+                <GlassCard sx={{ textAlign: "center", py: 5 }}>
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.55)",
+                            fontSize: "0.9rem",
+                        }}
+                    >
+                        No products match &ldquo;{search}&rdquo;.
+                    </Typography>
+                </GlassCard>
             ) : (
                 <Stack spacing={2}>
-                    {groupByApp(products).map((app) => {
+                    {filteredApps.map((app) => {
                         const minPrice = app.prices.length
                             ? app.prices.reduce((m: any, x: any) =>
                                   x.unit_amount < m.unit_amount ? x : m,
@@ -600,6 +656,7 @@ function groupByApp(products: any[]) {
                 tierCount: 0,
                 prices: [] as any[],
                 firstProductId: p.id,
+                time_created: p.time_created ?? p.created_at ?? null,
             };
         }
         const a = acc[p.app_id];

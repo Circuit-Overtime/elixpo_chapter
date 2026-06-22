@@ -1081,16 +1081,6 @@ export default function ProductDetailPage() {
                             </>
                         )}
                     </Box>
-                ) : webhook?.secret_preview ? (
-                    <Typography
-                        sx={{
-                            ...mono,
-                            color: "rgba(245,245,244,0.5)",
-                            mt: 1.5,
-                        }}
-                    >
-                        Signing secret: {webhook.secret_preview}
-                    </Typography>
                 ) : null}
                 {webhookGrace && (
                     <Typography
