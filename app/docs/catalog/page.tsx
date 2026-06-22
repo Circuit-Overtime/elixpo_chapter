@@ -22,8 +22,15 @@ const FILE = `{
       "name": "Blogs Member",
       "description": "Member-only reads, higher limits…",
       "prices": [
-        { "nickname": "India",  "currency": "INR", "unit_amount": 19900, "interval": "month", "region": "IN" },
-        { "nickname": "Global", "currency": "USD", "unit_amount":   600, "interval": "month" }
+        // One-time payment — buyer manually re-purchases each cycle.
+        { "nickname": "India",  "currency": "INR", "unit_amount": 19900, "interval": "month", "region": "IN", "type": "one_time" },
+
+        // Autopay (recurring) — Razorpay charges automatically each cycle.
+        // The buyer is redirected to Razorpay's hosted mandate page on
+        // first checkout; subsequent renewals are silent.
+        { "nickname": "India · Autopay",  "currency": "INR", "unit_amount": 19900, "interval": "month", "region": "IN", "type": "recurring" },
+
+        { "nickname": "Global", "currency": "USD", "unit_amount":   600, "interval": "month", "type": "one_time" }
       ]
     }
   ]
