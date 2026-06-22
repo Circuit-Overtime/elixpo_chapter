@@ -251,6 +251,11 @@ export async function GET(request: NextRequest) {
                 mfa_enabled: mfaEnabled,
                 mfa_setup_required: mfaSetupRequired,
                 owned_apps_count: ownedAppsCount,
+                tier: (dbUser as any).tier || "hobby",
+                tier_renews_at: (dbUser as any).tier_renews_at || null,
+                is_internal:
+                    (dbUser as any).is_internal === 1 ||
+                    (dbUser as any).is_internal === true,
                 expiresAt: new Date(payload.exp * 1000),
             });
         } catch (dbError) {

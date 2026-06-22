@@ -5,6 +5,7 @@ import {
     DevicesOther,
     Person,
     SpaceDashboard,
+    Sell,
     Webhook,
 } from "@mui/icons-material";
 import CloseIcon from "@mui/icons-material/Close";
@@ -40,6 +41,7 @@ interface Me {
 // Marketing nav (signed-out).
 const MARKETING_LINKS = [
     { label: "Home", href: "/" },
+    { label: "Pricing", href: "/pricing" },
     { label: "Docs", href: "/docs" },
     { label: "About", href: "/about" },
 ];
@@ -54,6 +56,7 @@ const APP_LINKS: {
     { label: "OAuth Apps", href: "/dashboard/oauth-apps", icon: Apps },
     { label: "Services", href: "/dashboard/services", icon: DevicesOther },
     { label: "Webhooks", href: "/dashboard/webhooks", icon: Webhook },
+    { label: "Pricing", href: "/pricing", icon: Sell },
     { label: "Profile", href: "/dashboard/profile", icon: Person },
 ];
 

@@ -18,7 +18,7 @@
  */
 
 const BASE_URL = "https://mails.elixpo.com";
-const TIMEOUT_MS = 5_000;
+const TIMEOUT_MS = 20_000;
 
 export type MailTemplate =
     | "user_verify_otp"
@@ -29,7 +29,10 @@ export type MailTemplate =
     | "oauth_app_delete"
     | "account_suspended"
     | "sign_in_device"
-    | "webhook_fail";
+    | "webhook_fail"
+    | "billing_subscription_activated"
+    | "billing_payment_failed"
+    | "billing_subscription_cancelled";
 
 const HOOK_ENV: Record<MailTemplate, string> = {
     user_verify_otp: "MAILS_HOOK_USER_VERIFY_OTP",
@@ -41,6 +44,11 @@ const HOOK_ENV: Record<MailTemplate, string> = {
     account_suspended: "MAILS_HOOK_ACCOUNT_SUSPENDED",
     sign_in_device: "MAILS_HOOK_SIGN_IN_DEVICE",
     webhook_fail: "MAILS_HOOK_WEBHOOK_FAIL",
+    billing_subscription_activated:
+        "MAILS_HOOK_BILLING_SUBSCRIPTION_ACTIVATED",
+    billing_payment_failed: "MAILS_HOOK_BILLING_PAYMENT_FAILED",
+    billing_subscription_cancelled:
+        "MAILS_HOOK_BILLING_SUBSCRIPTION_CANCELLED",
 };
 
 interface SendOptions {

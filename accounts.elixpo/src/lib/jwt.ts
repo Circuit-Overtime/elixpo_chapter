@@ -3,7 +3,7 @@ import * as jose from "jose";
 export interface JWTPayload {
     sub: string;
     email: string;
-    provider?: "google" | "github" | "email";
+    provider?: "google" | "github" | "discord" | "microsoft" | "email";
     iat: number;
     exp: number;
     type: "access" | "refresh";
@@ -28,7 +28,7 @@ export async function getVerifyingKey(): Promise<jose.KeyLike | Uint8Array> {
 export async function createAccessToken(
     userId: string,
     email: string,
-    provider?: "google" | "github" | "email",
+    provider?: "google" | "github" | "discord" | "microsoft" | "email",
     expiresInMinutes: number = 15,
 ): Promise<string> {
     const payload: Omit<JWTPayload, "iat" | "exp"> = {
@@ -51,7 +51,7 @@ export async function createAccessToken(
 
 export async function createRefreshToken(
     userId: string,
-    provider?: "google" | "github" | "email",
+    provider?: "google" | "github" | "discord" | "microsoft" | "email",
     expiresInDays: number = 30,
 ): Promise<string> {
     const payload: Omit<JWTPayload, "iat" | "exp"> = {

@@ -189,50 +189,72 @@ const PIXELS = [
     "#7c5cff",
 ];
 
-/* The Elixpo suite — one identity signs you into all of these. Wordmarks
- * (no boxes) reinforce that Elixpo Accounts is the shared SSO hub. */
-const wordmark: CSSProperties = {
-    fontFamily: "var(--font-geist-sans), sans-serif",
-    fontWeight: 800,
-    fontSize: "1.35rem",
-    letterSpacing: "-0.01em",
-    whiteSpace: "nowrap",
+/* The Elixpo suite — one identity signs you into all of these.
+ *
+ * Logos-only marquee (no labels) — reads like a "brand assets" strip of
+ * trusted products. Favicons are fetched directly from each source
+ * domain so they auto-update whenever a product redesigns its mark.
+ *
+ * The tinted ring around each icon is purely decorative; the icon
+ * itself sits on a subtle dark plate so light + dark favicons both have
+ * enough contrast against the hero background.
+ */
+const brandTile = (color: string): CSSProperties => ({
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    flexShrink: 0,
     display: "inline-flex",
     alignItems: "center",
-    opacity: 0.95,
-    lineHeight: 1,
+    justifyContent: "center",
+    background: "rgba(20,18,28,0.55)",
+    border: `1px solid ${color}33`,
+    boxShadow: `0 0 24px -8px ${color}55`,
+    backdropFilter: "blur(6px)",
+});
+
+const brandIconStyle: CSSProperties = {
+    width: 36,
+    height: 36,
+    objectFit: "contain",
 };
-const tint = (color: string): CSSProperties => ({ ...wordmark, color });
+
+const productEntry = (
+    label: string,
+    favicon: string,
+    color: string,
+): { name: string; node: ReactNode } => ({
+    name: label,
+    node: (
+        <span
+            style={brandTile(color)}
+            aria-label={label}
+            title={label}
+        >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+                src={favicon}
+                alt={`${label} logo`}
+                style={brandIconStyle}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+            />
+        </span>
+    ),
+});
 
 const ELIXPO_PRODUCTS: { name: string; node: ReactNode }[] = [
-    {
-        name: "Elixpo",
-        node: (
-            <span style={wordmark}>
-                <b style={{ color: "#f5f5f4" }}>Elix</b>
-                <b style={{ color: "#9b7bf7" }}>po</b>
-            </span>
-        ),
-    },
-    { name: "Blogs", node: <span style={tint("#5fb6ff")}>Blogs</span> },
-    { name: "Sketch", node: <span style={tint("#86efac")}>Sketch</span> },
-    {
-        name: "URL",
-        node: (
-            <span
-                style={{
-                    ...tint("rgba(245,245,244,0.85)"),
-                    letterSpacing: "0.04em",
-                }}
-            >
-                URL
-            </span>
-        ),
-    },
-    { name: "Payouts", node: <span style={tint("#fbbf24")}>Payouts</span> },
-    { name: "Mails", node: <span style={tint("#9b7bf7")}>Mails</span> },
-    { name: "Me", node: <span style={tint("#ff6a8a")}>Me</span> },
-    { name: "Art", node: <span style={tint("#5ac8fa")}>Art</span> },
+    productEntry("Elixpo", "https://elixpo.com/favicon.ico", "#f5f5f4"),
+    productEntry("Blogs", "https://blogs.elixpo.com/favicon.ico", "#5fb6ff"),
+    productEntry("Sketch", "https://sketch.elixpo.com/favicon.ico", "#86efac"),
+    productEntry(
+        "URL",
+        "https://url.elixpo.com/favicon.ico",
+        "rgba(245,245,244,0.85)",
+    ),
+    productEntry("Mails", "https://mails.elixpo.com/favicon.ico", "#9b7bf7"),
+    productEntry("Me", "https://me.elixpo.com/favicon.ico", "#ff6a8a"),
+    productEntry("Admin", "https://admin.elixpo.com/favicon.ico", "#fbbf24"),
 ];
 
 const ArrowRight = () => (

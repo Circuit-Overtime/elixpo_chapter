@@ -71,6 +71,8 @@ export async function POST(request: NextRequest) {
             "[mfa email enroll] unhandled: %s",
             err instanceof Error ? err.stack || err.message : String(err),
         );
+        // 424 not 500 — CF zone intercepts 5xx with an HTML error page,
+        // which the client toast can't parse. 424 keeps the JSON body.
         return NextResponse.json(
             {
                 error:
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
                         ? `Enrollment failed: ${err.message}`
                         : "Enrollment failed (unknown error)",
             },
-            { status: 500 },
+            { status: 424 },
         );
     }
 }
@@ -157,7 +159,7 @@ async function enrollImpl(request: NextRequest) {
             {
                 error: "Verification service unavailable. Please try again in a moment.",
             },
-            { status: 503 },
+            { status: 424 },
         );
     }
     const cooldownKey = `mfa_email_enroll_cd:${auth.sub}`;
@@ -228,11 +230,13 @@ async function enrollImpl(request: NextRequest) {
         ip_address: ipAddress,
     });
     if (!mailResult.ok) {
+        // 424 Failed Dependency — see catch-all comment about CF zone
+        // replacing 5xx bodies with HTML.
         return NextResponse.json(
             {
                 error: `Couldn't send the verification email: ${mailResult.error ?? "unknown"}`,
             },
-            { status: 502 },
+            { status: 424 },
         );
     }
 
