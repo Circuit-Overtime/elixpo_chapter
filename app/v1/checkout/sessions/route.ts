@@ -118,6 +118,79 @@ export async function POST(request: NextRequest) {
 
         const customerId = await upsertCustomer(db, app.id, uid, email);
 
+        // Defensive auto-cancel of any pre-existing active recurring
+        // subscription for this (app, customer) before creating a new
+        // one — prevents the "two simultaneously-active subs both
+        // billing" failure mode if the consuming app's tier mirror
+        // drifted (e.g. manual SQL reset bypassed the plan-change
+        // detector). Only fires for recurring price selections; one-time
+        // checkouts are stateless and don't need this.
+        if (resolved.price.type === "recurring") {
+            try {
+                const stale = ((
+                    await db
+                        .prepare(
+                            `SELECT id, provider_subscription_id
+                             FROM subscriptions
+                             WHERE app_id = ? AND customer_id = ?
+                               AND billing_mode = 'recurring'
+                               AND status IN ('active','past_due')
+                               AND cancel_at IS NULL`,
+                        )
+                        .bind(app.id, customerId)
+                        .all()
+                ).results ?? []) as Array<{
+                    id: string;
+                    provider_subscription_id: string | null;
+                }>;
+                if (stale.length > 0) {
+                    const { razorpayFromEnv } = await import(
+                        "@/lib/providers/razorpay"
+                    );
+                    const { getEnv } = await import("@/lib/env");
+                    const razorpay = await razorpayFromEnv(getEnv);
+                    for (const s of stale) {
+                        if (razorpay && s.provider_subscription_id) {
+                            try {
+                                // Immediate cancel (not graceful) — the
+                                // user is moving to a NEW sub right now,
+                                // no need to keep the old period alive.
+                                await razorpay.cancelSubscription(
+                                    s.provider_subscription_id,
+                                    false,
+                                );
+                            } catch (err) {
+                                console.warn(
+                                    "[v1/checkout/sessions] couldn't cancel stale sub %s upstream (proceeding): %s",
+                                    s.provider_subscription_id,
+                                    err instanceof Error ? err.message : String(err),
+                                );
+                            }
+                        }
+                        await db
+                            .prepare(
+                                "UPDATE subscriptions SET status='cancelled', cancel_at=datetime('now'), updated_at=datetime('now') WHERE id = ?",
+                            )
+                            .bind(s.id)
+                            .run();
+                    }
+                    console.log(
+                        "[v1/checkout/sessions] auto-cancelled %d stale recurring sub(s) for app=%s uid=%s",
+                        stale.length,
+                        app.slug,
+                        uid,
+                    );
+                }
+            } catch (err) {
+                // Don't block checkout on cleanup failure — the worst
+                // case is the same pre-fix behaviour (duplicate sub).
+                console.error(
+                    "[v1/checkout/sessions] stale-sub cleanup failed (non-fatal): %s",
+                    err instanceof Error ? err.message : String(err),
+                );
+            }
+        }
+
         const metadata: Record<string, unknown> = {
             plan: tier,
             source: "api",
