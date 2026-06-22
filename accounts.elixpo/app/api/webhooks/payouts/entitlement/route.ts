@@ -222,6 +222,26 @@ async function fireBillingEmail(
         return;
     }
 
+    // Plan change (paid → different paid). Treat like activation —
+    // welcome email for the new tier. The old sub's cancellation email
+    // (if any) is suppressed inside the cancel-webhook branch when the
+    // *target* tier is also paid (it's an upgrade, not a downgrade).
+    if (
+        result.previousTier !== "hobby" &&
+        result.nextTier !== "hobby" &&
+        result.previousTier !== result.nextTier
+    ) {
+        await sendMail("billing_subscription_activated", user.email, {
+            name,
+            plan_name: planName,
+            amount: data.amount ?? "",
+            currency: data.currency ?? "INR",
+            renews_at: expiresAt ?? "next cycle",
+            manage_url: manageUrl,
+        });
+        return;
+    }
+
     // hobby → paid: welcome email.
     if (result.previousTier === "hobby" && result.nextTier !== "hobby") {
         await sendMail("billing_subscription_activated", user.email, {

@@ -34,6 +34,58 @@ export type Tier = "hobby" | "indie" | "studio" | "internal";
 
 const KNOWN_PAID_TIERS = new Set<Tier>(["indie", "studio"]);
 
+/**
+ * Per-tier feature limits. Source of truth for tier enforcement; the
+ * /pricing page copy reflects these. Update both when changing limits.
+ *
+ * `Infinity` means "no enforced cap" — internal + studio get unlimited
+ * OAuth apps and webhook endpoints in v1.
+ */
+export interface TierLimits {
+    /** Max OAuth apps an owner can hold simultaneously. */
+    maxOAuthApps: number;
+    /** Max webhook endpoints per OAuth app. */
+    maxWebhookEndpointsPerApp: number;
+    /** Soft cap on MAU per app — UI warns at 80%, hard-blocks at 200%. */
+    maxMauPerApp: number;
+    /** Days that failed-webhook retries stay in the queue. */
+    webhookRetryDays: number;
+}
+
+export const TIER_LIMITS: Record<Tier, TierLimits> = {
+    hobby: {
+        maxOAuthApps: 3,
+        maxWebhookEndpointsPerApp: 1,
+        maxMauPerApp: 1_000,
+        webhookRetryDays: 7,
+    },
+    indie: {
+        maxOAuthApps: 10,
+        maxWebhookEndpointsPerApp: 5,
+        maxMauPerApp: 10_000,
+        webhookRetryDays: 30,
+    },
+    studio: {
+        maxOAuthApps: Number.POSITIVE_INFINITY,
+        maxWebhookEndpointsPerApp: Number.POSITIVE_INFINITY,
+        maxMauPerApp: 100_000,
+        webhookRetryDays: 30,
+    },
+    internal: {
+        maxOAuthApps: Number.POSITIVE_INFINITY,
+        maxWebhookEndpointsPerApp: Number.POSITIVE_INFINITY,
+        maxMauPerApp: Number.POSITIVE_INFINITY,
+        webhookRetryDays: 30,
+    },
+};
+
+/** Read the tier off a users row, normalising missing/legacy values to 'hobby'. */
+export function tierFromUserRow(row: { tier?: string | null; is_internal?: number | boolean } | null): Tier {
+    if (!row) return "hobby";
+    if (row.is_internal === 1 || row.is_internal === true) return "internal";
+    return normalizeTier(row.tier);
+}
+
 export function normalizeTier(raw: string | null | undefined): Tier {
     if (!raw) return "hobby";
     const t = raw.trim().toLowerCase();

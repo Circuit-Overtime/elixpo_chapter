@@ -262,6 +262,65 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // ── MAU hard ceiling ─────────────────────────────────────────
+        // The app owner's tier caps how many monthly-active users their
+        // OAuth app can serve. We allow up to 2× the soft cap (gives a
+        // burst window) and hard-block above that to push the owner to
+        // upgrade. The check runs BEFORE the auth code is issued so an
+        // over-limit user never even gets a token. Counter recording
+        // continues to happen at /api/auth/token, dedupes per month.
+        try {
+            const owner = (await db
+                .prepare(
+                    `SELECT u.tier, u.is_internal
+                     FROM oauth_clients oc
+                     JOIN users u ON u.id = oc.owner_id
+                     WHERE oc.client_id = ? AND oc.is_active = 1`,
+                )
+                .bind((authRequest as any).client_id)
+                .first()) as
+                | { tier: string | null; is_internal: number }
+                | null;
+            if (owner) {
+                const { checkMauGate } = await import("@/lib/mau");
+                const { tierFromUserRow } = await import("@/lib/billing");
+                const ownerTier = tierFromUserRow(owner);
+                const gate = await checkMauGate(
+                    db,
+                    (authRequest as any).client_id,
+                    ownerTier,
+                );
+                if (!gate.allow) {
+                    console.warn(
+                        "[authorize] MAU hard-block client=%s mau=%s cap=%s tier=%s",
+                        (authRequest as any).client_id,
+                        String(gate.mau),
+                        String(gate.cap),
+                        ownerTier,
+                    );
+                    redirectUrl.searchParams.append(
+                        "error",
+                        "temporarily_unavailable",
+                    );
+                    redirectUrl.searchParams.append(
+                        "error_description",
+                        "This application has reached its monthly user limit. Please contact the app developer.",
+                    );
+                    redirectUrl.searchParams.append("state", state);
+                    return NextResponse.json({
+                        redirect_uri: redirectUrl.toString(),
+                    });
+                }
+            }
+        } catch (err) {
+            // Never block auth on a MAU lookup failure — log loudly and
+            // proceed. The counter is best-effort by design.
+            console.warn(
+                "[authorize] MAU gate skipped due to lookup error: %s",
+                err instanceof Error ? err.message : String(err),
+            );
+        }
+
         const authorizationCode = `code_${generateRandomString(32)}`;
 
         try {

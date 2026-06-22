@@ -3,6 +3,7 @@
 import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import BackgroundAurora from "../components/background-aurora";
+import Navbar from "../components/navbar";
 
 /**
  * /pricing — public pricing page.
@@ -151,13 +152,16 @@ export default function PricingPage() {
     return (
         <>
             <BackgroundAurora variant="default" />
+            <Box sx={{ position: "relative", zIndex: 1 }}>
+                <Navbar />
+            </Box>
             <Box
                 sx={{
                     position: "relative",
                     zIndex: 1,
-                    minHeight: "100dvh",
+                    minHeight: "calc(100dvh - 68px)",
                     px: { xs: 2.5, sm: 4 },
-                    py: { xs: 6, sm: 10 },
+                    py: { xs: 4, sm: 7 },
                     color: "#f5f5f4",
                 }}
             >
