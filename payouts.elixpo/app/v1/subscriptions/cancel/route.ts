@@ -152,6 +152,62 @@ export async function POST(request: NextRequest) {
             .bind(finalStatus, sub.id)
             .run();
 
+        // ── Inline notify the consuming app immediately ──────────────────
+        //
+        // Razorpay only sends `subscription.cancelled` on graceful cancels
+        // at period_end (i.e. ~31 days later for monthly). That's far too
+        // late for a "your cancellation is confirmed" email — buyers
+        // expect it within seconds of clicking Cancel.
+        //
+        // Fire entitlement.updated outbound right here, with the same
+        // shape the webhook handler would have sent. The flag
+        // `subscriptions.cancel_at` we just set above acts as the dedup
+        // marker: when Razorpay's eventual webhook lands, the handler
+        // sees cancel_at is set and skips the outbound, avoiding a
+        // duplicate email.
+        try {
+            const { getWebhookEndpoint } = await import("@/lib/repo");
+            const endpoint = await getWebhookEndpoint(db, app.id);
+            if (endpoint) {
+                const { fireEntitlementUpdated } = await import(
+                    "@/lib/webhooks"
+                );
+                const subWithSlug = (await db
+                    .prepare(
+                        `SELECT s.tier, s.current_period_end, a.slug
+                         FROM subscriptions s
+                         JOIN apps a ON a.id = s.app_id
+                         WHERE s.id = ?`,
+                    )
+                    .bind(sub.id)
+                    .first()) as
+                    | { tier: string; current_period_end: string | null; slug: string }
+                    | null;
+                if (subWithSlug) {
+                    await fireEntitlementUpdated(db, endpoint, {
+                        app: subWithSlug.slug,
+                        uid,
+                        tier: subWithSlug.tier,
+                        // Graceful: access stays active until period_end.
+                        active: true,
+                        status: "cancelled",
+                        expires_at: subWithSlug.current_period_end,
+                        provider_subscription_id: sub.provider_subscription_id,
+                        failed: false,
+                    } as any);
+                }
+            }
+        } catch (err) {
+            // Best-effort: the consuming app's cancellation email is
+            // nicer-to-have. The cancel itself already succeeded; we
+            // don't want a notification hiccup to surface as a cancel
+            // failure to the caller.
+            console.error(
+                "[v1/subscriptions/cancel] inline notify failed (non-fatal): %s",
+                err instanceof Error ? err.message : String(err),
+            );
+        }
+
         return NextResponse.json({
             id: sub.id,
             status: finalStatus,

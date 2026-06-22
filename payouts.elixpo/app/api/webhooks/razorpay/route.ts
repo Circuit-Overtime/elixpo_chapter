@@ -267,7 +267,7 @@ async function fireGracefulCancelWebhook(
 ): Promise<void> {
     const sub = (await db
         .prepare(
-            `SELECT s.id, s.app_id, s.tier, s.current_period_end,
+            `SELECT s.id, s.app_id, s.tier, s.current_period_end, s.cancel_at,
                     c.external_uid, a.slug AS app_slug
              FROM subscriptions s
              JOIN customers c ON c.id = s.customer_id
@@ -281,15 +281,61 @@ async function fireGracefulCancelWebhook(
               app_id: string;
               tier: string;
               current_period_end: string | null;
+              cancel_at: string | null;
               external_uid: string;
               app_slug: string;
           }
         | null;
     if (!sub) return;
 
+    // Dedup: if this is the `subscription.cancelled` webhook arriving at
+    // period_end for a buyer-initiated cancel we already notified about
+    // inline (from /v1/subscriptions/cancel), the local row's cancel_at
+    // is set. Skip the outbound — the consuming app already sent the
+    // cancellation email when the buyer clicked Cancel. Halt events
+    // (charge failures) still fire because they're a different signal.
+    if (status === "cancelled" && sub.cancel_at) {
+        console.log(
+            "[webhook/razorpay] skipping cancellation outbound for sub=%s — already notified inline at %s",
+            providerSubId,
+            sub.cancel_at,
+        );
+        return;
+    }
+
     const { getWebhookEndpoint } = await import("@/lib/repo");
     const endpoint = await getWebhookEndpoint(db, sub.app_id);
     if (!endpoint) return;
+
+    // For halted events, distinguish UPI-mandate-revocation from
+    // exhausted-card-retries by looking at recent payment.failed
+    // events for the same subscription. Razorpay's webhook stream:
+    //   - Card declined: fires `payment.failed` (often multiple) BEFORE
+    //     the eventual `subscription.halted` once retries are exhausted.
+    //   - UPI mandate revoked from buyer's GPay/PhonePe app: bank
+    //     pushes mandate revocation to NPCI → Razorpay halts the sub
+    //     without any payment.failed (no charge was attempted because
+    //     the mandate itself is gone).
+    // We check provider_webhook_events for any payment.failed in the
+    // last 7 days mentioning this sub_id; if present we treat it as
+    // a charge failure (failed=true → consumer sends "update your card"
+    // mail), otherwise UPI revoke (failed=false → consumer sends a
+    // cancellation confirmation mail).
+    let failed = false;
+    if (status === "halted") {
+        const recentFail = (await db
+            .prepare(
+                `SELECT id FROM provider_webhook_events
+                 WHERE provider = 'razorpay'
+                   AND event_type = 'payment.failed'
+                   AND payload LIKE ?
+                   AND datetime(created_at) > datetime('now', '-7 days')
+                 LIMIT 1`,
+            )
+            .bind(`%${providerSubId}%`)
+            .first()) as { id: string } | null;
+        failed = !!recentFail;
+    }
 
     const { fireEntitlementUpdated } = await import("@/lib/webhooks");
     // The entitlement stays ACTIVE until period_end — the consumer
@@ -304,10 +350,7 @@ async function fireGracefulCancelWebhook(
         status: status,
         expires_at: sub.current_period_end,
         provider_subscription_id: providerSubId,
-        // For halted, signal that a charge failed so the consumer can
-        // send the "update your card" email instead of the cancellation
-        // email.
-        failed: status === "halted",
+        failed,
     } as any);
 }
 

@@ -2,8 +2,17 @@
 
 export const runtime = "edge";
 
-import { Box, CircularProgress, Stack, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import SearchIcon from "@mui/icons-material/Search";
+import {
+    Box,
+    Button,
+    CircularProgress,
+    InputAdornment,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
 import {
     fmtDate,
     formatMoney,
@@ -11,9 +20,14 @@ import {
     StatusChip,
 } from "@/components/dashboard-ui";
 
+const STATUS_FILTERS = ["all", "captured", "failed", "created", "expired"] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
 export default function TransactionsPage() {
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [emailSearch, setEmailSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
     useEffect(() => {
         fetch("/api/dashboard/transactions?limit=100", {
@@ -26,6 +40,19 @@ export default function TransactionsPage() {
             })
             .catch(() => setLoading(false));
     }, []);
+
+    const filtered = useMemo(() => {
+        return rows.filter((t) => {
+            const matchesStatus =
+                statusFilter === "all" || t.status === statusFilter;
+            const matchesEmail =
+                !emailSearch.trim() ||
+                (t.uid || "")
+                    .toLowerCase()
+                    .includes(emailSearch.toLowerCase());
+            return matchesStatus && matchesEmail;
+        });
+    }, [rows, statusFilter, emailSearch]);
 
     return (
         <Box>
@@ -49,6 +76,78 @@ export default function TransactionsPage() {
                 </Typography>
             </Box>
 
+            {/* Filters */}
+            {!loading && rows.length > 0 && (
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1.5}
+                    sx={{ mb: 2.5 }}
+                    alignItems={{ xs: "stretch", sm: "center" }}
+                >
+                    {/* Email / UID search */}
+                    <TextField
+                        value={emailSearch}
+                        onChange={(e) => setEmailSearch(e.target.value)}
+                        placeholder="Search by email or user ID…"
+                        size="small"
+                        sx={{ ...field, flex: 1, minWidth: 220 }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon
+                                        sx={{
+                                            fontSize: 18,
+                                            color: "rgba(245,245,244,0.4)",
+                                        }}
+                                    />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+
+                    {/* Status filter chips */}
+                    <Stack direction="row" spacing={0.8} flexWrap="wrap">
+                        {STATUS_FILTERS.map((s) => (
+                            <Button
+                                key={s}
+                                onClick={() => setStatusFilter(s)}
+                                sx={{
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    fontSize: "0.76rem",
+                                    px: 1.4,
+                                    py: 0.5,
+                                    borderRadius: "8px",
+                                    minWidth: 0,
+                                    color:
+                                        statusFilter === s
+                                            ? "#fff"
+                                            : "rgba(245,245,244,0.6)",
+                                    background:
+                                        statusFilter === s
+                                            ? "#7c5cff"
+                                            : "rgba(255,255,255,0.04)",
+                                    border:
+                                        statusFilter === s
+                                            ? "1px solid #7c5cff"
+                                            : "1px solid rgba(255,255,255,0.1)",
+                                    "&:hover": {
+                                        background:
+                                            statusFilter === s
+                                                ? "#8a6dff"
+                                                : "rgba(155,123,247,0.1)",
+                                        borderColor: "rgba(155,123,247,0.4)",
+                                        color: "#fff",
+                                    },
+                                }}
+                            >
+                                {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+                            </Button>
+                        ))}
+                    </Stack>
+                </Stack>
+            )}
+
             <GlassCard>
                 {loading ? (
                     <Box sx={{ display: "grid", placeItems: "center", py: 6 }}>
@@ -58,6 +157,12 @@ export default function TransactionsPage() {
                     <Box sx={{ py: 6, textAlign: "center" }}>
                         <Typography sx={{ color: "rgba(245,245,244,0.55)" }}>
                             No transactions yet.
+                        </Typography>
+                    </Box>
+                ) : filtered.length === 0 ? (
+                    <Box sx={{ py: 6, textAlign: "center" }}>
+                        <Typography sx={{ color: "rgba(245,245,244,0.55)" }}>
+                            No transactions match your filters.
                         </Typography>
                     </Box>
                 ) : (
@@ -95,7 +200,7 @@ export default function TransactionsPage() {
                                 </Box>
                             </Box>
                             <Box component="tbody">
-                                {rows.map((t) => (
+                                {filtered.map((t) => (
                                     <Box
                                         component="tr"
                                         key={t.id}
@@ -173,3 +278,14 @@ export default function TransactionsPage() {
         </Box>
     );
 }
+
+const field = {
+    "& .MuiOutlinedInput-root": {
+        color: "#e5e7eb",
+        background: "rgba(255,255,255,0.02)",
+        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
+    },
+    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+};

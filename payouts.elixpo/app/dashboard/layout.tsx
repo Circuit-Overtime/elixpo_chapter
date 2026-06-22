@@ -12,6 +12,7 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import PersonIcon from "@mui/icons-material/Person";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
+import WebhookIcon from "@mui/icons-material/Webhook";
 import {
     Box,
     Button,
@@ -38,6 +39,11 @@ import BackgroundAurora from "../components/background-aurora";
 const NAV = [
     { label: "Overview", icon: SpaceDashboardIcon, href: "/dashboard" },
     { label: "Products", icon: InventoryIcon, href: "/dashboard/products" },
+    {
+        label: "Webhooks",
+        icon: WebhookIcon,
+        href: "/dashboard/webhooks",
+    },
     {
         label: "Transactions",
         icon: ReceiptLongIcon,

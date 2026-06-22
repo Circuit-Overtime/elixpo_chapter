@@ -19,11 +19,16 @@ export async function GET(request: NextRequest) {
     }
 
     const db = await getDatabase();
+    // Pull entitlement's expires_at — it's the authoritative source of truth
+    // for "when does access end". current_period_end on subscriptions is
+    // only set by fulfillPayment on capture, so it can lag/miss for some
+    // rows (e.g. mid-debug states). The entitlement row is upserted on
+    // every grant, so its expires_at is reliable.
     const rows = ((
         await db
             .prepare(
                 `SELECT s.id, s.tier, s.status, s.billing_mode,
-                        s.current_period_start, s.current_period_end,
+                        s.current_period_start, s.current_period_end, s.cancel_at,
                         a.name AS app_name, a.slug AS app_slug, a.homepage_url,
                         p.name AS product_name,
                         pr.unit_amount, pr.currency, pr.interval, pr.interval_count, pr.nickname,
@@ -35,41 +40,78 @@ export async function GET(request: NextRequest) {
                  LEFT JOIN prices pr ON s.price_id = pr.id
                  LEFT JOIN entitlements e ON e.app_id = s.app_id AND e.external_uid = c.external_uid
                  WHERE c.external_uid = ?1
-                 ORDER BY (s.status = 'active') DESC, s.current_period_end DESC`,
+                 ORDER BY
+                     CASE
+                         WHEN s.status = 'active' AND s.cancel_at IS NULL THEN 0
+                         WHEN s.cancel_at IS NOT NULL THEN 1
+                         ELSE 2
+                     END,
+                     COALESCE(s.current_period_end, e.expires_at, s.created_at) DESC`,
             )
             .bind(session.uid)
             .all()
     ).results ?? []) as any[];
 
     const now = Date.now();
-    const subscriptions = rows.map((r) => {
-        const end = r.current_period_end
-            ? new Date(`${r.current_period_end.replace(" ", "T")}Z`).getTime()
-            : null;
-        const active = r.status === "active" && (end === null || end > now);
-        return {
-            id: r.id,
-            app_name: r.app_name,
-            app_slug: r.app_slug,
-            homepage_url: r.homepage_url,
-            product_name: r.product_name,
-            tier: r.tier,
-            status: r.status,
-            active,
-            billing_mode: r.billing_mode,
-            current_period_end: r.current_period_end,
-            rate:
-                r.unit_amount != null
-                    ? {
-                          amount: r.unit_amount,
-                          currency: r.currency,
-                          interval: r.interval,
-                          interval_count: r.interval_count,
-                          nickname: r.nickname,
-                      }
-                    : null,
-        };
-    });
+    const parseTime = (s: string | null): number | null => {
+        if (!s) return null;
+        const t = new Date(`${s.replace(" ", "T")}Z`).getTime();
+        return Number.isFinite(t) ? t : null;
+    };
+
+    const subscriptions = rows
+        // Hide subscriptions that never activated AND have no useful
+        // state to show (pending checkouts the buyer abandoned). They
+        // pollute the list otherwise.
+        .filter((r) => {
+            const isPendingZombie =
+                r.status === "pending" &&
+                !r.cancel_at &&
+                !r.current_period_end &&
+                !r.entitlement_expires;
+            return !isPendingZombie;
+        })
+        .map((r) => {
+            // Effective period end — prefer the subscription's own field,
+            // fall back to the entitlement's expires_at when the sub
+            // row's period wasn't populated (e.g. older flows).
+            const effectiveEndStr =
+                r.current_period_end ?? r.entitlement_expires ?? null;
+            const end = parseTime(effectiveEndStr);
+            const inPeriod = end === null || end > now;
+            // Cancelled state — cancel_at is set the moment the buyer
+            // clicks Cancel, regardless of whether status flipped (graceful
+            // cancels keep status='active' through period_end on the
+            // provider side too).
+            const cancelled = !!r.cancel_at;
+            // True only when sub is actively renewing — not in a
+            // cancellation grace period, not pending, not failed.
+            const active = !cancelled && r.status === "active" && inPeriod;
+            return {
+                id: r.id,
+                app_name: r.app_name,
+                app_slug: r.app_slug,
+                homepage_url: r.homepage_url,
+                product_name: r.product_name,
+                tier: r.tier,
+                status: r.status,
+                active,
+                cancelled,
+                cancel_at: r.cancel_at,
+                billing_mode: r.billing_mode,
+                current_period_end: effectiveEndStr,
+                rate:
+                    r.unit_amount != null
+                        ? {
+                              amount: r.unit_amount,
+                              currency: r.currency,
+                              interval: r.interval,
+                              interval_count: r.interval_count,
+                              nickname: r.nickname,
+                          }
+                        : null,
+            };
+        });
 
     return NextResponse.json(
         { subscriptions },

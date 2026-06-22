@@ -142,20 +142,63 @@ export default function SubscriptionsPage() {
                                         />
                                         <Chip
                                             label={
-                                                s.active ? "Active" : s.status
+                                                s.cancelled
+                                                    ? "Cancelled"
+                                                    : s.active
+                                                      ? "Active"
+                                                      : s.status
                                             }
                                             size="small"
                                             sx={{
                                                 height: 20,
                                                 fontSize: "0.62rem",
                                                 fontWeight: 700,
-                                                color: s.active
-                                                    ? "#86efac"
-                                                    : "#9ca3af",
-                                                bgcolor: s.active
-                                                    ? "rgba(134,239,172,0.12)"
-                                                    : "rgba(156,163,175,0.12)",
-                                                border: `1px solid ${s.active ? "rgba(134,239,172,0.3)" : "rgba(156,163,175,0.25)"}`,
+                                                color: s.cancelled
+                                                    ? "#fca5a5"
+                                                    : s.active
+                                                      ? "#86efac"
+                                                      : "#9ca3af",
+                                                bgcolor: s.cancelled
+                                                    ? "rgba(248,113,113,0.10)"
+                                                    : s.active
+                                                      ? "rgba(134,239,172,0.12)"
+                                                      : "rgba(156,163,175,0.12)",
+                                                border: `1px solid ${
+                                                    s.cancelled
+                                                        ? "rgba(248,113,113,0.3)"
+                                                        : s.active
+                                                          ? "rgba(134,239,172,0.3)"
+                                                          : "rgba(156,163,175,0.25)"
+                                                }`,
+                                            }}
+                                        />
+                                        <Chip
+                                            label={
+                                                s.billing_mode === "recurring"
+                                                    ? "Auto-pay"
+                                                    : "One-time"
+                                            }
+                                            size="small"
+                                            sx={{
+                                                height: 20,
+                                                fontSize: "0.62rem",
+                                                fontWeight: 700,
+                                                color:
+                                                    s.billing_mode ===
+                                                    "recurring"
+                                                        ? "#5fb6ff"
+                                                        : "#fbbf24",
+                                                bgcolor:
+                                                    s.billing_mode ===
+                                                    "recurring"
+                                                        ? "rgba(95,182,255,0.10)"
+                                                        : "rgba(251,191,36,0.10)",
+                                                border: `1px solid ${
+                                                    s.billing_mode ===
+                                                    "recurring"
+                                                        ? "rgba(95,182,255,0.3)"
+                                                        : "rgba(251,191,36,0.3)"
+                                                }`,
                                             }}
                                         />
                                     </Stack>
@@ -200,14 +243,21 @@ export default function SubscriptionsPage() {
                                             mt: 0.5,
                                         }}
                                     >
-                                        {s.active
-                                            ? `Renews / expires ${fmtDate(s.current_period_end)}`
-                                            : s.current_period_end
-                                              ? `Ended ${fmtDate(s.current_period_end)}`
-                                              : ""}
-                                        {s.billing_mode === "one_time"
-                                            ? " · renew manually"
-                                            : ""}
+                                        {s.cancelled && s.current_period_end
+                                            ? `Access until ${fmtDate(s.current_period_end)} · no further charges`
+                                            : s.cancelled
+                                              ? "Cancelled · access ending"
+                                              : s.active &&
+                                                  s.billing_mode === "recurring"
+                                                ? `Renews ${fmtDate(s.current_period_end)}`
+                                                : s.active &&
+                                                    s.billing_mode === "one_time"
+                                                  ? `Expires ${fmtDate(s.current_period_end)} · renew manually`
+                                                  : s.current_period_end
+                                                    ? `Ended ${fmtDate(s.current_period_end)}`
+                                                    : s.status === "pending"
+                                                      ? "Pending mandate approval"
+                                                      : ""}
                                     </Typography>
                                 </Box>
                                 <Box
