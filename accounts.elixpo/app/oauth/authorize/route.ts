@@ -119,10 +119,12 @@ export async function GET(request: NextRequest) {
         const accessToken =
             request.cookies.get("access_token")?.value ||
             request.headers.get("authorization")?.replace("Bearer ", "");
+        const refreshTokenCookie =
+            request.cookies.get("refresh_token")?.value;
 
-        if (!accessToken) {
-            // Not logged in — save the full authorize request in a cookie and
-            // send them to login. After login they'll be bounced back here.
+        // Build the "send them to /login and resume here afterwards"
+        // redirect once — used as a fallback on auth failure below.
+        const buildLoginRedirect = () => {
             const pendingParams = new URLSearchParams({
                 response_type: responseType,
                 client_id: clientId,
@@ -131,36 +133,47 @@ export async function GET(request: NextRequest) {
                 scope,
                 ...(nonce ? { nonce } : {}),
             });
-
             const loginUrl = new URL("/login", request.url);
             loginUrl.searchParams.set(
                 "next",
                 `/oauth/authorize?${pendingParams.toString()}`,
             );
-
             return NextResponse.redirect(loginUrl);
-        }
+        };
 
-        // Verify the token is valid
-        const payload = await verifyJWT(accessToken);
+        // Verify the access token if present. If it's missing OR expired,
+        // try the server-side auto-refresh path before sending the buyer
+        // to /login — many users hit this route with an expired access
+        // cookie but a valid refresh cookie sitting beside it; making
+        // them visit /login (which would just auto-refresh anyway) is a
+        // pointless spinner flash.
+        let payload = accessToken ? await verifyJWT(accessToken) : null;
+        let rotatedTokens: Awaited<
+            ReturnType<typeof import("@/lib/auth-refresh").tryRefreshSession>
+        > | null = null;
         if (payload?.type !== "access") {
-            // Token present but invalid/expired — same as not logged in
-            const pendingParams = new URLSearchParams({
-                response_type: responseType,
-                client_id: clientId,
-                redirect_uri: redirectUri,
-                state,
-                scope,
-                ...(nonce ? { nonce } : {}),
-            });
-
-            const loginUrl = new URL("/login", request.url);
-            loginUrl.searchParams.set(
-                "next",
-                `/oauth/authorize?${pendingParams.toString()}`,
-            );
-
-            return NextResponse.redirect(loginUrl);
+            if (refreshTokenCookie) {
+                const { tryRefreshSession } = await import(
+                    "@/lib/auth-refresh"
+                );
+                const refreshed = await tryRefreshSession(
+                    request,
+                    refreshTokenCookie,
+                );
+                if (refreshed.ok) {
+                    rotatedTokens = refreshed;
+                    // Re-verify the newly-minted token so the rest of
+                    // this handler sees the canonical JWTPayload shape.
+                    payload = await verifyJWT(refreshed.newAccessToken);
+                }
+            }
+            if (payload?.type !== "access") {
+                // Refresh either wasn't possible or failed — fall back
+                // to /login. The login page's existing auto-redirect
+                // handles the rare race where cookies arrive between
+                // the two checks.
+                return buildLoginRedirect();
+            }
         }
 
         // --- 3b. Require a username before issuing any SSO token ---
@@ -207,7 +220,20 @@ export async function GET(request: NextRequest) {
         consentUrl.searchParams.set("scope", scope);
         if (nonce) consentUrl.searchParams.set("nonce", nonce);
 
-        return NextResponse.redirect(consentUrl);
+        const consentResponse = NextResponse.redirect(consentUrl);
+        // If we rotated tokens during the auth check above, attach the
+        // refreshed cookies to this redirect so the consent screen — and
+        // any subsequent /api/auth/* call — sees the valid session
+        // immediately. Without this, the buyer would arrive at /authorize
+        // with the same expired access cookie and another auto-refresh
+        // would have to fire.
+        if (rotatedTokens?.ok) {
+            const { applyRefreshedCookies } = await import(
+                "@/lib/auth-refresh"
+            );
+            applyRefreshedCookies(consentResponse, rotatedTokens);
+        }
+        return consentResponse;
     } catch (err) {
         console.error("[OAuth Authorize] Error:", err);
         return NextResponse.json(

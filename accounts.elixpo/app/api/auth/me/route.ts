@@ -253,6 +253,7 @@ export async function GET(request: NextRequest) {
                 owned_apps_count: ownedAppsCount,
                 tier: (dbUser as any).tier || "hobby",
                 tier_renews_at: (dbUser as any).tier_renews_at || null,
+                tier_cancelled_at: (dbUser as any).tier_cancelled_at || null,
                 is_internal:
                     (dbUser as any).is_internal === 1 ||
                     (dbUser as any).is_internal === true,

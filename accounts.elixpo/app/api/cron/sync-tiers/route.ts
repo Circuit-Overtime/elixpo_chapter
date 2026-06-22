@@ -49,9 +49,9 @@ const TIER_CATALOG: ProductDef[] = [
             "Ship real products to real users — 10k MAU per app, 10 apps, 5 webhook endpoints.",
         prices: [
             {
-                nickname: "India · Monthly (test)",
+                nickname: "India · Monthly",
                 currency: "INR",
-                unit_amount: 100, // ₹1 — test pricing
+                unit_amount: 159900, // ₹1,599 — production
                 interval: "month",
                 interval_count: 1,
                 type: "recurring",
@@ -65,9 +65,9 @@ const TIER_CATALOG: ProductDef[] = [
             "For studios shipping at scale — 100k MAU per app, unlimited apps, audit log export.",
         prices: [
             {
-                nickname: "India · Monthly (test)",
+                nickname: "India · Monthly",
                 currency: "INR",
-                unit_amount: 200, // ₹2 — test pricing
+                unit_amount: 829900, // ₹8,299 — production
                 interval: "month",
                 interval_count: 1,
                 type: "recurring",

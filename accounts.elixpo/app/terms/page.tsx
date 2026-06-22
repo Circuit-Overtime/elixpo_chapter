@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Box, Stack, Typography } from "@mui/material";
 import BackgroundAurora from "../components/background-aurora";
+import Navbar from "../components/navbar";
 
 export const metadata: Metadata = {
     title: "Terms of Service — Elixpo Accounts",
@@ -20,13 +21,16 @@ export default function TermsPage() {
     return (
         <>
             <BackgroundAurora variant="docs" />
+            <Box sx={{ position: "relative", zIndex: 1 }}>
+                <Navbar />
+            </Box>
             <Box
                 sx={{
                     position: "relative",
                     zIndex: 1,
-                    minHeight: "100dvh",
+                    minHeight: "calc(100dvh - 68px)",
                     px: { xs: 2.5, sm: 4 },
-                    py: { xs: 5, sm: 8 },
+                    py: { xs: 4, sm: 6 },
                     color: "#f5f5f4",
                 }}
             >

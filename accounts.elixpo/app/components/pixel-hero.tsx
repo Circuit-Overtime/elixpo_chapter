@@ -514,17 +514,6 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                     transitionDelay: "0.55s",
                 }}
             >
-                <span
-                    style={{
-                        fontSize: "0.78rem",
-                        fontWeight: 600,
-                        letterSpacing: "0.04em",
-                        color: "rgba(245,245,244,0.45)",
-                        textTransform: "uppercase",
-                    }}
-                >
-                    One login across the entire Elixpo suite
-                </span>
                 <div
                     style={{
                         position: "relative",
