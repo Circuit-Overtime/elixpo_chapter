@@ -5,6 +5,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { verifyHandoff } from "@/lib/handoff";
+import { ensureProviderCustomer } from "@/lib/customers";
 import { ensurePlanForPrice } from "@/lib/plans";
 import { razorpayFromEnv } from "@/lib/providers/razorpay";
 import {
@@ -200,6 +201,17 @@ async function finalizeSession(
                 priceId: priceRow.id,
             });
 
+            // Same lazy pattern for the buyer's Razorpay customer record.
+            // Required for UPI Autopay to generate a valid mandate Intent;
+            // Card eMandate works without it but we always set it for
+            // consistency. Cached on customers.provider_customer_id so
+            // repeat checkouts skip the round-trip.
+            const { providerCustomerId } = await ensureProviderCustomer(
+                db,
+                razorpay,
+                session.customer_id,
+            );
+
             // Razorpay requires a finite total_count — there's no "until
             // cancelled" option. Razorpay's `end_time` cap is 2120-12-25
             // (Unix 4765046400), so total_count must satisfy
@@ -215,6 +227,7 @@ async function finalizeSession(
             // subscription — practically irrelevant for SaaS.
             const sub = await razorpay.createSubscription({
                 providerPlanId,
+                providerCustomerId,
                 totalCount: 1128,
                 notifyEmail: false,
                 notes: {

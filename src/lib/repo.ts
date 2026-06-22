@@ -490,6 +490,59 @@ export async function setPricePlanId(
         .run();
 }
 
+/**
+ * Read just the provider_customer_id cache cell for a given local
+ * customer. Used by the lazy-create helper to skip the upstream POST
+ * when we already minted a Razorpay customer for this row.
+ */
+export async function getCustomerProviderId(
+    db: D1Database,
+    customerId: string,
+): Promise<string | null> {
+    const row = (await db
+        .prepare(
+            "SELECT provider_customer_id, email, name FROM customers WHERE id = ?",
+        )
+        .bind(customerId)
+        .first()) as
+        | { provider_customer_id: string | null; email: string | null; name: string | null }
+        | null;
+    return row?.provider_customer_id ?? null;
+}
+
+/** Read enough of the customer row to seed a Razorpay customer create. */
+export async function getCustomerForProviderCreate(
+    db: D1Database,
+    customerId: string,
+): Promise<{
+    id: string;
+    email: string | null;
+    name: string | null;
+    external_uid: string;
+    provider_customer_id: string | null;
+} | null> {
+    return (await db
+        .prepare(
+            "SELECT id, email, name, external_uid, provider_customer_id FROM customers WHERE id = ?",
+        )
+        .bind(customerId)
+        .first()) as any;
+}
+
+/** Persist the Razorpay customer id once minted, so subsequent checkouts skip the POST. */
+export async function setCustomerProviderId(
+    db: D1Database,
+    customerId: string,
+    providerCustomerId: string,
+): Promise<void> {
+    await db
+        .prepare(
+            "UPDATE customers SET provider_customer_id = ? WHERE id = ?",
+        )
+        .bind(providerCustomerId, customerId)
+        .run();
+}
+
 /** Look up a subscription by provider id — used by the webhook handler. */
 export async function getSubscriptionByProviderId(
     db: D1Database,

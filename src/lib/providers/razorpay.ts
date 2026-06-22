@@ -8,6 +8,8 @@
 
 import { hmacSha256Hex, timingSafeEqual, verifyHmacSha256Hex } from "../crypto";
 import type {
+    CreateCustomerInput,
+    CreateCustomerResult,
     CreateOrderInput,
     CreateOrderResult,
     CreatePlanInput,
@@ -220,6 +222,12 @@ export class RazorpayProvider implements PaymentProvider {
             body: JSON.stringify({
                 plan_id: input.providerPlanId,
                 total_count: this.safeTotalCount(input),
+                // Binding a customer pre-mandate is required for UPI
+                // Autopay to work — without it the hosted page can't
+                // generate a valid UPI Intent and the QR loops forever.
+                ...(input.providerCustomerId
+                    ? { customer_id: input.providerCustomerId }
+                    : {}),
                 // We drive all notification copy ourselves through
                 // mails.elixpo (consistent branding + suppression list).
                 customer_notify: input.notifyEmail ? 1 : 0,
@@ -270,6 +278,41 @@ export class RazorpayProvider implements PaymentProvider {
             );
         }
         return { status: raw.status, raw };
+    }
+
+    async createCustomer(
+        input: CreateCustomerInput,
+    ): Promise<CreateCustomerResult> {
+        // POST /v1/customers — Razorpay enforces `fail_existing=0` semantics
+        // by default (returns the existing customer instead of 4xx if the
+        // contact/email already exists), which makes this safe to call
+        // repeatedly. We still cache the result ourselves to avoid the
+        // round-trip on every checkout.
+        // Docs: https://razorpay.com/docs/api/customers/create
+        const body: Record<string, unknown> = {
+            name: input.name,
+            fail_existing: 0,
+        };
+        if (input.email) body.email = input.email;
+        if (input.contact) body.contact = input.contact;
+        if (input.referenceId) body.notes = { reference_id: input.referenceId };
+
+        const res = await fetch(`${RAZORPAY_API}/customers`, {
+            method: "POST",
+            headers: {
+                Authorization: this.authHeader(),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+
+        const raw: any = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(
+                `Razorpay customer create failed (${res.status}): ${raw?.error?.description || res.statusText}`,
+            );
+        }
+        return { providerCustomerId: raw.id, raw };
     }
 }
 
