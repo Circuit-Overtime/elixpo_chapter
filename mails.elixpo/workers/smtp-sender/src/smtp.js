@@ -5,6 +5,7 @@
 // debugging (credentials redacted).
 
 import { connect } from "cloudflare:sockets";
+import { isDkimConfigured, signMessage } from "./dkim.js";
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -102,7 +103,27 @@ export async function sendMail(opts) {
         await send("DATA");
         expect(await read(), 354);
 
-        const message = buildMessage({ from, fromName, to, subject, html, text, attachments: opts.attachments, listUnsubscribe: opts.listUnsubscribe });
+        const rawMessage = buildMessage({ from, fromName, to, subject, html, text, attachments: opts.attachments, listUnsubscribe: opts.listUnsubscribe });
+        // DKIM signing — prepends a `DKIM-Signature:` header to the
+        // message before transmission. Skipped (returns rawMessage
+        // unchanged) when DKIM_DOMAIN / DKIM_SELECTOR / DKIM_PRIVATE_KEY
+        // aren't configured on the Worker env. We swallow signing errors
+        // and fall back to the unsigned message — a missing signature
+        // costs deliverability, but a hard fail at this point costs the
+        // delivery entirely.
+        let message = rawMessage;
+        if (opts.env && isDkimConfigured(opts.env)) {
+            try {
+                message = await signMessage(rawMessage, opts.env);
+                transcript.push(
+                    `C: <DKIM-Signature d=${opts.env.DKIM_DOMAIN} s=${opts.env.DKIM_SELECTOR}>`,
+                );
+            } catch (err) {
+                transcript.push(
+                    `! dkim signing skipped: ${err?.message || String(err)}`,
+                );
+            }
+        }
         await writer.write(enc.encode(message + "\r\n.\r\n"));
         transcript.push("C: <message body> + .");
         const queued = await read();
