@@ -154,6 +154,12 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
  * Returns the previous tier (so callers can decide whether to fire the
  * "subscription activated" email — we only email on UPGRADES, not on
  * silent renewals where the tier stayed the same).
+ *
+ * Also manages the `tier_cancelled_at` marker so the dashboard can
+ * render the right state for graceful cancels:
+ *   - `cancelled` event           → set tier_cancelled_at = now()
+ *   - hobby → paid transition     → clear tier_cancelled_at (new sub)
+ *   - paid → hobby (period ended) → clear tier_cancelled_at (cycle done)
  */
 export async function applyEntitlementUpdate(
     db: D1Database,
@@ -162,6 +168,8 @@ export async function applyEntitlementUpdate(
         tier: Tier;
         expiresAt: string | null;
         providerSubscriptionId: string | null;
+        /** Webhook payload's `data.status`. Used to set cancelled marker. */
+        eventStatus?: string | null;
     },
 ): Promise<{ previousTier: Tier; nextTier: Tier }> {
     const row = (await db
@@ -178,10 +186,34 @@ export async function applyEntitlementUpdate(
         return { previousTier: "internal", nextTier: "internal" };
     }
 
+    // Decide tier_cancelled_at:
+    //   - status='cancelled' (our cancel API, or Razorpay terminal cancel)
+    //     OR status='halted' (UPI mandate revoked from the buyer's GPay/
+    //     PhonePe app, or repeated charge failures — either way the
+    //     sub will not renew) → mark now. Treating halted the same
+    //     way bridges the "buyer cancelled in their UPI app, our site
+    //     never knew" gap: the dashboard reflects cancellation
+    //     immediately regardless of where the cancel was triggered.
+    //   - hobby→paid (new sub starting) → clear (fresh cycle)
+    //   - paid→hobby (period_end downgrade) → clear (cycle finished)
+    //   - everything else (renewal, no-op) → preserve existing value
+    let cancelledAtClause = "tier_cancelled_at = tier_cancelled_at"; // no-op
+    if (
+        params.eventStatus === "cancelled" ||
+        params.eventStatus === "halted"
+    ) {
+        cancelledAtClause = "tier_cancelled_at = datetime('now')";
+    } else if (previousTier === "hobby" && params.tier !== "hobby") {
+        cancelledAtClause = "tier_cancelled_at = NULL";
+    } else if (previousTier !== "hobby" && params.tier === "hobby") {
+        cancelledAtClause = "tier_cancelled_at = NULL";
+    }
+
     await db
         .prepare(
             `UPDATE users
-             SET tier = ?, tier_renews_at = ?, tier_provider_subscription_id = ?
+             SET tier = ?, tier_renews_at = ?, tier_provider_subscription_id = ?,
+                 ${cancelledAtClause}
              WHERE id = ?`,
         )
         .bind(

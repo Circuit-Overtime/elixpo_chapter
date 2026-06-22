@@ -28,6 +28,8 @@ interface Me {
     id?: string;
     tier?: "hobby" | "indie" | "studio" | "internal";
     tier_renews_at?: string | null;
+    /** Set when buyer cancelled; tier stays through `tier_renews_at`. */
+    tier_cancelled_at?: string | null;
     is_internal?: boolean;
 }
 
@@ -95,6 +97,10 @@ export default function SubscriptionsPage() {
     const meta = TIER_META[tier] ?? TIER_META.hobby;
     const renewsAt = formatDate(me?.tier_renews_at);
     const isPaid = tier === "indie" || tier === "studio";
+    // Graceful-cancel state: buyer cancelled, tier still active through
+    // tier_renews_at. UI suppresses the Cancel button and shows the
+    // "ending on X" copy instead.
+    const isCancelled = isPaid && !!me?.tier_cancelled_at;
 
     return (
         <Box sx={{ maxWidth: 760, mx: "auto" }}>
@@ -147,19 +153,33 @@ export default function SubscriptionsPage() {
                                 {meta.name}
                             </Typography>
                             <Chip
-                                label={isPaid ? "Active" : "Free"}
+                                label={
+                                    isCancelled
+                                        ? "Cancelled"
+                                        : isPaid
+                                          ? "Active"
+                                          : "Free"
+                                }
                                 size="small"
                                 sx={{
                                     height: 22,
                                     fontSize: "0.68rem",
                                     fontWeight: 700,
-                                    color: isPaid ? "#86efac" : "rgba(245,245,244,0.7)",
-                                    bgcolor: isPaid
-                                        ? "rgba(134,239,172,0.12)"
-                                        : "rgba(255,255,255,0.06)",
-                                    border: isPaid
-                                        ? "1px solid rgba(134,239,172,0.3)"
-                                        : "1px solid rgba(255,255,255,0.1)",
+                                    color: isCancelled
+                                        ? "#fca5a5"
+                                        : isPaid
+                                          ? "#86efac"
+                                          : "rgba(245,245,244,0.7)",
+                                    bgcolor: isCancelled
+                                        ? "rgba(248,113,113,0.10)"
+                                        : isPaid
+                                          ? "rgba(134,239,172,0.12)"
+                                          : "rgba(255,255,255,0.06)",
+                                    border: isCancelled
+                                        ? "1px solid rgba(248,113,113,0.3)"
+                                        : isPaid
+                                          ? "1px solid rgba(134,239,172,0.3)"
+                                          : "1px solid rgba(255,255,255,0.1)",
                                 }}
                             />
                         </Stack>
@@ -191,7 +211,11 @@ export default function SubscriptionsPage() {
                                 },
                             }}
                         >
-                            {isPaid ? "Change plan" : "Upgrade"}
+                            {isCancelled
+                                ? "Resubscribe"
+                                : isPaid
+                                  ? "Change plan"
+                                  : "Upgrade"}
                         </Button>
                     )}
                 </Stack>
@@ -206,13 +230,39 @@ export default function SubscriptionsPage() {
                             gap: 1.5,
                         }}
                     >
-                        <Row label="Renews on" value={renewsAt} />
-                        <Row label="Billing cycle" value="Monthly" />
+                        <Row
+                            label={isCancelled ? "Access until" : "Renews on"}
+                            value={renewsAt}
+                        />
+                        <Row
+                            label="Billing cycle"
+                            value={isCancelled ? "Ending after this" : "Monthly"}
+                        />
+                    </Box>
+                )}
+                {isCancelled && (
+                    <Box
+                        sx={{
+                            mt: 2.5,
+                            p: 1.5,
+                            borderRadius: "10px",
+                            background: "rgba(248,113,113,0.06)",
+                            border: "1px solid rgba(248,113,113,0.2)",
+                            color: "rgba(252,165,165,0.95)",
+                            fontSize: "0.88rem",
+                        }}
+                    >
+                        Subscription cancelled. You keep paid access until{" "}
+                        <strong>{renewsAt ?? "the end of your period"}</strong>,
+                        then your account moves to the free Hobby tier.
                     </Box>
                 )}
             </Box>
 
-            {isPaid && !me?.is_internal && (
+            {/* Show the in-period Cancel block ONLY while still active —
+                a cancelled-but-pending sub has nothing left to do, and the
+                "Resubscribe" CTA up top handles the inverse action. */}
+            {isPaid && !isCancelled && !me?.is_internal && (
                 <CancelSection renewsAt={renewsAt} onCancelled={() => location.reload()} />
             )}
 

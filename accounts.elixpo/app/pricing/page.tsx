@@ -51,8 +51,8 @@ const TIERS: Tier[] = [
     {
         id: "indie",
         name: "Indie",
-        priceLabel: "₹1",
-        priceCaption: "per month (test pricing)",
+        priceLabel: "₹1,599",
+        priceCaption: "per month · billed in INR",
         accent: "#9b7bf7",
         description: "Ship real products to real users. Lift the small-app caps.",
         features: [
@@ -68,8 +68,8 @@ const TIERS: Tier[] = [
     {
         id: "studio",
         name: "Studio",
-        priceLabel: "₹2",
-        priceCaption: "per month (test pricing)",
+        priceLabel: "₹8,299",
+        priceCaption: "per month · billed in INR",
         accent: "#5fb6ff",
         description: "For studios shipping at scale. Audit logs and unlimited apps.",
         features: [
@@ -244,6 +244,16 @@ export default function PricingPage() {
                                     tier={tier}
                                     isCurrent={!!isCurrent}
                                     busy={busyTier === tier.id}
+                                    // While /api/auth/me is still in flight,
+                                    // disable the upgrade buttons. Otherwise a
+                                    // fast-clicker could fire `/api/billing/
+                                    // checkout` before we know the user's
+                                    // current tier — and our same-tier guard
+                                    // wouldn't run, letting them mint a
+                                    // duplicate sub via /v1/checkout/sessions.
+                                    // The defensive auto-cancel on payouts
+                                    // would catch it, but better not to.
+                                    disabled={loading}
                                     onSelect={() => {
                                         if (tier.id === "hobby") return;
                                         startCheckout(tier.id);
@@ -261,9 +271,9 @@ export default function PricingPage() {
                             fontSize: "0.85rem",
                         }}
                     >
-                        Test pricing. We bump these to the real ₹1,599 (Indie) and
-                        ₹8,299 (Studio) once auto-pay is validated end-to-end.
-                        Charged in INR via Razorpay.
+                        Charged in INR via Razorpay. Cancel any time — you keep
+                        access through the period you've paid for. No hidden
+                        fees, no per-seat tax.
                     </Typography>
                 </Box>
             </Box>
@@ -275,11 +285,15 @@ function TierCard({
     tier,
     isCurrent,
     busy,
+    disabled,
     onSelect,
 }: {
     tier: Tier;
     isCurrent: boolean;
     busy: boolean;
+    /** True while /api/auth/me is still in flight — blocks clicks
+     *  until we know which tier the user is already on. */
+    disabled: boolean;
     onSelect: () => void;
 }) {
     return (
@@ -402,7 +416,9 @@ function TierCard({
             </Stack>
             <Button
                 fullWidth
-                disabled={busy || isCurrent || tier.id === "hobby"}
+                disabled={
+                    disabled || busy || isCurrent || tier.id === "hobby"
+                }
                 onClick={onSelect}
                 sx={{
                     textTransform: "none",
@@ -434,7 +450,7 @@ function TierCard({
                     },
                 }}
             >
-                {busy ? (
+                {busy || disabled ? (
                     <CircularProgress size={20} sx={{ color: "#fff" }} />
                 ) : isCurrent ? (
                     "Current plan"

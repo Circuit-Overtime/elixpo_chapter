@@ -139,6 +139,10 @@ export async function POST(request: NextRequest) {
             tier: nextTier,
             expiresAt,
             providerSubscriptionId,
+            // Pass through the raw status so the helper can manage the
+            // `tier_cancelled_at` marker — set on graceful-cancel events,
+            // cleared on fresh subscriptions and period-end downgrades.
+            eventStatus: typeof data?.status === "string" ? data.status : null,
         });
     } catch (err) {
         console.error(
@@ -194,9 +198,28 @@ async function fireBillingEmail(
     );
     const manageUrl = "https://accounts.elixpo.com/dashboard/billing";
 
-    // Payment failure signaled by the data envelope (Pay sets failed=true
-    // when subscription.halted or repeated failed charges).
-    if (data.failed === true || data.status === "halted") {
+    // status='halted' on its own isn't enough to pick an email — Razorpay
+    // halts subs for two distinct causes:
+    //   (a) Charge failures exhausted retries (card declined) → buyer
+    //       needs to update payment to resume. Pay sets `failed: true`
+    //       because it found prior payment.failed events for this sub.
+    //   (b) Buyer revoked the UPI mandate from their GPay / PhonePe app.
+    //       No charges failed (no charges were attempted post-revoke);
+    //       Pay sets `failed: false`. From the buyer's perspective this
+    //       is a cancellation — they intentionally ended the sub.
+    // We map (a) → payment_failed email, (b) → cancellation email.
+    if (data.status === "halted" && data.failed === true) {
+        await sendMail("billing_payment_failed", user.email, {
+            name,
+            plan_name: planName,
+            update_payment_url: manageUrl,
+            grace_until: expiresAt ?? "soon",
+        });
+        return;
+    }
+    // Pure failed=true (no halted) still routes to payment_failed —
+    // preserves the existing semantic in case the envelope shape evolves.
+    if (data.failed === true) {
         await sendMail("billing_payment_failed", user.email, {
             name,
             plan_name: planName,
@@ -207,12 +230,16 @@ async function fireBillingEmail(
     }
 
     // Graceful cancel — fire the cancellation email IMMEDIATELY when Pay
-    // signals status='cancelled' (still active through period_end). This
-    // way the buyer gets confirmation right after clicking Cancel; no
-    // second email is sent when the entitlement finally expires (the
+    // signals status='cancelled' (cancel API called) OR status='halted'
+    // with failed=false (UPI mandate revoked from buyer's UPI app). The
+    // buyer intended to cancel in both cases; send the same confirmation.
+    // No second email is sent when the entitlement finally expires (the
     // active=false webhook arrives with the same status flag and we
     // short-circuit on the no-tier-change path).
-    if (data.status === "cancelled") {
+    if (
+        data.status === "cancelled" ||
+        (data.status === "halted" && data.failed === false)
+    ) {
         await sendMail("billing_subscription_cancelled", user.email, {
             name,
             plan_name: planName,
