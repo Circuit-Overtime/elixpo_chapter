@@ -141,6 +141,67 @@ Content-Type: application/json
                 email the buyer; and again with <Code>active: false</Code>{" "}
                 at period end so you can flip the tier.
             </DocP>
+
+            <DocH2>Timeouts &amp; limits to set on your side</DocH2>
+            <DocList
+                items={[
+                    <>
+                        <strong>HTTP client timeout:</strong> set ≥{" "}
+                        <Code>20s</Code> on calls to{" "}
+                        <Code>POST /v1/checkout/sessions</Code> and{" "}
+                        <Code>POST /v1/subscriptions/cancel</Code>. We do
+                        a synchronous round-trip to Razorpay (plan
+                        create, subscription create, mandate cancel) on
+                        each call; cold-paths can take 6–12s. Anything
+                        under 10s will false-timeout under load. The
+                        underlying mail.elixpo + Razorpay APIs use the
+                        same ~20s convention, so this aligns the whole
+                        stack.
+                    </>,
+                    <>
+                        <strong>Checkout-session lifetime:</strong>{" "}
+                        sessions expire <Code>30 minutes</Code> after
+                        creation. The hosted checkout enforces this; a
+                        buyer who lingers on the price summary past 30m
+                        will hit a friendly "session expired" page and
+                        get bounced back to your app's pricing URL.
+                    </>,
+                    <>
+                        <strong>Autopay mandate lifetime (RBI rule):</strong>{" "}
+                        UPI Autopay and Card eMandate both cap at{" "}
+                        <Code>30 years</Code> from creation. We clamp{" "}
+                        <Code>total_count</Code> to <Code>360</Code> (=30y
+                        monthly) per RBI; passing higher fails with{" "}
+                        <Code>expire_at cannot be more than 30 years for
+                        upi</Code>. Buyers who somehow run through 30 years
+                        of renewals re-mint a fresh sub — operationally
+                        irrelevant.
+                    </>,
+                    <>
+                        <strong>Per-charge auth window (UPI):</strong>{" "}
+                        UPI Autopay needs a charge intent 24h before
+                        debit; Razorpay handles this internally — your
+                        only obligation is to keep the subscription
+                        active. No timeouts to set on your side here.
+                    </>,
+                    <>
+                        <strong>Webhook delivery:</strong> we retry
+                        delivery for{" "}
+                        <Code>up to 7 days</Code> with exponential
+                        backoff. Your endpoint MUST respond within{" "}
+                        <Code>10 seconds</Code> with 2xx or we treat the
+                        delivery as failed and queue a retry. Don't
+                        process inline — ack fast, work async if needed.
+                    </>,
+                    <>
+                        <strong>Idempotency window:</strong> dedup
+                        deliveries on <Code>payload.id</Code> within at
+                        least <Code>24 hours</Code>. Retries reuse the
+                        original id; processing the same event twice will
+                        double-grant entitlements.
+                    </>,
+                ]}
+            />
         </Box>
     );
 }
