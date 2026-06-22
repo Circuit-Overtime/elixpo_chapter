@@ -96,21 +96,153 @@ export class RazorpayProvider implements PaymentProvider {
         const type: string = body.event || "";
         const payment = body.payload?.payment?.entity;
         const order = body.payload?.order?.entity;
+        const subscription = body.payload?.subscription?.entity;
 
         const isPaymentCaptured =
             type === "payment.captured" ||
             (type === "order.paid" && payment?.status === "captured");
 
+        // Subscription lifecycle:
+        //   subscription.activated  — mandate confirmed, first charge done
+        //   subscription.charged    — recurring charge succeeded (renewal)
+        //   subscription.cancelled  — buyer or merchant cancelled
+        //   subscription.paused     — paused (Razorpay-side pause feature)
+        //   subscription.halted     — repeated charge failures; buyer must
+        //                             update payment method to resume
+        //   subscription.completed  — ran out of total_count cycles
+        // `subscription.charged` events arrive WITH a `payment.entity` too;
+        // we treat them as both a subscription event AND a captured charge
+        // so the same fulfillment path (`fulfillPayment`) extends the
+        // entitlement and writes a ledger row per renewal.
+        const isSubscriptionEvent = type.startsWith("subscription.");
+        const subscriptionStatusFromType = isSubscriptionEvent
+            ? type.split(".").slice(1).join(".")
+            : null;
+
         return {
             eventId: headers.get("x-razorpay-event-id"),
             type,
-            isPaymentCaptured,
+            // subscription.charged carries a payment.entity → treat as captured
+            isPaymentCaptured:
+                isPaymentCaptured ||
+                (type === "subscription.charged" &&
+                    payment?.status === "captured"),
             providerOrderId: payment?.order_id || order?.id || null,
             providerPaymentId: payment?.id || null,
             amount: payment?.amount ?? order?.amount ?? null,
             currency: payment?.currency ?? order?.currency ?? null,
             raw: body,
+            providerSubscriptionId:
+                subscription?.id ?? payment?.subscription_id ?? null,
+            subscriptionStatus: subscriptionStatusFromType,
         };
+    }
+
+    async createPlan(input: CreatePlanInput): Promise<CreatePlanResult> {
+        // Razorpay Plans API: POST /v1/plans. Plans are immutable —
+        // amount/period/interval can't be edited after creation, so we
+        // make one plan per (price) row and reuse it for every
+        // Subscription against that price.
+        // Docs: https://razorpay.com/docs/api/payments/subscriptions/plans
+        const period = input.interval; // 'day' | 'week' | 'month' | 'year'
+        const interval = Math.max(1, input.intervalCount ?? 1);
+        const res = await fetch(`${RAZORPAY_API}/plans`, {
+            method: "POST",
+            headers: {
+                Authorization: this.authHeader(),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                period,
+                interval,
+                item: {
+                    name: input.name,
+                    description: input.description ?? input.name,
+                    amount: input.amount,
+                    currency: input.currency,
+                },
+                notes: input.referenceId
+                    ? { price_id: input.referenceId }
+                    : undefined,
+            }),
+        });
+
+        const raw: any = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(
+                `Razorpay plan create failed (${res.status}): ${raw?.error?.description || res.statusText}`,
+            );
+        }
+        return { providerPlanId: raw.id, raw };
+    }
+
+    async createSubscription(
+        input: CreateSubscriptionInput,
+    ): Promise<CreateSubscriptionResult> {
+        // Razorpay Subscriptions API: POST /v1/subscriptions. Returns a
+        // `short_url` that the buyer is redirected to — Razorpay's hosted
+        // mandate-collection UX. After they approve, the activated webhook
+        // fires and the first charge auto-runs.
+        // Docs: https://razorpay.com/docs/api/payments/subscriptions/create-subscription
+        const res = await fetch(`${RAZORPAY_API}/subscriptions`, {
+            method: "POST",
+            headers: {
+                Authorization: this.authHeader(),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                plan_id: input.providerPlanId,
+                total_count: input.totalCount,
+                // We drive all notification copy ourselves through
+                // mails.elixpo (consistent branding + suppression list).
+                customer_notify: input.notifyEmail ? 1 : 0,
+                notes: input.notes ?? {},
+            }),
+        });
+
+        const raw: any = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(
+                `Razorpay subscription create failed (${res.status}): ${raw?.error?.description || res.statusText}`,
+            );
+        }
+        return {
+            providerSubscriptionId: raw.id,
+            shortUrl: raw.short_url,
+            status: raw.status,
+            raw,
+        };
+    }
+
+    async cancelSubscription(
+        providerSubscriptionId: string,
+        cancelAtCycleEnd = false,
+    ): Promise<{ status: string; raw: unknown }> {
+        // POST /v1/subscriptions/{id}/cancel
+        // cancel_at_cycle_end = 1 → keeps the entitlement until the period
+        // they already paid for ends (graceful downgrade).
+        // = 0 → cancels immediately, entitlement should expire now.
+        const res = await fetch(
+            `${RAZORPAY_API}/subscriptions/${encodeURIComponent(providerSubscriptionId)}/cancel`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: this.authHeader(),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    cancel_at_cycle_end: cancelAtCycleEnd ? 1 : 0,
+                }),
+            },
+        );
+
+        const raw: any = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(
+                `Razorpay subscription cancel failed (${res.status}): ${raw?.error?.description || res.statusText}`,
+            );
+        }
+        return { status: raw.status, raw };
     }
 }
 
