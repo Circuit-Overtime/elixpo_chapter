@@ -19,6 +19,9 @@ export async function GET(request) {
   const sub = (searchParams.get('sub') || '').slice(0, 140);
   const kind = (searchParams.get('kind') || '').slice(0, 40);
   const readTime = (searchParams.get('readTime') || '').slice(0, 20);
+  // Member+ perk: share cards drop the LixBlogs brand. Callers pass brand=0 when
+  // the author/owner is on a paid tier (resolved from their `tier` in /api/resolve).
+  const showBrand = searchParams.get('brand') !== '0';
 
   // satori can't decode WebP — force Cloudinary to deliver JPEG.
   const ogSafeImage = (url) => {
@@ -54,6 +57,10 @@ export async function GET(request) {
     </div>
   );
 
+  // Brand slot — renders the LixBlogs mark, or an empty spacer that preserves the
+  // surrounding space-between layout when branding is suppressed for paid tiers.
+  const BrandSlot = () => (showBrand ? <Brand /> : <div style={{ display: 'flex' }} />);
+
   const initial = (title || 'L').replace('@', '').charAt(0).toUpperCase();
 
   // ── Profile / org / collection — logo + avatar + name + handle + bio ──
@@ -62,7 +69,7 @@ export async function GET(request) {
       (
         <div style={{ width: '100%', height: '100%', display: 'flex', background: '#ffffff', fontFamily: 'sans-serif', padding: '72px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', border: `1px solid ${BORDER}`, borderRadius: '28px', padding: '60px 68px', justifyContent: 'space-between' }}>
-            <Brand />
+            <BrandSlot />
             <div style={{ display: 'flex', alignItems: 'center', gap: '44px' }}>
               {hasAvatar ? (
                 <img src={avatar} width={210} height={210} style={{ width: '210px', height: '210px', borderRadius: '50%', objectFit: 'cover', border: `1px solid ${BORDER}` }} />
@@ -105,7 +112,7 @@ export async function GET(request) {
                 {hasAvatar ? <img src={avatar} width={44} height={44} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: `1px solid ${BORDER}` }} /> : null}
                 <span style={{ display: 'flex' }}>{[readTime, sub].filter(Boolean).join('  ·  ')}</span>
               </div>
-              <Brand />
+              <BrandSlot />
             </div>
           </div>
         </div>

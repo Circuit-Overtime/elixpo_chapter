@@ -81,7 +81,7 @@ export async function GET(request) {
     if (ownerType === 'user') {
       const user = await db.prepare(`
         SELECT id, username, display_name, bio, avatar_url, banner_r2_key,
-          location, timezone, pronouns, website, company, links, created_at
+          location, timezone, pronouns, website, company, links, tier, created_at
         FROM users WHERE id = ?
       `).bind(ownerId).first();
 
@@ -94,7 +94,7 @@ export async function GET(request) {
             b.cover_pos_x, b.cover_pos_y, b.cover_zoom, b.member_only,
             b.status, b.published_as, b.page_emoji, b.read_time_minutes,
             b.published_at, b.created_at, b.updated_at, b.author_id,
-            u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
+            u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier
           FROM blogs b
           JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.author_id = ? AND b.status IN ('published', 'unlisted')
@@ -173,7 +173,7 @@ export async function GET(request) {
         if (!col) return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
 
         const blog = await db.prepare(`
-          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
+          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier
           FROM blogs b JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.collection_id = ? AND b.status IN ('published', 'unlisted')
         `).bind(slug, col.id).first();
@@ -204,7 +204,7 @@ export async function GET(request) {
           const colBlogs = await db.prepare(`
             SELECT b.id, b.slug, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
               b.read_time_minutes, b.published_at, b.author_id,
-              u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar,
+              u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier,
               (SELECT COUNT(*) FROM likes WHERE blog_id = b.id) as like_count,
               (SELECT COUNT(*) FROM comments WHERE blog_id = b.id) as comment_count
             FROM blogs b JOIN users u ON u.id = b.author_id
@@ -236,7 +236,7 @@ export async function GET(request) {
 
         // Otherwise treat as a blog slug
         const blog = await db.prepare(`
-          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
+          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier
           FROM blogs b JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.published_as = ? AND b.status IN ('published', 'unlisted')
         `).bind(slug, `org:${ownerId}`).first();
@@ -257,7 +257,7 @@ export async function GET(request) {
       // Org profile — fetch owner, members, collections, blogs
       const [owner, members, collections, blogs] = await Promise.all([
         db.prepare(`
-          SELECT id, username, display_name, avatar_url, bio, created_at
+          SELECT id, username, display_name, avatar_url, bio, tier, created_at
           FROM users WHERE id = ?
         `).bind(org.owner_id).first(),
         db.prepare(`

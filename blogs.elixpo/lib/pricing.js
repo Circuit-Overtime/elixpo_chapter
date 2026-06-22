@@ -12,7 +12,7 @@ export const PLANS = [
     features: [
       'Read everything public',
       'Unlimited public posts',
-      'Block editor + 15 AI requests/day',
+      'Full block editor & all block types',
       '1 organization · 50 MB storage',
       'Comments, follows, bookmarks',
     ],
@@ -25,8 +25,8 @@ export const PLANS = [
     features: [
       'Everything in Free',
       'Sub-pages & canvas boards',
-      '50 AI requests/day + AI image generation',
-      'Member-only posts — earn from reads',
+      'AI image generation in your posts',
+      'Member-only posts',
       '2 GB storage · 5 co-authors · 5 orgs',
       'No LixBlogs branding on share cards',
     ],
@@ -36,6 +36,7 @@ export const PLANS = [
     name: 'Team',
     tagline: 'For organizations',
     perSeat: true,
+    comingSoon: true,
     features: [
       'Everything in Member, for the whole org',
       'Unlimited seats & collections',

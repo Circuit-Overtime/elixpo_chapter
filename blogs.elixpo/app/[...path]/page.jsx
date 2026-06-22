@@ -32,6 +32,8 @@ export async function generateMetadata({ params, searchParams }) {
     const h = await headers();
     const origin = `${h.get('x-forwarded-proto') || 'https'}://${h.get('host')}`;
     const ogUrl = (p) => `${origin}/api/og?${new URLSearchParams(p)}`;
+    // Member+ authors/owners get unbranded share cards.
+    const noBrand = (tier) => (tier && tier !== 'free' ? { brand: '0' } : {});
 
     // ── 1-segment: user or org profile ──
     if (!slug) {
@@ -44,14 +46,14 @@ export async function generateMetadata({ params, searchParams }) {
         const dn = data.user.display_name || data.user.username || name;
         const handle = `@${data.user.username || name}`;
         const description = (data.user.bio || `${handle} on LixBlogs`).slice(0, 200);
-        const og = ogUrl({ type: 'profile', kind: 'Author Profile', title: dn, sub: handle, subtitle: data.user.bio || '', avatar: httpImg(data.user.avatar_url) });
+        const og = ogUrl({ type: 'profile', kind: 'Author Profile', title: dn, sub: handle, subtitle: data.user.bio || '', avatar: httpImg(data.user.avatar_url), ...noBrand(data.user.tier) });
         return cardMeta({ title: `${dn} — LixBlogs Author Profile`, description, url, og, ogType: 'profile' });
       }
       if (data.type === 'org' && data.org) {
         const dn = data.org.name || name;
         const ownerName = data.owner?.display_name || data.owner?.username || '';
         const description = (data.org.description || data.org.bio || `${dn} on LixBlogs`).slice(0, 200);
-        const og = ogUrl({ type: 'profile', kind: 'Organisation', title: dn, sub: ownerName ? `by ${ownerName}` : `@${data.org.slug || name}`, subtitle: data.org.description || data.org.bio || '', avatar: httpImg(data.org.logo_url || data.org.logo_r2_key) });
+        const og = ogUrl({ type: 'profile', kind: 'Organisation', title: dn, sub: ownerName ? `by ${ownerName}` : `@${data.org.slug || name}`, subtitle: data.org.description || data.org.bio || '', avatar: httpImg(data.org.logo_url || data.org.logo_r2_key), ...noBrand(data.owner?.tier) });
         return cardMeta({ title: `${dn} — LixBlogs Organisation`, description, url, og, ogType: 'profile' });
       }
       return {};
@@ -96,7 +98,7 @@ export async function generateMetadata({ params, searchParams }) {
     const sub = authorList.length ? `by ${authorList.slice(0, 4).join(', ')}${authorList.length > 4 ? ` +${authorList.length - 4}` : ''}` : '';
     const description = (b.subtitle || '').slice(0, 200) || (primary ? `By ${primary} on LixBlogs` : 'On LixBlogs');
     const readTime = b.read_time_minutes ? `${b.read_time_minutes} min read` : '';
-    const og = ogUrl({ type: 'blog', title, subtitle: b.subtitle || '', sub, readTime, cover: httpImg(b.cover_image_r2_key), avatar: httpImg(b.author_avatar) });
+    const og = ogUrl({ type: 'blog', title, subtitle: b.subtitle || '', sub, readTime, cover: httpImg(b.cover_image_r2_key), avatar: httpImg(b.author_avatar), ...noBrand(b.author_tier) });
 
     return {
       title,

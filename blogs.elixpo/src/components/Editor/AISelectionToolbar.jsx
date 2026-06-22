@@ -572,7 +572,7 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
         <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
-              <img src="/base-logo.png" alt="AI" className="w-full h-full object-cover" />
+              <img src="/logo-mark.png" alt="AI" className="w-full h-full object-cover" />
             </div>
             <input
               ref={promptRef}
@@ -636,7 +636,7 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
         <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border-[1.5px] border-[rgba(196,181,253,0.3)]">
-              <img src="/base-logo.png" alt="Elixpo" className="w-full h-full object-cover" />
+              <img src="/logo-mark.png" alt="Elixpo" className="w-full h-full object-cover" />
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-[13px] font-semibold text-[#c4b5fd]">Elixpo</span>
@@ -673,7 +673,7 @@ export default function AISelectionToolbar({ editor, onTitleChange, blogId }) {
         <div className="mx-auto w-full max-w-[600px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-2xl overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border-[1.5px] border-[rgba(196,181,253,0.3)]">
-              <img src="/base-logo.png" alt="Elixpo" className="w-full h-full object-cover" />
+              <img src="/logo-mark.png" alt="Elixpo" className="w-full h-full object-cover" />
             </div>
             <span className="text-[13px] text-[#c4b5fd]">Elixpo finished editing</span>
             <div className="ml-auto flex items-center gap-2">

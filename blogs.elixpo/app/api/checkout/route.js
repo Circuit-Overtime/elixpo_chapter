@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../lib/auth';
-import { pricingForCountry } from '../../../lib/pricing';
+import { pricingForCountry, PLANS } from '../../../lib/pricing';
 import { payoutsBase } from '../../../lib/checkout-handoff';
 
 // GET /api/checkout?plan=member
@@ -21,6 +21,11 @@ export async function GET(request) {
   }
   if (!plan || plan === 'free') {
     return NextResponse.redirect(new URL('/', request.url));
+  }
+  // Block plans that aren't purchasable yet (e.g. Team) — UI hides them, but
+  // guard the route against a hand-crafted ?plan= too.
+  if (PLANS.find((p) => p.id === plan)?.comingSoon) {
+    return NextResponse.redirect(new URL('/pricing?error=coming_soon', request.url));
   }
 
   // Region → currency (same source the pricing page uses). Elixpo Pay picks the
