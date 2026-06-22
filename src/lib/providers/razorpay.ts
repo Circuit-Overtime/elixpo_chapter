@@ -188,6 +188,21 @@ export class RazorpayProvider implements PaymentProvider {
         return { providerPlanId: raw.id, raw };
     }
 
+    /**
+     * Razorpay caps `end_time` at Unix 4765046400 (2120-12-25). Subscription
+     * create returns 400 if `start_at + total_count * interval` exceeds it.
+     * We clamp here defensively so any caller passing a too-large count
+     * gets a working subscription instead of a 400.
+     */
+    private safeTotalCount(input: CreateSubscriptionInput): number {
+        // For monthly cycles, 1128 ≈ 94 years from 2026 — well under the
+        // 2120 ceiling with margin. Sub-monthly intervals would need a
+        // higher cap, but we don't currently offer those.
+        const MONTHLY_CEILING = 1128;
+        const requested = Math.max(1, input.totalCount);
+        return Math.min(requested, MONTHLY_CEILING);
+    }
+
     async createSubscription(
         input: CreateSubscriptionInput,
     ): Promise<CreateSubscriptionResult> {
@@ -204,7 +219,7 @@ export class RazorpayProvider implements PaymentProvider {
             },
             body: JSON.stringify({
                 plan_id: input.providerPlanId,
-                total_count: input.totalCount,
+                total_count: this.safeTotalCount(input),
                 // We drive all notification copy ourselves through
                 // mails.elixpo (consistent branding + suppression list).
                 customer_notify: input.notifyEmail ? 1 : 0,

@@ -201,12 +201,21 @@ async function finalizeSession(
             });
 
             // Razorpay requires a finite total_count — there's no "until
-            // cancelled" option. 1200 cycles is ~100 years on monthly and
-            // is the de-facto pattern for indefinite SaaS subscriptions.
-            // If a buyer somehow hits the cap we'll re-mint the sub.
+            // cancelled" option. Razorpay's `end_time` cap is 2120-12-25
+            // (Unix 4765046400), so total_count must satisfy
+            // `start_at + total_count * interval ≤ 4765046400`.
+            //
+            // 1128 monthly cycles ≈ 94 years from 2026 → just under the
+            // upper bound with a margin. Anything ≥ 1144 fails with
+            // BAD_REQUEST_ERROR "end_time must be between …". For weekly
+            // intervals the safe cap is higher; we don't currently offer
+            // sub-monthly cycles so 1128 is a one-size-fits-all ceiling.
+            //
+            // If a buyer somehow runs through all cycles we mint a new
+            // subscription — practically irrelevant for SaaS.
             const sub = await razorpay.createSubscription({
                 providerPlanId,
-                totalCount: 1200,
+                totalCount: 1128,
                 notifyEmail: false,
                 notes: {
                     session_id: session.id,
