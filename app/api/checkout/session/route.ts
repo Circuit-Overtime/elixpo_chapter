@@ -223,25 +223,19 @@ async function finalizeSession(
             //     db, razorpay, session.customer_id,
             // );
 
-            // Razorpay requires a finite total_count — there's no "until
-            // cancelled" option. Razorpay's `end_time` cap is 2120-12-25
-            // (Unix 4765046400), so total_count must satisfy
-            // `start_at + total_count * interval ≤ 4765046400`.
-            //
-            // 1128 monthly cycles ≈ 94 years from 2026 → just under the
-            // upper bound with a margin. Anything ≥ 1144 fails with
-            // BAD_REQUEST_ERROR "end_time must be between …". For weekly
-            // intervals the safe cap is higher; we don't currently offer
-            // sub-monthly cycles so 1128 is a one-size-fits-all ceiling.
-            //
-            // If a buyer somehow runs through all cycles we mint a new
-            // subscription — practically irrelevant for SaaS.
+            // Razorpay requires a finite total_count. RBI caps UPI
+            // Autopay + eMandate mandates at 30 years from creation, so
+            // 360 monthly cycles is the practical universal max
+            // (anything higher fails with "expire_at cannot be more
+            // than 30 years for upi"). Plenty for a SaaS subscription;
+            // buyers who run through 30 years of renewals can re-mint.
+            // RazorpayProvider.safeTotalCount() also clamps defensively.
             const sub = await razorpay.createSubscription({
                 providerPlanId,
                 // providerCustomerId intentionally omitted — see comment
                 // above about the contact-required schedule computation
                 // on Razorpay's hosted page.
-                totalCount: 1128,
+                totalCount: 360,
                 notifyEmail: false,
                 notes: {
                     session_id: session.id,

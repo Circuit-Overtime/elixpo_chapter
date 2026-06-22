@@ -191,16 +191,20 @@ export class RazorpayProvider implements PaymentProvider {
     }
 
     /**
-     * Razorpay caps `end_time` at Unix 4765046400 (2120-12-25). Subscription
-     * create returns 400 if `start_at + total_count * interval` exceeds it.
-     * We clamp here defensively so any caller passing a too-large count
-     * gets a working subscription instead of a 400.
+     * Razorpay enforces TWO ceilings on subscription length:
+     *  1. `end_time` ≤ 2120-12-25 (Unix 4765046400) — global cap.
+     *  2. UPI Autopay mandates ≤ 30 years from creation — RBI rule, the
+     *     stricter of the two. Returns:
+     *       "expire_at cannot be more than 30 years for upi"
+     *  Card eMandate and bank eMandate also cap at 30 years per RBI.
+     *
+     * So 30 years (= 360 monthly cycles) is the practical universal max.
+     * Plenty of headroom for any realistic SaaS subscription — buyers
+     * who somehow run through 30 years of renewals can re-mint a new
+     * subscription.
      */
     private safeTotalCount(input: CreateSubscriptionInput): number {
-        // For monthly cycles, 1128 ≈ 94 years from 2026 — well under the
-        // 2120 ceiling with margin. Sub-monthly intervals would need a
-        // higher cap, but we don't currently offer those.
-        const MONTHLY_CEILING = 1128;
+        const MONTHLY_CEILING = 360; // 30 years, RBI/UPI Autopay limit
         const requested = Math.max(1, input.totalCount);
         return Math.min(requested, MONTHLY_CEILING);
     }
