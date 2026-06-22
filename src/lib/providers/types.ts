@@ -150,6 +150,15 @@ export interface PaymentProvider {
         cancelAtCycleEnd?: boolean,
     ): Promise<{ status: string; raw: unknown }>;
     /**
+     * Fetch a subscription. Returns its current status + the canonical
+     * short_url (Razorpay regenerates this on every GET, so it's safe to
+     * use for retries even after the buyer has interacted with the
+     * mandate page once).
+     */
+    getSubscription(
+        providerSubscriptionId: string,
+    ): Promise<{ status: string; shortUrl: string | null; raw: unknown }>;
+    /**
      * Create a buyer record on the provider, used as the customer
      * binding for subscription mandates. Lazily called once per local
      * customer row — `provider_customer_id` is cached afterwards.

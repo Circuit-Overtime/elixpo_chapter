@@ -249,6 +249,38 @@ export class RazorpayProvider implements PaymentProvider {
         };
     }
 
+    async getSubscription(
+        providerSubscriptionId: string,
+    ): Promise<{ status: string; shortUrl: string | null; raw: unknown }> {
+        // GET /v1/subscriptions/{id} — returns the live subscription
+        // including the canonical `short_url`. We use this for retries
+        // (page reload, browser back) where the original short_url from
+        // create-time wasn't persisted; constructing one from the sub_id
+        // by string concat doesn't work — Razorpay's short URL uses a
+        // separate ID namespace.
+        const res = await fetch(
+            `${RAZORPAY_API}/subscriptions/${encodeURIComponent(providerSubscriptionId)}`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: this.authHeader(),
+                    Accept: "application/json",
+                },
+            },
+        );
+        const raw: any = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(
+                `Razorpay subscription get failed (${res.status}): ${raw?.error?.description || res.statusText}`,
+            );
+        }
+        return {
+            status: raw.status,
+            shortUrl: raw.short_url ?? null,
+            raw,
+        };
+    }
+
     async cancelSubscription(
         providerSubscriptionId: string,
         cancelAtCycleEnd = false,

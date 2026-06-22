@@ -256,13 +256,43 @@ async function finalizeSession(
                 status: "pending",
             });
         } else {
-            // Reload short_url for retry — Razorpay returns it on every
-            // GET of the subscription.
-            // (Skipped: we'd need a `getSubscription` method on the
-            // provider. Simpler: re-store on first create only; on retry
-            // we just hand back the existing subscriptionId and let the
-            // client construct the standard short URL ourselves below.)
-            shortUrl = `https://rzp.io/i/${subscriptionId}`;
+            // Reload path — the buyer hit this checkout session before
+            // (page refresh, browser back, etc.). Fetch the live
+            // subscription from Razorpay to get the canonical short_url;
+            // do NOT construct a URL from the sub_id by string concat
+            // (Razorpay's short URL uses a different id namespace).
+            //
+            // If the sub is already past the mandate stage (active/
+            // cancelled/completed), the rzp.io hosted page returns
+            // "Hosted page is not available" — that's expected. We
+            // surface the URL anyway; the buyer's browser will land on
+            // the success page (via Razorpay's own redirect) once they
+            // visit a still-valid sub.
+            try {
+                const live = await razorpay.getSubscription(subscriptionId);
+                shortUrl = live.shortUrl ?? undefined;
+            } catch (err) {
+                console.error(
+                    "[checkout/session] getSubscription failed: %s",
+                    err instanceof Error ? err.message : String(err),
+                );
+            }
+            if (!shortUrl) {
+                // Fallback: if Razorpay can't return a URL (e.g. sub is
+                // in a non-mandate state), send the buyer to the
+                // app-side success/return URL instead of a broken page.
+                return NextResponse.json({
+                    session_id: session.id,
+                    provider: "razorpay",
+                    mode: razorpay.mode,
+                    billing_mode: "autopay",
+                    subscription_id: subscriptionId,
+                    short_url: null,
+                    finished: true,
+                    return_url: session.return_url,
+                    ...details,
+                });
+            }
         }
 
         return NextResponse.json({
