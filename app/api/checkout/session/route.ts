@@ -281,7 +281,10 @@ async function finalizeSession(
                 // Fallback: if Razorpay can't return a URL (e.g. sub is
                 // in a non-mandate state), send the buyer to the
                 // app-side success/return URL instead of a broken page.
+                // `details` already carries return_url — spread first so
+                // our explicit fields win without TS duplicate-key warnings.
                 return NextResponse.json({
+                    ...details,
                     session_id: session.id,
                     provider: "razorpay",
                     mode: razorpay.mode,
@@ -289,8 +292,6 @@ async function finalizeSession(
                     subscription_id: subscriptionId,
                     short_url: null,
                     finished: true,
-                    return_url: session.return_url,
-                    ...details,
                 });
             }
         }
