@@ -1,5 +1,6 @@
 export const runtime = "edge";
 
+import type { D1Database } from "@cloudflare/workers-types";
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
