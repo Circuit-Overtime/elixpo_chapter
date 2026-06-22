@@ -5,7 +5,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { verifyHandoff } from "@/lib/handoff";
-import { ensureProviderCustomer } from "@/lib/customers";
+// ensureProviderCustomer kept available in @/lib/customers for future use
+// once accounts.elixpo collects phone numbers — see the comment in the
+// recurring-checkout branch below.
 import { ensurePlanForPrice } from "@/lib/plans";
 import { razorpayFromEnv } from "@/lib/providers/razorpay";
 import {
@@ -201,16 +203,25 @@ async function finalizeSession(
                 priceId: priceRow.id,
             });
 
-            // Same lazy pattern for the buyer's Razorpay customer record.
-            // Required for UPI Autopay to generate a valid mandate Intent;
-            // Card eMandate works without it but we always set it for
-            // consistency. Cached on customers.provider_customer_id so
-            // repeat checkouts skip the round-trip.
-            const { providerCustomerId } = await ensureProviderCustomer(
-                db,
-                razorpay,
-                session.customer_id,
-            );
+            // Provider-customer binding is INTENTIONALLY disabled in v1.
+            //
+            // Background: Razorpay's hosted mandate page (rzp.io) won't
+            // compute start_at / end_at / charge_at when the bound
+            // customer is missing `contact` (Indian eMandate + UPI
+            // Autopay both require a phone number per RBI rules).
+            // Without a schedule the page renders "Hosted page is not
+            // available". accounts.elixpo doesn't collect phone numbers
+            // today, so binding a half-filled customer hurts more than
+            // it helps — Razorpay's own page collects contact + mandate
+            // in one go if no customer is bound.
+            //
+            // The customer record is still maintained in our DB and
+            // ready to bind once we add phone collection (then re-enable
+            // the line below and remove this comment).
+            //
+            // const { providerCustomerId } = await ensureProviderCustomer(
+            //     db, razorpay, session.customer_id,
+            // );
 
             // Razorpay requires a finite total_count — there's no "until
             // cancelled" option. Razorpay's `end_time` cap is 2120-12-25
@@ -227,7 +238,9 @@ async function finalizeSession(
             // subscription — practically irrelevant for SaaS.
             const sub = await razorpay.createSubscription({
                 providerPlanId,
-                providerCustomerId,
+                // providerCustomerId intentionally omitted — see comment
+                // above about the contact-required schedule computation
+                // on Razorpay's hosted page.
                 totalCount: 1128,
                 notifyEmail: false,
                 notes: {

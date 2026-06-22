@@ -157,7 +157,13 @@ function CheckoutInner() {
                 // button at this point would just dead-end on "Hosted
                 // page is not available".
                 if (data.finished) {
-                    finishSuccess(data.return_url);
+                    // Stale session — the autopay subscription is past
+                    // the mandate stage on Razorpay's side. Skip the
+                    // success ceremony and bounce immediately so the
+                    // buyer doesn't see a misleading "you're all set"
+                    // screen for a sub they may have cancelled.
+                    const back = data.return_url || "/";
+                    window.location.href = back;
                     return;
                 }
                 setPhase("ready");
