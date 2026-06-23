@@ -102,7 +102,7 @@ export async function syncProduct(
     const existing = ((
         await db
             .prepare(
-                "SELECT id, currency, region, interval, active FROM prices WHERE product_id = ?",
+                "SELECT id, currency, region, interval, active, unit_amount, interval_count, type, provider_plan_id FROM prices WHERE product_id = ?",
             )
             .bind(productId)
             .all()
@@ -145,11 +145,26 @@ export async function syncProduct(
                 ? "recurring"
                 : "one_time";
         if (match) {
+            // A recurring price's Razorpay Plan is immutable and keyed on
+            // amount + interval + interval_count. If any plan-affecting field
+            // changed — or the price just became recurring — the cached
+            // provider_plan_id is now stale and would keep charging the old
+            // amount. Drop it so a fresh Plan is minted on the next checkout
+            // (see ensurePlanForPrice). Currency/region/interval are part of
+            // the match key, so they can't change on an update.
+            const planStale =
+                priceType === "recurring" &&
+                (Number(match.unit_amount) !== unit ||
+                    Number(match.interval_count) !== intervalCount ||
+                    match.type !== "recurring");
+
             // Also reconcile `type` on existing rows so an owner can flip
             // a price between one_time ↔ autopay by re-syncing the catalog.
             await db
                 .prepare(
-                    "UPDATE prices SET unit_amount = ?, nickname = ?, interval_count = ?, type = ?, active = 1 WHERE id = ?",
+                    `UPDATE prices SET unit_amount = ?, nickname = ?, interval_count = ?, type = ?, active = 1${
+                        planStale ? ", provider_plan_id = NULL" : ""
+                    } WHERE id = ?`,
                 )
                 .bind(unit, nickname, intervalCount, priceType, match.id)
                 .run();
@@ -161,6 +176,7 @@ export async function syncProduct(
                 interval,
                 region,
                 updated: true,
+                plan_reset: planStale,
             });
         } else {
             const pid = newId("price");
