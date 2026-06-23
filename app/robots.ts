@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-const BASE_URL = 'https://url.elixpo.com';
+const BASE_URL = 'https://lixrl.com';
 
 /**
  * Robots policy.

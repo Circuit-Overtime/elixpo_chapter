@@ -4,7 +4,7 @@
   "description": "Fast URL shortener built on Cloudflare's edge network — lightning-fast redirects, powerful analytics, and a developer-first API for the Elixpo ecosystem.",
   "author": "Elixpo <hello@elixpo.com> (https://elixpo.com)",
   "license": "SEE LICENSE IN LICENSE",
-  "homepage": "https://url.elixpo.com",
+  "homepage": "https://lixrl.com",
   "repository": {
     "type": "git",
     "url": "https://github.com/elixpo/elixpourl"

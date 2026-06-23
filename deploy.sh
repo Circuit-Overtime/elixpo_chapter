@@ -7,7 +7,7 @@ OUTDIR=".vercel/output/static"
 
 # CF Pages treats `main` as Production. Without --branch, wrangler tags the
 # deploy as Preview for whatever git branch you're on — which never updates
-# url.elixpo.com. Override with DEPLOY_BRANCH=<branch> for a preview from CLI.
+# lixrl.com. Override with DEPLOY_BRANCH=<branch> for a preview from CLI.
 BRANCH="${DEPLOY_BRANCH:-main}"
 
 RED='\033[0;31m'
@@ -76,7 +76,7 @@ do_deploy() {
   fi
   log "Deploying to ${BOLD}Cloudflare Pages${RESET} on branch ${BOLD}$BRANCH${RESET}..."
   if [ "$BRANCH" = "main" ]; then
-    dim "Production deploy — will update url.elixpo.com on success."
+    dim "Production deploy — will update lixrl.com on success."
   else
     dim "Preview deploy — production URL stays on whatever's deployed to main."
   fi
@@ -153,6 +153,12 @@ do_secrets() {
       DEV_TIER_OVERRIDE)
         # Dev-only: would promote EVERY prod user to that tier. Never ship it.
         dim "skip $k (dev-only — must not reach production)"
+        continue
+        ;;
+      BASE_URL)
+        # Environment-specific (vault holds the localhost dev value). Set the
+        # prod origin directly on the Pages project, e.g. https://lixrl.com.
+        dim "skip $k (env-specific — set prod origin on Pages directly)"
         continue
         ;;
     esac

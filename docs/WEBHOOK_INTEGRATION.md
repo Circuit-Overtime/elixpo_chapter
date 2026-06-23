@@ -64,9 +64,9 @@ re-wire) the webhook:
      -H "Content-Type: application/json" \
      -d '{
        "name": "ElixpoURL",
-       "redirect_uris": ["https://url.elixpo.com/api/auth/callback"],
+       "redirect_uris": ["https://lixrl.com/api/auth/callback"],
        "scopes": ["openid", "profile", "email"],
-       "webhook_url": "https://url.elixpo.com/api/webhooks/elixpo",
+       "webhook_url": "https://lixrl.com/api/webhooks/elixpo",
        "webhook_events": ["user.deleted", "user.updated"]
      }'
    ```
@@ -124,7 +124,7 @@ reference verifier code (which is what the receiver here uses).
 - [ ] `ELIXPO_WEBHOOK_SECRET` set in Cloudflare Pages (encrypted env var)
 - [ ] Same value mirrored in `.env.local` for local dev (never committed)
 - [ ] `webhook_url` on the SSO-side registration points at the production
-      URL: `https://url.elixpo.com/api/webhooks/elixpo`
+      URL: `https://lixrl.com/api/webhooks/elixpo`
 - [ ] `webhook_events` includes both `user.deleted` and `user.updated`
 - [ ] Receiver test passes:
       `curl -X POST … -H "X-Elixpo-Signature: sha256=…" …` returns 200
