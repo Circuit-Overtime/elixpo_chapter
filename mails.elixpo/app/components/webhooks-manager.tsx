@@ -10,6 +10,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
+import SearchIcon from "@mui/icons-material/Search";
 import WebhookIcon from "@mui/icons-material/Webhook";
 import {
     Box,
@@ -22,6 +23,7 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
+    InputAdornment,
     Menu,
     MenuItem,
     Select,
@@ -263,43 +265,46 @@ function CreateDialog({
     open,
     templates,
     products,
+    webhookCountByTemplate,
     onClose,
     onCreated,
 }: {
     open: boolean;
     templates: TemplateSummary[];
     products: ProductSummary[];
+    webhookCountByTemplate: Map<string, number>;
     onClose: () => void;
     onCreated: (webhook: WebhookSummary) => void;
 }) {
+    const [productId, setProductId] = useState("");
     const [templateId, setTemplateId] = useState("");
+    const [templateQuery, setTemplateQuery] = useState("");
     const [name, setName] = useState("");
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!open) return;
+        setProductId("");
         setTemplateId("");
+        setTemplateQuery("");
         setName("");
         setSaving(false);
         setError(null);
     }, [open]);
 
-    // Group templates by product for the Select.
-    const grouped = useMemo(() => {
-        const byProduct = new Map<string, { name: string; templates: TemplateSummary[] }>();
-        for (const t of templates) {
-            const product = products.find((p) => p.id === t.product_id);
-            const key = t.product_id;
-            if (!byProduct.has(key)) {
-                byProduct.set(key, { name: product?.name ?? "Unknown product", templates: [] });
-            }
-            byProduct.get(key)!.templates.push(t);
-        }
-        return Array.from(byProduct.values()).sort((a, b) => a.name.localeCompare(b.name));
-    }, [templates, products]);
+    // Filter the template list by the search query (name + slug, case-insensitive).
+    const filteredTemplates = useMemo(() => {
+        const q = templateQuery.trim().toLowerCase();
+        if (!q) return templates;
+        return templates.filter(
+            (t) =>
+                t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q),
+        );
+    }, [templates, templateQuery]);
 
-    const canSubmit = !saving && templateId !== "" && name.trim().length > 0;
+    const canSubmit =
+        !saving && productId !== "" && templateId !== "" && name.trim().length > 0;
 
     async function submit() {
         if (!canSubmit) return;
@@ -309,7 +314,7 @@ function CreateDialog({
             const res = await fetch("/api/webhooks", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ templateId, name: name.trim() }),
+                body: JSON.stringify({ templateId, name: name.trim(), productId }),
             });
             const data = (await res.json().catch(() => ({}))) as {
                 ok?: boolean;
@@ -329,34 +334,6 @@ function CreateDialog({
         }
     }
 
-    // Build flat MenuItem list with subheaders (Select doesn't accept fragments well,
-    // so emit an array of nodes).
-    const menuNodes: React.ReactNode[] = [];
-    for (const group of grouped) {
-        menuNodes.push(
-            <MenuItem key={`hdr-${group.name}`} disabled sx={{ opacity: "1 !important" }}>
-                <Typography
-                    sx={{
-                        fontSize: "0.7rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.04em",
-                        textTransform: "uppercase",
-                        color: TEXT_40,
-                    }}
-                >
-                    {group.name}
-                </Typography>
-            </MenuItem>,
-        );
-        for (const t of group.templates) {
-            menuNodes.push(
-                <MenuItem key={t.id} value={t.id} sx={{ pl: 3 }}>
-                    {t.name}
-                </MenuItem>,
-            );
-        }
-    }
-
     return (
         <Dialog open={open} onClose={() => !saving && onClose()} fullWidth maxWidth="sm" slotProps={darkPaper}>
             <DialogTitle sx={{ color: TEXT, fontWeight: 800, fontSize: "1.2rem", pb: 1 }}>
@@ -365,10 +342,10 @@ function CreateDialog({
             <DialogContent sx={{ pb: 1 }}>
                 <Stack spacing={2.2} sx={{ mt: 0.5 }}>
                     <Box>
-                        <FieldLabel>Template (required)</FieldLabel>
+                        <FieldLabel>Product (required)</FieldLabel>
                         <Select
-                            value={templateId}
-                            onChange={(e) => setTemplateId(e.target.value)}
+                            value={productId}
+                            onChange={(e) => setProductId(e.target.value)}
                             displayEmpty
                             fullWidth
                             size="small"
@@ -378,17 +355,148 @@ function CreateDialog({
                                 if (!val) {
                                     return (
                                         <Typography sx={{ color: "rgba(245,245,244,0.35)", fontSize: "0.92rem" }}>
-                                            Choose a template
+                                            Choose a product
                                         </Typography>
                                     );
                                 }
-                                const t = templates.find((x) => x.id === val);
-                                const product = products.find((p) => p.id === t?.product_id);
-                                return t ? `${t.name}${product ? ` · ${product.name}` : ""}` : String(val);
+                                const p = products.find((x) => x.id === val);
+                                return p ? p.name : String(val);
                             }}
                         >
-                            {menuNodes}
+                            {products.map((p) => (
+                                <MenuItem key={p.id} value={p.id}>
+                                    {p.name}
+                                </MenuItem>
+                            ))}
                         </Select>
+                    </Box>
+
+                    <Box>
+                        <FieldLabel>Template (required)</FieldLabel>
+                        {templates.length === 0 ? (
+                            <Typography sx={{ fontSize: "0.84rem", color: TEXT_55, lineHeight: 1.6 }}>
+                                You don&rsquo;t have any templates yet. Create one under{" "}
+                                <Box
+                                    component={Link}
+                                    href="/dashboard/templates"
+                                    sx={{
+                                        color: HOOK_ACCENT,
+                                        textDecoration: "none",
+                                        "&:hover": { textDecoration: "underline" },
+                                    }}
+                                >
+                                    Templates
+                                </Box>{" "}
+                                first.
+                            </Typography>
+                        ) : (
+                            <>
+                                <TextField
+                                    value={templateQuery}
+                                    onChange={(e) => setTemplateQuery(e.target.value)}
+                                    placeholder="Search templates…"
+                                    fullWidth
+                                    size="small"
+                                    sx={darkField}
+                                    slotProps={{
+                                        input: {
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <SearchIcon sx={{ fontSize: 18, color: TEXT_40 }} />
+                                                </InputAdornment>
+                                            ),
+                                        },
+                                    }}
+                                />
+                                <Box
+                                    sx={{
+                                        mt: 1,
+                                        maxHeight: 230,
+                                        overflowY: "auto",
+                                        borderRadius: "10px",
+                                        border: `1px solid ${BORDER}`,
+                                        background: "rgba(255,255,255,0.02)",
+                                    }}
+                                >
+                                    {filteredTemplates.length === 0 ? (
+                                        <Typography
+                                            sx={{ fontSize: "0.82rem", color: TEXT_40, p: 1.6, textAlign: "center" }}
+                                        >
+                                            No templates match
+                                        </Typography>
+                                    ) : (
+                                        filteredTemplates.map((t) => {
+                                            const selected = t.id === templateId;
+                                            const count = webhookCountByTemplate.get(t.id) ?? 0;
+                                            return (
+                                                <Box
+                                                    key={t.id}
+                                                    onClick={() => setTemplateId(t.id)}
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 1.2,
+                                                        px: 1.4,
+                                                        py: 1.1,
+                                                        cursor: "pointer",
+                                                        borderBottom: `1px solid ${BORDER}`,
+                                                        "&:last-of-type": { borderBottom: "none" },
+                                                        background: selected
+                                                            ? "rgba(155,123,247,0.12)"
+                                                            : "transparent",
+                                                        "&:hover": {
+                                                            background: selected
+                                                                ? "rgba(155,123,247,0.16)"
+                                                                : "rgba(255,255,255,0.03)",
+                                                        },
+                                                    }}
+                                                >
+                                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                        <Typography
+                                                            sx={{
+                                                                fontSize: "0.9rem",
+                                                                fontWeight: 600,
+                                                                color: selected ? ACCENT : TEXT,
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis",
+                                                                whiteSpace: "nowrap",
+                                                            }}
+                                                        >
+                                                            {t.name}
+                                                        </Typography>
+                                                        <Typography
+                                                            sx={{
+                                                                fontSize: "0.74rem",
+                                                                color: TEXT_40,
+                                                                fontFamily: "var(--font-geist-mono)",
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis",
+                                                                whiteSpace: "nowrap",
+                                                            }}
+                                                        >
+                                                            {t.slug}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Chip
+                                                        label={`${count} ${count === 1 ? "webhook" : "webhooks"}`}
+                                                        size="small"
+                                                        sx={{
+                                                            height: 20,
+                                                            fontSize: "0.68rem",
+                                                            fontWeight: 600,
+                                                            color: TEXT_55,
+                                                            bgcolor: "rgba(255,255,255,0.04)",
+                                                            border: `1px solid ${BORDER}`,
+                                                            flexShrink: 0,
+                                                        }}
+                                                    />
+                                                </Box>
+                                            );
+                                        })
+                                    )}
+                                </Box>
+                            </>
+                        )}
                     </Box>
 
                     <Box>
@@ -400,7 +508,6 @@ function CreateDialog({
                             helperText="A label for this event"
                             fullWidth
                             size="small"
-                            autoFocus
                             sx={darkField}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") {
@@ -931,6 +1038,7 @@ export default function WebhooksManager() {
     const [deleting, setDeleting] = useState<WebhookSummary | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
+    const [search, setSearch] = useState("");
 
     const [toast, setToast] = useState<string | null>(null);
 
@@ -1013,13 +1121,34 @@ export default function WebhooksManager() {
         }
     }
 
-    // Group webhooks by template for the list.
+    // Per-template webhook counts for the create dialog's template chips.
+    const webhookCountByTemplate = useMemo(() => {
+        const counts = new Map<string, number>();
+        for (const w of webhooks) {
+            counts.set(w.template_id, (counts.get(w.template_id) ?? 0) + 1);
+        }
+        return counts;
+    }, [webhooks]);
+
+    // Client-side filter by webhook name / template name / product name.
+    const filteredWebhooks = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return webhooks;
+        return webhooks.filter(
+            (w) =>
+                w.name.toLowerCase().includes(q) ||
+                w.template_name.toLowerCase().includes(q) ||
+                w.product_name.toLowerCase().includes(q),
+        );
+    }, [webhooks, search]);
+
+    // Group filtered webhooks by template for the list.
     const groups = useMemo(() => {
         const byTemplate = new Map<
             string,
             { templateId: string; templateName: string; productName: string; items: WebhookSummary[] }
         >();
-        for (const w of webhooks) {
+        for (const w of filteredWebhooks) {
             if (!byTemplate.has(w.template_id)) {
                 byTemplate.set(w.template_id, {
                     templateId: w.template_id,
@@ -1033,7 +1162,7 @@ export default function WebhooksManager() {
         return Array.from(byTemplate.values()).sort((a, b) =>
             a.templateName.localeCompare(b.templateName),
         );
-    }, [webhooks]);
+    }, [filteredWebhooks]);
 
     const hasTemplates = templates.length > 0;
 
@@ -1122,6 +1251,35 @@ export default function WebhooksManager() {
                     <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
                         {newButton}
                     </Stack>
+                    <TextField
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search webhooks by name, template, or product…"
+                        fullWidth
+                        size="small"
+                        sx={{ ...darkField, mb: 2 }}
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon sx={{ fontSize: 18, color: TEXT_40 }} />
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                    />
+                    {groups.length === 0 ? (
+                        <Typography
+                            sx={{
+                                fontSize: "0.88rem",
+                                color: TEXT_55,
+                                textAlign: "center",
+                                py: 4,
+                            }}
+                        >
+                            No webhooks match &ldquo;{search.trim()}&rdquo;
+                        </Typography>
+                    ) : (
                     <Stack spacing={2}>
                         {groups.map((group) => (
                             <GlassCard key={group.templateId}>
@@ -1161,6 +1319,7 @@ export default function WebhooksManager() {
                             </GlassCard>
                         ))}
                     </Stack>
+                    )}
                 </Box>
             )}
 
@@ -1168,6 +1327,7 @@ export default function WebhooksManager() {
                 open={createOpen}
                 templates={templates}
                 products={products}
+                webhookCountByTemplate={webhookCountByTemplate}
                 onClose={() => setCreateOpen(false)}
                 onCreated={(webhook) => {
                     setToast("Webhook created");

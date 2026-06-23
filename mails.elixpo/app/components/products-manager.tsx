@@ -8,6 +8,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import SearchIcon from "@mui/icons-material/Search";
 import VpnKeyOutlinedIcon from "@mui/icons-material/VpnKeyOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
@@ -20,6 +21,7 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
+    InputAdornment,
     Menu,
     MenuItem,
     Select,
@@ -1117,6 +1119,7 @@ export default function ProductsManager() {
     const [rotating, setRotating] = useState<ProductSummary | null>(null);
     const [deleting, setDeleting] = useState<ProductSummary | null>(null);
     const [revealSecret, setRevealSecret] = useState<string | null>(null);
+    const [query, setQuery] = useState("");
 
     async function load() {
         try {
@@ -1152,6 +1155,16 @@ export default function ProductsManager() {
     function refresh() {
         load();
     }
+
+    // Client-side filter (substring, case-insensitive) — preserves source order.
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? products.filter((p) =>
+              [p.name, p.client_id, p.homepage_url ?? ""].some((v) =>
+                  v.toLowerCase().includes(q),
+              ),
+          )
+        : products;
 
     // ── Render states ──
     if (loading) {
@@ -1216,18 +1229,48 @@ export default function ProductsManager() {
                             New product
                         </Button>
                     </Stack>
-                    <Stack spacing={2}>
-                        {products.map((p) => (
-                            <ProductCard
-                                key={p.id}
-                                product={p}
-                                senderLabelText={senderLabelFor(p.default_sender_id)}
-                                onEdit={() => setEditing(p)}
-                                onRotate={() => setRotating(p)}
-                                onDelete={() => setDeleting(p)}
-                            />
-                        ))}
-                    </Stack>
+                    <TextField
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search by name, client ID, or homepage…"
+                        fullWidth
+                        size="small"
+                        sx={{ ...darkField, mb: 2 }}
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon sx={{ fontSize: 18, color: TEXT_40 }} />
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                    />
+                    {filtered.length === 0 ? (
+                        <Typography
+                            sx={{
+                                fontSize: "0.88rem",
+                                color: TEXT_55,
+                                textAlign: "center",
+                                py: 4,
+                            }}
+                        >
+                            No products match &ldquo;{query.trim()}&rdquo;.
+                        </Typography>
+                    ) : (
+                        <Stack spacing={2}>
+                            {filtered.map((p) => (
+                                <ProductCard
+                                    key={p.id}
+                                    product={p}
+                                    senderLabelText={senderLabelFor(p.default_sender_id)}
+                                    onEdit={() => setEditing(p)}
+                                    onRotate={() => setRotating(p)}
+                                    onDelete={() => setDeleting(p)}
+                                />
+                            ))}
+                        </Stack>
+                    )}
                 </Box>
             )}
 

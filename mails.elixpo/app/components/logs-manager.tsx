@@ -4,6 +4,7 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import HistoryIcon from "@mui/icons-material/History";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import SearchIcon from "@mui/icons-material/Search";
 import {
     Box,
     Chip,
@@ -11,10 +12,12 @@ import {
     Collapse,
     Divider,
     IconButton,
+    InputAdornment,
     MenuItem,
     Select,
     Snackbar,
     Stack,
+    TextField,
     Tooltip,
     Typography,
 } from "@mui/material";
@@ -136,6 +139,20 @@ const darkSelect = {
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
     "& .MuiSelect-icon": { color: TEXT_40 },
     "& .MuiSelect-select": { fontSize: "0.88rem", py: 1 },
+};
+
+const darkSearchField = {
+    "& .MuiInputBase-root": {
+        color: TEXT,
+        borderRadius: "11px",
+        background: "rgba(255,255,255,0.02)",
+        fontSize: "0.88rem",
+    },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.16)" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(155,123,247,0.5)" },
+    "& .Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
+    "& .MuiInputBase-input": { py: 1 },
+    "& .MuiInputBase-input::placeholder": { color: TEXT_40, opacity: 1 },
 };
 
 const darkMenuProps = {
@@ -511,6 +528,7 @@ export default function LogsManager() {
 
     const [productId, setProductId] = useState<string>("");
     const [status, setStatus] = useState<string>("");
+    const [search, setSearch] = useState<string>("");
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -584,7 +602,13 @@ export default function LogsManager() {
         );
     }
 
-    const filtersActive = productId !== "" || status !== "";
+    // Client-side recipient search over the currently loaded deliveries.
+    const searchTerm = search.trim().toLowerCase();
+    const visibleDeliveries = searchTerm
+        ? deliveries.filter((d) => d.to_email.toLowerCase().includes(searchTerm))
+        : deliveries;
+
+    const filtersActive = productId !== "" || status !== "" || searchTerm !== "";
     const noLogsAtAll = !hasAnyLogs.current && !filtersActive;
 
     return (
@@ -634,7 +658,25 @@ export default function LogsManager() {
                     <MenuItem value="sending">Sending</MenuItem>
                 </Select>
 
-                <Box sx={{ flex: 1 }} />
+                <TextField
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search recipient email…"
+                    size="small"
+                    sx={{ ...darkSearchField, flex: 1, minWidth: { xs: "auto", sm: 220 } }}
+                    slotProps={{
+                        input: {
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon sx={{ fontSize: 18, color: TEXT_40 }} />
+                                </InputAdornment>
+                            ),
+                        },
+                        htmlInput: {
+                            "aria-label": "Search recipient email",
+                        },
+                    }}
+                />
 
                 <Tooltip title="Refresh" arrow>
                     <span>
@@ -663,7 +705,7 @@ export default function LogsManager() {
             </Stack>
 
             {/* List */}
-            {deliveries.length === 0 ? (
+            {visibleDeliveries.length === 0 ? (
                 noLogsAtAll ? (
                     <EmptyState
                         icon={HistoryIcon}
@@ -671,6 +713,17 @@ export default function LogsManager() {
                         headline="No sends yet"
                         subtext="Once you trigger a webhook or run a template test, each delivery — success or failure — will be logged here with its recipient, status, and merged variables."
                     />
+                ) : deliveries.length > 0 ? (
+                    <Typography
+                        sx={{
+                            color: TEXT_55,
+                            fontSize: "0.85rem",
+                            textAlign: "center",
+                            py: 3,
+                        }}
+                    >
+                        No deliveries match.
+                    </Typography>
                 ) : (
                     <GlassCard sx={{ py: { xs: 4, md: 5 } }}>
                         <Typography sx={{ color: TEXT_55, fontSize: "0.9rem", textAlign: "center" }}>
@@ -680,10 +733,10 @@ export default function LogsManager() {
                 )
             ) : (
                 <GlassCard sx={{ py: 0.5 }}>
-                    {deliveries.map((d, i) => (
+                    {visibleDeliveries.map((d, i) => (
                         <Box key={d.id}>
                             <DeliveryRow d={d} />
-                            {i < deliveries.length - 1 && <Divider sx={{ borderColor: BORDER }} />}
+                            {i < visibleDeliveries.length - 1 && <Divider sx={{ borderColor: BORDER }} />}
                         </Box>
                     ))}
                 </GlassCard>
