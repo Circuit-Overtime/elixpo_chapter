@@ -12,6 +12,12 @@ interface CloudflareEnv {
   ELIXPO_PAY_APP_ID: string;
   ELIXPO_PAY_API_KEY: string;
   ELIXPO_PAY_WEBHOOK_SECRET: string;
+  // Elixpo Mails — transactional triggers.
+  ELIXPO_MAILS_BASE_URL: string;
+  ELIXPO_MAILS_SECRET: string;
+  ELIXPO_MAILS_HOOK_RECEIPT: string;
+  ELIXPO_MAILS_HOOK_CANCELED: string;
+  ELIXPO_MAILS_HOOK_PAYMENT_FAILED: string;
 }
 
 declare module '@cloudflare/next-on-pages' {
