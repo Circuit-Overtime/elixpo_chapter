@@ -113,11 +113,20 @@ export async function GET(
     );
 }
 
+/** A https URL, an empty string (clear), or undefined-on-invalid. */
+function cleanUrl(v: unknown): string | null | undefined {
+    if (typeof v !== "string") return undefined;
+    const s = v.trim();
+    if (s === "") return null; // clear it
+    return /^https:\/\/.+/i.test(s) ? s : undefined; // invalid → skip
+}
+
 /**
  * PATCH /api/dashboard/products/:id
- *   { app_name }    — rename the app (the "product" title)
- *   { name, description } — update this tier (products-row)
- *   { active }      — archive/unarchive the WHOLE app (all its tiers)
+ *   { app_name }              — rename the app (the "product" title)
+ *   { homepage_url, pricing_url } — app-level links (https or "" to clear)
+ *   { name, description }     — update this tier (products-row)
+ *   { active }                — archive/unarchive the WHOLE app (all its tiers)
  */
 export async function PATCH(
     request: NextRequest,
@@ -143,6 +152,37 @@ export async function PATCH(
                  WHERE id = (SELECT app_id FROM products WHERE id = ?)`,
             )
             .bind(String(body.app_name).trim().slice(0, 80), id)
+            .run();
+        touched = true;
+    }
+
+    // App-level: homepage / pricing links.
+    const appSets: string[] = [];
+    const appVals: any[] = [];
+    if ("homepage_url" in body) {
+        const u = cleanUrl(body.homepage_url);
+        if (u === undefined) {
+            return NextResponse.json({ error: "invalid_homepage_url" }, { status: 400 });
+        }
+        appSets.push("homepage_url = ?");
+        appVals.push(u);
+    }
+    if ("pricing_url" in body) {
+        const u = cleanUrl(body.pricing_url);
+        if (u === undefined) {
+            return NextResponse.json({ error: "invalid_pricing_url" }, { status: 400 });
+        }
+        appSets.push("pricing_url = ?");
+        appVals.push(u);
+    }
+    if (appSets.length) {
+        appVals.push(id);
+        await db
+            .prepare(
+                `UPDATE apps SET ${appSets.join(", ")}, updated_at = datetime('now')
+                 WHERE id = (SELECT app_id FROM products WHERE id = ?)`,
+            )
+            .bind(...appVals)
             .run();
         touched = true;
     }

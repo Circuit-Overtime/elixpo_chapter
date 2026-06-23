@@ -59,6 +59,16 @@ export default function ProductDetailPage() {
     const [changeIdOpen, setChangeIdOpen] = useState(false);
     const [changeIdBusy, setChangeIdBusy] = useState(false);
     const [changeIdErr, setChangeIdErr] = useState("");
+    // App links (homepage / pricing) editing
+    const [homepageDraft, setHomepageDraft] = useState("");
+    const [pricingDraft, setPricingDraft] = useState("");
+    const [linksBusy, setLinksBusy] = useState(false);
+    const [linksErr, setLinksErr] = useState("");
+    const [linksSaved, setLinksSaved] = useState(false);
+    // Permanent delete
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [deleteBusy, setDeleteBusy] = useState(false);
+    const [deleteErr, setDeleteErr] = useState("");
 
     const copyWebhookSecret = async () => {
         if (!webhookSecretOnce) return;
@@ -79,7 +89,10 @@ export default function ProductDetailPage() {
             setLoading(false);
             return;
         }
-        setData(await r.json());
+        const d: any = await r.json();
+        setData(d);
+        setHomepageDraft(d?.product?.homepage_url || "");
+        setPricingDraft(d?.product?.pricing_url || "");
         setLoading(false);
     };
 
@@ -202,6 +215,58 @@ export default function ProductDetailPage() {
             setChangeIdErr(e?.message || "Could not change client id");
         } finally {
             setChangeIdBusy(false);
+        }
+    };
+
+    const saveLinks = async () => {
+        setLinksBusy(true);
+        setLinksErr("");
+        setLinksSaved(false);
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    homepage_url: homepageDraft.trim(),
+                    pricing_url: pricingDraft.trim(),
+                }),
+            });
+            const d: any = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                throw new Error(
+                    d.error === "invalid_homepage_url"
+                        ? "Homepage must be a https:// URL"
+                        : d.error === "invalid_pricing_url"
+                          ? "Pricing page must be a https:// URL"
+                          : d.error_description || d.error || "failed",
+                );
+            }
+            setLinksSaved(true);
+            await load();
+        } catch (e: any) {
+            setLinksErr(e?.message || "Could not save links");
+        } finally {
+            setLinksBusy(false);
+        }
+    };
+
+    const doDelete = async () => {
+        setDeleteBusy(true);
+        setDeleteErr("");
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}/delete`, {
+                method: "POST",
+                credentials: "include",
+            });
+            const d: any = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                throw new Error(d.error_description || d.error || "failed");
+            }
+            window.location.href = "/dashboard/products";
+        } catch (e: any) {
+            setDeleteErr(e?.message || "Could not delete product");
+            setDeleteBusy(false);
         }
     };
 
@@ -1383,6 +1448,90 @@ export default function ProductDetailPage() {
                 </Button>
             </Box>
 
+            {/* App links — homepage & pricing page (editable) */}
+            <GlassCard sx={{ mt: 2 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Links</Typography>
+                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem", mb: 2 }}>
+                    Your homepage and pricing page — shown to buyers and surfaced on this product.
+                </Typography>
+                <Stack spacing={1.6}>
+                    <Box>
+                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                            Homepage URL
+                        </Typography>
+                        <TextField
+                            value={homepageDraft}
+                            onChange={(e) => setHomepageDraft(e.target.value)}
+                            placeholder="https://yourapp.com"
+                            size="small"
+                            fullWidth
+                            sx={field}
+                        />
+                    </Box>
+                    <Box>
+                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                            Pricing page URL
+                        </Typography>
+                        <TextField
+                            value={pricingDraft}
+                            onChange={(e) => setPricingDraft(e.target.value)}
+                            placeholder="https://yourapp.com/pricing"
+                            size="small"
+                            fullWidth
+                            sx={field}
+                        />
+                    </Box>
+                </Stack>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 1.8 }}>
+                    <Button
+                        onClick={saveLinks}
+                        disabled={
+                            linksBusy ||
+                            (homepageDraft.trim() === (product.homepage_url || "") &&
+                                pricingDraft.trim() === (product.pricing_url || ""))
+                        }
+                        sx={{ textTransform: "none", fontWeight: 600, color: "#fff", px: 2.4, py: 0.9, borderRadius: "10px", background: "#7c5cff", "&:hover": { background: "#8a6dff" }, "&.Mui-disabled": { opacity: 0.5, color: "#fff" } }}
+                    >
+                        {linksBusy ? "Saving…" : "Save links"}
+                    </Button>
+                    {linksSaved && (
+                        <Typography sx={{ color: "#86efac", fontSize: "0.82rem" }}>Saved ✓</Typography>
+                    )}
+                    {linksErr && (
+                        <Typography sx={{ color: "#f87171", fontSize: "0.82rem" }}>{linksErr}</Typography>
+                    )}
+                </Stack>
+                <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.72rem", mt: 1 }}>
+                    Must be a <code>https://</code> URL. Leave blank to clear.
+                </Typography>
+            </GlassCard>
+
+            {/* Danger zone — permanent delete */}
+            <GlassCard sx={{ mt: 2, border: "1px solid rgba(239,68,68,0.3)" }}>
+                <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#f87171" }}>
+                    Danger zone
+                </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ mt: 1 }}>
+                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.85rem", maxWidth: 540 }}>
+                        Permanently delete this product and everything in it — all tiers, prices,
+                        webhook config, and API credentials. This <strong>cannot be undone</strong>.
+                        Prefer <strong>Archive</strong> if you might bring it back.
+                    </Typography>
+                    <Button
+                        onClick={() => {
+                            setDeleteErr("");
+                            setConfirmDelete(true);
+                        }}
+                        sx={{ textTransform: "none", fontWeight: 700, color: "#fff", whiteSpace: "nowrap", px: 2.4, py: 0.9, borderRadius: "10px", background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", "&:hover": { background: "linear-gradient(135deg, #f87171 0%, #ef4444 100%)" } }}
+                    >
+                        Delete product
+                    </Button>
+                </Stack>
+                {deleteErr && (
+                    <Typography sx={{ color: "#f87171", fontSize: "0.82rem", mt: 1.2 }}>{deleteErr}</Typography>
+                )}
+            </GlassCard>
+
             <ConfirmDialog
                 open={confirmArchive}
                 destructive
@@ -1447,6 +1596,24 @@ export default function ProductDetailPage() {
                     setChangeIdOpen(false);
                     setChangeIdErr("");
                 }}
+            />
+
+            <ConfirmDialog
+                open={confirmDelete}
+                destructive
+                busy={deleteBusy}
+                title="Permanently delete this product?"
+                confirmLabel="Delete forever"
+                message={
+                    <>
+                        This <strong>permanently deletes {product.app_name}</strong> and
+                        everything in it — all tiers, prices, webhook configuration, and
+                        API credentials. This <strong>cannot be undone</strong>. (Products
+                        with captured payments can't be deleted — archive those instead.)
+                    </>
+                }
+                onConfirm={doDelete}
+                onClose={() => setConfirmDelete(false)}
             />
         </Box>
     );
