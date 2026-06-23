@@ -34,3 +34,108 @@ Switch modes per price with the type field in your catalog JSON — no other cha
 ## Cancellation
 
 For autopay prices, buyers can self-serve cancel from your app — see Checkout sessions → Cancelling. Graceful by default: access continues through the paid period, then the entitlement expires and you get a final entitlement.updated with active: false.
+
+---
+
+# Integration contracts (verified against the live API)
+
+> These three contracts are what an integrator MUST get exactly right. The
+> server endpoints are authed with the app's API key (`Bearer <ELIXPO_PAY_API_KEY>`);
+> the inbound webhook is verified with the endpoint's signing secret
+> (`whsec_…` = `ELIXPO_PAY_WEBHOOK_SECRET`). The API key alone identifies the
+> app — you never pass an app id or price id in request bodies.
+
+## 1. Catalog sync — POST /v1/sync
+
+Push your code-defined catalog. Auth: `Bearer <ELIXPO_PAY_API_KEY>`.
+
+Body:
+{
+  "app": "<app-slug>",
+  "products": [
+    { "tier": "pro", "name": "Pro", "description": "…",
+      "prices": [
+        { "currency": "INR", "unit_amount": 29900, "type": "recurring",
+          "interval": "month", "interval_count": 1, "nickname": "pro_inr_monthly" }
+      ] }
+  ]
+}
+
+- Product is keyed by **`tier`** (`^[a-z0-9_]{2,32}$`) — NOT `id`. Missing `tier`
+  → `{ "error": "invalid_tier" }`.
+- Price fields: **`unit_amount`** (minor units — paise/cents), `type`
+  (`recurring` | `one_time`), `interval` (`day|week|month|year`),
+  `interval_count`. NOT `amount` / `interval_days`.
+- Prices reconcile by (currency, region, interval): matches update, new insert,
+  missing-from-payload deactivate.
+- Returns HTTP 200 with `{ ok, synced:[…], errors:[…] }`. **200 does NOT mean
+  success** — check `ok !== false` and `errors.length === 0`.
+- Changing a recurring price's `unit_amount`/`interval_count` re-mints the
+  Razorpay plan automatically (the immutable old plan is dropped).
+
+## 2. Checkout sessions — POST /v1/checkout/sessions
+
+Auth: `Bearer <ELIXPO_PAY_API_KEY>`. The price is resolved from
+**tier + currency + interval** — you do NOT pass a price id.
+
+Body:
+{
+  "tier": "pro",
+  "currency": "INR",
+  "interval": "month",            // 'month' | 'year' (NOT 'monthly'/'annual')
+  "customer": { "uid": "<your-user-id>", "email": "buyer@example.com" },
+  "return_url": "https://yourapp.com/after-checkout"
+}
+
+Returns HTTP 201 `{ id, url, amount, currency, tier, expires_at }`. Redirect the
+buyer to `url`. `customer.uid` is the id you'll receive back as `data.uid` in
+the webhook — use your own stable user id.
+
+## 3. Webhook delivery & signing (entitlement.updated)
+
+Elixpo Pay POSTs to your registered endpoint. **This scheme is NOT the Elixpo
+Mails `t=,v1=` scheme — do not confuse them.**
+
+Headers:
+  X-Elixpo-Pay-Event:     entitlement.updated
+  X-Elixpo-Pay-Timestamp: <unix_seconds>
+  X-Elixpo-Pay-Signature: sha256=<hex>[,sha256=<hex>]
+
+- Signed string is `${timestamp}.${rawBody}` (timestamp from the header, a
+  literal dot, then the exact raw body bytes).
+- HMAC-SHA256, **hex**, key = the endpoint signing secret (`whsec_…`). The
+  header is a **comma-separated list** of `sha256=…` during secret rotation —
+  accept if ANY matches. Reject timestamps outside ±5 minutes.
+
+Body envelope — entitlement fields are nested under **`data`**, and the event
+type field is **`type`** (NOT `event`):
+{
+  "id": "whd_…",                  // delivery id — use for idempotency
+  "type": "entitlement.updated",
+  "created": 1718500000,
+  "data": {
+    "app": "<app-slug>",
+    "uid": "<your-user-id>",      // matches checkout customer.uid
+    "tier": "pro",                // the tier name directly — not a product id
+    "active": true,
+    "status": "active",
+    "expires_at": "2026-07-23 19:53:23",   // "YYYY-MM-DD HH:MM:SS" UTC
+    "version": 1,
+    "provider_subscription_id": "sub_…"     // present on subscription events
+  }
+}
+
+Handling:
+- `active:true` + known paid `tier` → grant that tier, expiry = `expires_at`.
+- `active:false` (or unknown/cancelled-at-period-end) → drop to free.
+- Respond 2xx fast; non-2xx is recorded as a failed delivery and retried.
+- Dedupe on `data.version` (monotonic per entitlement) and/or the delivery `id`.
+
+Subscription lifecycle (all via entitlement.updated):
+- First charge / renewal → `{ active:true, status:"active" }`, new `expires_at`.
+- Buyer cancels → `{ active:true, status:"cancelled" }` fires **immediately**
+  (keeps access until `expires_at`) — **send the cancellation email here** —
+  then a second `{ active:false }` at period end → flip tier to free.
+- Mandate broken (UPI revoke / repeated card failure) → `{ status:"halted",
+  failed:true }`. Account deletion / app revoke → `{ status:"revoked",
+  active:false }`.
