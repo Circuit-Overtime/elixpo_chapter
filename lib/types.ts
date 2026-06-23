@@ -65,7 +65,13 @@ export interface User {
   is_active: number;
   created_at: string;
   updated_at: string;
+  // Billing state (migration 0003). Null until a paid subscription exists.
+  tier_expires_at?: string | null;
+  pay_subscription_id?: string | null;
+  billing_status?: BillingStatus;
 }
+
+export type BillingStatus = 'none' | 'active' | 'past_due' | 'canceled';
 
 export interface UrlRecord {
   id: number;

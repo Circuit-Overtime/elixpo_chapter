@@ -26,6 +26,13 @@ export function getEnv() {
     // verify the HMAC on /api/webhooks/elixpo. Must match the secret
     // configured on the accounts.elixpo side.
     ELIXPO_WEBHOOK_SECRET: (ctx as any).ELIXPO_WEBHOOK_SECRET || process.env.ELIXPO_WEBHOOK_SECRET || '',
+    // Elixpo Pay — subscriptions / autopay. OAuth secret creates checkout
+    // sessions + authorizes catalog sync; webhook secret verifies the
+    // inbound entitlement.updated signature (t=,v1= scheme).
+    ELIXPO_PAY_BASE_URL: (ctx as any).ELIXPO_PAY_BASE_URL || process.env.ELIXPO_PAY_BASE_URL || 'https://payouts.elixpo.com',
+    ELIXPO_PAY_APP_ID: (ctx as any).ELIXPO_PAY_APP_ID || process.env.ELIXPO_PAY_APP_ID || '',
+    ELIXPO_PAY_OAUTH_SECRET: (ctx as any).ELIXPO_PAY_OAUTH_SECRET || process.env.ELIXPO_PAY_OAUTH_SECRET || '',
+    ELIXPO_PAY_WEBHOOK_SECRET: (ctx as any).ELIXPO_PAY_WEBHOOK_SECRET || process.env.ELIXPO_PAY_WEBHOOK_SECRET || '',
   };
 }
 

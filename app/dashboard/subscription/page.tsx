@@ -21,7 +21,27 @@ function fmtRetention(days: number): string {
   return days >= 365 ? `${Math.round(days / 365)} year` : `${days} days`;
 }
 
-export default async function SubscriptionPage() {
+function fmtDate(iso?: string | null): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? '—'
+    : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  active: 'Active',
+  past_due: 'Payment overdue',
+  canceled: 'Canceled',
+  none: 'Active',
+};
+
+export default async function SubscriptionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ upgraded?: string }>;
+}) {
+  const { upgraded } = await searchParams;
   const user = (await getCurrentUser())!;
   const db = getDB();
   const limits = TIER_LIMITS[user.tier];
@@ -40,10 +60,11 @@ export default async function SubscriptionPage() {
   const isEnterprise = user.tier === 'enterprise';
   const isPaid = user.tier !== 'free' && !isEnterprise;
   const pricing = isEnterprise ? null : TIER_PRICING[user.tier as SellableTier];
-  // INR monthly is the headline figure for the current-plan card. Billing
-  // currency/interval/renewal land with the Elixpo Pay integration; until
-  // then we show the list price and a neutral status.
+  // INR monthly is the headline figure for the current-plan card.
   const headlineAmount = pricing ? pricing.price.INR.monthly : 0;
+  const billingStatus = user.billing_status ?? 'none';
+  const statusLabel = STATUS_LABEL[billingStatus] ?? 'Active';
+  const isCanceled = billingStatus === 'canceled';
 
   const usedUrls = urlCount?.count ?? 0;
   const usedKeys = keyCount?.count ?? 0;
@@ -60,6 +81,19 @@ export default async function SubscriptionPage() {
           Your current plan, usage, and billing.
         </p>
       </div>
+
+      {upgraded && (
+        <div
+          className="mb-6 p-4 rounded-xl flex items-center gap-3"
+          style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)' }}
+        >
+          <span className="w-2 h-2 rounded-full" style={{ background: '#6ee7b7' }} />
+          <div className="text-sm text-[#a7f3d0]">
+            Payment received — you&apos;re on <strong className="capitalize">{user.tier}</strong>. Your
+            new limits are active now.
+          </div>
+        </div>
+      )}
 
       {/* Current plan */}
       <div className="p-6 rounded-2xl mb-6" style={CARD_STYLE}>
@@ -91,30 +125,33 @@ export default async function SubscriptionPage() {
             </div>
           </div>
 
-          <span
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[0.75rem] font-semibold self-start sm:self-center"
-            style={{
-              background: 'rgba(52,211,153,0.12)',
-              color: '#6ee7b7',
-              border: '1px solid rgba(52,211,153,0.3)',
-            }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#6ee7b7' }} />
-            Active
-          </span>
+          {(() => {
+            const tone =
+              billingStatus === 'past_due'
+                ? { bg: 'rgba(251,191,36,0.12)', fg: '#fde68a', dot: '#fbbf24', bd: 'rgba(251,191,36,0.3)' }
+                : isCanceled
+                  ? { bg: 'rgba(248,113,113,0.12)', fg: '#fca5a5', dot: '#f87171', bd: 'rgba(248,113,113,0.3)' }
+                  : { bg: 'rgba(52,211,153,0.12)', fg: '#6ee7b7', dot: '#6ee7b7', bd: 'rgba(52,211,153,0.3)' };
+            return (
+              <span
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[0.75rem] font-semibold self-start sm:self-center"
+                style={{ background: tone.bg, color: tone.fg, border: `1px solid ${tone.bd}` }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: tone.dot }} />
+                {statusLabel}
+              </span>
+            );
+          })()}
         </div>
 
-        {/* Billing meta — populated once Elixpo Pay is wired. */}
+        {/* Billing meta — populated by the Elixpo Pay entitlement webhook. */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-white/8">
-          <Meta label="Status" value="Active" />
+          <Meta label="Status" value={statusLabel} />
           <Meta
-            label="Renews"
-            value={isPaid ? 'On autopay' : '—'}
+            label={isCanceled ? 'Access until' : 'Renews'}
+            value={isPaid ? fmtDate(user.tier_expires_at) : '—'}
           />
-          <Meta
-            label="Payment method"
-            value={isPaid ? 'UPI / Card mandate' : '—'}
-          />
+          <Meta label="Payment method" value={isPaid ? 'UPI / Card mandate' : '—'} />
         </div>
 
         {/* Actions */}
