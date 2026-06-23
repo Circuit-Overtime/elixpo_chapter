@@ -12,8 +12,10 @@ import StyledQr, { type StyledQrHandle } from './StyledQr';
 
 interface Props {
   shortUrl: string;
-  /** Reserved for future tier gating of the studio. Unused for now. */
-  canCustomize?: boolean;
+  /** Number of QR presets the tier unlocks (-1 = full catalog). */
+  presetLimit: number;
+  /** Whether the tier can add a custom logo to the QR. */
+  allowLogo: boolean;
 }
 
 const QR_DISPLAY = 220;
@@ -24,7 +26,7 @@ const QR_BACKBUFFER = 1024; // crisp downloads regardless of on-screen size
  * the lib touches the DOM and can't run on the edge) and opens a studio for
  * picking a style from the catalog and adding a logo by public URL.
  */
-export default function QrCard({ shortUrl }: Props) {
+export default function QrCard({ shortUrl, presetLimit, allowLogo }: Props) {
   const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID);
   const [logoUrl, setLogoUrl] = useState('');
   const [studioOpen, setStudioOpen] = useState(false);
@@ -153,6 +155,8 @@ export default function QrCard({ shortUrl }: Props) {
           onPresetChange={setPresetId}
           logoUrl={logoUrl}
           onLogoChange={setLogoUrl}
+          presetLimit={presetLimit}
+          allowLogo={allowLogo}
         />
       </Modal>
     </div>

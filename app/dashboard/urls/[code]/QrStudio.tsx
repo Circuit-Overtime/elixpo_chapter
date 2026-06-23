@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useRef, useState } from 'react';
 import {
   buildQrOptions,
@@ -15,6 +16,10 @@ interface Props {
   onPresetChange: (id: string) => void;
   logoUrl: string;
   onLogoChange: (url: string) => void;
+  /** Presets unlocked by the tier (-1 = all). */
+  presetLimit: number;
+  /** Whether the tier can add a logo. */
+  allowLogo: boolean;
 }
 
 const ACCENT = '#9b7bf7';
@@ -26,6 +31,8 @@ export default function QrStudio({
   onPresetChange,
   logoUrl,
   onLogoChange,
+  presetLimit,
+  allowLogo,
 }: Props) {
   const [logoDraft, setLogoDraft] = useState(logoUrl);
   const [error, setError] = useState<string | null>(null);
@@ -75,37 +82,54 @@ export default function QrStudio({
             <label className="text-[0.7rem] uppercase tracking-wider text-white/45 font-semibold">
               Logo image URL
             </label>
-            <div className="flex gap-2 mt-1.5">
-              <input
-                type="url"
-                inputMode="url"
-                placeholder="https://yoursite.com/logo.png"
-                value={logoDraft}
-                onChange={(e) => setLogoDraft(e.target.value)}
-                onBlur={applyLogo}
-                onKeyDown={(e) => e.key === 'Enter' && applyLogo()}
-                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm text-white bg-transparent outline-none"
-                style={{ border: '1px solid rgba(255,255,255,0.14)' }}
-              />
-              {logoUrl && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLogoDraft('');
-                    onLogoChange('');
-                    setError(null);
-                  }}
-                  className="px-3 py-2 rounded-lg text-sm text-white/70 cursor-pointer bg-transparent"
-                  style={{ border: '1px solid rgba(255,255,255,0.14)' }}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <p className="text-[0.72rem] text-white/40 mt-1.5 leading-relaxed">
-              Paste a public PNG URL — we don&apos;t host images. The QR always
-              exports as a vector SVG.
-            </p>
+            {allowLogo ? (
+              <>
+                <div className="flex gap-2 mt-1.5">
+                  <input
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://yoursite.com/logo.png"
+                    value={logoDraft}
+                    onChange={(e) => setLogoDraft(e.target.value)}
+                    onBlur={applyLogo}
+                    onKeyDown={(e) => e.key === 'Enter' && applyLogo()}
+                    className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm text-white bg-transparent outline-none"
+                    style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+                  />
+                  {logoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLogoDraft('');
+                        onLogoChange('');
+                        setError(null);
+                      }}
+                      className="px-3 py-2 rounded-lg text-sm text-white/70 cursor-pointer bg-transparent"
+                      style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <p className="text-[0.72rem] text-white/40 mt-1.5 leading-relaxed">
+                  Paste a public PNG URL — we don&apos;t host images. The QR always
+                  exports as a vector SVG.
+                </p>
+              </>
+            ) : (
+              <Link
+                href="/pricing"
+                className="mt-1.5 flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg no-underline group"
+                style={{ background: 'rgba(155,123,247,0.08)', border: '1px solid rgba(155,123,247,0.25)' }}
+              >
+                <span className="text-[0.8rem] text-white/75">
+                  🔒 Add your own logo with <strong className="text-white">Pro</strong>
+                </span>
+                <span className="text-[0.78rem] font-semibold" style={{ color: '#c8b6ff' }}>
+                  Upgrade →
+                </span>
+              </Link>
+            )}
           </div>
 
           {error && (
@@ -132,30 +156,51 @@ export default function QrStudio({
 
       {/* Style catalog */}
       <div>
-        <div className="text-[0.7rem] uppercase tracking-wider text-white/45 font-semibold mb-2.5">
-          Style
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="text-[0.7rem] uppercase tracking-wider text-white/45 font-semibold">
+            Style
+          </div>
+          {presetLimit !== -1 && (
+            <Link href="/pricing" className="text-[0.7rem] font-semibold no-underline" style={{ color: '#c8b6ff' }}>
+              Unlock all styles →
+            </Link>
+          )}
         </div>
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5">
-          {QR_PRESETS.map((p) => {
+          {QR_PRESETS.map((p, i) => {
+            const locked = presetLimit !== -1 && i >= presetLimit;
             const selected = p.id === presetId;
             return (
               <button
                 key={p.id}
                 type="button"
-                onClick={() => onPresetChange(p.id)}
-                title={p.name}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-xl cursor-pointer transition-all bg-transparent"
+                onClick={() =>
+                  locked
+                    ? setError('Upgrade to Pro to unlock the full style catalog.')
+                    : onPresetChange(p.id)
+                }
+                title={locked ? `${p.name} — Pro` : p.name}
+                aria-disabled={locked}
+                className="relative flex flex-col items-center gap-1.5 p-2 rounded-xl cursor-pointer transition-all bg-transparent"
                 style={{
-                  border: selected
-                    ? `1px solid ${ACCENT}`
-                    : '1px solid rgba(255,255,255,0.08)',
+                  border: selected ? `1px solid ${ACCENT}` : '1px solid rgba(255,255,255,0.08)',
                   background: selected ? 'rgba(155,123,247,0.1)' : 'transparent',
                 }}
               >
-                <ThumbQr preset={p} data={shortUrl} />
+                <div className="relative" style={{ opacity: locked ? 0.4 : 1 }}>
+                  <ThumbQr preset={p} data={shortUrl} />
+                  {locked && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="5" y="11" width="14" height="10" rx="2" />
+                        <path d="M8 11V7a4 4 0 018 0v4" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
                 <span
                   className="text-[0.62rem] font-medium truncate w-full text-center"
-                  style={{ color: selected ? '#c8b6ff' : 'rgba(255,255,255,0.6)' }}
+                  style={{ color: locked ? 'rgba(255,255,255,0.4)' : selected ? '#c8b6ff' : 'rgba(255,255,255,0.6)' }}
                 >
                   {p.name}
                 </span>
