@@ -16,6 +16,44 @@ export const TIER_LIMITS: Record<Tier, TierLimits> = {
   enterprise: { maxUrls: -1, maxApiKeys: 100, maxClicksRetention: 365, customCodes: true, analytics: true, expiringLinks: true },
 };
 
+// ── Commercial pricing ────────────────────────────────────────────────
+// Sellable self-serve tiers. `enterprise` is intentionally absent: it's a
+// "contact us" custom deal, not a priced card. Amounts are major units
+// (whole ₹ / $); annual = ~2 months free vs paying monthly. These mirror
+// the Elixpo Pay catalog price ids (one per tier × currency × interval).
+export type SellableTier = 'free' | 'pro' | 'business';
+export type BillingCurrency = 'INR' | 'USD';
+export type BillingInterval = 'monthly' | 'annual';
+
+export interface TierPricing {
+  name: string;
+  tagline: string;
+  /** Amount per currency × interval, in major units. */
+  price: Record<BillingCurrency, Record<BillingInterval, number>>;
+}
+
+export const CURRENCY_SYMBOL: Record<BillingCurrency, string> = { INR: '₹', USD: '$' };
+
+export const TIER_PRICING: Record<SellableTier, TierPricing> = {
+  free: {
+    name: 'Free',
+    tagline: 'For personal projects and trying things out.',
+    price: { INR: { monthly: 0, annual: 0 }, USD: { monthly: 0, annual: 0 } },
+  },
+  pro: {
+    name: 'Pro',
+    tagline: 'For makers shipping real apps.',
+    price: { INR: { monthly: 299, annual: 2990 }, USD: { monthly: 5, annual: 50 } },
+  },
+  business: {
+    name: 'Business',
+    tagline: 'For teams that need headroom and longer history.',
+    price: { INR: { monthly: 999, annual: 9990 }, USD: { monthly: 15, annual: 150 } },
+  },
+};
+
+export const SELLABLE_TIER_ORDER: SellableTier[] = ['free', 'pro', 'business'];
+
 export interface User {
   id: number;
   elixpo_id: string;
