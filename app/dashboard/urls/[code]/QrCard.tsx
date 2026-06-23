@@ -103,7 +103,7 @@ export default function QrCard({ shortUrl }: Props) {
         <div className="flex flex-col gap-2 w-full">
           <button
             type="button"
-            onClick={() => qrRef.current?.download('png')}
+            onClick={() => qrRef.current?.download()}
             className="inline-flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all cursor-pointer border-none"
             style={{
               background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
@@ -115,7 +115,7 @@ export default function QrCard({ shortUrl }: Props) {
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Download PNG
+            Download SVG
           </button>
 
           <button

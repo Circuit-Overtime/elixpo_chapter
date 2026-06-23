@@ -10,7 +10,8 @@ import type { CSSProperties } from 'react';
 import type { Options } from 'qr-code-styling';
 
 export interface StyledQrHandle {
-  download: (extension: 'png' | 'svg') => Promise<void>;
+  /** QR is always exported as SVG (vector). */
+  download: () => Promise<void>;
 }
 
 interface Props {
@@ -47,8 +48,8 @@ const StyledQr = forwardRef<StyledQrHandle, Props>(function StyledQr(
         qrRef.current = new QRCodeStyling(options);
         container.innerHTML = '';
         qrRef.current.append(container);
-        // Force the appended canvas to fill the (smaller) display box.
-        const el = container.querySelector('canvas') as HTMLCanvasElement | null;
+        // Force the appended node (svg) to fill the (smaller) display box.
+        const el = container.querySelector('svg, canvas') as HTMLElement | null;
         if (el) {
           el.style.width = '100%';
           el.style.height = '100%';
@@ -71,16 +72,12 @@ const StyledQr = forwardRef<StyledQrHandle, Props>(function StyledQr(
   useImperativeHandle(
     ref,
     () => ({
-      download: async (extension) => {
+      download: async () => {
         if (!qrRef.current) return;
         try {
-          await Promise.resolve(qrRef.current.download({ name: filename, extension }));
+          await Promise.resolve(qrRef.current.download({ name: filename, extension: 'svg' }));
         } catch {
-          // Most common cause: the logo URL's host didn't send CORS headers,
-          // which taints the canvas and blocks export.
-          onError?.(
-            'Export failed — the logo image must be hosted with CORS enabled (Access-Control-Allow-Origin).',
-          );
+          onError?.('SVG export failed — check the logo image URL is reachable.');
         }
       },
     }),

@@ -27,7 +27,22 @@ async function main(): Promise<void> {
 
   const text = await res.text();
   if (!res.ok) {
-    console.error(`Catalog sync failed (${res.status}): ${text}`);
+    console.error(`Catalog sync failed (HTTP ${res.status}): ${text}`);
+    process.exit(1);
+  }
+
+  // /v1/sync returns 200 even on a per-product validation failure, with
+  // ok:false + errors[]. Treat that as a hard failure so the job doesn't
+  // green-check a no-op sync.
+  let payload: { ok?: boolean; synced?: unknown[]; errors?: unknown[] } = {};
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    console.error(`Catalog sync: unparseable response: ${text}`);
+    process.exit(1);
+  }
+  if (payload.ok === false || (payload.errors && payload.errors.length > 0)) {
+    console.error(`Catalog sync rejected: ${text}`);
     process.exit(1);
   }
 

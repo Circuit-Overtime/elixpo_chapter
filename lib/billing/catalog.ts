@@ -31,23 +31,30 @@ export function priceId(
   return `${tier}_${currency.toLowerCase()}_${interval}`;
 }
 
-export function intervalDays(interval: BillingInterval): number {
-  return interval === 'monthly' ? 30 : 365;
+/** Pay stores interval as ('month'|'year', count) — not a day count. */
+function intervalSpec(interval: BillingInterval): { interval: 'month' | 'year'; interval_count: number } {
+  return interval === 'monthly'
+    ? { interval: 'month', interval_count: 1 }
+    : { interval: 'year', interval_count: 1 };
 }
 
+// Shapes mirror the elixpo_pay `products` / `prices` columns that /v1/sync
+// maps onto: product.tier (required), price.unit_amount (minor units),
+// price.interval + interval_count. `nickname` is our deterministic lookup
+// label (also what checkout references).
 export interface CatalogPrice {
-  id: string;
   currency: BillingCurrency;
-  /** Minor units (paise / cents). */
-  amount: number;
-  /** All paid tiers bill on autopay. */
+  unit_amount: number;
   type: 'recurring';
-  interval_days: number;
+  interval: 'month' | 'year';
+  interval_count: number;
+  nickname: string;
 }
 
 export interface CatalogProduct {
-  id: SellableTier;
+  tier: SellableTier;
   name: string;
+  description?: string;
   prices: CatalogPrice[];
 }
 
@@ -57,21 +64,21 @@ export interface Catalog {
 }
 
 /**
- * Build the full catalog payload — i.e. the contents of payouts.catalog.json
- * that get POSTed to Elixpo Pay's /v1/sync. `app` defaults to PAY_APP but the
- * sync script passes ELIXPO_PAY_APP_ID so the body matches the configured app.
+ * Build the full catalog payload POSTed to Elixpo Pay's /v1/sync. `app` is the
+ * app slug (ELIXPO_PAY_APP_ID); products are keyed by `tier`.
  */
 export function buildCatalog(app: string = PAY_APP): Catalog {
   const products: CatalogProduct[] = PAID_TIERS.map((tier) => ({
-    id: tier,
+    tier,
     name: TIER_PRICING[tier].name,
+    description: TIER_PRICING[tier].tagline,
     prices: CURRENCIES.flatMap((currency) =>
       INTERVALS.map((interval) => ({
-        id: priceId(tier, currency, interval),
         currency,
-        amount: TIER_PRICING[tier].price[currency][interval] * 100,
+        unit_amount: TIER_PRICING[tier].price[currency][interval] * 100,
         type: 'recurring' as const,
-        interval_days: intervalDays(interval),
+        ...intervalSpec(interval),
+        nickname: priceId(tier, currency, interval),
       })),
     ),
   }));

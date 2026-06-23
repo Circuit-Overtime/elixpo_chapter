@@ -151,7 +151,7 @@ export function buildQrOptions(
   return {
     width: size,
     height: size,
-    type: 'canvas',
+    type: 'svg', // QR is always vector — render + export as SVG
     data,
     image: image || undefined,
     margin: 8,
