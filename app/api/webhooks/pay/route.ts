@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getDB, getEnv, getKV } from '@/lib/db';
+import { triggerMail } from '@/lib/mails';
 import type { BillingStatus, Tier } from '@/lib/types';
 
 export const runtime = 'edge';
@@ -76,11 +77,72 @@ export async function POST(request: NextRequest) {
 
   try {
     await applyEntitlement(data);
+    // Lifecycle email — best-effort, never blocks (or fails) the 2xx ack.
+    await sendLifecycleMail(data).catch((e) => console.error('[webhook:pay] mail', e));
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[webhook:pay] handler error', err);
     return NextResponse.json({ error: 'handler failed' }, { status: 500 });
   }
+}
+
+// ─── Lifecycle email ────────────────────────────────────────────────
+
+/**
+ * Trigger the matching transactional email for this entitlement event:
+ *   active + status 'active'    → receipt (grant / renewal)
+ *   status 'cancelled'          → cancellation (access continues to expiry)
+ *   status 'halted' / failed    → payment failed (mandate broken)
+ * No-op if Mails isn't configured or the user has no email on file.
+ */
+async function sendLifecycleMail(data: EntitlementData): Promise<void> {
+  const env = getEnv();
+  if (!env.ELIXPO_MAILS_SECRET || !data.uid) return;
+
+  const user = await getDB()
+    .prepare('SELECT email, display_name FROM users WHERE elixpo_id = ?')
+    .bind(data.uid)
+    .first<{ email: string; display_name: string }>();
+  if (!user?.email) return;
+
+  const name = user.display_name || 'there';
+  const tier = String(data.tier || '');
+  const status = (data.status || '').toLowerCase();
+  const expiry = formatDate(data.expires_at);
+  // Dedupe per entitlement state so a redelivery can't double-send.
+  const idem = `${data.uid}:${data.version ?? 0}:${status || (data.active ? 'active' : 'inactive')}`;
+
+  if (status === 'cancelled' || status === 'canceled') {
+    await triggerMail({
+      endpointKey: env.ELIXPO_MAILS_HOOK_CANCELED,
+      to: user.email,
+      variables: { name, tier, access_until: expiry },
+      idempotencyKey: idem,
+    });
+  } else if (status === 'halted' || data.failed === true) {
+    await triggerMail({
+      endpointKey: env.ELIXPO_MAILS_HOOK_PAYMENT_FAILED,
+      to: user.email,
+      variables: { name, tier, update_url: 'https://lixrl.com/dashboard/subscription' },
+      idempotencyKey: idem,
+    });
+  } else if (data.active === true && (status === 'active' || status === '')) {
+    await triggerMail({
+      endpointKey: env.ELIXPO_MAILS_HOOK_RECEIPT,
+      to: user.email,
+      variables: { name, tier, next_renewal: expiry },
+      idempotencyKey: idem,
+    });
+  }
+}
+
+/** "Jul 23, 2026" from Pay's "YYYY-MM-DD HH:MM:SS" (UTC) or a unix seconds value. */
+function formatDate(v?: string | number | null): string {
+  if (v == null) return '';
+  const d = typeof v === 'number' ? new Date(v * 1000) : new Date(`${v}`.replace(' ', 'T') + 'Z');
+  if (Number.isNaN(d.getTime())) return '';
+  const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${m[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
 // ─── Apply the entitlement to our user row ──────────────────────────
@@ -145,6 +207,8 @@ interface EntitlementData {
   tier?: string;
   active?: boolean;
   status?: string;
+  failed?: boolean;
+  version?: number;
   expires_at?: string | number;
   provider_subscription_id?: string;
   subscription_id?: string;
