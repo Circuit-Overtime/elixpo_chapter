@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveUser } from '@/lib/auth';
 import { getEnv, getOrigin } from '@/lib/db';
-import { priceId } from '@/lib/billing/catalog';
 import {
   type BillingCurrency,
   type BillingInterval,
@@ -30,7 +29,9 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const env = getEnv();
-  if (!env.ELIXPO_PAY_API_KEY || !env.ELIXPO_PAY_APP_ID) {
+  // The API key alone identifies the app to Pay; app id isn't needed in the
+  // request body. Only the key gates "configured".
+  if (!env.ELIXPO_PAY_API_KEY) {
     return NextResponse.json({ error: 'Billing is not configured yet.' }, { status: 503 });
   }
 
@@ -60,13 +61,14 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${env.ELIXPO_PAY_API_KEY}`,
       },
+      // Pay resolves the price from tier + currency + interval against the
+      // synced catalog. interval maps monthly→month, annual→year.
       body: JSON.stringify({
-        app: env.ELIXPO_PAY_APP_ID,
-        price: priceId(tier, currency, interval),
-        uid: user.elixpo_id,
-        customer_email: user.email,
-        success_url: `${origin}/dashboard/subscription?upgraded=1`,
-        cancel_url: `${origin}/pricing`,
+        tier,
+        currency,
+        interval: interval === 'monthly' ? 'month' : 'year',
+        customer: { uid: user.elixpo_id, email: user.email },
+        return_url: `${origin}/dashboard/subscription?upgraded=1`,
       }),
     });
   } catch {

@@ -502,7 +502,11 @@ export default async function UrlDetailPage({
             </div>
           )}
         </div>
-        <QrCard shortUrl={shortUrl} canCustomize={limits.analytics} />
+        <QrCard
+          shortUrl={shortUrl}
+          presetLimit={limits.qrPresets}
+          allowLogo={limits.qrLogo}
+        />
       </div>
 
       {/* Country / Browser / Device breakdowns — Pro+ only */}

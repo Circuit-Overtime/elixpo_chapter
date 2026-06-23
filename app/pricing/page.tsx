@@ -141,8 +141,8 @@ export default function PricingPage() {
             Simple pricing that <span style={{ color: ACCENT }}>scales with you.</span>
           </h1>
           <p className="text-base md:text-[1.1rem] text-white/65 max-w-[620px] leading-relaxed">
-            Start free, no card required. Upgrade when you need more links,
-            longer analytics, or branded domains.
+            Start free, no credit card. Scale to custom slugs, branded domains,
+            team seats, and a full year of analytics when you&apos;re ready.
           </p>
 
           {/* Toggles: currency + billing interval */}
@@ -155,14 +155,34 @@ export default function PricingPage() {
               value={currency}
               onChange={(v) => setCurrency(v as BillingCurrency)}
             />
-            <Toggle
-              options={[
-                { value: 'monthly', label: 'Monthly' },
-                { value: 'annual', label: 'Annual · 2 mo free' },
-              ]}
-              value={interval}
-              onChange={(v) => setInterval(v as BillingInterval)}
-            />
+            <div className="flex items-center gap-2">
+              <Toggle
+                options={[
+                  { value: 'monthly', label: 'Monthly' },
+                  { value: 'annual', label: 'Annual' },
+                ]}
+                value={interval}
+                onChange={(v) => setInterval(v as BillingInterval)}
+              />
+              <span
+                className="text-[0.7rem] font-bold px-2 py-1 rounded-full whitespace-nowrap"
+                style={{ background: 'rgba(52,211,153,0.14)', color: '#6ee7b7', border: '1px solid rgba(52,211,153,0.3)' }}
+              >
+                2 months free
+              </span>
+            </div>
+          </div>
+
+          {/* Trust strip — lowers purchase anxiety */}
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.78rem] text-white/55 pt-1">
+            {['No card on Free', 'Cancel anytime', 'Secure UPI / card autopay'].map((t) => (
+              <span key={t} className="inline-flex items-center gap-1.5">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                {t}
+              </span>
+            ))}
           </div>
         </section>
 
@@ -219,12 +239,20 @@ export default function PricingPage() {
                     </span>
                   )}
                 </div>
-                <div className="text-[0.72rem] text-white/40 mb-5 h-4">
-                  {amount > 0 && interval === 'annual'
-                    ? `Billed yearly · ${CURRENCY_SYMBOL[currency]}${Math.round(amount / 12).toLocaleString()}/mo`
-                    : amount > 0
-                      ? 'Billed monthly · autopay'
-                      : 'Free forever'}
+                <div className="text-[0.72rem] mb-5 h-4 flex items-center gap-2">
+                  <span className="text-white/40">
+                    {amount > 0 && interval === 'annual'
+                      ? `${CURRENCY_SYMBOL[currency]}${Math.round(amount / 12).toLocaleString()}/mo, billed yearly`
+                      : amount > 0
+                        ? 'Billed monthly · autopay'
+                        : 'Free forever'}
+                  </span>
+                  {amount > 0 && interval === 'annual' && (
+                    <span className="font-semibold" style={{ color: '#6ee7b7' }}>
+                      save {CURRENCY_SYMBOL[currency]}
+                      {(p.price[currency].monthly * 12 - amount).toLocaleString()}
+                    </span>
+                  )}
                 </div>
 
                 <CtaButton
@@ -250,27 +278,68 @@ export default function PricingPage() {
           })}
         </section>
 
-        {/* Enterprise — non-priced contact card */}
-        <section
-          className="mt-8 p-6 md:p-7 rounded-[18px] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}
-        >
-          <div>
-            <h3 className="text-[1.05rem] font-bold text-white">Enterprise</h3>
-            <p className="text-[0.88rem] text-white/60 mt-1">
-              Custom limits, SLA + support, SSO, and invoicing. Built around your team.
-            </p>
-          </div>
-          <a
-            href="mailto:hello@elixpo.com?subject=ElixpoURL%20Enterprise"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-[12px] font-semibold text-sm text-white/90 no-underline whitespace-nowrap transition-all"
-            style={{ border: '1px solid rgba(255,255,255,0.16)' }}
+        {/* Enterprise — non-priced 16:9 card to balance the layout */}
+        <section className="mt-10">
+          <div
+            className="relative mx-auto w-full max-w-3xl rounded-[22px] overflow-hidden flex items-center justify-center text-center px-6 py-8"
+            style={{
+              aspectRatio: '16 / 9',
+              background:
+                'radial-gradient(120% 120% at 50% 0%, rgba(155,123,247,0.18) 0%, rgba(95,182,255,0.06) 40%, rgba(255,255,255,0.02) 100%)',
+              border: '1px solid rgba(155,123,247,0.28)',
+            }}
           >
-            Contact sales
-          </a>
+            {/* soft glow accent */}
+            <div
+              className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full"
+              style={{ background: 'radial-gradient(circle, rgba(155,123,247,0.22) 0%, transparent 65%)' }}
+            />
+            <div className="relative z-10 flex flex-col items-center gap-4 max-w-[560px]">
+              <span
+                className="text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1 rounded-full"
+                style={{ background: 'rgba(155,123,247,0.16)', color: '#c8b6ff', border: '1px solid rgba(155,123,247,0.35)' }}
+              >
+                Enterprise
+              </span>
+              <h3
+                className="text-[1.5rem] md:text-[1.9rem] font-extrabold leading-tight"
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 0%, #c8c4d8 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Built around your organization
+              </h3>
+
+              {/* Short perks */}
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+                {[
+                  'Unlimited links & domains',
+                  'SSO / SAML + SCIM',
+                  'Dedicated support & SLA',
+                  'Audit logs & invoicing',
+                  'Custom seats & limits',
+                ].map((perk) => (
+                  <span key={perk} className="inline-flex items-center gap-1.5 text-[0.82rem] text-white/75">
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ACCENT }} />
+                    {perk}
+                  </span>
+                ))}
+              </div>
+
+              <a
+                href="mailto:hello@elixpo.com?subject=ElixpoURL%20Enterprise"
+                className="mt-1 inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-[12px] font-semibold text-sm text-white no-underline transition-all"
+                style={{
+                  background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                  boxShadow: '0 8px 24px rgba(155,123,247,0.35)',
+                }}
+              >
+                Contact team
+              </a>
+            </div>
+          </div>
         </section>
       </main>
 
