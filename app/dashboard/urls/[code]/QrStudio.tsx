@@ -47,9 +47,9 @@ export default function QrStudio({
     onLogoChange(v);
   };
 
-  const download = async (ext: 'png' | 'svg') => {
+  const download = async () => {
     setError(null);
-    await qrRef.current?.download(ext);
+    await qrRef.current?.download();
   };
 
   return (
@@ -103,9 +103,8 @@ export default function QrStudio({
               )}
             </div>
             <p className="text-[0.72rem] text-white/40 mt-1.5 leading-relaxed">
-              Paste a public PNG URL — we don&apos;t host images. The host must
-              send CORS headers (Access-Control-Allow-Origin) or PNG export
-              will fail. SVG export always works.
+              Paste a public PNG URL — we don&apos;t host images. The QR always
+              exports as a vector SVG.
             </p>
           </div>
 
@@ -121,17 +120,9 @@ export default function QrStudio({
           <div className="flex gap-2 mt-auto">
             <button
               type="button"
-              onClick={() => download('png')}
+              onClick={download}
               className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white cursor-pointer border-none"
               style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)', boxShadow: '0 4px 14px rgba(155,123,247,0.35)' }}
-            >
-              Download PNG
-            </button>
-            <button
-              type="button"
-              onClick={() => download('svg')}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white/85 cursor-pointer"
-              style={{ border: '1px solid rgba(255,255,255,0.16)', background: 'transparent' }}
             >
               Download SVG
             </button>
