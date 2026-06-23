@@ -351,11 +351,6 @@ export default function ProductDetail({ id }: { id: string }) {
                     <Box>
                         <FieldLabel>Shared secret</FieldLabel>
                         <Stack direction="row" spacing={1} alignItems="center">
-                            <Chip
-                                label={product.has_secret ? "Secret set" : "No secret"}
-                                size="small"
-                                sx={{ height: 30, borderRadius: "10px", fontSize: "0.8rem", color: product.has_secret ? "#86efac" : "rgba(245,245,244,0.6)", bgcolor: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}` }}
-                            />
                             <Button onClick={rotateSecret} startIcon={<AutorenewIcon sx={{ fontSize: "1rem !important" }} />} sx={{ ...GHOST_BTN, py: 0.7 }}>
                                 Rotate
                             </Button>
@@ -953,7 +948,27 @@ function CreateWebhookDialog({
 }) {
     const [templateId, setTemplateId] = useState("");
     const [name, setName] = useState("");
+    const [query, setQuery] = useState("");
     const [busy, setBusy] = useState(false);
+    const [counts, setCounts] = useState<Record<string, number>>({});
+
+    // How many webhooks already point at each template (across all products).
+    useEffect(() => {
+        fetch("/api/webhooks")
+            .then((r) => r.json())
+            .then((d: any) => {
+                if (!d?.ok || !Array.isArray(d.webhooks)) return;
+                const c: Record<string, number> = {};
+                for (const w of d.webhooks) c[w.template_id] = (c[w.template_id] || 0) + 1;
+                setCounts(c);
+            })
+            .catch(() => {});
+    }, []);
+
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? templates.filter((t) => t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q))
+        : templates;
 
     async function create() {
         if (!templateId || !name.trim()) return;
@@ -962,7 +977,7 @@ function CreateWebhookDialog({
             const r = await fetch("/api/webhooks", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ templateId, name: name.trim() }),
+                body: JSON.stringify({ templateId, name: name.trim(), productId }),
             });
             const d: any = await r.json().catch(() => ({}));
             if (r.ok && d?.ok) onCreated();
@@ -979,11 +994,60 @@ function CreateWebhookDialog({
                 <Stack spacing={2} sx={{ mt: 0.5 }}>
                     <Box>
                         <FieldLabel>Template (required)</FieldLabel>
-                        <Select value={templateId} onChange={(e) => setTemplateId(e.target.value)} fullWidth size="small" displayEmpty renderValue={(v) => (v ? templates.find((t) => t.id === v)?.name ?? "Unknown" : "Choose a template")} sx={selectSx} MenuProps={menuProps}>
-                            {templates.map((t) => (
-                                <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
-                            ))}
-                        </Select>
+                        <TextField
+                            autoFocus
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search templates…"
+                            fullWidth
+                            size="small"
+                            sx={{ ...darkField, mb: 1 }}
+                        />
+                        <Box sx={{ maxHeight: 230, overflowY: "auto", borderRadius: "10px", border: `1px solid ${BORDER}` }}>
+                            {filtered.length === 0 ? (
+                                <Typography sx={{ color: TEXT_55, fontSize: "0.85rem", p: 1.6, textAlign: "center" }}>
+                                    {templates.length === 0 ? "No templates yet." : "No templates match."}
+                                </Typography>
+                            ) : (
+                                filtered.map((t) => {
+                                    const n = counts[t.id] || 0;
+                                    const active = t.id === templateId;
+                                    return (
+                                        <Box
+                                            key={t.id}
+                                            onClick={() => setTemplateId(t.id)}
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                                gap: 1,
+                                                px: 1.4,
+                                                py: 1,
+                                                cursor: "pointer",
+                                                borderBottom: `1px solid ${BORDER}`,
+                                                background: active ? "rgba(155,123,247,0.14)" : "transparent",
+                                                "&:hover": { background: active ? "rgba(155,123,247,0.16)" : "rgba(255,255,255,0.03)" },
+                                                "&:last-of-type": { borderBottom: "none" },
+                                            }}
+                                        >
+                                            <Box sx={{ minWidth: 0 }}>
+                                                <Typography sx={{ color: TEXT, fontSize: "0.88rem", fontWeight: active ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                    {t.name}
+                                                </Typography>
+                                                <Typography sx={{ color: TEXT_55, fontSize: "0.74rem", fontFamily: "var(--font-geist-mono)" }}>
+                                                    {t.slug}
+                                                </Typography>
+                                            </Box>
+                                            <Chip
+                                                label={`${n} webhook${n === 1 ? "" : "s"}`}
+                                                size="small"
+                                                sx={{ flexShrink: 0, height: 20, fontSize: "0.66rem", color: n ? "#c4b5fd" : TEXT_55, bgcolor: n ? "rgba(155,123,247,0.12)" : "rgba(255,255,255,0.05)", border: `1px solid ${n ? "rgba(155,123,247,0.3)" : BORDER}` }}
+                                            />
+                                        </Box>
+                                    );
+                                })
+                            )}
+                        </Box>
                     </Box>
                     <Box>
                         <FieldLabel>Event name (required)</FieldLabel>

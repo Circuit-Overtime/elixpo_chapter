@@ -62,11 +62,12 @@ export async function POST(request: NextRequest) {
         );
     }
 
+    const productId = typeof body?.productId === "string" ? body.productId : undefined;
     const db = await getDatabase();
-    const row = await createWebhook(db, session.tenantId, templateId, name);
+    const row = await createWebhook(db, session.tenantId, templateId, name, productId);
     if (!row) {
         return NextResponse.json(
-            { error: "invalid_template", message: "That template doesn't exist." },
+            { error: "invalid_target", message: "That template or product doesn't exist." },
             { status: 400 },
         );
     }

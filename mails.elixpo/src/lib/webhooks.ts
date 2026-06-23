@@ -11,6 +11,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { base64url } from "./crypto";
 import { newId } from "./ids";
+import { getProduct } from "./products";
 import { getTemplate } from "./templates";
 
 export interface WebhookRow {
@@ -83,7 +84,7 @@ export async function listWebhooks(db: D1Database, tenantId: string): Promise<We
              JOIN templates t ON t.id = w.template_id
              JOIN products p ON p.id = w.product_id
              WHERE w.tenant_id = ?
-             ORDER BY w.created_at DESC`,
+             ORDER BY w.created_at ASC`,
         )
         .bind(tenantId)
         .all();
@@ -108,7 +109,7 @@ export async function listWebhooksByProduct(
              JOIN templates t ON t.id = w.template_id
              JOIN products p ON p.id = w.product_id
              WHERE w.tenant_id = ? AND w.product_id = ?
-             ORDER BY w.created_at DESC`,
+             ORDER BY w.created_at ASC`,
         )
         .bind(tenantId, productId)
         .all();
@@ -156,15 +157,28 @@ export async function getWebhookByEndpointKey(
         .first()) as WebhookRow | null;
 }
 
-/** Create a webhook for a template; inherits the template's product. */
+/**
+ * Create a webhook that attaches a template to a product. The product is the one
+ * the webhook is created UNDER (so a template can be wired to many products via
+ * many webhooks) — NOT the template's home product. Falls back to the template's
+ * home product only when no productId is supplied.
+ */
 export async function createWebhook(
     db: D1Database,
     tenantId: string,
     templateId: string,
     name: string,
+    productId?: string | null,
 ): Promise<WebhookRow | null> {
     const template = await getTemplate(db, tenantId, templateId);
     if (!template) return null;
+
+    let pid = template.product_id;
+    if (productId) {
+        const product = await getProduct(db, tenantId, productId);
+        if (!product) return null; // chosen product doesn't exist / not owned
+        pid = product.id;
+    }
 
     const id = newId("webhook");
     const endpointKey = await uniqueEndpointKey(db);
@@ -172,9 +186,23 @@ export async function createWebhook(
         .prepare(
             "INSERT INTO webhooks (id, tenant_id, product_id, template_id, name, endpoint_key) VALUES (?, ?, ?, ?, ?, ?)",
         )
-        .bind(id, tenantId, template.product_id, templateId, name.trim() || "Untitled event", endpointKey)
+        .bind(id, tenantId, pid, templateId, name.trim() || "Untitled event", endpointKey)
         .run();
     return getWebhook(db, tenantId, id);
+}
+
+/** Count of webhooks per template for the tenant (template_id → count). */
+export async function webhookCountsByTemplate(
+    db: D1Database,
+    tenantId: string,
+): Promise<Record<string, number>> {
+    const res = await db
+        .prepare("SELECT template_id, COUNT(*) AS n FROM webhooks WHERE tenant_id = ? GROUP BY template_id")
+        .bind(tenantId)
+        .all();
+    const out: Record<string, number> = {};
+    for (const r of (res.results || []) as any[]) out[r.template_id] = Number(r.n) || 0;
+    return out;
 }
 
 export interface WebhookUpdate {
