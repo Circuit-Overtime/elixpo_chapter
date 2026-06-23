@@ -40,7 +40,7 @@ const FEATURES = [
   },
   {
     title: 'Custom slugs & branded links',
-    body: 'Pick the slug yourself or let us generate one. Branded domains coming on the Growth tier so your links wear your name.',
+    body: 'Pick the slug yourself or let us generate one. Branded domains on Pro and Business so your links wear your name.',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
