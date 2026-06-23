@@ -61,7 +61,7 @@ export default function QuickstartPage() {
         with your destination URL and (optionally) a custom slug.
       </p>
       <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl -X POST https://url.elixpo.com/api/urls \\
+        <code>{`curl -X POST https://lixrl.com/api/urls \\
   -H "Authorization: Bearer elu_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -73,7 +73,7 @@ export default function QuickstartPage() {
       <p className={P}>You&apos;ll get back the resolved short link:</p>
       <pre className={PRE} style={PRE_STYLE}>
         <code>{`{
-  "short_url": "https://url.elixpo.com/launch",
+  "short_url": "https://lixrl.com/launch",
   "short_code": "launch",
   "original_url": "https://example.com/your-long-url",
   "title": "Launch announcement",

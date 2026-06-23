@@ -39,5 +39,5 @@ export function getEnv() {
 /** Derive the origin from a request URL (works for both localhost and production) */
 export function getOrigin(requestUrl: string): string {
   const { origin } = new URL(requestUrl);
-  return origin; // e.g. http://localhost:3000 or https://url.elixpo.com
+  return origin; // e.g. http://localhost:3000 or https://lixrl.com
 }

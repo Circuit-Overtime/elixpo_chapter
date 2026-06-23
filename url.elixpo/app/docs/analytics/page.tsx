@@ -27,7 +27,7 @@ export default function AnalyticsPage() {
         </code>
       </p>
       <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl https://url.elixpo.com/api/urls/my-link/analytics?days=30 \\
+        <code>{`curl https://lixrl.com/api/urls/my-link/analytics?days=30 \\
   -H "Authorization: Bearer elu_YOUR_KEY"`}</code>
       </pre>
 
