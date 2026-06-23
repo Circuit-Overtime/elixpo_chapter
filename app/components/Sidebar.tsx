@@ -75,6 +75,28 @@ const Icons = {
       <path d="M6 8l4 4 4-4" />
     </svg>
   ),
+  billing: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <rect x="2" y="4.5" width="16" height="11" rx="2" />
+      <path d="M2 8h16M5 12.5h3" />
+    </svg>
+  ),
+  sparkle: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M10 2.5l1.6 4.3 4.4 1.7-4.4 1.7L10 14.5l-1.6-4.3L4 8.5l4.4-1.7L10 2.5z" />
+    </svg>
+  ),
+  docs: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M5 3h8a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
+      <path d="M6 7h6M6 10h6M6 13h4" />
+    </svg>
+  ),
+  shield: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M10 2.5l6 2.2v4.3c0 4-2.7 6.6-6 8-3.3-1.4-6-4-6-8V4.7l6-2.2z" />
+    </svg>
+  ),
 };
 
 const navItems = [
@@ -84,8 +106,15 @@ const navItems = [
 ];
 
 const accountItems = [
+  { href: '/dashboard/subscription', label: 'Subscription & billing', icon: Icons.billing },
   { href: '/profile', label: 'Profile', icon: Icons.user },
   { href: '/profile/keys', label: 'API Keys', icon: Icons.key },
+];
+
+// Secondary links shown lower in the dropdown.
+const resourceItems = [
+  { href: '/pricing', label: 'Plans & pricing', icon: Icons.sparkle },
+  { href: '/docs', label: 'Docs', icon: Icons.docs },
 ];
 
 // Marketing-surface links next to the brand. Icon + label.
@@ -214,14 +243,42 @@ export default function Sidebar({ user }: { user: User }) {
         {/* Dropdown */}
         {accountOpen && (
           <div
-            className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border-light overflow-hidden shadow-xl z-50"
+            className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border-light overflow-hidden shadow-xl z-50"
             style={{ background: 'rgba(16, 18, 28, 0.97)', backdropFilter: 'blur(20px)' }}
           >
-            {/* User info */}
+            {/* User info + current tier */}
             <div className="px-4 py-3 border-b border-border-light">
-              <div className="text-sm font-medium text-text-primary truncate">{user.display_name}</div>
-              <div className="text-[0.65rem] text-text-secondary truncate">{user.email}</div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-medium text-text-primary truncate">{user.display_name}</div>
+                <span
+                  className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[0.6rem] font-bold uppercase tracking-wider"
+                  style={{
+                    background: 'rgba(155,123,247,0.18)',
+                    color: '#c8b6ff',
+                    border: '1px solid rgba(155,123,247,0.4)',
+                  }}
+                >
+                  {user.tier}
+                </span>
+              </div>
+              <div className="text-[0.65rem] text-text-secondary truncate mt-0.5">{user.email}</div>
             </div>
+
+            {/* Upgrade CTA — only when there's headroom to sell into. */}
+            {user.tier === 'free' && (
+              <Link
+                href="/pricing"
+                onClick={() => setAccountOpen(false)}
+                className="flex items-center gap-3 mx-2 my-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-white no-underline"
+                style={{
+                  background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                  boxShadow: '0 4px 12px rgba(155,123,247,0.3)',
+                }}
+              >
+                <span className="opacity-90">{Icons.sparkle}</span>
+                Upgrade to Pro
+              </Link>
+            )}
 
             {/* Account links */}
             <div className="py-1.5">
@@ -237,6 +294,21 @@ export default function Sidebar({ user }: { user: User }) {
                   }`}
                 >
                   <span className={isActive(item.href) ? 'opacity-100' : 'opacity-50'}>{item.icon}</span>
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Resources */}
+            <div className="border-t border-border-light py-1.5">
+              {resourceItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setAccountOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-glass transition-all duration-150 no-underline"
+                >
+                  <span className="opacity-50">{item.icon}</span>
                   {item.label}
                 </Link>
               ))}

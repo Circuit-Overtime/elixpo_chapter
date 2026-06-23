@@ -1,0 +1,249 @@
+export const runtime = 'edge';
+
+import Link from 'next/link';
+import { getCurrentUser } from '@/lib/auth';
+import { getDB } from '@/lib/db';
+import {
+  CURRENCY_SYMBOL,
+  type SellableTier,
+  TIER_LIMITS,
+  TIER_PRICING,
+} from '@/lib/types';
+
+const CARD_STYLE = {
+  background:
+    'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  backdropFilter: 'blur(20px)',
+} as const;
+
+function fmtRetention(days: number): string {
+  return days >= 365 ? `${Math.round(days / 365)} year` : `${days} days`;
+}
+
+export default async function SubscriptionPage() {
+  const user = (await getCurrentUser())!;
+  const db = getDB();
+  const limits = TIER_LIMITS[user.tier];
+
+  const [urlCount, keyCount] = await Promise.all([
+    db
+      .prepare('SELECT COUNT(*) as count FROM urls WHERE user_id = ?')
+      .bind(user.id)
+      .first<{ count: number }>(),
+    db
+      .prepare('SELECT COUNT(*) as count FROM api_keys WHERE user_id = ? AND is_active = 1')
+      .bind(user.id)
+      .first<{ count: number }>(),
+  ]);
+
+  const isEnterprise = user.tier === 'enterprise';
+  const isPaid = user.tier !== 'free' && !isEnterprise;
+  const pricing = isEnterprise ? null : TIER_PRICING[user.tier as SellableTier];
+  // INR monthly is the headline figure for the current-plan card. Billing
+  // currency/interval/renewal land with the Elixpo Pay integration; until
+  // then we show the list price and a neutral status.
+  const headlineAmount = pricing ? pricing.price.INR.monthly : 0;
+
+  const usedUrls = urlCount?.count ?? 0;
+  const usedKeys = keyCount?.count ?? 0;
+  const urlPct =
+    limits.maxUrls === -1 ? 0 : Math.min(100, Math.round((usedUrls / limits.maxUrls) * 100));
+
+  return (
+    <div className="w-full max-w-4xl mx-auto py-2 px-2">
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-[1.8rem] font-bold text-white tracking-tight">
+          Subscription
+        </h1>
+        <p className="text-sm text-white/55 mt-1">
+          Your current plan, usage, and billing.
+        </p>
+      </div>
+
+      {/* Current plan */}
+      <div className="p-6 rounded-2xl mb-6" style={CARD_STYLE}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span
+              className="inline-flex items-center px-2.5 py-1 rounded-md text-[0.78rem] font-bold uppercase tracking-wider"
+              style={{
+                background: 'rgba(155,123,247,0.18)',
+                color: '#c8b6ff',
+                border: '1px solid rgba(155,123,247,0.4)',
+              }}
+            >
+              {user.tier}
+            </span>
+            <div>
+              <div className="text-base font-bold text-white">
+                {isEnterprise
+                  ? 'Enterprise — custom plan'
+                  : `${pricing?.name} plan`}
+              </div>
+              <div className="text-[0.8rem] text-white/55 mt-0.5">
+                {isPaid
+                  ? `${CURRENCY_SYMBOL.INR}${headlineAmount.toLocaleString()}/mo · autopay`
+                  : isEnterprise
+                    ? 'Billed by agreement'
+                    : 'Free forever · no card on file'}
+              </div>
+            </div>
+          </div>
+
+          <span
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[0.75rem] font-semibold self-start sm:self-center"
+            style={{
+              background: 'rgba(52,211,153,0.12)',
+              color: '#6ee7b7',
+              border: '1px solid rgba(52,211,153,0.3)',
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#6ee7b7' }} />
+            Active
+          </span>
+        </div>
+
+        {/* Billing meta — populated once Elixpo Pay is wired. */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-white/8">
+          <Meta label="Status" value="Active" />
+          <Meta
+            label="Renews"
+            value={isPaid ? 'On autopay' : '—'}
+          />
+          <Meta
+            label="Payment method"
+            value={isPaid ? 'UPI / Card mandate' : '—'}
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-3 mt-6">
+          {!isPaid && !isEnterprise && (
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-semibold text-white no-underline"
+              style={{
+                background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+              }}
+            >
+              Upgrade plan
+            </Link>
+          )}
+          {isPaid && (
+            <>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-semibold text-white no-underline"
+                style={{
+                  background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                  boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+                }}
+              >
+                Change plan
+              </Link>
+              <a
+                href="mailto:hello@elixpo.com?subject=ElixpoURL%20cancel%20subscription"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-medium text-white/80 no-underline"
+                style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+              >
+                Cancel subscription
+              </a>
+            </>
+          )}
+          {isEnterprise && (
+            <a
+              href="mailto:hello@elixpo.com?subject=ElixpoURL%20Enterprise"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-medium text-white/80 no-underline"
+              style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+            >
+              Contact your account manager
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Usage vs plan limits */}
+      <div className="p-6 rounded-2xl mb-6" style={CARD_STYLE}>
+        <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-white/45 mb-4">
+          Usage this plan
+        </div>
+
+        <div className="mb-5">
+          <div className="flex justify-between text-sm mb-1.5">
+            <span className="text-white/70">Short links</span>
+            <span className="text-white/55">
+              {usedUrls.toLocaleString()} / {limits.maxUrls === -1 ? '∞' : limits.maxUrls.toLocaleString()}
+            </span>
+          </div>
+          {limits.maxUrls !== -1 && (
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.max(urlPct, 2)}%`,
+                  background:
+                    urlPct >= 100
+                      ? 'linear-gradient(90deg,#ef4444,#dc2626)'
+                      : urlPct >= 80
+                        ? 'linear-gradient(90deg,#fbbf24,#f59e0b)'
+                        : 'linear-gradient(90deg,#9b7bf7,#7c5cff)',
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <Meta
+            label="API keys"
+            value={`${usedKeys} / ${limits.maxApiKeys}`}
+          />
+          <Meta label="Analytics retention" value={fmtRetention(limits.maxClicksRetention)} />
+          <Meta label="Custom slugs" value={limits.customCodes ? 'Included' : '—'} />
+        </div>
+      </div>
+
+      {/* What's included */}
+      {!isEnterprise && pricing && (
+        <div className="p-6 rounded-2xl" style={CARD_STYLE}>
+          <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-white/45 mb-4">
+            What&apos;s included
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 list-none p-0">
+            {planFeatures(user.tier as SellableTier).map((f) => (
+              <li key={f} className="text-[0.88rem] text-white/75 flex items-start gap-2">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#9b7bf7' }} />
+                {f}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[0.65rem] text-white/45 uppercase tracking-wider mb-1">{label}</div>
+      <div className="text-sm font-medium text-white">{value}</div>
+    </div>
+  );
+}
+
+function planFeatures(tier: SellableTier): string[] {
+  const l = TIER_LIMITS[tier];
+  const out = [
+    `${l.maxUrls.toLocaleString()} short links`,
+    `${l.maxApiKeys} API key${l.maxApiKeys === 1 ? '' : 's'}`,
+    `${fmtRetention(l.maxClicksRetention)} click analytics`,
+  ];
+  if (l.customCodes) out.push('Custom slugs');
+  if (l.analytics) out.push('Geo / device analytics + CSV export');
+  if (l.expiringLinks) out.push('Expiring links');
+  if (tier === 'business') out.push('Webhook delivery + branded domain');
+  return out;
+}
