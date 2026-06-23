@@ -9,6 +9,7 @@ import {
   type BillingCurrency,
   type BillingInterval,
   CURRENCY_SYMBOL,
+  EXTRA_SEAT_PRICE,
   type SellableTier,
   SELLABLE_TIER_ORDER,
   TIER_LIMITS,
@@ -19,17 +20,27 @@ const ACCENT = '#9b7bf7';
 
 // Per-tier feature bullets, derived from the single source of truth so the
 // marketing copy can never drift from what the API actually enforces.
+function retentionLabel(days: number): string {
+  return days >= 365 ? `${Math.round(days / 365)}-year analytics retention` : `${days}-day click analytics`;
+}
+
 function featuresFor(tier: SellableTier): string[] {
   const l = TIER_LIMITS[tier];
   const out = [
     `${l.maxUrls.toLocaleString()} short links`,
-    `${l.maxApiKeys} API key${l.maxApiKeys === 1 ? '' : 's'}`,
-    `${l.maxClicksRetention}-day click analytics`,
+    retentionLabel(l.maxClicksRetention),
+    `${l.maxApiKeys} API key${l.maxApiKeys === 1 ? '' : 's'} · ${l.rateLimitPerMin.toLocaleString()}/min`,
   ];
-  if (l.customCodes) out.push('Custom slugs');
-  if (l.analytics) out.push('Geo / device analytics + CSV export');
+  out.push(l.customCodes ? 'Custom slugs' : 'Auto-generated slugs');
+  out.push(l.analytics ? 'Geo / device analytics + CSV' : 'Click totals');
   if (l.expiringLinks) out.push('Expiring links');
-  if (tier === 'business') out.push('Webhook delivery + branded domain');
+  if (l.brandedDomains > 0) {
+    out.push(`${l.brandedDomains} branded domain${l.brandedDomains === 1 ? '' : 's'}`);
+  }
+  if (l.webhooks) out.push('Webhook delivery');
+  if (l.seats > 1) {
+    out.push(`${l.seats} team seats · +${CURRENCY_SYMBOL.INR}${EXTRA_SEAT_PRICE.INR}/extra seat`);
+  }
   return out;
 }
 

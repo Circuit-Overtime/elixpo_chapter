@@ -7,13 +7,25 @@ export interface TierLimits {
   customCodes: boolean;
   analytics: boolean;
   expiringLinks: boolean;
+  /** Team members included in the plan (-1 = unlimited). */
+  seats: number;
+  /** Branded/custom short domains included (-1 = unlimited). */
+  brandedDomains: number;
+  /** Outbound webhooks on link events. */
+  webhooks: boolean;
+  /** API requests/min ceiling (-1 = custom/unbounded). */
+  rateLimitPerMin: number;
 }
 
+// -1 = unlimited. NOTE on enforcement: maxUrls, maxApiKeys, maxClicksRetention,
+// customCodes, analytics, expiringLinks are enforced in the API today. seats,
+// brandedDomains, webhooks, rateLimitPerMin define the plan and drive the
+// pricing UI; their feature enforcement lands with those features.
 export const TIER_LIMITS: Record<Tier, TierLimits> = {
-  free: { maxUrls: 25, maxApiKeys: 1, maxClicksRetention: 7, customCodes: false, analytics: false, expiringLinks: false },
-  pro: { maxUrls: 500, maxApiKeys: 5, maxClicksRetention: 30, customCodes: true, analytics: true, expiringLinks: true },
-  business: { maxUrls: 5000, maxApiKeys: 20, maxClicksRetention: 90, customCodes: true, analytics: true, expiringLinks: true },
-  enterprise: { maxUrls: -1, maxApiKeys: 100, maxClicksRetention: 365, customCodes: true, analytics: true, expiringLinks: true },
+  free:       { maxUrls: 25,    maxApiKeys: 1,   maxClicksRetention: 7,   customCodes: false, analytics: false, expiringLinks: false, seats: 1,  brandedDomains: 0,  webhooks: false, rateLimitPerMin: 60 },
+  pro:        { maxUrls: 1000,  maxApiKeys: 5,   maxClicksRetention: 30,  customCodes: true,  analytics: true,  expiringLinks: true,  seats: 1,  brandedDomains: 1,  webhooks: true,  rateLimitPerMin: 600 },
+  business:   { maxUrls: 10000, maxApiKeys: 20,  maxClicksRetention: 365, customCodes: true,  analytics: true,  expiringLinks: true,  seats: 5,  brandedDomains: 3,  webhooks: true,  rateLimitPerMin: 6000 },
+  enterprise: { maxUrls: -1,    maxApiKeys: 100, maxClicksRetention: 730, customCodes: true,  analytics: true,  expiringLinks: true,  seats: -1, brandedDomains: -1, webhooks: true,  rateLimitPerMin: -1 },
 };
 
 // ── Commercial pricing ────────────────────────────────────────────────
@@ -47,12 +59,16 @@ export const TIER_PRICING: Record<SellableTier, TierPricing> = {
   },
   business: {
     name: 'Business',
-    tagline: 'For teams that need headroom and longer history.',
-    price: { INR: { monthly: 999, annual: 9990 }, USD: { monthly: 15, annual: 150 } },
+    tagline: 'For teams that need seats, domains, and a year of history.',
+    price: { INR: { monthly: 1499, annual: 14990 }, USD: { monthly: 19, annual: 190 } },
   },
 };
 
 export const SELLABLE_TIER_ORDER: SellableTier[] = ['free', 'pro', 'business'];
+
+// B2B expansion: Business includes TIER_LIMITS.business.seats; additional
+// seats bill at this rate per seat per month.
+export const EXTRA_SEAT_PRICE: Record<BillingCurrency, number> = { INR: 249, USD: 3 };
 
 export interface User {
   id: number;
