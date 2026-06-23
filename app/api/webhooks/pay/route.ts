@@ -7,32 +7,22 @@ export const runtime = 'edge';
 /**
  * POST /api/webhooks/pay
  *
- * Inbound webhook from Elixpo Pay. Fired on `entitlement.updated` — i.e.
- * on first purchase, every autopay renewal, and on cancellation/lapse.
- * This is what flips a user's tier; because getCurrentUser() reads `tier`
- * fresh from D1 on every request (KV only caches session→userId), the new
- * tier and its gates take effect on the user's very next request — no cache
- * bust needed.
+ * Inbound webhook from Elixpo Pay. Fired on `entitlement.updated` — first
+ * purchase, every autopay renewal, and cancellation/lapse. Flips the user's
+ * tier; because getCurrentUser() reads `tier` fresh from D1 each request (KV
+ * only caches session→userId), the change takes effect on the next request.
  *
- * ─── Signature (Elixpo Pay scheme) ───────────────────────────────────
- *   X-Elixpo-Signature: t=<unix_seconds>,v1=<hex HMAC-SHA256>
- *   signed payload = `${t}.${rawBody}`, key = ELIXPO_PAY_WEBHOOK_SECRET.
- *   Rejected outside a ±5 minute window.
+ * ─── Signature (Elixpo Pay scheme — see payouts.elixpo webhooks.ts) ───
+ *   X-Elixpo-Pay-Timestamp: <unix_seconds>
+ *   X-Elixpo-Pay-Signature: sha256=<hex>[,sha256=<hex>…]   (accept if ANY match)
+ *   X-Elixpo-Pay-Event:     entitlement.updated
+ *   signed payload = `${timestamp}.${rawBody}`, key = ELIXPO_PAY_WEBHOOK_SECRET.
+ *   Comma list carries the current + in-grace previous secret during rotation.
  *
- * ─── Body (entitlement.updated) ──────────────────────────────────────
- *   {
- *     "event": "entitlement.updated",
- *     "app": "lixurl",
- *     "uid": "<elixpo_id>",
- *     "product": "pro" | "business",
- *     "active": true | false,
- *     "current_period_end": "<ISO>",     // when access lapses
- *     "subscription": { "id": "sub_…" }   // autopay mandate
- *   }
- *
- * Failure semantics mirror /api/webhooks/elixpo:
- *   401 bad signature/timestamp · 400 malformed · 200 dup/ignored ·
- *   500 DB error (Pay retries) · 503 receiver not configured.
+ * ─── Body ────────────────────────────────────────────────────────────
+ *   { id, type: "entitlement.updated", created, data: {
+ *       app, uid: "<elixpo_id>", tier: "pro"|"business"|…, active: bool,
+ *       status, expires_at, provider_subscription_id? } }
  */
 export async function POST(request: NextRequest) {
   const env = getEnv();
@@ -41,16 +31,22 @@ export async function POST(request: NextRequest) {
   }
 
   const rawBody = await request.text();
-  const sigHeader = request.headers.get('x-elixpo-signature') || '';
-  const parsed = parseSignature(sigHeader);
-  if (!parsed) return reject('missing or malformed signature');
 
-  const now = Math.floor(Date.now() / 1000);
-  if (!Number.isFinite(parsed.t) || Math.abs(now - parsed.t) > 300) {
+  // Replay window
+  const tsHeader = request.headers.get('x-elixpo-pay-timestamp') || '';
+  if (!/^\d+$/.test(tsHeader)) return reject('missing or invalid timestamp');
+  const ts = Number(tsHeader);
+  if (Math.abs(Math.floor(Date.now() / 1000) - ts) > 300) {
     return reject('timestamp outside ±5 minute window');
   }
 
-  const ok = await verifyHmac(env.ELIXPO_PAY_WEBHOOK_SECRET, `${parsed.t}.${rawBody}`, parsed.v1);
+  // Signature — recompute once, accept if any provided sha256= matches.
+  const sigHeader = request.headers.get('x-elixpo-pay-signature') || '';
+  const expected = await hmacHex(env.ELIXPO_PAY_WEBHOOK_SECRET, `${ts}.${rawBody}`);
+  const provided = sigHeader
+    .split(',')
+    .map((s) => s.trim().replace(/^sha256=/i, '').toLowerCase());
+  const ok = provided.some((p) => /^[0-9a-f]{64}$/.test(p) && timingSafeEqual(p, expected));
   if (!ok) return reject('invalid signature');
 
   let body: PayEvent;
@@ -60,8 +56,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'invalid json' }, { status: 400 });
   }
 
-  // Idempotency — Pay retries on 5xx. Dedupe on event id (header or body).
-  const eventId = request.headers.get('x-elixpo-event-id') || body.id;
+  // Idempotency — Pay retries on non-2xx. Dedupe on the delivery id.
+  const eventId = body.id || request.headers.get('x-elixpo-pay-event-id');
   const kv = getKV();
   if (eventId) {
     if (await kv.get(`wh:pay:${eventId}`)) {
@@ -70,16 +66,16 @@ export async function POST(request: NextRequest) {
     await kv.put(`wh:pay:${eventId}`, '1', { expirationTtl: 1800 }).catch(() => {});
   }
 
-  if (body.event && body.event !== 'entitlement.updated') {
-    // Accept-and-ignore unrelated events so Pay stops retrying.
-    return NextResponse.json({ ok: true, ignored: body.event });
+  if (body.type && body.type !== 'entitlement.updated') {
+    return NextResponse.json({ ok: true, ignored: body.type });
   }
-  if (!body.uid) {
-    return NextResponse.json({ error: 'missing uid' }, { status: 400 });
+  const data = body.data;
+  if (!data?.uid) {
+    return NextResponse.json({ error: 'missing data.uid' }, { status: 400 });
   }
 
   try {
-    await applyEntitlement(body);
+    await applyEntitlement(data);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[webhook:pay] handler error', err);
@@ -91,25 +87,23 @@ export async function POST(request: NextRequest) {
 
 const PAID_TIERS = new Set<Tier>(['pro', 'business', 'enterprise']);
 
-async function applyEntitlement(ev: PayEvent): Promise<void> {
+async function applyEntitlement(data: EntitlementData): Promise<void> {
   const db = getDB();
 
-  // active + recognized product → grant that tier. Otherwise (cancel,
-  // lapse, unknown product) → fall back to free.
-  const product = (ev.product || '').toLowerCase() as Tier;
-  const granting = ev.active === true && PAID_TIERS.has(product);
+  // active + recognized tier → grant it. Otherwise (cancel/lapse/unknown
+  // tier) → fall back to free.
+  const incomingTier = (data.tier || '').toLowerCase() as Tier;
+  const granting = data.active === true && PAID_TIERS.has(incomingTier);
 
-  const tier: Tier = granting ? product : 'free';
+  const tier: Tier = granting ? incomingTier : 'free';
   const status: BillingStatus = granting
-    ? normalizeStatus(ev.status)
-    : ev.active === false
+    ? normalizeStatus(data.status)
+    : data.active === false
       ? 'canceled'
       : 'none';
-  const expiresAt = granting ? normalizeIso(ev.current_period_end ?? ev.expires_at) : null;
-  const subId = ev.subscription?.id ?? ev.subscription_id ?? null;
+  const expiresAt = granting ? normalizeIso(data.expires_at) : null;
+  const subId = data.provider_subscription_id ?? data.subscription_id ?? null;
 
-  // Update by elixpo_id (the uid Pay knows the buyer by). Only touches the
-  // row if the user exists in our DB; a no-op otherwise (idempotent).
   await db
     .prepare(
       `UPDATE users
@@ -118,7 +112,7 @@ async function applyEntitlement(ev: PayEvent): Promise<void> {
              updated_at = datetime('now')
        WHERE elixpo_id = ?`,
     )
-    .bind(tier, status, expiresAt, subId, ev.uid)
+    .bind(tier, status, expiresAt, subId, data.uid)
     .run();
 }
 
@@ -138,58 +132,51 @@ function normalizeStatus(s?: string): BillingStatus {
 /** Coerce Pay's timestamp to a Z-suffixed ISO string for safe comparison. */
 function normalizeIso(v?: string | number | null): string | null {
   if (v == null) return null;
-  const d = typeof v === 'number' ? new Date(v * 1000) : new Date(v);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  // Pay emits "YYYY-MM-DD HH:MM:SS" (UTC) — make it ISO so Date.parse is unambiguous.
+  const s = typeof v === 'number' ? new Date(v * 1000) : new Date(`${v}`.replace(' ', 'T') + 'Z');
+  return Number.isNaN(s.getTime()) ? null : s.toISOString();
 }
 
-// ─── Signature helpers (t=,v1= scheme) ──────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────
 
-interface PayEvent {
-  id?: string;
-  event?: string;
+interface EntitlementData {
   app?: string;
   uid?: string;
-  product?: string;
+  tier?: string;
   active?: boolean;
   status?: string;
-  current_period_end?: string | number;
   expires_at?: string | number;
-  subscription?: { id?: string };
+  provider_subscription_id?: string;
   subscription_id?: string;
 }
 
-function parseSignature(header: string): { t: number; v1: string } | null {
-  const parts = Object.fromEntries(
-    header.split(',').map((kv) => {
-      const i = kv.indexOf('=');
-      return [kv.slice(0, i).trim(), kv.slice(i + 1).trim()];
-    }),
-  );
-  const t = Number(parts.t);
-  const v1 = parts.v1;
-  if (!parts.t || !v1 || !/^[0-9a-f]{64}$/i.test(v1)) return null;
-  return { t, v1 };
+interface PayEvent {
+  id?: string;
+  type?: string;
+  created?: number;
+  data?: EntitlementData;
 }
 
-async function verifyHmac(secret: string, signed: string, sigHex: string): Promise<boolean> {
+// ─── HMAC helpers ───────────────────────────────────────────────────
+
+async function hmacHex(secret: string, message: string): Promise<string> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
     enc.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['verify'],
+    ['sign'],
   );
-  return crypto.subtle.verify('HMAC', key, hexToBytes(sigHex), enc.encode(signed));
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function hexToBytes(hex: string): ArrayBuffer {
-  const buf = new ArrayBuffer(hex.length / 2);
-  const view = new Uint8Array(buf);
-  for (let i = 0; i < hex.length; i += 2) {
-    view[i / 2] = Number.parseInt(hex.slice(i, i + 2), 16);
-  }
-  return buf;
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
 }
 
 function reject(reason: string): NextResponse {
