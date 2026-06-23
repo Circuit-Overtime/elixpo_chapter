@@ -105,7 +105,7 @@ export default function OverviewPage() {
       <ul className="space-y-2 list-none p-0">
         <li className="text-white/70 text-[0.96rem] flex gap-2.5">
           <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
-          Base URL: <code className="font-mono text-white">https://url.elixpo.com</code>
+          Base URL: <code className="font-mono text-white">https://lixrl.com</code>
         </li>
         <li className="text-white/70 text-[0.96rem] flex gap-2.5">
           <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />

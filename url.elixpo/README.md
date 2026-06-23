@@ -10,7 +10,7 @@
 
 
 <p align="center">
-  <a href="https://url.elixpo.com"><img src="https://img.shields.io/badge/live-url.elixpo.com-a3e635?style=flat-square" alt="Live" /></a>
+  <a href="https://lixrl.com"><img src="https://img.shields.io/badge/live-lixrl.com-a3e635?style=flat-square" alt="Live" /></a>
   <img src="https://img.shields.io/badge/platform-Cloudflare%20Pages-f38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Pages" />
   <img src="https://img.shields.io/badge/framework-Next.js%2015-000?style=flat-square&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/runtime-Edge-86efac?style=flat-square" alt="Edge Runtime" />
@@ -30,14 +30,14 @@
 
 ElixpoURL is the URL shortener built for the [Elixpo](https://elixpo.com) ecosystem. It turns long URLs into clean, shareable short links — instantly. Every redirect runs on Cloudflare's global edge network, meaning your links resolve in milliseconds no matter where your audience is.
 
-> Huge thanks to [Karan](https://github.com/karanray06) from our [GDG JIS University](https://gdg.community.dev/gdg-on-campus-jis-university-kolkata-india/) community for preparing the basis foundation of the HLD with us on which we have the [Elixpo URL](https://url.elixpo.com) was built with modifications made based on scale.
+> Huge thanks to [Karan](https://github.com/karanray06) from our [GDG JIS University](https://gdg.community.dev/gdg-on-campus-jis-university-kolkata-india/) community for preparing the basis foundation of the HLD with us on which we have the [Elixpo URL](https://lixrl.com) was built with modifications made based on scale.
 
 
 ## Why ElixpoURL?
 
 - **Instant redirects** — Short links resolve at the edge, not from a central server. No cold starts, no latency spikes.
 - **Click analytics** — See who's clicking, from where, on what device, and when. Understand your traffic at a glance.
-- **Custom short codes** — Choose your own slugs like `url.elixpo.com/launch` instead of random strings.
+- **Custom short codes** — Choose your own slugs like `lixrl.com/launch` instead of random strings.
 - **Expiring links** — Set links to auto-expire after a date. Great for limited-time campaigns.
 - **Developer-first API** — Create, read, update, and delete links programmatically with simple API keys.
 - **SSO with Elixpo Accounts** — One login across the entire Elixpo ecosystem. No separate credentials to manage.
@@ -55,11 +55,11 @@ ElixpoURL is the URL shortener built for the [Elixpo](https://elixpo.com) ecosys
 
 ## Get started
 
-Head to **[url.elixpo.com](https://url.elixpo.com)** and sign in with your Elixpo account. You can start shortening URLs immediately on the free plan — no credit card required.
+Head to **[lixrl.com](https://lixrl.com)** and sign in with your Elixpo account. You can start shortening URLs immediately on the free plan — no credit card required.
 
 ## API Documentation
 
-> Full documentation is available at [url.elixpo.com/docs](https://url.elixpo.com/docs).
+> Full documentation is available at [lixrl.com/docs](https://lixrl.com/docs).
 
 ## Star history
 

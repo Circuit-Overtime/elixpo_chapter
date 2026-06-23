@@ -50,7 +50,7 @@ export default function ApiPage() {
         <code className="font-mono text-white">POST /api/urls</code>
       </p>
       <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl -X POST https://url.elixpo.com/api/urls \\
+        <code>{`curl -X POST https://lixrl.com/api/urls \\
   -H "Authorization: Bearer elu_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -61,7 +61,7 @@ export default function ApiPage() {
       </pre>
       <pre className={PRE} style={PRE_STYLE}>
         <code>{`{
-  "short_url": "https://url.elixpo.com/my-link",
+  "short_url": "https://lixrl.com/my-link",
   "short_code": "my-link",
   "original_url": "https://example.com/long-url",
   "title": "My Link",
@@ -78,7 +78,7 @@ export default function ApiPage() {
         </code>
       </p>
       <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl https://url.elixpo.com/api/urls?limit=20&offset=0 \\
+        <code>{`curl https://lixrl.com/api/urls?limit=20&offset=0 \\
   -H "Authorization: Bearer elu_YOUR_KEY"`}</code>
       </pre>
 
@@ -91,7 +91,7 @@ export default function ApiPage() {
         </code>
       </p>
       <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl https://url.elixpo.com/api/urls/my-link \\
+        <code>{`curl https://lixrl.com/api/urls/my-link \\
   -H "Authorization: Bearer elu_YOUR_KEY"`}</code>
       </pre>
 
@@ -105,7 +105,7 @@ export default function ApiPage() {
         — change destination URL, title, or active status.
       </p>
       <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl -X PATCH https://url.elixpo.com/api/urls/my-link \\
+        <code>{`curl -X PATCH https://lixrl.com/api/urls/my-link \\
   -H "Authorization: Bearer elu_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"url": "https://new-destination.com", "is_active": true}'`}</code>
@@ -122,7 +122,7 @@ export default function ApiPage() {
         irreversible.
       </p>
       <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl -X DELETE https://url.elixpo.com/api/urls/my-link \\
+        <code>{`curl -X DELETE https://lixrl.com/api/urls/my-link \\
   -H "Authorization: Bearer elu_YOUR_KEY"`}</code>
       </pre>
     </article>
