@@ -9,18 +9,19 @@ import { buildCatalog } from '../lib/billing/catalog';
 async function main(): Promise<void> {
   const base = (process.env.ELIXPO_PAY_BASE_URL || 'https://payouts.elixpo.com').replace(/\/$/, '');
   const appId = process.env.ELIXPO_PAY_APP_ID;
-  const secret = process.env.ELIXPO_PAY_OAUTH_SECRET;
+  const apiKey = process.env.ELIXPO_PAY_API_KEY;
 
-  if (!appId || !secret) {
-    console.error('Missing ELIXPO_PAY_APP_ID or ELIXPO_PAY_OAUTH_SECRET');
+  if (!appId || !apiKey) {
+    console.error('Missing ELIXPO_PAY_APP_ID or ELIXPO_PAY_API_KEY');
     process.exit(1);
   }
 
-  const catalog = buildCatalog();
+  const catalog = buildCatalog(appId);
 
-  const res = await fetch(`${base}/v1/apps/${appId}/catalog`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
+  // POST https://payouts.elixpo.com/v1/sync — body is the catalog JSON.
+  const res = await fetch(`${base}/v1/sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify(catalog),
   });
 

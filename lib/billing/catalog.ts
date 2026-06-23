@@ -56,8 +56,12 @@ export interface Catalog {
   products: CatalogProduct[];
 }
 
-/** Build the full catalog payload to PUT to Elixpo Pay. */
-export function buildCatalog(): Catalog {
+/**
+ * Build the full catalog payload — i.e. the contents of payouts.catalog.json
+ * that get POSTed to Elixpo Pay's /v1/sync. `app` defaults to PAY_APP but the
+ * sync script passes ELIXPO_PAY_APP_ID so the body matches the configured app.
+ */
+export function buildCatalog(app: string = PAY_APP): Catalog {
   const products: CatalogProduct[] = PAID_TIERS.map((tier) => ({
     id: tier,
     name: TIER_PRICING[tier].name,
@@ -71,5 +75,5 @@ export function buildCatalog(): Catalog {
       })),
     ),
   }));
-  return { app: PAY_APP, products };
+  return { app, products };
 }

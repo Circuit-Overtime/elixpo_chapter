@@ -5,10 +5,10 @@
 #   - manually     → workflow_dispatch
 #
 # Requires repo secrets:
-#   ELIXPO_PAY_OAUTH_SECRET   one secret (catalog sync + checkout)
-#   ELIXPO_PAY_APP_ID         app id under your merchant
+#   ELIXPO_PAY_API_KEY   one key (catalog sync POST /v1/sync + checkout)
+#   ELIXPO_PAY_APP_ID    app id under your merchant
 # Optional repo variable:
-#   ELIXPO_PAY_BASE_URL       defaults to https://payouts.elixpo.com
+#   ELIXPO_PAY_BASE_URL  defaults to https://payouts.elixpo.com
 name: pay-catalog-sync
 
 on:
@@ -36,7 +36,7 @@ jobs:
           node-version: 20
       - name: Push catalog to Elixpo Pay
         env:
-          ELIXPO_PAY_OAUTH_SECRET: ${{ secrets.ELIXPO_PAY_OAUTH_SECRET }}
+          ELIXPO_PAY_API_KEY: ${{ secrets.ELIXPO_PAY_API_KEY }}
           ELIXPO_PAY_APP_ID: ${{ secrets.ELIXPO_PAY_APP_ID }}
           ELIXPO_PAY_BASE_URL: ${{ vars.ELIXPO_PAY_BASE_URL }}
         run: npx -y tsx scripts/sync-catalog.ts

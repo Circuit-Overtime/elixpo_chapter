@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const env = getEnv();
-  if (!env.ELIXPO_PAY_OAUTH_SECRET || !env.ELIXPO_PAY_APP_ID) {
+  if (!env.ELIXPO_PAY_API_KEY || !env.ELIXPO_PAY_APP_ID) {
     return NextResponse.json({ error: 'Billing is not configured yet.' }, { status: 503 });
   }
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.ELIXPO_PAY_OAUTH_SECRET}`,
+        Authorization: `Bearer ${env.ELIXPO_PAY_API_KEY}`,
       },
       body: JSON.stringify({
         app: env.ELIXPO_PAY_APP_ID,

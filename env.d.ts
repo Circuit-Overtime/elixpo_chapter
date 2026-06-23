@@ -10,7 +10,7 @@ interface CloudflareEnv {
   // Elixpo Pay — subscriptions / autopay.
   ELIXPO_PAY_BASE_URL: string;
   ELIXPO_PAY_APP_ID: string;
-  ELIXPO_PAY_OAUTH_SECRET: string;
+  ELIXPO_PAY_API_KEY: string;
   ELIXPO_PAY_WEBHOOK_SECRET: string;
 }
 
