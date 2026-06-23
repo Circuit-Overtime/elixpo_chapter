@@ -56,15 +56,19 @@ export const TIER_PRICING: Record<SellableTier, TierPricing> = {
     tagline: 'For personal projects and trying things out.',
     price: { INR: { monthly: 0, annual: 0 }, USD: { monthly: 0, annual: 0 } },
   },
+  // ⚠️ TESTING PRICES — temporary, for live Razorpay autopay testing.
+  // Revert before launch:
+  //   pro      → INR { monthly: 299,  annual: 2990 },  USD { monthly: 5,  annual: 50 }
+  //   business → INR { monthly: 1499, annual: 14990 }, USD { monthly: 19, annual: 190 }
   pro: {
     name: 'Pro',
     tagline: 'For makers shipping real apps.',
-    price: { INR: { monthly: 299, annual: 2990 }, USD: { monthly: 5, annual: 50 } },
+    price: { INR: { monthly: 2, annual: 2 }, USD: { monthly: 1, annual: 1 } },
   },
   business: {
     name: 'Business',
     tagline: 'For teams that need seats, domains, and a year of history.',
-    price: { INR: { monthly: 1499, annual: 14990 }, USD: { monthly: 19, annual: 190 } },
+    price: { INR: { monthly: 3, annual: 3 }, USD: { monthly: 1, annual: 1 } },
   },
 };
 
