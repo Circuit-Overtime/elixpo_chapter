@@ -33,6 +33,13 @@ export function getEnv() {
     ELIXPO_PAY_APP_ID: (ctx as any).ELIXPO_PAY_APP_ID || process.env.ELIXPO_PAY_APP_ID || '',
     ELIXPO_PAY_API_KEY: (ctx as any).ELIXPO_PAY_API_KEY || process.env.ELIXPO_PAY_API_KEY || '',
     ELIXPO_PAY_WEBHOOK_SECRET: (ctx as any).ELIXPO_PAY_WEBHOOK_SECRET || process.env.ELIXPO_PAY_WEBHOOK_SECRET || '',
+    // Elixpo Mails — transactional triggers. Secret signs the request; each
+    // HOOK_* is a template's endpoint_key.
+    ELIXPO_MAILS_BASE_URL: (ctx as any).ELIXPO_MAILS_BASE_URL || process.env.ELIXPO_MAILS_BASE_URL || 'https://mails.elixpo.com',
+    ELIXPO_MAILS_SECRET: (ctx as any).ELIXPO_MAILS_SECRET || process.env.ELIXPO_MAILS_SECRET || '',
+    ELIXPO_MAILS_HOOK_RECEIPT: (ctx as any).ELIXPO_MAILS_HOOK_RECEIPT || process.env.ELIXPO_MAILS_HOOK_RECEIPT || '',
+    ELIXPO_MAILS_HOOK_CANCELED: (ctx as any).ELIXPO_MAILS_HOOK_CANCELED || process.env.ELIXPO_MAILS_HOOK_CANCELED || '',
+    ELIXPO_MAILS_HOOK_PAYMENT_FAILED: (ctx as any).ELIXPO_MAILS_HOOK_PAYMENT_FAILED || process.env.ELIXPO_MAILS_HOOK_PAYMENT_FAILED || '',
   };
 }
 
