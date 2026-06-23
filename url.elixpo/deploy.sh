@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="elixpourl"
 OUTDIR=".vercel/output/static"
 
@@ -23,10 +24,12 @@ usage() {
   echo "  deploy    Deploy to Cloudflare Pages (builds first if needed)"
   echo "  all       Build and deploy in one step"
   echo "  migrate   Run D1 database migrations (remote)"
+  echo "  secrets   Decrypt .env (sops) and upload all secrets to Pages prod"
   echo ""
   echo "Examples:"
   echo "  ./deploy.sh build deploy"
   echo "  ./deploy.sh migrate build deploy"
+  echo "  ./deploy.sh secrets deploy   # push env secrets, then redeploy"
   echo ""
   echo -e "${DIM}Override the deploy branch:${RESET}"
   echo "  DEPLOY_BRANCH=elixpo/feat-x ./deploy.sh deploy   # preview from a feature branch"
@@ -89,12 +92,86 @@ do_migrate() {
   log "Migrations applied"
 }
 
+# Decrypt the sops-managed .env and push every secret to the Pages project's
+# production environment. Mirrors sops-reencrypt.sh's AGE-key resolution, but
+# decrypts in memory (never writes plaintext to disk, never touches the
+# working .env.local). CLOUDFLARE_* are deploy-time creds — used to auth
+# wrangler, not pushed to the app runtime.
+do_secrets() {
+  if ! command -v sops &>/dev/null; then
+    err "sops is required for the secrets command but was not found"
+    exit 1
+  fi
+
+  local enc="$SCRIPT_DIR/.env"
+  if [ ! -f "$enc" ]; then
+    err ".env (sops-encrypted) not found. Run ./sops-reencrypt.sh first."
+    exit 1
+  fi
+
+  # Same key resolution as sops-reencrypt.sh.
+  if [ -z "${SOPS_AGE_KEY:-}" ]; then
+    local keyfile="$HOME/.config/sops/age/keys.txt"
+    if [ -f "$keyfile" ]; then
+      SOPS_AGE_KEY="$(grep 'AGE-SECRET-KEY' "$keyfile" | head -1)"
+      export SOPS_AGE_KEY
+    else
+      err "No AGE key. Set SOPS_AGE_KEY or create $keyfile"
+      exit 1
+    fi
+  fi
+
+  log "Decrypting ${BOLD}.env${RESET} with sops (in memory)..."
+  local decrypted
+  decrypted="$(sops decrypt "$enc")"
+
+  # Parse KEY=VALUE into a map (skip blanks, comments, non-identifier keys).
+  declare -A vars=()
+  while IFS= read -r line || [ -n "$line" ]; do
+    [[ -z "$line" || "$line" == \#* || "$line" != *=* ]] && continue
+    local k="${line%%=*}" v="${line#*=}"
+    [[ "$k" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    vars["$k"]="$v"
+  done <<< "$decrypted"
+
+  # Auth wrangler with the CF creds pulled from the vault.
+  export CLOUDFLARE_API_TOKEN="${vars[CLOUDFLARE_API_TOKEN]:-${CLOUDFLARE_API_TOKEN:-}}"
+  export CLOUDFLARE_ACCOUNT_ID="${vars[CLOUDFLARE_ACCOUNT_ID]:-${CLOUDFLARE_ACCOUNT_ID:-}}"
+  if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+    err "CLOUDFLARE_API_TOKEN not found in .env (needed to authenticate wrangler)"
+    exit 1
+  fi
+
+  log "Uploading secrets to ${BOLD}$PROJECT${RESET} (production)..."
+  local count=0
+  for k in "${!vars[@]}"; do
+    case "$k" in
+      CLOUDFLARE_API_TOKEN | CLOUDFLARE_ACCOUNT_ID)
+        dim "skip $k (deploy-time credential, not app runtime)"
+        continue
+        ;;
+      DEV_TIER_OVERRIDE)
+        # Dev-only: would promote EVERY prod user to that tier. Never ship it.
+        dim "skip $k (dev-only — must not reach production)"
+        continue
+        ;;
+    esac
+    printf '%s' "${vars[$k]}" | npx wrangler pages secret put "$k" \
+      --project-name="$PROJECT" >/dev/null
+    dim "set $k"
+    count=$((count + 1))
+  done
+  log "Uploaded $count secrets"
+  dim "Secrets apply to the next deploy — run: ./deploy.sh deploy"
+}
+
 run_cmd() {
   case "$1" in
     build)   do_build ;;
     deploy)  do_deploy ;;
     all)     do_build && do_deploy ;;
     migrate) do_migrate ;;
+    secrets) do_secrets ;;
     *)       err "Unknown command: $1"; usage ;;
   esac
 }

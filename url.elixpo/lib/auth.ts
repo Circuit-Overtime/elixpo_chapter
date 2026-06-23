@@ -23,6 +23,20 @@ function applyDevTierOverride(user: User): User {
   return user;
 }
 
+// Entitlement safety net. The Pay webhook flips tier→free on cancel/lapse,
+// but if a renewal-failed webhook is ever missed, an expired paid tier
+// would otherwise linger. Treat a past `tier_expires_at` as free at read
+// time. Cheap (one Date.parse) and runs on every resolved user.
+function normalizeEntitlement(user: User): User {
+  if (user.tier !== 'free' && user.tier_expires_at) {
+    const exp = Date.parse(user.tier_expires_at);
+    if (!Number.isNaN(exp) && exp < Date.now()) {
+      return { ...user, tier: 'free' };
+    }
+  }
+  return user;
+}
+
 // ─── Get current user from session ──────────────────────────
 
 export async function getCurrentUser(): Promise<User | null> {
@@ -40,7 +54,7 @@ export async function getCurrentUser(): Promise<User | null> {
       .prepare('SELECT * FROM users WHERE id = ? AND is_active = 1')
       .bind(parseInt(cachedUserId))
       .first<User>();
-    if (user) return applyDevTierOverride(user);
+    if (user) return applyDevTierOverride(normalizeEntitlement(user));
   }
 
   // D1 fallback
@@ -56,7 +70,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
   // Re-cache
   await kv.put(`session:${sessionId}`, String(user.id), { expirationTtl: SESSION_DURATION });
-  return applyDevTierOverride(user);
+  return applyDevTierOverride(normalizeEntitlement(user));
 }
 
 // ─── Get user from API key (for API routes) ─────────────────
@@ -85,18 +99,23 @@ export async function getUserFromApiKey(authHeader: string): Promise<User | null
     .run()
     .catch(() => {});
 
-  return applyDevTierOverride({
-    id: row.id,
-    elixpo_id: row.elixpo_id,
-    email: row.email,
-    display_name: row.display_name,
-    avatar_url: row.avatar_url,
-    role: row.role,
-    tier: row.tier,
-    is_active: row.is_active,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-  });
+  return applyDevTierOverride(
+    normalizeEntitlement({
+      id: row.id,
+      elixpo_id: row.elixpo_id,
+      email: row.email,
+      display_name: row.display_name,
+      avatar_url: row.avatar_url,
+      role: row.role,
+      tier: row.tier,
+      is_active: row.is_active,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      tier_expires_at: row.tier_expires_at ?? null,
+      pay_subscription_id: row.pay_subscription_id ?? null,
+      billing_status: row.billing_status ?? 'none',
+    }),
+  );
 }
 
 // ─── Resolve user from session or API key ───────────────────
