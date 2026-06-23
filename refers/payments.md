@@ -139,3 +139,30 @@ Subscription lifecycle (all via entitlement.updated):
 - Mandate broken (UPI revoke / repeated card failure) → `{ status:"halted",
   failed:true }`. Account deletion / app revoke → `{ status:"revoked",
   active:false }`.
+
+### payment.captured (optional — toggle per endpoint)
+
+Same envelope + signature; `type: "payment.captured"`. **This is the event
+that carries the amount** — use it for receipts / your ledger (entitlement.updated
+has no amount). data:
+{
+  "app": "<app-slug>", "uid": "<your-user-id>",
+  "transaction_id": "txn_…", "provider_payment_id": "pay_…",
+  "provider_order_id": "order_…",
+  "currency": "INR", "amount": 29900,   // minor units
+  "tier": "pro"
+}
+
+## 4. Pull entitlement — GET /v1/entitlements?app=<slug>&uid=<uid>
+
+Server-to-server lookup, the reconcile backstop when a webhook is missed.
+Auth: `Bearer <ELIXPO_PAY_API_KEY>` (or `X-Elixpo-Pay-Key: <key>`). Returns the
+current EntitlementView `{ tier, status, active, expires_at, version }`.
+
+## 5. Cancel subscription — POST /v1/subscriptions/cancel
+
+Auth: `Bearer <ELIXPO_PAY_API_KEY>`.
+Body: `{ "customer": { "uid": "<your-user-id>" }, "cancel_at_cycle_end"?: true }`
+(default `true` = graceful: access through the current paid period). Response
+`{ id, status, current_period_end }`. Idempotent. Drives entitlement.updated back
+to your webhook (`status:"cancelled"` now, then `active:false` at period end).
