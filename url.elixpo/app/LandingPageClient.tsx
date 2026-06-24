@@ -1,54 +1,149 @@
 'use client';
 
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import BackgroundAurora from './components/BackgroundAurora';
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
+import PixelHero from './components/PixelHero';
 
-const ACCENT = '#9b7bf7';
+const CARD_BG =
+  'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)';
 
-const FEATURES = [
+/* ── Icons (inline SVG, stroke = currentColor) ──────────────────────────── */
+
+function Icon({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
+const BoltIcon = () => (
+  <Icon>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </Icon>
+);
+const ChartIcon = () => (
+  <Icon>
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </Icon>
+);
+const SlugIcon = () => (
+  <Icon>
+    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+  </Icon>
+);
+const QrIcon = () => (
+  <Icon>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <line x1="14" y1="14" x2="14" y2="14" />
+    <path d="M14 14h3v3M21 14v7h-7v-3" />
+  </Icon>
+);
+const DomainIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" />
+  </Icon>
+);
+const ApiIcon = () => (
+  <Icon>
+    <polyline points="16 18 22 12 16 6" />
+    <polyline points="8 6 2 12 8 18" />
+  </Icon>
+);
+const ArrowIcon = () => (
+  <Icon>
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </Icon>
+);
+
+/* ── Content ────────────────────────────────────────────────────────────── */
+
+const STEPS: { n: string; title: string; body: string; accent: string }[] = [
   {
-    title: 'Edge-native redirects',
-    body: "Every short link resolves on Cloudflare's edge — sub-50ms anywhere on the planet, no cold starts, no proxies in between.",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-      </svg>
-    ),
+    n: '01',
+    title: 'Sign in',
+    body: 'Authenticate with your Elixpo account — no separate signup, no password to remember.',
+    accent: '#9b7bf7',
   },
   {
-    title: 'Click analytics out of the box',
-    body: 'Real-time counts, country breakdown, referrers, devices — no extra setup, no third-party script. Your data stays on your account.',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10" />
-        <line x1="12" y1="20" x2="12" y2="4" />
-        <line x1="6" y1="20" x2="6" y2="14" />
-      </svg>
-    ),
+    n: '02',
+    title: 'Shorten',
+    body: 'Paste a long URL, pick a slug or let us mint one, and your link goes live on the edge.',
+    accent: '#5fb6ff',
   },
   {
-    title: 'Developer-first API',
-    body: 'A clean REST API with API keys, scoped permissions, and predictable JSON. Drop it into any app, Elixpo or yours.',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="16 18 22 12 16 6" />
-        <polyline points="8 6 2 12 8 18" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Custom slugs & branded links',
-    body: 'Pick the slug yourself or let us generate one. Branded domains on Pro and Business so your links wear your name.',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-      </svg>
-    ),
+    n: '03',
+    title: 'Track',
+    body: 'Watch clicks, countries, and referrers in real time — or call the API and pipe them anywhere.',
+    accent: '#86efac',
   },
 ];
+
+const FEATURES: {
+  icon: ReactNode;
+  title: string;
+  body: string;
+  accent: string;
+}[] = [
+  {
+    icon: <BoltIcon />,
+    title: 'Edge-native redirects',
+    body: "Links resolve on Cloudflare's edge in under 50ms worldwide. No cold starts, no proxy hops between the click and the destination.",
+    accent: '#9b7bf7',
+  },
+  {
+    icon: <ChartIcon />,
+    title: 'Click analytics',
+    body: 'Real-time counts with country, referrer, and device breakdowns. No third-party script — the data lives on your account.',
+    accent: '#5fb6ff',
+  },
+  {
+    icon: <SlugIcon />,
+    title: 'Custom slugs',
+    body: 'Choose the slug yourself or generate a short one. Collision checks run at write time so a link is never ambiguous.',
+    accent: '#86efac',
+  },
+  {
+    icon: <QrIcon />,
+    title: 'Styled QR codes',
+    body: 'Generate a QR for any link, tinted to your accent and exportable as SVG or PNG — ready for print or a slide.',
+    accent: '#fbbf24',
+  },
+  {
+    icon: <DomainIcon />,
+    title: 'Branded domains',
+    body: 'Point your own domain at ElixpoURL on Pro and Business so every short link carries your name, not ours.',
+    accent: '#ff7cc9',
+  },
+  {
+    icon: <ApiIcon />,
+    title: 'REST API',
+    body: 'Create, list, and revoke links with scoped API keys and predictable JSON. Drop it into any app you ship.',
+    accent: '#c4b5fd',
+  },
+];
+
+/* ── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
   return (
@@ -59,196 +154,284 @@ export default function LandingPage() {
         <Navbar />
       </div>
 
-      {/* Hero panel: full-bleed rounded video card. Video sits behind a vignette
-          + dim layer; oversized wordmark anchors the bottom-left while the
-          description + CTA float to the right. Matches the elixpo.com hero. */}
-      <section className="relative z-10 w-full px-3 md:px-5 mt-3 md:mt-4">
-        <div
-          className="video-hero relative w-full mx-auto overflow-hidden"
-          style={{
-            maxWidth: '1480px',
-            minHeight: 'min(78vh, 760px)',
-            borderRadius: '28px',
-            border: '1px solid rgba(255,255,255,0.06)',
-            boxShadow: '0 40px 120px rgba(0,0,0,0.7)',
-          }}
-        >
-          <video
-            src="/product_pitch.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            poster="/og-image.png"
+      {/* ── Hero (pixel field) ──────────────────────────────────────────── */}
+      <div className="relative z-10">
+        <PixelHero />
+      </div>
+
+      {/* ── How it works (3 steps) ──────────────────────────────────────── */}
+      <section className="relative z-10 w-full max-w-4xl mx-auto px-4 py-12 md:py-16">
+        <p className="text-center text-[0.8rem] font-bold tracking-[0.12em] uppercase text-[#b69aff] mb-2">
+          Get started
+        </p>
+        <h2 className="text-center font-extrabold tracking-[-0.02em] text-[1.7rem] md:text-[2.3rem] text-white">
+          Live in three steps
+        </h2>
+
+        <div className="relative mt-10 md:mt-14">
+          {/* dashed roadmap line (desktop) */}
+          <svg
+            viewBox="0 0 1000 54"
+            preserveAspectRatio="none"
+            className="hidden md:block absolute top-0 left-[8%] w-[84%] h-14 overflow-visible z-0"
             aria-hidden="true"
-          />
+          >
+            <defs>
+              <linearGradient id="url-rm" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#9b7bf7" />
+                <stop offset="50%" stopColor="#5fb6ff" />
+                <stop offset="100%" stopColor="#86efac" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M0 27 C 110 4, 230 4, 333 27 S 560 50, 666 27 S 880 4, 1000 27"
+              fill="none"
+              stroke="url(#url-rm)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeDasharray="1 13"
+              opacity="0.65"
+            />
+          </svg>
 
-          {/* Two-column overlay. Left column anchors the wordmark at the
-              bottom; right column centers the tagline + CTA vertically.
-              Mirrors the elixpo.com hero composition. */}
-          <div className="video-hero-content absolute inset-0 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr]">
-            {/* Left — wordmark pinned bottom-left */}
-            <div className="flex flex-col justify-end px-6 sm:px-10 md:px-14 lg:px-20 pb-8 md:pb-12 lg:pb-14">
-              <h1
-                className="font-extrabold leading-[0.9] tracking-[-0.045em] text-white drop-shadow-[0_8px_40px_rgba(0,0,0,0.7)]"
-                style={{
-                  fontSize: 'clamp(2.5rem, 8.5vw, 8rem)',
-                }}
+          <div className="relative z-[1] flex flex-col md:flex-row md:justify-between gap-10 md:gap-4">
+            {STEPS.map((s) => (
+              <div
+                key={s.n}
+                className="flex-1 flex flex-col items-center text-center md:max-w-[240px] mx-auto"
               >
-                Elixpo
-                <span style={{ color: '#c8b6ff' }}>URL</span>
-              </h1>
-            </div>
-
-            {/* Right — pill + tagline + CTA, baseline-aligned with the
-                wordmark (justify-end pushes everything to the bottom). */}
-            <div className="flex flex-col justify-end items-start gap-5 px-6 sm:px-10 md:px-14 lg:pr-20 lg:pl-4 pb-10 md:pb-12 lg:pb-14 max-w-[420px]">
-              <span
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
-                style={{
-                  background: 'rgba(155, 123, 247, 0.18)',
-                  color: '#fff',
-                  border: '1px solid rgba(155, 123, 247, 0.45)',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: ACCENT }}
-                />
-                Built on Cloudflare&rsquo;s edge
-              </span>
-
-              <p
-                className="text-base md:text-[1.05rem] text-white/90 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
-                style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
-              >
-                An open URL shortener built on Cloudflare&rsquo;s edge.
-                Lightning-fast redirects, click analytics, and a
-                developer-first API — for any app you ship, Elixpo or
-                yours.
-              </p>
-
-              <Link
-                href="/api/auth/login"
-                className="group inline-flex items-center gap-3 pl-6 pr-2 py-2 rounded-full font-semibold text-[0.95rem] text-white no-underline transition-all"
-                style={{
-                  background: 'rgba(11,13,18,0.85)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(8px)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background =
-                    'rgba(155,123,247,0.22)';
-                  e.currentTarget.style.borderColor =
-                    'rgba(155,123,247,0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background =
-                    'rgba(11,13,18,0.85)';
-                  e.currentTarget.style.borderColor =
-                    'rgba(255,255,255,0.15)';
-                }}
-              >
-                <span className="tracking-wider uppercase text-[0.78rem]">
-                  Get Started
-                </span>
-                <span
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-full text-white transition-all group-hover:translate-x-0.5"
+                <div
+                  className="w-[54px] h-[54px] rounded-full grid place-items-center font-extrabold text-lg"
                   style={{
-                    background:
-                      'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                    boxShadow: '0 4px 14px rgba(155,123,247,0.5)',
+                    color: s.accent,
+                    background: '#0e1117',
+                    border: `1px solid ${s.accent}55`,
+                    boxShadow: `0 0 0 6px #0b0d12, 0 8px 24px ${s.accent}33`,
                   }}
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                  </svg>
-                </span>
-              </Link>
-            </div>
+                  {s.n}
+                </div>
+                <h3 className="mt-4 text-[1.05rem] font-bold text-white">
+                  {s.title}
+                </h3>
+                <p className="mt-1.5 text-[0.88rem] leading-relaxed text-white/60">
+                  {s.body}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pt-16 md:pt-24 pb-16 md:pb-20">
-        {/* Features */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {/* ── Feature grid ────────────────────────────────────────────────── */}
+      <section
+        id="features"
+        className="relative z-10 w-full max-w-6xl mx-auto px-4 py-14 md:py-20 scroll-mt-20"
+      >
+        <div className="text-center max-w-[620px] mx-auto mb-10 md:mb-14">
+          <h2 className="font-extrabold tracking-[-0.02em] leading-[1.05] text-[2.1rem] md:text-[3rem] text-white">
+            Everything a link should do
+          </h2>
+          <p className="mt-4 text-[1.05rem] leading-relaxed text-white/65">
+            Redirects, analytics, branding, and an API behind one dashboard —
+            so you ship the link and skip the plumbing.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {FEATURES.map((f) => (
             <div
               key={f.title}
               className="p-6 rounded-[16px] transition-colors"
               style={{
-                background:
-                  'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
+                background: CARD_BG,
                 border: '1px solid rgba(255,255,255,0.08)',
                 backdropFilter: 'blur(20px)',
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.borderColor =
-                  'rgba(155,123,247,0.3)')
+                (e.currentTarget.style.borderColor = 'rgba(155,123,247,0.3)')
               }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.borderColor =
-                  'rgba(255,255,255,0.08)')
+                (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')
               }
             >
               <div
-                className="inline-flex items-center justify-center w-10 h-10 rounded-[10px] mb-4"
+                className="inline-flex items-center justify-center w-[54px] h-[54px] rounded-[16px] mb-4"
                 style={{
-                  background: 'rgba(155,123,247,0.12)',
-                  border: '1px solid rgba(155,123,247,0.25)',
-                  color: ACCENT,
+                  color: f.accent,
+                  background: `${f.accent}14`,
+                  border: `1px solid ${f.accent}40`,
+                  boxShadow: `0 8px 26px ${f.accent}26`,
                 }}
               >
                 {f.icon}
               </div>
-              <h3
-                className="text-[1.05rem] font-bold mb-2 text-white"
-                style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
-              >
+              <h3 className="text-[1.05rem] font-bold mb-2 text-white">
                 {f.title}
               </h3>
               <p
-                className="text-[0.92rem] leading-relaxed text-white/62"
+                className="text-[0.9rem] leading-relaxed text-white/62"
                 style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
               >
                 {f.body}
               </p>
             </div>
           ))}
-        </section>
+        </div>
+      </section>
 
-        {/* CTA */}
-        <section
-          className="mt-16 md:mt-20 p-6 md:p-10 rounded-[20px] text-center"
+      {/* ── API teaser ──────────────────────────────────────────────────── */}
+      <section className="relative z-10 w-full max-w-6xl mx-auto px-4 py-10 md:py-16">
+        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+          <div className="max-w-[400px] text-center md:text-left">
+            <p className="text-[0.8rem] font-bold tracking-[0.12em] uppercase text-[#b69aff] mb-2">
+              For developers
+            </p>
+            <h3 className="text-[1.6rem] md:text-[2rem] font-bold text-white tracking-tight mb-3">
+              One POST and you have a link
+            </h3>
+            <p className="text-[0.95rem] leading-relaxed text-white/62 mb-6">
+              Authenticate with a scoped API key, send the destination, and get
+              back the short URL plus its analytics handle. The same endpoints
+              that power the dashboard are open to you.
+            </p>
+            <Link
+              href="/docs/api"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] font-semibold text-[0.92rem] text-white no-underline transition-colors"
+              style={{ border: '1px solid rgba(255,255,255,0.16)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(155,123,247,0.5)';
+                e.currentTarget.style.background = 'rgba(155,123,247,0.06)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              Explore the API
+              <ArrowIcon />
+            </Link>
+          </div>
+
+          {/* code artifact — non-interactive, framed as a terminal */}
+          <div
+            aria-hidden
+            className="w-full max-w-[440px] rounded-[16px] overflow-hidden select-none"
+            style={{
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: '#0b0d12',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.55)',
+            }}
+          >
+            <div
+              className="flex items-center gap-2 px-3.5 py-2.5"
+              style={{
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(255,255,255,0.025)',
+              }}
+            >
+              <div className="flex gap-1.5">
+                {['#ff5f57', '#febc2e', '#28c840'].map((c) => (
+                  <span
+                    key={c}
+                    className="w-[9px] h-[9px] rounded-full"
+                    style={{ background: c, opacity: 0.55 }}
+                  />
+                ))}
+              </div>
+              <span
+                className="ml-1 text-[0.66rem] text-white/40"
+                style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+              >
+                POST api.lixrl.com/v1/links
+              </span>
+            </div>
+            <pre
+              className="p-4 text-[0.78rem] leading-[1.7] overflow-x-auto m-0"
+              style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+            >
+              <code>
+                <span className="text-white/40">{'$ '}</span>
+                <span className="text-[#86efac]">curl</span>
+                <span className="text-white/85">{' -X POST api.lixrl.com/v1/links \\'}</span>
+                {'\n'}
+                <span className="text-white/85">{'    -H '}</span>
+                <span className="text-[#fbbf24]">{'"Authorization: Bearer $KEY"'}</span>
+                <span className="text-white/85">{' \\'}</span>
+                {'\n'}
+                <span className="text-white/85">{'    -d '}</span>
+                <span className="text-[#fbbf24]">{'\'{"url":"https://elixpo.com","slug":"home"}\''}</span>
+                {'\n\n'}
+                <span className="text-white/40">{'{'}</span>
+                {'\n'}
+                <span className="text-white/40">{'  '}</span>
+                <span className="text-[#9b7bf7]">{'"short"'}</span>
+                <span className="text-white/85">{': '}</span>
+                <span className="text-[#86efac]">{'"https://lixrl.com/home"'}</span>
+                <span className="text-white/85">{','}</span>
+                {'\n'}
+                <span className="text-white/40">{'  '}</span>
+                <span className="text-[#9b7bf7]">{'"clicks"'}</span>
+                <span className="text-white/85">{': '}</span>
+                <span className="text-[#5fb6ff]">{'0'}</span>
+                {'\n'}
+                <span className="text-white/40">{'}'}</span>
+              </code>
+            </pre>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Pricing teaser ──────────────────────────────────────────────── */}
+      <section className="relative z-10 w-full max-w-5xl mx-auto px-4 py-12 md:py-16">
+        <div className="text-center max-w-[560px] mx-auto">
+          <h2 className="font-extrabold tracking-[-0.02em] text-[1.9rem] md:text-[2.5rem] text-white">
+            Pricing that scales with you
+          </h2>
+          <p className="mt-3 text-[1rem] leading-relaxed text-white/65">
+            Start free, upgrade when you need branded domains and higher limits.
+          </p>
+          <div className="mt-7">
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-semibold text-[0.95rem] text-white no-underline transition-colors"
+              style={{ border: '1px solid rgba(255,255,255,0.16)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(155,123,247,0.5)';
+                e.currentTarget.style.background = 'rgba(155,123,247,0.06)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              See pricing
+              <ArrowIcon />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Final CTA band ──────────────────────────────────────────────── */}
+      <section className="relative z-10 w-full max-w-5xl mx-auto px-4 py-12 md:py-16">
+        <div
+          className="p-8 md:p-12 rounded-[20px] text-center"
           style={{
             background:
               'linear-gradient(135deg, rgba(155,123,247,0.14) 0%, rgba(95,182,255,0.06) 100%)',
             border: '1px solid rgba(155,123,247,0.25)',
           }}
         >
-          <h2 className="text-[1.5rem] md:text-[1.9rem] font-bold text-white tracking-tight mb-3">
-            Start shortening in seconds.
+          <h2 className="text-[1.6rem] md:text-[2.1rem] font-bold text-white tracking-tight mb-3">
+            Mint your first short link
           </h2>
-          <p className="text-white/65 max-w-[520px] mx-auto mb-6">
-            Sign in with your Elixpo account, mint your first short link, and
-            grab an API key. Free tier, no credit card.
+          <p className="text-white/65 max-w-[520px] mx-auto mb-7">
+            Sign in with your Elixpo account, shorten a URL, and grab an API key
+            — free tier, no credit card.
           </p>
           <Link
             href="/api/auth/login"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-semibold text-base text-white no-underline transition-all"
+            className="inline-flex items-center gap-2 px-7 py-3 rounded-[12px] font-semibold text-base text-white no-underline transition-all"
             style={{
               background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
               boxShadow: '0 8px 24px rgba(155,123,247,0.35)',
@@ -268,23 +451,11 @@ export default function LandingPage() {
               e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
-            Continue to sign in
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
+            Start free
+            <ArrowIcon />
           </Link>
-        </section>
-      </main>
+        </div>
+      </section>
 
       <div className="relative z-10">
         <Footer />

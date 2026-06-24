@@ -120,8 +120,11 @@ export default async function DashboardPage({
   const isUnlimited = limits.maxUrls === -1;
   const usagePct = isUnlimited ? 0 : pct(used, limits.maxUrls);
   const tone = quotaTone(usagePct);
+  // Over cap = more links than the tier allows (e.g. after a downgrade).
+  // Per policy, existing links keep resolving; only new creation is blocked.
+  const isOverCap = !isUnlimited && used > limits.maxUrls;
   const showUpgradeNudge =
-    user.tier === 'free' && !isUnlimited && usagePct >= 80;
+    user.tier === 'free' && !isUnlimited && (usagePct >= 80 || isOverCap);
 
   return (
     <div className="w-full max-w-6xl mx-auto py-2 px-2">
@@ -172,12 +175,16 @@ export default async function DashboardPage({
         >
           <div>
             <div className="text-sm font-bold text-white">
-              You&apos;re at {used} of {limits.maxUrls} links on Free
+              {isOverCap
+                ? `You have ${used} links — Free includes ${limits.maxUrls}`
+                : `You're at ${used} of ${limits.maxUrls} links on Free`}
             </div>
             <p className="text-sm text-white/65 mt-0.5">
-              {usagePct >= 100
-                ? 'You\'ve hit the limit. Upgrade to keep shortening.'
-                : 'Upgrade to Pro for higher limits, custom slugs, and longer analytics retention.'}
+              {isOverCap
+                ? 'All your links still work. Resubscribe to create new ones and restore custom slugs, longer analytics, and styled QR.'
+                : usagePct >= 100
+                  ? "You've hit the limit. Upgrade to keep shortening."
+                  : 'Upgrade to Pro for higher limits, custom slugs, and longer analytics retention.'}
             </p>
           </div>
           <Link
