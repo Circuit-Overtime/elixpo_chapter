@@ -112,14 +112,24 @@ async function sendLifecycleMail(data: EntitlementData): Promise<void> {
   // Dedupe per entitlement state so a redelivery can't double-send.
   const idem = `${data.uid}:${data.version ?? 0}:${status || (data.active ? 'active' : 'inactive')}`;
 
-  if (status === 'cancelled' || status === 'canceled') {
+  // `halted` splits two ways (per Pay's `failed` flag): a broken card
+  // (failed:true → "update your payment") vs a UPI-mandate revoke
+  // (failed:false → effectively a cancellation). `cancelled` is always a
+  // cancellation. Either way access continues until expires_at.
+  const isCancellation =
+    status === 'cancelled' ||
+    status === 'canceled' ||
+    (status === 'halted' && data.failed !== true);
+  const isPaymentFailed = status === 'halted' && data.failed === true;
+
+  if (isCancellation) {
     await triggerMail({
       endpointKey: env.ELIXPO_MAILS_HOOK_CANCELED,
       to: user.email,
       variables: { name, tier, access_until: expiry },
       idempotencyKey: idem,
     });
-  } else if (status === 'halted' || data.failed === true) {
+  } else if (isPaymentFailed) {
     await triggerMail({
       endpointKey: env.ELIXPO_MAILS_HOOK_PAYMENT_FAILED,
       to: user.email,
@@ -159,7 +169,7 @@ async function applyEntitlement(data: EntitlementData): Promise<void> {
 
   const tier: Tier = granting ? incomingTier : 'free';
   const status: BillingStatus = granting
-    ? normalizeStatus(data.status)
+    ? billingStatusFor(data.status, data.failed)
     : data.active === false
       ? 'canceled'
       : 'none';
@@ -178,14 +188,17 @@ async function applyEntitlement(data: EntitlementData): Promise<void> {
     .run();
 }
 
-function normalizeStatus(s?: string): BillingStatus {
+function billingStatusFor(s?: string, failed?: boolean): BillingStatus {
   switch ((s || '').toLowerCase()) {
-    case 'past_due':
-    case 'pending':
-      return 'past_due';
     case 'canceled':
     case 'cancelled':
       return 'canceled';
+    case 'halted':
+      // Card failure → recoverable (past_due); UPI revoke → effectively canceled.
+      return failed ? 'past_due' : 'canceled';
+    case 'past_due':
+    case 'pending':
+      return 'past_due';
     default:
       return 'active';
   }

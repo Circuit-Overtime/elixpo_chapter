@@ -205,25 +205,38 @@ export default function PricingPage() {
             return (
               <div
                 key={tier}
-                className="p-6 rounded-[18px] relative flex flex-col"
+                className="p-6 rounded-[18px] relative flex flex-col transition-opacity"
                 style={{
-                  background: isPopular
-                    ? 'linear-gradient(135deg, rgba(155,123,247,0.16) 0%, rgba(95,182,255,0.05) 100%)'
-                    : 'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
-                  border: isPopular
-                    ? '1px solid rgba(155,123,247,0.45)'
-                    : '1px solid rgba(255,255,255,0.08)',
+                  // Current plan is greyed/dimmed — it's not an upgrade target.
+                  background: isCurrent
+                    ? 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
+                    : isPopular
+                      ? 'linear-gradient(135deg, rgba(155,123,247,0.16) 0%, rgba(95,182,255,0.05) 100%)'
+                      : 'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
+                  border: isCurrent
+                    ? '1px solid rgba(255,255,255,0.06)'
+                    : isPopular
+                      ? '1px solid rgba(155,123,247,0.45)'
+                      : '1px solid rgba(255,255,255,0.08)',
                   backdropFilter: 'blur(20px)',
+                  opacity: isCurrent ? 0.6 : 1,
                 }}
               >
-                {isPopular && (
+                {isCurrent ? (
+                  <span
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded-full"
+                    style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.2)' }}
+                  >
+                    Current plan
+                  </span>
+                ) : isPopular ? (
                   <span
                     className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded-full text-white"
                     style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)' }}
                   >
                     Most popular
                   </span>
-                )}
+                ) : null}
 
                 <h3 className="text-[1.15rem] font-bold text-white">{p.name}</h3>
                 <p className="text-[0.85rem] text-white/55 mt-1 mb-4 min-h-[2.4em]">{p.tagline}</p>

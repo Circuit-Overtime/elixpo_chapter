@@ -133,12 +133,24 @@ Handling:
 
 Subscription lifecycle (all via entitlement.updated):
 - First charge / renewal → `{ active:true, status:"active" }`, new `expires_at`.
-- Buyer cancels → `{ active:true, status:"cancelled" }` fires **immediately**
-  (keeps access until `expires_at`) — **send the cancellation email here** —
-  then a second `{ active:false }` at period end → flip tier to free.
-- Mandate broken (UPI revoke / repeated card failure) → `{ status:"halted",
-  failed:true }`. Account deletion / app revoke → `{ status:"revoked",
-  active:false }`.
+- Buyer cancels in YOUR app (`POST /v1/subscriptions/cancel`) →
+  `{ active:true, status:"cancelled" }` fires **immediately** (keeps access
+  until `expires_at`) — **send the cancellation email here** — then a second
+  `{ active:false }` at period end → flip tier to free.
+- Mandate ended **outside your app** → Razorpay reports it and Pay forwards
+  `{ active:true, status:"halted", … }`, distinguished by the **`failed`** flag:
+  - `failed:false` → buyer **revoked the UPI/e-mandate** in their bank/GPay/
+    PhonePe app (no charge was attempted). Treat as a **cancellation** — send
+    the cancellation email.
+  - `failed:true` → **card retries exhausted**. Send a **"update your payment"**
+    email; recoverable if they re-subscribe.
+- Account deletion / app revoke → `{ status:"revoked", active:false }`.
+
+**Detection is universal — you never poll the provider.** Whether the buyer
+cancels from your dashboard, revokes the mandate in their UPI app, or the card
+fails, it all arrives as `entitlement.updated`. Access always continues to
+`expires_at`; the final `{ active:false }` (from the daily expiry sweep) is your
+cue to downgrade to free.
 
 ### payment.captured (optional — toggle per endpoint)
 

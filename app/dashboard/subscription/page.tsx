@@ -168,7 +168,9 @@ export default async function SubscriptionPage({
               Upgrade plan
             </Link>
           )}
-          {isPaid && (
+          {/* Active paid plan → change or cancel. Already cancelled/lapsing →
+              no cancel button; offer resubscribe instead. */}
+          {isPaid && !isCanceled && (
             <>
               <Link
                 href="/pricing"
@@ -188,6 +190,18 @@ export default async function SubscriptionPage({
                 Cancel subscription
               </a>
             </>
+          )}
+          {isPaid && isCanceled && (
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-semibold text-white no-underline"
+              style={{
+                background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+                boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+              }}
+            >
+              Resubscribe
+            </Link>
           )}
           {isEnterprise && (
             <a
