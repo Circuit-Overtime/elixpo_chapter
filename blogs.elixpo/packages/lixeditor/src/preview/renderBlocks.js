@@ -127,11 +127,20 @@ export function renderBlocksToHTML(blocks) {
         if (block.props?.url) {
           const ip = block.props;
           const alt = escAttr(ip.alt || ip.caption || '');
-          const widthAttr = ip.width ? ` width="${escAttr(ip.width)}"` : '';
           const align = ['left', 'center', 'right'].includes(ip.align) ? ip.align : null;
-          let img = `<img src="${escAttr(ip.url)}" alt="${alt}"${widthAttr} style="max-width:100%;height:auto;${align === 'center' ? 'display:block;margin:0 auto;' : ''}" />`;
+          // Images fill the content width by default (block); an explicit width
+          // (from resizing) is respected but never overflows.
+          const imgStyle = ip.width
+            ? `max-width:100%;width:${escAttr(String(ip.width))}px;height:auto;display:block;border-radius:8px;`
+            : `width:100%;height:auto;display:block;border-radius:8px;`;
+          let img = `<img src="${escAttr(ip.url)}" alt="${alt}" style="${imgStyle}" />`;
           if (ip.link) img = `<a href="${escAttr(ip.link)}" target="_blank" rel="noopener noreferrer">${img}</a>`;
-          return `<figure${align ? ` style="text-align:${align}"` : ''}>${img}${ip.caption ? `<figcaption>${ip.caption}</figcaption>` : ''}</figure>${childrenHTML}`;
+          // figure margin matches paragraph spacing; caption always centered.
+          const figStyle = `margin:16px 0;${align ? `text-align:${align};` : ''}`;
+          const caption = ip.caption
+            ? `<figcaption style="text-align:center;margin-top:6px;font-size:0.85em;color:#9aa0a6;">${ip.caption}</figcaption>`
+            : '';
+          return `<figure style="${figStyle}">${img}${caption}</figure>${childrenHTML}`;
         }
         return childrenHTML;
       case 'table': {
@@ -155,6 +164,10 @@ export function renderBlocksToHTML(blocks) {
         return table + childrenHTML;
       }
       case 'paragraph':
+        // Preserve a deliberate blank line (empty paragraph from pressing Enter)
+        // as <p><br></p> so spacing survives the export, instead of collapsing.
+        if (content) return `<p${alignAttr}>${content}</p>${childrenHTML}`;
+        return `<p${alignAttr}><br></p>${childrenHTML}`;
       default:
         if (content) return `<p${alignAttr}>${content}</p>${childrenHTML}`;
         return childrenHTML || '';
