@@ -170,10 +170,12 @@ export default function Sidebar({ user }: { user: User }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const NavIcon = ({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) => (
+  // Icon + text on lg; icon-only (with a native tooltip) below lg.
+  const NavPill = ({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) => (
     <Link
       href={href}
-      className={`relative group flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 no-underline ${
+      title={label}
+      className={`group flex items-center gap-2 h-9 px-2 lg:px-3 rounded-lg transition-all duration-200 no-underline ${
         isActive(href)
           ? 'text-accent-main bg-[rgba(155,123,247,0.12)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
@@ -182,10 +184,7 @@ export default function Sidebar({ user }: { user: User }) {
       <span className={isActive(href) ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}>
         {icon}
       </span>
-      {/* Tooltip */}
-      <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 text-xs font-medium rounded-md bg-[#161828] border border-border-light text-text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
-        {label}
-      </span>
+      <span className="hidden lg:inline text-sm font-medium">{label}</span>
     </Link>
   );
 
@@ -202,18 +201,16 @@ export default function Sidebar({ user }: { user: User }) {
         </span>
       </Link>
 
-      {/* Right: Nav icons + Account dropdown */}
-      <div className="flex items-center gap-1 sm:gap-2">
-        {/* App nav icons */}
+      {/* Right: Nav + Account dropdown */}
+      <div className="flex items-center gap-0.5 sm:gap-1">
+        {/* App nav — icon+text on lg. Pricing intentionally omitted inside the
+            dashboard; it's still reachable from the profile menu. */}
         {navItems.map((item) => (
-          <NavIcon key={item.href} {...item} />
+          <NavPill key={item.href} {...item} />
         ))}
 
-        {/* Marketing icons (Pricing, Docs) — same icon-row treatment */}
         <div className="w-px h-6 bg-border-light mx-1" />
-        {marketingLinks.map((item) => (
-          <NavIcon key={item.href} {...item} />
-        ))}
+        <NavPill href="/docs" label="Docs" icon={Icons.docs} />
 
         {/* Divider before account */}
         <div className="w-px h-6 bg-border-light ml-1 sm:ml-2" />
