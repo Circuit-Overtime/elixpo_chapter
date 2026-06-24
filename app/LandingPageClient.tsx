@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
 import BackgroundAurora from './components/BackgroundAurora';
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
@@ -147,163 +146,18 @@ const FEATURES: {
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 50);
-    return () => clearTimeout(t);
-  }, []);
-
-  const rise = (delay: string) => ({
-    opacity: mounted ? 1 : 0,
-    transform: mounted ? 'translateY(0)' : 'translateY(20px)',
-    transition: 'opacity 0.7s ease, transform 0.7s ease',
-    transitionDelay: delay,
-  });
-
   return (
     <div className="min-h-screen flex flex-col text-[#f5f5f4] relative bg-black">
       <BackgroundAurora variant="default" />
-
-      <style>{`
-        @keyframes url-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        .url-marquee { animation: url-marquee 26s linear infinite; }
-        @media (prefers-reduced-motion: reduce) { .url-marquee { animation: none; } }
-      `}</style>
 
       <div className="relative z-10">
         <Navbar />
       </div>
 
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="relative z-10 flex flex-col items-center justify-center text-center px-4 pt-16 pb-20 md:pt-24 md:pb-28 overflow-hidden">
-        {/* soft purple glow behind the headline */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[34%] -translate-x-1/2 -translate-y-1/2"
-          style={{
-            width: '60vmax',
-            height: '38vmax',
-            background:
-              'radial-gradient(circle, rgba(155,123,247,0.16) 0%, transparent 60%)',
-            filter: 'blur(40px)',
-          }}
-        />
-
-        <span
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[0.8rem] font-semibold backdrop-blur-md"
-          style={{
-            ...rise('0s'),
-            color: '#b69aff',
-            background: 'rgba(155,123,247,0.1)',
-            border: '1px solid rgba(155,123,247,0.25)',
-          }}
-        >
-          <span
-            className="w-1.5 h-1.5 rounded-full animate-pulse"
-            style={{ background: ACCENT }}
-          />
-          Built on Cloudflare&rsquo;s edge
-        </span>
-
-        <h1
-          className="mt-6 font-bold tracking-[-0.03em] leading-[1.02] flex flex-wrap justify-center gap-x-[0.35em]"
-          style={{ ...rise('0.05s'), fontSize: 'clamp(2.6rem, 8vw, 5.6rem)' }}
-        >
-          <span
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontStyle: 'italic',
-              fontWeight: 500,
-              color: 'rgba(245,245,244,0.92)',
-            }}
-          >
-            Short links,
-          </span>
-          <span
-            style={{
-              fontWeight: 800,
-              backgroundImage:
-                'linear-gradient(135deg, #f5f5f4 0%, #9b7bf7 42%, #5fb6ff 78%, #86efac 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            edge speed.
-          </span>
-        </h1>
-
-        <p
-          className="mt-6 max-w-[600px] text-[1.02rem] md:text-[1.12rem] leading-relaxed text-white/72"
-          style={rise('0.15s')}
-        >
-          An open URL shortener built on Cloudflare&rsquo;s edge. Instant
-          redirects, click analytics, custom slugs, and a developer-first REST
-          API — for any app you ship, Elixpo or yours.
-        </p>
-
-        <div
-          className="mt-9 flex flex-wrap items-center justify-center gap-3"
-          style={rise('0.3s')}
-        >
-          <Link
-            href="/api/auth/login"
-            className="inline-flex items-center gap-2 h-[50px] px-7 rounded-[14px] font-bold text-[0.95rem] text-white no-underline transition-all"
-            style={{
-              background: 'linear-gradient(180deg, #a98cff 0%, #7c5cff 100%)',
-              boxShadow:
-                'inset 0 1px 1px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.2), 0 14px 30px rgba(124,92,255,0.35)',
-            }}
-          >
-            Start free
-            <ArrowIcon />
-          </Link>
-          <Link
-            href="/docs"
-            className="inline-flex items-center gap-2 h-[50px] px-7 rounded-[14px] font-bold text-[0.95rem] text-[#f5f5f4] no-underline backdrop-blur-md transition-all"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1)',
-            }}
-          >
-            Read the docs
-          </Link>
-        </div>
-
-        {/* trust marquee */}
-        <div
-          className="mt-14 w-full max-w-[860px] overflow-hidden"
-          style={{
-            ...rise('0.5s'),
-            WebkitMaskImage:
-              'linear-gradient(to right, transparent, white 15%, white 85%, transparent)',
-            maskImage:
-              'linear-gradient(to right, transparent, white 15%, white 85%, transparent)',
-          }}
-        >
-          <div className="url-marquee flex w-max gap-12 py-1">
-            {[0, 1].map((dup) => (
-              <div
-                key={dup}
-                className="flex gap-12 items-center shrink-0"
-                aria-hidden={dup === 1}
-              >
-                {TRUST.map((t) => (
-                  <span
-                    key={`${dup}-${t}`}
-                    className="text-[0.95rem] font-semibold whitespace-nowrap text-white/45"
-                    style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ── Hero (pixel field) ──────────────────────────────────────────── */}
+      <div className="relative z-10">
+        <PixelHero />
+      </div>
 
       {/* ── How it works (3 steps) ──────────────────────────────────────── */}
       <section className="relative z-10 w-full max-w-4xl mx-auto px-4 py-12 md:py-16">
@@ -530,120 +384,31 @@ export default function LandingPage() {
 
       {/* ── Pricing teaser ──────────────────────────────────────────────── */}
       <section className="relative z-10 w-full max-w-5xl mx-auto px-4 py-12 md:py-16">
-        <div className="text-center max-w-[560px] mx-auto mb-8 md:mb-10">
+        <div className="text-center max-w-[560px] mx-auto">
           <h2 className="font-extrabold tracking-[-0.02em] text-[1.9rem] md:text-[2.5rem] text-white">
             Pricing that scales with you
           </h2>
           <p className="mt-3 text-[1rem] leading-relaxed text-white/65">
             Start free, upgrade when you need branded domains and higher limits.
           </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {[
-            {
-              name: 'Free',
-              price: '$0',
-              note: 'For personal links',
-              perks: ['Unlimited edge redirects', 'Basic click analytics', 'API access'],
-              highlight: false,
-            },
-            {
-              name: 'Pro',
-              price: '$8',
-              note: 'per month',
-              perks: ['1 branded domain', 'Full analytics history', 'Styled QR codes'],
-              highlight: true,
-            },
-            {
-              name: 'Business',
-              price: '$24',
-              note: 'per month',
-              perks: ['Multiple domains', 'Team API keys', 'Priority edge support'],
-              highlight: false,
-            },
-          ].map((tier) => (
-            <div
-              key={tier.name}
-              className="p-6 rounded-[16px] flex flex-col"
-              style={{
-                background: tier.highlight
-                  ? 'linear-gradient(135deg, rgba(155,123,247,0.14) 0%, rgba(95,182,255,0.06) 100%)'
-                  : CARD_BG,
-                border: tier.highlight
-                  ? '1px solid rgba(155,123,247,0.4)'
-                  : '1px solid rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(20px)',
+          <div className="mt-7">
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-semibold text-[0.95rem] text-white no-underline transition-colors"
+              style={{ border: '1px solid rgba(255,255,255,0.16)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(155,123,247,0.5)';
+                e.currentTarget.style.background = 'rgba(155,123,247,0.06)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
+                e.currentTarget.style.background = 'transparent';
               }}
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[0.95rem] font-bold text-white">
-                  {tier.name}
-                </span>
-                {tier.highlight && (
-                  <span
-                    className="text-[0.62rem] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full"
-                    style={{
-                      color: '#b69aff',
-                      background: 'rgba(155,123,247,0.16)',
-                      border: '1px solid rgba(155,123,247,0.3)',
-                    }}
-                  >
-                    Popular
-                  </span>
-                )}
-              </div>
-              <div className="flex items-baseline gap-1.5 mb-1">
-                <span className="text-[2rem] font-extrabold text-white">
-                  {tier.price}
-                </span>
-                <span className="text-[0.8rem] text-white/45">{tier.note}</span>
-              </div>
-              <ul className="mt-4 space-y-2 list-none p-0 flex-1">
-                {tier.perks.map((p) => (
-                  <li
-                    key={p}
-                    className="flex items-start gap-2 text-[0.88rem] text-white/70"
-                  >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#86efac"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="mt-0.5 shrink-0"
-                      aria-hidden="true"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="text-center mt-8">
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-semibold text-[0.95rem] text-white no-underline transition-colors"
-            style={{ border: '1px solid rgba(255,255,255,0.16)' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(155,123,247,0.5)';
-              e.currentTarget.style.background = 'rgba(155,123,247,0.06)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            Compare all plans
-            <ArrowIcon />
-          </Link>
+              See pricing
+              <ArrowIcon />
+            </Link>
+          </div>
         </div>
       </section>
 
