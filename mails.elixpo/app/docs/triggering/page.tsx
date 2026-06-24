@@ -64,7 +64,7 @@ export default function Triggering() {
                 items={[
                     <><Code>to</Code> — recipient email address. Required.</>,
                     <><Code>variables</Code> — object of <Code>{"{{var}}"}</Code> values merged into the template's subject and body.</>,
-                    <><Code>idempotency_key</Code> — optional dedupe key; the same key won't send twice (good for retries).</>,
+                    <><Code>idempotency_key</Code> — optional dedupe key (or pass an <Code>Idempotency-Key</Code> request header); the same key won't send twice — a duplicate returns the original result (good for retries).</>,
                 ]}
             />
 

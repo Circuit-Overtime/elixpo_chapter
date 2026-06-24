@@ -1039,6 +1039,7 @@ export default function WebhooksManager() {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
+    const [productFilter, setProductFilter] = useState("");
 
     const [toast, setToast] = useState<string | null>(null);
 
@@ -1130,20 +1131,26 @@ export default function WebhooksManager() {
         return counts;
     }, [webhooks]);
 
-    // Client-side filter by webhook name / template name / product name.
+    // Client-side filter by product, then by webhook / template / product name.
     const filteredWebhooks = useMemo(() => {
         const q = search.trim().toLowerCase();
-        if (!q) return webhooks;
-        return webhooks.filter(
-            (w) =>
+        return webhooks.filter((w) => {
+            if (productFilter && w.product_id !== productFilter) return false;
+            if (!q) return true;
+            return (
                 w.name.toLowerCase().includes(q) ||
                 w.template_name.toLowerCase().includes(q) ||
-                w.product_name.toLowerCase().includes(q),
-        );
-    }, [webhooks, search]);
+                w.product_name.toLowerCase().includes(q)
+            );
+        });
+    }, [webhooks, search, productFilter]);
 
-    // Group filtered webhooks by template for the list.
+    // Group filtered webhooks by template. Within each group the newest
+    // webhook (by created_at) sorts to the top; groups order by their newest
+    // webhook, so the most recently created webhook is always first.
     const groups = useMemo(() => {
+        const ts = (iso: string) =>
+            Date.parse(iso?.includes("T") ? iso : `${iso}`.replace(" ", "T") + "Z") || 0;
         const byTemplate = new Map<
             string,
             { templateId: string; templateName: string; productName: string; items: WebhookSummary[] }
@@ -1159,9 +1166,10 @@ export default function WebhooksManager() {
             }
             byTemplate.get(w.template_id)!.items.push(w);
         }
-        return Array.from(byTemplate.values()).sort((a, b) =>
-            a.templateName.localeCompare(b.templateName),
-        );
+        const out = Array.from(byTemplate.values());
+        for (const g of out) g.items.sort((a, b) => ts(b.created_at) - ts(a.created_at));
+        out.sort((a, b) => ts(b.items[0]?.created_at) - ts(a.items[0]?.created_at));
+        return out;
     }, [filteredWebhooks]);
 
     const hasTemplates = templates.length > 0;
@@ -1251,23 +1259,50 @@ export default function WebhooksManager() {
                     <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
                         {newButton}
                     </Stack>
-                    <TextField
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search webhooks by name, template, or product…"
-                        fullWidth
-                        size="small"
-                        sx={{ ...darkField, mb: 2 }}
-                        slotProps={{
-                            input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon sx={{ fontSize: 18, color: TEXT_40 }} />
-                                    </InputAdornment>
-                                ),
-                            },
-                        }}
-                    />
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1.5}
+                        sx={{ mb: 2 }}
+                    >
+                        <TextField
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search webhooks by name, template, or product…"
+                            size="small"
+                            sx={{ ...darkField, flex: 1 }}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon sx={{ fontSize: 18, color: TEXT_40 }} />
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
+                        />
+                        {products.length > 0 && (
+                            <Select
+                                value={productFilter}
+                                onChange={(e) => setProductFilter(e.target.value)}
+                                displayEmpty
+                                size="small"
+                                sx={{ ...darkSelect, minWidth: { xs: "100%", sm: 200 } }}
+                                MenuProps={darkMenuProps}
+                                renderValue={(val) =>
+                                    val
+                                        ? (products.find((p) => p.id === val)?.name ?? "Product")
+                                        : "All products"
+                                }
+                            >
+                                <MenuItem value="">All products</MenuItem>
+                                {products.map((p) => (
+                                    <MenuItem key={p.id} value={p.id}>
+                                        {p.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        )}
+                    </Stack>
                     {groups.length === 0 ? (
                         <Typography
                             sx={{
@@ -1277,7 +1312,9 @@ export default function WebhooksManager() {
                                 py: 4,
                             }}
                         >
-                            No webhooks match &ldquo;{search.trim()}&rdquo;
+                            {search.trim()
+                                ? `No webhooks match “${search.trim()}”`
+                                : "No webhooks for the selected product"}
                         </Typography>
                     ) : (
                     <Stack spacing={2}>

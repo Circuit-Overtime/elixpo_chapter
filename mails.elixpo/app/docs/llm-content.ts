@@ -144,5 +144,6 @@ Every send attempt produces a delivery log with status:
 
 Each log records the recipient, template, webhook, error (if any), and the
 merged variables used for the send. Provide an idempotency_key in the trigger
-body to dedupe retries — the same key won't send twice.
+body — or an Idempotency-Key request header — to dedupe retries; the same key
+won't send twice (a duplicate returns the original result).
 `;
