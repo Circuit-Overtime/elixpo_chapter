@@ -21,9 +21,16 @@ Your app never touches card data. Your server creates a checkout session with yo
 - Merchant — your tenant. You sign in with Elixpo Accounts.
 - App — a project under your merchant (e.g. lixblogs), with its own API key.
 - Product — a sellable tier (e.g. member).
-- Price — a regional/PPP variant of a product in a currency.
+- Price — a regional/PPP variant of a product in a currency. Each price has a type of one_time (manual re-purchase each cycle) or recurring (autopay mandate, billed automatically).
 - Entitlement — the tier + expiry a customer currently holds.
+- Subscription — for autopay prices, the recurring billing mandate. We manage the Razorpay subscription, the renewal charges, and emit entitlement.updated on every successful cycle.
 
-## P0 scope
+## Billing modes
 
-The first release powers first-party billing for blogs.elixpo with Razorpay (INR), one-time orders that grant a 30-day entitlement. Stripe, true recurring subscriptions, creator payouts, and bring-your-own-keys multi-tenancy follow.
+- One-time — buyer goes through Razorpay Checkout, pays once, gets entitlement for the price's interval (e.g. 30 days). Re-buying is manual.
+- Autopay (recurring) — buyer goes through Razorpay's hosted mandate page (UPI Autopay or Card eMandate), and Razorpay charges them automatically each cycle. You receive entitlement.updated on every renewal.
+Switch modes per price with the type field in your catalog JSON — no other change needed in your integration. See Catalog sync.
+
+## Cancellation
+
+For autopay prices, buyers can self-serve cancel from your app — see Checkout sessions → Cancelling. Graceful by default: access continues through the paid period, then the entitlement expires and you get a final entitlement.updated with active: false.
