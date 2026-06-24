@@ -6,8 +6,7 @@ import { useEffect, useState } from 'react';
 import BackgroundAurora from './components/BackgroundAurora';
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
-
-const ACCENT = '#9b7bf7';
+import PixelHero from './components/PixelHero';
 
 const CARD_BG =
   'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)';
@@ -79,15 +78,6 @@ const ArrowIcon = () => (
 );
 
 /* ── Content ────────────────────────────────────────────────────────────── */
-
-const TRUST = [
-  'Cloudflare Workers',
-  'D1',
-  'KV',
-  'Edge runtime',
-  'Elixpo Accounts',
-  'REST API',
-];
 
 const STEPS: { n: string; title: string; body: string; accent: string }[] = [
   {
