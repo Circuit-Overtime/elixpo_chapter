@@ -3,13 +3,14 @@ import { Geist, Geist_Mono } from "next/font/google";
 import BackgroundAurora from "./components/background-aurora";
 import "./globals.css";
 
-const SITE_URL = "https://mail.elixpo.com";
+const SITE_URL = "https://mails.elixpo.com";
+const TAGLINE = "Elixpo Mails — Event-Based Transactional Emails";
 const OG_IMAGE = {
     url: "/og-image.png",
     width: 1200,
     height: 630,
     type: "image/png",
-    alt: "mail.elixpo — Event-based transactional email",
+    alt: TAGLINE,
 };
 
 export const viewport: Viewport = {
@@ -29,27 +30,33 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: {
-        default: "mail.elixpo — Event-based transactional email for the Elixpo ecosystem",
-        template: "%s | mail.elixpo",
+        // Every route shows the Elixpo Mails tagline by default; pages that set
+        // their own title get it appended ("Pricing · Elixpo Mails").
+        default: TAGLINE,
+        template: "%s · Elixpo Mails",
     },
     description:
-        "mail.elixpo lets businesses send event-based transactional email without building mail infra. Bring your own sender, design templates with {{variable}} placeholders in a live WYSIWYG editor, and trigger sends from your service via webhook on Cloudflare's edge.",
+        "Elixpo Mails — event-based transactional email for the Elixpo suite. Bring your own sender (SMTP / Gmail, encrypted), design on-brand emails with {{variables}} in a live WYSIWYG editor, and trigger sends from your service with HMAC-signed webhooks — attachments, one-click unsubscribe, and delivery logs, on Cloudflare's edge.",
     keywords: [
+        "Elixpo Mails",
         "Elixpo",
-        "mail.elixpo",
         "transactional email",
+        "event-based email",
         "email templates",
         "email API",
         "WYSIWYG email",
         "webhook email",
+        "HMAC webhooks",
         "SMTP",
+        "List-Unsubscribe",
         "multi-tenant",
         "bring your own sender",
+        "Cloudflare",
     ],
     authors: [{ name: "Elixpo", url: "https://elixpo.com" }],
     creator: "Elixpo",
     publisher: "Elixpo",
-    applicationName: "mail.elixpo",
+    applicationName: "Elixpo Mails",
     category: "technology",
     metadataBase: new URL(SITE_URL),
     alternates: { canonical: "/" },
@@ -59,17 +66,17 @@ export const metadata: Metadata = {
         type: "website",
         locale: "en_US",
         url: SITE_URL,
-        siteName: "mail.elixpo",
-        title: "mail.elixpo — Event-based transactional email",
+        siteName: "Elixpo Mails",
+        title: TAGLINE,
         description:
-            "Bring your own sender, design templates with {{variables}}, and trigger transactional email from your service via webhook — on Cloudflare's edge.",
+            "Event-based transactional email: bring your own sender, design templates with {{variables}}, and trigger sends with HMAC-signed webhooks — on Cloudflare's edge.",
         images: [OG_IMAGE],
     },
     twitter: {
         card: "summary_large_image",
-        title: "mail.elixpo — Event-based transactional email",
+        title: TAGLINE,
         description:
-            "The transactional email layer for modern software — bring your own sender, design templates with live preview, and send via webhook.",
+            "The transactional email layer for modern software — bring your own sender, design on-brand templates with live preview, and send via signed webhook.",
         images: [OG_IMAGE.url],
     },
     icons: {
