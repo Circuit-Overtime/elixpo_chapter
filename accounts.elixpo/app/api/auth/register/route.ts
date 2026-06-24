@@ -195,20 +195,41 @@ export async function POST(request: NextRequest) {
                         process.env.NEXT_PUBLIC_APP_URL ||
                         "https://accounts.elixpo.com";
                     const verifyLink = `${APP_URL}/verify?token=${verificationToken}`;
-                    await sendMail("user_verify_otp", email, {
-                        name: displayName,
-                        otp_code: otpCode,
-                        expiry_minutes: 10,
-                        verify_link: verifyLink,
-                    });
-                    console.log(
-                        "[Register] Verification OTP sent to %s",
+                    const mailResult = await sendMail(
+                        "user_verify_otp",
                         email,
+                        {
+                            name: displayName,
+                            otp_code: otpCode,
+                            expiry_minutes: 10,
+                            verify_link: verifyLink,
+                        },
                     );
+                    // sendMail returns `{ok: false}` for env / signature /
+                    // upstream-4xx failures WITHOUT throwing. We must
+                    // inspect the result explicitly — otherwise the
+                    // try/catch never fires and we never know the mail
+                    // didn't go out. The buyer gets stuck at "check your
+                    // inbox" with nothing arriving.
+                    if (!mailResult.ok) {
+                        console.error(
+                            "[Register] sendMail returned ok=false for %s: %s",
+                            email,
+                            mailResult.error ?? "unknown",
+                        );
+                    } else {
+                        console.log(
+                            "[Register] Verification OTP sent to %s (delivery_id=%s)",
+                            email,
+                            mailResult.delivery_id ?? "",
+                        );
+                    }
                 } catch (otpError) {
                     console.error(
-                        "[Register] Failed to send verification email:",
-                        otpError,
+                        "[Register] Failed to send verification email (threw): %s",
+                        otpError instanceof Error
+                            ? otpError.message
+                            : String(otpError),
                     );
                     // Non-critical — user can request again from profile
                 }
