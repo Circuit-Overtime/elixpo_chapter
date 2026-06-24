@@ -121,11 +121,29 @@ export default function CatalogDocs() {
                         history stays intact).
                     </>,
                     <>
+                        Changing a <Code>recurring</Code> price's{" "}
+                        <Code>unit_amount</Code> or <Code>interval</Code>{" "}
+                        <strong>re-mints the Razorpay plan automatically</strong>{" "}
+                        (provider plans are immutable). New checkouts use the new
+                        amount; subscriptions already active keep billing their
+                        original amount until they renew or cancel.
+                    </>,
+                    <>
                         Send a single product as the bare object, or many under{" "}
                         <Code>products</Code>.
                     </>,
                 ]}
             />
+
+            <DocH2>Check the response</DocH2>
+            <DocP>
+                <Code>/v1/sync</Code> returns <strong>HTTP 200 even when a
+                product fails validation</strong> — always inspect the body, and
+                treat <Code>ok: false</Code> or a non-empty <Code>errors</Code>{" "}
+                array as a failure. Trusting the status code alone silently
+                no-ops the sync.
+            </DocP>
+            <CodeBlock code={RESPONSE} language="json" />
 
             <DocH2>Read it back</DocH2>
             <DocP>
