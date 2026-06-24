@@ -117,30 +117,6 @@ const resourceItems = [
   { href: '/docs', label: 'Docs', icon: Icons.docs },
 ];
 
-// Marketing-surface links next to the brand. Icon + label.
-const marketingLinks = [
-  {
-    href: '/pricing',
-    label: 'Pricing',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]">
-        <circle cx="10" cy="10" r="7.5" />
-        <path d="M10 5v10M7 8.5h4.5a1.5 1.5 0 010 3H7m0 0H12a1.5 1.5 0 010 3H7" />
-      </svg>
-    ),
-  },
-  {
-    href: '/docs',
-    label: 'Docs',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]">
-        <path d="M5 3h8a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
-        <path d="M6 7h6M6 10h6M6 13h4" />
-      </svg>
-    ),
-  },
-];
-
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const avatarUrl = getAvatarUrl(user);
@@ -170,10 +146,12 @@ export default function Sidebar({ user }: { user: User }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const NavIcon = ({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) => (
+  // Icon + text on lg; icon-only (with a native tooltip) below lg.
+  const NavPill = ({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) => (
     <Link
       href={href}
-      className={`relative group flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 no-underline ${
+      title={label}
+      className={`group flex items-center gap-2 h-9 px-2 lg:px-3 rounded-lg transition-all duration-200 no-underline ${
         isActive(href)
           ? 'text-accent-main bg-[rgba(155,123,247,0.12)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
@@ -182,10 +160,7 @@ export default function Sidebar({ user }: { user: User }) {
       <span className={isActive(href) ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}>
         {icon}
       </span>
-      {/* Tooltip */}
-      <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 text-xs font-medium rounded-md bg-[#161828] border border-border-light text-text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
-        {label}
-      </span>
+      <span className="hidden lg:inline text-sm font-medium">{label}</span>
     </Link>
   );
 
@@ -202,18 +177,16 @@ export default function Sidebar({ user }: { user: User }) {
         </span>
       </Link>
 
-      {/* Right: Nav icons + Account dropdown */}
-      <div className="flex items-center gap-1 sm:gap-2">
-        {/* App nav icons */}
+      {/* Right: Nav + Account dropdown */}
+      <div className="flex items-center gap-0.5 sm:gap-1">
+        {/* App nav — icon+text on lg. Pricing intentionally omitted inside the
+            dashboard; it's still reachable from the profile menu. */}
         {navItems.map((item) => (
-          <NavIcon key={item.href} {...item} />
+          <NavPill key={item.href} {...item} />
         ))}
 
-        {/* Marketing icons (Pricing, Docs) — same icon-row treatment */}
         <div className="w-px h-6 bg-border-light mx-1" />
-        {marketingLinks.map((item) => (
-          <NavIcon key={item.href} {...item} />
-        ))}
+        <NavPill href="/docs" label="Docs" icon={Icons.docs} />
 
         {/* Divider before account */}
         <div className="w-px h-6 bg-border-light ml-1 sm:ml-2" />
@@ -222,9 +195,9 @@ export default function Sidebar({ user }: { user: User }) {
         <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setAccountOpen(!accountOpen)}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-glass transition-all duration-200 bg-transparent border-none cursor-pointer group"
+          className="flex items-center gap-2.5 p-1 lg:pl-1.5 lg:pr-2.5 rounded-lg hover:bg-bg-glass transition-all duration-200 bg-transparent border-none cursor-pointer group"
         >
-          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-border-medium group-hover:border-accent-main/40 transition-colors">
+          <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-border-medium group-hover:border-accent-main/40 transition-colors">
             <img
               src={avatarUrl}
               alt={user.display_name}
@@ -232,10 +205,12 @@ export default function Sidebar({ user }: { user: User }) {
               referrerPolicy="no-referrer"
             />
           </div>
-          <span className="text-sm text-text-primary hidden sm:inline max-w-[120px] truncate">
-            {user.display_name}
-          </span>
-          <span className={`text-text-secondary transition-transform duration-200 ${accountOpen ? 'rotate-180' : ''}`}>
+          {/* Name + email on lg; avatar-only below lg. */}
+          <div className="hidden lg:flex flex-col items-start leading-tight min-w-0 max-w-[160px]">
+            <span className="text-sm text-text-primary truncate w-full">{user.display_name}</span>
+            <span className="text-[0.65rem] text-text-secondary truncate w-full">{user.email}</span>
+          </div>
+          <span className={`hidden lg:block text-text-secondary transition-transform duration-200 ${accountOpen ? 'rotate-180' : ''}`}>
             {Icons.chevron}
           </span>
         </button>
@@ -246,12 +221,29 @@ export default function Sidebar({ user }: { user: User }) {
             className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border-light overflow-hidden shadow-xl z-50"
             style={{ background: 'rgba(16, 18, 28, 0.97)', backdropFilter: 'blur(20px)' }}
           >
-            {/* User info + current tier */}
-            <div className="px-4 py-3 border-b border-border-light">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-medium text-text-primary truncate">{user.display_name}</div>
+            {/* Profile card — avatar, identity, current plan */}
+            <div
+              className="px-4 py-3.5 border-b border-border-light"
+              style={{ background: 'linear-gradient(135deg, rgba(155,123,247,0.1) 0%, rgba(255,255,255,0.01) 100%)' }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-accent-main/30">
+                  <img
+                    src={avatarUrl}
+                    alt={user.display_name}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-text-primary truncate">{user.display_name}</div>
+                  <div className="text-[0.68rem] text-text-secondary truncate">{user.email}</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-[0.6rem] uppercase tracking-wider text-text-secondary font-semibold">Current plan</span>
                 <span
-                  className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[0.6rem] font-bold uppercase tracking-wider"
+                  className="inline-flex items-center px-2 py-0.5 rounded-md text-[0.62rem] font-bold uppercase tracking-wider"
                   style={{
                     background: 'rgba(155,123,247,0.18)',
                     color: '#c8b6ff',
@@ -261,7 +253,6 @@ export default function Sidebar({ user }: { user: User }) {
                   {user.tier}
                 </span>
               </div>
-              <div className="text-[0.65rem] text-text-secondary truncate mt-0.5">{user.email}</div>
             </div>
 
             {/* Upgrade CTA — only when there's headroom to sell into. */}

@@ -18,6 +18,7 @@ interface CloudflareEnv {
   ELIXPO_MAILS_HOOK_RECEIPT: string;
   ELIXPO_MAILS_HOOK_CANCELED: string;
   ELIXPO_MAILS_HOOK_PAYMENT_FAILED: string;
+  ELIXPO_MAILS_HOOK_DOWNGRADED: string;
 }
 
 declare module '@cloudflare/next-on-pages' {

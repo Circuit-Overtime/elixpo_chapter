@@ -17,6 +17,13 @@ const title = 'ElixpoURL: Fast URL Shortener on the Edge';
 const description =
   "Shorten URLs at the speed of light. Lightning-fast redirects, powerful analytics, and a developer-first API, all running on Cloudflare's edge network.";
 
+// Google Search Console — "HTML tag" verification method. Set
+// NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION (the `content` value Google gives you)
+// in .env.local and rebuild. Empty → no tag emitted. The DNS-TXT method is an
+// alternative that needs no code change at all.
+const googleSiteVerification =
+  process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '';
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -46,6 +53,9 @@ export const metadata: Metadata = {
   creator: 'Elixpo',
   publisher: 'Elixpo',
   category: 'developer tools',
+  ...(googleSiteVerification
+    ? { verification: { google: googleSiteVerification } }
+    : {}),
   robots: {
     index: true,
     follow: true,
