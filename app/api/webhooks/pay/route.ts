@@ -136,6 +136,15 @@ async function sendLifecycleMail(data: EntitlementData): Promise<void> {
       variables: { name, tier, update_url: 'https://lixrl.com/dashboard/subscription' },
       idempotencyKey: idem,
     });
+  } else if (data.active === false) {
+    // Final fallback to Free at period end. `tier` here is the plan that
+    // just ended. No-ops if no downgrade template is configured.
+    await triggerMail({
+      endpointKey: env.ELIXPO_MAILS_HOOK_DOWNGRADED,
+      to: user.email,
+      variables: { name, tier, resubscribe_url: 'https://lixrl.com/pricing' },
+      idempotencyKey: idem,
+    });
   } else if (data.active === true && (status === 'active' || status === '')) {
     await triggerMail({
       endpointKey: env.ELIXPO_MAILS_HOOK_RECEIPT,
