@@ -117,30 +117,6 @@ const resourceItems = [
   { href: '/docs', label: 'Docs', icon: Icons.docs },
 ];
 
-// Marketing-surface links next to the brand. Icon + label.
-const marketingLinks = [
-  {
-    href: '/pricing',
-    label: 'Pricing',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]">
-        <circle cx="10" cy="10" r="7.5" />
-        <path d="M10 5v10M7 8.5h4.5a1.5 1.5 0 010 3H7m0 0H12a1.5 1.5 0 010 3H7" />
-      </svg>
-    ),
-  },
-  {
-    href: '/docs',
-    label: 'Docs',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]">
-        <path d="M5 3h8a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
-        <path d="M6 7h6M6 10h6M6 13h4" />
-      </svg>
-    ),
-  },
-];
-
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const avatarUrl = getAvatarUrl(user);
@@ -219,9 +195,9 @@ export default function Sidebar({ user }: { user: User }) {
         <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setAccountOpen(!accountOpen)}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-glass transition-all duration-200 bg-transparent border-none cursor-pointer group"
+          className="flex items-center gap-2.5 p-1 lg:pl-1.5 lg:pr-2.5 rounded-lg hover:bg-bg-glass transition-all duration-200 bg-transparent border-none cursor-pointer group"
         >
-          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-border-medium group-hover:border-accent-main/40 transition-colors">
+          <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-border-medium group-hover:border-accent-main/40 transition-colors">
             <img
               src={avatarUrl}
               alt={user.display_name}
@@ -229,10 +205,12 @@ export default function Sidebar({ user }: { user: User }) {
               referrerPolicy="no-referrer"
             />
           </div>
-          <span className="text-sm text-text-primary hidden sm:inline max-w-[120px] truncate">
-            {user.display_name}
-          </span>
-          <span className={`text-text-secondary transition-transform duration-200 ${accountOpen ? 'rotate-180' : ''}`}>
+          {/* Name + email on lg; avatar-only below lg. */}
+          <div className="hidden lg:flex flex-col items-start leading-tight min-w-0 max-w-[160px]">
+            <span className="text-sm text-text-primary truncate w-full">{user.display_name}</span>
+            <span className="text-[0.65rem] text-text-secondary truncate w-full">{user.email}</span>
+          </div>
+          <span className={`hidden lg:block text-text-secondary transition-transform duration-200 ${accountOpen ? 'rotate-180' : ''}`}>
             {Icons.chevron}
           </span>
         </button>
