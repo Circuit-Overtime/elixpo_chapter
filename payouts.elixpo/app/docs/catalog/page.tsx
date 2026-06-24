@@ -54,7 +54,23 @@ const res = await fetch("https://payouts.elixpo.com/v1/sync", {
   },
   body: JSON.stringify({ products: catalog.products }),
 });
-console.log(await res.json());`;
+
+// /v1/sync returns HTTP 200 even when a product is rejected — you MUST
+// inspect the body. Trusting the status code alone silently no-ops the sync.
+const out = await res.json();
+if (!res.ok || out.ok === false || (out.errors?.length ?? 0) > 0) {
+  console.error("catalog sync failed:", JSON.stringify(out.errors ?? out));
+  process.exit(1);
+}
+console.log(\`synced \${out.synced?.length ?? 0} products\`);`;
+
+const RESPONSE = `// Success
+{ "ok": true, "app": "blogs", "synced": [ { "product": { "tier": "member" }, "prices": [ … ] } ], "errors": [] }
+
+// Rejected — still HTTP 200, but ok:false with per-product errors
+{ "ok": false, "synced": [], "errors": [
+  { "tier": null, "error": "invalid_tier", "error_description": "product.tier required (a-z 0-9 _)" }
+] }`;
 
 const READ = "GET https://payouts.elixpo.com/v1/catalog?app=<your-client-id>";
 
@@ -105,11 +121,29 @@ export default function CatalogDocs() {
                         history stays intact).
                     </>,
                     <>
+                        Changing a <Code>recurring</Code> price's{" "}
+                        <Code>unit_amount</Code> or <Code>interval</Code>{" "}
+                        <strong>re-mints the Razorpay plan automatically</strong>{" "}
+                        (provider plans are immutable). New checkouts use the new
+                        amount; subscriptions already active keep billing their
+                        original amount until they renew or cancel.
+                    </>,
+                    <>
                         Send a single product as the bare object, or many under{" "}
                         <Code>products</Code>.
                     </>,
                 ]}
             />
+
+            <DocH2>Check the response</DocH2>
+            <DocP>
+                <Code>/v1/sync</Code> returns <strong>HTTP 200 even when a
+                product fails validation</strong> — always inspect the body, and
+                treat <Code>ok: false</Code> or a non-empty <Code>errors</Code>{" "}
+                array as a failure. Trusting the status code alone silently
+                no-ops the sync.
+            </DocP>
+            <CodeBlock code={RESPONSE} language="json" />
 
             <DocH2>Read it back</DocH2>
             <DocP>
