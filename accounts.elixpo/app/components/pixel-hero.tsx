@@ -249,7 +249,7 @@ const ELIXPO_PRODUCTS: { name: string; node: ReactNode }[] = [
     productEntry("Sketch", "https://sketch.elixpo.com/favicon.ico", "#86efac"),
     productEntry(
         "URL",
-        "https://url.elixpo.com/favicon.ico",
+        "https://lixrl.com/favicon.ico",
         "rgba(245,245,244,0.85)",
     ),
     productEntry("Mails", "https://mails.elixpo.com/favicon.ico", "#9b7bf7"),

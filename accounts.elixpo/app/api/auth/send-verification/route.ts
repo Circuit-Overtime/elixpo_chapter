@@ -107,14 +107,39 @@ export async function POST(request: NextRequest) {
         const APP_URL =
             process.env.NEXT_PUBLIC_APP_URL || "https://accounts.elixpo.com";
         const verifyLink = `${APP_URL}/verify?token=${verificationToken}`;
-        await sendMail("user_verify_otp", user.email, {
+        const mailResult = await sendMail("user_verify_otp", user.email, {
             name: recipientName,
             otp_code: otp,
             expiry_minutes: expiryMinutes,
             verify_link: verifyLink,
         });
 
-        console.log("[Verification] OTP sent to %s", user.email);
+        // sendMail returns ok:false on misconfig / signature failure /
+        // upstream non-2xx WITHOUT throwing — caller must inspect to
+        // surface the real failure to the client. Without this branch,
+        // the user clicks "Resend code", we return 200, and they wait
+        // for an email that never arrives.
+        if (!mailResult.ok) {
+            console.error(
+                "[Verification] sendMail returned ok=false for %s: %s",
+                user.email,
+                mailResult.error ?? "unknown",
+            );
+            return NextResponse.json(
+                {
+                    error:
+                        mailResult.error ??
+                        "Couldn't send the verification email. Try again in a moment.",
+                },
+                { status: 502 },
+            );
+        }
+
+        console.log(
+            "[Verification] OTP sent to %s (delivery_id=%s)",
+            user.email,
+            mailResult.delivery_id ?? "",
+        );
 
         return NextResponse.json({
             message: "Verification code sent to your email",

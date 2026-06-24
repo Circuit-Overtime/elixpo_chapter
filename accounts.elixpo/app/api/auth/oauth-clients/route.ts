@@ -91,21 +91,55 @@ export async function POST(request: NextRequest) {
 
         // Tier-limit gate. /pricing promises specific app counts per
         // tier (3 / 10 / unlimited) — enforce them here so the promise
-        // is real. Pulls tier + is_internal off the users row (mirrored
-        // from payouts.elixpo entitlements).
+        // is real. Pulls tier + is_internal + tier_cancelled_at off the
+        // users row (mirrored from payouts.elixpo entitlements).
         const tierRow = (await db
-            .prepare("SELECT tier, is_internal FROM users WHERE id = ?")
+            .prepare(
+                "SELECT tier, is_internal, tier_cancelled_at FROM users WHERE id = ?",
+            )
             .bind(auth.sub)
-            .first()) as { tier: string | null; is_internal: number } | null;
+            .first()) as {
+            tier: string | null;
+            is_internal: number;
+            tier_cancelled_at: string | null;
+        } | null;
         const { tierFromUserRow, TIER_LIMITS } = await import("@/lib/billing");
         const tier = tierFromUserRow(tierRow);
         const cap = TIER_LIMITS[tier].maxOAuthApps;
-        if (Number.isFinite(cap) && activeCount >= cap) {
+
+        // Cancellation-state gate. A buyer who cancelled their paid sub
+        // keeps every app they ever created — but they CAN'T add new
+        // ones until they resubscribe. This is the platform commitment:
+        // "your existing apps stay, but new registrations require an
+        // active subscription". Internal accounts skip this gate.
+        const cancelled = !!tierRow?.tier_cancelled_at && !tierRow.is_internal;
+        if (cancelled) {
             return NextResponse.json(
                 {
-                    error: `Your ${tier} plan is limited to ${cap} OAuth apps. Upgrade to register more.`,
-                    tier_limit_exceeded: true,
+                    error: "Your subscription is cancelled. Existing OAuth apps stay live, but registering new ones needs an active subscription. Resubscribe from /pricing to continue.",
+                    subscription_cancelled: true,
                     current_tier: tier,
+                    upgrade_url: "/pricing",
+                },
+                { status: 403 },
+            );
+        }
+
+        if (Number.isFinite(cap) && activeCount >= cap) {
+            // Distinguish "at-cap on current tier" from "over-cap from a
+            // downgrade" — the second case is informational ("you keep
+            // them, but no more until you upgrade"), the first is just a
+            // promise of the current plan.
+            const overFromDowngrade = activeCount > cap;
+            return NextResponse.json(
+                {
+                    error: overFromDowngrade
+                        ? `You have ${activeCount} OAuth apps from a previous higher tier. Your current ${tier} plan covers ${cap}. The existing apps stay; upgrade to register more.`
+                        : `Your ${tier} plan is limited to ${cap} OAuth apps. Upgrade to register more.`,
+                    tier_limit_exceeded: true,
+                    over_from_downgrade: overFromDowngrade,
+                    current_tier: tier,
+                    current_count: activeCount,
                     limit: cap,
                     upgrade_url: "/pricing",
                 },

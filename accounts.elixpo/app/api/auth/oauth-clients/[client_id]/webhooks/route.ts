@@ -174,23 +174,50 @@ export async function POST(
 
     // Tier cap: limit webhook endpoints per app by the OWNER's tier.
     // /pricing promises 1 / 5 / unlimited endpoints per app on
-    // Hobby / Indie / Studio — enforce that here.
+    // Hobby / Indie / Studio — enforce that here. Also block any new
+    // endpoint creation while the owner's sub is cancelled (existing
+    // endpoints keep working; only new ones are blocked).
     try {
         const existing = await listAppWebhookEndpoints(db, client_id);
         const currentCount = Array.isArray(existing) ? existing.length : 0;
         const ownerRow = (await db
-            .prepare("SELECT tier, is_internal FROM users WHERE id = ?")
+            .prepare(
+                "SELECT tier, is_internal, tier_cancelled_at FROM users WHERE id = ?",
+            )
             .bind(auth.sub)
-            .first()) as { tier: string | null; is_internal: number } | null;
+            .first()) as {
+            tier: string | null;
+            is_internal: number;
+            tier_cancelled_at: string | null;
+        } | null;
         const { tierFromUserRow, TIER_LIMITS } = await import("@/lib/billing");
         const tier = tierFromUserRow(ownerRow);
         const cap = TIER_LIMITS[tier].maxWebhookEndpointsPerApp;
-        if (Number.isFinite(cap) && currentCount >= cap) {
+
+        const cancelled =
+            !!ownerRow?.tier_cancelled_at && !ownerRow.is_internal;
+        if (cancelled) {
             return NextResponse.json(
                 {
-                    error: `Your ${tier} plan is limited to ${cap} webhook endpoint${cap === 1 ? "" : "s"} per app. Upgrade to add more.`,
-                    tier_limit_exceeded: true,
+                    error: "Your subscription is cancelled. Existing endpoints keep firing, but adding new ones needs an active subscription. Resubscribe from /pricing to continue.",
+                    subscription_cancelled: true,
                     current_tier: tier,
+                    upgrade_url: "/pricing",
+                },
+                { status: 403 },
+            );
+        }
+        if (Number.isFinite(cap) && currentCount >= cap) {
+            const overFromDowngrade = currentCount > cap;
+            return NextResponse.json(
+                {
+                    error: overFromDowngrade
+                        ? `This app has ${currentCount} webhook endpoints from a previous higher tier. Your current ${tier} plan covers ${cap} per app. Existing endpoints stay; upgrade to add more.`
+                        : `Your ${tier} plan is limited to ${cap} webhook endpoint${cap === 1 ? "" : "s"} per app. Upgrade to add more.`,
+                    tier_limit_exceeded: true,
+                    over_from_downgrade: overFromDowngrade,
+                    current_tier: tier,
+                    current_count: currentCount,
                     limit: cap,
                     upgrade_url: "/pricing",
                 },
