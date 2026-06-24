@@ -246,12 +246,29 @@ export default function Sidebar({ user }: { user: User }) {
             className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border-light overflow-hidden shadow-xl z-50"
             style={{ background: 'rgba(16, 18, 28, 0.97)', backdropFilter: 'blur(20px)' }}
           >
-            {/* User info + current tier */}
-            <div className="px-4 py-3 border-b border-border-light">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-medium text-text-primary truncate">{user.display_name}</div>
+            {/* Profile card — avatar, identity, current plan */}
+            <div
+              className="px-4 py-3.5 border-b border-border-light"
+              style={{ background: 'linear-gradient(135deg, rgba(155,123,247,0.1) 0%, rgba(255,255,255,0.01) 100%)' }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-accent-main/30">
+                  <img
+                    src={avatarUrl}
+                    alt={user.display_name}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-text-primary truncate">{user.display_name}</div>
+                  <div className="text-[0.68rem] text-text-secondary truncate">{user.email}</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-[0.6rem] uppercase tracking-wider text-text-secondary font-semibold">Current plan</span>
                 <span
-                  className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[0.6rem] font-bold uppercase tracking-wider"
+                  className="inline-flex items-center px-2 py-0.5 rounded-md text-[0.62rem] font-bold uppercase tracking-wider"
                   style={{
                     background: 'rgba(155,123,247,0.18)',
                     color: '#c8b6ff',
@@ -261,7 +278,6 @@ export default function Sidebar({ user }: { user: User }) {
                   {user.tier}
                 </span>
               </div>
-              <div className="text-[0.65rem] text-text-secondary truncate mt-0.5">{user.email}</div>
             </div>
 
             {/* Upgrade CTA — only when there's headroom to sell into. */}

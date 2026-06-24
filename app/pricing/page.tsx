@@ -430,7 +430,8 @@ function CtaButton({
   else if (!loggedIn) label = `Sign in to get ${tier === 'pro' ? 'Pro' : 'Business'}`;
   else label = `Upgrade to ${tier === 'pro' ? 'Pro' : 'Business'}`;
 
-  const filled = popular || (!isCurrentPlanCta && tier !== 'free');
+  // The current-plan CTA is never a gradient — it's greyed out.
+  const filled = !isCurrentPlanCta && (popular || tier !== 'free');
 
   return (
     <button
@@ -441,13 +442,19 @@ function CtaButton({
       className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-[12px] font-semibold text-sm transition-all border-none"
       style={{
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: !loaded ? 0.5 : disabled && !isCurrentPlanCta ? 0.6 : 1,
-        color: filled ? '#fff' : 'rgba(255,255,255,0.9)',
-        background: filled
-          ? 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)'
-          : 'transparent',
+        opacity: !loaded ? 0.5 : 1,
+        color: isCurrentPlanCta ? 'rgba(255,255,255,0.4)' : filled ? '#fff' : 'rgba(255,255,255,0.9)',
+        background: isCurrentPlanCta
+          ? 'rgba(255,255,255,0.05)'
+          : filled
+            ? 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)'
+            : 'transparent',
         boxShadow: filled && !disabled ? '0 6px 18px rgba(155,123,247,0.32)' : 'none',
-        border: filled ? 'none' : '1px solid rgba(255,255,255,0.16)',
+        border: isCurrentPlanCta
+          ? '1px solid rgba(255,255,255,0.1)'
+          : filled
+            ? 'none'
+            : '1px solid rgba(255,255,255,0.16)',
       }}
     >
       {thisSubmitting && (
