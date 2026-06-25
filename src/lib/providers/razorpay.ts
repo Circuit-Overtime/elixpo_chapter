@@ -50,6 +50,9 @@ export class RazorpayProvider implements PaymentProvider {
                 receipt: input.receipt,
                 notes: input.notes ?? {},
                 payment_capture: 1,
+                // Razorpay Route split (only when a connected payout account
+                // supplies transfers; otherwise omitted → settles to platform).
+                ...(input.transfers?.length ? { transfers: input.transfers } : {}),
             }),
         });
 

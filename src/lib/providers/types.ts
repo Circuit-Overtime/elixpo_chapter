@@ -10,6 +10,13 @@ export interface CreateOrderInput {
     /** Our checkout session id, passed through for reconciliation. */
     receipt: string;
     notes?: Record<string, string>;
+    /**
+     * Razorpay Route transfers — splits the captured amount to a merchant's
+     * linked account (`{ account: "acc_…", amount, currency, … }`). Foundation:
+     * passed through when present; the connect flow that populates it lands in a
+     * follow-up. Undefined → funds settle to the platform account as today.
+     */
+    transfers?: Array<Record<string, unknown>>;
 }
 
 export interface CreateOrderResult {
