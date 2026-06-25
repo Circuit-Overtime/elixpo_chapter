@@ -2,6 +2,7 @@
 
 export const runtime = "edge";
 
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import CardMembershipIcon from "@mui/icons-material/CardMembership";
 import CodeIcon from "@mui/icons-material/Code";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
@@ -48,6 +49,11 @@ const NAV = [
         label: "Transactions",
         icon: ReceiptLongIcon,
         href: "/dashboard/transactions",
+    },
+    {
+        label: "Payouts",
+        icon: AccountBalanceIcon,
+        href: "/dashboard/payouts",
     },
     {
         label: "My subscriptions",

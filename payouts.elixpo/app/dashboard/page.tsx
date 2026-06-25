@@ -105,6 +105,68 @@ export default function OverviewPage() {
                 </Button>
             </Stack>
 
+            {data?.counts.products === 0 && (
+                <GlassCard sx={{ mb: 3, border: "1px solid rgba(155,123,247,0.3)" }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: "1.15rem" }}>
+                        Get set up in 3 steps
+                    </Typography>
+                    <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.88rem", mb: 2 }}>
+                        New here? This is the whole flow — each step links to where you do it.
+                    </Typography>
+                    <Stack spacing={1.4}>
+                        {[
+                            {
+                                n: "1",
+                                t: "Connect your product",
+                                d: "Register it and grab your client ID + secret key. Sync pricing from code.",
+                                href: "/dashboard/products",
+                                cta: "Go to Products",
+                            },
+                            {
+                                n: "2",
+                                t: "Set up payouts",
+                                d: "Connect your bank so each payment is split to you (minus the platform fee).",
+                                href: "/dashboard/payouts",
+                                cta: "Connect bank",
+                            },
+                            {
+                                n: "3",
+                                t: "Go live",
+                                d: "Drop in the hosted checkout and handle the entitlement webhook. See the docs.",
+                                href: "/docs/quickstart",
+                                cta: "Read the docs",
+                            },
+                        ].map((s) => (
+                            <Stack
+                                key={s.n}
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={1.5}
+                                alignItems={{ xs: "flex-start", sm: "center" }}
+                                justifyContent="space-between"
+                                sx={{ p: 1.6, borderRadius: "12px", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}
+                            >
+                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+                                    <Box sx={{ flexShrink: 0, width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", fontWeight: 800, fontSize: "0.85rem", color: "#c4b5fd", background: "rgba(155,123,247,0.12)", border: "1px solid rgba(155,123,247,0.3)" }}>
+                                        {s.n}
+                                    </Box>
+                                    <Box sx={{ minWidth: 0 }}>
+                                        <Typography sx={{ fontWeight: 700, fontSize: "0.95rem" }}>{s.t}</Typography>
+                                        <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.82rem" }}>{s.d}</Typography>
+                                    </Box>
+                                </Stack>
+                                <Button
+                                    component={Link}
+                                    href={s.href}
+                                    sx={{ flexShrink: 0, textTransform: "none", fontWeight: 600, color: "#c4b5fd", border: "1px solid rgba(155,123,247,0.3)", borderRadius: "10px", px: 1.8, whiteSpace: "nowrap", "&:hover": { borderColor: "rgba(155,123,247,0.6)", background: "rgba(155,123,247,0.06)" } }}
+                                >
+                                    {s.cta}
+                                </Button>
+                            </Stack>
+                        ))}
+                    </Stack>
+                </GlassCard>
+            )}
+
             <Box
                 sx={{
                     display: "grid",

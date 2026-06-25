@@ -20,6 +20,7 @@ const PREFIXES = {
     ledger: "le",
     ledgerGroup: "leg",
     refund: "rfnd",
+    payoutAccount: "pa",
 } as const;
 
 export type IdKind = keyof typeof PREFIXES;

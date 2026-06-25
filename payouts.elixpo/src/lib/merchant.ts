@@ -10,6 +10,26 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { getEnv } from "./env";
 import { newId } from "./ids";
 
+/**
+ * The platform-owner merchant (Elixpo itself, claimed by ELIXPO_PAY_OWNER_EMAIL).
+ * Its products ARE the platform's own — payments settle directly to the platform
+ * Razorpay account and are NEVER split via Route. Only third-party merchants get
+ * a Route payout split.
+ */
+export const PLATFORM_MERCHANT_ID = "mer_elixpo";
+
+export function isPlatformMerchant(merchantId: string): boolean {
+    return merchantId === PLATFORM_MERCHANT_ID;
+}
+
+/**
+ * Platform commission on third-party (Route) payments, in basis points
+ * (100 = 1%). Set by Elixpo — merchants do NOT control this. The split sends the
+ * payment amount MINUS this cut to the merchant's linked account; the cut stays
+ * with the platform. Change this one value to adjust the rate everywhere.
+ */
+export const PLATFORM_COMMISSION_BPS = 200; // 2%
+
 export interface MerchantRow {
     id: string;
     name: string;
