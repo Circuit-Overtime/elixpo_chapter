@@ -110,15 +110,30 @@ export async function PUT(request: NextRequest) {
     // full number is sent to Razorpay to create the linked account, not stored.
     const last4 = accountNumber.slice(-4);
 
+    // Self-detection: if these are the PLATFORM OWNER's own bank details, this
+    // isn't a third-party split — funds already belong in the platform account.
+    // Mark it 'self' (settles directly, no Route split) and flag for ownership
+    // verification instead of creating a duplicate linked account.
+    const ownerAccount = ((await getEnv("ELIXPO_OWNER_BANK_ACCOUNT")) || "").replace(/\s/g, "");
+    const ownerIfsc = ((await getEnv("ELIXPO_OWNER_BANK_IFSC")) || "").trim().toUpperCase();
+    const isOwnerBank = !!ownerAccount && !!ownerIfsc && accountNumber === ownerAccount && ifsc === ownerIfsc;
+
     const existing = await getAccount(db, merchantId);
     let accountId: string | null = existing?.razorpay_account_id ?? null;
     let status: string = existing?.status ?? "pending";
     let createError: string | null = null;
 
+    if (isOwnerBank) {
+        // Don't create a linked account or split — needs ownership verification.
+        accountId = null;
+        status = "self";
+    }
+
     // Create the Razorpay linked account from the bank details the merchant gave
     // us (Elixpo Pay onboards them; they never touch Razorpay). Skip if they
-    // already have one. Non-fatal: on failure we save as 'pending' + surface why.
-    if (!accountId) {
+    // already have one, or if this is the owner's own bank (self). Non-fatal: on
+    // failure we save as 'pending' + surface why.
+    if (!accountId && !isOwnerBank) {
         const razorpay = await razorpayFromEnv(getEnv);
         if (razorpay) {
             const merchant = (await db
@@ -168,6 +183,7 @@ export async function PUT(request: NextRequest) {
         ok: true,
         account: view(await getAccount(db, merchantId)),
         create_error: createError,
+        self: isOwnerBank,
     });
 }
 

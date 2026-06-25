@@ -132,6 +132,7 @@ export default function PayoutsPage() {
 
     const connected = !!account;
     const active = account?.status === "active";
+    const selfAcct = account?.status === "self";
 
     return (
         <Box>
@@ -184,24 +185,24 @@ export default function PayoutsPage() {
               <>
             {/* Status */}
             {connected && (
-                <GlassCard sx={{ mb: 2, border: active ? "1px solid rgba(134,239,172,0.3)" : "1px solid rgba(251,191,36,0.3)" }}>
+                <GlassCard sx={{ mb: 2, border: `1px solid ${selfAcct ? "rgba(155,123,247,0.35)" : active ? "rgba(134,239,172,0.3)" : "rgba(251,191,36,0.3)"}` }}>
                     <Stack direction="row" spacing={1.5} alignItems="center">
-                        <AccountBalanceIcon sx={{ color: active ? "#86efac" : "#fbbf24" }} />
+                        <AccountBalanceIcon sx={{ color: selfAcct ? "#c4b5fd" : active ? "#86efac" : "#fbbf24" }} />
                         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                                 <Typography sx={{ fontWeight: 700 }}>
                                     {account.beneficiary_name}
                                 </Typography>
                                 <Chip
-                                    label={active ? "Active" : "Pending"}
+                                    label={selfAcct ? "Self" : active ? "Active" : "Pending"}
                                     size="small"
                                     sx={{
                                         height: 20,
                                         fontSize: "0.62rem",
                                         fontWeight: 700,
-                                        color: active ? "#86efac" : "#fbbf24",
-                                        bgcolor: active ? "rgba(134,239,172,0.12)" : "rgba(251,191,36,0.12)",
-                                        border: `1px solid ${active ? "rgba(134,239,172,0.3)" : "rgba(251,191,36,0.3)"}`,
+                                        color: selfAcct ? "#c4b5fd" : active ? "#86efac" : "#fbbf24",
+                                        bgcolor: selfAcct ? "rgba(155,123,247,0.12)" : active ? "rgba(134,239,172,0.12)" : "rgba(251,191,36,0.12)",
+                                        border: `1px solid ${selfAcct ? "rgba(155,123,247,0.3)" : active ? "rgba(134,239,172,0.3)" : "rgba(251,191,36,0.3)"}`,
                                     }}
                                 />
                             </Stack>
@@ -211,11 +212,19 @@ export default function PayoutsPage() {
                             </Typography>
                         </Box>
                     </Stack>
-                    {!active && (
-                        <Typography sx={{ color: "rgba(251,191,36,0.85)", fontSize: "0.8rem", mt: 1.4 }}>
-                            Funds currently settle to Elixpo. Routing to your bank turns on once your
-                            Razorpay linked account is attached & verified.
+                    {selfAcct ? (
+                        <Typography sx={{ color: "#c4b5fd", fontSize: "0.8rem", mt: 1.4 }}>
+                            These details match the platform's own bank — marked as{" "}
+                            <strong>Self</strong>, so payments settle directly (no split).
+                            Ownership verification is required before this is finalised.
                         </Typography>
+                    ) : (
+                        !active && (
+                            <Typography sx={{ color: "rgba(251,191,36,0.85)", fontSize: "0.8rem", mt: 1.4 }}>
+                                Funds currently settle to Elixpo. Routing to your bank turns on once
+                                your Razorpay linked account is attached & verified.
+                            </Typography>
+                        )
                     )}
                 </GlassCard>
             )}
