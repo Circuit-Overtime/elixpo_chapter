@@ -4,6 +4,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import MenuIcon from "@mui/icons-material/Menu";
 import StarIcon from "@mui/icons-material/Star";
+import PersonIcon from "@mui/icons-material/Person";
 import {
     Avatar,
     Box,
@@ -287,7 +288,7 @@ const Navbar = () => {
                         <Box
                             sx={{
                                 width: {
-                                    xs: 80,
+                                    xs: 44,
                                     "@media (min-width: 640px)": 104,
                                 },
                                 height: 38,
@@ -378,31 +379,72 @@ const Navbar = () => {
                             </Box>
                         </Button>
                     ) : (
-                        <Button
-                            component={Link}
-                            href="/login"
-                            disableElevation
-                            sx={{
-                                textTransform: "none",
-                                fontWeight: 600,
-                                fontSize: "0.9rem",
-                                color: "#fff",
-                                background:
-                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                                borderRadius: "10px",
-                                px: 2.2,
-                                py: 0.8,
-                                boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
-                                "&:hover": {
+                        <>
+                            {/* Mobile user profile / sign-in icon */}
+                            <IconButton
+                                component={Link}
+                                href="/login"
+                                sx={{
+                                    display: {
+                                        xs: "inline-flex",
+                                        "@media (min-width: 640px)": {
+                                            display: "none",
+                                        },
+                                    },
+                                    p: 0.5,
+                                    border: "1px solid rgba(255,255,255,0.1)",
+                                    borderRadius: "10px",
+                                    "&:hover": {
+                                        borderColor: "rgba(155,123,247,0.45)",
+                                        background: "rgba(155,123,247,0.08)",
+                                    },
+                                }}
+                            >
+                                <Avatar
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        bgcolor: "rgba(155,123,247,0.15)",
+                                        color: ACCENT,
+                                    }}
+                                >
+                                    <PersonIcon sx={{ fontSize: 20 }} />
+                                </Avatar>
+                            </IconButton>
+
+                            {/* Desktop Sign in button */}
+                            <Button
+                                component={Link}
+                                href="/login"
+                                disableElevation
+                                sx={{
+                                    display: {
+                                        xs: "none",
+                                        "@media (min-width: 640px)": {
+                                            display: "inline-flex",
+                                        },
+                                    },
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    fontSize: "0.9rem",
+                                    color: "#fff",
                                     background:
-                                        "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
-                                    boxShadow:
-                                        "0 6px 20px rgba(155,123,247,0.45)",
-                                },
-                            }}
-                        >
-                            Sign in
-                        </Button>
+                                        "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                    borderRadius: "10px",
+                                    px: 2.2,
+                                    py: 0.8,
+                                    boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
+                                    "&:hover": {
+                                        background:
+                                            "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                        boxShadow:
+                                            "0 6px 20px rgba(155,123,247,0.45)",
+                                    },
+                                }}
+                            >
+                                Sign in
+                            </Button>
+                        </>
                     )}
 
                     <IconButton
@@ -505,6 +547,86 @@ const Navbar = () => {
                     </Stack>
 
                     <Divider sx={{ borderColor: "rgba(255,255,255,0.08)" }} />
+
+                    {me === undefined ? null : me ? (
+                        <Box
+                            sx={{
+                                p: 1.5,
+                                borderRadius: "12px",
+                                background: "rgba(255,255,255,0.03)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.5,
+                            }}
+                        >
+                            <Avatar
+                                src={me.avatar || undefined}
+                                sx={{
+                                    width: 36,
+                                    height: 36,
+                                    fontSize: "0.9rem",
+                                    bgcolor: "rgba(155,123,247,0.4)",
+                                }}
+                            >
+                                {(me.name || me.email || "?")
+                                    .charAt(0)
+                                    .toUpperCase()}
+                            </Avatar>
+                            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                                <Typography
+                                    sx={{
+                                        fontWeight: 600,
+                                        fontSize: "0.88rem",
+                                        color: "#f4f4f6",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
+                                    {me.name || me.email}
+                                </Typography>
+                                {me.name && me.email && (
+                                    <Typography
+                                        sx={{
+                                            fontSize: "0.72rem",
+                                            color: "rgba(244,244,246,0.5)",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {me.email}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Box>
+                    ) : (
+                        <Button
+                            component={Link}
+                            href="/login"
+                            onClick={handleDrawerToggle}
+                            fullWidth
+                            disableElevation
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 600,
+                                fontSize: "0.95rem",
+                                color: "#fff",
+                                background:
+                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                borderRadius: "10px",
+                                py: 1.2,
+                                boxShadow: "0 4px 14px rgba(155,123,247,0.2)",
+                                "&:hover": {
+                                    background:
+                                        "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                },
+                            }}
+                        >
+                            Sign in
+                        </Button>
+                    )}
 
                     <Stack spacing={1} sx={{ flexGrow: 1 }}>
                         {LINKS.map((l) => (
