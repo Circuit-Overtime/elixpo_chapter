@@ -72,6 +72,52 @@ export class RazorpayProvider implements PaymentProvider {
     }
 
     /**
+     * Create a Razorpay Route LINKED ACCOUNT (sub-merchant) from a merchant's
+     * bank details, so payments can be split to them. Returns the `acc_…` id.
+     * Throws with Razorpay's error description on failure (surfaced to the UI).
+     */
+    async createLinkedAccount(input: {
+        email: string;
+        name: string;
+        beneficiaryName: string;
+        ifsc: string;
+        accountNumber: string;
+        businessType?: string;
+        accountType?: "current" | "savings";
+    }): Promise<{ accountId: string; raw: any }> {
+        const res = await fetch(`${RAZORPAY_API}/accounts`, {
+            method: "POST",
+            headers: {
+                Authorization: this.authHeader(),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                email: input.email,
+                name: input.name,
+                tnc_accepted: true,
+                account_details: {
+                    business_name: input.name,
+                    business_type: input.businessType || "individual",
+                },
+                bank_account: {
+                    ifsc_code: input.ifsc,
+                    beneficiary_name: input.beneficiaryName,
+                    account_type: input.accountType || "current",
+                    account_number: input.accountNumber,
+                },
+            }),
+        });
+        const raw: any = await res.json().catch(() => ({}));
+        if (!res.ok || !raw?.id) {
+            throw new Error(
+                raw?.error?.description ||
+                    `Razorpay linked-account create failed (${res.status})`,
+            );
+        }
+        return { accountId: raw.id, raw };
+    }
+
+    /**
      * Client handback signature: HMAC_SHA256(key_secret, `${orderId}|${paymentId}`).
      * Razorpay Checkout returns razorpay_signature in the success callback.
      */

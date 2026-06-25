@@ -117,7 +117,9 @@ async function finalizeSession(
     session: any,
 ): Promise<NextResponse> {
     const app = (await db
-        .prepare("SELECT id, slug, name, return_url FROM apps WHERE id = ?")
+        .prepare(
+            "SELECT id, slug, name, return_url, merchant_id FROM apps WHERE id = ?",
+        )
         .bind(session.app_id)
         .first()) as any;
 
@@ -320,7 +322,17 @@ async function finalizeSession(
     // Reuse the order if this session already minted one (page reload / retry).
     let orderId: string | undefined = session.provider_order_id || undefined;
     if (!orderId) {
-        const order = await razorpay.createOrder({
+        // Razorpay Route: if the app's merchant has a connected, active payout
+        // account, split the payment to their linked account (minus the platform
+        // commission). Otherwise funds settle to the platform account as before.
+        const transfers = await routeTransfers(
+            db,
+            app?.merchant_id,
+            session.amount,
+            session.currency,
+            app?.slug,
+        );
+        const base = {
             amount: session.amount,
             currency: session.currency,
             receipt: session.id,
@@ -329,7 +341,22 @@ async function finalizeSession(
                 uid: session.external_uid,
                 tier: details.tier,
             },
-        });
+        };
+        let order: { providerOrderId: string };
+        try {
+            order = await razorpay.createOrder(
+                transfers ? { ...base, transfers } : base,
+            );
+        } catch (err) {
+            // A bad/inactive Route account must never break checkout — fall back
+            // to a normal order (funds settle to the platform) and log it.
+            if (!transfers) throw err;
+            console.error(
+                `[checkout/session] Route transfer rejected for merchant ${app?.merchant_id}; falling back to platform settle:`,
+                err,
+            );
+            order = await razorpay.createOrder(base);
+        }
         orderId = order.providerOrderId;
         await setSessionOrder(db, session.id, orderId);
     }
@@ -417,4 +444,43 @@ function parseMeta(raw: unknown): Record<string, any> {
     } catch {
         return {};
     }
+}
+
+/**
+ * Build the Razorpay Route `transfers` for an order when the app's merchant has
+ * a connected, active payout account. Splits `amount` to their linked account,
+ * holding back the platform commission. Returns undefined when there's no active
+ * account (→ funds settle to the platform account, unchanged behaviour).
+ */
+async function routeTransfers(
+    db: D1Database,
+    merchantId: string | undefined,
+    amount: number,
+    currency: string,
+    appSlug: string | undefined,
+): Promise<Array<Record<string, unknown>> | undefined> {
+    if (!merchantId) return undefined;
+    const pa = (await db
+        .prepare(
+            `SELECT razorpay_account_id, commission_bps
+             FROM payout_accounts
+             WHERE merchant_id = ? AND status = 'active'
+               AND razorpay_account_id IS NOT NULL`,
+        )
+        .bind(merchantId)
+        .first()) as { razorpay_account_id: string; commission_bps: number } | null;
+    if (!pa?.razorpay_account_id) return undefined;
+
+    const commission = Math.round((amount * (pa.commission_bps || 0)) / 10000);
+    const transferAmount = amount - commission;
+    if (transferAmount <= 0) return undefined; // commission ≥ amount → keep it all
+
+    return [
+        {
+            account: pa.razorpay_account_id,
+            amount: transferAmount,
+            currency,
+            notes: appSlug ? { app: appSlug } : {},
+        },
+    ];
 }

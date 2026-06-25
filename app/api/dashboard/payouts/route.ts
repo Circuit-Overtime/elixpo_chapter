@@ -3,7 +3,9 @@ export const runtime = "edge";
 import { type NextRequest, NextResponse } from "next/server";
 import type { D1Database } from "@cloudflare/workers-types";
 import { requireDashboard } from "@/lib/dashboard-auth";
+import { getEnv } from "@/lib/env";
 import { newId } from "@/lib/ids";
+import { razorpayFromEnv } from "@/lib/providers/razorpay";
 
 /**
  * Connected payout account (Razorpay Route) for the signed-in merchant.
@@ -72,9 +74,7 @@ export async function PUT(request: NextRequest) {
     const beneficiary = String(body.beneficiary_name || "").trim().slice(0, 120);
     const ifsc = String(body.ifsc || "").trim().toUpperCase();
     const accountNumber = String(body.account_number || "").replace(/\s/g, "");
-    const razorpayAccountId = body.razorpay_account_id
-        ? String(body.razorpay_account_id).trim()
-        : null;
+    const businessType = String(body.business_type || "individual").trim();
 
     if (!beneficiary) {
         return NextResponse.json({ error: "missing_beneficiary" }, { status: 400 });
@@ -85,15 +85,44 @@ export async function PUT(request: NextRequest) {
     if (!/^\d{6,18}$/.test(accountNumber)) {
         return NextResponse.json({ error: "invalid_account_number" }, { status: 400 });
     }
-    if (razorpayAccountId && !/^acc_[A-Za-z0-9]+$/.test(razorpayAccountId)) {
-        return NextResponse.json({ error: "invalid_account_id" }, { status: 400 });
-    }
-    // Only the last 4 of the account number are persisted (display only).
+
+    // Only the last 4 of the account number are persisted (display only); the
+    // full number is sent to Razorpay to create the linked account, not stored.
     const last4 = accountNumber.slice(-4);
-    // Active once a Razorpay linked account is attached; pending otherwise.
-    const status = razorpayAccountId ? "active" : "pending";
 
     const existing = await getAccount(db, merchantId);
+    let accountId: string | null = existing?.razorpay_account_id ?? null;
+    let status: string = existing?.status ?? "pending";
+    let createError: string | null = null;
+
+    // Create the Razorpay linked account from the bank details the merchant gave
+    // us (Elixpo Pay onboards them; they never touch Razorpay). Skip if they
+    // already have one. Non-fatal: on failure we save as 'pending' + surface why.
+    if (!accountId) {
+        const razorpay = await razorpayFromEnv(getEnv);
+        if (razorpay) {
+            const merchant = (await db
+                .prepare("SELECT email, name FROM merchants WHERE id = ?")
+                .bind(merchantId)
+                .first()) as { email: string | null; name: string | null } | null;
+            try {
+                const created = await razorpay.createLinkedAccount({
+                    email: merchant?.email || `merchant+${merchantId}@elixpo.com`,
+                    name: beneficiary,
+                    beneficiaryName: beneficiary,
+                    ifsc,
+                    accountNumber,
+                    businessType,
+                });
+                accountId = created.accountId;
+                status = "active";
+            } catch (e: any) {
+                createError = e?.message || "Could not create the Razorpay account";
+                status = "pending";
+            }
+        }
+    }
+
     if (existing) {
         await db
             .prepare(
@@ -102,7 +131,7 @@ export async function PUT(request: NextRequest) {
                      razorpay_account_id = ?, status = ?, updated_at = datetime('now')
                  WHERE merchant_id = ?`,
             )
-            .bind(beneficiary, ifsc, last4, razorpayAccountId, status, merchantId)
+            .bind(beneficiary, ifsc, last4, accountId, status, merchantId)
             .run();
     } else {
         await db
@@ -111,11 +140,15 @@ export async function PUT(request: NextRequest) {
                  (id, merchant_id, provider, razorpay_account_id, beneficiary_name, bank_ifsc, bank_last4, status)
                  VALUES (?, ?, 'razorpay', ?, ?, ?, ?, ?)`,
             )
-            .bind(newId("payoutAccount"), merchantId, razorpayAccountId, beneficiary, ifsc, last4, status)
+            .bind(newId("payoutAccount"), merchantId, accountId, beneficiary, ifsc, last4, status)
             .run();
     }
 
-    return NextResponse.json({ ok: true, account: view(await getAccount(db, merchantId)) });
+    return NextResponse.json({
+        ok: true,
+        account: view(await getAccount(db, merchantId)),
+        create_error: createError,
+    });
 }
 
 export async function DELETE(request: NextRequest) {

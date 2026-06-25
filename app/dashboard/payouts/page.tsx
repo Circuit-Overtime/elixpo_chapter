@@ -44,9 +44,9 @@ export default function PayoutsPage() {
     const [beneficiary, setBeneficiary] = useState("");
     const [accountNumber, setAccountNumber] = useState("");
     const [ifsc, setIfsc] = useState("");
-    const [razorpayId, setRazorpayId] = useState("");
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState("");
+    const [createError, setCreateError] = useState("");
     const [saved, setSaved] = useState(false);
     const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 
@@ -59,7 +59,6 @@ export default function PayoutsPage() {
             if (d.account) {
                 setBeneficiary(d.account.beneficiary_name || "");
                 setIfsc(d.account.bank_ifsc || "");
-                setRazorpayId(d.account.razorpay_account_id || "");
             }
         }
         setLoading(false);
@@ -72,6 +71,7 @@ export default function PayoutsPage() {
     const save = async () => {
         setBusy(true);
         setErr("");
+        setCreateError("");
         setSaved(false);
         try {
             const r = await fetch("/api/dashboard/payouts", {
@@ -82,7 +82,6 @@ export default function PayoutsPage() {
                     beneficiary_name: beneficiary.trim(),
                     account_number: accountNumber.trim(),
                     ifsc: ifsc.trim(),
-                    razorpay_account_id: razorpayId.trim() || null,
                 }),
             });
             const d: any = await r.json().catch(() => ({}));
@@ -92,12 +91,14 @@ export default function PayoutsPage() {
                         missing_beneficiary: "Enter the account holder name.",
                         invalid_ifsc: "That IFSC doesn't look right.",
                         invalid_account_number: "Enter a valid account number.",
-                        invalid_account_id: "Razorpay account id must look like acc_…",
                     }[d.error as string] || d.error_description || d.error || "failed",
                 );
             }
             setAccountNumber("");
             setSaved(true);
+            // Razorpay couldn't create the linked account (e.g. KYC/details) —
+            // saved as pending; show why so the merchant can fix it.
+            if (d.create_error) setCreateError(d.create_error);
             await load();
         } catch (e: any) {
             setErr(e?.message || "Could not save");
@@ -113,7 +114,6 @@ export default function PayoutsPage() {
         setAccount(null);
         setBeneficiary("");
         setIfsc("");
-        setRazorpayId("");
         setBusy(false);
         await load();
     };
@@ -185,7 +185,9 @@ export default function PayoutsPage() {
                     {connected ? "Update bank details" : "Connect your bank"}
                 </Typography>
                 <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem", mb: 2 }}>
-                    Your account number is never stored in full — only the last 4 digits, for display.
+                    We verify these and set up your Razorpay payout account for you — you
+                    don't touch Razorpay. Your account number is never stored in full
+                    (only the last 4 digits, for display).
                 </Typography>
                 <Stack spacing={1.8}>
                     <Box>
@@ -202,14 +204,14 @@ export default function PayoutsPage() {
                             <TextField value={ifsc} onChange={(e) => setIfsc(e.target.value.toUpperCase())} placeholder="HDFC0001234" size="small" fullWidth sx={field} />
                         </Box>
                     </Stack>
-                    <Box>
-                        <Typography sx={labelSx}>Razorpay linked account id (optional)</Typography>
-                        <TextField value={razorpayId} onChange={(e) => setRazorpayId(e.target.value)} placeholder="acc_…" size="small" fullWidth sx={field} />
-                        <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.72rem", mt: 0.5 }}>
-                            Once you onboard your bank as a Razorpay linked account, paste its id here to turn on splitting.
+                </Stack>
+                {createError && (
+                    <Box sx={{ mt: 1.8, px: 1.6, py: 1.2, borderRadius: "10px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)" }}>
+                        <Typography sx={{ color: "#fbbf24", fontSize: "0.82rem" }}>
+                            Saved, but Razorpay couldn't set up the payout account yet: {createError}
                         </Typography>
                     </Box>
-                </Stack>
+                )}
                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 2 }}>
                     <Button
                         onClick={save}
