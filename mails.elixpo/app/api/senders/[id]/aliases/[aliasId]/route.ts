@@ -1,9 +1,10 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
-import { getSession } from "@/lib/session";
 import { deleteAlias, getAlias } from "@/lib/senders";
+import { getSession } from "@/lib/session";
+import { requireWriteRole } from "@/lib/workspace-guard";
+import { type NextRequest, NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ id: string; aliasId: string }> };
 
@@ -11,6 +12,9 @@ type Ctx = { params: Promise<{ id: string; aliasId: string }> };
 export async function DELETE(request: NextRequest, { params }: Ctx) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const denied = await requireWriteRole(session);
+    if (denied) return denied;
     const { id, aliasId } = await params;
 
     const db = await getDatabase();

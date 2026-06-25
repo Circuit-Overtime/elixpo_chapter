@@ -245,5 +245,8 @@ export async function updateTemplate(
 }
 
 export async function deleteTemplate(db: D1Database, tenantId: string, id: string): Promise<void> {
-    await db.prepare("DELETE FROM templates WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
+    await db
+        .prepare("DELETE FROM templates WHERE id = ? AND tenant_id = ?")
+        .bind(id, tenantId)
+        .run();
 }

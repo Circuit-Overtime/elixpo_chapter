@@ -1,12 +1,13 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { parseAttachmentInputs, replaceAttachments } from "@/lib/attachments";
 import { cleanupOrphanImages } from "@/lib/cloudinary";
 import { getDatabase } from "@/lib/d1-client";
 import { getOrCreateDefaultProduct, getProduct, slugify } from "@/lib/products";
 import { getSession } from "@/lib/session";
 import { createTemplate, listTemplates, toSummary } from "@/lib/templates";
+import { requireWriteRole } from "@/lib/workspace-guard";
+import { type NextRequest, NextResponse } from "next/server";
 
 function sessionUrls(body: any): string[] {
     return Array.isArray(body?.uploadedImages)
@@ -29,6 +30,9 @@ export async function POST(request: NextRequest) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+    const denied = await requireWriteRole(session);
+    if (denied) return denied;
+
     let body: any;
     try {
         body = await request.json();
@@ -43,7 +47,8 @@ export async function POST(request: NextRequest) {
             { status: 400 },
         );
     }
-    const slug = (typeof body?.slug === "string" && body.slug.trim()) ? slugify(body.slug) : slugify(name);
+    const slug =
+        typeof body?.slug === "string" && body.slug.trim() ? slugify(body.slug) : slugify(name);
 
     const db = await getDatabase();
     // A template must belong to a product. Use the one the caller chose; fall
@@ -82,7 +87,12 @@ export async function POST(request: NextRequest) {
             keepTemplateId: row.id,
         }).catch(() => {});
         if (body?.attachments !== undefined) {
-            await replaceAttachments(db, session.tenantId, row.id, parseAttachmentInputs(body.attachments));
+            await replaceAttachments(
+                db,
+                session.tenantId,
+                row.id,
+                parseAttachmentInputs(body.attachments),
+            );
         }
         const { toPublic } = await import("@/lib/templates");
         return NextResponse.json({ ok: true, template: toPublic(row) }, { status: 201 });

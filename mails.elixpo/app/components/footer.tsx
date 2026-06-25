@@ -57,12 +57,18 @@ const Footer = () => {
                 zIndex: 1,
                 mt: { xs: 6, md: 10 },
                 borderTop: "1px solid rgba(255,255,255,0.08)",
-                background:
-                    "linear-gradient(180deg, rgba(11,13,18,0) 0%, rgba(11,13,18,0.4) 100%)",
+                background: "linear-gradient(180deg, rgba(11,13,18,0) 0%, rgba(11,13,18,0.4) 100%)",
                 backdropFilter: "blur(12px)",
             }}
         >
-            <Box sx={{ maxWidth: "1200px", mx: "auto", px: { xs: 2.5, md: 4 }, py: { xs: 5, md: 6 } }}>
+            <Box
+                sx={{
+                    maxWidth: "1200px",
+                    mx: "auto",
+                    px: { xs: 2.5, md: 4 },
+                    py: { xs: 5, md: 6 },
+                }}
+            >
                 <Stack
                     direction={{ xs: "column", md: "row" }}
                     spacing={{ xs: 4, md: 6 }}
@@ -74,9 +80,16 @@ const Footer = () => {
                                 component="img"
                                 src="/mark.png"
                                 alt="mail.elixpo"
-                                sx={{ height: 28, width: 28, borderRadius: "7px", display: "block" }}
+                                sx={{
+                                    height: 28,
+                                    width: 28,
+                                    borderRadius: "7px",
+                                    display: "block",
+                                }}
                             />
-                            <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#f4f4f6" }}>
+                            <Typography
+                                sx={{ fontWeight: 700, fontSize: "1rem", color: "#f4f4f6" }}
+                            >
                                 Elixpo
                                 <Box component="span" sx={{ color: ACCENT }}>
                                     {" "}
@@ -84,11 +97,17 @@ const Footer = () => {
                                 </Box>
                             </Typography>
                         </Stack>
-                        <Typography sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", lineHeight: 1.6 }}>
-                            Event-based transactional email on the edge. Bring your own
-                            sender, design templates with {"{{variables}}"} in a live
-                            editor, and trigger sends from your service via webhook —
-                            without building mail infrastructure.
+                        <Typography
+                            sx={{
+                                color: "rgba(255,255,255,0.55)",
+                                fontSize: "0.88rem",
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            Event-based transactional email on the edge. Bring your own sender,
+                            design templates with {"{{variables}}"} in a live editor, and trigger
+                            sends from your service via webhook — without building mail
+                            infrastructure.
                         </Typography>
                     </Box>
 
@@ -142,7 +161,11 @@ const Footer = () => {
                                 <Button
                                     onClick={copyEmail}
                                     startIcon={<MailOutlineIcon sx={{ fontSize: 18 }} />}
-                                    endIcon={<ContentCopyIcon sx={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }} />}
+                                    endIcon={
+                                        <ContentCopyIcon
+                                            sx={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}
+                                        />
+                                    }
                                     sx={{
                                         textTransform: "none",
                                         color: "rgba(255,255,255,0.85)",

@@ -197,7 +197,9 @@ export async function webhookCountsByTemplate(
     tenantId: string,
 ): Promise<Record<string, number>> {
     const res = await db
-        .prepare("SELECT template_id, COUNT(*) AS n FROM webhooks WHERE tenant_id = ? GROUP BY template_id")
+        .prepare(
+            "SELECT template_id, COUNT(*) AS n FROM webhooks WHERE tenant_id = ? GROUP BY template_id",
+        )
         .bind(tenantId)
         .all();
     const out: Record<string, number> = {};
@@ -237,5 +239,8 @@ export async function updateWebhook(
 }
 
 export async function deleteWebhook(db: D1Database, tenantId: string, id: string): Promise<void> {
-    await db.prepare("DELETE FROM webhooks WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
+    await db
+        .prepare("DELETE FROM webhooks WHERE id = ? AND tenant_id = ?")
+        .bind(id, tenantId)
+        .run();
 }

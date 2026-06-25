@@ -77,10 +77,10 @@ export async function uploadImage(
     form.append("public_id", publicId);
     form.append("signature", signature);
 
-    const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cfg.cloudName}/image/upload`,
-        { method: "POST", body: form },
-    );
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/image/upload`, {
+        method: "POST",
+        body: form,
+    });
     const data = (await res.json().catch(() => ({}))) as any;
     if (!res.ok || !data?.secure_url) {
         throw new Error(data?.error?.message || `cloudinary upload failed (${res.status})`);
@@ -127,7 +127,7 @@ export function extractCloudinaryPublicIds(html: string | null | undefined): str
         const id = publicIdFromUrl(url);
         // Only ever consider assets we created — never a foreign Cloudinary URL
         // a user may have embedded.
-        if (id && id.includes("ml_lix_")) ids.add(id);
+        if (id?.includes("ml_lix_")) ids.add(id);
     }
     return [...ids];
 }
@@ -141,10 +141,10 @@ export async function destroyImage(cfg: CloudinaryConfig, publicId: string): Pro
     form.append("timestamp", String(timestamp));
     form.append("api_key", cfg.apiKey);
     form.append("signature", signature);
-    const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cfg.cloudName}/image/destroy`,
-        { method: "POST", body: form },
-    );
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/image/destroy`, {
+        method: "POST",
+        body: form,
+    });
     const data = (await res.json().catch(() => ({}))) as any;
     return data?.result === "ok" || data?.result === "not found";
 }
@@ -194,7 +194,7 @@ export async function cleanupOrphanImages(
     const candidates = new Set<string>(extractCloudinaryPublicIds(opts.previousHtml));
     for (const url of opts.sessionUrls || []) {
         const id = publicIdFromUrl(url);
-        if (id && id.includes("ml_lix_")) candidates.add(id);
+        if (id?.includes("ml_lix_")) candidates.add(id);
     }
     const keep = new Set(extractCloudinaryPublicIds(opts.newHtml));
     const removed = [...candidates].filter((id) => !keep.has(id));
@@ -209,7 +209,10 @@ export async function cleanupOrphanImages(
         const binds = opts.keepTemplateId
             ? [tenantId, opts.keepTemplateId, `%${id}%`]
             : [tenantId, `%${id}%`];
-        const ref = await db.prepare(sql).bind(...binds).first();
+        const ref = await db
+            .prepare(sql)
+            .bind(...binds)
+            .first();
         if (ref) continue;
         try {
             if (await destroyImage(cfg, id)) deleted++;

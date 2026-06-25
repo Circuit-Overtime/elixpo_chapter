@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { buildAuthorizeUrl } from "@/lib/sso";
+import { type NextRequest, NextResponse } from "next/server";
 
 const STATE_COOKIE = "mail_oauth_state";
 

@@ -100,7 +100,9 @@ export async function verifySignature(
     if (timingSafeEqual(expected, candidate)) return { ok: true };
 
     if (opts.prevSecret && opts.prevValid) {
-        const expectedPrev = (await computeSignature(opts.prevSecret, sig.t, rawBody)).toLowerCase();
+        const expectedPrev = (
+            await computeSignature(opts.prevSecret, sig.t, rawBody)
+        ).toLowerCase();
         if (timingSafeEqual(expectedPrev, candidate)) return { ok: true };
     }
     return { ok: false, reason: "invalid_signature" };

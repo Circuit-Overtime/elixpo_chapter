@@ -1,8 +1,8 @@
 export const runtime = "edge";
 
-import type { NextRequest } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { productNameById, suppress, verifyUnsub } from "@/lib/suppressions";
+import type { NextRequest } from "next/server";
 
 function page(title: string, body: string, status = 200): Response {
     const html = `<!doctype html><html lang="en"><head>
@@ -26,7 +26,12 @@ function page(title: string, body: string, status = 200): Response {
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
     const { token } = await params;
     const data = await verifyUnsub(token);
-    if (!data) return page("Invalid link", `<h1>Link not valid</h1><p>This unsubscribe link is invalid or has been tampered with.</p>`, 400);
+    if (!data)
+        return page(
+            "Invalid link",
+            "<h1>Link not valid</h1><p>This unsubscribe link is invalid or has been tampered with.</p>",
+            400,
+        );
 
     const db = await getDatabase();
     const product = await productNameById(db, data.productId);
@@ -44,7 +49,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
     const { token } = await params;
     const data = await verifyUnsub(token);
-    if (!data) return page("Invalid link", `<h1>Link not valid</h1><p>This unsubscribe link is invalid.</p>`, 400);
+    if (!data)
+        return page(
+            "Invalid link",
+            "<h1>Link not valid</h1><p>This unsubscribe link is invalid.</p>",
+            400,
+        );
 
     const db = await getDatabase();
     await suppress(db, data.productId, data.email, "unsubscribe");

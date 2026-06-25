@@ -17,9 +17,15 @@ export interface SessionData {
     email: string;
     name?: string;
     avatar?: string | null;
-    tenantId: string;
+    tenantId: string; // the *active* workspace
+    role?: string; // the user's role in the active workspace (owner|admin|writer|viewer)
     iat: number;
     exp: number;
+}
+
+/** The active workspace role, defaulting to owner for legacy single-owner cookies. */
+export function sessionRole(s: { role?: string } | null): string {
+    return s?.role || "owner";
 }
 
 export async function signSession(
@@ -34,9 +40,7 @@ export async function signSession(
     return `${body}.${sig}`;
 }
 
-export async function verifySession(
-    token: string | undefined,
-): Promise<SessionData | null> {
+export async function verifySession(token: string | undefined): Promise<SessionData | null> {
     if (!token) return null;
     const secret = await getEnv("ELIXPO_MAIL_SESSION_SECRET");
     if (!secret) return null;

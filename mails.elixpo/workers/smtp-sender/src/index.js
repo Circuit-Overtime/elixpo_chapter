@@ -63,10 +63,7 @@ export default {
             });
             return json(result, 200);
         } catch (err) {
-            return json(
-                { ok: false, error: String((err && err.message) || err) },
-                502,
-            );
+            return json({ ok: false, error: String(err?.message || err) }, 502);
         }
     },
 };

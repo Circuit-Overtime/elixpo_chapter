@@ -1,14 +1,15 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { exchangeCode, saveConnection, verifyState } from "@/lib/drive";
 import { appUrl } from "@/lib/env";
+import { type NextRequest, NextResponse } from "next/server";
 
 /** GET /api/drive/callback — Google redirects here after consent. */
 export async function GET(request: NextRequest) {
     const base = await appUrl();
-    const settings = (status: string) => NextResponse.redirect(`${base}/dashboard/settings?drive=${status}`);
+    const settings = (status: string) =>
+        NextResponse.redirect(`${base}/dashboard/settings?drive=${status}`);
 
     const sp = request.nextUrl.searchParams;
     if (sp.get("error")) return settings("denied");

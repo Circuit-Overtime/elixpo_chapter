@@ -38,6 +38,7 @@ import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState, GHOST_BTN, PRIMARY_BTN } from "./dashboard-ui";
 import { BORDER, GlassCard, SURFACE } from "./glass-card";
+import { useRole } from "./role-provider";
 
 // ── Palette ─────────────────────────────────────────────────────────────────
 const ACCENT = "#9b7bf7";
@@ -162,6 +163,21 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
     );
 }
 
+// ── Read-only access chip (shown to viewers where a write button would be) ───
+function ReadOnlyChip() {
+    return (
+        <Chip
+            label="Read-only access"
+            size="small"
+            sx={{
+                color: "rgba(245,245,244,0.5)",
+                bgcolor: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.07)",
+            }}
+        />
+    );
+}
+
 // ── Status chip ─────────────────────────────────────────────────────────────
 function StatusChip({ status }: { status: string }) {
     const active = status === "active";
@@ -210,7 +226,10 @@ function CopyButton({
                 size="small"
                 sx={{
                     color: copied ? GREEN : TEXT_40,
-                    "&:hover": { color: copied ? GREEN : ACCENT, background: "rgba(155,123,247,0.06)" },
+                    "&:hover": {
+                        color: copied ? GREEN : ACCENT,
+                        background: "rgba(155,123,247,0.06)",
+                    },
                 }}
                 aria-label={label}
             >
@@ -229,34 +248,32 @@ function buildSnippet(origin: string, endpointKey: string, variables: string[]):
     const base = origin || "https://your-domain";
     const url = `${base}/v1/hooks/${endpointKey}`;
     const varsObj =
-        variables.length > 0
-            ? `{ ${variables.map((v) => `"${v}": "..."`).join(", ")} }`
-            : "{}";
+        variables.length > 0 ? `{ ${variables.map((v) => `"${v}": "..."`).join(", ")} }` : "{}";
     // Build as a plain string so the literal backticks and ${...} appear verbatim
     // in the snippet the user copies — they are JS, not TSX template interpolation.
     const dollar = "$";
     return [
         `import crypto from "node:crypto";`,
-        ``,
+        "",
         `const secret = "YOUR_PRODUCT_SECRET"; // your product's shared secret`,
         `const url = "${url}";`,
-        ``,
-        `const payload = JSON.stringify({`,
+        "",
+        "const payload = JSON.stringify({",
         `  to: "user@example.com",`,
         `  variables: ${varsObj},`,
-        `});`,
-        ``,
-        `const t = Math.floor(Date.now() / 1000);`,
+        "});",
+        "",
+        "const t = Math.floor(Date.now() / 1000);",
         `const v1 = crypto.createHmac("sha256", secret).update(\`${dollar}{t}.${dollar}{payload}\`).digest("hex");`,
-        ``,
-        `const res = await fetch(url, {`,
+        "",
+        "const res = await fetch(url, {",
         `  method: "POST",`,
-        `  headers: {`,
+        "  headers: {",
         `    "Content-Type": "application/json",`,
         `    "X-Elixpo-Signature": \`t=${dollar}{t},v1=${dollar}{v1}\`,`,
-        `  },`,
-        `  body: payload,`,
-        `});`,
+        "  },",
+        "  body: payload,",
+        "});",
     ].join("\n");
 }
 
@@ -298,13 +315,11 @@ function CreateDialog({
         const q = templateQuery.trim().toLowerCase();
         if (!q) return templates;
         return templates.filter(
-            (t) =>
-                t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q),
+            (t) => t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q),
         );
     }, [templates, templateQuery]);
 
-    const canSubmit =
-        !saving && productId !== "" && templateId !== "" && name.trim().length > 0;
+    const canSubmit = !saving && productId !== "" && templateId !== "" && name.trim().length > 0;
 
     async function submit() {
         if (!canSubmit) return;
@@ -335,7 +350,13 @@ function CreateDialog({
     }
 
     return (
-        <Dialog open={open} onClose={() => !saving && onClose()} fullWidth maxWidth="sm" slotProps={darkPaper}>
+        <Dialog
+            open={open}
+            onClose={() => !saving && onClose()}
+            fullWidth
+            maxWidth="sm"
+            slotProps={darkPaper}
+        >
             <DialogTitle sx={{ color: TEXT, fontWeight: 800, fontSize: "1.2rem", pb: 1 }}>
                 New webhook
             </DialogTitle>
@@ -354,7 +375,12 @@ function CreateDialog({
                             renderValue={(val) => {
                                 if (!val) {
                                     return (
-                                        <Typography sx={{ color: "rgba(245,245,244,0.35)", fontSize: "0.92rem" }}>
+                                        <Typography
+                                            sx={{
+                                                color: "rgba(245,245,244,0.35)",
+                                                fontSize: "0.92rem",
+                                            }}
+                                        >
                                             Choose a product
                                         </Typography>
                                     );
@@ -374,7 +400,9 @@ function CreateDialog({
                     <Box>
                         <FieldLabel>Template (required)</FieldLabel>
                         {templates.length === 0 ? (
-                            <Typography sx={{ fontSize: "0.84rem", color: TEXT_55, lineHeight: 1.6 }}>
+                            <Typography
+                                sx={{ fontSize: "0.84rem", color: TEXT_55, lineHeight: 1.6 }}
+                            >
                                 You don&rsquo;t have any templates yet. Create one under{" "}
                                 <Box
                                     component={Link}
@@ -402,7 +430,9 @@ function CreateDialog({
                                         input: {
                                             startAdornment: (
                                                 <InputAdornment position="start">
-                                                    <SearchIcon sx={{ fontSize: 18, color: TEXT_40 }} />
+                                                    <SearchIcon
+                                                        sx={{ fontSize: 18, color: TEXT_40 }}
+                                                    />
                                                 </InputAdornment>
                                             ),
                                         },
@@ -420,7 +450,12 @@ function CreateDialog({
                                 >
                                     {filteredTemplates.length === 0 ? (
                                         <Typography
-                                            sx={{ fontSize: "0.82rem", color: TEXT_40, p: 1.6, textAlign: "center" }}
+                                            sx={{
+                                                fontSize: "0.82rem",
+                                                color: TEXT_40,
+                                                p: 1.6,
+                                                textAlign: "center",
+                                            }}
                                         >
                                             No templates match
                                         </Typography>
@@ -468,7 +503,8 @@ function CreateDialog({
                                                             sx={{
                                                                 fontSize: "0.74rem",
                                                                 color: TEXT_40,
-                                                                fontFamily: "var(--font-geist-mono)",
+                                                                fontFamily:
+                                                                    "var(--font-geist-mono)",
                                                                 overflow: "hidden",
                                                                 textOverflow: "ellipsis",
                                                                 whiteSpace: "nowrap",
@@ -636,7 +672,12 @@ function RenameDialog({
                         }}
                     />
                     {error && (
-                        <Stack direction="row" spacing={0.8} alignItems="flex-start" sx={{ mt: 1.6 }}>
+                        <Stack
+                            direction="row"
+                            spacing={0.8}
+                            alignItems="flex-start"
+                            sx={{ mt: 1.6 }}
+                        >
                             <ErrorOutlineIcon sx={{ fontSize: 16, color: RED, mt: 0.2 }} />
                             <Typography sx={{ fontSize: "0.82rem", color: RED, lineHeight: 1.5 }}>
                                 {error}
@@ -729,8 +770,8 @@ function DeleteDialog({
             </DialogTitle>
             <DialogContent>
                 <Typography sx={{ color: TEXT_55, fontSize: "0.9rem", lineHeight: 1.6 }}>
-                    Delete <strong style={{ color: TEXT }}>{webhook?.name}</strong>? Its trigger endpoint
-                    will stop working immediately. This can&rsquo;t be undone.
+                    Delete <strong style={{ color: TEXT }}>{webhook?.name}</strong>? Its trigger
+                    endpoint will stop working immediately. This can&rsquo;t be undone.
                 </Typography>
                 {error && (
                     <Stack direction="row" spacing={0.8} alignItems="flex-start" sx={{ mt: 1.6 }}>
@@ -753,7 +794,9 @@ function DeleteDialog({
                         minWidth: 100,
                         background: "linear-gradient(135deg, #f87171 0%, #ef4444 100%)",
                         boxShadow: "0 8px 24px rgba(239,68,68,0.3)",
-                        "&:hover": { background: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)" },
+                        "&:hover": {
+                            background: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)",
+                        },
                         "&.Mui-disabled": {
                             background: "rgba(255,255,255,0.06)",
                             color: "rgba(245,245,244,0.35)",
@@ -761,7 +804,11 @@ function DeleteDialog({
                         },
                     }}
                 >
-                    {busy ? <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} /> : "Delete"}
+                    {busy ? (
+                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                    ) : (
+                        "Delete"
+                    )}
                 </Button>
             </DialogActions>
         </Dialog>
@@ -792,6 +839,7 @@ function WebhookRow({
     onDelete: () => void;
     busy: boolean;
 }) {
+    const { canWrite } = useRole();
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const triggerUrl = `${origin}/v1/hooks/${webhook.endpoint_key}`;
     const snippet = buildSnippet(origin, webhook.endpoint_key, variables);
@@ -806,9 +854,19 @@ function WebhookRow({
                 border: `1px solid ${BORDER}`,
             }}
         >
-            <Stack direction="row" justifyContent="space-between" spacing={1.5} alignItems="flex-start">
+            <Stack
+                direction="row"
+                justifyContent="space-between"
+                spacing={1.5}
+                alignItems="flex-start"
+            >
                 <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Stack direction="row" alignItems="center" spacing={1.2} sx={{ flexWrap: "wrap", rowGap: 0.6 }}>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1.2}
+                        sx={{ flexWrap: "wrap", rowGap: 0.6 }}
+                    >
                         <Typography
                             sx={{
                                 fontWeight: 700,
@@ -844,81 +902,92 @@ function WebhookRow({
                     >
                         Usage
                     </Button>
-                    <IconButton
-                        onClick={(e) => setMenuAnchor(e.currentTarget)}
-                        size="small"
-                        disabled={busy}
-                        sx={{
-                            color: TEXT_55,
-                            border: "1px solid rgba(255,255,255,0.16)",
-                            borderRadius: "10px",
-                            "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
-                        }}
-                        aria-label="More actions"
-                    >
-                        {busy ? (
-                            <CircularProgress size={16} sx={{ color: TEXT_55 }} />
-                        ) : (
-                            <MoreVertIcon sx={{ fontSize: 19 }} />
-                        )}
-                    </IconButton>
-                    <Menu
-                        anchorEl={menuAnchor}
-                        open={!!menuAnchor}
-                        onClose={() => setMenuAnchor(null)}
-                        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                        transformOrigin={{ vertical: "top", horizontal: "right" }}
-                        slotProps={{
-                            paper: {
-                                sx: {
-                                    background: SURFACE,
-                                    border: `1px solid ${BORDER}`,
-                                    borderRadius: "12px",
-                                    backgroundImage: "none",
-                                    minWidth: 170,
-                                    "& .MuiMenuItem-root": {
-                                        fontSize: "0.86rem",
-                                        color: TEXT,
-                                        gap: 1.2,
-                                        py: 1,
+                    {canWrite && (
+                        <>
+                            <IconButton
+                                onClick={(e) => setMenuAnchor(e.currentTarget)}
+                                size="small"
+                                disabled={busy}
+                                sx={{
+                                    color: TEXT_55,
+                                    border: "1px solid rgba(255,255,255,0.16)",
+                                    borderRadius: "10px",
+                                    "&:hover": {
+                                        borderColor: "rgba(155,123,247,0.5)",
+                                        background: "rgba(155,123,247,0.06)",
                                     },
-                                },
-                            },
-                        }}
-                    >
-                        <MenuItem
-                            onClick={() => {
-                                setMenuAnchor(null);
-                                onRename();
-                            }}
-                        >
-                            <EditOutlinedIcon sx={{ fontSize: 18, color: TEXT_55 }} />
-                            Rename
-                        </MenuItem>
-                        <MenuItem
-                            onClick={() => {
-                                setMenuAnchor(null);
-                                onToggleStatus();
-                            }}
-                        >
-                            {disabled ? (
-                                <PlayCircleOutlineIcon sx={{ fontSize: 18, color: GREEN }} />
-                            ) : (
-                                <PauseCircleOutlineIcon sx={{ fontSize: 18, color: TEXT_55 }} />
-                            )}
-                            {disabled ? "Enable" : "Disable"}
-                        </MenuItem>
-                        <MenuItem
-                            onClick={() => {
-                                setMenuAnchor(null);
-                                onDelete();
-                            }}
-                            sx={{ color: `${RED} !important` }}
-                        >
-                            <DeleteOutlineIcon sx={{ fontSize: 18, color: RED }} />
-                            Delete
-                        </MenuItem>
-                    </Menu>
+                                }}
+                                aria-label="More actions"
+                            >
+                                {busy ? (
+                                    <CircularProgress size={16} sx={{ color: TEXT_55 }} />
+                                ) : (
+                                    <MoreVertIcon sx={{ fontSize: 19 }} />
+                                )}
+                            </IconButton>
+                            <Menu
+                                anchorEl={menuAnchor}
+                                open={!!menuAnchor}
+                                onClose={() => setMenuAnchor(null)}
+                                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                                slotProps={{
+                                    paper: {
+                                        sx: {
+                                            background: SURFACE,
+                                            border: `1px solid ${BORDER}`,
+                                            borderRadius: "12px",
+                                            backgroundImage: "none",
+                                            minWidth: 170,
+                                            "& .MuiMenuItem-root": {
+                                                fontSize: "0.86rem",
+                                                color: TEXT,
+                                                gap: 1.2,
+                                                py: 1,
+                                            },
+                                        },
+                                    },
+                                }}
+                            >
+                                <MenuItem
+                                    onClick={() => {
+                                        setMenuAnchor(null);
+                                        onRename();
+                                    }}
+                                >
+                                    <EditOutlinedIcon sx={{ fontSize: 18, color: TEXT_55 }} />
+                                    Rename
+                                </MenuItem>
+                                <MenuItem
+                                    onClick={() => {
+                                        setMenuAnchor(null);
+                                        onToggleStatus();
+                                    }}
+                                >
+                                    {disabled ? (
+                                        <PlayCircleOutlineIcon
+                                            sx={{ fontSize: 18, color: GREEN }}
+                                        />
+                                    ) : (
+                                        <PauseCircleOutlineIcon
+                                            sx={{ fontSize: 18, color: TEXT_55 }}
+                                        />
+                                    )}
+                                    {disabled ? "Enable" : "Disable"}
+                                </MenuItem>
+                                <MenuItem
+                                    onClick={() => {
+                                        setMenuAnchor(null);
+                                        onDelete();
+                                    }}
+                                    sx={{ color: `${RED} !important` }}
+                                >
+                                    <DeleteOutlineIcon sx={{ fontSize: 18, color: RED }} />
+                                    Delete
+                                </MenuItem>
+                            </Menu>
+                        </>
+                    )}
                 </Stack>
             </Stack>
 
@@ -950,15 +1019,28 @@ function WebhookRow({
                 >
                     {origin ? triggerUrl : "Loading endpoint…"}
                 </Typography>
-                <CopyButton value={triggerUrl} label="Copy trigger URL" onCopied={() => onCopied("Copied")} />
+                <CopyButton
+                    value={triggerUrl}
+                    label="Copy trigger URL"
+                    onCopied={() => onCopied("Copied")}
+                />
             </Box>
 
             {/* Usage expander */}
             <Collapse in={expanded} timeout="auto" unmountOnExit>
                 <Box sx={{ mt: 1.6 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.7 }}>
+                    <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        sx={{ mb: 0.7 }}
+                    >
                         <FieldLabel>Send with Node.js</FieldLabel>
-                        <CopyButton value={snippet} label="Copy code sample" onCopied={() => onCopied("Copied")} />
+                        <CopyButton
+                            value={snippet}
+                            label="Copy code sample"
+                            onCopied={() => onCopied("Copied")}
+                        />
                     </Stack>
                     <Box
                         component="pre"
@@ -978,29 +1060,48 @@ function WebhookRow({
                     >
                         {snippet}
                     </Box>
-                    <Typography sx={{ fontSize: "0.78rem", color: TEXT_55, mt: 1.2, lineHeight: 1.6 }}>
+                    <Typography
+                        sx={{ fontSize: "0.78rem", color: TEXT_55, mt: 1.2, lineHeight: 1.6 }}
+                    >
                         Sign every request with your product&rsquo;s shared secret. The{" "}
-                        <Box component="code" sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.74rem" }}>
+                        <Box
+                            component="code"
+                            sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.74rem" }}
+                        >
                             X-Elixpo-Signature
                         </Box>{" "}
                         header is{" "}
-                        <Box component="code" sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.74rem" }}>
+                        <Box
+                            component="code"
+                            sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.74rem" }}
+                        >
                             t=&lt;unix seconds&gt;,v1=&lt;hex HMAC-SHA256 of &quot;t.body&quot;&gt;
                         </Box>
-                        . We reject signatures older than 5 minutes. Your product secret is shown once when you
-                        create or rotate the product — find it under{" "}
+                        . We reject signatures older than 5 minutes. Your product secret is shown
+                        once when you create or rotate the product — find it under{" "}
                         <Box
                             component={Link}
                             href="/dashboard/products"
-                            sx={{ color: HOOK_ACCENT, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+                            sx={{
+                                color: HOOK_ACCENT,
+                                textDecoration: "none",
+                                "&:hover": { textDecoration: "underline" },
+                            }}
                         >
                             Products
                         </Box>
                         .
                     </Typography>
                     {variables.length > 0 && (
-                        <Stack direction="row" spacing={0.8} sx={{ mt: 1.2, flexWrap: "wrap", rowGap: 0.6 }} alignItems="center">
-                            <Typography sx={{ fontSize: "0.74rem", color: TEXT_40 }}>Declared variables:</Typography>
+                        <Stack
+                            direction="row"
+                            spacing={0.8}
+                            sx={{ mt: 1.2, flexWrap: "wrap", rowGap: 0.6 }}
+                            alignItems="center"
+                        >
+                            <Typography sx={{ fontSize: "0.74rem", color: TEXT_40 }}>
+                                Declared variables:
+                            </Typography>
                             {variables.map((v) => (
                                 <Chip
                                     key={v}
@@ -1026,6 +1127,7 @@ function WebhookRow({
 
 // ── Manager (root) ──────────────────────────────────────────────────────────
 export default function WebhooksManager() {
+    const { canWrite } = useRole();
     const [webhooks, setWebhooks] = useState<WebhookSummary[]>([]);
     const [templates, setTemplates] = useState<TemplateSummary[]>([]);
     const [products, setProducts] = useState<ProductSummary[]>([]);
@@ -1073,8 +1175,12 @@ export default function WebhooksManager() {
                 throw new Error(wData?.message || wData?.error || "Could not load webhooks.");
             }
             setWebhooks(Array.isArray(wData.webhooks) ? wData.webhooks : []);
-            setTemplates(tRes.ok && tData?.ok && Array.isArray(tData.templates) ? tData.templates : []);
-            setProducts(pRes.ok && pData?.ok && Array.isArray(pData.products) ? pData.products : []);
+            setTemplates(
+                tRes.ok && tData?.ok && Array.isArray(tData.templates) ? tData.templates : [],
+            );
+            setProducts(
+                pRes.ok && pData?.ok && Array.isArray(pData.products) ? pData.products : [],
+            );
             setLoadError(null);
         } catch (e) {
             setLoadError(e instanceof Error ? e.message : "Could not load webhooks.");
@@ -1150,10 +1256,15 @@ export default function WebhooksManager() {
     // webhook, so the most recently created webhook is always first.
     const groups = useMemo(() => {
         const ts = (iso: string) =>
-            Date.parse(iso?.includes("T") ? iso : `${iso}`.replace(" ", "T") + "Z") || 0;
+            Date.parse(iso?.includes("T") ? iso : `${`${iso}`.replace(" ", "T")}Z`) || 0;
         const byTemplate = new Map<
             string,
-            { templateId: string; templateName: string; productName: string; items: WebhookSummary[] }
+            {
+                templateId: string;
+                templateName: string;
+                productName: string;
+                items: WebhookSummary[];
+            }
         >();
         for (const w of filteredWebhooks) {
             if (!byTemplate.has(w.template_id)) {
@@ -1164,7 +1275,7 @@ export default function WebhooksManager() {
                     items: [],
                 });
             }
-            byTemplate.get(w.template_id)!.items.push(w);
+            byTemplate.get(w.template_id)?.items.push(w);
         }
         const out = Array.from(byTemplate.values());
         for (const g of out) g.items.sort((a, b) => ts(b.created_at) - ts(a.created_at));
@@ -1180,7 +1291,9 @@ export default function WebhooksManager() {
             <GlassCard sx={{ py: { xs: 6, md: 8 } }}>
                 <Stack alignItems="center" spacing={2}>
                     <CircularProgress size={28} sx={{ color: ACCENT }} />
-                    <Typography sx={{ color: TEXT_55, fontSize: "0.9rem" }}>Loading webhooks…</Typography>
+                    <Typography sx={{ color: TEXT_55, fontSize: "0.9rem" }}>
+                        Loading webhooks…
+                    </Typography>
                 </Stack>
             </GlassCard>
         );
@@ -1189,7 +1302,12 @@ export default function WebhooksManager() {
     if (loadError) {
         return (
             <GlassCard>
-                <Stack direction="row" spacing={1.2} alignItems="center" justifyContent="space-between">
+                <Stack
+                    direction="row"
+                    spacing={1.2}
+                    alignItems="center"
+                    justifyContent="space-between"
+                >
                     <Stack direction="row" spacing={1} alignItems="center">
                         <ErrorOutlineIcon sx={{ fontSize: 18, color: RED }} />
                         <Typography sx={{ color: RED, fontSize: "0.9rem" }}>{loadError}</Typography>
@@ -1235,7 +1353,7 @@ export default function WebhooksManager() {
                         accent={HOOK_ACCENT}
                         headline="No webhooks yet"
                         subtext="Create a named, signed trigger endpoint on one of your templates, then POST to it from your stack to send the email."
-                        cta={newButton}
+                        cta={canWrite ? newButton : <ReadOnlyChip />}
                     />
                 ) : (
                     <EmptyState
@@ -1244,11 +1362,7 @@ export default function WebhooksManager() {
                         headline="Create a template first"
                         subtext="Webhooks attach to a template. Add a template, then come back here to create a signed trigger endpoint for it."
                         cta={
-                            <Button
-                                component={Link}
-                                href="/dashboard/templates"
-                                sx={PRIMARY_BTN}
-                            >
+                            <Button component={Link} href="/dashboard/templates" sx={PRIMARY_BTN}>
                                 Go to templates
                             </Button>
                         }
@@ -1256,14 +1370,12 @@ export default function WebhooksManager() {
                 )
             ) : (
                 <Box>
-                    <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
-                        {newButton}
-                    </Stack>
-                    <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={1.5}
-                        sx={{ mb: 2 }}
-                    >
+                    {canWrite && (
+                        <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+                            {newButton}
+                        </Stack>
+                    )}
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 2 }}>
                         <TextField
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -1317,45 +1429,49 @@ export default function WebhooksManager() {
                                 : "No webhooks for the selected product"}
                         </Typography>
                     ) : (
-                    <Stack spacing={2}>
-                        {groups.map((group) => (
-                            <GlassCard key={group.templateId}>
-                                <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    spacing={1.2}
-                                    sx={{ mb: 1.8, flexWrap: "wrap", rowGap: 0.5 }}
-                                >
-                                    <WebhookIcon sx={{ fontSize: 18, color: HOOK_ACCENT }} />
-                                    <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT }}>
-                                        {group.templateName}
-                                    </Typography>
-                                    <Typography sx={{ fontSize: "0.8rem", color: TEXT_40 }}>
-                                        {group.productName}
-                                    </Typography>
-                                </Stack>
-                                <Stack spacing={1.4}>
-                                    {group.items.map((w) => (
-                                        <WebhookRow
-                                            key={w.id}
-                                            webhook={w}
-                                            origin={origin}
-                                            variables={variablesFor(w.template_id)}
-                                            expanded={expandedId === w.id}
-                                            onToggleExpand={() =>
-                                                setExpandedId((cur) => (cur === w.id ? null : w.id))
-                                            }
-                                            onCopied={(msg) => setToast(msg)}
-                                            onRename={() => setRenaming(w)}
-                                            onToggleStatus={() => toggleStatus(w)}
-                                            onDelete={() => setDeleting(w)}
-                                            busy={togglingId === w.id}
-                                        />
-                                    ))}
-                                </Stack>
-                            </GlassCard>
-                        ))}
-                    </Stack>
+                        <Stack spacing={2}>
+                            {groups.map((group) => (
+                                <GlassCard key={group.templateId}>
+                                    <Stack
+                                        direction="row"
+                                        alignItems="center"
+                                        spacing={1.2}
+                                        sx={{ mb: 1.8, flexWrap: "wrap", rowGap: 0.5 }}
+                                    >
+                                        <WebhookIcon sx={{ fontSize: 18, color: HOOK_ACCENT }} />
+                                        <Typography
+                                            sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT }}
+                                        >
+                                            {group.templateName}
+                                        </Typography>
+                                        <Typography sx={{ fontSize: "0.8rem", color: TEXT_40 }}>
+                                            {group.productName}
+                                        </Typography>
+                                    </Stack>
+                                    <Stack spacing={1.4}>
+                                        {group.items.map((w) => (
+                                            <WebhookRow
+                                                key={w.id}
+                                                webhook={w}
+                                                origin={origin}
+                                                variables={variablesFor(w.template_id)}
+                                                expanded={expandedId === w.id}
+                                                onToggleExpand={() =>
+                                                    setExpandedId((cur) =>
+                                                        cur === w.id ? null : w.id,
+                                                    )
+                                                }
+                                                onCopied={(msg) => setToast(msg)}
+                                                onRename={() => setRenaming(w)}
+                                                onToggleStatus={() => toggleStatus(w)}
+                                                onDelete={() => setDeleting(w)}
+                                                busy={togglingId === w.id}
+                                            />
+                                        ))}
+                                    </Stack>
+                                </GlassCard>
+                            ))}
+                        </Stack>
                     )}
                 </Box>
             )}

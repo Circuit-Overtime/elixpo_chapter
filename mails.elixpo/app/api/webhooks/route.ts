@@ -1,6 +1,5 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getSession } from "@/lib/session";
 import {
@@ -10,6 +9,8 @@ import {
     listWebhooksByTemplate,
     webhookToPublic,
 } from "@/lib/webhooks";
+import { requireWriteRole } from "@/lib/workspace-guard";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/webhooks — list the tenant's webhooks (joined with template/product
@@ -39,6 +40,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const denied = await requireWriteRole(session);
+    if (denied) return denied;
 
     let body: any;
     try {

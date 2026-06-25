@@ -35,6 +35,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { EmptyState, GHOST_BTN, PRIMARY_BTN } from "./dashboard-ui";
 import { BORDER, GlassCard, SURFACE } from "./glass-card";
+import { useRole } from "./role-provider";
 
 // ── Palette ─────────────────────────────────────────────────────────────────
 const ACCENT = "#9b7bf7";
@@ -169,6 +170,21 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
     );
 }
 
+// ── Read-only access chip (shown to viewers where a write button would be) ───
+function ReadOnlyChip() {
+    return (
+        <Chip
+            label="Read-only access"
+            size="small"
+            sx={{
+                color: "rgba(245,245,244,0.5)",
+                bgcolor: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.07)",
+            }}
+        />
+    );
+}
+
 // ── Status chip ─────────────────────────────────────────────────────────────
 function StatusChip({ status }: { status: string }) {
     const active = status === "active";
@@ -226,7 +242,10 @@ function CopyButton({ value, label }: { value: string; label: string }) {
                 size="small"
                 sx={{
                     color: copied ? GREEN : TEXT_40,
-                    "&:hover": { color: copied ? GREEN : ACCENT, background: "rgba(155,123,247,0.06)" },
+                    "&:hover": {
+                        color: copied ? GREEN : ACCENT,
+                        background: "rgba(155,123,247,0.06)",
+                    },
                 }}
                 aria-label={label}
             >
@@ -292,10 +311,18 @@ function SecretRevealDialog({
                             border: "1px solid rgba(251,191,36,0.3)",
                         }}
                     >
-                        <WarningAmberIcon sx={{ fontSize: 19, color: AMBER, flexShrink: 0, mt: 0.1 }} />
-                        <Typography sx={{ fontSize: "0.84rem", color: "rgba(245,245,244,0.78)", lineHeight: 1.6 }}>
-                            Copy this now — you won&rsquo;t be able to see it again. Store it somewhere safe;
-                            we only keep a hashed copy.
+                        <WarningAmberIcon
+                            sx={{ fontSize: 19, color: AMBER, flexShrink: 0, mt: 0.1 }}
+                        />
+                        <Typography
+                            sx={{
+                                fontSize: "0.84rem",
+                                color: "rgba(245,245,244,0.78)",
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            Copy this now — you won&rsquo;t be able to see it again. Store it
+                            somewhere safe; we only keep a hashed copy.
                         </Typography>
                     </Box>
 
@@ -426,7 +453,13 @@ function CreateDialog({
     }
 
     return (
-        <Dialog open={open} onClose={() => !saving && onClose()} fullWidth maxWidth="sm" slotProps={darkPaper}>
+        <Dialog
+            open={open}
+            onClose={() => !saving && onClose()}
+            fullWidth
+            maxWidth="sm"
+            slotProps={darkPaper}
+        >
             <DialogTitle sx={{ color: TEXT, fontWeight: 800, fontSize: "1.2rem", pb: 1 }}>
                 Create a product
             </DialogTitle>
@@ -802,7 +835,9 @@ function RotateDialog({
         setBusy(true);
         setError(null);
         try {
-            const res = await fetch(`/api/products/${product.id}/rotate-secret`, { method: "POST" });
+            const res = await fetch(`/api/products/${product.id}/rotate-secret`, {
+                method: "POST",
+            });
             const data: any = await res.json().catch(() => ({}));
             if (!res.ok || !data?.ok) {
                 throw new Error(data?.message || data?.error || "Could not rotate the secret.");
@@ -829,8 +864,8 @@ function RotateDialog({
             </DialogTitle>
             <DialogContent>
                 <Typography sx={{ color: TEXT_55, fontSize: "0.9rem", lineHeight: 1.6 }}>
-                    Rotate the secret for <strong style={{ color: TEXT }}>{product?.name}</strong>? The
-                    current secret keeps working for a short grace period.
+                    Rotate the secret for <strong style={{ color: TEXT }}>{product?.name}</strong>?
+                    The current secret keeps working for a short grace period.
                 </Typography>
                 {error && (
                     <Stack direction="row" spacing={0.8} alignItems="flex-start" sx={{ mt: 1.6 }}>
@@ -919,8 +954,8 @@ function DeleteDialog({
             </DialogTitle>
             <DialogContent>
                 <Typography sx={{ color: TEXT_55, fontSize: "0.9rem", lineHeight: 1.6 }}>
-                    Delete <strong style={{ color: TEXT }}>{product?.name}</strong>? Its client ID and
-                    secret will stop working immediately. This can&rsquo;t be undone.
+                    Delete <strong style={{ color: TEXT }}>{product?.name}</strong>? Its client ID
+                    and secret will stop working immediately. This can&rsquo;t be undone.
                 </Typography>
                 {error && (
                     <Stack direction="row" spacing={0.8} alignItems="flex-start" sx={{ mt: 1.6 }}>
@@ -943,7 +978,9 @@ function DeleteDialog({
                         minWidth: 100,
                         background: "linear-gradient(135deg, #f87171 0%, #ef4444 100%)",
                         boxShadow: "0 8px 24px rgba(239,68,68,0.3)",
-                        "&:hover": { background: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)" },
+                        "&:hover": {
+                            background: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)",
+                        },
                         "&.Mui-disabled": {
                             background: "rgba(255,255,255,0.06)",
                             color: "rgba(245,245,244,0.35)",
@@ -951,7 +988,11 @@ function DeleteDialog({
                         },
                     }}
                 >
-                    {busy ? <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} /> : "Delete"}
+                    {busy ? (
+                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                    ) : (
+                        "Delete"
+                    )}
                 </Button>
             </DialogActions>
         </Dialog>
@@ -972,6 +1013,7 @@ function ProductCard({
     onRotate: () => void;
     onDelete: () => void;
 }) {
+    const { canWrite } = useRole();
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
     return (
@@ -984,7 +1026,12 @@ function ProductCard({
             >
                 {/* Identity + meta */}
                 <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Stack direction="row" alignItems="center" spacing={1.2} sx={{ flexWrap: "wrap", rowGap: 0.6 }}>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1.2}
+                        sx={{ flexWrap: "wrap", rowGap: 0.6 }}
+                    >
                         <Typography
                             component={Link}
                             href={`/dashboard/products/${product.id}`}
@@ -1021,14 +1068,24 @@ function ProductCard({
                     </Stack>
 
                     {/* count chips */}
-                    <Stack direction="row" spacing={1} sx={{ mt: 1.2, flexWrap: "wrap", rowGap: 0.6 }}>
-                        <CountChip label={`${product.template_count} template${product.template_count === 1 ? "" : "s"}`} />
-                        <CountChip label={`${product.webhook_count} webhook${product.webhook_count === 1 ? "" : "s"}`} />
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ mt: 1.2, flexWrap: "wrap", rowGap: 0.6 }}
+                    >
+                        <CountChip
+                            label={`${product.template_count} template${product.template_count === 1 ? "" : "s"}`}
+                        />
+                        <CountChip
+                            label={`${product.webhook_count} webhook${product.webhook_count === 1 ? "" : "s"}`}
+                        />
                     </Stack>
 
                     {/* default sender + created time */}
                     <Typography sx={{ fontSize: "0.8rem", color: TEXT_55, mt: 1.2 }}>
-                        {senderLabelText ? `Default sender: ${senderLabelText}` : "No default sender"}
+                        {senderLabelText
+                            ? `Default sender: ${senderLabelText}`
+                            : "No default sender"}
                     </Typography>
                     <Typography sx={{ fontSize: "0.76rem", color: TEXT_40, mt: 0.4 }}>
                         Created {relativeTime(product.created_at)}
@@ -1037,70 +1094,82 @@ function ProductCard({
 
                 {/* Action row */}
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
-                    <Button
-                        onClick={onEdit}
-                        startIcon={<EditOutlinedIcon sx={{ fontSize: "1rem !important" }} />}
-                        sx={{ ...GHOST_BTN, fontSize: "0.84rem" }}
-                    >
-                        Edit
-                    </Button>
-                    <Button
-                        onClick={onRotate}
-                        startIcon={<VpnKeyOutlinedIcon sx={{ fontSize: "1rem !important" }} />}
-                        sx={{ ...GHOST_BTN, fontSize: "0.84rem" }}
-                    >
-                        Rotate secret
-                    </Button>
+                    {!canWrite && <ReadOnlyChip />}
+                    {canWrite && (
+                        <>
+                            <Button
+                                onClick={onEdit}
+                                startIcon={
+                                    <EditOutlinedIcon sx={{ fontSize: "1rem !important" }} />
+                                }
+                                sx={{ ...GHOST_BTN, fontSize: "0.84rem" }}
+                            >
+                                Edit
+                            </Button>
+                            <Button
+                                onClick={onRotate}
+                                startIcon={
+                                    <VpnKeyOutlinedIcon sx={{ fontSize: "1rem !important" }} />
+                                }
+                                sx={{ ...GHOST_BTN, fontSize: "0.84rem" }}
+                            >
+                                Rotate secret
+                            </Button>
 
-                    <IconButton
-                        onClick={(e) => setMenuAnchor(e.currentTarget)}
-                        size="small"
-                        sx={{
-                            color: TEXT_55,
-                            border: "1px solid rgba(255,255,255,0.16)",
-                            borderRadius: "10px",
-                            "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
-                        }}
-                        aria-label="More actions"
-                    >
-                        <MoreVertIcon sx={{ fontSize: 19 }} />
-                    </IconButton>
-
-                    <Menu
-                        anchorEl={menuAnchor}
-                        open={!!menuAnchor}
-                        onClose={() => setMenuAnchor(null)}
-                        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                        transformOrigin={{ vertical: "top", horizontal: "right" }}
-                        slotProps={{
-                            paper: {
-                                sx: {
-                                    background: SURFACE,
-                                    border: `1px solid ${BORDER}`,
-                                    borderRadius: "12px",
-                                    backgroundImage: "none",
-                                    minWidth: 160,
-                                    "& .MuiMenuItem-root": {
-                                        fontSize: "0.86rem",
-                                        color: TEXT,
-                                        gap: 1.2,
-                                        py: 1,
+                            <IconButton
+                                onClick={(e) => setMenuAnchor(e.currentTarget)}
+                                size="small"
+                                sx={{
+                                    color: TEXT_55,
+                                    border: "1px solid rgba(255,255,255,0.16)",
+                                    borderRadius: "10px",
+                                    "&:hover": {
+                                        borderColor: "rgba(155,123,247,0.5)",
+                                        background: "rgba(155,123,247,0.06)",
                                     },
-                                },
-                            },
-                        }}
-                    >
-                        <MenuItem
-                            onClick={() => {
-                                setMenuAnchor(null);
-                                onDelete();
-                            }}
-                            sx={{ color: `${RED} !important` }}
-                        >
-                            <DeleteOutlineIcon sx={{ fontSize: 18, color: RED }} />
-                            Delete
-                        </MenuItem>
-                    </Menu>
+                                }}
+                                aria-label="More actions"
+                            >
+                                <MoreVertIcon sx={{ fontSize: 19 }} />
+                            </IconButton>
+
+                            <Menu
+                                anchorEl={menuAnchor}
+                                open={!!menuAnchor}
+                                onClose={() => setMenuAnchor(null)}
+                                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                                slotProps={{
+                                    paper: {
+                                        sx: {
+                                            background: SURFACE,
+                                            border: `1px solid ${BORDER}`,
+                                            borderRadius: "12px",
+                                            backgroundImage: "none",
+                                            minWidth: 160,
+                                            "& .MuiMenuItem-root": {
+                                                fontSize: "0.86rem",
+                                                color: TEXT,
+                                                gap: 1.2,
+                                                py: 1,
+                                            },
+                                        },
+                                    },
+                                }}
+                            >
+                                <MenuItem
+                                    onClick={() => {
+                                        setMenuAnchor(null);
+                                        onDelete();
+                                    }}
+                                    sx={{ color: `${RED} !important` }}
+                                >
+                                    <DeleteOutlineIcon sx={{ fontSize: 18, color: RED }} />
+                                    Delete
+                                </MenuItem>
+                            </Menu>
+                        </>
+                    )}
                 </Stack>
             </Stack>
         </GlassCard>
@@ -1109,6 +1178,7 @@ function ProductCard({
 
 // ── Manager (root) ──────────────────────────────────────────────────────────
 export default function ProductsManager() {
+    const { canWrite } = useRole();
     const [products, setProducts] = useState<ProductSummary[]>([]);
     const [senders, setSenders] = useState<Sender[]>([]);
     const [loading, setLoading] = useState(true);
@@ -1132,7 +1202,9 @@ export default function ProductsManager() {
             setProducts(Array.isArray(pData.products) ? (pData.products as ProductSummary[]) : []);
             // Senders are best-effort: used to label and populate the Select.
             setSenders(
-                sRes.ok && sData?.ok && Array.isArray(sData.senders) ? (sData.senders as Sender[]) : [],
+                sRes.ok && sData?.ok && Array.isArray(sData.senders)
+                    ? (sData.senders as Sender[])
+                    : [],
             );
             setLoadError(null);
         } catch (e: any) {
@@ -1160,9 +1232,7 @@ export default function ProductsManager() {
     const q = query.trim().toLowerCase();
     const filtered = q
         ? products.filter((p) =>
-              [p.name, p.client_id, p.homepage_url ?? ""].some((v) =>
-                  v.toLowerCase().includes(q),
-              ),
+              [p.name, p.client_id, p.homepage_url ?? ""].some((v) => v.toLowerCase().includes(q)),
           )
         : products;
 
@@ -1172,7 +1242,9 @@ export default function ProductsManager() {
             <GlassCard sx={{ py: { xs: 6, md: 8 } }}>
                 <Stack alignItems="center" spacing={2}>
                     <CircularProgress size={28} sx={{ color: ACCENT }} />
-                    <Typography sx={{ color: TEXT_55, fontSize: "0.9rem" }}>Loading products…</Typography>
+                    <Typography sx={{ color: TEXT_55, fontSize: "0.9rem" }}>
+                        Loading products…
+                    </Typography>
                 </Stack>
             </GlassCard>
         );
@@ -1181,7 +1253,12 @@ export default function ProductsManager() {
     if (loadError) {
         return (
             <GlassCard>
-                <Stack direction="row" spacing={1.2} alignItems="center" justifyContent="space-between">
+                <Stack
+                    direction="row"
+                    spacing={1.2}
+                    alignItems="center"
+                    justifyContent="space-between"
+                >
                     <Stack direction="row" spacing={1} alignItems="center">
                         <ErrorOutlineIcon sx={{ fontSize: 18, color: RED }} />
                         <Typography sx={{ color: RED, fontSize: "0.9rem" }}>{loadError}</Typography>
@@ -1209,26 +1286,32 @@ export default function ProductsManager() {
                     headline="No products yet"
                     subtext="A product groups your templates and holds the credentials your service uses to trigger sends — a public client ID and a shared secret. Create one to get started."
                     cta={
-                        <Button
-                            onClick={() => setCreateOpen(true)}
-                            startIcon={<AddIcon sx={{ fontSize: "1.1rem !important" }} />}
-                            sx={PRIMARY_BTN}
-                        >
-                            Create product
-                        </Button>
+                        canWrite ? (
+                            <Button
+                                onClick={() => setCreateOpen(true)}
+                                startIcon={<AddIcon sx={{ fontSize: "1.1rem !important" }} />}
+                                sx={PRIMARY_BTN}
+                            >
+                                Create product
+                            </Button>
+                        ) : (
+                            <ReadOnlyChip />
+                        )
                     }
                 />
             ) : (
                 <Box>
-                    <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
-                        <Button
-                            onClick={() => setCreateOpen(true)}
-                            startIcon={<AddIcon sx={{ fontSize: "1.1rem !important" }} />}
-                            sx={PRIMARY_BTN}
-                        >
-                            New product
-                        </Button>
-                    </Stack>
+                    {canWrite && (
+                        <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+                            <Button
+                                onClick={() => setCreateOpen(true)}
+                                startIcon={<AddIcon sx={{ fontSize: "1.1rem !important" }} />}
+                                sx={PRIMARY_BTN}
+                            >
+                                New product
+                            </Button>
+                        </Stack>
+                    )}
                     <TextField
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
@@ -1297,7 +1380,11 @@ export default function ProductsManager() {
                     refresh();
                 }}
             />
-            <DeleteDialog product={deleting} onClose={() => setDeleting(null)} onDeleted={refresh} />
+            <DeleteDialog
+                product={deleting}
+                onClose={() => setDeleting(null)}
+                onDeleted={refresh}
+            />
             <SecretRevealDialog secret={revealSecret} onClose={() => setRevealSecret(null)} />
         </Box>
     );

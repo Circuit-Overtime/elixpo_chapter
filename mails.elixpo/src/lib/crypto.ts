@@ -12,8 +12,7 @@ export function toHex(buf: ArrayBuffer): string {
 }
 
 export function base64url(input: ArrayBuffer | string): string {
-    const bytes =
-        typeof input === "string" ? encoder.encode(input) : new Uint8Array(input);
+    const bytes = typeof input === "string" ? encoder.encode(input) : new Uint8Array(input);
     let bin = "";
     for (const b of bytes) bin += String.fromCharCode(b);
     return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

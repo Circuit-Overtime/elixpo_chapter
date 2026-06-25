@@ -20,7 +20,9 @@ export function DocTitle({ children }: { children: React.ReactNode }) {
 
 export function DocLead({ children }: { children: React.ReactNode }) {
     return (
-        <Typography sx={{ color: "rgba(245,245,244,0.7)", fontSize: "1.02rem", lineHeight: 1.7, mb: 3 }}>
+        <Typography
+            sx={{ color: "rgba(245,245,244,0.7)", fontSize: "1.02rem", lineHeight: 1.7, mb: 3 }}
+        >
             {children}
         </Typography>
     );
@@ -30,7 +32,14 @@ export function DocH2({ children }: { children: React.ReactNode }) {
     return (
         <Typography
             component="h2"
-            sx={{ fontWeight: 700, fontSize: "1.35rem", mt: 4, mb: 1.5, color: TEXT, letterSpacing: "-0.01em" }}
+            sx={{
+                fontWeight: 700,
+                fontSize: "1.35rem",
+                mt: 4,
+                mb: 1.5,
+                color: TEXT,
+                letterSpacing: "-0.01em",
+            }}
         >
             {children}
         </Typography>
@@ -50,7 +59,9 @@ export function DocH3({ children }: { children: React.ReactNode }) {
 
 export function DocP({ children }: { children: React.ReactNode }) {
     return (
-        <Typography sx={{ color: "rgba(245,245,244,0.72)", lineHeight: 1.75, mb: 1.5, fontSize: "0.98rem" }}>
+        <Typography
+            sx={{ color: "rgba(245,245,244,0.72)", lineHeight: 1.75, mb: 1.5, fontSize: "0.98rem" }}
+        >
             {children}
         </Typography>
     );
@@ -58,7 +69,15 @@ export function DocP({ children }: { children: React.ReactNode }) {
 
 export function DocList({ items }: { items: React.ReactNode[] }) {
     return (
-        <Box component="ul" sx={{ color: "rgba(245,245,244,0.72)", pl: 3, mb: 2, "& li": { mb: 0.8, lineHeight: 1.65 } }}>
+        <Box
+            component="ul"
+            sx={{
+                color: "rgba(245,245,244,0.72)",
+                pl: 3,
+                mb: 2,
+                "& li": { mb: 0.8, lineHeight: 1.65 },
+            }}
+        >
             {items.map((it, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: static docs list
                 <li key={i}>{it}</li>
@@ -125,11 +144,26 @@ export function Callout({
             }}
         >
             {title && (
-                <Typography sx={{ fontWeight: 700, fontSize: "0.85rem", color: accent, mb: 0.5, letterSpacing: "0.01em" }}>
+                <Typography
+                    sx={{
+                        fontWeight: 700,
+                        fontSize: "0.85rem",
+                        color: accent,
+                        mb: 0.5,
+                        letterSpacing: "0.01em",
+                    }}
+                >
                     {title}
                 </Typography>
             )}
-            <Box sx={{ color: "rgba(245,245,244,0.75)", fontSize: "0.92rem", lineHeight: 1.65, "& a": { color: accent } }}>
+            <Box
+                sx={{
+                    color: "rgba(245,245,244,0.75)",
+                    fontSize: "0.92rem",
+                    lineHeight: 1.65,
+                    "& a": { color: accent },
+                }}
+            >
                 {children}
             </Box>
         </Box>

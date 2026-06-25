@@ -1,9 +1,9 @@
 export const runtime = "edge";
 
+import { requireDashboardSession } from "@/lib/dashboard-session";
 import { Box } from "@mui/material";
 import { PageHeader } from "../../components/dashboard-ui";
 import WebhooksManager from "../../components/webhooks-manager";
-import { requireDashboardSession } from "@/lib/dashboard-session";
 
 export default async function WebhooksPage() {
     await requireDashboardSession();

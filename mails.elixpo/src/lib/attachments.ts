@@ -109,7 +109,8 @@ export async function replaceAttachments(
         .run();
     let pos = 0;
     for (const it of items) {
-        const kind: AttachmentKind = it.kind === "drive" || it.kind === "url" || it.kind === "variable" ? it.kind : "url";
+        const kind: AttachmentKind =
+            it.kind === "drive" || it.kind === "url" || it.kind === "variable" ? it.kind : "url";
         const source = (it.source || "").trim();
         if (!source) continue;
         await db
@@ -180,7 +181,8 @@ async function downloadUrl(
     if (!res.ok) return null;
     const buffer = await res.arrayBuffer();
     if (buffer.byteLength > MAX_ATTACHMENT_BYTES) return null;
-    const contentType = res.headers.get("content-type")?.split(";")[0] || "application/octet-stream";
+    const contentType =
+        res.headers.get("content-type")?.split(";")[0] || "application/octet-stream";
     return { buffer, contentType, filename: fallbackName };
 }
 
@@ -206,7 +208,10 @@ async function downloadDrive(
     if (buffer.byteLength > MAX_ATTACHMENT_BYTES) return null;
     return {
         buffer,
-        contentType: meta?.mimeType || res.headers.get("content-type")?.split(";")[0] || "application/octet-stream",
+        contentType:
+            meta?.mimeType ||
+            res.headers.get("content-type")?.split(";")[0] ||
+            "application/octet-stream",
         filename: meta?.name || fallbackName,
     };
 }
@@ -231,11 +236,16 @@ export async function resolveAttachments(
     for (const row of rows) {
         const source = substituteVariables(row.source, vars).trim();
         if (!source) continue;
-        const fallbackName = (row.filename ? substituteVariables(row.filename, vars).trim() : "") || "attachment";
+        const fallbackName =
+            (row.filename ? substituteVariables(row.filename, vars).trim() : "") || "attachment";
 
         // Decide the fetch strategy from the (resolved) source.
         const isUrl = /^https?:\/\//i.test(source);
-        const asDriveId = !isUrl ? driveFileId(source) : isUrl && /drive\.google\.com/i.test(source) ? driveFileId(source) : null;
+        const asDriveId = !isUrl
+            ? driveFileId(source)
+            : isUrl && /drive\.google\.com/i.test(source)
+              ? driveFileId(source)
+              : null;
 
         let dl: { buffer: ArrayBuffer; contentType: string; filename: string } | null = null;
         try {
@@ -254,7 +264,9 @@ export async function resolveAttachments(
         if (total > MAX_TOTAL_ATTACHMENT_BYTES) break; // stop adding once over the message cap
 
         out.push({
-            filename: row.filename ? substituteVariables(row.filename, vars).trim() || dl.filename : dl.filename,
+            filename: row.filename
+                ? substituteVariables(row.filename, vars).trim() || dl.filename
+                : dl.filename,
             contentType: row.mime || dl.contentType,
             contentBase64: arrayBufferToBase64(dl.buffer),
         });

@@ -46,10 +46,23 @@ export default function WorkspaceNameForm({ initialName }: { initialName: string
 
     return (
         <Box>
-            <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "rgba(245,245,244,0.4)", mb: 0.7 }}>
+            <Typography
+                sx={{
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    color: "rgba(245,245,244,0.4)",
+                    mb: 0.7,
+                }}
+            >
                 Workspace name
             </Typography>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} alignItems={{ sm: "center" }}>
+            <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.2}
+                alignItems={{ sm: "center" }}
+            >
                 <TextField
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -73,7 +86,10 @@ export default function WorkspaceNameForm({ initialName }: { initialName: string
                             "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
                         },
                         "& .MuiInputBase-input": { fontSize: "0.95rem", py: 1.1 },
-                        "& .MuiInputBase-input::placeholder": { color: "rgba(245,245,244,0.35)", opacity: 1 },
+                        "& .MuiInputBase-input::placeholder": {
+                            color: "rgba(245,245,244,0.35)",
+                            opacity: 1,
+                        },
                     }}
                 />
                 <Button
@@ -91,11 +107,21 @@ export default function WorkspaceNameForm({ initialName }: { initialName: string
                         minWidth: 96,
                         background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
                         boxShadow: "0 6px 18px rgba(124,92,255,0.32)",
-                        "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
-                        "&.Mui-disabled": { background: "rgba(255,255,255,0.06)", color: "rgba(245,245,244,0.35)", boxShadow: "none" },
+                        "&:hover": {
+                            background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                        },
+                        "&.Mui-disabled": {
+                            background: "rgba(255,255,255,0.06)",
+                            color: "rgba(245,245,244,0.35)",
+                            boxShadow: "none",
+                        },
                     }}
                 >
-                    {saving ? <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} /> : "Save"}
+                    {saving ? (
+                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                    ) : (
+                        "Save"
+                    )}
                 </Button>
             </Stack>
 
@@ -106,7 +132,12 @@ export default function WorkspaceNameForm({ initialName }: { initialName: string
                     ) : (
                         <ErrorOutlineIcon sx={{ fontSize: 16, color: "#fca5a5" }} />
                     )}
-                    <Typography sx={{ fontSize: "0.82rem", color: msg.type === "ok" ? "#86efac" : "#fca5a5" }}>
+                    <Typography
+                        sx={{
+                            fontSize: "0.82rem",
+                            color: msg.type === "ok" ? "#86efac" : "#fca5a5",
+                        }}
+                    >
                         {msg.text}
                     </Typography>
                 </Stack>

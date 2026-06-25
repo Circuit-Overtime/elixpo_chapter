@@ -35,13 +35,15 @@ export interface ProductRow {
 }
 
 export function slugify(s: string): string {
-    return (
-        s
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "")
-            .slice(0, 40) || "product"
-    );
+    // Collapse runs of non-alphanumerics to a single dash, then trim leading/
+    // trailing dashes with a linear scan (avoids the /^-+|-+$/ polynomial
+    // backtracking CodeQL flags on long dash runs).
+    const collapsed = s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    let start = 0;
+    let end = collapsed.length;
+    while (start < end && collapsed.charCodeAt(start) === 45 /* '-' */) start++;
+    while (end > start && collapsed.charCodeAt(end - 1) === 45) end--;
+    return collapsed.slice(start, end).slice(0, 40) || "product";
 }
 
 export async function listProducts(db: D1Database, tenantId: string): Promise<ProductRow[]> {
@@ -359,8 +361,14 @@ export async function countProductTemplates(
 
 /** Delete a product (caller must ensure it has no templates). Drops its webhooks. */
 export async function deleteProduct(db: D1Database, tenantId: string, id: string): Promise<void> {
-    await db.prepare("DELETE FROM webhooks WHERE product_id = ? AND tenant_id = ?").bind(id, tenantId).run();
-    await db.prepare("DELETE FROM products WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
+    await db
+        .prepare("DELETE FROM webhooks WHERE product_id = ? AND tenant_id = ?")
+        .bind(id, tenantId)
+        .run();
+    await db
+        .prepare("DELETE FROM products WHERE id = ? AND tenant_id = ?")
+        .bind(id, tenantId)
+        .run();
 }
 
 /** List products with template + webhook counts for the dashboard. */

@@ -12,6 +12,8 @@ const PREFIXES = {
     delivery: "dlv", // a delivery log row
     attachment: "att", // a template attachment pointer (drive/url/variable)
     suppression: "sup", // an unsubscribed/suppressed recipient (per product)
+    member: "wm", // a workspace member (user ↔ workspace with a role)
+    invite: "inv", // a workspace invite link
 } as const;
 
 export type IdKind = keyof typeof PREFIXES;
@@ -28,8 +30,5 @@ export function nowIso(): string {
 
 /** ISO timestamp `days` days from now (UTC, second precision). */
 export function isoDaysFromNow(days: number): string {
-    return new Date(Date.now() + days * 86_400_000)
-        .toISOString()
-        .replace("T", " ")
-        .slice(0, 19);
+    return new Date(Date.now() + days * 86_400_000).toISOString().replace("T", " ").slice(0, 19);
 }

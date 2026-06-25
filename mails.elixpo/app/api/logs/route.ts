@@ -1,9 +1,9 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
-import { deliveryStats, listDeliveries } from "@/lib/deliveries";
 import { getDatabase } from "@/lib/d1-client";
+import { deliveryStats, listDeliveries } from "@/lib/deliveries";
 import { getSession } from "@/lib/session";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/logs — delivery logs for the dashboard, newest first.

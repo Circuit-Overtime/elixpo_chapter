@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+    type CSSProperties,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 
 /* -----------------------------------------------------------------------------
  * Staggered pixel-field physics engine (vanilla canvas — no deps).
@@ -207,12 +214,23 @@ const MAIL_BRANDS: { name: string; node: ReactNode }[] = [
         ),
     },
     { name: "Fastmail", node: <span style={tint("#4d94ff")}>Fastmail</span> },
-    { name: "Any SMTP", node: <span style={{ ...tint("rgba(245,245,244,0.7)"), letterSpacing: "0.06em" }}>SMTP</span> },
+    {
+        name: "Any SMTP",
+        node: (
+            <span style={{ ...tint("rgba(245,245,244,0.7)"), letterSpacing: "0.06em" }}>SMTP</span>
+        ),
+    },
 ];
 
 const ArrowRight = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+            d="M5 12h14M13 6l6 6-6 6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
     </svg>
 );
 
@@ -268,7 +286,8 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                         width: "60vmax",
                         height: "40vmax",
                         transform: "translate(-50%, -50%)",
-                        background: "radial-gradient(circle, rgba(155,123,247,0.16) 0%, transparent 60%)",
+                        background:
+                            "radial-gradient(circle, rgba(155,123,247,0.16) 0%, transparent 60%)",
                         filter: "blur(40px)",
                     }}
                 />
@@ -357,9 +376,9 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                     animation: mounted ? "pay-rise 0.8s ease 0.15s both" : undefined,
                 }}
             >
-                Bring your own sender, design templates with {"{{variables}}"} in a
-                live editor, and trigger sends from your service via a webhook —
-                without building mail infrastructure.
+                Bring your own sender, design templates with {"{{variables}}"} in a live editor, and
+                trigger sends from your service via a webhook — without building mail
+                infrastructure.
             </p>
 
             {/* CTAs — Tahoe glass buttons */}
@@ -414,7 +433,8 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                         fontWeight: 700,
                         color: "#f5f5f4",
                         textDecoration: "none",
-                        background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)",
+                        background:
+                            "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)",
                         border: "1px solid rgba(255,255,255,0.14)",
                         backdropFilter: "blur(12px)",
                         boxShadow: "inset 0 1px 1px rgba(255,255,255,0.1)",
@@ -464,11 +484,22 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                             "linear-gradient(to right, transparent, white 15%, white 85%, transparent)",
                     }}
                 >
-                    <div className="pay-marquee" style={{ display: "flex", width: "max-content", gap: 52, padding: "4px 0" }}>
+                    <div
+                        className="pay-marquee"
+                        style={{ display: "flex", width: "max-content", gap: 52, padding: "4px 0" }}
+                    >
                         {[0, 1].map((dup) => (
-                            <div key={dup} style={{ display: "flex", gap: 52, alignItems: "center" }} aria-hidden={dup === 1}>
+                            <div
+                                key={dup}
+                                style={{ display: "flex", gap: 52, alignItems: "center" }}
+                                aria-hidden={dup === 1}
+                            >
                                 {MAIL_BRANDS.map((b) => (
-                                    <span key={`${dup}-${b.name}`} aria-label={b.name} style={{ display: "inline-flex", alignItems: "center" }}>
+                                    <span
+                                        key={`${dup}-${b.name}`}
+                                        aria-label={b.name}
+                                        style={{ display: "inline-flex", alignItems: "center" }}
+                                    >
                                         {b.node}
                                     </span>
                                 ))}

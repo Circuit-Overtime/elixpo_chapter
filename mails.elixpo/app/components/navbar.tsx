@@ -5,7 +5,17 @@ import GitHubIcon from "@mui/icons-material/GitHub";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import MenuIcon from "@mui/icons-material/Menu";
 import StarIcon from "@mui/icons-material/Star";
-import { Avatar, Box, Button, Chip, Drawer, IconButton, Stack, Toolbar, Typography } from "@mui/material";
+import {
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    Drawer,
+    IconButton,
+    Stack,
+    Toolbar,
+    Typography,
+} from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -44,7 +54,7 @@ const Navbar = () => {
             .then((r) => (r.ok ? r.json() : null))
             .then((d: any) => {
                 if (cancelled) return;
-                if (d && d.authenticated && d.user) {
+                if (d?.authenticated && d.user) {
                     setMe({ name: d.user.name, email: d.user.email, avatar: d.user.avatar });
                 } else {
                     setMe(null);
@@ -142,7 +152,13 @@ const Navbar = () => {
                     )}
                 </Link>
 
-                <Box sx={{ flexGrow: 1, justifyContent: "center", display: { xs: "none", md: "flex" } }}>
+                <Box
+                    sx={{
+                        flexGrow: 1,
+                        justifyContent: "center",
+                        display: { xs: "none", md: "flex" },
+                    }}
+                >
                     {me === undefined ? null : me ? (
                         // Signed in: show the app routes (same as the dashboard nav).
                         <DashboardNavLinks orientation="horizontal" />
@@ -160,7 +176,10 @@ const Navbar = () => {
                                         color: "rgba(244,244,246,0.7)",
                                         px: 1.6,
                                         borderRadius: "9px",
-                                        "&:hover": { color: "#fff", background: "rgba(255,255,255,0.05)" },
+                                        "&:hover": {
+                                            color: "#fff",
+                                            background: "rgba(255,255,255,0.05)",
+                                        },
                                     }}
                                 >
                                     {l.label}
@@ -175,43 +194,49 @@ const Navbar = () => {
                 <Stack direction="row" spacing={{ xs: 1, md: 1.2 }} alignItems="center">
                     {/* GitHub (marketing nav only — hidden once signed in) */}
                     {!me && (
-                    <Box
-                        component="a"
-                        href={REPO_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="GitHub repository"
-                        sx={{
-                            display: { xs: "none", sm: "inline-flex" },
-                            alignItems: "center",
-                            height: 38,
-                            px: 1.3,
-                            gap: 0.9,
-                            borderRadius: "10px",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            color: "rgba(244,244,246,0.8)",
-                            textDecoration: "none",
-                            fontSize: "0.85rem",
-                            fontWeight: 700,
-                            transition: "all 0.18s ease",
-                            "&:hover": {
-                                color: "#fff",
-                                borderColor: "rgba(155,123,247,0.45)",
-                                background: "rgba(155,123,247,0.08)",
-                            },
-                        }}
-                    >
-                        <GitHubIcon sx={{ fontSize: 19 }} />
-                        {stars !== null && (
-                            <>
-                                <Box sx={{ width: "1px", height: 16, background: "rgba(255,255,255,0.15)" }} />
-                                <Stack direction="row" spacing={0.3} alignItems="center">
-                                    <StarIcon sx={{ fontSize: 14, color: "#fbbf24" }} />
-                                    <Box component="span">{formatStars(stars)}</Box>
-                                </Stack>
-                            </>
-                        )}
-                    </Box>
+                        <Box
+                            component="a"
+                            href={REPO_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="GitHub repository"
+                            sx={{
+                                display: { xs: "none", sm: "inline-flex" },
+                                alignItems: "center",
+                                height: 38,
+                                px: 1.3,
+                                gap: 0.9,
+                                borderRadius: "10px",
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                color: "rgba(244,244,246,0.8)",
+                                textDecoration: "none",
+                                fontSize: "0.85rem",
+                                fontWeight: 700,
+                                transition: "all 0.18s ease",
+                                "&:hover": {
+                                    color: "#fff",
+                                    borderColor: "rgba(155,123,247,0.45)",
+                                    background: "rgba(155,123,247,0.08)",
+                                },
+                            }}
+                        >
+                            <GitHubIcon sx={{ fontSize: 19 }} />
+                            {stars !== null && (
+                                <>
+                                    <Box
+                                        sx={{
+                                            width: "1px",
+                                            height: 16,
+                                            background: "rgba(255,255,255,0.15)",
+                                        }}
+                                    />
+                                    <Stack direction="row" spacing={0.3} alignItems="center">
+                                        <StarIcon sx={{ fontSize: 14, color: "#fbbf24" }} />
+                                        <Box component="span">{formatStars(stars)}</Box>
+                                    </Stack>
+                                </>
+                            )}
+                        </Box>
                     )}
 
                     {me === undefined ? (
@@ -235,24 +260,63 @@ const Navbar = () => {
                                 pr: { xs: 0.6, sm: 1 },
                                 py: 0.5,
                                 transition: "all 0.15s ease",
-                                "&:hover": { borderColor: "rgba(155,123,247,0.4)", background: "rgba(155,123,247,0.06)" },
+                                "&:hover": {
+                                    borderColor: "rgba(155,123,247,0.4)",
+                                    background: "rgba(155,123,247,0.06)",
+                                },
                             }}
                         >
                             <Avatar
                                 src={me.avatar || undefined}
-                                sx={{ width: 28, height: 28, fontSize: "0.85rem", bgcolor: "rgba(155,123,247,0.4)" }}
+                                sx={{
+                                    width: 28,
+                                    height: 28,
+                                    fontSize: "0.85rem",
+                                    bgcolor: "rgba(155,123,247,0.4)",
+                                }}
                             >
                                 {(me.name || me.email || "?").charAt(0).toUpperCase()}
                             </Avatar>
-                            <Stack sx={{ display: { xs: "none", sm: "flex" }, alignItems: "flex-start", lineHeight: 1.1 }}>
-                                <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#f5f5f4", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <Stack
+                                sx={{
+                                    display: { xs: "none", sm: "flex" },
+                                    alignItems: "flex-start",
+                                    lineHeight: 1.1,
+                                }}
+                            >
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.82rem",
+                                        fontWeight: 600,
+                                        color: "#f5f5f4",
+                                        maxWidth: 150,
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
                                     {me.name || me.email}
                                 </Typography>
-                                <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.7rem",
+                                        color: "rgba(245,245,244,0.45)",
+                                        maxWidth: 150,
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
                                     {me.email}
                                 </Typography>
                             </Stack>
-                            <KeyboardArrowDownIcon sx={{ fontSize: 18, color: "rgba(245,245,244,0.5)", display: { xs: "none", sm: "block" } }} />
+                            <KeyboardArrowDownIcon
+                                sx={{
+                                    fontSize: 18,
+                                    color: "rgba(245,245,244,0.5)",
+                                    display: { xs: "none", sm: "block" },
+                                }}
+                            />
                         </Box>
                     ) : (
                         <Button
@@ -283,7 +347,10 @@ const Navbar = () => {
                     <IconButton
                         onClick={() => setDrawerOpen(true)}
                         aria-label="Open menu"
-                        sx={{ display: { xs: "inline-flex", md: "none" }, color: "rgba(244,244,246,0.85)" }}
+                        sx={{
+                            display: { xs: "inline-flex", md: "none" },
+                            color: "rgba(244,244,246,0.85)",
+                        }}
                     >
                         <MenuIcon />
                     </IconButton>
@@ -306,9 +373,19 @@ const Navbar = () => {
                     },
                 }}
             >
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2, px: 0.5 }}>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{ mb: 2, px: 0.5 }}
+                >
                     <Stack direction="row" alignItems="center" spacing={1.1}>
-                        <Box component="img" src="/mark.png" alt="Elixpo Mails" sx={{ height: 26, width: 26, borderRadius: "7px" }} />
+                        <Box
+                            component="img"
+                            src="/mark.png"
+                            alt="Elixpo Mails"
+                            sx={{ height: 26, width: 26, borderRadius: "7px" }}
+                        />
                         <Typography sx={{ fontWeight: 700, fontSize: "1rem" }}>
                             Elixpo
                             <Box component="span" sx={{ color: ACCENT }}>
@@ -317,14 +394,21 @@ const Navbar = () => {
                             </Box>
                         </Typography>
                     </Stack>
-                    <IconButton onClick={() => setDrawerOpen(false)} aria-label="Close menu" sx={{ color: "rgba(245,245,244,0.6)" }}>
+                    <IconButton
+                        onClick={() => setDrawerOpen(false)}
+                        aria-label="Close menu"
+                        sx={{ color: "rgba(245,245,244,0.6)" }}
+                    >
                         <CloseIcon />
                     </IconButton>
                 </Stack>
 
                 {me ? (
                     // Signed in: the app routes (no sign out here — that lives in the dashboard).
-                    <DashboardNavLinks orientation="vertical" onNavigate={() => setDrawerOpen(false)} />
+                    <DashboardNavLinks
+                        orientation="vertical"
+                        onNavigate={() => setDrawerOpen(false)}
+                    />
                 ) : (
                     <Stack spacing={0.5}>
                         {LINKS.map((l) => (
@@ -342,7 +426,10 @@ const Navbar = () => {
                                     px: 1.5,
                                     py: 1.1,
                                     borderRadius: "10px",
-                                    "&:hover": { color: "#fff", background: "rgba(255,255,255,0.05)" },
+                                    "&:hover": {
+                                        color: "#fff",
+                                        background: "rgba(255,255,255,0.05)",
+                                    },
                                 }}
                             >
                                 {l.label}
@@ -362,7 +449,9 @@ const Navbar = () => {
                                 borderRadius: "10px",
                                 py: 1.1,
                                 boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
-                                "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+                                "&:hover": {
+                                    background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                },
                             }}
                         >
                             Sign in

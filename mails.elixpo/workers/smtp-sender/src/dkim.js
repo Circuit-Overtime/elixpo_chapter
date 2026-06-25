@@ -72,9 +72,7 @@ export async function signMessage(message, env) {
     const signedHeaderList = [];
     const canonicalSignedHeaders = [];
     for (const name of headerNames) {
-        const idx = parsed.findIndex(
-            (h) => h.name.toLowerCase() === name.toLowerCase(),
-        );
+        const idx = parsed.findIndex((h) => h.name.toLowerCase() === name.toLowerCase());
         if (idx < 0) continue;
         signedHeaderList.push(parsed[idx].name);
         canonicalSignedHeaders.push(canonicalizeHeaderRelaxed(parsed[idx]));
@@ -86,23 +84,14 @@ export async function signMessage(message, env) {
     // Body canonicalization (relaxed): collapse runs of WSP, strip
     // trailing WSP per line, then remove trailing empty lines.
     const canonBody = canonicalizeBodyRelaxed(body);
-    const bodyHashBuf = await crypto.subtle.digest(
-        "SHA-256",
-        enc.encode(canonBody),
-    );
+    const bodyHashBuf = await crypto.subtle.digest("SHA-256", enc.encode(canonBody));
     const bh = b64(new Uint8Array(bodyHashBuf));
 
     const timestamp = Math.floor(Date.now() / 1000);
     // RFC 6376 §3.5: signature header without `b=` value, then the
     // value is appended after signing. Use the relaxed canonical form
     // for THIS header too.
-    const dkimHeaderUnsigned =
-        `v=1; a=rsa-sha256; c=relaxed/relaxed; ` +
-        `d=${env.DKIM_DOMAIN}; s=${env.DKIM_SELECTOR}; ` +
-        `t=${timestamp}; ` +
-        `h=${signedHeaderList.join(":")}; ` +
-        `bh=${bh}; ` +
-        `b=`;
+    const dkimHeaderUnsigned = `v=1; a=rsa-sha256; c=relaxed/relaxed; d=${env.DKIM_DOMAIN}; s=${env.DKIM_SELECTOR}; t=${timestamp}; h=${signedHeaderList.join(":")}; bh=${bh}; b=`;
 
     // The signed string = canonical signed-headers + canonical
     // DKIM-Signature header (with empty b=).
@@ -110,20 +99,16 @@ export async function signMessage(message, env) {
         name: "DKIM-Signature",
         value: dkimHeaderUnsigned,
     });
-    const toSign = canonicalSignedHeaders.join("\r\n") + "\r\n" + dkimAsCanonHeader;
+    const toSign = `${canonicalSignedHeaders.join("\r\n")}\r\n${dkimAsCanonHeader}`;
 
     const key = await importPrivateKey(env.DKIM_PRIVATE_KEY);
-    const sig = await crypto.subtle.sign(
-        { name: "RSASSA-PKCS1-v1_5" },
-        key,
-        enc.encode(toSign),
-    );
+    const sig = await crypto.subtle.sign({ name: "RSASSA-PKCS1-v1_5" }, key, enc.encode(toSign));
     const b = b64(new Uint8Array(sig));
 
     // Final signature header (with b=). Insert as the FIRST header so
     // verifiers see it before relay-added Received headers.
     const finalHeader = `DKIM-Signature: ${dkimHeaderUnsigned}${b}`;
-    return finalHeader + "\r\n" + message;
+    return `${finalHeader}\r\n${message}`;
 }
 
 // ── canonicalization helpers (RFC 6376 §3.4) ─────────────────────────
@@ -140,16 +125,14 @@ function parseHeaders(headerBlock) {
             unfolded.push(line);
         }
     }
-    return unfolded
-        .filter(Boolean)
-        .map((line) => {
-            const colon = line.indexOf(":");
-            if (colon < 0) return { name: line, value: "" };
-            return {
-                name: line.slice(0, colon),
-                value: line.slice(colon + 1),
-            };
-        });
+    return unfolded.filter(Boolean).map((line) => {
+        const colon = line.indexOf(":");
+        if (colon < 0) return { name: line, value: "" };
+        return {
+            name: line.slice(0, colon),
+            value: line.slice(colon + 1),
+        };
+    });
 }
 
 function canonicalizeHeaderRelaxed({ name, value }) {

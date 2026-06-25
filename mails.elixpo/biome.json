@@ -14,8 +14,18 @@
         "enabled": true,
         "rules": {
             "recommended": true,
-            "suspicious": { "noExplicitAny": "off" },
-            "style": { "useNodejsImportProtocol": "off" }
+            "suspicious": {
+                "noExplicitAny": "off",
+                "noImplicitAnyLet": "warn",
+                "noArrayIndexKey": "warn",
+                "noAssignInExpressions": "warn"
+            },
+            "style": { "useNodejsImportProtocol": "off" },
+            "correctness": {
+                "useJsxKeyInIterable": "warn",
+                "useExhaustiveDependencies": "warn"
+            },
+            "security": { "noDangerouslySetInnerHtml": "warn" }
         }
     }
 }

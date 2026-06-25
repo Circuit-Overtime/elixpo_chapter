@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-import TemplateComposer from "../../../components/template-composer";
 import { requireDashboardSession } from "@/lib/dashboard-session";
+import TemplateComposer from "../../../components/template-composer";
 
 export default async function EditTemplatePage({ params }: { params: Promise<{ id: string }> }) {
     await requireDashboardSession();

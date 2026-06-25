@@ -22,11 +22,11 @@ export default function PrivacyPage() {
         >
             <LegalSection heading="1. Who controls your data">
                 <LegalP>
-                    For account and configuration data, mail.elixpo acts as the data
-                    controller. For the recipient data you submit when you trigger a send
-                    (recipient addresses and template variables), you are the controller
-                    and mail.elixpo is your processor — we process that data only to
-                    deliver the email you asked us to send, on your instructions.
+                    For account and configuration data, mail.elixpo acts as the data controller. For
+                    the recipient data you submit when you trigger a send (recipient addresses and
+                    template variables), you are the controller and mail.elixpo is your processor —
+                    we process that data only to deliver the email you asked us to send, on your
+                    instructions.
                 </LegalP>
             </LegalSection>
 
@@ -53,59 +53,56 @@ export default function PrivacyPage() {
                     ]}
                 />
                 <LegalP>
-                    We do not sell your data, and we do not use the content of your
-                    templates or the recipient data you submit to train models or for
-                    advertising.
+                    We do not sell your data, and we do not use the content of your templates or the
+                    recipient data you submit to train models or for advertising.
                 </LegalP>
             </LegalSection>
 
             <LegalSection heading="4. Sub-processors and infrastructure">
                 <LegalP>
-                    The service runs on Cloudflare’s edge platform (including D1 and KV
-                    storage). Authentication is provided by Elixpo Accounts. When you send
-                    email, the message is delivered through the SMTP provider of the sender
-                    you connect (for example, your own mailbox provider) — that provider
-                    processes the message and recipient address to deliver it.
+                    The service runs on Cloudflare’s edge platform (including D1 and KV storage).
+                    Authentication is provided by Elixpo Accounts. When you send email, the message
+                    is delivered through the SMTP provider of the sender you connect (for example,
+                    your own mailbox provider) — that provider processes the message and recipient
+                    address to deliver it.
                 </LegalP>
             </LegalSection>
 
             <LegalSection heading="5. Encryption and security">
                 <LegalP>
-                    Sender app passwords are encrypted at rest using authenticated
-                    encryption. API secret keys are stored only as one-way hashes and shown
-                    to you once at creation. Traffic is served over TLS. No system is
-                    perfectly secure, but we apply least-privilege access and encrypt the
-                    most sensitive fields.
+                    Sender app passwords are encrypted at rest using authenticated encryption. API
+                    secret keys are stored only as one-way hashes and shown to you once at creation.
+                    Traffic is served over TLS. No system is perfectly secure, but we apply
+                    least-privilege access and encrypt the most sensitive fields.
                 </LegalP>
             </LegalSection>
 
             <LegalSection heading="6. Retention and deletion">
                 <LegalP>
-                    We retain account, sender, template, and config data for as long as
-                    your tenant is active. Delivery logs are retained to support auditing
-                    and may be pruned over time. If your Elixpo Accounts user is deleted,
-                    we receive a signed revocation event and purge the associated senders,
-                    templates, and configurations. You may also delete senders, templates,
-                    and configs yourself at any time from the dashboard.
+                    We retain account, sender, template, and config data for as long as your tenant
+                    is active. Delivery logs are retained to support auditing and may be pruned over
+                    time. If your Elixpo Accounts user is deleted, we receive a signed revocation
+                    event and purge the associated senders, templates, and configurations. You may
+                    also delete senders, templates, and configs yourself at any time from the
+                    dashboard.
                 </LegalP>
             </LegalSection>
 
             <LegalSection heading="7. Your rights">
                 <LegalP>
-                    Depending on your jurisdiction, you may have rights to access, correct,
-                    export, or delete your personal data. Because much of the recipient
-                    data we hold is processed on your behalf, requests from your recipients
-                    should be directed to you as the controller; we will assist you in
-                    fulfilling them. To exercise your own rights, contact us at the address
-                    below.
+                    Depending on your jurisdiction, you may have rights to access, correct, export,
+                    or delete your personal data. Because much of the recipient data we hold is
+                    processed on your behalf, requests from your recipients should be directed to
+                    you as the controller; we will assist you in fulfilling them. To exercise your
+                    own rights, contact us at the address below.
                 </LegalP>
             </LegalSection>
 
             <LegalSection heading="8. Changes to this policy">
                 <LegalP>
-                    We may update this policy as the service evolves. Material changes will
-                    be reflected by updating the “last updated” date above, and where
-                    appropriate we will notify account holders.
+                    We may update this policy as the service evolves. Material changes will be
+                    reflected by updating the “last updated” date above, and where appropriate we
+                    will notify account holders.
                 </LegalP>
             </LegalSection>
         </LegalShell>

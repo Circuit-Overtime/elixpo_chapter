@@ -1,5 +1,12 @@
 export const runtime = "edge";
 
+import { getDatabase } from "@/lib/d1-client";
+import { requireDashboardSession } from "@/lib/dashboard-session";
+import { deliveryStats, listDeliveries } from "@/lib/deliveries";
+import { listProductsWithCounts } from "@/lib/products";
+import { listSenders } from "@/lib/senders";
+import { listTemplates } from "@/lib/templates";
+import { listWebhooks } from "@/lib/webhooks";
 import type { SvgIconComponent } from "@mui/icons-material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CheckIcon from "@mui/icons-material/Check";
@@ -14,13 +21,6 @@ import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import Link from "next/link";
 import { PRIMARY_BTN } from "../components/dashboard-ui";
 import { GlassCard } from "../components/glass-card";
-import { deliveryStats, listDeliveries } from "@/lib/deliveries";
-import { getDatabase } from "@/lib/d1-client";
-import { requireDashboardSession } from "@/lib/dashboard-session";
-import { listProductsWithCounts } from "@/lib/products";
-import { listSenders } from "@/lib/senders";
-import { listTemplates } from "@/lib/templates";
-import { listWebhooks } from "@/lib/webhooks";
 
 const ACCENT = "#9b7bf7";
 const TEXT = "#f5f5f4";
@@ -54,20 +54,22 @@ async function loadSnapshot(tenantId: string): Promise<Snapshot> {
         monthStart.setUTCHours(0, 0, 0, 0);
         const monthStr = monthStart.toISOString().replace("T", " ").slice(0, 19);
 
-        const [senders, products, templates, webhooks, stats, recent, monthRow] = await Promise.all([
-            listSenders(db, tenantId),
-            listProductsWithCounts(db, tenantId),
-            listTemplates(db, tenantId),
-            listWebhooks(db, tenantId),
-            deliveryStats(db, tenantId),
-            listDeliveries(db, tenantId, { limit: 5 }),
-            db
-                .prepare(
-                    "SELECT COUNT(*) AS n FROM deliveries WHERE tenant_id = ? AND status = 'sent' AND queued_at >= ?",
-                )
-                .bind(tenantId, monthStr)
-                .first(),
-        ]);
+        const [senders, products, templates, webhooks, stats, recent, monthRow] = await Promise.all(
+            [
+                listSenders(db, tenantId),
+                listProductsWithCounts(db, tenantId),
+                listTemplates(db, tenantId),
+                listWebhooks(db, tenantId),
+                deliveryStats(db, tenantId),
+                listDeliveries(db, tenantId, { limit: 5 }),
+                db
+                    .prepare(
+                        "SELECT COUNT(*) AS n FROM deliveries WHERE tenant_id = ? AND status = 'sent' AND queued_at >= ?",
+                    )
+                    .bind(tenantId, monthStr)
+                    .first(),
+            ],
+        );
 
         const total = stats.total;
         return {
@@ -114,9 +116,24 @@ export default async function OverviewPage() {
 
     const stats = [
         { label: "Products", value: String(snap.products), icon: InventoryIcon, accent: "#9b7bf7" },
-        { label: "Templates", value: String(snap.templates), icon: DescriptionIcon, accent: "#86efac" },
-        { label: "Sends this month", value: String(snap.sentThisMonth), icon: SendIcon, accent: "#5fb6ff" },
-        { label: "Deliverability", value: snap.deliverability, icon: InsightsIcon, accent: "#fbbf24" },
+        {
+            label: "Templates",
+            value: String(snap.templates),
+            icon: DescriptionIcon,
+            accent: "#86efac",
+        },
+        {
+            label: "Sends this month",
+            value: String(snap.sentThisMonth),
+            icon: SendIcon,
+            accent: "#5fb6ff",
+        },
+        {
+            label: "Deliverability",
+            value: snap.deliverability,
+            icon: InsightsIcon,
+            accent: "#fbbf24",
+        },
     ];
 
     const steps = [
@@ -171,15 +188,31 @@ export default async function OverviewPage() {
                 sx={{ mb: { xs: 3.5, md: 4.5 } }}
             >
                 <Box>
-                    <Typography sx={{ fontWeight: 800, fontSize: { xs: "1.7rem", md: "2.1rem" }, letterSpacing: "-0.02em", color: TEXT }}>
+                    <Typography
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: { xs: "1.7rem", md: "2.1rem" },
+                            letterSpacing: "-0.02em",
+                            color: TEXT,
+                        }}
+                    >
                         Welcome back, {name}
                     </Typography>
                     <Typography sx={{ color: TEXT_55, fontSize: "0.95rem", mt: 0.5 }}>
-                        Your transactional email workspace. Connect a sender, create a product, and start sending.
+                        Your transactional email workspace. Connect a sender, create a product, and
+                        start sending.
                     </Typography>
                 </Box>
                 <Stack spacing={0.6} alignItems={{ xs: "flex-start", sm: "flex-end" }}>
-                    <Typography sx={{ fontSize: "0.66rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(245,245,244,0.4)", fontWeight: 700 }}>
+                    <Typography
+                        sx={{
+                            fontSize: "0.66rem",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.08em",
+                            color: "rgba(245,245,244,0.4)",
+                            fontWeight: 700,
+                        }}
+                    >
                         Tenant
                     </Typography>
                     <Chip
@@ -206,7 +239,11 @@ export default async function OverviewPage() {
             >
                 {stats.map((s) => (
                     <GlassCard key={s.label} sx={{ p: { xs: 2, md: 2.4 } }}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                        <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="flex-start"
+                        >
                             <Box
                                 sx={{
                                     width: 38,
@@ -222,10 +259,20 @@ export default async function OverviewPage() {
                                 <s.icon sx={{ fontSize: 20 }} />
                             </Box>
                         </Stack>
-                        <Typography sx={{ fontWeight: 800, fontSize: { xs: "1.6rem", md: "1.9rem" }, color: TEXT, mt: 1.6, lineHeight: 1 }}>
+                        <Typography
+                            sx={{
+                                fontWeight: 800,
+                                fontSize: { xs: "1.6rem", md: "1.9rem" },
+                                color: TEXT,
+                                mt: 1.6,
+                                lineHeight: 1,
+                            }}
+                        >
                             {s.value}
                         </Typography>
-                        <Typography sx={{ color: TEXT_55, fontSize: "0.82rem", mt: 0.6 }}>{s.label}</Typography>
+                        <Typography sx={{ color: TEXT_55, fontSize: "0.82rem", mt: 0.6 }}>
+                            {s.label}
+                        </Typography>
                     </GlassCard>
                 ))}
             </Box>
@@ -253,7 +300,9 @@ export default async function OverviewPage() {
                                 fontSize: "0.66rem",
                                 fontWeight: 700,
                                 color: allDone ? "#86efac" : "#c4b5fd",
-                                bgcolor: allDone ? "rgba(52,211,153,0.12)" : "rgba(155,123,247,0.12)",
+                                bgcolor: allDone
+                                    ? "rgba(52,211,153,0.12)"
+                                    : "rgba(155,123,247,0.12)",
                                 border: `1px solid ${allDone ? "rgba(52,211,153,0.3)" : "rgba(155,123,247,0.3)"}`,
                             }}
                         />
@@ -275,7 +324,9 @@ export default async function OverviewPage() {
                                     p: 1.8,
                                     borderRadius: "12px",
                                     border: `1px solid ${step.done ? "rgba(52,211,153,0.22)" : BORDER}`,
-                                    background: step.done ? "rgba(52,211,153,0.05)" : "rgba(255,255,255,0.015)",
+                                    background: step.done
+                                        ? "rgba(52,211,153,0.05)"
+                                        : "rgba(255,255,255,0.015)",
                                     flexDirection: { xs: "column", sm: "row" },
                                 }}
                             >
@@ -288,7 +339,9 @@ export default async function OverviewPage() {
                                             display: "grid",
                                             placeItems: "center",
                                             color: step.done ? "#34d399" : step.accent,
-                                            background: step.done ? "rgba(52,211,153,0.14)" : `${step.accent}14`,
+                                            background: step.done
+                                                ? "rgba(52,211,153,0.14)"
+                                                : `${step.accent}14`,
                                             border: `1px solid ${step.done ? "rgba(52,211,153,0.4)" : `${step.accent}40`}`,
                                         }}
                                     >
@@ -314,17 +367,31 @@ export default async function OverviewPage() {
                                     </Box>
                                 </Box>
                                 <Box sx={{ flex: 1 }}>
-                                    <Typography sx={{ fontWeight: 700, fontSize: "0.96rem", color: TEXT }}>
+                                    <Typography
+                                        sx={{ fontWeight: 700, fontSize: "0.96rem", color: TEXT }}
+                                    >
                                         {step.title}
                                     </Typography>
-                                    <Typography sx={{ color: TEXT_55, fontSize: "0.85rem", lineHeight: 1.55 }}>
+                                    <Typography
+                                        sx={{
+                                            color: TEXT_55,
+                                            fontSize: "0.85rem",
+                                            lineHeight: 1.55,
+                                        }}
+                                    >
                                         {step.body}
                                     </Typography>
                                 </Box>
                                 <Button
                                     component={Link}
                                     href={step.href}
-                                    endIcon={!step.done ? <ArrowForwardIcon sx={{ fontSize: "1rem !important" }} /> : undefined}
+                                    endIcon={
+                                        !step.done ? (
+                                            <ArrowForwardIcon
+                                                sx={{ fontSize: "1rem !important" }}
+                                            />
+                                        ) : undefined
+                                    }
                                     sx={{
                                         flexShrink: 0,
                                         textTransform: "none",
@@ -336,7 +403,10 @@ export default async function OverviewPage() {
                                         borderRadius: "10px",
                                         border: `1px solid ${step.done ? "rgba(52,211,153,0.3)" : BORDER}`,
                                         whiteSpace: "nowrap",
-                                        "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+                                        "&:hover": {
+                                            borderColor: "rgba(155,123,247,0.5)",
+                                            background: "rgba(155,123,247,0.06)",
+                                        },
                                     }}
                                 >
                                     {step.done ? "Manage" : step.cta}
@@ -348,14 +418,30 @@ export default async function OverviewPage() {
 
                 {/* Recent activity */}
                 <GlassCard sx={{ height: "100%" }}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        sx={{ mb: 0.5 }}
+                    >
                         <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: TEXT }}>
                             Recent activity
                         </Typography>
                         <Button
                             component={Link}
                             href="/dashboard/logs"
-                            sx={{ textTransform: "none", fontSize: "0.8rem", fontWeight: 600, color: ACCENT, minWidth: 0, p: 0.5, "&:hover": { background: "transparent", textDecoration: "underline" } }}
+                            sx={{
+                                textTransform: "none",
+                                fontSize: "0.8rem",
+                                fontWeight: 600,
+                                color: ACCENT,
+                                minWidth: 0,
+                                p: 0.5,
+                                "&:hover": {
+                                    background: "transparent",
+                                    textDecoration: "underline",
+                                },
+                            }}
                         >
                             View all
                         </Button>
@@ -367,24 +453,65 @@ export default async function OverviewPage() {
                     {snap.recent.length > 0 ? (
                         <Stack divider={<Box sx={{ borderBottom: `1px solid ${BORDER}` }} />}>
                             {snap.recent.map((d, i) => (
-                                <Stack key={`${d.to}-${i}`} direction="row" alignItems="center" spacing={1.2} sx={{ py: 1.1 }}>
-                                    <Box sx={{ width: 9, height: 9, borderRadius: "50%", flexShrink: 0, background: statusColor(d.status) }} />
+                                <Stack
+                                    key={`${d.to}-${i}`}
+                                    direction="row"
+                                    alignItems="center"
+                                    spacing={1.2}
+                                    sx={{ py: 1.1 }}
+                                >
+                                    <Box
+                                        sx={{
+                                            width: 9,
+                                            height: 9,
+                                            borderRadius: "50%",
+                                            flexShrink: 0,
+                                            background: statusColor(d.status),
+                                        }}
+                                    />
                                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                                        <Typography sx={{ color: TEXT, fontSize: "0.86rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <Typography
+                                            sx={{
+                                                color: TEXT,
+                                                fontSize: "0.86rem",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
                                             {d.to}
                                         </Typography>
-                                        <Typography sx={{ color: TEXT_55, fontSize: "0.76rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <Typography
+                                            sx={{
+                                                color: TEXT_55,
+                                                fontSize: "0.76rem",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
                                             {d.template || "—"} · {d.status}
                                         </Typography>
                                     </Box>
-                                    <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.74rem", flexShrink: 0 }}>
+                                    <Typography
+                                        sx={{
+                                            color: "rgba(245,245,244,0.4)",
+                                            fontSize: "0.74rem",
+                                            flexShrink: 0,
+                                        }}
+                                    >
                                         {relativeTime(d.queued_at)}
                                     </Typography>
                                 </Stack>
                             ))}
                         </Stack>
                     ) : (
-                        <Stack alignItems="center" textAlign="center" spacing={1.6} sx={{ py: { xs: 4, md: 5 } }}>
+                        <Stack
+                            alignItems="center"
+                            textAlign="center"
+                            spacing={1.6}
+                            sx={{ py: { xs: 4, md: 5 } }}
+                        >
                             <Box
                                 sx={{
                                     width: 56,
@@ -400,17 +527,33 @@ export default async function OverviewPage() {
                                 <HistoryIcon sx={{ fontSize: 28 }} />
                             </Box>
                             <Box>
-                                <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT, mb: 0.5 }}>
+                                <Typography
+                                    sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT, mb: 0.5 }}
+                                >
                                     No sends yet
                                 </Typography>
-                                <Typography sx={{ color: TEXT_55, fontSize: "0.86rem", lineHeight: 1.6, maxWidth: 280 }}>
-                                    Once you trigger a webhook, your first delivery will show up right here.
+                                <Typography
+                                    sx={{
+                                        color: TEXT_55,
+                                        fontSize: "0.86rem",
+                                        lineHeight: 1.6,
+                                        maxWidth: 280,
+                                    }}
+                                >
+                                    Once you trigger a webhook, your first delivery will show up
+                                    right here.
                                 </Typography>
                             </Box>
                             <Button
                                 component={Link}
-                                href={snap.senders === 0 ? "/dashboard/senders" : "/dashboard/webhooks"}
-                                endIcon={<ArrowForwardIcon sx={{ fontSize: "1.05rem !important" }} />}
+                                href={
+                                    snap.senders === 0
+                                        ? "/dashboard/senders"
+                                        : "/dashboard/webhooks"
+                                }
+                                endIcon={
+                                    <ArrowForwardIcon sx={{ fontSize: "1.05rem !important" }} />
+                                }
                                 sx={{ ...PRIMARY_BTN, fontSize: "0.86rem", px: 2.2 }}
                             >
                                 {snap.senders === 0 ? "Get set up" : "Trigger a send"}
