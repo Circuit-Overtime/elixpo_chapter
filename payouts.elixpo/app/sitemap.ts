@@ -14,6 +14,7 @@ const ROUTES: Array<[string, number]> = [
     ["/docs/checkout", 0.7],
     ["/docs/webhooks", 0.7],
     ["/docs/entitlements", 0.7],
+    ["/docs/payouts", 0.7],
     ["/privacy", 0.4],
     ["/terms", 0.4],
     ["/refunds", 0.4],

@@ -1,5 +1,12 @@
 "use client";
 
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+import type { SvgIconComponent } from "@mui/icons-material";
 import Link from "next/link";
 import {
     type CSSProperties,
@@ -202,81 +209,44 @@ const wordmark: CSSProperties = {
     opacity: 0.95,
     lineHeight: 1,
 };
-const tint = (color: string): CSSProperties => ({ ...wordmark, color });
+const methodChip: CSSProperties = {
+    ...wordmark,
+    fontSize: "1.05rem",
+    fontWeight: 700,
+    color: "rgba(245,245,244,0.8)",
+    gap: 9,
+};
 
-function MastercardMark() {
+function method(Icon: SvgIconComponent, label: string, color: string): ReactNode {
     return (
-        <svg
-            width="42"
-            height="26"
-            viewBox="0 0 42 26"
-            aria-hidden="true"
-            style={{ display: "block" }}
-        >
-            <circle cx="16" cy="13" r="11" fill="#eb001b" />
-            <circle cx="26" cy="13" r="11" fill="#f79e1b" />
-            <path
-                d="M21 4.6a11 11 0 0 1 0 16.8 11 11 0 0 1 0-16.8z"
-                fill="#ff5f00"
-            />
-        </svg>
+        <span style={methodChip}>
+            <Icon sx={{ fontSize: 26, color }} />
+            {label}
+        </span>
     );
 }
 
+// The payment methods buyers can pay with (via Razorpay), shown in the hero
+// marquee so visitors see what's accepted at a glance.
 const PAY_BRANDS: { name: string; node: ReactNode }[] = [
-    { name: "Razorpay", node: <span style={tint("#5b9bff")}>Razorpay</span> },
-    {
-        name: "Stripe",
-        node: (
-            <span style={{ ...tint("#8b85ff"), letterSpacing: "-0.04em" }}>
-                stripe
-            </span>
-        ),
-    },
-    {
-        name: "Visa",
-        node: (
-            <span
-                style={{
-                    ...tint("#eef1ff"),
-                    fontStyle: "italic",
-                    letterSpacing: "0.04em",
-                }}
-            >
-                VISA
-            </span>
-        ),
-    },
-    { name: "Mastercard", node: <MastercardMark /> },
     {
         name: "UPI",
         node: (
-            <span style={wordmark}>
-                <b style={{ color: "#2ecc71" }}>U</b>
-                <b style={{ color: "#ff7a2f" }}>P</b>
-                <b style={{ color: "#2ecc71" }}>I</b>
+            <span style={methodChip}>
+                <span>
+                    <b style={{ color: "#2ecc71" }}>U</b>
+                    <b style={{ color: "#ff7a2f" }}>P</b>
+                    <b style={{ color: "#2ecc71" }}>I</b>
+                </span>
             </span>
         ),
     },
-    {
-        name: "RuPay",
-        node: (
-            <span style={wordmark}>
-                <b style={{ color: "#7e9bff" }}>Ru</b>
-                <b style={{ color: "#ff8a3d" }}>Pay</b>
-            </span>
-        ),
-    },
-    {
-        name: "PayPal",
-        node: (
-            <span style={{ ...wordmark, fontStyle: "italic" }}>
-                <b style={{ color: "#4d94ff" }}>Pay</b>
-                <b style={{ color: "#7fd3ff" }}>Pal</b>
-            </span>
-        ),
-    },
-    { name: "Amex", node: <span style={tint("#4a9fe0")}>AMEX</span> },
+    { name: "Cards", node: method(CreditCardIcon, "Cards", "#9b7bf7") },
+    { name: "Netbanking", node: method(AccountBalanceIcon, "Netbanking", "#5b9bff") },
+    { name: "Wallets", node: method(AccountBalanceWalletIcon, "Wallets", "#86efac") },
+    { name: "Pay Later", node: method(ScheduleIcon, "Pay Later", "#fbbf24") },
+    { name: "EMI", node: method(CalendarMonthIcon, "EMI", "#f472b6") },
+    { name: "QR", node: method(QrCode2Icon, "Scan & Pay", "#c4b5fd") },
 ];
 
 const ArrowRight = () => (

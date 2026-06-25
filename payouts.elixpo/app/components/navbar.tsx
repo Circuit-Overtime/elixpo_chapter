@@ -321,9 +321,9 @@ const Navbar = () => {
                             <Avatar
                                 src={me.avatar || undefined}
                                 sx={{
-                                    width: 26,
-                                    height: 26,
-                                    fontSize: "0.8rem",
+                                    width: 32,
+                                    height: 32,
+                                    fontSize: "0.9rem",
                                     bgcolor: "rgba(155,123,247,0.4)",
                                 }}
                             >
@@ -332,21 +332,49 @@ const Navbar = () => {
                                     .toUpperCase()}
                             </Avatar>
                             <Box
-                                component="span"
                                 sx={{
                                     display: {
                                         xs: "none",
                                         "@media (min-width: 640px)": {
-                                            display: "inline",
+                                            display: "flex",
                                         },
                                     },
-                                    maxWidth: 130,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
+                                    flexDirection: "column",
+                                    alignItems: "flex-start",
+                                    minWidth: 0,
+                                    lineHeight: 1.15,
                                 }}
                             >
-                                {me.name || me.email}
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        fontSize: "0.86rem",
+                                        fontWeight: 600,
+                                        color: "#f4f4f6",
+                                        maxWidth: 150,
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
+                                    {me.name || me.email}
+                                </Box>
+                                {me.name && me.email && (
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            fontSize: "0.7rem",
+                                            fontWeight: 500,
+                                            color: "rgba(244,244,246,0.5)",
+                                            maxWidth: 150,
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {me.email}
+                                    </Box>
+                                )}
                             </Box>
                         </Button>
                     ) : (
