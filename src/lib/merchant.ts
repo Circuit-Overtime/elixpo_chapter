@@ -22,6 +22,14 @@ export function isPlatformMerchant(merchantId: string): boolean {
     return merchantId === PLATFORM_MERCHANT_ID;
 }
 
+/**
+ * Platform commission on third-party (Route) payments, in basis points
+ * (100 = 1%). Set by Elixpo — merchants do NOT control this. The split sends the
+ * payment amount MINUS this cut to the merchant's linked account; the cut stays
+ * with the platform. Change this one value to adjust the rate everywhere.
+ */
+export const PLATFORM_COMMISSION_BPS = 200; // 2%
+
 export interface MerchantRow {
     id: string;
     name: string;

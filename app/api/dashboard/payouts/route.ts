@@ -5,7 +5,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { requireDashboard } from "@/lib/dashboard-auth";
 import { getEnv } from "@/lib/env";
 import { newId } from "@/lib/ids";
-import { isPlatformMerchant } from "@/lib/merchant";
+import { isPlatformMerchant, PLATFORM_COMMISSION_BPS } from "@/lib/merchant";
 import { razorpayFromEnv } from "@/lib/providers/razorpay";
 
 /**
@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
         {
             account: view(row),
             routable: revenue.results ?? [],
+            platform_commission_bps: PLATFORM_COMMISSION_BPS,
             // The platform owner's products settle directly — no payout connection.
             is_platform_owner: isPlatformMerchant(merchantId),
         },

@@ -41,6 +41,7 @@ export default function PayoutsPage() {
     const [account, setAccount] = useState<any>(null);
     const [routable, setRoutable] = useState<any[]>([]);
     const [isOwner, setIsOwner] = useState(false);
+    const [feeBps, setFeeBps] = useState(0);
 
     const [beneficiary, setBeneficiary] = useState("");
     const [accountNumber, setAccountNumber] = useState("");
@@ -58,6 +59,7 @@ export default function PayoutsPage() {
             setAccount(d.account);
             setRoutable(d.routable || []);
             setIsOwner(!!d.is_platform_owner);
+            setFeeBps(d.platform_commission_bps || 0);
             if (d.account) {
                 setBeneficiary(d.account.beneficiary_name || "");
                 setIfsc(d.account.bank_ifsc || "");
@@ -138,8 +140,12 @@ export default function PayoutsPage() {
                     Payouts
                 </Typography>
                 <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.92rem" }}>
-                    Connect your bank to receive your app's revenue. Once live, each payment is
-                    split to you automatically (Razorpay Route), minus the platform fee.
+                    Connect your bank to receive your app's revenue. Once live, each payment
+                    is split to you automatically — you get the amount minus a{" "}
+                    <Box component="span" sx={{ color: "#c4b5fd", fontWeight: 600 }}>
+                        {(feeBps / 100).toFixed(feeBps % 100 ? 1 : 0)}% platform fee
+                    </Box>
+                    .
                 </Typography>
             </Box>
 

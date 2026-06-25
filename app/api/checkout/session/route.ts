@@ -5,7 +5,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { verifyHandoff } from "@/lib/handoff";
-import { isPlatformMerchant } from "@/lib/merchant";
+import { isPlatformMerchant, PLATFORM_COMMISSION_BPS } from "@/lib/merchant";
 // ensureProviderCustomer kept available in @/lib/customers for future use
 // once accounts.elixpo collects phone numbers — see the comment in the
 // recurring-checkout branch below.
@@ -465,16 +465,17 @@ async function routeTransfers(
     if (!merchantId || isPlatformMerchant(merchantId)) return undefined;
     const pa = (await db
         .prepare(
-            `SELECT razorpay_account_id, commission_bps
+            `SELECT razorpay_account_id
              FROM payout_accounts
              WHERE merchant_id = ? AND status = 'active'
                AND razorpay_account_id IS NOT NULL`,
         )
         .bind(merchantId)
-        .first()) as { razorpay_account_id: string; commission_bps: number } | null;
+        .first()) as { razorpay_account_id: string } | null;
     if (!pa?.razorpay_account_id) return undefined;
 
-    const commission = Math.round((amount * (pa.commission_bps || 0)) / 10000);
+    // Platform commission is set by us (hardcoded), never by the merchant.
+    const commission = Math.round((amount * PLATFORM_COMMISSION_BPS) / 10000);
     const transferAmount = amount - commission;
     if (transferAmount <= 0) return undefined; // commission ≥ amount → keep it all
 

@@ -33,9 +33,9 @@ export default function PayoutsDocs() {
 
             <DocH2>Fees</DocH2>
             <DocP>
-                The platform commission is shown on your Payouts page (0% during beta).
-                It's applied to each split, so your bank receives the payment amount
-                minus the fee.
+                Elixpo charges a fixed platform commission on each split — set by us,
+                not configurable per merchant — and it's shown on your Payouts page. It's
+                applied to every payment, so your bank receives the amount minus the fee.
             </DocP>
         </Box>
     );
