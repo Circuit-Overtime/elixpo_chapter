@@ -320,8 +320,10 @@ export default function PayoutsPage() {
                 confirmLabel="Disconnect"
                 message={
                     <>
-                        Revenue will go back to <strong>settling in the Elixpo account</strong> until
-                        you reconnect. Your existing payments aren't affected.
+                        With no bank connected, your payments will{" "}
+                        <strong>settle into the Elixpo Pay account</strong> (
+                        <strong>hello@elixpo.com</strong>) until you reconnect — they won't
+                        reach your bank. Your existing payments aren't affected.
                     </>
                 }
                 onConfirm={disconnect}

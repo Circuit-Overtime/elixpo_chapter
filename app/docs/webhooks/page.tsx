@@ -110,6 +110,40 @@ export default function WebhooksDocs() {
                 dashboard. More event types will appear here over time.
             </DocP>
 
+            <DocH2>Set it up in the dashboard</DocH2>
+            <DocP>
+                Open your product → <strong>Entitlement webhook</strong>, then:
+            </DocP>
+            <DocList
+                items={[
+                    <>
+                        <strong>Endpoint URL</strong> — the route in your app that receives
+                        events (e.g. <Code>https://yourapp.com/api/billing/grant</Code>). Must
+                        be <Code>https</Code>.
+                    </>,
+                    <>
+                        <strong>☑ entitlement.updated</strong> — leave this on. It's how a
+                        purchase actually unlocks access (and how downgrades/revocations
+                        reach you). Without it, payments succeed but users never get access.
+                    </>,
+                    <>
+                        <strong>☐ payment.captured</strong> — check this only if you want a
+                        ping on every successful charge (receipts, your own analytics/ledger).
+                        Not needed to grant access.
+                    </>,
+                    <>
+                        <strong>Signing secret</strong> — copy the <Code>whsec_…</Code> shown
+                        on save and store it as <Code>ELIXPO_PAY_WEBHOOK_SECRET</Code> in your
+                        app. You verify every delivery with it. <strong>Roll secret</strong>{" "}
+                        rotates it with a grace window (old + new both valid for a bit).
+                    </>,
+                ]}
+            />
+            <DocP>
+                Respond <Code>2xx</Code> fast. Failures are recorded and shown as failed
+                deliveries you can inspect.
+            </DocP>
+
             <DocH2>Request</DocH2>
             <CodeBlock code={HEADERS} language="http" />
             <CodeBlock code={BODY} language="json" />

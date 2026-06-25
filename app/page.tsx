@@ -3,6 +3,7 @@
 import type { SvgIconComponent } from "@mui/icons-material";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import HubIcon from "@mui/icons-material/Hub";
 import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
 import VpnKeyIcon from "@mui/icons-material/VpnKey";
@@ -76,6 +77,59 @@ export default function Home() {
 
                 {/* ── Section 2: roadmap, right after the hero ────────────────── */}
                 <RoadmapSteps />
+
+                {/* ── Open source strip ───────────────────────────────────────── */}
+                <Container maxWidth="md" sx={{ py: { xs: 2, md: 3 } }}>
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
+                        alignItems="center"
+                        justifyContent="space-between"
+                        sx={{
+                            p: { xs: 2.5, md: 3 },
+                            borderRadius: "16px",
+                            border: "1px solid rgba(155,123,247,0.25)",
+                            background:
+                                "linear-gradient(120deg, rgba(155,123,247,0.08), rgba(155,123,247,0.02))",
+                        }}
+                    >
+                        <Box sx={{ textAlign: { xs: "center", sm: "left" } }}>
+                            <Typography
+                                sx={{ fontWeight: 800, fontSize: "1.15rem", color: "#f5f5f4" }}
+                            >
+                                100% open source
+                            </Typography>
+                            <Typography
+                                sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.9rem", mt: 0.3 }}
+                            >
+                                Audit every line, self-host it, or contribute — no black boxes
+                                handling your money.
+                            </Typography>
+                        </Box>
+                        <Button
+                            component="a"
+                            href="https://github.com/elixpo/payouts.elixpo"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            startIcon={<GitHubIcon />}
+                            sx={{
+                                flexShrink: 0,
+                                textTransform: "none",
+                                fontWeight: 700,
+                                color: "#fff",
+                                px: 2.6,
+                                py: 1,
+                                borderRadius: "12px",
+                                background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                "&:hover": {
+                                    background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                },
+                            }}
+                        >
+                            View on GitHub
+                        </Button>
+                    </Stack>
+                </Container>
 
                 {/* ── Section 3: The platform ─────────────────────────────────── */}
                 <Box
