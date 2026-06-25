@@ -40,6 +40,7 @@ export default function PayoutsPage() {
     const [loading, setLoading] = useState(true);
     const [account, setAccount] = useState<any>(null);
     const [routable, setRoutable] = useState<any[]>([]);
+    const [isOwner, setIsOwner] = useState(false);
 
     const [beneficiary, setBeneficiary] = useState("");
     const [accountNumber, setAccountNumber] = useState("");
@@ -56,6 +57,7 @@ export default function PayoutsPage() {
             const d: any = await r.json();
             setAccount(d.account);
             setRoutable(d.routable || []);
+            setIsOwner(!!d.is_platform_owner);
             if (d.account) {
                 setBeneficiary(d.account.beneficiary_name || "");
                 setIfsc(d.account.bank_ifsc || "");
@@ -141,6 +143,39 @@ export default function PayoutsPage() {
                 </Typography>
             </Box>
 
+            {isOwner ? (
+                <GlassCard>
+                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                        <AccountBalanceIcon sx={{ color: "#86efac", mt: 0.3 }} />
+                        <Box>
+                            <Typography sx={{ fontWeight: 700, fontSize: "1.05rem" }}>
+                                Your products settle directly
+                            </Typography>
+                            <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.88rem", mt: 0.5, maxWidth: 560 }}>
+                                You're the platform owner, so revenue from your own products lands
+                                straight in the Elixpo Razorpay account — no payout connection
+                                needed. Connecting a bank is for third-party merchants whose
+                                products are split to them.
+                            </Typography>
+                        </Box>
+                    </Stack>
+                    {routable.length > 0 && (
+                        <Stack direction="row" spacing={3} flexWrap="wrap" sx={{ mt: 2.5 }}>
+                            {routable.map((r: any) => (
+                                <Box key={r.currency}>
+                                    <Typography sx={{ fontWeight: 800, fontSize: "1.4rem" }}>
+                                        {formatMoney(r.total, r.currency)}
+                                    </Typography>
+                                    <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.76rem" }}>
+                                        {r.count} payment{r.count === 1 ? "" : "s"} · {r.currency}
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Stack>
+                    )}
+                </GlassCard>
+            ) : (
+              <>
             {/* Status */}
             {connected && (
                 <GlassCard sx={{ mb: 2, border: active ? "1px solid rgba(134,239,172,0.3)" : "1px solid rgba(251,191,36,0.3)" }}>
@@ -258,6 +293,8 @@ export default function PayoutsPage() {
                         the platform fee) lands in your bank automatically on each payment.
                     </Typography>
                 </GlassCard>
+            )}
+              </>
             )}
 
             <ConfirmDialog

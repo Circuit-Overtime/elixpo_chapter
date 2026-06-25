@@ -50,10 +50,10 @@
     "files": {
         "includes": [
             "**",
-            "!!**/node_modules/**",
-            "!!**/.next/**",
-            "!!**/.vercel/**",
-            "!!**/.wrangler/**",
+            "!!**/node_modules",
+            "!!**/.next",
+            "!!**/.vercel",
+            "!!**/.wrangler",
             "!!**/*.css"
         ]
     },

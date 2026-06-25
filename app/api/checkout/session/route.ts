@@ -5,6 +5,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getEnv } from "@/lib/env";
 import { verifyHandoff } from "@/lib/handoff";
+import { isPlatformMerchant } from "@/lib/merchant";
 // ensureProviderCustomer kept available in @/lib/customers for future use
 // once accounts.elixpo collects phone numbers — see the comment in the
 // recurring-checkout branch below.
@@ -459,7 +460,9 @@ async function routeTransfers(
     currency: string,
     appSlug: string | undefined,
 ): Promise<Array<Record<string, unknown>> | undefined> {
-    if (!merchantId) return undefined;
+    // The platform owner's products settle directly to the platform account —
+    // never split them.
+    if (!merchantId || isPlatformMerchant(merchantId)) return undefined;
     const pa = (await db
         .prepare(
             `SELECT razorpay_account_id, commission_bps

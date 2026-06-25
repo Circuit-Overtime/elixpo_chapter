@@ -10,6 +10,18 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { getEnv } from "./env";
 import { newId } from "./ids";
 
+/**
+ * The platform-owner merchant (Elixpo itself, claimed by ELIXPO_PAY_OWNER_EMAIL).
+ * Its products ARE the platform's own — payments settle directly to the platform
+ * Razorpay account and are NEVER split via Route. Only third-party merchants get
+ * a Route payout split.
+ */
+export const PLATFORM_MERCHANT_ID = "mer_elixpo";
+
+export function isPlatformMerchant(merchantId: string): boolean {
+    return merchantId === PLATFORM_MERCHANT_ID;
+}
+
 export interface MerchantRow {
     id: string;
     name: string;

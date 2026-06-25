@@ -5,6 +5,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { requireDashboard } from "@/lib/dashboard-auth";
 import { getEnv } from "@/lib/env";
 import { newId } from "@/lib/ids";
+import { isPlatformMerchant } from "@/lib/merchant";
 import { razorpayFromEnv } from "@/lib/providers/razorpay";
 
 /**
@@ -60,7 +61,12 @@ export async function GET(request: NextRequest) {
         .all();
 
     return NextResponse.json(
-        { account: view(row), routable: revenue.results ?? [] },
+        {
+            account: view(row),
+            routable: revenue.results ?? [],
+            // The platform owner's products settle directly — no payout connection.
+            is_platform_owner: isPlatformMerchant(merchantId),
+        },
         { headers: { "Cache-Control": "no-store" } },
     );
 }
@@ -69,6 +75,19 @@ export async function PUT(request: NextRequest) {
     const ctx = await requireDashboard(request);
     if (ctx instanceof NextResponse) return ctx;
     const { db, merchantId } = ctx;
+
+    // The platform owner doesn't connect a payout account — its products settle
+    // directly to the platform Razorpay account.
+    if (isPlatformMerchant(merchantId)) {
+        return NextResponse.json(
+            {
+                error: "platform_owner",
+                error_description:
+                    "Your products settle directly to the platform account — no payout connection needed.",
+            },
+            { status: 400 },
+        );
+    }
 
     const body: any = await request.json().catch(() => ({}));
     const beneficiary = String(body.beneficiary_name || "").trim().slice(0, 120);
