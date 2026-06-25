@@ -128,7 +128,7 @@ export default function LandingSections({ authed }: { authed?: boolean }) {
                     public status page.
                 </p>
                 <Link
-                    href="/status"
+                    href="https://status.elixpo.com"
                     style={{
                         display: "inline-flex",
                         alignItems: "center",

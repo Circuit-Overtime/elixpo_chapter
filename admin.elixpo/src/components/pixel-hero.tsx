@@ -445,7 +445,7 @@ export default function PixelHero({ authed }: { authed?: boolean }) {
                     <ArrowRight />
                 </a>
                 <Link
-                    href="/status"
+                    href="https://status.elixpo.com"
                     style={{
                         display: "inline-flex",
                         alignItems: "center",
