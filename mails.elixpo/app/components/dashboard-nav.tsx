@@ -78,11 +78,15 @@ export function DashboardNavLinks({
                             transition: "all 0.15s ease",
                             "&:hover": {
                                 color: "#f5f5f4",
-                                background: active ? "rgba(155,123,247,0.14)" : "rgba(255,255,255,0.04)",
+                                background: active
+                                    ? "rgba(155,123,247,0.14)"
+                                    : "rgba(255,255,255,0.04)",
                             },
                         }}
                     >
-                        <Icon sx={{ fontSize: 19, color: active ? ACCENT : "rgba(245,245,244,0.55)" }} />
+                        <Icon
+                            sx={{ fontSize: 19, color: active ? ACCENT : "rgba(245,245,244,0.55)" }}
+                        />
                         {item.label}
                     </Box>
                 );

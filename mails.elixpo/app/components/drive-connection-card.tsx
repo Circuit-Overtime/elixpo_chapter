@@ -5,6 +5,7 @@ import CloudIcon from "@mui/icons-material/Cloud";
 import { Alert, Box, Button, Chip, CircularProgress, Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { GlassCard } from "./glass-card";
+import { useRole } from "./role-provider";
 
 const TEXT = "#f5f5f4";
 const TEXT_55 = "rgba(245,245,244,0.55)";
@@ -23,15 +24,34 @@ const NOTICES: Record<string, { sev: "success" | "error" | "info" | "warning"; m
     not_configured: { sev: "warning", msg: "Google Drive isn't set up on this workspace yet." },
 };
 
+function ReadOnlyChip() {
+    return (
+        <Chip
+            label="Read-only access"
+            size="small"
+            sx={{
+                color: "rgba(245,245,244,0.5)",
+                bgcolor: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.07)",
+            }}
+        />
+    );
+}
+
 export default function DriveConnectionCard() {
+    const { canWrite } = useRole();
     const [status, setStatus] = useState<Status | null>(null);
     const [busy, setBusy] = useState(false);
-    const [notice, setNotice] = useState<{ sev: "success" | "error" | "info" | "warning"; msg: string } | null>(null);
+    const [notice, setNotice] = useState<{
+        sev: "success" | "error" | "info" | "warning";
+        msg: string;
+    } | null>(null);
 
     async function load() {
         try {
             const d: any = await fetch("/api/drive/status").then((r) => r.json());
-            if (d?.ok) setStatus({ configured: d.configured, connected: d.connected, email: d.email });
+            if (d?.ok)
+                setStatus({ configured: d.configured, connected: d.connected, email: d.email });
             else setStatus({ configured: false, connected: false, email: null });
         } catch {
             setStatus({ configured: false, connected: false, email: null });
@@ -66,20 +86,33 @@ export default function DriveConnectionCard() {
     return (
         <GlassCard>
             <Stack direction="row" alignItems="center" spacing={1.2} sx={{ mb: 0.4 }}>
-                <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: TEXT }}>Connections</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: TEXT }}>
+                    Connections
+                </Typography>
                 <Chip
                     label="Google Drive"
                     size="small"
-                    sx={{ height: 20, fontSize: "0.62rem", fontWeight: 700, color: TEXT_55, bgcolor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}
+                    sx={{
+                        height: 20,
+                        fontSize: "0.62rem",
+                        fontWeight: 700,
+                        color: TEXT_55,
+                        bgcolor: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                    }}
                 />
             </Stack>
             <Typography sx={{ color: TEXT_55, fontSize: "0.88rem", mb: 2.2 }}>
-                Connect your workspace&rsquo;s Google Drive to attach files to emails. We only access
-                files you pick — nothing else in your Drive.
+                Connect your workspace&rsquo;s Google Drive to attach files to emails. We only
+                access files you pick — nothing else in your Drive.
             </Typography>
 
             {notice && (
-                <Alert severity={notice.sev} sx={{ mb: 2, fontSize: "0.85rem" }} onClose={() => setNotice(null)}>
+                <Alert
+                    severity={notice.sev}
+                    sx={{ mb: 2, fontSize: "0.85rem" }}
+                    onClose={() => setNotice(null)}
+                >
                     {notice.msg}
                 </Alert>
             )}
@@ -94,7 +127,12 @@ export default function DriveConnectionCard() {
                     alignItems={{ xs: "flex-start", sm: "center" }}
                     justifyContent="space-between"
                     spacing={1.5}
-                    sx={{ p: 1.6, borderRadius: "12px", border: "1px solid rgba(52,211,153,0.25)", background: "rgba(52,211,153,0.06)" }}
+                    sx={{
+                        p: 1.6,
+                        borderRadius: "12px",
+                        border: "1px solid rgba(52,211,153,0.25)",
+                        background: "rgba(52,211,153,0.06)",
+                    }}
                 >
                     <Stack direction="row" alignItems="center" spacing={1.2}>
                         <CheckCircleIcon sx={{ color: "#34d399", fontSize: 22 }} />
@@ -107,46 +145,62 @@ export default function DriveConnectionCard() {
                             </Typography>
                         </Box>
                     </Stack>
-                    <Button
-                        onClick={disconnect}
-                        disabled={busy}
-                        sx={{
-                            textTransform: "none",
-                            fontWeight: 600,
-                            fontSize: "0.85rem",
-                            color: "#f87171",
-                            borderRadius: "10px",
-                            border: "1px solid rgba(248,113,113,0.3)",
-                            px: 2,
-                            "&:hover": { background: "rgba(248,113,113,0.08)" },
-                        }}
-                    >
-                        {busy ? "Disconnecting…" : "Disconnect"}
-                    </Button>
+                    {canWrite && (
+                        <Button
+                            onClick={disconnect}
+                            disabled={busy}
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 600,
+                                fontSize: "0.85rem",
+                                color: "#f87171",
+                                borderRadius: "10px",
+                                border: "1px solid rgba(248,113,113,0.3)",
+                                px: 2,
+                                "&:hover": { background: "rgba(248,113,113,0.08)" },
+                            }}
+                        >
+                            {busy ? "Disconnecting…" : "Disconnect"}
+                        </Button>
+                    )}
                 </Stack>
             ) : (
-                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1 }}>
-                    <Button
-                        component="a"
-                        href="/api/drive/connect"
-                        startIcon={<CloudIcon />}
-                        disabled={!status.configured}
-                        sx={{
-                            textTransform: "none",
-                            fontWeight: 700,
-                            fontSize: "0.9rem",
-                            color: "#fff",
-                            px: 2.6,
-                            py: 1,
-                            borderRadius: "11px",
-                            background: `linear-gradient(135deg, ${ACCENT} 0%, #7c5cff 100%)`,
-                            boxShadow: "0 8px 24px rgba(124,92,255,0.35)",
-                            "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
-                            "&.Mui-disabled": { background: "rgba(255,255,255,0.06)", color: "rgba(245,245,244,0.4)", boxShadow: "none" },
-                        }}
-                    >
-                        Connect Google Drive
-                    </Button>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={1.5}
+                    sx={{ flexWrap: "wrap", gap: 1 }}
+                >
+                    {!canWrite && <ReadOnlyChip />}
+                    {canWrite && (
+                        <Button
+                            component="a"
+                            href="/api/drive/connect"
+                            startIcon={<CloudIcon />}
+                            disabled={!status.configured}
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 700,
+                                fontSize: "0.9rem",
+                                color: "#fff",
+                                px: 2.6,
+                                py: 1,
+                                borderRadius: "11px",
+                                background: `linear-gradient(135deg, ${ACCENT} 0%, #7c5cff 100%)`,
+                                boxShadow: "0 8px 24px rgba(124,92,255,0.35)",
+                                "&:hover": {
+                                    background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                },
+                                "&.Mui-disabled": {
+                                    background: "rgba(255,255,255,0.06)",
+                                    color: "rgba(245,245,244,0.4)",
+                                    boxShadow: "none",
+                                },
+                            }}
+                        >
+                            Connect Google Drive
+                        </Button>
+                    )}
                     {!status.configured && (
                         <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.8rem" }}>
                             Drive isn&rsquo;t configured on this deployment yet.

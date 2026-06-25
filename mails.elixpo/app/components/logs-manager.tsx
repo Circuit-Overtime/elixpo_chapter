@@ -276,7 +276,14 @@ function DeliveryDetail({ d }: { d: DeliverySummary }) {
             }}
         >
             <DetailRow label="Subject">
-                <Typography sx={{ fontSize: "0.85rem", color: TEXT, lineHeight: 1.5, wordBreak: "break-word" }}>
+                <Typography
+                    sx={{
+                        fontSize: "0.85rem",
+                        color: TEXT,
+                        lineHeight: 1.5,
+                        wordBreak: "break-word",
+                    }}
+                >
                     {d.subject || "—"}
                 </Typography>
             </DetailRow>
@@ -295,7 +302,12 @@ function DeliveryDetail({ d }: { d: DeliverySummary }) {
             </DetailRow>
 
             <DetailRow label="Status">
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap", rowGap: 0.6 }}>
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    sx={{ flexWrap: "wrap", rowGap: 0.6 }}
+                >
                     <StatusChip status={d.status} />
                     <Typography sx={{ fontSize: "0.8rem", color: TEXT_55 }}>
                         {d.attempts} attempt{d.attempts === 1 ? "" : "s"}
@@ -306,7 +318,9 @@ function DeliveryDetail({ d }: { d: DeliverySummary }) {
             {d.sent_at && (
                 <DetailRow label="Sent at">
                     <Tooltip title={formatAbsolute(d.sent_at)} arrow>
-                        <Typography sx={{ fontSize: "0.82rem", color: TEXT, display: "inline-block" }}>
+                        <Typography
+                            sx={{ fontSize: "0.82rem", color: TEXT, display: "inline-block" }}
+                        >
                             {formatAbsolute(d.sent_at)}
                         </Typography>
                     </Tooltip>
@@ -371,7 +385,9 @@ function DeliveryDetail({ d }: { d: DeliverySummary }) {
 
             <DetailRow label="Variables">
                 {varEntries.length === 0 ? (
-                    <Typography sx={{ fontSize: "0.8rem", color: TEXT_40 }}>No variables</Typography>
+                    <Typography sx={{ fontSize: "0.8rem", color: TEXT_40 }}>
+                        No variables
+                    </Typography>
                 ) : (
                     <Stack spacing={0.5}>
                         {varEntries.map(([k, v]) => (
@@ -379,7 +395,10 @@ function DeliveryDetail({ d }: { d: DeliverySummary }) {
                                 key={k}
                                 sx={{
                                     display: "grid",
-                                    gridTemplateColumns: { xs: "1fr", sm: "minmax(80px, 200px) 1fr" },
+                                    gridTemplateColumns: {
+                                        xs: "1fr",
+                                        sm: "minmax(80px, 200px) 1fr",
+                                    },
                                     gap: { xs: 0, sm: 1.2 },
                                     px: 1.2,
                                     py: 0.7,
@@ -487,7 +506,9 @@ function DeliveryRow({ d }: { d: DeliverySummary }) {
                             {d.template_name || "—"}
                         </Typography>
                         <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: TEXT_40 }} />
-                        <Typography sx={{ fontSize: "0.74rem", color: TEXT_40 }}>{webhook}</Typography>
+                        <Typography sx={{ fontSize: "0.74rem", color: TEXT_40 }}>
+                            {webhook}
+                        </Typography>
                     </Stack>
                 </Box>
 
@@ -548,7 +569,9 @@ export default function LogsManager() {
                 const res = await fetch(`/api/logs${qs ? `?${qs}` : ""}`);
                 const data = (await res.json().catch(() => ({}))) as LogsResponse;
                 if (!res.ok || !data?.ok) {
-                    throw new Error(data?.message || data?.error || "Could not load delivery logs.");
+                    throw new Error(
+                        data?.message || data?.error || "Could not load delivery logs.",
+                    );
                 }
                 const rows = Array.isArray(data.deliveries) ? data.deliveries : [];
                 setDeliveries(rows);
@@ -596,7 +619,9 @@ export default function LogsManager() {
             <GlassCard sx={{ py: { xs: 6, md: 8 } }}>
                 <Stack alignItems="center" spacing={2}>
                     <CircularProgress size={28} sx={{ color: ACCENT }} />
-                    <Typography sx={{ color: TEXT_55, fontSize: "0.9rem" }}>Loading delivery logs…</Typography>
+                    <Typography sx={{ color: TEXT_55, fontSize: "0.9rem" }}>
+                        Loading delivery logs…
+                    </Typography>
                 </Stack>
             </GlassCard>
         );
@@ -726,7 +751,9 @@ export default function LogsManager() {
                     </Typography>
                 ) : (
                     <GlassCard sx={{ py: { xs: 4, md: 5 } }}>
-                        <Typography sx={{ color: TEXT_55, fontSize: "0.9rem", textAlign: "center" }}>
+                        <Typography
+                            sx={{ color: TEXT_55, fontSize: "0.9rem", textAlign: "center" }}
+                        >
                             No deliveries match these filters.
                         </Typography>
                     </GlassCard>
@@ -736,7 +763,9 @@ export default function LogsManager() {
                     {visibleDeliveries.map((d, i) => (
                         <Box key={d.id}>
                             <DeliveryRow d={d} />
-                            {i < visibleDeliveries.length - 1 && <Divider sx={{ borderColor: BORDER }} />}
+                            {i < visibleDeliveries.length - 1 && (
+                                <Divider sx={{ borderColor: BORDER }} />
+                            )}
                         </Box>
                     ))}
                 </GlassCard>

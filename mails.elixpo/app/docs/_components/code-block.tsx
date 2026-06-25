@@ -63,7 +63,11 @@ export default function CodeBlock({
                         "&:hover": { color: "#fff", background: "rgba(255,255,255,0.06)" },
                     }}
                 >
-                    {copied ? <CheckIcon sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
+                    {copied ? (
+                        <CheckIcon sx={{ fontSize: 16 }} />
+                    ) : (
+                        <ContentCopyIcon sx={{ fontSize: 16 }} />
+                    )}
                 </IconButton>
             </Tooltip>
             <Box

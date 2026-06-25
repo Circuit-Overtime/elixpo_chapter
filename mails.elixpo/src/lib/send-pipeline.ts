@@ -15,9 +15,9 @@ import { decryptSecret } from "./encryption";
 import { appUrl } from "./env";
 import { type ProductRow, productToFooter } from "./products";
 import { renderTemplate } from "./render";
-import { isSuppressed, signUnsub } from "./suppressions";
 import { type SenderRow, getSender } from "./senders";
 import { relayViaSender } from "./smtp-sender";
+import { isSuppressed, signUnsub } from "./suppressions";
 import type { TemplateRow } from "./templates";
 
 /**
@@ -73,10 +73,7 @@ export interface DeliverResult {
  * outcome. Always returns a DeliverResult (never throws for send failures —
  * those are captured in the delivery row and the result).
  */
-export async function deliverTemplate(
-    db: D1Database,
-    input: DeliverInput,
-): Promise<DeliverResult> {
+export async function deliverTemplate(db: D1Database, input: DeliverInput): Promise<DeliverResult> {
     const { tenantId, template, product, webhookId, to, vars = {} } = input;
     const productId = product?.id ?? template.product_id;
     const isTransactional = template.transactional === 1;
@@ -96,11 +93,19 @@ export async function deliverTemplate(
             idempotencyKey: input.idempotencyKey || null,
             status: "suppressed",
         });
-        return { ok: false, deliveryId, status: "suppressed", subject: template.subject, error: "Recipient is unsubscribed." };
+        return {
+            ok: false,
+            deliveryId,
+            status: "suppressed",
+            subject: template.subject,
+            error: "Recipient is unsubscribed.",
+        };
     }
 
     // Per-recipient one-click unsubscribe link (non-transactional only).
-    const unsubscribeUrl = isTransactional ? null : `${await appUrl()}/u/${await signUnsub(productId, to)}`;
+    const unsubscribeUrl = isTransactional
+        ? null
+        : `${await appUrl()}/u/${await signUnsub(productId, to)}`;
 
     const sender = await resolveSender(db, tenantId, template, product);
     const footer = product ? productToFooter(product) : null;
@@ -187,5 +192,12 @@ export async function deliverTemplate(
 
     const error = result.error || "Send failed.";
     await markDeliveryFailed(db, deliveryId, error, result.response ?? null);
-    return { ok: false, deliveryId, status: "failed", subject, error, smtpResponse: result.response ?? null };
+    return {
+        ok: false,
+        deliveryId,
+        status: "failed",
+        subject,
+        error,
+        smtpResponse: result.response ?? null,
+    };
 }

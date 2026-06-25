@@ -45,13 +45,13 @@ export async function sendMail(opts) {
             if (at >= 0) {
                 const reply = buf.slice(0, at);
                 buf = buf.slice(at);
-                transcript.push("S: " + reply.trimEnd());
+                transcript.push(`S: ${reply.trimEnd()}`);
                 return reply;
             }
             const { value, done } = await reader.read();
             if (done) {
                 if (buf) {
-                    transcript.push("S: " + buf.trimEnd());
+                    transcript.push(`S: ${buf.trimEnd()}`);
                     return buf;
                 }
                 throw new Error("connection closed before reply completed");
@@ -61,8 +61,8 @@ export async function sendMail(opts) {
     }
 
     async function send(line, redact) {
-        transcript.push("C: " + (redact ? "***" : line));
-        await writer.write(enc.encode(line + "\r\n"));
+        transcript.push(`C: ${redact ? "***" : line}`);
+        await writer.write(enc.encode(`${line}\r\n`));
     }
 
     function expect(reply, code) {
@@ -73,7 +73,7 @@ export async function sendMail(opts) {
 
     try {
         expect(await read(), 220);
-        await send(`EHLO mail.elixpo`);
+        await send("EHLO mail.elixpo");
         expect(await read(), 250);
 
         if (starttls) {
@@ -84,7 +84,7 @@ export async function sendMail(opts) {
             writer = secureSocket.writable.getWriter();
             reader = secureSocket.readable.getReader();
             buf = "";
-            await send(`EHLO mail.elixpo`);
+            await send("EHLO mail.elixpo");
             expect(await read(), 250);
         }
 
@@ -103,7 +103,16 @@ export async function sendMail(opts) {
         await send("DATA");
         expect(await read(), 354);
 
-        const rawMessage = buildMessage({ from, fromName, to, subject, html, text, attachments: opts.attachments, listUnsubscribe: opts.listUnsubscribe });
+        const rawMessage = buildMessage({
+            from,
+            fromName,
+            to,
+            subject,
+            html,
+            text,
+            attachments: opts.attachments,
+            listUnsubscribe: opts.listUnsubscribe,
+        });
         // DKIM signing — prepends a `DKIM-Signature:` header to the
         // message before transmission. Skipped (returns rawMessage
         // unchanged) when DKIM_DOMAIN / DKIM_SELECTOR / DKIM_PRIVATE_KEY
@@ -119,12 +128,10 @@ export async function sendMail(opts) {
                     `C: <DKIM-Signature d=${opts.env.DKIM_DOMAIN} s=${opts.env.DKIM_SELECTOR}>`,
                 );
             } catch (err) {
-                transcript.push(
-                    `! dkim signing skipped: ${err?.message || String(err)}`,
-                );
+                transcript.push(`! dkim signing skipped: ${err?.message || String(err)}`);
             }
         }
-        await writer.write(enc.encode(message + "\r\n.\r\n"));
+        await writer.write(enc.encode(`${message}\r\n.\r\n`));
         transcript.push("C: <message body> + .");
         const queued = await read();
         expect(queued, 250);
@@ -171,17 +178,17 @@ function buildMessage({ from, fromName, to, subject, html, text, attachments, li
         `To: <${to}>`,
         `Subject: ${encodeHeaderWord(subject)}`,
         `Date: ${date}`,
-        `MIME-Version: 1.0`,
+        "MIME-Version: 1.0",
     ];
 
     // RFC 8058 one-click unsubscribe.
     if (listUnsubscribe) {
         const url = String(listUnsubscribe).replace(/[\r\n<>]/g, "");
         headers.push(`List-Unsubscribe: <${url}>`);
-        headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
+        headers.push("List-Unsubscribe-Post: List-Unsubscribe=One-Click");
     }
 
-    const files = Array.isArray(attachments) ? attachments.filter((a) => a && a.contentBase64) : [];
+    const files = Array.isArray(attachments) ? attachments.filter((a) => a?.contentBase64) : [];
 
     // The body (text/html) as a self-contained content block — multipart/
     // alternative when we have both, else a single text/html or text/plain.
@@ -192,46 +199,46 @@ function buildMessage({ from, fromName, to, subject, html, text, attachments, li
                 header: `Content-Type: multipart/alternative; boundary="${b}"`,
                 body: [
                     `--${b}`,
-                    `Content-Type: text/plain; charset=utf-8`,
-                    ``,
+                    "Content-Type: text/plain; charset=utf-8",
+                    "",
                     dotStuff(text),
                     `--${b}`,
-                    `Content-Type: text/html; charset=utf-8`,
-                    ``,
+                    "Content-Type: text/html; charset=utf-8",
+                    "",
                     dotStuff(html),
                     `--${b}--`,
                 ].join("\r\n"),
             };
         }
-        if (html) return { header: `Content-Type: text/html; charset=utf-8`, body: dotStuff(html) };
-        return { header: `Content-Type: text/plain; charset=utf-8`, body: dotStuff(text || "") };
+        if (html) return { header: "Content-Type: text/html; charset=utf-8", body: dotStuff(html) };
+        return { header: "Content-Type: text/plain; charset=utf-8", body: dotStuff(text || "") };
     }
 
     if (files.length === 0) {
         const c = contentBlock();
         headers.push(c.header);
-        return headers.join("\r\n") + "\r\n\r\n" + c.body;
+        return `${headers.join("\r\n")}\r\n\r\n${c.body}`;
     }
 
     // multipart/mixed: the content block, then one part per attachment.
     const mixed = `=_mixed_${randomToken()}`;
     headers.push(`Content-Type: multipart/mixed; boundary="${mixed}"`);
     const c = contentBlock();
-    const parts = [`--${mixed}`, c.header, ``, c.body];
+    const parts = [`--${mixed}`, c.header, "", c.body];
     for (const a of files) {
         const name = encodeHeaderWord(a.filename || "attachment");
         const type = (a.contentType || "application/octet-stream").replace(/[\r\n"]/g, "");
         parts.push(
             `--${mixed}`,
             `Content-Type: ${type}; name="${name}"`,
-            `Content-Transfer-Encoding: base64`,
+            "Content-Transfer-Encoding: base64",
             `Content-Disposition: attachment; filename="${name}"`,
-            ``,
+            "",
             wrap76(String(a.contentBase64).replace(/[^A-Za-z0-9+/=]/g, "")),
         );
     }
     parts.push(`--${mixed}--`);
-    return headers.join("\r\n") + "\r\n\r\n" + parts.join("\r\n");
+    return `${headers.join("\r\n")}\r\n\r\n${parts.join("\r\n")}`;
 }
 
 // Base64 bodies must be wrapped to <=76 chars per line (RFC 2045).
@@ -241,7 +248,10 @@ function wrap76(b64) {
 
 // RFC 5321 dot-stuffing: a line starting with "." must be escaped to "..".
 function dotStuff(s) {
-    return s.replace(/\r?\n/g, "\r\n").replace(/\r\n\./g, "\r\n..").replace(/^\./, "..");
+    return s
+        .replace(/\r?\n/g, "\r\n")
+        .replace(/\r\n\./g, "\r\n..")
+        .replace(/^\./, "..");
 }
 
 // Encode a header value as RFC 2047 if it contains non-ASCII; else pass through.

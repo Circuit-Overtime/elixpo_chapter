@@ -30,9 +30,23 @@ const GHOST = {
 
 export default function NotFound() {
     return (
-        <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", px: 3, color: "#f5f5f4" }}>
+        <Box
+            sx={{
+                minHeight: "100vh",
+                display: "grid",
+                placeItems: "center",
+                px: 3,
+                color: "#f5f5f4",
+            }}
+        >
             <Stack alignItems="center" textAlign="center" spacing={3} sx={{ maxWidth: 460 }}>
-                <Image src="/logo.png" alt="Elixpo Mails" width={52} height={52} style={{ borderRadius: 12 }} />
+                <Image
+                    src="/logo.png"
+                    alt="Elixpo Mails"
+                    width={52}
+                    height={52}
+                    style={{ borderRadius: 12 }}
+                />
                 <Box>
                     <Typography
                         sx={{
@@ -47,12 +61,26 @@ export default function NotFound() {
                     >
                         404
                     </Typography>
-                    <Typography sx={{ fontWeight: 800, fontSize: "1.4rem", mt: 1, letterSpacing: "-0.01em" }}>
+                    <Typography
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: "1.4rem",
+                            mt: 1,
+                            letterSpacing: "-0.01em",
+                        }}
+                    >
                         Lost in the outbox
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.98rem", mt: 1, lineHeight: 1.6 }}>
-                        This page didn&rsquo;t make it to the inbox. The link may be broken or the page
-                        may have moved.
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.55)",
+                            fontSize: "0.98rem",
+                            mt: 1,
+                            lineHeight: 1.6,
+                        }}
+                    >
+                        This page didn&rsquo;t make it to the inbox. The link may be broken or the
+                        page may have moved.
                     </Typography>
                 </Box>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

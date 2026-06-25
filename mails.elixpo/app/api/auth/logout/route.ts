@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE } from "@/lib/session";
+import { type NextRequest, NextResponse } from "next/server";
 
 /** GET /api/auth/logout — clear the session cookie and return home. */
 export async function GET(request: NextRequest) {

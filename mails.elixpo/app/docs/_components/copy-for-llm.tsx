@@ -22,7 +22,13 @@ export default function CopyForLlm() {
     return (
         <Button
             onClick={copy}
-            startIcon={copied ? <CheckIcon sx={{ fontSize: "1.05rem !important" }} /> : <ContentCopyIcon sx={{ fontSize: "1.05rem !important" }} />}
+            startIcon={
+                copied ? (
+                    <CheckIcon sx={{ fontSize: "1.05rem !important" }} />
+                ) : (
+                    <ContentCopyIcon sx={{ fontSize: "1.05rem !important" }} />
+                )
+            }
             sx={{
                 textTransform: "none",
                 fontWeight: 600,

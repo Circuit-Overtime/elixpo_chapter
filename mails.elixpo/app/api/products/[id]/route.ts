@@ -1,8 +1,7 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
-import { getDatabase } from "@/lib/d1-client";
 import { destroyImageByUrl } from "@/lib/cloudinary";
+import { getDatabase } from "@/lib/d1-client";
 import {
     countProductTemplates,
     deleteProduct,
@@ -11,6 +10,8 @@ import {
     updateProduct,
 } from "@/lib/products";
 import { getSession } from "@/lib/session";
+import { requireWriteRole } from "@/lib/workspace-guard";
+import { type NextRequest, NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -30,6 +31,9 @@ export async function GET(request: NextRequest, { params }: Ctx) {
 export async function PATCH(request: NextRequest, { params }: Ctx) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const denied = await requireWriteRole(session);
+    if (denied) return denied;
     const { id } = await params;
 
     let body: any;
@@ -43,7 +47,8 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     const existing = await getProduct(db, session.tenantId, id);
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-    const optStr = (v: unknown) => (v !== undefined ? (typeof v === "string" ? v : null) : undefined);
+    const optStr = (v: unknown) =>
+        v !== undefined ? (typeof v === "string" ? v : null) : undefined;
     const product = await updateProduct(db, session.tenantId, id, {
         name: typeof body?.name === "string" ? body.name : undefined,
         defaultSenderId:
@@ -74,6 +79,9 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
 export async function DELETE(request: NextRequest, { params }: Ctx) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const denied = await requireWriteRole(session);
+    if (denied) return denied;
     const { id } = await params;
 
     const db = await getDatabase();

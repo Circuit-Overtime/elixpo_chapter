@@ -82,7 +82,9 @@ function SectionHead({
                 {title}
             </Typography>
             {body && (
-                <Typography sx={{ maxWidth: 600, color: TEXT_65, fontSize: "1.05rem", lineHeight: 1.7 }}>
+                <Typography
+                    sx={{ maxWidth: 600, color: TEXT_65, fontSize: "1.05rem", lineHeight: 1.7 }}
+                >
                     {body}
                 </Typography>
             )}
@@ -108,7 +110,10 @@ function useAuthed(): boolean | null {
     return authed;
 }
 
-function PrimaryCta({ authed, signedOutLabel }: { authed: boolean | null; signedOutLabel: string }) {
+function PrimaryCta({
+    authed,
+    signedOutLabel,
+}: { authed: boolean | null; signedOutLabel: string }) {
     const signedIn = authed === true;
     return (
         <Button
@@ -234,9 +239,20 @@ export default function Home() {
                     }}
                 >
                     <Box>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, color: "rgba(245,245,244,0.55)" }}>
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            sx={{ mb: 1, color: "rgba(245,245,244,0.55)" }}
+                        >
                             <EastIcon sx={{ fontSize: 18, color: ACCENT }} />
-                            <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, letterSpacing: "0.02em" }}>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.82rem",
+                                    fontWeight: 600,
+                                    letterSpacing: "0.02em",
+                                }}
+                            >
                                 Your service fires one request
                             </Typography>
                         </Stack>
@@ -244,7 +260,9 @@ export default function Home() {
                     </Box>
 
                     {/* Delivery result panel */}
-                    <GlassCard sx={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <GlassCard
+                        sx={{ display: "flex", flexDirection: "column", justifyContent: "center" }}
+                    >
                         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
                             <CheckCircleIcon sx={{ fontSize: 20, color: "#86efac" }} />
                             <Typography sx={{ fontWeight: 700, color: TEXT, fontSize: "0.95rem" }}>
@@ -264,16 +282,31 @@ export default function Home() {
                                 }}
                             />
                         </Stack>
-                        <Stack spacing={1.1} sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.8rem" }}>
+                        <Stack
+                            spacing={1.1}
+                            sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.8rem" }}
+                        >
                             {[
                                 ["to", "ada@example.com"],
                                 ["template", "welcome-email"],
                                 ["sender", "you@yourdomain.com"],
                                 ["subject", "Welcome to Acme, Ada"],
                             ].map(([k, v]) => (
-                                <Stack key={k} direction="row" spacing={1.5} justifyContent="space-between">
-                                    <Box component="span" sx={{ color: "rgba(245,245,244,0.4)" }}>{k}</Box>
-                                    <Box component="span" sx={{ color: "rgba(245,245,244,0.82)", textAlign: "right" }}>{v}</Box>
+                                <Stack
+                                    key={k}
+                                    direction="row"
+                                    spacing={1.5}
+                                    justifyContent="space-between"
+                                >
+                                    <Box component="span" sx={{ color: "rgba(245,245,244,0.4)" }}>
+                                        {k}
+                                    </Box>
+                                    <Box
+                                        component="span"
+                                        sx={{ color: "rgba(245,245,244,0.82)", textAlign: "right" }}
+                                    >
+                                        {v}
+                                    </Box>
                                 </Stack>
                             ))}
                         </Stack>
@@ -291,7 +324,13 @@ export default function Home() {
                     {TRUST.map((t) => (
                         <Stack key={t.label} direction="row" spacing={1} alignItems="center">
                             <t.icon sx={{ fontSize: 18, color: "rgba(155,123,247,0.85)" }} />
-                            <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.85rem", fontWeight: 500 }}>
+                            <Typography
+                                sx={{
+                                    color: "rgba(245,245,244,0.55)",
+                                    fontSize: "0.85rem",
+                                    fontWeight: 500,
+                                }}
+                            >
                                 {t.label}
                             </Typography>
                         </Stack>
@@ -354,10 +393,19 @@ export default function Home() {
                                     </Box>
                                 </Box>
                                 <Box sx={{ pr: { md: 2.5 } }}>
-                                    <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: TEXT, mb: 0.6 }}>
+                                    <Typography
+                                        sx={{
+                                            fontWeight: 700,
+                                            fontSize: "1.05rem",
+                                            color: TEXT,
+                                            mb: 0.6,
+                                        }}
+                                    >
                                         {s.title}
                                     </Typography>
-                                    <Typography sx={{ color: TEXT_60, fontSize: "0.9rem", lineHeight: 1.6 }}>
+                                    <Typography
+                                        sx={{ color: TEXT_60, fontSize: "0.9rem", lineHeight: 1.6 }}
+                                    >
                                         {s.body}
                                     </Typography>
                                 </Box>
@@ -380,7 +428,11 @@ export default function Home() {
                             display: "grid",
                             columnGap: { xs: 4, md: 6 },
                             rowGap: { xs: 4.5, md: 6 },
-                            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+                            gridTemplateColumns: {
+                                xs: "1fr",
+                                sm: "repeat(2, 1fr)",
+                                md: "repeat(3, 1fr)",
+                            },
                         }}
                     >
                         {FEATURES.map((f) => (
@@ -400,10 +452,19 @@ export default function Home() {
                                 >
                                     <f.icon sx={{ fontSize: 22 }} />
                                 </Box>
-                                <Typography sx={{ fontWeight: 700, fontSize: "1.08rem", color: TEXT, mb: 0.8 }}>
+                                <Typography
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "1.08rem",
+                                        color: TEXT,
+                                        mb: 0.8,
+                                    }}
+                                >
                                     {f.title}
                                 </Typography>
-                                <Typography sx={{ color: TEXT_60, fontSize: "0.92rem", lineHeight: 1.7 }}>
+                                <Typography
+                                    sx={{ color: TEXT_60, fontSize: "0.92rem", lineHeight: 1.7 }}
+                                >
                                     {f.body}
                                 </Typography>
                             </Box>
@@ -416,10 +477,22 @@ export default function Home() {
             <Box sx={{ py: { xs: 5, md: 8 } }}>
                 <Container maxWidth="md">
                     <Stack alignItems="center" textAlign="center" spacing={3}>
-                        <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.88rem", fontWeight: 600, letterSpacing: "0.02em" }}>
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.5)",
+                                fontSize: "0.88rem",
+                                fontWeight: 600,
+                                letterSpacing: "0.02em",
+                            }}
+                        >
                             Built for every transactional moment
                         </Typography>
-                        <Stack direction="row" spacing={1.2} justifyContent="center" sx={{ flexWrap: "wrap", gap: 1.2 }}>
+                        <Stack
+                            direction="row"
+                            spacing={1.2}
+                            justifyContent="center"
+                            sx={{ flexWrap: "wrap", gap: 1.2 }}
+                        >
                             {USE_CASES.map((u) => (
                                 <Stack
                                     key={u.label}
@@ -435,7 +508,13 @@ export default function Home() {
                                     }}
                                 >
                                     <u.icon sx={{ fontSize: 17, color: ACCENT }} />
-                                    <Typography sx={{ color: "rgba(245,245,244,0.8)", fontSize: "0.85rem", fontWeight: 500 }}>
+                                    <Typography
+                                        sx={{
+                                            color: "rgba(245,245,244,0.8)",
+                                            fontSize: "0.85rem",
+                                            fontWeight: 500,
+                                        }}
+                                    >
                                         {u.label}
                                     </Typography>
                                 </Stack>
@@ -457,17 +536,43 @@ export default function Home() {
                         }}
                     >
                         <Box>
-                            <Typography sx={{ color: ACCENT, fontWeight: 700, fontSize: "0.78rem", letterSpacing: "0.14em", textTransform: "uppercase", mb: 1.5 }}>
+                            <Typography
+                                sx={{
+                                    color: ACCENT,
+                                    fontWeight: 700,
+                                    fontSize: "0.78rem",
+                                    letterSpacing: "0.14em",
+                                    textTransform: "uppercase",
+                                    mb: 1.5,
+                                }}
+                            >
                                 Integrate in minutes
                             </Typography>
-                            <Typography component="h2" sx={{ fontWeight: 800, fontSize: { xs: "1.8rem", md: "2.4rem" }, letterSpacing: "-0.02em", lineHeight: 1.1, color: TEXT, mb: 2 }}>
+                            <Typography
+                                component="h2"
+                                sx={{
+                                    fontWeight: 800,
+                                    fontSize: { xs: "1.8rem", md: "2.4rem" },
+                                    letterSpacing: "-0.02em",
+                                    lineHeight: 1.1,
+                                    color: TEXT,
+                                    mb: 2,
+                                }}
+                            >
                                 One endpoint. Any language.
                             </Typography>
-                            <Typography sx={{ color: TEXT_65, fontSize: "1.02rem", lineHeight: 1.75, mb: 2.5 }}>
-                                Each email config issues its own client credentials — shown
-                                once, stored hashed. Authenticate with a Bearer token, name a
-                                template and a recipient, pass your variables, and we render
-                                an email-safe message and relay it through your sender.
+                            <Typography
+                                sx={{
+                                    color: TEXT_65,
+                                    fontSize: "1.02rem",
+                                    lineHeight: 1.75,
+                                    mb: 2.5,
+                                }}
+                            >
+                                Each email config issues its own client credentials — shown once,
+                                stored hashed. Authenticate with a Bearer token, name a template and
+                                a recipient, pass your variables, and we render an email-safe
+                                message and relay it through your sender.
                             </Typography>
                             <Stack spacing={1.4}>
                                 {[
@@ -475,9 +580,19 @@ export default function Home() {
                                     "Idempotent sends — safe to retry",
                                     "Every request recorded in delivery logs",
                                 ].map((line) => (
-                                    <Stack key={line} direction="row" spacing={1.2} alignItems="center">
+                                    <Stack
+                                        key={line}
+                                        direction="row"
+                                        spacing={1.2}
+                                        alignItems="center"
+                                    >
                                         <CheckCircleIcon sx={{ fontSize: 18, color: "#86efac" }} />
-                                        <Typography sx={{ color: "rgba(245,245,244,0.78)", fontSize: "0.92rem" }}>
+                                        <Typography
+                                            sx={{
+                                                color: "rgba(245,245,244,0.78)",
+                                                fontSize: "0.92rem",
+                                            }}
+                                        >
                                             {line}
                                         </Typography>
                                     </Stack>
@@ -495,16 +610,26 @@ export default function Home() {
                     sx={{
                         textAlign: "center",
                         py: { xs: 5, md: 7 },
-                        background: "linear-gradient(160deg, rgba(155,123,247,0.12) 0%, rgba(124,92,255,0.05) 100%)",
+                        background:
+                            "linear-gradient(160deg, rgba(155,123,247,0.12) 0%, rgba(124,92,255,0.05) 100%)",
                         border: "1px solid rgba(155,123,247,0.25)",
                     }}
                 >
-                    <Typography sx={{ fontWeight: 800, fontSize: { xs: "1.6rem", md: "2.2rem" }, letterSpacing: "-0.02em", mb: 1.2 }}>
+                    <Typography
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: { xs: "1.6rem", md: "2.2rem" },
+                            letterSpacing: "-0.02em",
+                            mb: 1.2,
+                        }}
+                    >
                         Ship your first email today
                     </Typography>
-                    <Typography sx={{ color: TEXT_65, fontSize: "1rem", maxWidth: 480, mx: "auto", mb: 3 }}>
-                        Connect a sender, design a template, and trigger a send in minutes —
-                        no SMTP servers, no template engines, no queues.
+                    <Typography
+                        sx={{ color: TEXT_65, fontSize: "1rem", maxWidth: 480, mx: "auto", mb: 3 }}
+                    >
+                        Connect a sender, design a template, and trigger a send in minutes — no SMTP
+                        servers, no template engines, no queues.
                     </Typography>
                     <PrimaryCta authed={authed} signedOutLabel="Sign in with Elixpo" />
                 </GlassCard>

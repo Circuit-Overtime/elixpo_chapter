@@ -35,7 +35,11 @@ const ghostBtn = {
     borderRadius: "12px",
     background: "rgba(255,255,255,0.04)",
     border: "1px solid rgba(255,255,255,0.1)",
-    "&:hover": { color: "#fff", borderColor: "rgba(155,123,247,0.45)", background: "rgba(155,123,247,0.08)" },
+    "&:hover": {
+        color: "#fff",
+        borderColor: "rgba(155,123,247,0.45)",
+        background: "rgba(155,123,247,0.08)",
+    },
 };
 
 function LoginInner() {
@@ -49,7 +53,7 @@ function LoginInner() {
             .then((r) => (r.ok ? r.json() : null))
             .then((d: any) => {
                 if (cancelled) return;
-                if (d && d.authenticated) window.location.replace("/dashboard");
+                if (d?.authenticated) window.location.replace("/dashboard");
                 else setChecking(false);
             })
             .catch(() => {
@@ -62,7 +66,16 @@ function LoginInner() {
 
     if (checking) {
         return (
-            <Box sx={{ position: "relative", minHeight: "100vh", display: "grid", placeItems: "center", p: 2, color: "#f5f5f4" }}>
+            <Box
+                sx={{
+                    position: "relative",
+                    minHeight: "100vh",
+                    display: "grid",
+                    placeItems: "center",
+                    p: 2,
+                    color: "#f5f5f4",
+                }}
+            >
                 <CircularProgress sx={{ color: "#9b7bf7", position: "relative", zIndex: 1 }} />
             </Box>
         );
@@ -71,7 +84,16 @@ function LoginInner() {
     const errorText = error ? (ERROR_MESSAGES[error] ?? "Sign-in failed. Please try again.") : null;
 
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", display: "grid", placeItems: "center", p: 2, color: "#f5f5f4" }}>
+        <Box
+            sx={{
+                position: "relative",
+                minHeight: "100vh",
+                display: "grid",
+                placeItems: "center",
+                p: 2,
+                color: "#f5f5f4",
+            }}
+        >
             <Box
                 sx={{
                     position: "relative",
@@ -81,13 +103,28 @@ function LoginInner() {
                     p: { xs: 3.5, md: 4 },
                     borderRadius: "24px",
                     textAlign: "center",
-                    background: "linear-gradient(160deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 100%)",
+                    background:
+                        "linear-gradient(160deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 100%)",
                     backdropFilter: "blur(26px)",
                     border: "1px solid rgba(255,255,255,0.12)",
-                    boxShadow: "inset 0 1px 1px rgba(255,255,255,0.08), 0 30px 70px rgba(0,0,0,0.55)",
+                    boxShadow:
+                        "inset 0 1px 1px rgba(255,255,255,0.08), 0 30px 70px rgba(0,0,0,0.55)",
                 }}
             >
-                <Box component="img" src="/mark.png" alt="mail.elixpo" sx={{ height: 60, width: 60, mx: "auto", mb: 2, borderRadius: "16px", display: "block", filter: "drop-shadow(0 10px 24px rgba(124,92,255,0.35))" }} />
+                <Box
+                    component="img"
+                    src="/mark.png"
+                    alt="mail.elixpo"
+                    sx={{
+                        height: 60,
+                        width: 60,
+                        mx: "auto",
+                        mb: 2,
+                        borderRadius: "16px",
+                        display: "block",
+                        filter: "drop-shadow(0 10px 24px rgba(124,92,255,0.35))",
+                    }}
+                />
 
                 <Typography sx={{ fontWeight: 800, fontSize: "1.6rem", letterSpacing: "-0.01em" }}>
                     Sign in to Elixpo Mails
@@ -97,7 +134,18 @@ function LoginInner() {
                 </Typography>
 
                 {errorText && (
-                    <Box sx={{ mt: 2.5, px: 2, py: 1.2, borderRadius: "12px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", fontSize: "0.85rem" }}>
+                    <Box
+                        sx={{
+                            mt: 2.5,
+                            px: 2,
+                            py: 1.2,
+                            borderRadius: "12px",
+                            background: "rgba(239,68,68,0.1)",
+                            border: "1px solid rgba(239,68,68,0.3)",
+                            color: "#f87171",
+                            fontSize: "0.85rem",
+                        }}
+                    >
                         {errorText}
                     </Box>
                 )}
@@ -116,8 +164,11 @@ function LoginInner() {
                         py: 1.5,
                         borderRadius: "14px",
                         background: "linear-gradient(180deg, #a98cff 0%, #7c5cff 100%)",
-                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3), 0 12px 30px rgba(124,92,255,0.4)",
-                        "&:hover": { background: "linear-gradient(180deg, #b79dff 0%, #8a6dff 100%)" },
+                        boxShadow:
+                            "inset 0 1px 1px rgba(255,255,255,0.3), 0 12px 30px rgba(124,92,255,0.4)",
+                        "&:hover": {
+                            background: "linear-gradient(180deg, #b79dff 0%, #8a6dff 100%)",
+                        },
                     }}
                 >
                     Continue with Elixpo Accounts
@@ -140,16 +191,37 @@ function LoginInner() {
                             New here? What is Elixpo Accounts?
                         </Typography>
                     </Stack>
-                    <Typography sx={{ color: "rgba(245,245,244,0.62)", fontSize: "0.84rem", lineHeight: 1.6, mb: 1.5 }}>
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.62)",
+                            fontSize: "0.84rem",
+                            lineHeight: 1.6,
+                            mb: 1.5,
+                        }}
+                    >
                         Elixpo Mails doesn't have its own password. It uses{" "}
                         <strong style={{ color: "#f5f5f4" }}>Elixpo Accounts</strong> — the single,
-                        secure sign-on shared across the whole Elixpo ecosystem. One identity, everywhere.
+                        secure sign-on shared across the whole Elixpo ecosystem. One identity,
+                        everywhere.
                     </Typography>
                     <Stack spacing={1}>
                         {BENEFITS.map((b) => (
                             <Stack key={b} direction="row" spacing={1} alignItems="flex-start">
-                                <CheckCircleIcon sx={{ fontSize: 15, color: "#86efac", mt: "2px", flexShrink: 0 }} />
-                                <Typography sx={{ color: "rgba(245,245,244,0.7)", fontSize: "0.82rem", lineHeight: 1.5 }}>
+                                <CheckCircleIcon
+                                    sx={{
+                                        fontSize: 15,
+                                        color: "#86efac",
+                                        mt: "2px",
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <Typography
+                                    sx={{
+                                        color: "rgba(245,245,244,0.7)",
+                                        fontSize: "0.82rem",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
                                     {b}
                                 </Typography>
                             </Stack>
@@ -178,10 +250,20 @@ function LoginInner() {
                 </Box>
 
                 <Stack direction="row" spacing={1.2} sx={{ mt: 2.5 }}>
-                    <Button component={Link} href="/" startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />} sx={ghostBtn}>
+                    <Button
+                        component={Link}
+                        href="/"
+                        startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />}
+                        sx={ghostBtn}
+                    >
                         Back home
                     </Button>
-                    <Button component={Link} href="/docs" startIcon={<MenuBookIcon sx={{ fontSize: "1.05rem !important" }} />} sx={ghostBtn}>
+                    <Button
+                        component={Link}
+                        href="/docs"
+                        startIcon={<MenuBookIcon sx={{ fontSize: "1.05rem !important" }} />}
+                        sx={ghostBtn}
+                    >
                         Read the docs
                     </Button>
                 </Stack>

@@ -1,9 +1,9 @@
 export const runtime = "edge";
 
+import { requireDashboardSession } from "@/lib/dashboard-session";
 import { Box } from "@mui/material";
 import { PageHeader } from "../../components/dashboard-ui";
 import ProductsManager from "../../components/products-manager";
-import { requireDashboardSession } from "@/lib/dashboard-session";
 
 export default async function ProductsPage() {
     await requireDashboardSession();

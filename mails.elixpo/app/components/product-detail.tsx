@@ -24,9 +24,9 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
-    Link as MuiLink,
     Menu,
     MenuItem,
+    Link as MuiLink,
     Select,
     Snackbar,
     Stack,
@@ -39,6 +39,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, GHOST_BTN, PRIMARY_BTN } from "./dashboard-ui";
 import { BORDER, GlassCard, SURFACE } from "./glass-card";
+import { useRole } from "./role-provider";
 
 const ACCENT = "#9b7bf7";
 const TEXT = "#f5f5f4";
@@ -127,7 +128,16 @@ const menuProps = {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
     return (
-        <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "rgba(245,245,244,0.4)", mb: 0.7 }}>
+        <Typography
+            sx={{
+                fontSize: "0.72rem",
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                color: "rgba(245,245,244,0.4)",
+                mb: 0.7,
+            }}
+        >
             {children}
         </Typography>
     );
@@ -164,6 +174,7 @@ function buildSnippet(origin: string, key: string, vars: string[]): string {
 }
 
 export default function ProductDetail({ id }: { id: string }) {
+    const { canWrite } = useRole();
     const router = useRouter();
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
@@ -232,7 +243,9 @@ export default function ProductDetail({ id }: { id: string }) {
 
     async function rotateSecret() {
         try {
-            const d: any = await fetch(`/api/products/${id}/rotate-secret`, { method: "POST" }).then((r) => r.json());
+            const d: any = await fetch(`/api/products/${id}/rotate-secret`, {
+                method: "POST",
+            }).then((r) => r.json());
             if (d?.ok && d.secret) {
                 setRevealSecret(d.secret);
                 setProduct((p) => (p ? { ...p, has_secret: true } : p));
@@ -271,7 +284,11 @@ export default function ProductDetail({ id }: { id: string }) {
                     icon={InventoryIcon}
                     headline="Product not found"
                     subtext="This product doesn't exist or you don't have access to it."
-                    cta={<Button component={Link} href="/dashboard/products" sx={GHOST_BTN}>Back to products</Button>}
+                    cta={
+                        <Button component={Link} href="/dashboard/products" sx={GHOST_BTN}>
+                            Back to products
+                        </Button>
+                    }
                 />
             </Box>
         );
@@ -285,18 +302,37 @@ export default function ProductDetail({ id }: { id: string }) {
 
             {/* Commercial header */}
             <GlassCard sx={{ mb: 2.5 }}>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2.5} alignItems={{ xs: "flex-start", sm: "center" }} justifyContent="space-between">
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={2.5}
+                    alignItems={{ xs: "flex-start", sm: "center" }}
+                    justifyContent="space-between"
+                >
                     <Stack direction="row" spacing={2} alignItems="center" sx={{ minWidth: 0 }}>
                         <Avatar
                             src={product.logo_url || undefined}
                             variant="rounded"
-                            sx={{ width: 56, height: 56, bgcolor: "rgba(155,123,247,0.15)", color: ACCENT, fontWeight: 800, border: `1px solid ${BORDER}` }}
+                            sx={{
+                                width: 56,
+                                height: 56,
+                                bgcolor: "rgba(155,123,247,0.15)",
+                                color: ACCENT,
+                                fontWeight: 800,
+                                border: `1px solid ${BORDER}`,
+                            }}
                         >
                             {product.name.charAt(0).toUpperCase()}
                         </Avatar>
                         <Box sx={{ minWidth: 0 }}>
                             <Stack direction="row" spacing={1} alignItems="center">
-                                <Typography sx={{ fontWeight: 800, fontSize: "1.4rem", color: TEXT, letterSpacing: "-0.01em" }}>
+                                <Typography
+                                    sx={{
+                                        fontWeight: 800,
+                                        fontSize: "1.4rem",
+                                        color: TEXT,
+                                        letterSpacing: "-0.01em",
+                                    }}
+                                >
                                     {product.name}
                                 </Typography>
                                 <Chip
@@ -306,59 +342,132 @@ export default function ProductDetail({ id }: { id: string }) {
                                         height: 20,
                                         fontSize: "0.66rem",
                                         fontWeight: 700,
-                                        color: product.status === "active" ? "#86efac" : "rgba(245,245,244,0.6)",
-                                        bgcolor: product.status === "active" ? "rgba(52,211,153,0.12)" : "rgba(255,255,255,0.06)",
+                                        color:
+                                            product.status === "active"
+                                                ? "#86efac"
+                                                : "rgba(245,245,244,0.6)",
+                                        bgcolor:
+                                            product.status === "active"
+                                                ? "rgba(52,211,153,0.12)"
+                                                : "rgba(255,255,255,0.06)",
                                         border: `1px solid ${product.status === "active" ? "rgba(52,211,153,0.3)" : BORDER}`,
                                     }}
                                 />
                             </Stack>
                             {product.description && (
-                                <Typography sx={{ color: TEXT_55, fontSize: "0.9rem", mt: 0.5, maxWidth: 560 }}>
+                                <Typography
+                                    sx={{
+                                        color: TEXT_55,
+                                        fontSize: "0.9rem",
+                                        mt: 0.5,
+                                        maxWidth: 560,
+                                    }}
+                                >
                                     {product.description}
                                 </Typography>
                             )}
-                            <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: "wrap", gap: 1 }}>
+                            <Stack
+                                direction="row"
+                                spacing={2}
+                                sx={{ mt: 1, flexWrap: "wrap", gap: 1 }}
+                            >
                                 {product.homepage_url && (
-                                    <MuiLink href={product.homepage_url} target="_blank" rel="noopener noreferrer" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, color: ACCENT, fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+                                    <MuiLink
+                                        href={product.homepage_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        sx={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 0.5,
+                                            color: ACCENT,
+                                            fontSize: "0.82rem",
+                                            fontWeight: 600,
+                                            textDecoration: "none",
+                                            "&:hover": { textDecoration: "underline" },
+                                        }}
+                                    >
                                         <LanguageIcon sx={{ fontSize: 15 }} /> Homepage
                                     </MuiLink>
                                 )}
                                 {product.support_email && (
-                                    <MuiLink href={`mailto:${product.support_email}`} sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, color: TEXT_55, fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", "&:hover": { color: TEXT } }}>
-                                        <MailOutlineIcon sx={{ fontSize: 15 }} /> {product.support_email}
+                                    <MuiLink
+                                        href={`mailto:${product.support_email}`}
+                                        sx={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 0.5,
+                                            color: TEXT_55,
+                                            fontSize: "0.82rem",
+                                            fontWeight: 600,
+                                            textDecoration: "none",
+                                            "&:hover": { color: TEXT },
+                                        }}
+                                    >
+                                        <MailOutlineIcon sx={{ fontSize: 15 }} />{" "}
+                                        {product.support_email}
                                     </MuiLink>
                                 )}
                             </Stack>
                         </Box>
                     </Stack>
-                    <Button onClick={() => setEditOpen(true)} startIcon={<EditIcon sx={{ fontSize: "1.05rem !important" }} />} sx={{ ...GHOST_BTN, flexShrink: 0 }}>
-                        Edit details
-                    </Button>
+                    {canWrite && (
+                        <Button
+                            onClick={() => setEditOpen(true)}
+                            startIcon={<EditIcon sx={{ fontSize: "1.05rem !important" }} />}
+                            sx={{ ...GHOST_BTN, flexShrink: 0 }}
+                        >
+                            Edit details
+                        </Button>
+                    )}
                 </Stack>
             </GlassCard>
 
             {/* Credentials */}
             <GlassCard sx={{ mb: 2.5 }}>
-                <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT, mb: 0.4 }}>Credentials</Typography>
-                <Typography sx={{ color: TEXT_55, fontSize: "0.85rem", mb: 2 }}>
-                    Your service authenticates webhook calls with this product&rsquo;s shared secret.
+                <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT, mb: 0.4 }}>
+                    Credentials
                 </Typography>
-                <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" } }}>
+                <Typography sx={{ color: TEXT_55, fontSize: "0.85rem", mb: 2 }}>
+                    Your service authenticates webhook calls with this product&rsquo;s shared
+                    secret.
+                </Typography>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gap: 2,
+                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                    }}
+                >
                     <Box>
                         <FieldLabel>Client ID</FieldLabel>
-                        <CopyField value={product.client_id} onCopy={() => copy(product.client_id, "Client ID copied")} />
+                        <CopyField
+                            value={product.client_id}
+                            onCopy={() => copy(product.client_id, "Client ID copied")}
+                        />
                     </Box>
-                    <Box>
-                        <FieldLabel>Shared secret</FieldLabel>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <Button onClick={rotateSecret} startIcon={<AutorenewIcon sx={{ fontSize: "1rem !important" }} />} sx={{ ...GHOST_BTN, py: 0.7 }}>
-                                Rotate
-                            </Button>
-                        </Stack>
-                    </Box>
+                    {canWrite && (
+                        <Box>
+                            <FieldLabel>Shared secret</FieldLabel>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <Button
+                                    onClick={rotateSecret}
+                                    startIcon={
+                                        <AutorenewIcon sx={{ fontSize: "1rem !important" }} />
+                                    }
+                                    sx={{ ...GHOST_BTN, py: 0.7 }}
+                                >
+                                    Rotate
+                                </Button>
+                            </Stack>
+                        </Box>
+                    )}
                 </Box>
                 <Stack direction="row" spacing={3} sx={{ mt: 2 }}>
-                    <Meta label="Default sender" value={defaultSender ? defaultSender.email : "Tenant default"} />
+                    <Meta
+                        label="Default sender"
+                        value={defaultSender ? defaultSender.email : "Tenant default"}
+                    />
                     <Meta label="Created" value={fmtDate(product.created_at)} />
                     <Meta label="Updated" value={fmtDate(product.updated_at)} />
                 </Stack>
@@ -394,16 +503,31 @@ export default function ProductDetail({ id }: { id: string }) {
                 />
             )}
 
-            <SecretRevealDialog secret={revealSecret} onClose={() => setRevealSecret(null)} onCopy={() => revealSecret && copy(revealSecret, "Secret copied")} />
+            <SecretRevealDialog
+                secret={revealSecret}
+                onClose={() => setRevealSecret(null)}
+                onCopy={() => revealSecret && copy(revealSecret, "Secret copied")}
+            />
 
-            <Snackbar open={Boolean(toast)} autoHideDuration={2500} onClose={() => setToast(null)} message={toast || ""} anchorOrigin={{ vertical: "bottom", horizontal: "center" }} />
+            <Snackbar
+                open={Boolean(toast)}
+                autoHideDuration={2500}
+                onClose={() => setToast(null)}
+                message={toast || ""}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            />
         </Box>
     );
 }
 
 function BackLink() {
     return (
-        <Button component={Link} href="/dashboard/products" startIcon={<ArrowBackIcon sx={{ fontSize: "1.1rem !important" }} />} sx={{ textTransform: "none", color: TEXT_55, mb: 2, "&:hover": { color: TEXT } }}>
+        <Button
+            component={Link}
+            href="/dashboard/products"
+            startIcon={<ArrowBackIcon sx={{ fontSize: "1.1rem !important" }} />}
+            sx={{ textTransform: "none", color: TEXT_55, mb: 2, "&:hover": { color: TEXT } }}
+        >
             Products
         </Button>
     );
@@ -412,20 +536,57 @@ function BackLink() {
 function Meta({ label, value }: { label: string; value: string }) {
     return (
         <Box>
-            <Typography sx={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "rgba(245,245,244,0.4)" }}>{label}</Typography>
-            <Typography sx={{ fontSize: "0.85rem", color: "rgba(245,245,244,0.8)", mt: 0.3 }}>{value}</Typography>
+            <Typography
+                sx={{
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    color: "rgba(245,245,244,0.4)",
+                }}
+            >
+                {label}
+            </Typography>
+            <Typography sx={{ fontSize: "0.85rem", color: "rgba(245,245,244,0.8)", mt: 0.3 }}>
+                {value}
+            </Typography>
         </Box>
     );
 }
 
 function CopyField({ value, onCopy }: { value: string; onCopy: () => void }) {
     return (
-        <Stack direction="row" alignItems="center" sx={{ px: 1.4, py: 0.9, borderRadius: "10px", border: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.02)", gap: 1 }}>
-            <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.82rem", color: "rgba(245,245,244,0.85)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+        <Stack
+            direction="row"
+            alignItems="center"
+            sx={{
+                px: 1.4,
+                py: 0.9,
+                borderRadius: "10px",
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.02)",
+                gap: 1,
+            }}
+        >
+            <Typography
+                sx={{
+                    fontFamily: "var(--font-geist-mono)",
+                    fontSize: "0.82rem",
+                    color: "rgba(245,245,244,0.85)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    flex: 1,
+                }}
+            >
                 {value}
             </Typography>
             <Tooltip title="Copy" arrow>
-                <IconButton size="small" onClick={onCopy} sx={{ color: TEXT_55, "&:hover": { color: ACCENT } }}>
+                <IconButton
+                    size="small"
+                    onClick={onCopy}
+                    sx={{ color: TEXT_55, "&:hover": { color: ACCENT } }}
+                >
                     <ContentCopyIcon sx={{ fontSize: 16 }} />
                 </IconButton>
             </Tooltip>
@@ -458,12 +619,17 @@ function WebhooksSection({
     onCopy: (text: string, label?: string) => void;
     onToast: (m: string) => void;
 }) {
+    const { canWrite } = useRole();
     const [createOpen, setCreateOpen] = useState(false);
     const [menuFor, setMenuFor] = useState<{ el: HTMLElement; wh: Webhook } | null>(null);
     const [renaming, setRenaming] = useState<Webhook | null>(null);
 
     async function patch(wh: Webhook, body: Record<string, unknown>) {
-        await fetch(`/api/webhooks/${wh.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        await fetch(`/api/webhooks/${wh.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
         onChanged();
     }
     async function remove(wh: Webhook) {
@@ -474,24 +640,34 @@ function WebhooksSection({
 
     return (
         <GlassCard>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: webhooks.length ? 2 : 0.5 }}>
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mb: webhooks.length ? 2 : 0.5 }}
+            >
                 <Box>
                     <Stack direction="row" spacing={1} alignItems="center">
                         <WebhookIcon sx={{ fontSize: 19, color: ACCENT }} />
-                        <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT }}>Webhooks</Typography>
+                        <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT }}>
+                            Webhooks
+                        </Typography>
                     </Stack>
                     <Typography sx={{ color: TEXT_55, fontSize: "0.85rem", mt: 0.4 }}>
-                        Attach a template to this product — each webhook is a signed endpoint you trigger to send it.
+                        Attach a template to this product — each webhook is a signed endpoint you
+                        trigger to send it.
                     </Typography>
                 </Box>
-                <Button
-                    onClick={() => setCreateOpen(true)}
-                    disabled={templates.length === 0}
-                    startIcon={<AddIcon sx={{ fontSize: "1.1rem !important" }} />}
-                    sx={{ ...PRIMARY_BTN, flexShrink: 0 }}
-                >
-                    New webhook
-                </Button>
+                {canWrite && (
+                    <Button
+                        onClick={() => setCreateOpen(true)}
+                        disabled={templates.length === 0}
+                        startIcon={<AddIcon sx={{ fontSize: "1.1rem !important" }} />}
+                        sx={{ ...PRIMARY_BTN, flexShrink: 0 }}
+                    >
+                        New webhook
+                    </Button>
+                )}
             </Stack>
 
             {webhooks.length === 0 ? (
@@ -500,7 +676,16 @@ function WebhooksSection({
                         {templates.length === 0 ? (
                             <>
                                 Create a{" "}
-                                <Box component={Link} href="/dashboard/templates" sx={{ color: ACCENT, fontWeight: 600, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+                                <Box
+                                    component={Link}
+                                    href="/dashboard/templates"
+                                    sx={{
+                                        color: ACCENT,
+                                        fontWeight: 600,
+                                        textDecoration: "none",
+                                        "&:hover": { textDecoration: "underline" },
+                                    }}
+                                >
                                     template
                                 </Box>{" "}
                                 first, then add a webhook to attach it here.
@@ -513,49 +698,137 @@ function WebhooksSection({
             ) : (
                 <Stack spacing={1.5}>
                     {webhooks.map((wh) => {
-                        const url = origin ? `${origin}/v1/hooks/${wh.endpoint_key}` : "Loading endpoint…";
+                        const url = origin
+                            ? `${origin}/v1/hooks/${wh.endpoint_key}`
+                            : "Loading endpoint…";
                         const open = expanded === wh.id;
                         return (
-                            <Box key={wh.id} sx={{ p: 1.6, borderRadius: "12px", border: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.015)" }}>
-                                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                            <Box
+                                key={wh.id}
+                                sx={{
+                                    p: 1.6,
+                                    borderRadius: "12px",
+                                    border: `1px solid ${BORDER}`,
+                                    background: "rgba(255,255,255,0.015)",
+                                }}
+                            >
+                                <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    justifyContent="space-between"
+                                    spacing={1}
+                                >
                                     <Box sx={{ minWidth: 0 }}>
                                         <Stack direction="row" spacing={1} alignItems="center">
-                                            <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontWeight: 700, fontSize: "0.9rem", color: TEXT }}>
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: "var(--font-geist-mono)",
+                                                    fontWeight: 700,
+                                                    fontSize: "0.9rem",
+                                                    color: TEXT,
+                                                }}
+                                            >
                                                 {wh.name}
                                             </Typography>
                                             <Chip
-                                                label={wh.status === "active" ? "Active" : "Disabled"}
+                                                label={
+                                                    wh.status === "active" ? "Active" : "Disabled"
+                                                }
                                                 size="small"
-                                                sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700, color: wh.status === "active" ? "#86efac" : "rgba(245,245,244,0.6)", bgcolor: wh.status === "active" ? "rgba(52,211,153,0.12)" : "rgba(255,255,255,0.06)", border: `1px solid ${wh.status === "active" ? "rgba(52,211,153,0.3)" : BORDER}` }}
+                                                sx={{
+                                                    height: 18,
+                                                    fontSize: "0.62rem",
+                                                    fontWeight: 700,
+                                                    color:
+                                                        wh.status === "active"
+                                                            ? "#86efac"
+                                                            : "rgba(245,245,244,0.6)",
+                                                    bgcolor:
+                                                        wh.status === "active"
+                                                            ? "rgba(52,211,153,0.12)"
+                                                            : "rgba(255,255,255,0.06)",
+                                                    border: `1px solid ${wh.status === "active" ? "rgba(52,211,153,0.3)" : BORDER}`,
+                                                }}
                                             />
                                         </Stack>
-                                        <Typography sx={{ color: TEXT_55, fontSize: "0.8rem", mt: 0.3 }}>
+                                        <Typography
+                                            sx={{ color: TEXT_55, fontSize: "0.8rem", mt: 0.3 }}
+                                        >
                                             → template{" "}
                                             <Box
                                                 component={Link}
                                                 href={`/dashboard/templates/${wh.template_id}`}
-                                                sx={{ display: "inline", color: ACCENT, fontWeight: 700, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+                                                sx={{
+                                                    display: "inline",
+                                                    color: ACCENT,
+                                                    fontWeight: 700,
+                                                    textDecoration: "none",
+                                                    "&:hover": { textDecoration: "underline" },
+                                                }}
                                             >
                                                 {wh.template_name}
                                             </Box>
                                         </Typography>
                                     </Box>
                                     <Stack direction="row" spacing={0.5} alignItems="center">
-                                        <Button onClick={() => setExpanded(open ? null : wh.id)} sx={{ ...GHOST_BTN, py: 0.5, px: 1.4, fontSize: "0.78rem" }}>
+                                        <Button
+                                            onClick={() => setExpanded(open ? null : wh.id)}
+                                            sx={{
+                                                ...GHOST_BTN,
+                                                py: 0.5,
+                                                px: 1.4,
+                                                fontSize: "0.78rem",
+                                            }}
+                                        >
                                             {open ? "Hide" : "Usage"}
                                         </Button>
-                                        <IconButton size="small" onClick={(e) => setMenuFor({ el: e.currentTarget, wh })} sx={{ color: TEXT_55, "&:hover": { color: TEXT } }}>
-                                            <MoreVertIcon sx={{ fontSize: 18 }} />
-                                        </IconButton>
+                                        {canWrite && (
+                                            <IconButton
+                                                size="small"
+                                                onClick={(e) =>
+                                                    setMenuFor({ el: e.currentTarget, wh })
+                                                }
+                                                sx={{ color: TEXT_55, "&:hover": { color: TEXT } }}
+                                            >
+                                                <MoreVertIcon sx={{ fontSize: 18 }} />
+                                            </IconButton>
+                                        )}
                                     </Stack>
                                 </Stack>
 
-                                <Stack direction="row" alignItems="center" sx={{ mt: 1.2, px: 1.2, py: 0.7, borderRadius: "8px", border: `1px solid ${BORDER}`, background: "rgba(0,0,0,0.2)", gap: 1 }}>
-                                    <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.76rem", color: "rgba(245,245,244,0.8)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                                <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    sx={{
+                                        mt: 1.2,
+                                        px: 1.2,
+                                        py: 0.7,
+                                        borderRadius: "8px",
+                                        border: `1px solid ${BORDER}`,
+                                        background: "rgba(0,0,0,0.2)",
+                                        gap: 1,
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            fontFamily: "var(--font-geist-mono)",
+                                            fontSize: "0.76rem",
+                                            color: "rgba(245,245,244,0.8)",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                            flex: 1,
+                                        }}
+                                    >
                                         {url}
                                     </Typography>
                                     <Tooltip title="Copy URL" arrow>
-                                        <IconButton size="small" disabled={!origin} onClick={() => onCopy(url, "Endpoint copied")} sx={{ color: TEXT_55, "&:hover": { color: ACCENT } }}>
+                                        <IconButton
+                                            size="small"
+                                            disabled={!origin}
+                                            onClick={() => onCopy(url, "Endpoint copied")}
+                                            sx={{ color: TEXT_55, "&:hover": { color: ACCENT } }}
+                                        >
                                             <ContentCopyIcon sx={{ fontSize: 15 }} />
                                         </IconButton>
                                     </Tooltip>
@@ -563,21 +836,77 @@ function WebhooksSection({
 
                                 <Collapse in={open} unmountOnExit>
                                     <Box sx={{ mt: 1.2 }}>
-                                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.6 }}>
-                                            <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "rgba(245,245,244,0.4)" }}>
+                                        <Stack
+                                            direction="row"
+                                            justifyContent="space-between"
+                                            alignItems="center"
+                                            sx={{ mb: 0.6 }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    fontSize: "0.72rem",
+                                                    fontWeight: 700,
+                                                    letterSpacing: "0.04em",
+                                                    textTransform: "uppercase",
+                                                    color: "rgba(245,245,244,0.4)",
+                                                }}
+                                            >
                                                 Send with Node.js
                                             </Typography>
                                             <Tooltip title="Copy code sample" arrow>
-                                                <IconButton size="small" onClick={() => onCopy(buildSnippet(origin, wh.endpoint_key, templateVars.get(wh.template_id) || []), "Code copied")} sx={{ color: TEXT_55, "&:hover": { color: ACCENT } }}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() =>
+                                                        onCopy(
+                                                            buildSnippet(
+                                                                origin,
+                                                                wh.endpoint_key,
+                                                                templateVars.get(wh.template_id) ||
+                                                                    [],
+                                                            ),
+                                                            "Code copied",
+                                                        )
+                                                    }
+                                                    sx={{
+                                                        color: TEXT_55,
+                                                        "&:hover": { color: ACCENT },
+                                                    }}
+                                                >
                                                     <ContentCopyIcon sx={{ fontSize: 15 }} />
                                                 </IconButton>
                                             </Tooltip>
                                         </Stack>
-                                        <Box component="pre" sx={{ m: 0, p: 1.4, borderRadius: "8px", background: "#0b0d12", border: `1px solid ${BORDER}`, overflow: "auto", fontFamily: "var(--font-geist-mono)", fontSize: "0.74rem", color: "#cbd5e1", lineHeight: 1.6 }}>
-                                            {buildSnippet(origin, wh.endpoint_key, templateVars.get(wh.template_id) || [])}
+                                        <Box
+                                            component="pre"
+                                            sx={{
+                                                m: 0,
+                                                p: 1.4,
+                                                borderRadius: "8px",
+                                                background: "#0b0d12",
+                                                border: `1px solid ${BORDER}`,
+                                                overflow: "auto",
+                                                fontFamily: "var(--font-geist-mono)",
+                                                fontSize: "0.74rem",
+                                                color: "#cbd5e1",
+                                                lineHeight: 1.6,
+                                            }}
+                                        >
+                                            {buildSnippet(
+                                                origin,
+                                                wh.endpoint_key,
+                                                templateVars.get(wh.template_id) || [],
+                                            )}
                                         </Box>
-                                        <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.74rem", mt: 0.8 }}>
-                                            Sign every request with the product&rsquo;s shared secret. We reject signatures older than 5 minutes. The secret is shown once when you create or rotate it.
+                                        <Typography
+                                            sx={{
+                                                color: "rgba(245,245,244,0.4)",
+                                                fontSize: "0.74rem",
+                                                mt: 0.8,
+                                            }}
+                                        >
+                                            Sign every request with the product&rsquo;s shared
+                                            secret. We reject signatures older than 5 minutes. The
+                                            secret is shown once when you create or rotate it.
                                         </Typography>
                                     </Box>
                                 </Collapse>
@@ -587,7 +916,12 @@ function WebhooksSection({
                 </Stack>
             )}
 
-            <Menu open={Boolean(menuFor)} anchorEl={menuFor?.el} onClose={() => setMenuFor(null)} {...menuProps}>
+            <Menu
+                open={Boolean(menuFor)}
+                anchorEl={menuFor?.el}
+                onClose={() => setMenuFor(null)}
+                {...menuProps}
+            >
                 <MenuItem
                     onClick={() => {
                         if (menuFor) setRenaming(menuFor.wh);
@@ -598,7 +932,10 @@ function WebhooksSection({
                 </MenuItem>
                 <MenuItem
                     onClick={() => {
-                        if (menuFor) patch(menuFor.wh, { status: menuFor.wh.status === "active" ? "disabled" : "active" });
+                        if (menuFor)
+                            patch(menuFor.wh, {
+                                status: menuFor.wh.status === "active" ? "disabled" : "active",
+                            });
                         setMenuFor(null);
                     }}
                 >
@@ -651,14 +988,20 @@ interface Suppression {
     created_at: string;
 }
 
-function SuppressionsSection({ productId, onToast }: { productId: string; onToast: (m: string) => void }) {
+function SuppressionsSection({
+    productId,
+    onToast,
+}: { productId: string; onToast: (m: string) => void }) {
+    const { canWrite } = useRole();
     const [items, setItems] = useState<Suppression[] | null>(null);
     const [email, setEmail] = useState("");
     const [busy, setBusy] = useState(false);
 
     const load = useCallback(async () => {
         try {
-            const d: any = await fetch(`/api/products/${productId}/suppressions`).then((r) => r.json());
+            const d: any = await fetch(`/api/products/${productId}/suppressions`).then((r) =>
+                r.json(),
+            );
             setItems(d?.ok ? (d.suppressions as Suppression[]) : []);
         } catch {
             setItems([]);
@@ -689,7 +1032,9 @@ function SuppressionsSection({ productId, onToast }: { productId: string; onToas
         }
     }
     async function remove(em: string) {
-        await fetch(`/api/products/${productId}/suppressions?email=${encodeURIComponent(em)}`, { method: "DELETE" });
+        await fetch(`/api/products/${productId}/suppressions?email=${encodeURIComponent(em)}`, {
+            method: "DELETE",
+        });
         load();
         onToast("Re-subscribed");
     }
@@ -699,53 +1044,104 @@ function SuppressionsSection({ productId, onToast }: { productId: string; onToas
             <Stack direction="row" spacing={1} alignItems="center">
                 <UnsubscribeIcon sx={{ fontSize: 19, color: ACCENT }} />
                 <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT }}>
-                    Suppressions{items && items.length ? ` (${items.length})` : ""}
+                    Suppressions{items?.length ? ` (${items.length})` : ""}
                 </Typography>
             </Stack>
             <Typography sx={{ color: TEXT_55, fontSize: "0.85rem", mt: 0.4, mb: 1.8 }}>
-                Unsubscribed (or manually blocked) recipients — skipped on every non-transactional send.
+                Unsubscribed (or manually blocked) recipients — skipped on every non-transactional
+                send.
             </Typography>
 
-            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                <TextField
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && add()}
-                    placeholder="name@example.com"
-                    size="small"
-                    sx={{ ...darkField, flex: 1, maxWidth: 360 }}
-                />
-                <Button onClick={add} disabled={!email.trim() || busy} sx={{ ...GHOST_BTN, py: 0.7 }}>
-                    Suppress
-                </Button>
-            </Stack>
+            {canWrite && (
+                <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                    <TextField
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && add()}
+                        placeholder="name@example.com"
+                        size="small"
+                        sx={{ ...darkField, flex: 1, maxWidth: 360 }}
+                    />
+                    <Button
+                        onClick={add}
+                        disabled={!email.trim() || busy}
+                        sx={{ ...GHOST_BTN, py: 0.7 }}
+                    >
+                        Suppress
+                    </Button>
+                </Stack>
+            )}
 
             {items === null ? (
                 <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
                     <CircularProgress size={20} sx={{ color: ACCENT }} />
                 </Box>
             ) : items.length === 0 ? (
-                <Typography sx={{ color: TEXT_55, fontSize: "0.88rem" }}>No suppressions yet.</Typography>
+                <Typography sx={{ color: TEXT_55, fontSize: "0.88rem" }}>
+                    No suppressions yet.
+                </Typography>
             ) : (
                 <Stack divider={<Box sx={{ borderBottom: `1px solid ${BORDER}` }} />}>
                     {items.map((s) => (
-                        <Stack key={s.id} direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ py: 1 }}>
-                            <Stack direction="row" alignItems="center" spacing={1.2} sx={{ minWidth: 0 }}>
-                                <Typography sx={{ color: TEXT, fontSize: "0.88rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <Stack
+                            key={s.id}
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            spacing={1}
+                            sx={{ py: 1 }}
+                        >
+                            <Stack
+                                direction="row"
+                                alignItems="center"
+                                spacing={1.2}
+                                sx={{ minWidth: 0 }}
+                            >
+                                <Typography
+                                    sx={{
+                                        color: TEXT,
+                                        fontSize: "0.88rem",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
                                     {s.email}
                                 </Typography>
                                 <Chip
                                     label={s.reason || "unsubscribe"}
                                     size="small"
-                                    sx={{ height: 18, fontSize: "0.62rem", color: TEXT_55, bgcolor: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}` }}
+                                    sx={{
+                                        height: 18,
+                                        fontSize: "0.62rem",
+                                        color: TEXT_55,
+                                        bgcolor: "rgba(255,255,255,0.05)",
+                                        border: `1px solid ${BORDER}`,
+                                    }}
                                 />
-                                <Typography sx={{ color: "rgba(245,245,244,0.35)", fontSize: "0.76rem", display: { xs: "none", sm: "block" } }}>
+                                <Typography
+                                    sx={{
+                                        color: "rgba(245,245,244,0.35)",
+                                        fontSize: "0.76rem",
+                                        display: { xs: "none", sm: "block" },
+                                    }}
+                                >
                                     {fmtDate(s.created_at)}
                                 </Typography>
                             </Stack>
-                            <Button onClick={() => remove(s.email)} sx={{ textTransform: "none", fontSize: "0.8rem", color: ACCENT, "&:hover": { background: "rgba(155,123,247,0.08)" } }}>
-                                Re-subscribe
-                            </Button>
+                            {canWrite && (
+                                <Button
+                                    onClick={() => remove(s.email)}
+                                    sx={{
+                                        textTransform: "none",
+                                        fontSize: "0.8rem",
+                                        color: ACCENT,
+                                        "&:hover": { background: "rgba(155,123,247,0.08)" },
+                                    }}
+                                >
+                                    Re-subscribe
+                                </Button>
+                            )}
                         </Stack>
                     ))}
                 </Stack>
@@ -757,7 +1153,14 @@ function SuppressionsSection({ productId, onToast }: { productId: string; onToas
 // ── Dialogs ──────────────────────────────────────────────────────────────────
 
 const dialogPaper = {
-    sx: { background: SURFACE, border: `1px solid ${BORDER}`, backgroundImage: "none", borderRadius: "16px", width: "100%", maxWidth: 460 },
+    sx: {
+        background: SURFACE,
+        border: `1px solid ${BORDER}`,
+        backgroundImage: "none",
+        borderRadius: "16px",
+        width: "100%",
+        maxWidth: 460,
+    },
 } as const;
 
 /** Upload a product logo to Cloudinary (optimized) and return its URL. */
@@ -775,7 +1178,9 @@ function LogoUploader({ value, onChange }: { value: string; onChange: (v: string
         try {
             const form = new FormData();
             form.append("file", file);
-            const d: any = await fetch("/api/uploads/image", { method: "POST", body: form }).then((r) => r.json());
+            const d: any = await fetch("/api/uploads/image", { method: "POST", body: form }).then(
+                (r) => r.json(),
+            );
             if (d?.url) onChange(d.url as string);
             else setErr(d?.message || "Upload failed");
         } catch {
@@ -787,20 +1192,48 @@ function LogoUploader({ value, onChange }: { value: string; onChange: (v: string
 
     return (
         <Stack direction="row" spacing={1.5} alignItems="center">
-            <Avatar src={value || undefined} variant="rounded" sx={{ width: 48, height: 48, bgcolor: "rgba(155,123,247,0.15)", color: ACCENT, border: `1px solid ${BORDER}` }}>
+            <Avatar
+                src={value || undefined}
+                variant="rounded"
+                sx={{
+                    width: 48,
+                    height: 48,
+                    bgcolor: "rgba(155,123,247,0.15)",
+                    color: ACCENT,
+                    border: `1px solid ${BORDER}`,
+                }}
+            >
                 {!value && "?"}
             </Avatar>
-            <Button onClick={() => fileRef.current?.click()} disabled={uploading} sx={{ ...GHOST_BTN, py: 0.7 }}>
+            <Button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                sx={{ ...GHOST_BTN, py: 0.7 }}
+            >
                 {uploading ? <CircularProgress size={15} sx={{ color: ACCENT, mr: 1 }} /> : null}
                 {uploading ? "Uploading…" : value ? "Replace" : "Upload logo"}
             </Button>
             {value && (
-                <Button onClick={() => onChange("")} sx={{ textTransform: "none", color: "#f87171", fontSize: "0.84rem", "&:hover": { background: "rgba(248,113,113,0.08)" } }}>
+                <Button
+                    onClick={() => onChange("")}
+                    sx={{
+                        textTransform: "none",
+                        color: "#f87171",
+                        fontSize: "0.84rem",
+                        "&:hover": { background: "rgba(248,113,113,0.08)" },
+                    }}
+                >
                     Remove
                 </Button>
             )}
             {err && <Typography sx={{ color: "#fca5a5", fontSize: "0.78rem" }}>{err}</Typography>}
-            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onChange={pick} />
+            <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                hidden
+                onChange={pick}
+            />
         </Stack>
     );
 }
@@ -837,7 +1270,18 @@ function EditDialog({
             const d: any = await fetch(`/api/products/${product.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, description, homepageUrl, supportEmail, logoUrl, address, phone, footerNote, defaultSenderId: defaultSenderId || null, status }),
+                body: JSON.stringify({
+                    name,
+                    description,
+                    homepageUrl,
+                    supportEmail,
+                    logoUrl,
+                    address,
+                    phone,
+                    footerNote,
+                    defaultSenderId: defaultSenderId || null,
+                    status,
+                }),
             }).then((r) => r.json());
             if (d?.ok && d.product) onSaved(d.product as Product);
         } finally {
@@ -852,79 +1296,207 @@ function EditDialog({
                 <Stack spacing={2} sx={{ mt: 0.5 }}>
                     <Box>
                         <FieldLabel>Name</FieldLabel>
-                        <TextField value={name} onChange={(e) => setName(e.target.value)} fullWidth size="small" sx={darkField} />
+                        <TextField
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            fullWidth
+                            size="small"
+                            sx={darkField}
+                        />
                     </Box>
                     <Box>
                         <FieldLabel>Description</FieldLabel>
-                        <TextField value={description} onChange={(e) => setDescription(e.target.value)} fullWidth size="small" multiline minRows={2} maxRows={4} sx={darkField} placeholder="What this product is — shown on its page." />
+                        <TextField
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            fullWidth
+                            size="small"
+                            multiline
+                            minRows={2}
+                            maxRows={4}
+                            sx={darkField}
+                            placeholder="What this product is — shown on its page."
+                        />
                     </Box>
                     <Box>
                         <FieldLabel>Homepage URL</FieldLabel>
-                        <TextField value={homepageUrl} onChange={(e) => setHomepageUrl(e.target.value)} fullWidth size="small" sx={darkField} placeholder="https://yourproduct.com" />
+                        <TextField
+                            value={homepageUrl}
+                            onChange={(e) => setHomepageUrl(e.target.value)}
+                            fullWidth
+                            size="small"
+                            sx={darkField}
+                            placeholder="https://yourproduct.com"
+                        />
                     </Box>
                     <Box>
                         <FieldLabel>Support email</FieldLabel>
-                        <TextField value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} fullWidth size="small" sx={darkField} placeholder="support@yourproduct.com" />
+                        <TextField
+                            value={supportEmail}
+                            onChange={(e) => setSupportEmail(e.target.value)}
+                            fullWidth
+                            size="small"
+                            sx={darkField}
+                            placeholder="support@yourproduct.com"
+                        />
                     </Box>
                     <Box>
                         <FieldLabel>Logo</FieldLabel>
                         <LogoUploader value={logoUrl} onChange={setLogoUrl} />
-                        <TextField value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} fullWidth size="small" sx={{ ...darkField, mt: 1 }} placeholder="…or paste an image URL" />
+                        <TextField
+                            value={logoUrl}
+                            onChange={(e) => setLogoUrl(e.target.value)}
+                            fullWidth
+                            size="small"
+                            sx={{ ...darkField, mt: 1 }}
+                            placeholder="…or paste an image URL"
+                        />
                     </Box>
 
                     <Box sx={{ pt: 0.5, mt: 0.5, borderTop: `1px solid ${BORDER}` }}>
-                        <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, color: TEXT, mb: 0.3 }}>Email footer</Typography>
+                        <Typography
+                            sx={{ fontSize: "0.8rem", fontWeight: 700, color: TEXT, mb: 0.3 }}
+                        >
+                            Email footer
+                        </Typography>
                         <Typography sx={{ color: TEXT_55, fontSize: "0.78rem", mb: 1.5 }}>
-                            Appended to every email this product sends (logo above + the details below).
+                            Appended to every email this product sends (logo above + the details
+                            below).
                         </Typography>
                     </Box>
                     <Box>
                         <FieldLabel>Address</FieldLabel>
-                        <TextField value={address} onChange={(e) => setAddress(e.target.value)} fullWidth size="small" multiline minRows={2} maxRows={3} sx={darkField} placeholder="123 Main St, City, Country (required for CAN-SPAM)" />
+                        <TextField
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            fullWidth
+                            size="small"
+                            multiline
+                            minRows={2}
+                            maxRows={3}
+                            sx={darkField}
+                            placeholder="123 Main St, City, Country (required for CAN-SPAM)"
+                        />
                     </Box>
                     <Box>
                         <FieldLabel>Phone</FieldLabel>
-                        <TextField value={phone} onChange={(e) => setPhone(e.target.value)} fullWidth size="small" sx={darkField} placeholder="+1 555 123 4567" />
+                        <TextField
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            fullWidth
+                            size="small"
+                            sx={darkField}
+                            placeholder="+1 555 123 4567"
+                        />
                     </Box>
                     <Box>
                         <FieldLabel>Quote / tagline</FieldLabel>
-                        <TextField value={footerNote} onChange={(e) => setFooterNote(e.target.value)} fullWidth size="small" sx={darkField} placeholder="Making email simple." />
+                        <TextField
+                            value={footerNote}
+                            onChange={(e) => setFooterNote(e.target.value)}
+                            fullWidth
+                            size="small"
+                            sx={darkField}
+                            placeholder="Making email simple."
+                        />
                     </Box>
 
                     <Box>
                         <FieldLabel>Default sender</FieldLabel>
-                        <Select value={defaultSenderId} onChange={(e) => setDefaultSenderId(e.target.value)} fullWidth size="small" displayEmpty renderValue={(v) => (v ? senders.find((s) => s.id === v)?.email ?? "Unknown" : "Tenant default")} sx={selectSx} MenuProps={menuProps}>
+                        <Select
+                            value={defaultSenderId}
+                            onChange={(e) => setDefaultSenderId(e.target.value)}
+                            fullWidth
+                            size="small"
+                            displayEmpty
+                            renderValue={(v) =>
+                                v
+                                    ? (senders.find((s) => s.id === v)?.email ?? "Unknown")
+                                    : "Tenant default"
+                            }
+                            sx={selectSx}
+                            MenuProps={menuProps}
+                        >
                             <MenuItem value="">Tenant default</MenuItem>
                             {senders.map((s) => (
-                                <MenuItem key={s.id} value={s.id}>{s.email}</MenuItem>
+                                <MenuItem key={s.id} value={s.id}>
+                                    {s.email}
+                                </MenuItem>
                             ))}
                         </Select>
                     </Box>
                     <Box>
                         <FieldLabel>Status</FieldLabel>
-                        <Select value={status} onChange={(e) => setStatus(e.target.value)} fullWidth size="small" sx={selectSx} MenuProps={menuProps}>
+                        <Select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            fullWidth
+                            size="small"
+                            sx={selectSx}
+                            MenuProps={menuProps}
+                        >
                             <MenuItem value="active">Active</MenuItem>
                             <MenuItem value="disabled">Disabled</MenuItem>
                         </Select>
                     </Box>
 
                     {confirmDelete ? (
-                        <Box sx={{ p: 1.4, borderRadius: "10px", border: "1px solid rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.06)" }}>
-                            <Typography sx={{ color: "#fca5a5", fontSize: "0.82rem", mb: 1 }}>Delete this product? Its webhooks are removed. This can&rsquo;t be undone.</Typography>
+                        <Box
+                            sx={{
+                                p: 1.4,
+                                borderRadius: "10px",
+                                border: "1px solid rgba(248,113,113,0.3)",
+                                background: "rgba(248,113,113,0.06)",
+                            }}
+                        >
+                            <Typography sx={{ color: "#fca5a5", fontSize: "0.82rem", mb: 1 }}>
+                                Delete this product? Its webhooks are removed. This can&rsquo;t be
+                                undone.
+                            </Typography>
                             <Stack direction="row" spacing={1}>
-                                <Button onClick={onDelete} sx={{ textTransform: "none", fontWeight: 700, color: "#fff", background: "#dc2626", borderRadius: "9px", px: 2, "&:hover": { background: "#b91c1c" } }}>Delete</Button>
-                                <Button onClick={() => setConfirmDelete(false)} sx={{ ...GHOST_BTN, py: 0.6 }}>Cancel</Button>
+                                <Button
+                                    onClick={onDelete}
+                                    sx={{
+                                        textTransform: "none",
+                                        fontWeight: 700,
+                                        color: "#fff",
+                                        background: "#dc2626",
+                                        borderRadius: "9px",
+                                        px: 2,
+                                        "&:hover": { background: "#b91c1c" },
+                                    }}
+                                >
+                                    Delete
+                                </Button>
+                                <Button
+                                    onClick={() => setConfirmDelete(false)}
+                                    sx={{ ...GHOST_BTN, py: 0.6 }}
+                                >
+                                    Cancel
+                                </Button>
                             </Stack>
                         </Box>
                     ) : (
-                        <Button onClick={() => setConfirmDelete(true)} startIcon={<DeleteOutlineIcon sx={{ fontSize: "1rem !important" }} />} sx={{ textTransform: "none", color: "#f87171", alignSelf: "flex-start", fontSize: "0.84rem", "&:hover": { background: "rgba(248,113,113,0.08)" } }}>
+                        <Button
+                            onClick={() => setConfirmDelete(true)}
+                            startIcon={<DeleteOutlineIcon sx={{ fontSize: "1rem !important" }} />}
+                            sx={{
+                                textTransform: "none",
+                                color: "#f87171",
+                                alignSelf: "flex-start",
+                                fontSize: "0.84rem",
+                                "&:hover": { background: "rgba(248,113,113,0.08)" },
+                            }}
+                        >
                             Delete product
                         </Button>
                     )}
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} sx={{ ...GHOST_BTN, py: 0.7 }}>Cancel</Button>
+                <Button onClick={onClose} sx={{ ...GHOST_BTN, py: 0.7 }}>
+                    Cancel
+                </Button>
                 <Button onClick={save} disabled={saving || !name.trim()} sx={PRIMARY_BTN}>
                     {saving ? "Saving…" : "Save"}
                 </Button>
@@ -967,7 +1539,9 @@ function CreateWebhookDialog({
 
     const q = query.trim().toLowerCase();
     const filtered = q
-        ? templates.filter((t) => t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q))
+        ? templates.filter(
+              (t) => t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q),
+          )
         : templates;
 
     async function create() {
@@ -1003,10 +1577,26 @@ function CreateWebhookDialog({
                             size="small"
                             sx={{ ...darkField, mb: 1 }}
                         />
-                        <Box sx={{ maxHeight: 230, overflowY: "auto", borderRadius: "10px", border: `1px solid ${BORDER}` }}>
+                        <Box
+                            sx={{
+                                maxHeight: 230,
+                                overflowY: "auto",
+                                borderRadius: "10px",
+                                border: `1px solid ${BORDER}`,
+                            }}
+                        >
                             {filtered.length === 0 ? (
-                                <Typography sx={{ color: TEXT_55, fontSize: "0.85rem", p: 1.6, textAlign: "center" }}>
-                                    {templates.length === 0 ? "No templates yet." : "No templates match."}
+                                <Typography
+                                    sx={{
+                                        color: TEXT_55,
+                                        fontSize: "0.85rem",
+                                        p: 1.6,
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    {templates.length === 0
+                                        ? "No templates yet."
+                                        : "No templates match."}
                                 </Typography>
                             ) : (
                                 filtered.map((t) => {
@@ -1025,23 +1615,53 @@ function CreateWebhookDialog({
                                                 py: 1,
                                                 cursor: "pointer",
                                                 borderBottom: `1px solid ${BORDER}`,
-                                                background: active ? "rgba(155,123,247,0.14)" : "transparent",
-                                                "&:hover": { background: active ? "rgba(155,123,247,0.16)" : "rgba(255,255,255,0.03)" },
+                                                background: active
+                                                    ? "rgba(155,123,247,0.14)"
+                                                    : "transparent",
+                                                "&:hover": {
+                                                    background: active
+                                                        ? "rgba(155,123,247,0.16)"
+                                                        : "rgba(255,255,255,0.03)",
+                                                },
                                                 "&:last-of-type": { borderBottom: "none" },
                                             }}
                                         >
                                             <Box sx={{ minWidth: 0 }}>
-                                                <Typography sx={{ color: TEXT, fontSize: "0.88rem", fontWeight: active ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                <Typography
+                                                    sx={{
+                                                        color: TEXT,
+                                                        fontSize: "0.88rem",
+                                                        fontWeight: active ? 700 : 500,
+                                                        overflow: "hidden",
+                                                        textOverflow: "ellipsis",
+                                                        whiteSpace: "nowrap",
+                                                    }}
+                                                >
                                                     {t.name}
                                                 </Typography>
-                                                <Typography sx={{ color: TEXT_55, fontSize: "0.74rem", fontFamily: "var(--font-geist-mono)" }}>
+                                                <Typography
+                                                    sx={{
+                                                        color: TEXT_55,
+                                                        fontSize: "0.74rem",
+                                                        fontFamily: "var(--font-geist-mono)",
+                                                    }}
+                                                >
                                                     {t.slug}
                                                 </Typography>
                                             </Box>
                                             <Chip
                                                 label={`${n} webhook${n === 1 ? "" : "s"}`}
                                                 size="small"
-                                                sx={{ flexShrink: 0, height: 20, fontSize: "0.66rem", color: n ? "#c4b5fd" : TEXT_55, bgcolor: n ? "rgba(155,123,247,0.12)" : "rgba(255,255,255,0.05)", border: `1px solid ${n ? "rgba(155,123,247,0.3)" : BORDER}` }}
+                                                sx={{
+                                                    flexShrink: 0,
+                                                    height: 20,
+                                                    fontSize: "0.66rem",
+                                                    color: n ? "#c4b5fd" : TEXT_55,
+                                                    bgcolor: n
+                                                        ? "rgba(155,123,247,0.12)"
+                                                        : "rgba(255,255,255,0.05)",
+                                                    border: `1px solid ${n ? "rgba(155,123,247,0.3)" : BORDER}`,
+                                                }}
                                             />
                                         </Box>
                                     );
@@ -1051,13 +1671,27 @@ function CreateWebhookDialog({
                     </Box>
                     <Box>
                         <FieldLabel>Event name (required)</FieldLabel>
-                        <TextField value={name} onChange={(e) => setName(e.target.value)} fullWidth size="small" sx={darkField} placeholder="order.paid" onKeyDown={(e) => e.key === "Enter" && create()} />
+                        <TextField
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            fullWidth
+                            size="small"
+                            sx={darkField}
+                            placeholder="order.paid"
+                            onKeyDown={(e) => e.key === "Enter" && create()}
+                        />
                     </Box>
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} sx={{ ...GHOST_BTN, py: 0.7 }}>Cancel</Button>
-                <Button onClick={create} disabled={busy || !templateId || !name.trim()} sx={PRIMARY_BTN}>
+                <Button onClick={onClose} sx={{ ...GHOST_BTN, py: 0.7 }}>
+                    Cancel
+                </Button>
+                <Button
+                    onClick={create}
+                    disabled={busy || !templateId || !name.trim()}
+                    sx={PRIMARY_BTN}
+                >
                     {busy ? "Creating…" : "Create"}
                 </Button>
             </DialogActions>
@@ -1065,43 +1699,95 @@ function CreateWebhookDialog({
     );
 }
 
-function RenameDialog({ initial, onClose, onSave }: { initial: string; onClose: () => void; onSave: (name: string) => void }) {
+function RenameDialog({
+    initial,
+    onClose,
+    onSave,
+}: { initial: string; onClose: () => void; onSave: (name: string) => void }) {
     const [name, setName] = useState(initial);
     return (
         <Dialog open onClose={onClose} slotProps={{ paper: dialogPaper }}>
             <DialogTitle sx={{ color: TEXT, fontWeight: 800 }}>Rename webhook</DialogTitle>
             <DialogContent>
-                <TextField autoFocus value={name} onChange={(e) => setName(e.target.value)} fullWidth size="small" sx={{ ...darkField, mt: 0.5 }} onKeyDown={(e) => e.key === "Enter" && name.trim() && onSave(name.trim())} />
+                <TextField
+                    autoFocus
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    fullWidth
+                    size="small"
+                    sx={{ ...darkField, mt: 0.5 }}
+                    onKeyDown={(e) => e.key === "Enter" && name.trim() && onSave(name.trim())}
+                />
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} sx={{ ...GHOST_BTN, py: 0.7 }}>Cancel</Button>
-                <Button onClick={() => name.trim() && onSave(name.trim())} disabled={!name.trim()} sx={PRIMARY_BTN}>Save</Button>
+                <Button onClick={onClose} sx={{ ...GHOST_BTN, py: 0.7 }}>
+                    Cancel
+                </Button>
+                <Button
+                    onClick={() => name.trim() && onSave(name.trim())}
+                    disabled={!name.trim()}
+                    sx={PRIMARY_BTN}
+                >
+                    Save
+                </Button>
             </DialogActions>
         </Dialog>
     );
 }
 
-function SecretRevealDialog({ secret, onClose, onCopy }: { secret: string | null; onClose: () => void; onCopy: () => void }) {
+function SecretRevealDialog({
+    secret,
+    onClose,
+    onCopy,
+}: { secret: string | null; onClose: () => void; onCopy: () => void }) {
     return (
         <Dialog open={Boolean(secret)} onClose={onClose} slotProps={{ paper: dialogPaper }}>
             <DialogTitle sx={{ color: TEXT, fontWeight: 800 }}>New shared secret</DialogTitle>
             <DialogContent>
                 <Typography sx={{ color: "#fca5a5", fontSize: "0.84rem", mb: 1.5 }}>
-                    Copy it now — it won&rsquo;t be shown again. The previous secret stays valid for a short grace window.
+                    Copy it now — it won&rsquo;t be shown again. The previous secret stays valid for
+                    a short grace window.
                 </Typography>
-                <Stack direction="row" alignItems="center" sx={{ px: 1.4, py: 1, borderRadius: "10px", border: `1px solid ${BORDER}`, background: "rgba(0,0,0,0.25)", gap: 1 }}>
-                    <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.82rem", color: "#86efac", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    sx={{
+                        px: 1.4,
+                        py: 1,
+                        borderRadius: "10px",
+                        border: `1px solid ${BORDER}`,
+                        background: "rgba(0,0,0,0.25)",
+                        gap: 1,
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            fontFamily: "var(--font-geist-mono)",
+                            fontSize: "0.82rem",
+                            color: "#86efac",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            flex: 1,
+                        }}
+                    >
                         {secret}
                     </Typography>
                     <Tooltip title="Copy" arrow>
-                        <IconButton size="small" onClick={onCopy} sx={{ color: TEXT_55, "&:hover": { color: ACCENT } }}>
+                        <IconButton
+                            size="small"
+                            onClick={onCopy}
+                            sx={{ color: TEXT_55, "&:hover": { color: ACCENT } }}
+                        >
                             <ContentCopyIcon sx={{ fontSize: 16 }} />
                         </IconButton>
                     </Tooltip>
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                <Button onClick={onClose} sx={PRIMARY_BTN}>Done</Button>
+                <Button onClick={onClose} sx={PRIMARY_BTN}>
+                    Done
+                </Button>
             </DialogActions>
         </Dialog>
     );
@@ -1109,7 +1795,11 @@ function SecretRevealDialog({ secret, onClose, onCopy }: { secret: string | null
 
 function fmtDate(s: string): string {
     try {
-        return new Date(s.replace(" ", "T") + "Z").toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+        return new Date(`${s.replace(" ", "T")}Z`).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+        });
     } catch {
         return s;
     }

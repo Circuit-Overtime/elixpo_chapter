@@ -1,9 +1,10 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
-import { getSession } from "@/lib/session";
 import { deleteSender, getSender, toPublic, updateSender } from "@/lib/senders";
+import { getSession } from "@/lib/session";
+import { requireWriteRole } from "@/lib/workspace-guard";
+import { type NextRequest, NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -23,6 +24,9 @@ export async function GET(request: NextRequest, { params }: Ctx) {
 export async function PATCH(request: NextRequest, { params }: Ctx) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const denied = await requireWriteRole(session);
+    if (denied) return denied;
     const { id } = await params;
 
     let body: any;
@@ -47,7 +51,10 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
         smtpPort: port,
         smtpSecure: typeof body?.smtpSecure === "string" ? body.smtpSecure : undefined,
         username: typeof body?.username === "string" ? body.username : undefined,
-        appPassword: typeof body?.appPassword === "string" && body.appPassword ? body.appPassword : undefined,
+        appPassword:
+            typeof body?.appPassword === "string" && body.appPassword
+                ? body.appPassword
+                : undefined,
         status: body?.status === "active" || body?.status === "disabled" ? body.status : undefined,
     });
     return NextResponse.json({ ok: true, sender: row ? toPublic(row) : null });
@@ -57,6 +64,9 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
 export async function DELETE(request: NextRequest, { params }: Ctx) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const denied = await requireWriteRole(session);
+    if (denied) return denied;
     const { id } = await params;
 
     const db = await getDatabase();

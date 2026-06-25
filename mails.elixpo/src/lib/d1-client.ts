@@ -54,11 +54,7 @@ export async function getDatabase(): Promise<D1Database> {
     );
 }
 
-function createRestD1Client(
-    accountId: string,
-    apiToken: string,
-    databaseId: string,
-): D1Database {
+function createRestD1Client(accountId: string, apiToken: string, databaseId: string): D1Database {
     const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}`;
 
     const query = async (sql: string, params: any[] = []): Promise<any> => {
@@ -72,9 +68,7 @@ function createRestD1Client(
         });
         if (!res.ok) {
             const err: any = await res.json().catch(() => ({}));
-            throw new Error(
-                `D1 query error: ${err.errors?.[0]?.message || res.statusText}`,
-            );
+            throw new Error(`D1 query error: ${err.errors?.[0]?.message || res.statusText}`);
         }
         return res.json();
     };

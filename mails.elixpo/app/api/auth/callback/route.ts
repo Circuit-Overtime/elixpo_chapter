@@ -1,10 +1,11 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { SESSION_COOKIE, signSession } from "@/lib/session";
 import { exchangeCodeForUser } from "@/lib/sso";
 import { getOrBootstrapTenant } from "@/lib/tenant";
+import { getMembership, linkUserToMemberships } from "@/lib/workspace";
+import { type NextRequest, NextResponse } from "next/server";
 
 const STATE_COOKIE = "mail_oauth_state";
 
@@ -43,12 +44,25 @@ export async function GET(request: NextRequest) {
             user.displayName || user.username || undefined,
         );
 
+        // Attach this uid to any membership rows that were keyed only by email
+        // (e.g. accepted invites) and refresh the cached name/avatar, then
+        // resolve the active-workspace role.
+        await linkUserToMemberships(
+            db,
+            user.id,
+            user.email,
+            user.displayName || user.username || undefined,
+            user.avatar ?? null,
+        );
+        const membership = await getMembership(db, tenant.id, user.id, user.email);
+
         const token = await signSession({
             uid: user.id,
             email: user.email,
             name: user.displayName || user.username || user.email,
             avatar: user.avatar ?? null,
             tenantId: tenant.id,
+            role: membership?.role || "owner",
         });
 
         const dest = next.startsWith("/") ? next : "/dashboard";
@@ -64,8 +78,6 @@ export async function GET(request: NextRequest) {
         return res;
     } catch (e: any) {
         console.error("[auth/callback] error:", e);
-        return NextResponse.redirect(
-            `${origin}/login?error=${encodeURIComponent("sso_failed")}`,
-        );
+        return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent("sso_failed")}`);
     }
 }

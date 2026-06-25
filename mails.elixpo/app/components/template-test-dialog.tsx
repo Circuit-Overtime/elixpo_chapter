@@ -12,8 +12,8 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    Link as MuiLink,
     MenuItem,
+    Link as MuiLink,
     Select,
     Snackbar,
     Stack,
@@ -405,12 +405,22 @@ export default function TemplateTestDialog({
                                         border: "1px solid rgba(95,182,255,0.22)",
                                     }}
                                 >
-                                    <Typography sx={{ fontSize: "0.82rem", color: "rgba(245,245,244,0.7)", lineHeight: 1.6 }}>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "0.82rem",
+                                            color: "rgba(245,245,244,0.7)",
+                                            lineHeight: 1.6,
+                                        }}
+                                    >
                                         {sendersError ? `${sendersError} ` : ""}
                                         <MuiLink
                                             component={NextLink}
                                             href="/dashboard/senders"
-                                            sx={{ color: "#5fb6ff", fontWeight: 600, textDecorationColor: "rgba(95,182,255,0.4)" }}
+                                            sx={{
+                                                color: "#5fb6ff",
+                                                fontWeight: 600,
+                                                textDecorationColor: "rgba(95,182,255,0.4)",
+                                            }}
                                         >
                                             Connect a sender first
                                         </MuiLink>{" "}
@@ -463,7 +473,10 @@ export default function TemplateTestDialog({
                                             <TextField
                                                 value={vars[name] ?? ""}
                                                 onChange={(e) =>
-                                                    setVars((m) => ({ ...m, [name]: e.target.value }))
+                                                    setVars((m) => ({
+                                                        ...m,
+                                                        [name]: e.target.value,
+                                                    }))
                                                 }
                                                 placeholder={`Value for ${name}`}
                                                 fullWidth
@@ -502,7 +515,10 @@ export default function TemplateTestDialog({
                                     fontSize: "0.8rem",
                                     px: 1,
                                     minWidth: 0,
-                                    "&:hover": { background: "rgba(155,123,247,0.06)", color: TEXT },
+                                    "&:hover": {
+                                        background: "rgba(155,123,247,0.06)",
+                                        color: TEXT,
+                                    },
                                     "&.Mui-disabled": { color: TEXT_40 },
                                 }}
                             >
@@ -520,7 +536,9 @@ export default function TemplateTestDialog({
                                     border: "1px solid rgba(239,68,68,0.3)",
                                 }}
                             >
-                                <Typography sx={{ fontSize: "0.82rem", color: RED, lineHeight: 1.5 }}>
+                                <Typography
+                                    sx={{ fontSize: "0.82rem", color: RED, lineHeight: 1.5 }}
+                                >
                                     {previewState.text}
                                 </Typography>
                             </Box>

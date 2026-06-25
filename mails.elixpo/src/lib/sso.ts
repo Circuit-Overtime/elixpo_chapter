@@ -6,15 +6,13 @@
 import { getEnv, requireEnv } from "./env";
 
 export async function accountsBaseUrl(): Promise<string> {
-    return (
-        (await getEnv("NEXT_PUBLIC_ACCOUNTS_URL")) || "https://accounts.elixpo.com"
-    ).replace(/\/$/, "");
+    return ((await getEnv("NEXT_PUBLIC_ACCOUNTS_URL")) || "https://accounts.elixpo.com").replace(
+        /\/$/,
+        "",
+    );
 }
 
-export async function buildAuthorizeUrl(
-    state: string,
-    redirectUri: string,
-): Promise<string> {
+export async function buildAuthorizeUrl(state: string, redirectUri: string): Promise<string> {
     const base = await accountsBaseUrl();
     const clientId = await requireEnv("NEXT_PUBLIC_ELIXPO_CLIENT_ID");
     const params = new URLSearchParams({

@@ -49,11 +49,19 @@ export function LegalShell({
                     >
                         {title}
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.45)", fontSize: "0.85rem", mb: intro ? 2.5 : 4 }}>
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.45)",
+                            fontSize: "0.85rem",
+                            mb: intro ? 2.5 : 4,
+                        }}
+                    >
                         Last updated {updated}
                     </Typography>
                     {intro && (
-                        <Typography sx={{ color: TEXT_70, fontSize: "1.05rem", lineHeight: 1.75, mb: 4 }}>
+                        <Typography
+                            sx={{ color: TEXT_70, fontSize: "1.05rem", lineHeight: 1.75, mb: 4 }}
+                        >
                             {intro}
                         </Typography>
                     )}
@@ -73,7 +81,11 @@ export function LegalShell({
                         <Box
                             component="a"
                             href="mailto:hello@elixpo.com"
-                            sx={{ color: ACCENT, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+                            sx={{
+                                color: ACCENT,
+                                textDecoration: "none",
+                                "&:hover": { textDecoration: "underline" },
+                            }}
                         >
                             hello@elixpo.com
                         </Box>
@@ -86,7 +98,10 @@ export function LegalShell({
 }
 
 /** A titled section within a legal document. */
-export function LegalSection({ heading, children }: { heading: string; children: React.ReactNode }) {
+export function LegalSection({
+    heading,
+    children,
+}: { heading: string; children: React.ReactNode }) {
     return (
         <Box component="section">
             <Typography
@@ -109,7 +124,9 @@ export function LegalSection({ heading, children }: { heading: string; children:
 /** A paragraph of legal prose. */
 export function LegalP({ children }: { children: React.ReactNode }) {
     return (
-        <Typography sx={{ color: TEXT_70, fontSize: "0.98rem", lineHeight: 1.78 }}>{children}</Typography>
+        <Typography sx={{ color: TEXT_70, fontSize: "0.98rem", lineHeight: 1.78 }}>
+            {children}
+        </Typography>
     );
 }
 

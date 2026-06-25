@@ -55,7 +55,10 @@ export async function openDrivePicker(): Promise<PickedFile | null> {
     await loadScript("https://accounts.google.com/gsi/client");
     await loadScript("https://apis.google.com/js/api.js");
     await new Promise<void>((resolve, reject) => {
-        (window as any).gapi.load("picker", { callback: () => resolve(), onerror: () => reject(new Error("picker_load")) });
+        (window as any).gapi.load("picker", {
+            callback: () => resolve(),
+            onerror: () => reject(new Error("picker_load")),
+        });
     });
 
     const token = await getAccessToken(clientId);
@@ -65,7 +68,9 @@ export async function openDrivePicker(): Promise<PickedFile | null> {
     const appId = process.env.NEXT_PUBLIC_GOOGLE_APP_ID;
 
     return new Promise<PickedFile | null>((resolve) => {
-        const view = new picker.DocsView(picker.ViewId.DOCS).setIncludeFolders(true).setSelectFolderEnabled(false);
+        const view = new picker.DocsView(picker.ViewId.DOCS)
+            .setIncludeFolders(true)
+            .setSelectFolderEnabled(false);
         let builder = new picker.PickerBuilder()
             .addView(view)
             .setOAuthToken(token)

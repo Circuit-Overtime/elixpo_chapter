@@ -1,11 +1,11 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { getProduct, productToFooter } from "@/lib/products";
 import { renderTemplate } from "@/lib/render";
 import { getSession } from "@/lib/session";
 import { getTemplate } from "@/lib/templates";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/templates/:id/preview — render the template to email HTML.
@@ -29,7 +29,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!tmpl) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     const subject = typeof body?.subject === "string" ? body.subject : tmpl.subject;
-    const contentHtml = typeof body?.contentHtml === "string" ? body.contentHtml : tmpl.content_html;
+    const contentHtml =
+        typeof body?.contentHtml === "string" ? body.contentHtml : tmpl.content_html;
     const bgColor = typeof body?.bgColor === "string" ? body.bgColor : tmpl.bg_color;
     const vars = body?.vars && typeof body.vars === "object" ? body.vars : {};
 

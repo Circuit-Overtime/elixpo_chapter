@@ -150,12 +150,22 @@ export default function ComposerToolbar({
                 </IconButton>
             </Tooltip>
 
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.6, my: 0.6, borderColor: "rgba(255,255,255,0.1)" }} />
+            <Divider
+                orientation="vertical"
+                flexItem
+                sx={{ mx: 0.6, my: 0.6, borderColor: "rgba(255,255,255,0.1)" }}
+            />
 
             {[1, 2].map((level) => (
                 <Tooltip key={level} title={`Heading ${level}`}>
-                    <IconButton size="small" sx={btn} onClick={() => toggleBlock("heading", { level })}>
-                        <Typography sx={{ fontSize: "0.82rem", fontWeight: 800, lineHeight: 1, px: 0.2 }}>
+                    <IconButton
+                        size="small"
+                        sx={btn}
+                        onClick={() => toggleBlock("heading", { level })}
+                    >
+                        <Typography
+                            sx={{ fontSize: "0.82rem", fontWeight: 800, lineHeight: 1, px: 0.2 }}
+                        >
                             H{level}
                         </Typography>
                     </IconButton>
@@ -167,7 +177,11 @@ export default function ComposerToolbar({
                 </IconButton>
             </Tooltip>
 
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.6, my: 0.6, borderColor: "rgba(255,255,255,0.1)" }} />
+            <Divider
+                orientation="vertical"
+                flexItem
+                sx={{ mx: 0.6, my: 0.6, borderColor: "rgba(255,255,255,0.1)" }}
+            />
 
             <Tooltip title="Bulleted list">
                 <IconButton size="small" sx={btn} onClick={() => toggleBlock("bulletListItem")}>
@@ -185,7 +199,11 @@ export default function ComposerToolbar({
                 </IconButton>
             </Tooltip>
 
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.6, my: 0.6, borderColor: "rgba(255,255,255,0.1)" }} />
+            <Divider
+                orientation="vertical"
+                flexItem
+                sx={{ mx: 0.6, my: 0.6, borderColor: "rgba(255,255,255,0.1)" }}
+            />
 
             <Tooltip title="Insert image">
                 <span>
@@ -254,7 +272,10 @@ export default function ComposerToolbar({
                             }}
                             sx={{
                                 flex: 1,
-                                "& .MuiOutlinedInput-root": { color: "#f5f5f4", borderRadius: "8px" },
+                                "& .MuiOutlinedInput-root": {
+                                    color: "#f5f5f4",
+                                    borderRadius: "8px",
+                                },
                                 "& fieldset": { borderColor: "rgba(255,255,255,0.16)" },
                             }}
                         />
@@ -268,7 +289,10 @@ export default function ComposerToolbar({
                                 px: 1.8,
                                 borderRadius: "8px",
                                 background: `linear-gradient(135deg, ${ACCENT} 0%, #7c5cff 100%)`,
-                                "&.Mui-disabled": { background: "rgba(255,255,255,0.08)", color: "rgba(245,245,244,0.4)" },
+                                "&.Mui-disabled": {
+                                    background: "rgba(255,255,255,0.08)",
+                                    color: "rgba(245,245,244,0.4)",
+                                },
                             }}
                         >
                             Link

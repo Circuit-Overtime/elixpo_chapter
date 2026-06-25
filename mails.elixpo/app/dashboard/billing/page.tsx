@@ -4,13 +4,13 @@ export const runtime = "edge";
 // (every tenant is treated as Starter / Free) and prices are illustrative.
 // Future: paid plans + metering via Elixpo Pay.
 
+import { requireDashboardSession } from "@/lib/dashboard-session";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CheckIcon from "@mui/icons-material/Check";
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import Link from "next/link";
+import { GHOST_BTN, PRIMARY_BTN, PageHeader } from "../../components/dashboard-ui";
 import { GlassCard } from "../../components/glass-card";
-import { GHOST_BTN, PageHeader, PRIMARY_BTN } from "../../components/dashboard-ui";
-import { requireDashboardSession } from "@/lib/dashboard-session";
 
 const TEXT = "#f5f5f4";
 const TEXT_55 = "rgba(245,245,244,0.55)";
@@ -28,10 +28,22 @@ const STARTER_LIMITS: { label: string; value: string }[] = [
 
 function UsageRow({ label, used, limit }: { label: string; used: string; limit: string }) {
     return (
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 1.1, borderBottom: `1px solid ${BORDER}` }}>
-            <Typography sx={{ fontSize: "0.88rem", color: "rgba(245,245,244,0.75)" }}>{label}</Typography>
-            <Typography sx={{ fontSize: "0.86rem", color: TEXT_55, fontFamily: "var(--font-geist-mono)" }}>
-                <Box component="span" sx={{ color: TEXT }}>{used}</Box> / {limit}
+        <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ py: 1.1, borderBottom: `1px solid ${BORDER}` }}
+        >
+            <Typography sx={{ fontSize: "0.88rem", color: "rgba(245,245,244,0.75)" }}>
+                {label}
+            </Typography>
+            <Typography
+                sx={{ fontSize: "0.86rem", color: TEXT_55, fontFamily: "var(--font-geist-mono)" }}
+            >
+                <Box component="span" sx={{ color: TEXT }}>
+                    {used}
+                </Box>{" "}
+                / {limit}
             </Typography>
         </Stack>
     );
@@ -47,39 +59,91 @@ export default async function BillingPage() {
                 description="Your subscription and usage. Billing isn't enabled yet — every workspace runs on the free Starter plan for now."
             />
 
-            <Box sx={{ display: "grid", gap: 2.5, gridTemplateColumns: { xs: "1fr", lg: "1.3fr 1fr" }, alignItems: "start" }}>
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2.5,
+                    gridTemplateColumns: { xs: "1fr", lg: "1.3fr 1fr" },
+                    alignItems: "start",
+                }}
+            >
                 {/* Current plan card */}
                 <GlassCard
                     sx={{
-                        background: "linear-gradient(160deg, rgba(155,123,247,0.10) 0%, rgba(124,92,255,0.04) 100%)",
+                        background:
+                            "linear-gradient(160deg, rgba(155,123,247,0.10) 0%, rgba(124,92,255,0.04) 100%)",
                         border: "1px solid rgba(155,123,247,0.25)",
                     }}
                 >
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+                    <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="flex-start"
+                        sx={{ mb: 2 }}
+                    >
                         <Box>
-                            <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: ACCENT, mb: 0.8 }}>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.72rem",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.08em",
+                                    textTransform: "uppercase",
+                                    color: ACCENT,
+                                    mb: 0.8,
+                                }}
+                            >
                                 Current plan
                             </Typography>
                             <Stack direction="row" alignItems="baseline" spacing={1}>
-                                <Typography sx={{ fontWeight: 800, fontSize: "1.8rem", color: TEXT, letterSpacing: "-0.02em" }}>
+                                <Typography
+                                    sx={{
+                                        fontWeight: 800,
+                                        fontSize: "1.8rem",
+                                        color: TEXT,
+                                        letterSpacing: "-0.02em",
+                                    }}
+                                >
                                     Starter
                                 </Typography>
-                                <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#86efac" }}>Free</Typography>
+                                <Typography
+                                    sx={{ fontWeight: 700, fontSize: "1rem", color: "#86efac" }}
+                                >
+                                    Free
+                                </Typography>
                             </Stack>
                         </Box>
                         <Chip
                             label="Active"
                             size="small"
-                            sx={{ height: 24, fontSize: "0.7rem", fontWeight: 700, color: "#86efac", bgcolor: "rgba(134,239,172,0.12)", border: "1px solid rgba(134,239,172,0.3)" }}
+                            sx={{
+                                height: 24,
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                color: "#86efac",
+                                bgcolor: "rgba(134,239,172,0.12)",
+                                border: "1px solid rgba(134,239,172,0.3)",
+                            }}
                         />
                     </Stack>
 
-                    <Box sx={{ display: "grid", gap: 1.2, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, mb: 2.5 }}>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gap: 1.2,
+                            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                            mb: 2.5,
+                        }}
+                    >
                         {STARTER_LIMITS.map((l) => (
                             <Stack key={l.label} direction="row" spacing={1} alignItems="center">
                                 <CheckIcon sx={{ fontSize: 16, color: "#86efac", flexShrink: 0 }} />
-                                <Typography sx={{ fontSize: "0.86rem", color: "rgba(245,245,244,0.78)" }}>
-                                    {l.value} <Box component="span" sx={{ color: TEXT_55 }}>{l.label.toLowerCase()}</Box>
+                                <Typography
+                                    sx={{ fontSize: "0.86rem", color: "rgba(245,245,244,0.78)" }}
+                                >
+                                    {l.value}{" "}
+                                    <Box component="span" sx={{ color: TEXT_55 }}>
+                                        {l.label.toLowerCase()}
+                                    </Box>
                                 </Typography>
                             </Stack>
                         ))}
@@ -94,7 +158,11 @@ export default async function BillingPage() {
                         >
                             Upgrade plan
                         </Button>
-                        <Button component={Link} href="/pricing" sx={{ ...GHOST_BTN, fontSize: "0.9rem" }}>
+                        <Button
+                            component={Link}
+                            href="/pricing"
+                            sx={{ ...GHOST_BTN, fontSize: "0.9rem" }}
+                        >
                             Compare plans
                         </Button>
                     </Stack>
@@ -111,10 +179,26 @@ export default async function BillingPage() {
                     <UsageRow label="Sends" used="0" limit="1,000" />
                     <UsageRow label="Products" used="0" limit="1" />
                     <UsageRow label="Templates" used="0" limit="5" />
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pt: 1.1 }}>
-                        <Typography sx={{ fontSize: "0.88rem", color: "rgba(245,245,244,0.75)" }}>Senders</Typography>
-                        <Typography sx={{ fontSize: "0.86rem", color: TEXT_55, fontFamily: "var(--font-geist-mono)" }}>
-                            <Box component="span" sx={{ color: TEXT }}>0</Box> / 1
+                    <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        sx={{ pt: 1.1 }}
+                    >
+                        <Typography sx={{ fontSize: "0.88rem", color: "rgba(245,245,244,0.75)" }}>
+                            Senders
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontSize: "0.86rem",
+                                color: TEXT_55,
+                                fontFamily: "var(--font-geist-mono)",
+                            }}
+                        >
+                            <Box component="span" sx={{ color: TEXT }}>
+                                0
+                            </Box>{" "}
+                            / 1
                         </Typography>
                     </Stack>
                 </GlassCard>

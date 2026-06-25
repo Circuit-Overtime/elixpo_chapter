@@ -8,6 +8,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { getEnv } from "./env";
 import { newId } from "./ids";
+import { addMember } from "./workspace";
 
 export interface TenantRow {
     id: string;
@@ -51,6 +52,7 @@ export async function getOrBootstrapTenant(
                 )
                 .bind(uid, email)
                 .run();
+            await ensureOwnerMember(db, "tenant_elixpo", uid, email, name);
             return { ...elixpo, owner_uid: uid };
         }
     }
@@ -60,9 +62,27 @@ export async function getOrBootstrapTenant(
     const tenantName = name || email.split("@")[0] || "New tenant";
     await db
         .prepare(
-            "INSERT INTO tenants (id, name, email, owner_uid, status) VALUES (?, ?, ?, ?, 'active')",
+            "INSERT INTO tenants (id, name, email, owner_uid, status, slug) VALUES (?, ?, ?, ?, 'active', ?)",
         )
-        .bind(id, tenantName, email, uid)
+        .bind(id, tenantName, email, uid, id)
         .run();
+    await ensureOwnerMember(db, id, uid, email, name);
     return { id, name: tenantName, email, owner_uid: uid, status: "active" };
+}
+
+/** Make sure the workspace owner has an `owner` membership row (idempotent). */
+async function ensureOwnerMember(
+    db: D1Database,
+    tenantId: string,
+    uid: string,
+    email: string,
+    name?: string,
+): Promise<void> {
+    await addMember(db, tenantId, {
+        email,
+        role: "owner",
+        status: "active",
+        userUid: uid,
+        name: name || null,
+    });
 }

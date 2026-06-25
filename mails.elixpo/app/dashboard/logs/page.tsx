@@ -1,9 +1,9 @@
 export const runtime = "edge";
 
-import { Box } from "@mui/material";
-import LogsManager from "../../components/logs-manager";
-import { PageHeader } from "../../components/dashboard-ui";
 import { requireDashboardSession } from "@/lib/dashboard-session";
+import { Box } from "@mui/material";
+import { PageHeader } from "../../components/dashboard-ui";
+import LogsManager from "../../components/logs-manager";
 
 export default async function LogsPage() {
     await requireDashboardSession();

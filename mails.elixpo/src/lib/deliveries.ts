@@ -147,7 +147,9 @@ export async function markDeliveryFailed(
     smtpResponse?: string | null,
 ): Promise<void> {
     await db
-        .prepare("UPDATE deliveries SET status = 'failed', error = ?, smtp_response = ? WHERE id = ?")
+        .prepare(
+            "UPDATE deliveries SET status = 'failed', error = ?, smtp_response = ? WHERE id = ?",
+        )
         .bind(error.slice(0, 1000), smtpResponse || null, id)
         .run();
 }

@@ -1,7 +1,9 @@
 "use client";
 
+import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
+import GroupsIcon from "@mui/icons-material/Groups";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
@@ -24,8 +26,16 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardNavLinks } from "./dashboard-nav";
+
+interface WorkspaceOption {
+    tenantId: string;
+    name: string;
+    slug: string | null;
+    role: string;
+    active: boolean;
+}
 
 const BORDER = "rgba(255,255,255,0.07)";
 const ACCENT = "#9b7bf7";
@@ -55,7 +65,13 @@ function Brand() {
         <Box
             component={Link}
             href="/dashboard"
-            sx={{ display: "flex", alignItems: "center", gap: 1.1, textDecoration: "none", color: "inherit" }}
+            sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.1,
+                textDecoration: "none",
+                color: "inherit",
+            }}
         >
             <Box
                 component="img"
@@ -63,7 +79,15 @@ function Brand() {
                 alt="mail.elixpo"
                 sx={{ height: 28, width: 28, borderRadius: "8px", display: "block" }}
             />
-            <Typography sx={{ fontWeight: 700, fontSize: "1.02rem", color: "#f5f5f4", letterSpacing: "-0.01em", display: { xs: "none", sm: "block" } }}>
+            <Typography
+                sx={{
+                    fontWeight: 700,
+                    fontSize: "1.02rem",
+                    color: "#f5f5f4",
+                    letterSpacing: "-0.01em",
+                    display: { xs: "none", sm: "block" },
+                }}
+            >
                 Elixpo
                 <Box component="span" sx={{ color: ACCENT }}>
                     {" "}
@@ -78,6 +102,43 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const menuOpen = Boolean(anchorEl);
+    const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
+    const [switching, setSwitching] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/auth/me")
+            .then((r) => r.json())
+            .then((raw) => {
+                const data = raw as { workspaces?: WorkspaceOption[] };
+                if (!cancelled && Array.isArray(data?.workspaces)) setWorkspaces(data.workspaces);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    async function switchWorkspace(tenantId: string) {
+        if (switching) return;
+        setSwitching(true);
+        try {
+            const res = await fetch("/api/workspace/switch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tenantId }),
+            });
+            if (res.ok) {
+                window.location.href = "/dashboard";
+                return;
+            }
+        } catch {
+            // fall through
+        }
+        setSwitching(false);
+    }
+
+    const activeWorkspace = workspaces.find((w) => w.active);
 
     return (
         <>
@@ -100,7 +161,10 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
                 <IconButton
                     onClick={() => setMobileOpen(true)}
                     aria-label="Open menu"
-                    sx={{ display: { xs: "inline-flex", md: "none" }, color: "rgba(245,245,244,0.8)" }}
+                    sx={{
+                        display: { xs: "inline-flex", md: "none" },
+                        color: "rgba(245,245,244,0.8)",
+                    }}
                 >
                     <MenuIcon />
                 </IconButton>
@@ -134,24 +198,63 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
                         color: "inherit",
                         font: "inherit",
                         transition: "all 0.15s ease",
-                        "&:hover": { borderColor: "rgba(155,123,247,0.4)", background: "rgba(155,123,247,0.06)" },
+                        "&:hover": {
+                            borderColor: "rgba(155,123,247,0.4)",
+                            background: "rgba(155,123,247,0.06)",
+                        },
                     }}
                 >
                     <Avatar
                         src={user.avatar || undefined}
-                        sx={{ width: 28, height: 28, fontSize: "0.85rem", bgcolor: "rgba(155,123,247,0.4)" }}
+                        sx={{
+                            width: 28,
+                            height: 28,
+                            fontSize: "0.85rem",
+                            bgcolor: "rgba(155,123,247,0.4)",
+                        }}
                     >
                         {initials(user)}
                     </Avatar>
-                    <Stack sx={{ display: { xs: "none", sm: "flex" }, alignItems: "flex-start", lineHeight: 1.1 }}>
-                        <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#f5f5f4", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <Stack
+                        sx={{
+                            display: { xs: "none", sm: "flex" },
+                            alignItems: "flex-start",
+                            lineHeight: 1.1,
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontSize: "0.82rem",
+                                fontWeight: 600,
+                                color: "#f5f5f4",
+                                maxWidth: 150,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                            }}
+                        >
                             {user.name || user.email}
                         </Typography>
-                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <Typography
+                            sx={{
+                                fontSize: "0.7rem",
+                                color: "rgba(245,245,244,0.45)",
+                                maxWidth: 150,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                            }}
+                        >
                             {user.email}
                         </Typography>
                     </Stack>
-                    <KeyboardArrowDownIcon sx={{ fontSize: 18, color: "rgba(245,245,244,0.5)", display: { xs: "none", sm: "block" } }} />
+                    <KeyboardArrowDownIcon
+                        sx={{
+                            fontSize: 18,
+                            color: "rgba(245,245,244,0.5)",
+                            display: { xs: "none", sm: "block" },
+                        }}
+                    />
                 </Box>
 
                 <Menu
@@ -179,15 +282,37 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
                         <Stack direction="row" spacing={1.2} alignItems="center">
                             <Avatar
                                 src={user.avatar || undefined}
-                                sx={{ width: 38, height: 38, fontSize: "1rem", bgcolor: "rgba(155,123,247,0.4)" }}
+                                sx={{
+                                    width: 38,
+                                    height: 38,
+                                    fontSize: "1rem",
+                                    bgcolor: "rgba(155,123,247,0.4)",
+                                }}
                             >
                                 {initials(user)}
                             </Avatar>
                             <Box sx={{ minWidth: 0 }}>
-                                <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#f5f5f4", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.9rem",
+                                        fontWeight: 700,
+                                        color: "#f5f5f4",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
                                     {user.name || user.email}
                                 </Typography>
-                                <Typography sx={{ fontSize: "0.76rem", color: "rgba(245,245,244,0.5)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.76rem",
+                                        color: "rgba(245,245,244,0.5)",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
                                     {user.email}
                                 </Typography>
                             </Box>
@@ -207,33 +332,144 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
                                 }}
                             />
                             <Box sx={{ flexGrow: 1 }} />
-                            <Typography sx={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(245,245,244,0.35)" }}>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.6rem",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.06em",
+                                    textTransform: "uppercase",
+                                    color: "rgba(245,245,244,0.35)",
+                                }}
+                            >
                                 Workspace
                             </Typography>
-                            <Typography sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.68rem", color: "rgba(245,245,244,0.55)", maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <Typography
+                                sx={{
+                                    fontFamily: "var(--font-geist-mono)",
+                                    fontSize: "0.68rem",
+                                    color: "rgba(245,245,244,0.55)",
+                                    maxWidth: 110,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
                                 {user.tenantId}
                             </Typography>
                         </Stack>
                     </Box>
                     <Divider sx={{ borderColor: BORDER }} />
 
+                    {/* Workspace switcher */}
+                    {workspaces.length > 1 && (
+                        <>
+                            <Typography
+                                sx={{
+                                    px: 2,
+                                    pt: 1.2,
+                                    pb: 0.4,
+                                    fontSize: "0.6rem",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.06em",
+                                    textTransform: "uppercase",
+                                    color: "rgba(245,245,244,0.35)",
+                                }}
+                            >
+                                Switch workspace
+                            </Typography>
+                            {workspaces.map((w) => (
+                                <MenuItem
+                                    key={w.tenantId}
+                                    disabled={switching}
+                                    onClick={() => {
+                                        if (w.active) {
+                                            setAnchorEl(null);
+                                        } else {
+                                            switchWorkspace(w.tenantId);
+                                        }
+                                    }}
+                                    sx={MENU_ITEM_SX}
+                                >
+                                    <GroupsIcon sx={MENU_ICON_SX} />
+                                    <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.84rem",
+                                                color: "#f5f5f4",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
+                                            {w.name}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.66rem",
+                                                color: "rgba(245,245,244,0.4)",
+                                                textTransform: "capitalize",
+                                            }}
+                                        >
+                                            {w.role}
+                                        </Typography>
+                                    </Box>
+                                    {w.active && <CheckIcon sx={{ fontSize: 16, color: ACCENT }} />}
+                                </MenuItem>
+                            ))}
+                            <Divider sx={{ borderColor: BORDER }} />
+                        </>
+                    )}
+
                     {/* Account */}
-                    <MenuItem component={Link} href="/dashboard" onClick={() => setAnchorEl(null)} sx={MENU_ITEM_SX}>
+                    <MenuItem
+                        component={Link}
+                        href="/dashboard"
+                        onClick={() => setAnchorEl(null)}
+                        sx={MENU_ITEM_SX}
+                    >
                         <SpaceDashboardIcon sx={MENU_ICON_SX} />
                         Overview
                     </MenuItem>
-                    <MenuItem component={Link} href="/dashboard/settings" onClick={() => setAnchorEl(null)} sx={MENU_ITEM_SX}>
+                    <MenuItem
+                        component={Link}
+                        href={
+                            activeWorkspace?.slug
+                                ? `/workspace/${activeWorkspace.slug}`
+                                : "/workspace"
+                        }
+                        onClick={() => setAnchorEl(null)}
+                        sx={MENU_ITEM_SX}
+                    >
+                        <GroupsIcon sx={MENU_ICON_SX} />
+                        Workspace &amp; team
+                    </MenuItem>
+                    <MenuItem
+                        component={Link}
+                        href="/dashboard/settings"
+                        onClick={() => setAnchorEl(null)}
+                        sx={MENU_ITEM_SX}
+                    >
                         <ManageAccountsIcon sx={MENU_ICON_SX} />
                         Account &amp; workspace
                     </MenuItem>
-                    <MenuItem component={Link} href="/dashboard/billing" onClick={() => setAnchorEl(null)} sx={MENU_ITEM_SX}>
+                    <MenuItem
+                        component={Link}
+                        href="/dashboard/billing"
+                        onClick={() => setAnchorEl(null)}
+                        sx={MENU_ITEM_SX}
+                    >
                         <CreditCardIcon sx={MENU_ICON_SX} />
                         Billing &amp; plan
                     </MenuItem>
                     <Divider sx={{ borderColor: BORDER }} />
 
                     {/* Resources */}
-                    <MenuItem component={Link} href="/docs" onClick={() => setAnchorEl(null)} sx={MENU_ITEM_SX}>
+                    <MenuItem
+                        component={Link}
+                        href="/docs"
+                        onClick={() => setAnchorEl(null)}
+                        sx={MENU_ITEM_SX}
+                    >
                         <MenuBookIcon sx={MENU_ICON_SX} />
                         Documentation
                     </MenuItem>
@@ -241,7 +477,12 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
                         <SupportAgentIcon sx={MENU_ICON_SX} />
                         Contact support
                     </MenuItem>
-                    <MenuItem component={Link} href="/" onClick={() => setAnchorEl(null)} sx={MENU_ITEM_SX}>
+                    <MenuItem
+                        component={Link}
+                        href="/"
+                        onClick={() => setAnchorEl(null)}
+                        sx={MENU_ITEM_SX}
+                    >
                         <OpenInNewIcon sx={MENU_ICON_SX} />
                         Marketing site
                     </MenuItem>
@@ -283,9 +524,18 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
                     },
                 }}
             >
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5, px: 0.5 }}>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{ mb: 2.5, px: 0.5 }}
+                >
                     <Brand />
-                    <IconButton onClick={() => setMobileOpen(false)} sx={{ color: "rgba(245,245,244,0.6)" }} aria-label="Close menu">
+                    <IconButton
+                        onClick={() => setMobileOpen(false)}
+                        sx={{ color: "rgba(245,245,244,0.6)" }}
+                        aria-label="Close menu"
+                    >
                         <CloseIcon />
                     </IconButton>
                 </Stack>

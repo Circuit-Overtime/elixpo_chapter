@@ -1,6 +1,5 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import {
     attachmentToPublic,
     deleteAllForTemplate,
@@ -13,6 +12,8 @@ import { getDatabase } from "@/lib/d1-client";
 import { getProduct, productToFooter, slugify } from "@/lib/products";
 import { getSession } from "@/lib/session";
 import { deleteTemplate, getTemplate, toPublic, updateTemplate } from "@/lib/templates";
+import { requireWriteRole } from "@/lib/workspace-guard";
+import { type NextRequest, NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -41,6 +42,9 @@ export async function GET(request: NextRequest, { params }: Ctx) {
 export async function PATCH(request: NextRequest, { params }: Ctx) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const denied = await requireWriteRole(session);
+    if (denied) return denied;
     const { id } = await params;
 
     let body: any;
@@ -57,15 +61,33 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     try {
         const row = await updateTemplate(db, session.tenantId, id, {
             name: typeof body?.name === "string" ? body.name.trim() : undefined,
-            slug: typeof body?.slug === "string" && body.slug.trim() ? slugify(body.slug) : undefined,
+            slug:
+                typeof body?.slug === "string" && body.slug.trim() ? slugify(body.slug) : undefined,
             subject: typeof body?.subject === "string" ? body.subject : undefined,
             kind: typeof body?.kind === "string" ? body.kind : undefined,
-            contentJson: body?.contentJson !== undefined ? (Array.isArray(body.contentJson) ? body.contentJson : null) : undefined,
+            contentJson:
+                body?.contentJson !== undefined
+                    ? Array.isArray(body.contentJson)
+                        ? body.contentJson
+                        : null
+                    : undefined,
             contentHtml: typeof body?.contentHtml === "string" ? body.contentHtml : undefined,
-            senderId: body?.senderId !== undefined ? (typeof body.senderId === "string" ? body.senderId : null) : undefined,
-            bgColor: body?.bgColor !== undefined ? (typeof body.bgColor === "string" ? body.bgColor : null) : undefined,
-            transactional: typeof body?.transactional === "boolean" ? body.transactional : undefined,
-            status: body?.status === "active" || body?.status === "archived" ? body.status : undefined,
+            senderId:
+                body?.senderId !== undefined
+                    ? typeof body.senderId === "string"
+                        ? body.senderId
+                        : null
+                    : undefined,
+            bgColor:
+                body?.bgColor !== undefined
+                    ? typeof body.bgColor === "string"
+                        ? body.bgColor
+                        : null
+                    : undefined,
+            transactional:
+                typeof body?.transactional === "boolean" ? body.transactional : undefined,
+            status:
+                body?.status === "active" || body?.status === "archived" ? body.status : undefined,
         });
         // When the body changed, delete images that are no longer referenced
         // (removed or replaced) plus any uploaded-then-removed this session.
@@ -81,7 +103,12 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
             }).catch(() => {});
         }
         if (body?.attachments !== undefined) {
-            await replaceAttachments(db, session.tenantId, id, parseAttachmentInputs(body.attachments));
+            await replaceAttachments(
+                db,
+                session.tenantId,
+                id,
+                parseAttachmentInputs(body.attachments),
+            );
         }
         return NextResponse.json({ ok: true, template: row ? toPublic(row) : null });
     } catch (e: any) {
@@ -100,6 +127,9 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
 export async function DELETE(request: NextRequest, { params }: Ctx) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const denied = await requireWriteRole(session);
+    if (denied) return denied;
     const { id } = await params;
 
     const db = await getDatabase();

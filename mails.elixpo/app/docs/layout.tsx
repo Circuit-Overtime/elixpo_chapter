@@ -76,14 +76,19 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                                     bgcolor: active ? "rgba(155,123,247,0.1)" : "transparent",
                                     color: active ? ACCENT : "rgba(245,245,244,0.6)",
                                     "&:hover": {
-                                        bgcolor: active ? "rgba(155,123,247,0.15)" : "rgba(255,255,255,0.05)",
+                                        bgcolor: active
+                                            ? "rgba(155,123,247,0.15)"
+                                            : "rgba(255,255,255,0.05)",
                                         color: active ? ACCENT : "rgba(245,245,244,0.9)",
                                     },
                                 }}
                             >
                                 <ListItemText
                                     primary={item.label}
-                                    primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: active ? 600 : 500 }}
+                                    primaryTypographyProps={{
+                                        fontSize: "0.9rem",
+                                        fontWeight: active ? 600 : 500,
+                                    }}
                                 />
                             </ListItemButton>
                         </ListItem>
@@ -95,7 +100,15 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
     return (
         <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
-            <Box sx={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+            <Box
+                sx={{
+                    position: "relative",
+                    zIndex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: "100vh",
+                }}
+            >
                 <AppBar
                     position="sticky"
                     elevation={0}
@@ -105,7 +118,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                         borderBottom: "1px solid rgba(255,255,255,0.08)",
                     }}
                 >
-                    <Toolbar sx={{ maxWidth: "1280px", width: "100%", mx: "auto", px: { xs: 2, md: 3 } }}>
+                    <Toolbar
+                        sx={{ maxWidth: "1280px", width: "100%", mx: "auto", px: { xs: 2, md: 3 } }}
+                    >
                         <IconButton
                             color="inherit"
                             edge="start"
@@ -114,16 +129,39 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                         >
                             <MenuIcon />
                         </IconButton>
-                        <Box component={Link} href="/" sx={{ display: "flex", alignItems: "center", gap: 1.2, textDecoration: "none" }}>
+                        <Box
+                            component={Link}
+                            href="/"
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.2,
+                                textDecoration: "none",
+                            }}
+                        >
                             <Box
                                 component="img"
                                 src="/logo.png"
                                 alt="Elixpo Mails"
-                                sx={{ height: 28, width: 28, borderRadius: "8px", display: "block" }}
+                                sx={{
+                                    height: 28,
+                                    width: 28,
+                                    borderRadius: "8px",
+                                    display: "block",
+                                }}
                             />
-                            <Typography sx={{ fontWeight: 700, color: "#f5f5f4", display: { xs: "none", sm: "block" } }}>
+                            <Typography
+                                sx={{
+                                    fontWeight: 700,
+                                    color: "#f5f5f4",
+                                    display: { xs: "none", sm: "block" },
+                                }}
+                            >
                                 Elixpo Mails{" "}
-                                <Box component="span" sx={{ color: "rgba(245,245,244,0.4)", fontWeight: 500 }}>
+                                <Box
+                                    component="span"
+                                    sx={{ color: "rgba(245,245,244,0.4)", fontWeight: 500 }}
+                                >
                                     Docs
                                 </Box>
                             </Typography>
@@ -133,7 +171,16 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                     </Toolbar>
                 </AppBar>
 
-                <Box sx={{ display: "flex", flexGrow: 1, maxWidth: "1280px", width: "100%", mx: "auto", px: { xs: 2, md: 3 } }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexGrow: 1,
+                        maxWidth: "1280px",
+                        width: "100%",
+                        mx: "auto",
+                        px: { xs: 2, md: 3 },
+                    }}
+                >
                     <Box
                         component="nav"
                         sx={{
@@ -169,20 +216,47 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                         {sidebar}
                     </Drawer>
 
-                    <Box component="main" sx={{ flexGrow: 1, minWidth: 0, pt: 4, pb: 8, px: { xs: 0, md: 5 }, maxWidth: 820 }}>
+                    <Box
+                        component="main"
+                        sx={{
+                            flexGrow: 1,
+                            minWidth: 0,
+                            pt: 4,
+                            pb: 8,
+                            px: { xs: 0, md: 5 },
+                            maxWidth: 820,
+                        }}
+                    >
                         {children}
 
                         <Divider sx={{ my: 4, borderColor: "rgba(255,255,255,0.06)" }} />
-                        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                gap: 2,
+                                flexWrap: "wrap",
+                            }}
+                        >
                             {prev ? (
-                                <Button component={Link} href={prev.href} startIcon={<ArrowBackIcon />} sx={navBtn}>
+                                <Button
+                                    component={Link}
+                                    href={prev.href}
+                                    startIcon={<ArrowBackIcon />}
+                                    sx={navBtn}
+                                >
                                     {prev.label}
                                 </Button>
                             ) : (
                                 <Box />
                             )}
                             {next ? (
-                                <Button component={Link} href={next.href} endIcon={<ArrowForwardIcon />} sx={navBtn}>
+                                <Button
+                                    component={Link}
+                                    href={next.href}
+                                    endIcon={<ArrowForwardIcon />}
+                                    sx={navBtn}
+                                >
                                     {next.label}
                                 </Button>
                             ) : (

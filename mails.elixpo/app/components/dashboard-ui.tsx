@@ -53,7 +53,14 @@ export function PageHeader({
             sx={{ mb: { xs: 3.5, md: 4.5 } }}
         >
             <Box>
-                <Typography sx={{ fontWeight: 800, fontSize: { xs: "1.55rem", md: "1.9rem" }, letterSpacing: "-0.02em", color: TEXT }}>
+                <Typography
+                    sx={{
+                        fontWeight: 800,
+                        fontSize: { xs: "1.55rem", md: "1.9rem" },
+                        letterSpacing: "-0.02em",
+                        color: TEXT,
+                    }}
+                >
                     {title}
                 </Typography>
                 <Typography sx={{ color: TEXT_55, fontSize: "0.95rem", mt: 0.5, maxWidth: 620 }}>
@@ -135,7 +142,15 @@ export function EmptyState({
                     <Typography sx={{ fontWeight: 700, fontSize: "1.2rem", color: TEXT, mb: 0.8 }}>
                         {headline}
                     </Typography>
-                    <Typography sx={{ color: TEXT_55, fontSize: "0.95rem", lineHeight: 1.65, maxWidth: 460, mx: "auto" }}>
+                    <Typography
+                        sx={{
+                            color: TEXT_55,
+                            fontSize: "0.95rem",
+                            lineHeight: 1.65,
+                            maxWidth: 460,
+                            mx: "auto",
+                        }}
+                    >
                         {subtext}
                     </Typography>
                 </Box>

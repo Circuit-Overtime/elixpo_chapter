@@ -146,7 +146,9 @@ export async function setDefaultSender(
         .bind(tenantId)
         .run();
     await db
-        .prepare("UPDATE senders SET is_default = 1, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?")
+        .prepare(
+            "UPDATE senders SET is_default = 1, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?",
+        )
         .bind(id, tenantId)
         .run();
     return getSender(db, tenantId, id);
@@ -229,13 +231,17 @@ export async function deleteSender(db: D1Database, tenantId: string, id: string)
     // Detach from any product/template that used this sender, drop its aliases,
     // then delete the sender itself.
     await db
-        .prepare("UPDATE products SET default_sender_id = NULL WHERE default_sender_id = ? AND tenant_id = ?")
+        .prepare(
+            "UPDATE products SET default_sender_id = NULL WHERE default_sender_id = ? AND tenant_id = ?",
+        )
         .bind(id, tenantId)
         .run();
-    await db.prepare("UPDATE templates SET sender_id = NULL WHERE sender_id = ? AND tenant_id = ?")
+    await db
+        .prepare("UPDATE templates SET sender_id = NULL WHERE sender_id = ? AND tenant_id = ?")
         .bind(id, tenantId)
         .run();
-    await db.prepare("DELETE FROM sender_aliases WHERE sender_id = ? AND tenant_id = ?")
+    await db
+        .prepare("DELETE FROM sender_aliases WHERE sender_id = ? AND tenant_id = ?")
         .bind(id, tenantId)
         .run();
     await db.prepare("DELETE FROM senders WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
@@ -303,9 +309,7 @@ export async function getAlias(
     aliasId: string,
 ): Promise<AliasRow | null> {
     return (await db
-        .prepare(
-            "SELECT * FROM sender_aliases WHERE id = ? AND sender_id = ? AND tenant_id = ?",
-        )
+        .prepare("SELECT * FROM sender_aliases WHERE id = ? AND sender_id = ? AND tenant_id = ?")
         .bind(aliasId, senderId, tenantId)
         .first()) as AliasRow | null;
 }

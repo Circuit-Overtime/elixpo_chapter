@@ -9,8 +9,8 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import BusinessIcon from "@mui/icons-material/Business";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { Box, Button, Chip, Container, Stack, Typography } from "@mui/material";
-import PricingFaq, { type Faq } from "../components/pricing-faq";
 import PageShell from "../components/page-shell";
+import PricingFaq, { type Faq } from "../components/pricing-faq";
 
 const ACCENT = "#9b7bf7";
 const TEXT = "#f5f5f4";
@@ -140,7 +140,9 @@ function TierCard({ tier }: { tier: Tier }) {
                     ? "linear-gradient(160deg, rgba(155,123,247,0.12) 0%, rgba(124,92,255,0.04) 100%)"
                     : SURFACE,
                 border: tier.popular ? "1.5px solid rgba(155,123,247,0.55)" : `1px solid ${BORDER}`,
-                boxShadow: tier.popular ? "0 16px 48px rgba(124,92,255,0.18)" : "0 1px 2px rgba(0,0,0,0.35)",
+                boxShadow: tier.popular
+                    ? "0 16px 48px rgba(124,92,255,0.18)"
+                    : "0 1px 2px rgba(0,0,0,0.35)",
                 height: "100%",
             }}
         >
@@ -163,14 +165,34 @@ function TierCard({ tier }: { tier: Tier }) {
                     }}
                 />
             )}
-            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: TEXT }}>{tier.name}</Typography>
+            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: TEXT }}>
+                {tier.name}
+            </Typography>
             <Stack direction="row" alignItems="baseline" spacing={0.6} sx={{ mt: 1.2 }}>
-                <Typography sx={{ fontWeight: 800, fontSize: "2.6rem", color: TEXT, letterSpacing: "-0.03em", lineHeight: 1 }}>
+                <Typography
+                    sx={{
+                        fontWeight: 800,
+                        fontSize: "2.6rem",
+                        color: TEXT,
+                        letterSpacing: "-0.03em",
+                        lineHeight: 1,
+                    }}
+                >
                     {tier.price}
                 </Typography>
-                <Typography sx={{ color: TEXT_60, fontSize: "0.95rem", fontWeight: 600 }}>{tier.cadence}</Typography>
+                <Typography sx={{ color: TEXT_60, fontSize: "0.95rem", fontWeight: 600 }}>
+                    {tier.cadence}
+                </Typography>
             </Stack>
-            <Typography sx={{ color: TEXT_65, fontSize: "0.9rem", lineHeight: 1.6, mt: 1.2, minHeight: { md: 44 } }}>
+            <Typography
+                sx={{
+                    color: TEXT_65,
+                    fontSize: "0.9rem",
+                    lineHeight: 1.6,
+                    mt: 1.2,
+                    minHeight: { md: 44 },
+                }}
+            >
                 {tier.blurb}
             </Typography>
 
@@ -187,8 +209,18 @@ function TierCard({ tier }: { tier: Tier }) {
             <Stack spacing={1.3} sx={{ mt: 3 }}>
                 {tier.features.map((f) => (
                     <Stack key={f} direction="row" spacing={1.2} alignItems="flex-start">
-                        <CheckCircleIcon sx={{ fontSize: 18, color: "#86efac", mt: "1px", flexShrink: 0 }} />
-                        <Typography sx={{ color: "rgba(245,245,244,0.82)", fontSize: "0.9rem", lineHeight: 1.5 }}>{f}</Typography>
+                        <CheckCircleIcon
+                            sx={{ fontSize: 18, color: "#86efac", mt: "1px", flexShrink: 0 }}
+                        />
+                        <Typography
+                            sx={{
+                                color: "rgba(245,245,244,0.82)",
+                                fontSize: "0.9rem",
+                                lineHeight: 1.5,
+                            }}
+                        >
+                            {f}
+                        </Typography>
                     </Stack>
                 ))}
             </Stack>
@@ -201,7 +233,12 @@ export default function PricingPage() {
         <PageShell variant="default">
             <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 12 }, pb: { xs: 4, md: 6 } }}>
                 {/* Heading */}
-                <Stack alignItems="center" textAlign="center" spacing={2} sx={{ mb: { xs: 5, md: 7 } }}>
+                <Stack
+                    alignItems="center"
+                    textAlign="center"
+                    spacing={2}
+                    sx={{ mb: { xs: 5, md: 7 } }}
+                >
                     <Chip
                         label="Pricing"
                         sx={{
@@ -214,15 +251,30 @@ export default function PricingPage() {
                     />
                     <Typography
                         component="h1"
-                        sx={{ fontWeight: 800, fontSize: { xs: "2.2rem", md: "3.2rem" }, letterSpacing: "-0.025em", lineHeight: 1.06, color: TEXT, maxWidth: 760 }}
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: { xs: "2.2rem", md: "3.2rem" },
+                            letterSpacing: "-0.025em",
+                            lineHeight: 1.06,
+                            color: TEXT,
+                            maxWidth: 760,
+                        }}
                     >
                         Simple pricing that scales{" "}
                         <Box component="span" sx={{ color: ACCENT }}>
                             with your sends.
                         </Box>
                     </Typography>
-                    <Typography sx={{ maxWidth: 560, color: TEXT_65, fontSize: { xs: "1rem", md: "1.15rem" }, lineHeight: 1.7 }}>
-                        Start free, bring your own sender, and only pay as your transactional volume grows. No mail infra to build, no surprises.
+                    <Typography
+                        sx={{
+                            maxWidth: 560,
+                            color: TEXT_65,
+                            fontSize: { xs: "1rem", md: "1.15rem" },
+                            lineHeight: 1.7,
+                        }}
+                    >
+                        Start free, bring your own sender, and only pay as your transactional volume
+                        grows. No mail infra to build, no surprises.
                     </Typography>
                 </Stack>
 
@@ -274,9 +326,21 @@ export default function PricingPage() {
                             <BusinessIcon sx={{ fontSize: 26 }} />
                         </Box>
                         <Box>
-                            <Typography sx={{ fontWeight: 700, fontSize: "1.25rem", color: TEXT, mb: 0.5 }}>Enterprise</Typography>
-                            <Typography sx={{ color: TEXT_65, fontSize: "0.95rem", lineHeight: 1.65, maxWidth: 560 }}>
-                                Custom send volume, dedicated support, security review, and tailored terms for high-scale and regulated workloads.
+                            <Typography
+                                sx={{ fontWeight: 700, fontSize: "1.25rem", color: TEXT, mb: 0.5 }}
+                            >
+                                Enterprise
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    color: TEXT_65,
+                                    fontSize: "0.95rem",
+                                    lineHeight: 1.65,
+                                    maxWidth: 560,
+                                }}
+                            >
+                                Custom send volume, dedicated support, security review, and tailored
+                                terms for high-scale and regulated workloads.
                             </Typography>
                         </Box>
                     </Stack>
@@ -293,11 +357,32 @@ export default function PricingPage() {
 
             {/* FAQ */}
             <Container maxWidth="md" sx={{ py: { xs: 5, md: 9 } }}>
-                <Stack alignItems="center" textAlign="center" spacing={1.5} sx={{ mb: { xs: 4, md: 5 } }}>
-                    <Typography sx={{ color: ACCENT, fontWeight: 700, fontSize: "0.78rem", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                <Stack
+                    alignItems="center"
+                    textAlign="center"
+                    spacing={1.5}
+                    sx={{ mb: { xs: 4, md: 5 } }}
+                >
+                    <Typography
+                        sx={{
+                            color: ACCENT,
+                            fontWeight: 700,
+                            fontSize: "0.78rem",
+                            letterSpacing: "0.14em",
+                            textTransform: "uppercase",
+                        }}
+                    >
                         FAQ
                     </Typography>
-                    <Typography component="h2" sx={{ fontWeight: 800, fontSize: { xs: "1.8rem", md: "2.4rem" }, letterSpacing: "-0.02em", color: TEXT }}>
+                    <Typography
+                        component="h2"
+                        sx={{
+                            fontWeight: 800,
+                            fontSize: { xs: "1.8rem", md: "2.4rem" },
+                            letterSpacing: "-0.02em",
+                            color: TEXT,
+                        }}
+                    >
                         Questions, answered
                     </Typography>
                 </Stack>

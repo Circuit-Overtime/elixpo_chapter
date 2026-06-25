@@ -1,6 +1,5 @@
 export const runtime = "edge";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { deliveryToPublic, findByIdempotencyKey } from "@/lib/deliveries";
 import { getProduct, getSigningSecrets } from "@/lib/products";
@@ -8,6 +7,7 @@ import { deliverTemplate } from "@/lib/send-pipeline";
 import { getTemplate } from "@/lib/templates";
 import { SIGNATURE_HEADER, parseSignatureHeader, verifySignature } from "@/lib/webhook-signing";
 import { getWebhookByEndpointKey } from "@/lib/webhooks";
+import { type NextRequest, NextResponse } from "next/server";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -93,7 +93,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const to = typeof body?.to === "string" ? body.to.trim() : "";
     if (!EMAIL_RE.test(to)) {
-        return json({ ok: false, error: "invalid_recipient", message: "Provide a valid `to` email." }, 400);
+        return json(
+            { ok: false, error: "invalid_recipient", message: "Provide a valid `to` email." },
+            400,
+        );
     }
     const vars =
         body?.variables && typeof body.variables === "object"

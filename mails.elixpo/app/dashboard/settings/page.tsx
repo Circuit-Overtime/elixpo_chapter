@@ -1,14 +1,16 @@
 export const runtime = "edge";
 
-import LockIcon from "@mui/icons-material/Lock";
-import { Box, Chip, Stack, Typography } from "@mui/material";
-import { PageHeader } from "../../components/dashboard-ui";
-import DriveConnectionCard from "../../components/drive-connection-card";
-import { GlassCard } from "../../components/glass-card";
-import WorkspaceNameForm from "../../components/workspace-name-form";
 import { getDatabase } from "@/lib/d1-client";
 import { requireDashboardSession } from "@/lib/dashboard-session";
 import { getTenant } from "@/lib/tenant";
+import GroupsIcon from "@mui/icons-material/Groups";
+import LockIcon from "@mui/icons-material/Lock";
+import { Box, Button, Stack, Typography } from "@mui/material";
+import Link from "next/link";
+import { PRIMARY_BTN, PageHeader } from "../../components/dashboard-ui";
+import DriveConnectionCard from "../../components/drive-connection-card";
+import { GlassCard } from "../../components/glass-card";
+import WorkspaceNameForm from "../../components/workspace-name-form";
 
 const TEXT = "#f5f5f4";
 const TEXT_55 = "rgba(245,245,244,0.55)";
@@ -17,7 +19,16 @@ const BORDER = "rgba(255,255,255,0.07)";
 function ReadOnlyField({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
     return (
         <Box>
-            <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "rgba(245,245,244,0.4)", mb: 0.7 }}>
+            <Typography
+                sx={{
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    color: "rgba(245,245,244,0.4)",
+                    mb: 0.7,
+                }}
+            >
                 {label}
             </Typography>
             <Box
@@ -77,8 +88,8 @@ export default async function SettingsPage() {
                         Workspace
                     </Typography>
                     <Typography sx={{ color: TEXT_55, fontSize: "0.88rem", mb: 2.5 }}>
-                        Your business name across mail.elixpo. The workspace ID is a fixed
-                        internal identifier and can&rsquo;t be changed.
+                        Your business name across mail.elixpo. The workspace ID is a fixed internal
+                        identifier and can&rsquo;t be changed.
                     </Typography>
 
                     <WorkspaceNameForm initialName={workspaceName} />
@@ -96,7 +107,13 @@ export default async function SettingsPage() {
                     <Typography sx={{ color: TEXT_55, fontSize: "0.88rem", mb: 2.5 }}>
                         Read-only — synced from your Elixpo Accounts profile.
                     </Typography>
-                    <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" } }}>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gap: 2,
+                            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                        }}
+                    >
                         <ReadOnlyField label="Name" value={session.name || ""} />
                         <ReadOnlyField label="Email" value={session.email} />
                         <ReadOnlyField label="Account ID" value={session.uid} mono />
@@ -106,21 +123,34 @@ export default async function SettingsPage() {
                 {/* Connections — Google Drive for attachments */}
                 <DriveConnectionCard />
 
-                {/* Future preferences */}
+                {/* Team & access */}
                 <GlassCard>
-                    <Stack direction="row" alignItems="center" spacing={1.2} sx={{ mb: 0.4 }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: TEXT }}>
-                            Workspace preferences
-                        </Typography>
-                        <Chip
-                            label="Coming soon"
-                            size="small"
-                            sx={{ height: 20, fontSize: "0.62rem", fontWeight: 700, color: "rgba(245,245,244,0.5)", bgcolor: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}` }}
-                        />
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
+                        alignItems={{ sm: "center" }}
+                        justifyContent="space-between"
+                    >
+                        <Box>
+                            <Typography
+                                sx={{ fontWeight: 700, fontSize: "1.05rem", color: TEXT, mb: 0.4 }}
+                            >
+                                Team &amp; access
+                            </Typography>
+                            <Typography sx={{ color: TEXT_55, fontSize: "0.88rem" }}>
+                                Invite people to this workspace, set roles (admin, writer, viewer),
+                                and approve join requests.
+                            </Typography>
+                        </Box>
+                        <Button
+                            component={Link}
+                            href="/workspace"
+                            startIcon={<GroupsIcon sx={{ fontSize: "1.1rem !important" }} />}
+                            sx={{ ...PRIMARY_BTN, flexShrink: 0, whiteSpace: "nowrap" }}
+                        >
+                            Manage workspace
+                        </Button>
                     </Stack>
-                    <Typography sx={{ color: TEXT_55, fontSize: "0.88rem" }}>
-                        Default sender, secret rotation policy, log retention, and team access will be configurable here.
-                    </Typography>
                 </GlassCard>
             </Stack>
         </Box>

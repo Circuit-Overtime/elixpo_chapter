@@ -37,7 +37,9 @@ async function redirectUri(): Promise<string> {
 
 export async function signState(tenantId: string): Promise<string> {
     const secret = await requireEnv("ELIXPO_MAIL_SESSION_SECRET");
-    const body = base64url(JSON.stringify({ t: tenantId, exp: Math.floor(Date.now() / 1000) + 600 }));
+    const body = base64url(
+        JSON.stringify({ t: tenantId, exp: Math.floor(Date.now() / 1000) + 600 }),
+    );
     const sig = await hmacSha256Hex(secret, body);
     return `${body}.${sig}`;
 }
@@ -200,7 +202,9 @@ export async function deleteConnection(db: D1Database, tenantId: string): Promis
         // Best-effort revoke at Google so access is actually withdrawn.
         try {
             const token = await decryptSecret(row.refresh_token_enc || row.access_token_enc);
-            await fetch(`${REVOKE_ENDPOINT}?token=${encodeURIComponent(token)}`, { method: "POST" });
+            await fetch(`${REVOKE_ENDPOINT}?token=${encodeURIComponent(token)}`, {
+                method: "POST",
+            });
         } catch {
             /* ignore */
         }
@@ -217,7 +221,8 @@ export async function getAccessToken(db: D1Database, tenantId: string): Promise<
     const row = await getConnection(db, tenantId);
     if (!row) return null;
 
-    const stillValid = row.expiry && row.expiry > new Date().toISOString().replace("T", " ").slice(0, 19);
+    const stillValid =
+        row.expiry && row.expiry > new Date().toISOString().replace("T", " ").slice(0, 19);
     if (stillValid) {
         try {
             return await decryptSecret(row.access_token_enc);
@@ -233,7 +238,10 @@ export async function getAccessToken(db: D1Database, tenantId: string): Promise<
     } catch {
         return null;
     }
-    const [clientId, clientSecret] = await Promise.all([googleClientId(), getEnv("GOOGLE_CLIENT_SECRET")]);
+    const [clientId, clientSecret] = await Promise.all([
+        googleClientId(),
+        getEnv("GOOGLE_CLIENT_SECRET"),
+    ]);
     if (!clientId || !clientSecret) return null;
 
     const res = await fetch(TOKEN_ENDPOINT, {
