@@ -67,15 +67,20 @@ export async function POST(request: NextRequest) {
     await kv.put(`wh:pay:${eventId}`, '1', { expirationTtl: 1800 }).catch(() => {});
   }
 
-  if (body.type && body.type !== 'entitlement.updated') {
-    return NextResponse.json({ ok: true, ignored: body.type });
-  }
   const data = body.data;
   if (!data?.uid) {
     return NextResponse.json({ error: 'missing data.uid' }, { status: 400 });
   }
 
   try {
+    if (body.type === 'payment.captured') {
+      // The only event carrying the amount — drives the receipt email.
+      await sendReceiptMail(data).catch((e) => console.error('[webhook:pay] receipt', e));
+      return NextResponse.json({ ok: true });
+    }
+    if (body.type && body.type !== 'entitlement.updated') {
+      return NextResponse.json({ ok: true, ignored: body.type });
+    }
     await applyEntitlement(data);
     // Lifecycle email — best-effort, never blocks (or fails) the 2xx ack.
     await sendLifecycleMail(data).catch((e) => console.error('[webhook:pay] mail', e));
@@ -145,14 +150,49 @@ async function sendLifecycleMail(data: EntitlementData): Promise<void> {
       variables: { name, tier, resubscribe_url: 'https://lixrl.com/pricing' },
       idempotencyKey: idem,
     });
-  } else if (data.active === true && (status === 'active' || status === '')) {
-    await triggerMail({
-      endpointKey: env.ELIXPO_MAILS_HOOK_RECEIPT,
-      to: user.email,
-      variables: { name, tier, next_renewal: expiry },
-      idempotencyKey: idem,
-    });
   }
+  // Receipt is NOT sent here — entitlement.updated has no amount. It fires
+  // from payment.captured via sendReceiptMail().
+}
+
+/**
+ * Receipt email — fired on payment.captured (first charge + every renewal),
+ * the only event carrying the amount. Renewal date comes from the user's
+ * stored expiry (set by the entitlement.updated that pairs this payment).
+ */
+async function sendReceiptMail(data: EntitlementData): Promise<void> {
+  const env = getEnv();
+  if (!env.ELIXPO_MAILS_SECRET || !env.ELIXPO_MAILS_HOOK_RECEIPT || !data.uid) return;
+
+  const user = await getDB()
+    .prepare('SELECT email, display_name, tier_expires_at FROM users WHERE elixpo_id = ?')
+    .bind(data.uid)
+    .first<{ email: string; display_name: string; tier_expires_at: string | null }>();
+  if (!user?.email) return;
+
+  await triggerMail({
+    endpointKey: env.ELIXPO_MAILS_HOOK_RECEIPT,
+    to: user.email,
+    variables: {
+      name: user.display_name || 'there',
+      tier: String(data.tier || ''),
+      amount: formatAmount(data.amount, data.currency),
+      next_renewal: formatDate(user.tier_expires_at),
+      subscription_url: 'https://lixrl.com/dashboard/subscription',
+    },
+    // One receipt per payment.
+    idempotencyKey: data.transaction_id || `${data.uid}:pay:${data.amount ?? ''}`,
+  });
+}
+
+/** Minor units → "₹3" / "$15" / "300 EUR". Empty if absent. */
+function formatAmount(minor?: number, currency?: string): string {
+  if (minor == null || Number.isNaN(Number(minor))) return '';
+  const cur = (currency || 'INR').toUpperCase();
+  const sym = cur === 'INR' ? '₹' : cur === 'USD' ? '$' : '';
+  const major = Number(minor) / 100;
+  const num = Number.isInteger(major) ? major.toLocaleString() : major.toFixed(2);
+  return sym ? `${sym}${num}` : `${num} ${cur}`;
 }
 
 /** "Jul 23, 2026" from Pay's "YYYY-MM-DD HH:MM:SS" (UTC) or a unix seconds value. */
@@ -234,6 +274,10 @@ interface EntitlementData {
   expires_at?: string | number;
   provider_subscription_id?: string;
   subscription_id?: string;
+  // payment.captured fields (amount-bearing event → receipt).
+  amount?: number;
+  currency?: string;
+  transaction_id?: string;
 }
 
 interface PayEvent {
