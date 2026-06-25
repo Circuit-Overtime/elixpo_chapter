@@ -1,6 +1,7 @@
 "use client";
 
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import {
     Box,
@@ -118,6 +119,31 @@ const Footer = () => {
                             creator payouts — for Elixpo products and any
                             developer building on us.
                         </Typography>
+                        <Button
+                            component="a"
+                            href="https://github.com/elixpo/payouts.elixpo"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            startIcon={<GitHubIcon sx={{ fontSize: 18 }} />}
+                            sx={{
+                                mt: 2,
+                                textTransform: "none",
+                                fontWeight: 600,
+                                fontSize: "0.84rem",
+                                color: "rgba(255,255,255,0.85)",
+                                border: "1px solid rgba(255,255,255,0.12)",
+                                borderRadius: "10px",
+                                px: 1.6,
+                                py: 0.6,
+                                "&:hover": {
+                                    color: "#fff",
+                                    borderColor: "rgba(155,123,247,0.45)",
+                                    background: "rgba(155,123,247,0.08)",
+                                },
+                            }}
+                        >
+                            Fully open source · GitHub
+                        </Button>
                     </Box>
 
                     <Stack
@@ -229,7 +255,7 @@ const Footer = () => {
                 >
                     <Typography sx={{ fontSize: "inherit" }}>
                         © {new Date().getFullYear()} Elixpo · Built on
-                        Cloudflare's edge
+                        Cloudflare's edge · Open source
                     </Typography>
                     <Typography sx={{ fontSize: "inherit" }}>
                         Payments infrastructure for the Elixpo ecosystem
