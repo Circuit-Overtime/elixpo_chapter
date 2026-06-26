@@ -321,7 +321,8 @@ export function deriveSessionContext(request: Request | { headers: Headers }) {
     // present on a Pages request; the other two are best-effort.
     const country = headers.get("cf-ipcountry") || null;
     const city = headers.get("cf-ipcity") || null;
-    const region = headers.get("cf-region-code") || headers.get("cf-region") || null;
+    const region =
+        headers.get("cf-region-code") || headers.get("cf-region") || null;
 
     // Browser + version from UA — same logic as shortUaForSession but
     // split out so we can persist the parts individually.
@@ -354,7 +355,8 @@ export function deriveSessionContext(request: Request | { headers: Headers }) {
         osVersion = ua.match(/Android (\d[\d.]*)/)?.[1] ?? null;
     } else if (/Mac OS X/.test(ua)) {
         os = "macOS";
-        osVersion = ua.match(/Mac OS X (\d[\d_]*)/)?.[1]?.replace(/_/g, ".") ?? null;
+        osVersion =
+            ua.match(/Mac OS X (\d[\d_]*)/)?.[1]?.replace(/_/g, ".") ?? null;
     } else if (/Windows NT/.test(ua)) {
         os = "Windows";
         osVersion = ua.match(/Windows NT ([\d.]+)/)?.[1] ?? null;

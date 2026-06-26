@@ -23,7 +23,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
-const _ACCENT = "#9b7bf7";
+const _ACCENT = "#ff7759";
 const SUPPORT_EMAIL = "hello@elixpo.com";
 
 interface Action {
@@ -253,14 +253,14 @@ const primaryBtnSx = {
     fontWeight: 600,
     fontSize: "0.95rem",
     color: "#fff",
-    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+    background: "linear-gradient(135deg, #ff7759 0%, #ff7759 100%)",
     borderRadius: "12px",
     py: 1.2,
-    boxShadow: "0 8px 24px rgba(155,123,247,0.32)",
+    boxShadow: "0 8px 24px rgba(255, 119, 89,0.32)",
     transition: "all 0.2s ease",
     "&:hover": {
-        background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
-        boxShadow: "0 12px 32px rgba(155,123,247,0.45)",
+        background: "linear-gradient(135deg, #ff7759 0%, #ff7759 100%)",
+        boxShadow: "0 12px 32px rgba(255, 119, 89,0.45)",
         transform: "translateY(-1px)",
     },
 };
@@ -269,13 +269,13 @@ const secondaryBtnSx = {
     textTransform: "none",
     fontWeight: 500,
     fontSize: "0.95rem",
-    color: "rgba(255,255,255,0.85)",
-    border: "1px solid rgba(255,255,255,0.12)",
+    color: "var(--fg)",
+    border: "1px solid var(--border)",
     borderRadius: "12px",
     py: 1.2,
     "&:hover": {
-        borderColor: "rgba(155,123,247,0.4)",
-        background: "rgba(255,255,255,0.04)",
+        borderColor: "rgba(255, 119, 89,0.4)",
+        background: "var(--overlay)",
     },
 };
 
@@ -315,9 +315,8 @@ const ErrorContent = () => {
                     maxWidth: 460,
                     width: "100%",
                     backdropFilter: "blur(20px)",
-                    background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                     borderRadius: "18px",
                     p: { xs: 3, md: 4 },
                 }}
@@ -335,7 +334,7 @@ const ErrorContent = () => {
                             borderRadius: "10px",
                             background: "rgba(248, 113, 113, 0.12)",
                             border: "1px solid rgba(248, 113, 113, 0.3)",
-                            color: "#f87171",
+                            color: "#b91c1c",
                         }}
                     >
                         <ErrorOutlineIcon sx={{ fontSize: 22 }} />
@@ -345,7 +344,7 @@ const ErrorContent = () => {
                         size="small"
                         sx={{
                             bgcolor: "rgba(248, 113, 113, 0.1)",
-                            color: "#f87171",
+                            color: "#b91c1c",
                             border: "1px solid rgba(248, 113, 113, 0.25)",
                             fontWeight: 600,
                             fontSize: "0.68rem",
@@ -360,7 +359,7 @@ const ErrorContent = () => {
                     sx={{
                         fontWeight: 800,
                         fontSize: { xs: "1.6rem", md: "1.85rem" },
-                        color: "#f5f5f4",
+                        color: "var(--fg)",
                         letterSpacing: "-0.02em",
                         lineHeight: 1.15,
                         mb: 1.2,
@@ -371,7 +370,7 @@ const ErrorContent = () => {
 
                 <Typography
                     sx={{
-                        color: "rgba(255, 255, 255, 0.65)",
+                        color: "var(--fg-faint)",
                         fontSize: "0.95rem",
                         lineHeight: 1.6,
                         mb: 3,
@@ -425,7 +424,7 @@ const ErrorContent = () => {
                     sx={{
                         mt: 3,
                         pt: 2.5,
-                        borderTop: "1px solid rgba(255,255,255,0.08)",
+                        borderTop: "1px solid var(--border)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
@@ -434,7 +433,7 @@ const ErrorContent = () => {
                 >
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.82rem",
                         }}
                     >
@@ -448,15 +447,15 @@ const ErrorContent = () => {
                             onClick={copyEmail}
                             aria-label="Copy support email"
                             sx={{
-                                color: "rgba(244,244,246,0.85)",
-                                border: "1px solid rgba(255,255,255,0.1)",
+                                color: "var(--fg-muted)",
+                                border: "1px solid var(--border)",
                                 borderRadius: "10px",
                                 width: 34,
                                 height: 34,
                                 "&:hover": {
-                                    color: "#fff",
-                                    borderColor: "rgba(155,123,247,0.45)",
-                                    background: "rgba(155,123,247,0.08)",
+                                    color: "#ff7759",
+                                    borderColor: "rgba(255, 119, 89,0.45)",
+                                    background: "rgba(255, 119, 89,0.08)",
                                 },
                             }}
                         >

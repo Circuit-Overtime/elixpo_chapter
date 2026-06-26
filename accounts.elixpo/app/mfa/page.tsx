@@ -29,22 +29,22 @@ const methodMeta: Record<
 > = {
     passkey: {
         label: "Use passkey",
-        icon: <KeyIcon sx={{ color: "#9b7bf7" }} />,
+        icon: <KeyIcon sx={{ color: "#ff7759" }} />,
         hint: "Touch ID, security key, or another passkey-capable device.",
     },
     totp: {
         label: "Use authenticator app",
-        icon: <PhoneAndroidIcon sx={{ color: "#9b7bf7" }} />,
+        icon: <PhoneAndroidIcon sx={{ color: "#ff7759" }} />,
         hint: "Enter the 6-digit code from your authenticator.",
     },
     email_otp: {
         label: "Use email code",
-        icon: <MailOutlineIcon sx={{ color: "#9b7bf7" }} />,
+        icon: <MailOutlineIcon sx={{ color: "#ff7759" }} />,
         hint: "We'll send a code to your registered email.",
     },
     backup_code: {
         label: "Use backup code",
-        icon: <SecurityIcon sx={{ color: "#9b7bf7" }} />,
+        icon: <SecurityIcon sx={{ color: "#ff7759" }} />,
         hint: "One of the codes you saved when you enabled 2FA.",
     },
 };
@@ -122,10 +122,10 @@ function ChallengeInner() {
     if (!mfaToken) {
         return (
             <Box sx={{ p: 4, textAlign: "center" }}>
-                <Typography sx={{ color: "#f87171" }}>
+                <Typography sx={{ color: "#b91c1c" }}>
                     Missing challenge token.
                 </Typography>
-                <Button href="/login" sx={{ mt: 2, color: "#9b7bf7" }}>
+                <Button href="/login" sx={{ mt: 2, color: "#ff7759" }}>
                     Back to sign in
                 </Button>
             </Box>
@@ -255,24 +255,24 @@ function ChallengeInner() {
                     maxWidth: 440,
                     p: 4,
                     borderRadius: "20px",
-                    background: "rgba(22,28,24,0.85)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                     backdropFilter: "blur(20px)",
                 }}
             >
                 <Box sx={{ textAlign: "center", mb: 3 }}>
                     <SecurityIcon
-                        sx={{ color: "#9b7bf7", fontSize: 36, mb: 1 }}
+                        sx={{ color: "#ff7759", fontSize: 36, mb: 1 }}
                     />
                     <Typography
                         variant="h5"
-                        sx={{ color: "#f5f5f4", fontWeight: 700 }}
+                        sx={{ color: "var(--fg)", fontWeight: 700 }}
                     >
                         Two-factor verification
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.9rem",
                             mt: 0.5,
                         }}
@@ -305,14 +305,14 @@ function ChallengeInner() {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1.5,
-                                border: `1px solid ${selected === m ? "rgba(155,123,247,0.5)" : "rgba(255,255,255,0.08)"}`,
+                                border: `1px solid ${selected === m ? "rgba(255, 119, 89,0.5)" : "var(--border)"}`,
                                 bgcolor:
                                     selected === m
-                                        ? "rgba(155,123,247,0.08)"
+                                        ? "rgba(255, 119, 89,0.08)"
                                         : "transparent",
                                 transition: "all 0.15s",
                                 "&:hover": {
-                                    borderColor: "rgba(155,123,247,0.4)",
+                                    borderColor: "rgba(255, 119, 89,0.4)",
                                 },
                             }}
                         >
@@ -320,7 +320,7 @@ function ChallengeInner() {
                             <Box sx={{ flex: 1 }}>
                                 <Typography
                                     sx={{
-                                        color: "#f5f5f4",
+                                        color: "var(--fg)",
                                         fontSize: "0.9rem",
                                         fontWeight: 600,
                                     }}
@@ -329,7 +329,7 @@ function ChallengeInner() {
                                 </Typography>
                                 <Typography
                                     sx={{
-                                        color: "rgba(255,255,255,0.45)",
+                                        color: "var(--fg-faint)",
                                         fontSize: "0.72rem",
                                     }}
                                 >
@@ -355,11 +355,14 @@ function ChallengeInner() {
                         disabled={busy}
                         startIcon={<KeyIcon />}
                         sx={{
-                            background:
-                                "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                            background: "#ff7759",
+                            color: "#fff",
                             textTransform: "none",
                             py: 1.2,
                             fontWeight: 600,
+                            "&:hover": {
+                                background: "rgba(255, 119, 89, 0.9)",
+                            },
                         }}
                     >
                         {busy ? "Authenticating…" : "Continue with passkey"}
@@ -372,8 +375,8 @@ function ChallengeInner() {
                             onClick={sendEmailOtp}
                             disabled={busy}
                             sx={{
-                                color: "#c8b6ff",
-                                borderColor: "rgba(155,123,247,0.4)",
+                                color: "#ff7759",
+                                borderColor: "rgba(255, 119, 89,0.4)",
                                 textTransform: "none",
                                 py: 1.2,
                             }}
@@ -405,17 +408,16 @@ function ChallengeInner() {
                                 sx={{
                                     mb: 2,
                                     "& .MuiOutlinedInput-root": {
-                                        color: "#f5f5f4",
+                                        color: "var(--fg)",
                                         "& fieldset": {
-                                            borderColor:
-                                                "rgba(255,255,255,0.15)",
+                                            borderColor: "var(--border)",
                                         },
                                         "&:hover fieldset": {
                                             borderColor:
-                                                "rgba(155,123,247,0.4)",
+                                                "rgba(255, 119, 89,0.4)",
                                         },
                                         "&.Mui-focused fieldset": {
-                                            borderColor: "#9b7bf7",
+                                            borderColor: "#ff7759",
                                         },
                                     },
                                 }}
@@ -426,11 +428,14 @@ function ChallengeInner() {
                                 onClick={submitCode}
                                 disabled={busy || code.length !== 6}
                                 sx={{
-                                    background:
-                                        "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                    background: "#ff7759",
+                                    color: "#fff",
                                     textTransform: "none",
                                     py: 1.2,
                                     fontWeight: 600,
+                                    "&:hover": {
+                                        background: "rgba(255, 119, 89, 0.9)",
+                                    },
                                 }}
                             >
                                 {busy ? "Verifying…" : "Verify"}
@@ -441,11 +446,11 @@ function ChallengeInner() {
                                 disabled={busy || emailResendCd.active}
                                 sx={{
                                     mt: 1,
-                                    color: "rgba(255,255,255,0.5)",
+                                    color: "var(--fg-faint)",
                                     textTransform: "none",
                                     fontSize: "0.8rem",
                                     "&.Mui-disabled": {
-                                        color: "rgba(255,255,255,0.3)",
+                                        color: "var(--fg-faint)",
                                     },
                                 }}
                             >
@@ -490,15 +495,15 @@ function ChallengeInner() {
                             sx={{
                                 mb: 2,
                                 "& .MuiOutlinedInput-root": {
-                                    color: "#f5f5f4",
+                                    color: "var(--fg)",
                                     "& fieldset": {
-                                        borderColor: "rgba(255,255,255,0.15)",
+                                        borderColor: "var(--border)",
                                     },
                                     "&:hover fieldset": {
-                                        borderColor: "rgba(155,123,247,0.4)",
+                                        borderColor: "rgba(255, 119, 89,0.4)",
                                     },
                                     "&.Mui-focused fieldset": {
-                                        borderColor: "#9b7bf7",
+                                        borderColor: "#ff7759",
                                     },
                                 },
                             }}
@@ -509,11 +514,14 @@ function ChallengeInner() {
                             onClick={submitCode}
                             disabled={busy || code.length < 6}
                             sx={{
-                                background:
-                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                background: "#ff7759",
+                                color: "#fff",
                                 textTransform: "none",
                                 py: 1.2,
                                 fontWeight: 600,
+                                "&:hover": {
+                                    background: "rgba(255, 119, 89, 0.9)",
+                                },
                             }}
                         >
                             {busy ? "Verifying…" : "Verify"}
@@ -522,14 +530,14 @@ function ChallengeInner() {
                 )}
 
                 <FormControlLabel
-                    sx={{ mt: 2, color: "rgba(255,255,255,0.7)" }}
+                    sx={{ mt: 2, color: "var(--fg-muted)" }}
                     control={
                         <Checkbox
                             checked={trustDevice}
                             onChange={(e) => setTrustDevice(e.target.checked)}
                             sx={{
-                                color: "rgba(255,255,255,0.3)",
-                                "&.Mui-checked": { color: "#9b7bf7" },
+                                color: "var(--fg-faint)",
+                                "&.Mui-checked": { color: "#ff7759" },
                             }}
                         />
                     }
@@ -549,7 +557,7 @@ export default function MfaChallengePage() {
         <Suspense
             fallback={
                 <Box sx={{ display: "flex", justifyContent: "center", p: 8 }}>
-                    <CircularProgress sx={{ color: "#9b7bf7" }} />
+                    <CircularProgress sx={{ color: "#ff7759" }} />
                 </Box>
             }
         >

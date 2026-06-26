@@ -1,80 +1,20 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
+import gsap from "gsap";
 import {
-    ArrowBack as ArrowBackIcon,
-    ArrowForward as ArrowForwardIcon,
-    Check as CheckIcon,
-    ContentCopy as ContentCopyIcon,
-    Dashboard as DashboardIcon,
-    GitHub as GitHubIcon,
-    Menu as MenuIcon,
-    Search as SearchIcon,
-} from "@mui/icons-material";
-import {
-    AppBar,
-    Box,
-    Button,
-    Divider,
-    Drawer,
-    IconButton,
-    InputAdornment,
-    List,
-    ListItem,
-    ListItemButton,
-    ListItemText,
-    Snackbar,
-    TextField,
-    Toolbar,
-    Tooltip,
-    Typography,
-} from "@mui/material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
+    ArrowLeft,
+    ArrowRight,
+    Check,
+    Copy,
+    LayoutDashboard,
+    Menu,
+    Search,
+    X,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type React from "react";
-import { useEffect, useState } from "react";
-import BackgroundAurora from "../components/background-aurora";
-
-export const runtime = "edge";
-
-const darkTheme = createTheme({
-    palette: {
-        mode: "dark",
-        primary: { main: "#9b7bf7" },
-        background: {
-            default: "rgba(0, 0, 0, 0)",
-            paper: "rgba(255, 255, 255, 0.03)",
-        },
-    },
-    typography: {
-        fontFamily: "var(--font-geist-sans), Arial, sans-serif",
-    },
-    components: {
-        MuiCard: {
-            styleOverrides: {
-                root: {
-                    background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                    backdropFilter: "blur(20px)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: "16px",
-                    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
-                },
-            },
-        },
-        MuiPaper: {
-            styleOverrides: {
-                root: {
-                    background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                    backdropFilter: "blur(20px)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: "16px",
-                },
-            },
-        },
-    },
-});
+import { useEffect, useRef, useState } from "react";
 
 const DOCS_NAV = [
     { label: "Overview", href: "/docs" },
@@ -93,6 +33,23 @@ interface HeadingItem {
     level: number;
 }
 
+const Github = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg
+        viewBox="0 0 24 24"
+        width="20"
+        height="20"
+        stroke="currentColor"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        {...props}
+    >
+        <title>GitHub Logo</title>
+        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+    </svg>
+);
+
 export default function DocsLayout({
     children,
 }: {
@@ -104,10 +61,36 @@ export default function DocsLayout({
     const [headings, setHeadings] = useState<HeadingItem[]>([]);
     const [activeHeadingId, setActiveHeadingId] = useState("");
     const [copied, setCopied] = useState(false);
+    const [authed, setAuthed] = useState<boolean | null>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
 
-    // Convert the rendered docs content into a markdown-ish text blob that's
-    // friendly to paste into an LLM chat. We walk the DOM tree of the
-    // #docs-content node and emit headings, lists, code, and paragraphs.
+    // Resolve sign-in state so the brand mark routes to the dashboard or landing.
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/auth/me", { credentials: "include" })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((raw) => {
+                const d = raw as { email?: string } | null;
+                if (!cancelled) setAuthed(!!d?.email);
+            })
+            .catch(() => {
+                if (!cancelled) setAuthed(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    // GSAP page content fade-in animation on pathname change
+    useEffect(() => {
+        gsap.fromTo(
+            "#docs-content-container",
+            { opacity: 0, y: 15 },
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+        );
+    }, []);
+
+    // Convert docs content to plain markdown copyable for LLMs
     const buildLlmPayload = (): string => {
         const root = document.getElementById("docs-content");
         if (!root) return "";
@@ -149,7 +132,6 @@ export default function DocsLayout({
                         el.parentElement &&
                         el.parentElement.tagName.toLowerCase() !== "pre"
                     ) {
-                        // inline code already captured inside paragraph text
                         return;
                     }
                     return;
@@ -196,6 +178,7 @@ export default function DocsLayout({
         try {
             await navigator.clipboard.writeText(payload);
             setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         } catch {
             const ta = document.createElement("textarea");
             ta.value = payload;
@@ -204,8 +187,9 @@ export default function DocsLayout({
             try {
                 document.execCommand("copy");
                 setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
             } catch {
-                // give up silently
+                // Ignore
             }
             document.body.removeChild(ta);
         }
@@ -225,6 +209,7 @@ export default function DocsLayout({
         item.label.toLowerCase().includes(search.toLowerCase()),
     );
 
+    // Parse subheadings for table of contents
     useEffect(() => {
         const contentEl = document.getElementById("docs-content");
         if (!contentEl) return;
@@ -232,7 +217,7 @@ export default function DocsLayout({
         const headingElements = contentEl.querySelectorAll("h2, h3");
         const list: HeadingItem[] = [];
 
-        headingElements.forEach((el, _index) => {
+        headingElements.forEach((el) => {
             const level = Number.parseInt(el.tagName.substring(1), 10);
             const text = el.textContent || "";
             let id = el.id;
@@ -249,6 +234,7 @@ export default function DocsLayout({
         setHeadings(list);
     }, []);
 
+    // Active subheadings highlighting on scroll
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
@@ -275,508 +261,322 @@ export default function DocsLayout({
         return () => observer.disconnect();
     }, []);
 
-    const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
-    };
-
     const sidebarContent = (
-        <Box
-            sx={{
-                p: 2,
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-            }}
-        >
-            <TextField
-                placeholder="Search docs..."
-                size="small"
-                fullWidth
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                InputProps={{
-                    startAdornment: (
-                        <InputAdornment position="start">
-                            <SearchIcon
-                                sx={{
-                                    color: "rgba(255, 255, 255, 0.4)",
-                                    fontSize: "1.1rem",
-                                }}
-                            />
-                        </InputAdornment>
-                    ),
-                }}
-                sx={{
-                    mb: 3,
-                    "& .MuiOutlinedInput-root": {
-                        color: "#e5e7eb",
-                        background: "rgba(255, 255, 255, 0.02)",
-                        "& fieldset": {
-                            borderColor: "rgba(255, 255, 255, 0.08)",
-                        },
-                        "&:hover fieldset": {
-                            borderColor: "rgba(155, 123, 247, 0.4)",
-                        },
-                        "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
-                    },
-                }}
-            />
+        <div className="flex flex-col h-full text-[var(--fg)] font-body p-4 md:p-0">
+            {/* Search */}
+            <div className="relative mb-6">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--fg-faint)]" />
+                <input
+                    type="text"
+                    placeholder="Search docs..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-[var(--border)] bg-[var(--surface)] rounded-xl text-sm font-medium focus:outline-none focus:border-[#ff7759] focus:ring-1 focus:ring-[#ff7759]"
+                />
+            </div>
 
-            <List sx={{ px: 0, flexGrow: 1, overflowY: "auto" }}>
+            {/* List */}
+            <nav className="flex-1 flex flex-col gap-1 overflow-y-auto">
                 {filteredNav.map((item) => {
                     const active = pathname === item.href;
                     return (
-                        <ListItem
+                        <Link
                             key={item.href}
-                            disablePadding
-                            sx={{ mb: 0.5 }}
+                            href={item.href}
+                            onClick={() => setMobileOpen(false)}
+                            className={`flex items-center px-4 py-2 rounded-xl text-sm font-semibold tracking-wide transition-all ${
+                                active
+                                    ? "bg-[#ff7759]/10 text-[#ff7759]"
+                                    : "text-[var(--fg-muted)] hover:bg-[var(--overlay)] hover:text-[var(--fg)]"
+                            }`}
                         >
-                            <ListItemButton
-                                component={Link}
-                                href={item.href}
-                                onClick={() => setMobileOpen(false)}
-                                sx={{
-                                    borderRadius: "8px",
-                                    py: 1,
-                                    px: 2,
-                                    bgcolor: active
-                                        ? "rgba(155, 123, 247, 0.1)"
-                                        : "transparent",
-                                    color: active
-                                        ? "#9b7bf7"
-                                        : "rgba(255, 255, 255, 0.65)",
-                                    "&:hover": {
-                                        bgcolor: active
-                                            ? "rgba(155, 123, 247, 0.15)"
-                                            : "rgba(255, 255, 255, 0.05)",
-                                        color: active
-                                            ? "#9b7bf7"
-                                            : "rgba(255, 255, 255, 0.9)",
-                                    },
-                                }}
-                            >
-                                <ListItemText
-                                    primary={item.label}
-                                    primaryTypographyProps={{
-                                        fontSize: "0.9rem",
-                                        fontWeight: active ? 600 : 500,
-                                    }}
-                                />
-                            </ListItemButton>
-                        </ListItem>
+                            {item.label}
+                        </Link>
                     );
                 })}
                 {filteredNav.length === 0 && (
-                    <Typography
-                        variant="body2"
-                        sx={{
-                            color: "rgba(255,255,255,0.4)",
-                            p: 2,
-                            textAlign: "center",
-                        }}
-                    >
+                    <p className="text-[var(--fg-faint)] text-xs text-center py-4">
                         No results found
-                    </Typography>
+                    </p>
                 )}
-            </List>
-        </Box>
+            </nav>
+        </div>
     );
 
     return (
-        <ThemeProvider theme={darkTheme}>
-            <Box
-                sx={{
-                    position: "relative",
-                    minHeight: "100vh",
-                    bgcolor: "#0b0c10",
-                }}
-            >
-                <BackgroundAurora variant="docs" />
-                <Box
-                    sx={{
-                        position: "relative",
-                        zIndex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        minHeight: "100vh",
-                    }}
-                >
-                    <AppBar
-                        position="sticky"
-                        elevation={0}
-                        sx={{
-                            bgcolor: "rgba(11, 13, 18, 0.4)",
-                            backdropFilter: "blur(16px)",
-                            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-                        }}
-                    >
-                        <Toolbar
-                            sx={{
-                                maxWidth: "1400px",
-                                width: "100%",
-                                mx: "auto",
-                                px: { xs: 2, md: 3 },
-                            }}
+        <div className="relative w-full min-h-screen font-body text-[var(--fg)] bg-[var(--bg)] selection:bg-[#ff7759] selection:text-white flex flex-col overflow-x-hidden">
+            <style>{`
+                .font-heading { font-family: var(--font-heading), sans-serif; }
+                .font-body { font-family: var(--font-body), sans-serif; }
+                #docs-content h1 {
+                    font-family: var(--font-heading), sans-serif;
+                    font-size: 2.2rem;
+                    font-weight: 800;
+                    margin-bottom: 1.5rem;
+                    color: var(--fg);
+                    letter-spacing: -0.02em;
+                }
+                #docs-content h2 {
+                    font-family: var(--font-heading), sans-serif;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    margin-top: 2.5rem;
+                    margin-bottom: 1rem;
+                    color: var(--fg);
+                    letter-spacing: -0.015em;
+                }
+                #docs-content h3 {
+                    font-family: var(--font-heading), sans-serif;
+                    font-size: 1.2rem;
+                    font-weight: 700;
+                    margin-top: 2rem;
+                    margin-bottom: 0.75rem;
+                    color: var(--fg);
+                }
+                #docs-content p {
+                    font-family: var(--font-body), sans-serif;
+                    line-height: 1.7;
+                    margin-bottom: 1.25rem;
+                    color: var(--fg-muted);
+                }
+                #docs-content ul, #docs-content ol {
+                    margin-bottom: 1.5rem;
+                    padding-left: 1.5rem;
+                    list-style-type: disc;
+                    color: var(--fg-muted);
+                }
+                #docs-content li {
+                    margin-bottom: 0.5rem;
+                    line-height: 1.6;
+                }
+                #docs-content code {
+                    background: var(--overlay);
+                    padding: 0.15rem 0.4rem;
+                    border-radius: 6px;
+                    font-size: 0.9em;
+                    font-family: var(--font-geist-mono), monospace;
+                }
+                #docs-content pre {
+                    background: var(--surface-2);
+                    color: var(--fg);
+                    padding: 1.25rem;
+                    border-radius: 14px;
+                    overflow-x: auto;
+                    margin-bottom: 1.5rem;
+                    border: 1px solid var(--border);
+                }
+                #docs-content pre code {
+                    background: transparent;
+                    color: inherit;
+                    padding: 0;
+                    border-radius: 0;
+                    font-size: 0.88em;
+                }
+            `}</style>
+
+            {/* Header / Navbar */}
+            <header className="border-b border-[var(--border)] bg-[var(--surface)]/75 backdrop-blur-md sticky top-0 z-40 w-full text-[var(--fg)]">
+                <div className="max-w-[1400px] w-full mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        {/* Mobile Menu Icon */}
+                        <button
+                            onClick={() => setMobileOpen(true)}
+                            className="md:hidden p-2 text-[var(--fg)] hover:bg-[var(--overlay)] rounded-full transition-colors"
+                            aria-label="Open sidebar"
                         >
-                            <IconButton
-                                color="inherit"
-                                aria-label="open drawer"
-                                edge="start"
-                                onClick={handleDrawerToggle}
-                                sx={{ mr: 2, display: { md: "none" } }}
-                            >
-                                <MenuIcon />
-                            </IconButton>
+                            <Menu className="w-5 h-5" />
+                        </button>
 
-                            <Box
-                                component={Link}
-                                href="/docs"
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1.5,
-                                    textDecoration: "none",
-                                }}
-                            >
-                                <Box
-                                    component="img"
-                                    src="/LOGO/logo.png"
-                                    alt="Elixpo"
-                                    sx={{
-                                        height: 30,
-                                        width: 30,
-                                        borderRadius: "6px",
-                                    }}
-                                />
-                                <Typography
-                                    sx={{
-                                        fontWeight: 700,
-                                        fontSize: "1.05rem",
-                                        color: "#f5f5f4",
-                                        letterSpacing: "-0.01em",
-                                    }}
-                                >
-                                    Elixpo Accounts
-                                </Typography>
-                            </Box>
-
-                            <Box sx={{ flexGrow: 1 }} />
-
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                }}
-                            >
-                                <Tooltip
-                                    title={
-                                        copied
-                                            ? "Copied!"
-                                            : "Copy this page as plain text to paste into an LLM"
-                                    }
-                                    arrow
-                                >
-                                    <Button
-                                        onClick={handleCopyForLlm}
-                                        startIcon={
-                                            copied ? (
-                                                <CheckIcon
-                                                    sx={{
-                                                        fontSize:
-                                                            "1.1rem !important",
-                                                    }}
-                                                />
-                                            ) : (
-                                                <ContentCopyIcon
-                                                    sx={{
-                                                        fontSize:
-                                                            "1.05rem !important",
-                                                    }}
-                                                />
-                                            )
-                                        }
-                                        sx={{
-                                            color: copied
-                                                ? "#86efac"
-                                                : "rgba(255, 255, 255, 0.75)",
-                                            textTransform: "none",
-                                            fontWeight: 600,
-                                            fontSize: "0.85rem",
-                                            px: 1.5,
-                                            borderRadius: "8px",
-                                            border: "1px solid rgba(255,255,255,0.12)",
-                                            "&:hover": {
-                                                color: "#fff",
-                                                bgcolor:
-                                                    "rgba(155,123,247,0.08)",
-                                                borderColor:
-                                                    "rgba(155,123,247,0.4)",
-                                            },
-                                        }}
-                                    >
-                                        {copied ? "Copied" : "Copy for LLM"}
-                                    </Button>
-                                </Tooltip>
-                                <Button
-                                    component={Link}
-                                    href="/dashboard/oauth-apps"
-                                    startIcon={
-                                        <DashboardIcon
-                                            sx={{
-                                                fontSize: "1.1rem !important",
-                                            }}
-                                        />
-                                    }
-                                    sx={{
-                                        color: "rgba(255, 255, 255, 0.65)",
-                                        textTransform: "none",
-                                        fontWeight: 600,
-                                        fontSize: "0.85rem",
-                                        px: 1.5,
-                                        borderRadius: "6px",
-                                        "&:hover": {
-                                            color: "#fff",
-                                            bgcolor: "rgba(255,255,255,0.06)",
-                                        },
-                                    }}
-                                >
-                                    Dashboard
-                                </Button>
-                                <IconButton
-                                    component="a"
-                                    href="https://github.com/elixpo/accounts.elixpo"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    sx={{
-                                        color: "rgba(255, 255, 255, 0.5)",
-                                        "&:hover": {
-                                            color: "#fff",
-                                            bgcolor: "rgba(255,255,255,0.06)",
-                                        },
-                                    }}
-                                >
-                                    <GitHubIcon sx={{ fontSize: "1.2rem" }} />
-                                </IconButton>
-                            </Box>
-                        </Toolbar>
-                    </AppBar>
-
-                    <Snackbar
-                        open={copied}
-                        autoHideDuration={2400}
-                        onClose={() => setCopied(false)}
-                        anchorOrigin={{
-                            vertical: "bottom",
-                            horizontal: "center",
-                        }}
-                        message="Copied page as markdown to clipboard — paste into any LLM"
-                    />
-
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexGrow: 1,
-                            maxWidth: "1400px",
-                            width: "100%",
-                            mx: "auto",
-                            px: { xs: 2, md: 3 },
-                        }}
-                    >
-                        <Box
-                            component="nav"
-                            sx={{
-                                width: 260,
-                                flexShrink: 0,
-                                display: { xs: "none", md: "block" },
-                                borderRight:
-                                    "1px solid rgba(255, 255, 255, 0.06)",
-                                position: "sticky",
-                                top: 64,
-                                height: "calc(100vh - 64px)",
-                                overflowY: "auto",
-                                pt: 3,
-                            }}
+                        {/* Title — routes home: dashboard if signed in, else landing */}
+                        <Link
+                            href={authed ? "/dashboard" : "/"}
+                            className="flex items-center gap-2.5"
                         >
-                            {sidebarContent}
-                        </Box>
-
-                        <Drawer
-                            variant="temporary"
-                            open={mobileOpen}
-                            onClose={handleDrawerToggle}
-                            ModalProps={{ keepMounted: true }}
-                            sx={{
-                                display: { xs: "block", md: "none" },
-                                "& .MuiDrawer-paper": {
-                                    boxSizing: "border-box",
-                                    width: 280,
-                                    bgcolor: "rgba(11, 13, 18, 0.95)",
-                                    backdropFilter: "blur(20px)",
-                                    borderRight:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
-                                },
-                            }}
-                        >
-                            {sidebarContent}
-                        </Drawer>
-
-                        <Box
-                            component="main"
-                            sx={{
-                                flexGrow: 1,
-                                minWidth: 0,
-                                pt: 4,
-                                pb: 8,
-                                px: { xs: 0, md: 4, lg: 6 },
-                            }}
-                        >
-                            <Box id="docs-content">{children}</Box>
-
-                            <Divider
-                                sx={{
-                                    my: 4,
-                                    borderColor: "rgba(255, 255, 255, 0.06)",
-                                }}
+                            <img
+                                src="/LOGO/logo.png"
+                                alt="Elixpo Mascot"
+                                className="w-7.5 h-7.5 rounded-lg object-contain bg-[var(--surface)]/80 p-0.5"
                             />
+                            <span className="font-heading text-lg font-bold tracking-tight">
+                                Elixpo{" "}
+                                <span className="text-[#ff7759]">Accounts</span>
+                            </span>
+                        </Link>
+                    </div>
 
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    gap: 2,
-                                    flexWrap: "wrap",
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                        {/* Copy for LLM */}
+                        <button
+                            onClick={handleCopyForLlm}
+                            className="flex items-center gap-2 border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--overlay)] px-3 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all shadow-sm active:scale-[0.98]"
+                        >
+                            {copied ? (
+                                <>
+                                    <Check className="w-4 h-4 text-green-600" />
+                                    <span className="text-green-600">
+                                        Copied
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    <Copy className="w-3.5 h-3.5 text-[var(--fg)]" />
+                                    <span>Copy for LLM</span>
+                                </>
+                            )}
+                        </button>
+
+                        {/* Dashboard Link */}
+                        <Link
+                            href="/dashboard/oauth-apps"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-[var(--overlay)] transition-colors text-[var(--fg-muted)] hover:text-[var(--fg)]"
+                        >
+                            <LayoutDashboard className="w-3.5 h-3.5" />
+                            <span>Dashboard</span>
+                        </Link>
+
+                        {/* GitHub Icon */}
+                        <a
+                            href="https://github.com/elixpo/accounts.elixpo"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--overlay)] rounded-xl transition-all active:scale-[0.96] text-[var(--fg)]"
+                            aria-label="View on GitHub"
+                        >
+                            <Github className="w-4 h-4" />
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            {/* Layout Wrapper */}
+            <div className="flex-1 flex max-w-[1400px] w-full mx-auto px-5 sm:px-8 relative">
+                {/* Desktop Left Sidebar */}
+                <aside className="w-[260px] flex-shrink-0 hidden md:block border-r border-[var(--border)] sticky top-16 h-[calc(100vh-64px)] overflow-y-auto pt-8 pr-6">
+                    {sidebarContent}
+                </aside>
+
+                {/* Mobile Drawer */}
+                <AnimatePresence>
+                    {mobileOpen && (
+                        <>
+                            {/* Backdrop */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setMobileOpen(false)}
+                                className="fixed inset-0 bg-[#192837]/35 backdrop-blur-[4px] z-50 pointer-events-auto"
+                            />
+                            {/* Drawer Sheet */}
+                            <motion.div
+                                initial={{ x: "-100%" }}
+                                animate={{ x: 0 }}
+                                exit={{ x: "-100%" }}
+                                transition={{
+                                    ease: [0.22, 1, 0.36, 1] as const,
+                                    duration: 0.45,
                                 }}
+                                className="fixed left-0 top-0 w-[min(88vw,280px)] h-[100dvh] bg-[var(--surface)] shadow-[12px_0_48px_rgba(25,40,55,0.18)] z-50 flex flex-col p-6 text-[var(--fg)]"
                             >
-                                {prevPage ? (
-                                    <Button
-                                        component={Link}
-                                        href={prevPage.href}
-                                        startIcon={<ArrowBackIcon />}
-                                        sx={{
-                                            color: "#9b7bf7",
-                                            borderColor:
-                                                "rgba(155, 123, 247, 0.2)",
-                                            textTransform: "none",
-                                            fontWeight: 600,
-                                            px: 2,
-                                            py: 1,
-                                            border: "1px solid",
-                                            borderRadius: "8px",
-                                            "&:hover": {
-                                                borderColor: "#9b7bf7",
-                                                bgcolor:
-                                                    "rgba(155, 123, 247, 0.05)",
-                                            },
-                                        }}
+                                <div className="flex items-center justify-between pb-4 border-b border-[var(--border)] mb-6">
+                                    <div className="flex items-center gap-2">
+                                        <img
+                                            src="/LOGO/logo.png"
+                                            alt="Elixpo Mascot"
+                                            className="w-7.5 h-7.5 rounded-lg object-contain bg-[var(--surface)]/80 p-0.5"
+                                        />
+                                        <span className="font-heading text-lg font-bold text-[var(--fg)]">
+                                            Elixpo
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => setMobileOpen(false)}
+                                        className="p-1 hover:bg-[var(--overlay)] rounded-full transition-colors text-[var(--fg)]"
+                                        aria-label="Close menu"
                                     >
-                                        {prevPage.label}
-                                    </Button>
-                                ) : (
-                                    <Box />
-                                )}
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto">
+                                    {sidebarContent}
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
 
-                                {nextPage ? (
-                                    <Button
-                                        component={Link}
-                                        href={nextPage.href}
-                                        endIcon={<ArrowForwardIcon />}
-                                        sx={{
-                                            color: "#9b7bf7",
-                                            borderColor:
-                                                "rgba(155, 123, 247, 0.2)",
-                                            textTransform: "none",
-                                            fontWeight: 600,
-                                            px: 2,
-                                            py: 1,
-                                            border: "1px solid",
-                                            borderRadius: "8px",
-                                            "&:hover": {
-                                                borderColor: "#9b7bf7",
-                                                bgcolor:
-                                                    "rgba(155, 123, 247, 0.05)",
-                                            },
-                                        }}
-                                    >
-                                        {nextPage.label}
-                                    </Button>
-                                ) : (
-                                    <Box />
-                                )}
-                            </Box>
-                        </Box>
+                {/* Main Content Area */}
+                <main className="flex-grow min-w-0 pt-8 pb-16 px-0 md:px-8 lg:px-12 relative flex flex-col justify-between">
+                    <div id="docs-content-container">
+                        <div id="docs-content" ref={contentRef}>
+                            {children}
+                        </div>
+                    </div>
 
-                        {headings.length > 0 && (
-                            <Box
-                                sx={{
-                                    width: 220,
-                                    flexShrink: 0,
-                                    display: { xs: "none", lg: "block" },
-                                    position: "sticky",
-                                    top: 64,
-                                    height: "calc(100vh - 64px)",
-                                    overflowY: "auto",
-                                    pt: 4,
-                                    pl: 3,
-                                    borderLeft:
-                                        "1px solid rgba(255, 255, 255, 0.06)",
-                                }}
-                            >
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: "rgba(255, 255, 255, 0.4)",
-                                        fontWeight: 700,
-                                        textTransform: "uppercase",
-                                        tracking: "0.05em",
-                                        display: "block",
-                                        mb: 2,
+                    <div>
+                        <div className="border-t border-[var(--border)] my-8" />
+
+                        {/* Page Pagination buttons */}
+                        <div className="flex justify-between items-center gap-4 flex-wrap">
+                            {prevPage ? (
+                                <Link
+                                    href={prevPage.href}
+                                    className="flex items-center gap-2 border border-[#ff7759]/25 hover:border-[#ff7759] bg-[var(--surface)] hover:bg-[#ff7759]/5 text-[#ff7759] px-5 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all active:scale-[0.98]"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    <span>{prevPage.label}</span>
+                                </Link>
+                            ) : (
+                                <div />
+                            )}
+
+                            {nextPage ? (
+                                <Link
+                                    href={nextPage.href}
+                                    className="flex items-center gap-2 border border-[#ff7759]/25 hover:border-[#ff7759] bg-[var(--surface)] hover:bg-[#ff7759]/5 text-[#ff7759] px-5 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all active:scale-[0.98]"
+                                >
+                                    <span>{nextPage.label}</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </Link>
+                            ) : (
+                                <div />
+                            )}
+                        </div>
+                    </div>
+                </main>
+
+                {/* Desktop Right On-This-Page Navigation Sidebar */}
+                {headings.length > 0 && (
+                    <aside className="w-[220px] flex-shrink-0 hidden lg:block border-l border-[var(--border)] sticky top-16 h-[calc(100vh-64px)] overflow-y-auto pt-8 pl-6">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--fg-faint)] block mb-4">
+                            On this page
+                        </span>
+                        <ul className="flex flex-col gap-2 text-xs font-semibold leading-relaxed">
+                            {headings.map((h) => (
+                                <li
+                                    key={h.id}
+                                    style={{
+                                        paddingLeft:
+                                            h.level === 3 ? "12px" : "0",
                                     }}
                                 >
-                                    On this page
-                                </Typography>
-                                <List sx={{ p: 0 }}>
-                                    {headings.map((h) => (
-                                        <ListItem
-                                            key={h.id}
-                                            disablePadding
-                                            sx={{
-                                                mb: 1,
-                                                pl: h.level === 3 ? 1.5 : 0,
-                                            }}
-                                        >
-                                            <Typography
-                                                component="a"
-                                                href={`#${h.id}`}
-                                                sx={{
-                                                    fontSize: "0.82rem",
-                                                    color:
-                                                        activeHeadingId === h.id
-                                                            ? "#9b7bf7"
-                                                            : "rgba(255, 255, 255, 0.45)",
-                                                    fontWeight:
-                                                        activeHeadingId === h.id
-                                                            ? 600
-                                                            : 400,
-                                                    textDecoration: "none",
-                                                    lineHeight: 1.4,
-                                                    transition:
-                                                        "color 0.15s ease",
-                                                    "&:hover": {
-                                                        color: "#fff",
-                                                    },
-                                                }}
-                                            >
-                                                {h.text}
-                                            </Typography>
-                                        </ListItem>
-                                    ))}
-                                </List>
-                            </Box>
-                        )}
-                    </Box>
-                </Box>
-            </Box>
-        </ThemeProvider>
+                                    <a
+                                        href={`#${h.id}`}
+                                        className={`transition-colors hover:text-[var(--fg)] ${
+                                            activeHeadingId === h.id
+                                                ? "text-[#ff7759] font-bold"
+                                                : "text-[var(--fg-faint)]"
+                                        }`}
+                                    >
+                                        {h.text}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </aside>
+                )}
+            </div>
+        </div>
     );
 }

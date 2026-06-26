@@ -30,7 +30,7 @@ export default function SelfHostingPage() {
                 sx={{
                     fontSize: "2rem",
                     fontWeight: 800,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mb: 2,
                     letterSpacing: "-0.02em",
                 }}
@@ -39,7 +39,7 @@ export default function SelfHostingPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 4,
                     fontSize: "1rem",
                     lineHeight: 1.7,
@@ -55,7 +55,7 @@ export default function SelfHostingPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -65,7 +65,7 @@ export default function SelfHostingPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -76,7 +76,7 @@ export default function SelfHostingPage() {
 
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -87,7 +87,7 @@ export default function SelfHostingPage() {
             <CodeBlock code={MIGRATE_DEV} language="bash" />
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 4,
                     lineHeight: 1.6,
                 }}
@@ -101,7 +101,7 @@ export default function SelfHostingPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -111,7 +111,7 @@ export default function SelfHostingPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -122,7 +122,7 @@ export default function SelfHostingPage() {
             <Box
                 component="ol"
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     pl: 3,
                     mb: 4,
                     "& li": { mb: 1.5, lineHeight: 1.6 },
@@ -165,7 +165,7 @@ export default function SelfHostingPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -175,7 +175,7 @@ export default function SelfHostingPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}

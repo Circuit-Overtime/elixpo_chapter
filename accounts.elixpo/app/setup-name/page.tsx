@@ -12,19 +12,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import BackgroundAurora from "../components/background-aurora";
 
-const ACCENT = "#9b7bf7";
+const ACCENT = "#ff7759";
 
 const textFieldSx = {
     "& .MuiOutlinedInput-root": {
-        color: "#f4f4f6",
+        color: "var(--fg)",
         background: "transparent",
-        "& fieldset": { borderColor: "rgba(255, 255, 255, 0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.24)" },
+        "& fieldset": { borderColor: "var(--border)" },
+        "&:hover fieldset": { borderColor: "var(--border)" },
         "&.Mui-focused fieldset": { borderColor: ACCENT },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255, 255, 255, 0.7)" },
+    "& .MuiInputLabel-root": { color: "var(--fg-muted)" },
     "& .MuiInputLabel-root.Mui-focused": { color: ACCENT },
-    "& .MuiFormHelperText-root": { color: "rgba(255, 255, 255, 0.4)" },
+    "& .MuiFormHelperText-root": { color: "var(--fg-faint)" },
 };
 
 function slugifyHandle(s: string): string {
@@ -175,7 +175,7 @@ const SetupNameContent = () => {
                     sx={{
                         position: "relative",
                         zIndex: 1,
-                        color: "rgba(255,255,255,0.5)",
+                        color: "var(--fg-faint)",
                     }}
                 >
                     Loading...
@@ -194,10 +194,10 @@ const SetupNameContent = () => {
                 : "3–32 chars. Lowercase letters, numbers, - and _. This is your @handle.";
     const handleHelperColor =
         check.state === "available"
-            ? "#4ade80"
+            ? "#15803d"
             : check.state === "taken"
-              ? "#f87171"
-              : "rgba(255,255,255,0.4)";
+              ? "#b91c1c"
+              : "var(--fg-faint)";
 
     return (
         <Box
@@ -218,24 +218,23 @@ const SetupNameContent = () => {
                     maxWidth: "460px",
                     width: "100%",
                     backdropFilter: "blur(20px)",
-                    background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                     borderRadius: "16px",
-                    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
+                    boxShadow: "0 8px 32px 0 rgba(25, 40, 55, 0.06)",
                     p: 4,
                 }}
             >
                 <Box sx={{ textAlign: "center", mb: 3 }}>
                     <Typography
                         variant="h4"
-                        sx={{ fontWeight: 700, color: "#f4f4f6", mb: 1 }}
+                        sx={{ fontWeight: 700, color: "var(--fg)", mb: 1 }}
                     >
                         Claim your handle
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(255, 255, 255, 0.5)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.95rem",
                         }}
                     >
@@ -266,7 +265,7 @@ const SetupNameContent = () => {
                     InputProps={{
                         startAdornment: (
                             <Typography
-                                sx={{ color: "rgba(255,255,255,0.4)", mr: 0.5 }}
+                                sx={{ color: "var(--fg-faint)", mr: 0.5 }}
                             >
                                 @
                             </Typography>
@@ -303,10 +302,10 @@ const SetupNameContent = () => {
                         textTransform: "none",
                         fontSize: "0.95rem",
                         py: 1.3,
-                        "&:hover": { background: "#b69aff" },
+                        "&:hover": { background: "rgba(255, 119, 89, 0.9)" },
                         "&:disabled": {
-                            background: "rgba(255,255,255,0.08)",
-                            color: "rgba(255, 255, 255, 0.3)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                         },
                     }}
                 >
@@ -315,7 +314,7 @@ const SetupNameContent = () => {
 
                 <Typography
                     sx={{
-                        color: "rgba(255, 255, 255, 0.3)",
+                        color: "var(--fg-faint)",
                         fontSize: "0.8rem",
                         textAlign: "center",
                         mt: 2.5,

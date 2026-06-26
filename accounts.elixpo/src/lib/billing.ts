@@ -25,7 +25,8 @@ import type { D1Database } from "@cloudflare/workers-types";
 function timingSafeEqualHex(a: string, b: string): boolean {
     if (a.length !== b.length) return false;
     let diff = 0;
-    for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    for (let i = 0; i < a.length; i++)
+        diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
     return diff === 0;
 }
 
@@ -80,7 +81,9 @@ export const TIER_LIMITS: Record<Tier, TierLimits> = {
 };
 
 /** Read the tier off a users row, normalising missing/legacy values to 'hobby'. */
-export function tierFromUserRow(row: { tier?: string | null; is_internal?: number | boolean } | null): Tier {
+export function tierFromUserRow(
+    row: { tier?: string | null; is_internal?: number | boolean } | null,
+): Tier {
     if (!row) return "hobby";
     if (row.is_internal === 1 || row.is_internal === true) return "internal";
     return normalizeTier(row.tier);
@@ -117,7 +120,10 @@ export async function verifyPayoutsSignature(
     const skew = Math.abs(Math.floor(Date.now() / 1000) - t);
     if (skew > 300) return false;
 
-    const expected = await hmacSha256Hex(secret, `${timestampHeader}.${rawBody}`);
+    const expected = await hmacSha256Hex(
+        secret,
+        `${timestampHeader}.${rawBody}`,
+    );
     const presented = signatureHeader
         .split(",")
         .map((s) => s.trim())
@@ -198,10 +204,7 @@ export async function applyEntitlementUpdate(
     //   - paid→hobby (period_end downgrade) → clear (cycle finished)
     //   - everything else (renewal, no-op) → preserve existing value
     let cancelledAtClause = "tier_cancelled_at = tier_cancelled_at"; // no-op
-    if (
-        params.eventStatus === "cancelled" ||
-        params.eventStatus === "halted"
-    ) {
+    if (params.eventStatus === "cancelled" || params.eventStatus === "halted") {
         cancelledAtClause = "tier_cancelled_at = datetime('now')";
     } else if (previousTier === "hobby" && params.tier !== "hobby") {
         cancelledAtClause = "tier_cancelled_at = NULL";

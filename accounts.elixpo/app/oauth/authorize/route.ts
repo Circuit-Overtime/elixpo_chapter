@@ -119,8 +119,7 @@ export async function GET(request: NextRequest) {
         const accessToken =
             request.cookies.get("access_token")?.value ||
             request.headers.get("authorization")?.replace("Bearer ", "");
-        const refreshTokenCookie =
-            request.cookies.get("refresh_token")?.value;
+        const refreshTokenCookie = request.cookies.get("refresh_token")?.value;
 
         // Build the "send them to /login and resume here afterwards"
         // redirect once — used as a fallback on auth failure below.

@@ -45,7 +45,7 @@ function ServiceIcon({
                     height: size,
                     borderRadius: "10px",
                     flexShrink: 0,
-                    bgcolor: "rgba(255,255,255,0.05)",
+                    bgcolor: "var(--overlay)",
                     p: 0.5,
                 }}
                 onError={() => setFaviconFailed(true)}
@@ -211,18 +211,18 @@ const ServicesPage = () => {
             <Box sx={{ mb: 4 }}>
                 <Typography
                     variant="h4"
-                    sx={{ fontWeight: 700, color: "#f5f5f4", mb: 1 }}
+                    sx={{ fontWeight: 700, color: "var(--fg)", mb: 1 }}
                 >
                     Connected Services
                 </Typography>
-                <Typography sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
+                <Typography sx={{ color: "var(--fg-faint)" }}>
                     Applications you've signed in to using your Elixpo account.
                 </Typography>
             </Box>
 
             {loading ? (
                 <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                    <CircularProgress sx={{ color: "#9b7bf7" }} />
+                    <CircularProgress sx={{ color: "#ff7759" }} />
                 </Box>
             ) : services.length === 0 ? (
                 <Box
@@ -230,13 +230,13 @@ const ServicesPage = () => {
                         py: 8,
                         textAlign: "center",
                         borderRadius: "16px",
-                        bgcolor: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.07)",
+                        bgcolor: "var(--surface)",
+                        border: "1px solid var(--border)",
                     }}
                 >
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.35)",
+                            color: "var(--fg-faint)",
                             fontSize: "1rem",
                             mb: 0.5,
                         }}
@@ -245,7 +245,7 @@ const ServicesPage = () => {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.2)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.85rem",
                         }}
                     >
@@ -292,18 +292,18 @@ const ServicesPage = () => {
                                 sx={{
                                     p: 2.5,
                                     borderRadius: "14px",
-                                    bgcolor: "rgba(255,255,255,0.03)",
-                                    border: "1px solid rgba(255,255,255,0.07)",
+                                    bgcolor: "var(--surface)",
+                                    border: "1px solid var(--border)",
                                     transition:
                                         "border-color 0.2s, background-color 0.2s, transform 0.2s",
                                     cursor: "pointer",
                                     "&:hover": {
-                                        borderColor: "rgba(155,123,247,0.45)",
-                                        bgcolor: "rgba(155,123,247,0.04)",
+                                        borderColor: "rgba(255, 119, 89,0.45)",
+                                        bgcolor: "rgba(255, 119, 89,0.04)",
                                         transform: "translateY(-1px)",
                                     },
                                     "&:focus-visible": {
-                                        outline: "2px solid #9b7bf7",
+                                        outline: "2px solid #ff7759",
                                         outlineOffset: 2,
                                     },
                                     display: "flex",
@@ -323,7 +323,7 @@ const ServicesPage = () => {
                                     <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                                         <Typography
                                             sx={{
-                                                color: "#f5f5f4",
+                                                color: "var(--fg)",
                                                 fontWeight: 600,
                                                 fontSize: "1rem",
                                             }}
@@ -340,7 +340,7 @@ const ServicesPage = () => {
                                                     e.stopPropagation()
                                                 }
                                                 sx={{
-                                                    color: "rgba(255,255,255,0.3)",
+                                                    color: "var(--fg-faint)",
                                                     fontSize: "0.75rem",
                                                     textDecoration: "none",
                                                     fontFamily: "monospace",
@@ -348,7 +348,7 @@ const ServicesPage = () => {
                                                     alignItems: "center",
                                                     gap: 0.5,
                                                     "&:hover": {
-                                                        color: "#9b7bf7",
+                                                        color: "#ff7759",
                                                     },
                                                 }}
                                             >
@@ -368,14 +368,14 @@ const ServicesPage = () => {
                                         }}
                                         disabled={revoking === svc.client_id}
                                         sx={{
-                                            color: "rgba(255,255,255,0.35)",
+                                            color: "var(--fg-faint)",
                                             textTransform: "none",
                                             fontSize: "0.8rem",
                                             flexShrink: 0,
                                             borderRadius: "8px",
                                             px: 1.5,
                                             "&:hover": {
-                                                color: "#ef4444",
+                                                color: "#b91c1c",
                                                 bgcolor: "rgba(239,68,68,0.08)",
                                             },
                                         }}
@@ -390,7 +390,7 @@ const ServicesPage = () => {
                                 {svc.description && (
                                     <Typography
                                         sx={{
-                                            color: "rgba(255,255,255,0.4)",
+                                            color: "var(--fg-faint)",
                                             fontSize: "0.85rem",
                                             lineHeight: 1.5,
                                         }}
@@ -411,8 +411,8 @@ const ServicesPage = () => {
                                         label={`Authorized ${new Date(svc.first_authorized).toLocaleDateString()}`}
                                         size="small"
                                         sx={{
-                                            bgcolor: "rgba(255,255,255,0.05)",
-                                            color: "rgba(255,255,255,0.35)",
+                                            bgcolor: "var(--overlay)",
+                                            color: "var(--fg-faint)",
                                             fontSize: "0.7rem",
                                             height: 22,
                                         }}
@@ -421,8 +421,8 @@ const ServicesPage = () => {
                                         label={`Last used ${new Date(svc.last_authorized).toLocaleDateString()}`}
                                         size="small"
                                         sx={{
-                                            bgcolor: "rgba(255,255,255,0.05)",
-                                            color: "rgba(255,255,255,0.35)",
+                                            bgcolor: "var(--overlay)",
+                                            color: "var(--fg-faint)",
                                             fontSize: "0.7rem",
                                             height: 22,
                                         }}

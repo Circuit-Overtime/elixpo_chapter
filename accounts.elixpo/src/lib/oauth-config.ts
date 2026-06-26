@@ -84,8 +84,7 @@ export function getOAuthConfig(
                 // standard shape — no separate /me call needed for the
                 // basics. Picture comes back as a Graph URL that requires
                 // an auth header to fetch the binary; we don't store it.
-                userInfoEndpoint:
-                    "https://graph.microsoft.com/oidc/userinfo",
+                userInfoEndpoint: "https://graph.microsoft.com/oidc/userinfo",
                 scopes: ["openid", "profile", "email"],
             };
 

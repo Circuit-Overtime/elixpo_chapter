@@ -45,9 +45,7 @@ export async function POST(request: NextRequest) {
 
     const db = await getDatabase();
     const user = (await db
-        .prepare(
-            "SELECT id, tier, is_internal FROM users WHERE id = ?",
-        )
+        .prepare("SELECT id, tier, is_internal FROM users WHERE id = ?")
         .bind(auth.sub)
         .first()) as { id: string; tier: string; is_internal: number } | null;
     if (!user)
@@ -66,7 +64,8 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    const apiBase = process.env.PAYOUTS_API_BASE || "https://payouts.elixpo.com";
+    const apiBase =
+        process.env.PAYOUTS_API_BASE || "https://payouts.elixpo.com";
     const apiKey = process.env.ELIXPO_ACCOUNTS_PAYOUT_CLIENT_SECRET || "";
     if (!apiKey) {
         console.error(

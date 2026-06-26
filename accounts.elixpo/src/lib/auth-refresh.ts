@@ -20,20 +20,15 @@
  * happen inside `tryRefreshSession` — callers only deal with the cookies.
  */
 
-import type { NextRequest } from "next/server";
-import type { NextResponse } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
+import { getDatabase } from "./d1-client";
 import {
     getRefreshTokenByHash,
     getUserById,
     revokeRefreshToken,
     createRefreshToken as storeRefreshToken,
 } from "./db";
-import {
-    createAccessToken,
-    createRefreshToken,
-    verifyJWT,
-} from "./jwt";
-import { getDatabase } from "./d1-client";
+import { createAccessToken, createRefreshToken, verifyJWT } from "./jwt";
 import { generateUUID, hashString } from "./webcrypto";
 
 export type RefreshSuccess = {
@@ -41,7 +36,13 @@ export type RefreshSuccess = {
     userId: string;
     email: string;
     displayName: string | null;
-    provider: "google" | "github" | "discord" | "microsoft" | "email" | undefined;
+    provider:
+        | "google"
+        | "github"
+        | "discord"
+        | "microsoft"
+        | "email"
+        | undefined;
     emailVerified: boolean;
     newAccessToken: string;
     newRefreshToken: string;
@@ -83,14 +84,12 @@ export async function tryRefreshSession(
             return { ok: false, reason: "token_revoked" };
         }
 
-        const user = (await getUserById(db, payload.sub)) as
-            | {
-                  id: string;
-                  email: string;
-                  display_name: string | null;
-                  email_verified: number;
-              }
-            | null;
+        const user = (await getUserById(db, payload.sub)) as {
+            id: string;
+            email: string;
+            display_name: string | null;
+            email_verified: number;
+        } | null;
         if (!user) {
             return { ok: false, reason: "user_not_found" };
         }

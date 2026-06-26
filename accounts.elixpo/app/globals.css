@@ -1,8 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root,
+[data-theme="light"] {
+  --background: #F2F2EE;
+  --foreground: #192837;
+  --font-heading: 'Helvetica Now Display Bold', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Semantic theme tokens (light = cream + coral). */
+  --bg: #F2F2EE;
+  --surface: #ffffff;
+  --surface-2: #faf9f6;
+  --fg: #192837;
+  --fg-muted: rgba(25, 40, 55, 0.70);
+  --fg-faint: rgba(25, 40, 55, 0.50);
+  --border: rgba(25, 40, 55, 0.10);
+  --field-bg: #ffffff;
+  --overlay: rgba(25, 40, 55, 0.04);
+  --accent: #ff7759;
+  --accent-2: #ff5a3c;
+  --accent-contrast: #ffffff;
+  --accent-tint: rgba(255, 119, 89, 0.10);
+  --accent-border: rgba(255, 119, 89, 0.30);
+
+  /* Brand vars consumed by Tailwind (kept in sync with the theme). */
+  --color-text: #192837;
+  --color-accent: #ff7759;
+  --color-login-bg: #F2F2EE;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --background: #0f1117;
+  --foreground: #f5f5f4;
+
+  --bg: #0f1117;
+  --surface: #181b22;
+  --surface-2: #14171d;
+  --fg: #f5f5f4;
+  --fg-muted: rgba(245, 245, 244, 0.70);
+  --fg-faint: rgba(245, 245, 244, 0.50);
+  --border: rgba(255, 255, 255, 0.10);
+  --field-bg: rgba(255, 255, 255, 0.03);
+  --overlay: rgba(255, 255, 255, 0.05);
+  --accent: #ff7759;
+  --accent-2: #ff5a3c;
+  --accent-contrast: #ffffff;
+  --accent-tint: rgba(255, 119, 89, 0.14);
+  --accent-border: rgba(255, 119, 89, 0.35);
+
+  --color-text: #f5f5f4;
+  --color-accent: #ff7759;
+  --color-login-bg: #0f1117;
+  color-scheme: dark;
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  
+  --color-brand-text: var(--color-text);
+  --color-brand-accent: var(--color-accent);
+  --color-brand-login-bg: var(--color-login-bg);
 }
 
 @theme inline {
@@ -12,17 +77,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--fg);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 @keyframes auroraDriftA {
