@@ -2,12 +2,12 @@
   "hero": {
     "focusTags": ["MLOps", "DevOps", "Open Source"],
     "name": "AYUSHMAN",
-    "headline": "Open-Source Maintainer & Platform Engineer",
-    "subhead": "GitHub Maintainer Advisory for Pollinations.ai · Platform Engineer @ Myceli AI",
+    "headline": "Open-Source Maintainer & DevRel Engineer",
+    "subhead": "GitHub Maintainer Advisory for Pollinations.ai · DevRel Engineer @ Myceli AI",
     "intro": "I build the automation, release engineering, and developer tooling that keep large open-source projects running, contributor pipelines, CI/CD, and deployment infrastructure.",
     "credentials": [
       { "label": "GitHub Maintainer Advisory", "org": "Pollinations.ai" },
-      { "label": "Product Engineer", "org": "Myceli AI" }
+      { "label": "DevRel Engineer", "org": "Myceli AI" }
     ],
     "ctas": [
       { "label": "View Work", "href": "projects" },
