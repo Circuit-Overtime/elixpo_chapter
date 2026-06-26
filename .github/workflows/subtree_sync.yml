@@ -37,6 +37,7 @@ jobs:
 
           repos=(
             "payouts.elixpo https://github.com/elixpo/payouts.elixpo"
+            "status.elixpo https://github.com/elixpo/status.elixpo"
             "mails.elixpo https://github.com/elixpo/mail.elixpo"
             "admin.elixpo https://github.com/elixpo/admin.elixpo"
             "agent.elixpo https://github.com/elixpo/agent.elixpo.git"
@@ -50,7 +51,7 @@ jobs:
             "me.elixpo https://github.com/elixpo/me.elixpo.git"
             "accounts.elixpo https://github.com/elixpo/accounts.elixpo.git"
             "search.elixpo https://github.com/pollinations/search.elixpo.git"
-            "url.elixpo https://github.com/elixpo/url.elixpo.git"
+            "lixrl.com https://github.com/elixpo/lixrl.com.git"
             "tommy.elixpo https://github.com/elixpo/tommy.elixpo.git"
             "rewrite.elixpo https://github.com/elixpo/rewrite.elixpo.git"
             "wish.elixpo https://github.com/elixpo/wish.elixpo.git"
