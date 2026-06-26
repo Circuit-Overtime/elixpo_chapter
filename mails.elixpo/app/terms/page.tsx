@@ -52,7 +52,10 @@ export default function TermsPage() {
                 <LegalP>
                     You must use mail.elixpo only for legitimate, consented transactional and
                     operational email, and in compliance with our{" "}
-                    <a href="/content-policy" style={{ color: "#9b7bf7", textDecoration: "none" }}>
+                    <a
+                        href="/content-policy"
+                        style={{ color: "var(--accent)", textDecoration: "none" }}
+                    >
                         Content &amp; Acceptable Use Policy
                     </a>{" "}
                     and applicable laws, including anti-spam laws such as CAN-SPAM, CASL, and the

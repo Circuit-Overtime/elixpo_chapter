@@ -2,13 +2,12 @@
 
 import type { SvgIconComponent } from "@mui/icons-material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import BoltIcon from "@mui/icons-material/Bolt";
+import CheckIcon from "@mui/icons-material/Check";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CodeIcon from "@mui/icons-material/Code";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DesignServicesIcon from "@mui/icons-material/DesignServices";
 import EastIcon from "@mui/icons-material/East";
 import HubIcon from "@mui/icons-material/Hub";
-import InsightsIcon from "@mui/icons-material/Insights";
 import LockIcon from "@mui/icons-material/Lock";
 import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
@@ -18,31 +17,30 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import WavingHandIcon from "@mui/icons-material/WavingHand";
 import WebhookIcon from "@mui/icons-material/Webhook";
-import { Box, Button, Chip, Container, Stack, Typography } from "@mui/material";
+import { Box, Button, Container, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import Link from "next/link";
 import type React from "react";
 import { useEffect, useState } from "react";
 import CodeBlock from "./components/code-block";
-import { GlassCard } from "./components/glass-card";
 import PageShell from "./components/page-shell";
 import PixelHero from "./components/pixel-hero";
 
-const ACCENT = "#9b7bf7";
-const TEXT = "#f5f5f4";
-const TEXT_60 = "rgba(245,245,244,0.6)";
-const TEXT_65 = "rgba(245,245,244,0.65)";
+const CORAL = "#ff7759";
+const ACTION_BLUE = "#1863dc";
 
+// Cohere primary CTA button styles
 const PRIMARY_BTN = {
     textTransform: "none" as const,
-    fontWeight: 700,
-    fontSize: "1rem",
+    fontWeight: 500,
+    fontSize: "0.95rem",
     color: "#fff",
-    px: 3.2,
-    py: 1.4,
-    borderRadius: "12px",
-    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-    boxShadow: "0 8px 24px rgba(124,92,255,0.4)",
-    "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+    px: 3.5,
+    py: 1.3,
+    borderRadius: "32px", // Pill
+    background: "#17171c",
+    boxShadow: "none",
+    fontFamily: "var(--font-sans)",
+    "&:hover": { background: "#000000" },
 };
 
 // ── Section heading helper ──────────────────────────────────────────────────
@@ -50,20 +48,23 @@ function SectionHead({
     eyebrow,
     title,
     body,
+    whiteText = false,
 }: {
     eyebrow: string;
     title: React.ReactNode;
     body?: string;
+    whiteText?: boolean;
 }) {
     return (
-        <Stack alignItems="center" textAlign="center" spacing={1.5} sx={{ mb: { xs: 4, md: 6 } }}>
+        <Stack alignItems="center" textAlign="center" spacing={1.8} sx={{ mb: { xs: 5, md: 8 } }}>
             <Typography
                 sx={{
-                    color: ACCENT,
-                    fontWeight: 700,
+                    color: whiteText ? "#ffad9b" : CORAL, // Soft Coral / Coral
+                    fontWeight: 500,
                     fontSize: "0.78rem",
-                    letterSpacing: "0.14em",
+                    letterSpacing: "0.18em",
                     textTransform: "uppercase",
+                    fontFamily: "var(--font-mono)",
                 }}
             >
                 {eyebrow}
@@ -71,11 +72,12 @@ function SectionHead({
             <Typography
                 component="h2"
                 sx={{
-                    fontWeight: 800,
-                    fontSize: { xs: "1.9rem", md: "2.6rem" },
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.08,
-                    color: TEXT,
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 500,
+                    fontSize: { xs: "2rem", md: "2.8rem" },
+                    letterSpacing: "-0.03em",
+                    lineHeight: 1.05,
+                    color: whiteText ? "#ffffff" : "var(--fg)",
                     maxWidth: 720,
                 }}
             >
@@ -83,7 +85,13 @@ function SectionHead({
             </Typography>
             {body && (
                 <Typography
-                    sx={{ maxWidth: 600, color: TEXT_65, fontSize: "1.05rem", lineHeight: 1.7 }}
+                    sx={{
+                        maxWidth: 600,
+                        color: whiteText ? "rgba(255,255,255,0.7)" : "var(--fg-muted)",
+                        fontSize: "1.05rem",
+                        lineHeight: 1.6,
+                        fontFamily: "var(--font-sans)",
+                    }}
                 >
                     {body}
                 </Typography>
@@ -92,9 +100,52 @@ function SectionHead({
     );
 }
 
+// ── Connective "story thread" artifact between sections ─────────────────────
+function SectionThread({ node = true }: { node?: boolean }) {
+    return (
+        <Box
+            aria-hidden
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 0,
+                py: { xs: 0.5, md: 1 },
+            }}
+        >
+            <Box
+                sx={{
+                    width: "1.5px",
+                    height: { xs: 26, md: 38 },
+                    background: "linear-gradient(to bottom, transparent, var(--accent-border))",
+                }}
+            />
+            {node && (
+                <Box
+                    sx={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: "50%",
+                        background: CORAL,
+                        boxShadow: "0 0 0 5px var(--accent-tint)",
+                        my: 0.4,
+                    }}
+                />
+            )}
+            <Box
+                sx={{
+                    width: "1.5px",
+                    height: { xs: 26, md: 38 },
+                    background: node
+                        ? "linear-gradient(to bottom, var(--accent-border), transparent)"
+                        : "linear-gradient(to bottom, var(--accent-border), transparent)",
+                }}
+            />
+        </Box>
+    );
+}
+
 // ── Auth-aware primary CTA ──────────────────────────────────────────────────
-// null = still resolving session; true/false = known. Defaults to the
-// signed-out label while resolving to avoid a misleading flash.
 function useAuthed(): boolean | null {
     const [authed, setAuthed] = useState<boolean | null>(null);
     useEffect(() => {
@@ -113,14 +164,15 @@ function useAuthed(): boolean | null {
 function PrimaryCta({
     authed,
     signedOutLabel,
-}: { authed: boolean | null; signedOutLabel: string }) {
+    sx,
+}: { authed: boolean | null; signedOutLabel: string; sx?: any }) {
     const signedIn = authed === true;
     return (
         <Button
             component={signedIn ? Link : "a"}
             href={signedIn ? "/dashboard" : "/api/auth/login"}
             endIcon={<ArrowForwardIcon sx={{ fontSize: "1.1rem !important" }} />}
-            sx={PRIMARY_BTN}
+            sx={{ ...PRIMARY_BTN, ...sx }}
         >
             {signedIn ? "Go to your dashboard" : signedOutLabel}
         </Button>
@@ -128,69 +180,54 @@ function PrimaryCta({
 }
 
 // ── Data ────────────────────────────────────────────────────────────────────
-const STEPS: { icon: SvgIconComponent; title: string; body: string; accent: string }[] = [
+const STEPS: { icon: SvgIconComponent; title: string; body: string }[] = [
     {
         icon: VpnKeyIcon,
-        title: "Connect a sender",
-        body: "Add your mailbox — email + app password. Stored encrypted, never returned.",
-        accent: "#9b7bf7",
+        title: "Connect your sender",
+        body: "Add your mailbox — email + app password, encrypted at rest. Your domain, your reputation.",
     },
     {
         icon: DesignServicesIcon,
         title: "Design a template",
-        body: "Compose in a visual editor with {{variable}} placeholders and a live preview.",
-        accent: "#86efac",
+        body: "Compose in a visual editor with {{variable}} placeholders and a live inbox preview.",
     },
     {
         icon: WebhookIcon,
-        title: "Trigger via webhook",
-        body: "POST an event with per-config credentials. We merge variables and send.",
-        accent: "#5fb6ff",
-    },
-    {
-        icon: InsightsIcon,
-        title: "Track delivery",
-        body: "Every send is logged with status, recipient, and resolved variables.",
-        accent: "#fbbf24",
+        title: "Send it",
+        body: "Send a one-time email to anyone — no login required — or trigger it from your stack with a signed webhook.",
     },
 ];
 
-const FEATURES: { icon: SvgIconComponent; title: string; body: string; accent: string }[] = [
+const FEATURES: { icon: SvgIconComponent; title: string; body: string }[] = [
     {
         icon: VpnKeyIcon,
         title: "Bring your own sender",
         body: "Connect any mailbox with an email and app password. Your sender, your domain, your reputation — encrypted at rest and never locked in.",
-        accent: "#9b7bf7",
     },
     {
         icon: DesignServicesIcon,
         title: "Visual template editor",
         body: "Design emails in a WYSIWYG editor with {{variable}} placeholders and a live preview that renders exactly what recipients will see.",
-        accent: "#86efac",
+    },
+    {
+        icon: MarkEmailReadIcon,
+        title: "One-time templates, no login",
+        body: "Compose a template and send it to anyone, right away — Gmail-style. No account for the recipient, no webhook to wire up.",
+    },
+    {
+        icon: HubIcon,
+        title: "Custom team workspaces",
+        body: "Invite teammates with one link, assign roles (admin, writer, viewer), and approve who joins — everyone shares one branded workspace.",
     },
     {
         icon: WebhookIcon,
         title: "Trigger from your stack",
-        body: "Fire a single webhook from your service with per-config client credentials. We resolve variables into your template and deliver.",
-        accent: "#5fb6ff",
-    },
-    {
-        icon: BoltIcon,
-        title: "Event-based, not batch",
-        body: "Welcome emails, receipts, password resets, alerts — every send is a single, idempotent, traceable event, not a campaign.",
-        accent: "#fbbf24",
-    },
-    {
-        icon: CodeIcon,
-        title: "No mail infra to build",
-        body: "Skip SMTP plumbing, retries, queues, and template engines. One dashboard and one endpoint, and you are sending.",
-        accent: "#c4b5fd",
+        body: "Fire a single signed webhook from your service with per-product credentials. We resolve variables into your template and deliver.",
     },
     {
         icon: MarkEmailReadIcon,
-        title: "Delivery logs",
-        body: "Each triggered send is recorded with status, recipient, and the variables it resolved — searchable from your dashboard.",
-        accent: "#ff7cc9",
+        title: "Delivery logs & unsubscribe",
+        body: "Every send is recorded with status, recipient, and resolved variables — with one-click unsubscribe and a managed suppression list built in.",
     },
 ];
 
@@ -206,7 +243,7 @@ const USE_CASES: { icon: SvgIconComponent; label: string }[] = [
 const TRUST: { icon: SvgIconComponent; label: string }[] = [
     { icon: HubIcon, label: "Single sign-on via Elixpo Accounts" },
     { icon: LockIcon, label: "Sender credentials encrypted at rest" },
-    { icon: PublicIcon, label: "Delivered on Cloudflare's global edge" },
+    { icon: PublicIcon, label: "Signed webhooks with one-click unsubscribe" },
 ];
 
 const WEBHOOK_EXAMPLE = `curl -X POST https://mail.elixpo.com/v1/send \\
@@ -225,209 +262,123 @@ export default function Home() {
             {/* ── Hero ─────────────────────────────────────────────────────── */}
             <PixelHero authed={authed} />
 
-            {/* ── See it work: request → delivery + trust ──────────────────── */}
-            <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 8 }, pb: { xs: 4, md: 6 } }}>
-                {/* Request → delivery artifact */}
-                <Box
-                    sx={{
-                        maxWidth: 900,
-                        mx: "auto",
-                        display: "grid",
-                        gap: 2.5,
-                        gridTemplateColumns: { xs: "1fr", md: "1.35fr 1fr" },
-                        alignItems: "stretch",
-                    }}
-                >
-                    <Box>
-                        <Stack
-                            direction="row"
-                            spacing={1}
-                            alignItems="center"
-                            sx={{ mb: 1, color: "rgba(245,245,244,0.55)" }}
-                        >
-                            <EastIcon sx={{ fontSize: 18, color: ACCENT }} />
-                            <Typography
-                                sx={{
-                                    fontSize: "0.82rem",
-                                    fontWeight: 600,
-                                    letterSpacing: "0.02em",
-                                }}
-                            >
-                                Your service fires one request
-                            </Typography>
-                        </Stack>
-                        <CodeBlock code={WEBHOOK_EXAMPLE} language="bash" />
-                    </Box>
-
-                    {/* Delivery result panel */}
-                    <GlassCard
-                        sx={{ display: "flex", flexDirection: "column", justifyContent: "center" }}
-                    >
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-                            <CheckCircleIcon sx={{ fontSize: 20, color: "#86efac" }} />
-                            <Typography sx={{ fontWeight: 700, color: TEXT, fontSize: "0.95rem" }}>
-                                Delivered
-                            </Typography>
-                            <Chip
-                                label="sent"
-                                size="small"
-                                sx={{
-                                    ml: "auto",
-                                    height: 22,
-                                    bgcolor: "rgba(134,239,172,0.12)",
-                                    color: "#86efac",
-                                    fontWeight: 700,
-                                    fontSize: "0.7rem",
-                                    border: "1px solid rgba(134,239,172,0.3)",
-                                }}
-                            />
-                        </Stack>
-                        <Stack
-                            spacing={1.1}
-                            sx={{ fontFamily: "var(--font-geist-mono)", fontSize: "0.8rem" }}
-                        >
-                            {[
-                                ["to", "ada@example.com"],
-                                ["template", "welcome-email"],
-                                ["sender", "you@yourdomain.com"],
-                                ["subject", "Welcome to Acme, Ada"],
-                            ].map(([k, v]) => (
-                                <Stack
-                                    key={k}
-                                    direction="row"
-                                    spacing={1.5}
-                                    justifyContent="space-between"
-                                >
-                                    <Box component="span" sx={{ color: "rgba(245,245,244,0.4)" }}>
-                                        {k}
-                                    </Box>
-                                    <Box
-                                        component="span"
-                                        sx={{ color: "rgba(245,245,244,0.82)", textAlign: "right" }}
-                                    >
-                                        {v}
-                                    </Box>
-                                </Stack>
-                            ))}
-                        </Stack>
-                    </GlassCard>
-                </Box>
-
-                {/* Trust strip */}
-                <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={{ xs: 1.5, sm: 4 }}
-                    justifyContent="center"
-                    alignItems="center"
-                    sx={{ mt: { xs: 5, md: 7 }, flexWrap: "wrap", rowGap: 1.5 }}
-                >
-                    {TRUST.map((t) => (
-                        <Stack key={t.label} direction="row" spacing={1} alignItems="center">
-                            <t.icon sx={{ fontSize: 18, color: "rgba(155,123,247,0.85)" }} />
-                            <Typography
-                                sx={{
-                                    color: "rgba(245,245,244,0.55)",
-                                    fontSize: "0.85rem",
-                                    fontWeight: 500,
-                                }}
-                            >
-                                {t.label}
-                            </Typography>
-                        </Stack>
-                    ))}
-                </Stack>
-            </Container>
-
-            {/* ── How it works ─────────────────────────────────────────────── */}
-            <Box sx={{ py: { xs: 6, md: 11 } }}>
+            {/* ── How it works: a connected three-step icon timeline ─────────────── */}
+            <Box sx={{ background: "var(--bg)", py: { xs: 7, md: 11 } }}>
                 <Container maxWidth="lg">
                     <SectionHead
                         eyebrow="How it works"
-                        title="From event to inbox in four steps"
-                        body="No SMTP servers to run, no template engine to wire up. Configure once, then trigger sends from anywhere in your stack."
+                        title="Up and running in three steps"
+                        body="Connect a sender, design your email, then send it — one-time to anyone, or triggered from your app. No mail servers, no template engine to wire up."
                     />
-                    <Stack
-                        direction={{ xs: "column", md: "row" }}
-                        spacing={{ xs: 3.5, md: 1 }}
-                        alignItems={{ xs: "flex-start", md: "stretch" }}
-                    >
-                        {STEPS.map((s, i) => (
-                            <Stack
-                                key={s.title}
-                                direction={{ xs: "row", md: "column" }}
-                                spacing={{ xs: 2, md: 0 }}
-                                sx={{ flex: 1, position: "relative" }}
-                            >
-                                <Box sx={{ position: "relative", mb: { md: 2 } }}>
+
+                    <Box sx={{ position: "relative" }}>
+                        {/* Connector line threading the three steps (desktop). */}
+                        <Box
+                            aria-hidden
+                            sx={{
+                                display: { xs: "none", md: "block" },
+                                position: "absolute",
+                                top: 34,
+                                left: "16%",
+                                right: "16%",
+                                height: "2px",
+                                background:
+                                    "linear-gradient(to right, transparent, var(--accent-border) 12%, var(--accent-border) 88%, transparent)",
+                            }}
+                        />
+                        <Stack direction={{ xs: "column", md: "row" }} spacing={{ xs: 4.5, md: 4 }}>
+                            {STEPS.map((s, i) => (
+                                <Box
+                                    key={s.title}
+                                    sx={{
+                                        flex: 1,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: { xs: "flex-start", md: "center" },
+                                        textAlign: { xs: "left", md: "center" },
+                                    }}
+                                >
                                     <Box
                                         sx={{
-                                            width: 52,
-                                            height: 52,
-                                            borderRadius: "16px",
+                                            width: 68,
+                                            height: 68,
+                                            borderRadius: "20px",
                                             display: "grid",
                                             placeItems: "center",
-                                            color: s.accent,
-                                            background: `${s.accent}14`,
-                                            border: `1px solid ${s.accent}40`,
+                                            background: "var(--surface)",
+                                            border: "1.5px solid var(--accent-border)",
+                                            color: CORAL,
+                                            boxShadow: "0 6px 24px var(--accent-tint)",
+                                            position: "relative",
+                                            zIndex: 1,
                                         }}
                                     >
-                                        <s.icon sx={{ fontSize: 26 }} />
+                                        <s.icon sx={{ fontSize: 30 }} />
                                     </Box>
-                                    <Box
-                                        sx={{
-                                            position: "absolute",
-                                            top: -8,
-                                            right: -8,
-                                            width: 22,
-                                            height: 22,
-                                            borderRadius: "50%",
-                                            display: "grid",
-                                            placeItems: "center",
-                                            fontSize: "0.7rem",
-                                            fontWeight: 800,
-                                            color: "#0b0d12",
-                                            background: s.accent,
-                                        }}
-                                    >
-                                        {i + 1}
-                                    </Box>
-                                </Box>
-                                <Box sx={{ pr: { md: 2.5 } }}>
                                     <Typography
                                         sx={{
-                                            fontWeight: 700,
-                                            fontSize: "1.05rem",
-                                            color: TEXT,
-                                            mb: 0.6,
+                                            fontFamily: "var(--font-mono)",
+                                            fontSize: "0.74rem",
+                                            color: CORAL,
+                                            fontWeight: 600,
+                                            mt: 2,
+                                            letterSpacing: "0.1em",
+                                        }}
+                                    >
+                                        STEP 0{i + 1}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: "var(--font-display)",
+                                            fontWeight: 500,
+                                            fontSize: "1.25rem",
+                                            color: "var(--fg)",
+                                            mt: 0.8,
+                                            mb: 1,
+                                            letterSpacing: "-0.01em",
                                         }}
                                     >
                                         {s.title}
                                     </Typography>
                                     <Typography
-                                        sx={{ color: TEXT_60, fontSize: "0.9rem", lineHeight: 1.6 }}
+                                        sx={{
+                                            color: "var(--fg-muted)",
+                                            fontSize: "0.92rem",
+                                            lineHeight: 1.6,
+                                            maxWidth: 300,
+                                        }}
                                     >
                                         {s.body}
                                     </Typography>
                                 </Box>
-                            </Stack>
-                        ))}
-                    </Stack>
+                            ))}
+                        </Stack>
+                    </Box>
                 </Container>
             </Box>
 
-            {/* ── Features (icon + text artifacts, no cards) ──────────────────── */}
-            <Box id="features" sx={{ py: { xs: 6, md: 10 }, scrollMarginTop: "80px" }}>
+            <SectionThread />
+
+            {/* ── Capabilities: soft band of icon cards (no rules) ───────────────── */}
+            <Box
+                id="features"
+                sx={{
+                    background: "var(--bg-soft)",
+                    py: { xs: 8, md: 12 },
+                    scrollMarginTop: "80px",
+                }}
+            >
                 <Container maxWidth="lg">
                     <SectionHead
                         eyebrow="Capabilities"
                         title="Everything you need to send"
-                        body="A multi-tenant transactional email layer — your sender, your templates, your triggers, on the edge."
+                        body="Your sender, your templates, your team — one-time sends or signed-webhook triggers, all from one branded workspace."
                     />
+
                     <Box
                         sx={{
                             display: "grid",
-                            columnGap: { xs: 4, md: 6 },
-                            rowGap: { xs: 4.5, md: 6 },
+                            gap: 2.5,
                             gridTemplateColumns: {
                                 xs: "1fr",
                                 sm: "repeat(2, 1fr)",
@@ -436,7 +387,23 @@ export default function Home() {
                         }}
                     >
                         {FEATURES.map((f) => (
-                            <Box key={f.title} sx={{ maxWidth: 360 }}>
+                            <Box
+                                key={f.title}
+                                sx={{
+                                    p: 3,
+                                    borderRadius: "18px",
+                                    background: "var(--surface)",
+                                    border: "1px solid var(--border)",
+                                    boxShadow: "var(--card-shadow)",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    transition: "border-color 0.2s ease, transform 0.2s ease",
+                                    "&:hover": {
+                                        borderColor: "var(--accent-border)",
+                                        transform: "translateY(-2px)",
+                                    },
+                                }}
+                            >
                                 <Box
                                     sx={{
                                         width: 44,
@@ -444,75 +411,154 @@ export default function Home() {
                                         borderRadius: "12px",
                                         display: "grid",
                                         placeItems: "center",
-                                        mb: 1.8,
-                                        color: f.accent,
-                                        background: `${f.accent}14`,
-                                        border: `1px solid ${f.accent}33`,
+                                        background: "var(--accent-tint)",
+                                        color: CORAL,
+                                        mb: 2,
                                     }}
                                 >
                                     <f.icon sx={{ fontSize: 22 }} />
                                 </Box>
                                 <Typography
                                     sx={{
-                                        fontWeight: 700,
-                                        fontSize: "1.08rem",
-                                        color: TEXT,
-                                        mb: 0.8,
+                                        fontWeight: 500,
+                                        fontSize: "1.12rem",
+                                        color: "var(--fg)",
+                                        mb: 1,
+                                        fontFamily: "var(--font-display)",
+                                        letterSpacing: "-0.01em",
                                     }}
                                 >
                                     {f.title}
                                 </Typography>
                                 <Typography
-                                    sx={{ color: TEXT_60, fontSize: "0.92rem", lineHeight: 1.7 }}
+                                    sx={{
+                                        color: "var(--fg-muted)",
+                                        fontSize: "0.92rem",
+                                        lineHeight: 1.6,
+                                        mb: 2,
+                                        flexGrow: 1,
+                                    }}
                                 >
                                     {f.body}
                                 </Typography>
+                                <Button
+                                    component={Link}
+                                    href="/docs"
+                                    sx={{
+                                        color: ACTION_BLUE,
+                                        fontSize: "0.85rem",
+                                        fontWeight: 500,
+                                        textTransform: "none",
+                                        p: 0,
+                                        minWidth: 0,
+                                        alignSelf: "flex-start",
+                                        background: "transparent",
+                                        "&:hover": {
+                                            background: "transparent",
+                                            textDecoration: "underline",
+                                        },
+                                    }}
+                                >
+                                    Learn more →
+                                </Button>
                             </Box>
                         ))}
                     </Box>
+
+                    {/* Built-on chip: lixeditor dependency */}
+                    <Stack direction="row" justifyContent="center" sx={{ mt: { xs: 5, md: 7 } }}>
+                        <Stack
+                            component="a"
+                            href="https://www.npmjs.com/package/@elixpo/lixeditor"
+                            target="_blank"
+                            rel="noreferrer"
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            sx={{
+                                px: 2.2,
+                                py: 1,
+                                borderRadius: "30px",
+                                border: "1px solid var(--border)",
+                                background: "var(--surface)",
+                                textDecoration: "none",
+                                transition: "all 0.2s ease",
+                                "&:hover": { borderColor: "var(--accent-border)" },
+                            }}
+                        >
+                            <DesignServicesIcon sx={{ fontSize: 16, color: CORAL }} />
+                            <Typography
+                                sx={{
+                                    color: "var(--fg-muted)",
+                                    fontSize: "0.84rem",
+                                    fontFamily: "var(--font-mono)",
+                                }}
+                            >
+                                Editor powered by{" "}
+                                <Box component="span" sx={{ color: "var(--fg)", fontWeight: 600 }}>
+                                    @elixpo/lixeditor
+                                </Box>
+                            </Typography>
+                        </Stack>
+                    </Stack>
                 </Container>
             </Box>
 
-            {/* ── Use cases ────────────────────────────────────────────────── */}
-            <Box sx={{ py: { xs: 5, md: 8 } }}>
+            <SectionThread />
+
+            {/* ── Use cases: Pill outline taxonomy controls ──────────────────────────────── */}
+            <Box
+                sx={{
+                    background: "var(--bg)",
+                    py: { xs: 7, md: 9 },
+                }}
+            >
                 <Container maxWidth="md">
-                    <Stack alignItems="center" textAlign="center" spacing={3}>
+                    <Stack alignItems="center" textAlign="center" spacing={4}>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--fg-muted)",
                                 fontSize: "0.88rem",
-                                fontWeight: 600,
-                                letterSpacing: "0.02em",
+                                fontWeight: 500,
+                                fontFamily: "var(--font-mono)",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
                             }}
                         >
                             Built for every transactional moment
                         </Typography>
                         <Stack
                             direction="row"
-                            spacing={1.2}
+                            spacing={1.5}
                             justifyContent="center"
-                            sx={{ flexWrap: "wrap", gap: 1.2 }}
+                            sx={{ flexWrap: "wrap", gap: 1.5 }}
                         >
                             {USE_CASES.map((u) => (
                                 <Stack
                                     key={u.label}
                                     direction="row"
-                                    spacing={0.9}
+                                    spacing={1}
                                     alignItems="center"
                                     sx={{
-                                        px: 1.8,
-                                        py: 1,
-                                        borderRadius: "999px",
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        background: "rgba(255,255,255,0.02)",
+                                        px: 2.2,
+                                        py: 0.8,
+                                        borderRadius: "30px", // Outlined pill radius
+                                        border: "1px solid var(--border)",
+                                        background: "transparent",
+                                        transition: "all 0.2s ease",
+                                        "&:hover": {
+                                            borderColor: CORAL,
+                                            background: "var(--accent-tint)",
+                                        },
                                     }}
                                 >
-                                    <u.icon sx={{ fontSize: 17, color: ACCENT }} />
+                                    <u.icon sx={{ fontSize: 16, color: CORAL }} />
                                     <Typography
                                         sx={{
-                                            color: "rgba(245,245,244,0.8)",
+                                            color: "var(--fg)",
                                             fontSize: "0.85rem",
                                             fontWeight: 500,
+                                            fontFamily: "var(--font-sans)",
                                         }}
                                     >
                                         {u.label}
@@ -524,116 +570,107 @@ export default function Home() {
                 </Container>
             </Box>
 
-            {/* ── Integration ──────────────────────────────────────────────── */}
-            <Box sx={{ py: { xs: 6, md: 10 } }}>
-                <Container maxWidth="lg">
+            <SectionThread node={false} />
+
+            {/* ── Closing CTA: dark video panel ──────────────────────────────────── */}
+            <Box
+                sx={{
+                    background: "var(--bg)",
+                    py: { xs: 8, md: 10 },
+                }}
+            >
+                <Container maxWidth="md">
                     <Box
                         sx={{
-                            display: "grid",
-                            gap: { xs: 4, md: 6 },
-                            gridTemplateColumns: { xs: "1fr", md: "1fr 1.2fr" },
-                            alignItems: "center",
+                            position: "relative",
+                            textAlign: "center",
+                            py: { xs: 8, md: 10 },
+                            px: { xs: 3, md: 6 },
+                            background: "#0c0d12", // Dark base fallback
+                            border: "1px solid var(--border)",
+                            borderRadius: "22px", // Signature 22px radius
+                            overflow: "hidden",
+                            boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
                         }}
                     >
-                        <Box>
-                            <Typography
-                                sx={{
-                                    color: ACCENT,
-                                    fontWeight: 700,
-                                    fontSize: "0.78rem",
-                                    letterSpacing: "0.14em",
-                                    textTransform: "uppercase",
-                                    mb: 1.5,
-                                }}
-                            >
-                                Integrate in minutes
-                            </Typography>
-                            <Typography
-                                component="h2"
-                                sx={{
-                                    fontWeight: 800,
-                                    fontSize: { xs: "1.8rem", md: "2.4rem" },
-                                    letterSpacing: "-0.02em",
-                                    lineHeight: 1.1,
-                                    color: TEXT,
-                                    mb: 2,
-                                }}
-                            >
-                                One endpoint. Any language.
-                            </Typography>
-                            <Typography
-                                sx={{
-                                    color: TEXT_65,
-                                    fontSize: "1.02rem",
-                                    lineHeight: 1.75,
-                                    mb: 2.5,
-                                }}
-                            >
-                                Each email config issues its own client credentials — shown once,
-                                stored hashed. Authenticate with a Bearer token, name a template and
-                                a recipient, pass your variables, and we render an email-safe
-                                message and relay it through your sender.
-                            </Typography>
-                            <Stack spacing={1.4}>
-                                {[
-                                    "Per-config client_id + secret you can rotate",
-                                    "Idempotent sends — safe to retry",
-                                    "Every request recorded in delivery logs",
-                                ].map((line) => (
-                                    <Stack
-                                        key={line}
-                                        direction="row"
-                                        spacing={1.2}
-                                        alignItems="center"
-                                    >
-                                        <CheckCircleIcon sx={{ fontSize: 18, color: "#86efac" }} />
-                                        <Typography
-                                            sx={{
-                                                color: "rgba(245,245,244,0.78)",
-                                                fontSize: "0.92rem",
-                                            }}
-                                        >
-                                            {line}
-                                        </Typography>
-                                    </Stack>
-                                ))}
-                            </Stack>
+                        {/* Video Background */}
+                        <Box
+                            component="video"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                zIndex: 0,
+                                opacity: 0.85,
+                            }}
+                        >
+                            <source
+                                src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_115655_b4d9cd77-feed-43cd-a198-af78ebdf1f7a.mp4"
+                                type="video/mp4"
+                            />
                         </Box>
-                        <CodeBlock code={WEBHOOK_EXAMPLE} language="bash" />
+
+                        {/* Readability Overlay */}
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                inset: 0,
+                                background:
+                                    "linear-gradient(180deg, rgba(11, 13, 18, 0.45) 0%, rgba(11, 13, 18, 0.7) 100%)",
+                                zIndex: 1,
+                            }}
+                        />
+
+                        {/* Content Wrapper */}
+                        <Box sx={{ position: "relative", zIndex: 2 }}>
+                            <Typography
+                                sx={{
+                                    fontFamily: "var(--font-display)",
+                                    fontWeight: 500,
+                                    fontSize: { xs: "1.75rem", md: "2.5rem" },
+                                    letterSpacing: "-0.03em",
+                                    mb: 2,
+                                    color: "#ffffff",
+                                }}
+                            >
+                                Ship your first email today
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    color: "rgba(255, 255, 255, 0.75)",
+                                    fontSize: "1rem",
+                                    maxWidth: 480,
+                                    mx: "auto",
+                                    mb: 4.5,
+                                    lineHeight: 1.6,
+                                    fontFamily: "var(--font-sans)",
+                                }}
+                            >
+                                Connect a sender, design a template, and trigger a send in minutes —
+                                no SMTP servers, no template engines, no queues.
+                            </Typography>
+                            <PrimaryCta
+                                authed={authed}
+                                signedOutLabel="Sign in with Elixpo"
+                                sx={{
+                                    background: "#ffffff",
+                                    color: "#0b0d12",
+                                    "&:hover": {
+                                        background: "rgba(255, 255, 255, 0.9)",
+                                    },
+                                }}
+                            />
+                        </Box>
                     </Box>
                 </Container>
             </Box>
-
-            {/* ── Closing CTA ──────────────────────────────────────────────── */}
-            <Container maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
-                <GlassCard
-                    sx={{
-                        textAlign: "center",
-                        py: { xs: 5, md: 7 },
-                        background:
-                            "linear-gradient(160deg, rgba(155,123,247,0.12) 0%, rgba(124,92,255,0.05) 100%)",
-                        border: "1px solid rgba(155,123,247,0.25)",
-                    }}
-                >
-                    <Typography
-                        sx={{
-                            fontWeight: 800,
-                            fontSize: { xs: "1.6rem", md: "2.2rem" },
-                            letterSpacing: "-0.02em",
-                            mb: 1.2,
-                        }}
-                    >
-                        Ship your first email today
-                    </Typography>
-                    <Typography
-                        sx={{ color: TEXT_65, fontSize: "1rem", maxWidth: 480, mx: "auto", mb: 3 }}
-                    >
-                        Connect a sender, design a template, and trigger a send in minutes — no SMTP
-                        servers, no template engines, no queues.
-                    </Typography>
-                    <PrimaryCta authed={authed} signedOutLabel="Sign in with Elixpo" />
-                </GlassCard>
-            </Container>
         </PageShell>
     );
 }

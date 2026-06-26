@@ -6,10 +6,10 @@
     "homepage": "https://mails.elixpo.com",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/elixpo/mail.elixpo.git"
+        "url": "git+https://github.com/elixpo/mails.elixpo.git"
     },
     "bugs": {
-        "url": "https://github.com/elixpo/mail.elixpo/issues"
+        "url": "https://github.com/elixpo/mails.elixpo/issues"
     },
     "keywords": [
         "transactional-email",

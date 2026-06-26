@@ -9,7 +9,7 @@ const Inner = dynamic(() => import("./lix-editor-inner"), {
     ssr: false,
     loading: () => (
         <Box sx={{ display: "grid", placeItems: "center", minHeight: 320 }}>
-            <CircularProgress sx={{ color: "#9b7bf7" }} />
+            <CircularProgress sx={{ color: "var(--accent)" }} />
         </Box>
     ),
 });

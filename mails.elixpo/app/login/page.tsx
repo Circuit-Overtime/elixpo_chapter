@@ -25,26 +25,27 @@ const ERROR_MESSAGES: Record<string, string> = {
     sso_failed: "We couldn't reach Elixpo Accounts to sign you in. Please try again in a moment.",
 };
 
+const CORAL = "#ff7759";
+const INK = "#212121";
+const SLATE = "#75758a";
+const HAIRLINE = "#d9d9dd";
+
 const ghostBtn = {
     flex: 1,
     textTransform: "none",
-    fontWeight: 600,
+    fontWeight: 500,
     fontSize: "0.88rem",
-    color: "rgba(245,245,244,0.82)",
-    py: 1.05,
-    borderRadius: "12px",
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    "&:hover": {
-        color: "#fff",
-        borderColor: "rgba(155,123,247,0.45)",
-        background: "rgba(155,123,247,0.08)",
-    },
+    color: INK,
+    py: 1,
+    borderRadius: "32px", // Outlined pill radius
+    background: "transparent",
+    border: `1px solid ${HAIRLINE}`,
+    fontFamily: "var(--font-sans)",
+    "&:hover": { borderColor: INK, background: "rgba(0,0,0,0.03)" },
 };
 
 function LoginInner() {
     const error = useSearchParams().get("error");
-    // If already signed in, skip the login screen and go to the dashboard.
     const [checking, setChecking] = useState(true);
 
     useEffect(() => {
@@ -53,7 +54,7 @@ function LoginInner() {
             .then((r) => (r.ok ? r.json() : null))
             .then((d: any) => {
                 if (cancelled) return;
-                if (d?.authenticated) window.location.replace("/dashboard");
+                if (d && d.authenticated) window.location.replace("/dashboard");
                 else setChecking(false);
             })
             .catch(() => {
@@ -73,10 +74,10 @@ function LoginInner() {
                     display: "grid",
                     placeItems: "center",
                     p: 2,
-                    color: "#f5f5f4",
+                    background: "#ffffff",
                 }}
             >
-                <CircularProgress sx={{ color: "#9b7bf7", position: "relative", zIndex: 1 }} />
+                <CircularProgress sx={{ color: CORAL }} />
             </Box>
         );
     }
@@ -91,7 +92,8 @@ function LoginInner() {
                 display: "grid",
                 placeItems: "center",
                 p: 2,
-                color: "#f5f5f4",
+                background: "#ffffff",
+                color: INK,
             }}
         >
             <Box
@@ -99,16 +101,13 @@ function LoginInner() {
                     position: "relative",
                     zIndex: 1,
                     width: "100%",
-                    maxWidth: 460,
-                    p: { xs: 3.5, md: 4 },
-                    borderRadius: "24px",
+                    maxWidth: 480,
+                    p: { xs: 4, md: 5 },
+                    borderRadius: "22px", // lg radius token
                     textAlign: "center",
-                    background:
-                        "linear-gradient(160deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 100%)",
-                    backdropFilter: "blur(26px)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    boxShadow:
-                        "inset 0 1px 1px rgba(255,255,255,0.08), 0 30px 70px rgba(0,0,0,0.55)",
+                    background: "#ffffff", // Pure Canvas White
+                    border: `1px solid ${HAIRLINE}`,
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.04)",
                 }}
             >
                 <Box
@@ -116,20 +115,28 @@ function LoginInner() {
                     src="/mark.png"
                     alt="mail.elixpo"
                     sx={{
-                        height: 60,
-                        width: 60,
+                        height: 52,
+                        width: 52,
                         mx: "auto",
-                        mb: 2,
-                        borderRadius: "16px",
+                        mb: 2.5,
+                        borderRadius: "12px",
                         display: "block",
-                        filter: "drop-shadow(0 10px 24px rgba(124,92,255,0.35))",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                     }}
                 />
 
-                <Typography sx={{ fontWeight: 800, fontSize: "1.6rem", letterSpacing: "-0.01em" }}>
+                <Typography
+                    sx={{
+                        fontWeight: 500,
+                        fontSize: "1.75rem",
+                        letterSpacing: "-0.02em",
+                        fontFamily: "var(--font-display)",
+                        color: "#000000",
+                    }}
+                >
                     Sign in to Elixpo Mails
                 </Typography>
-                <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.92rem", mt: 0.8 }}>
+                <Typography sx={{ color: SLATE, fontSize: "0.95rem", mt: 1 }}>
                     Manage your senders, templates, and transactional sends.
                 </Typography>
 
@@ -139,10 +146,10 @@ function LoginInner() {
                             mt: 2.5,
                             px: 2,
                             py: 1.2,
-                            borderRadius: "12px",
-                            background: "rgba(239,68,68,0.1)",
-                            border: "1px solid rgba(239,68,68,0.3)",
-                            color: "#f87171",
+                            borderRadius: "8px",
+                            background: "rgba(179,0,0,0.06)",
+                            border: "1px solid rgba(179,0,0,0.2)",
+                            color: "#b30000",
                             fontSize: "0.85rem",
                         }}
                     >
@@ -154,21 +161,19 @@ function LoginInner() {
                     component="a"
                     href="/api/auth/login"
                     fullWidth
-                    endIcon={<ArrowForwardIcon sx={{ fontSize: "1.1rem !important" }} />}
+                    endIcon={<ArrowForwardIcon sx={{ fontSize: "1rem !important" }} />}
                     sx={{
-                        mt: 3,
+                        mt: 3.5,
                         textTransform: "none",
-                        fontWeight: 700,
-                        fontSize: "1rem",
+                        fontWeight: 500,
+                        fontSize: "0.95rem",
                         color: "#fff",
-                        py: 1.5,
-                        borderRadius: "14px",
-                        background: "linear-gradient(180deg, #a98cff 0%, #7c5cff 100%)",
-                        boxShadow:
-                            "inset 0 1px 1px rgba(255,255,255,0.3), 0 12px 30px rgba(124,92,255,0.4)",
-                        "&:hover": {
-                            background: "linear-gradient(180deg, #b79dff 0%, #8a6dff 100%)",
-                        },
+                        py: 1.3,
+                        borderRadius: "32px", // Pill
+                        background: "#17171c",
+                        boxShadow: "none",
+                        fontFamily: "var(--font-sans)",
+                        "&:hover": { background: "#000" },
                     }}
                 >
                     Continue with Elixpo Accounts
@@ -177,50 +182,40 @@ function LoginInner() {
                 {/* ── Explainer: what Elixpo Accounts is ──────────────────────── */}
                 <Box
                     sx={{
-                        mt: 3,
-                        p: 2.2,
+                        mt: 4,
+                        p: 3,
                         borderRadius: "16px",
                         textAlign: "left",
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "#eeece7", // Soft Stone
+                        border: `1px solid ${HAIRLINE}`,
                     }}
                 >
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                        <ShieldIcon sx={{ fontSize: 16, color: "#9b7bf7" }} />
-                        <Typography sx={{ fontWeight: 700, fontSize: "0.9rem" }}>
-                            New here? What is Elixpo Accounts?
+                    <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 1.5 }}>
+                        <ShieldIcon sx={{ fontSize: 16, color: CORAL }} />
+                        <Typography
+                            sx={{
+                                fontWeight: 500,
+                                fontSize: "0.92rem",
+                                fontFamily: "var(--font-display)",
+                                color: "#000",
+                            }}
+                        >
+                            What is Elixpo Accounts?
                         </Typography>
                     </Stack>
-                    <Typography
-                        sx={{
-                            color: "rgba(245,245,244,0.62)",
-                            fontSize: "0.84rem",
-                            lineHeight: 1.6,
-                            mb: 1.5,
-                        }}
-                    >
+                    <Typography sx={{ color: SLATE, fontSize: "0.85rem", lineHeight: 1.6, mb: 2 }}>
                         Elixpo Mails doesn't have its own password. It uses{" "}
-                        <strong style={{ color: "#f5f5f4" }}>Elixpo Accounts</strong> — the single,
-                        secure sign-on shared across the whole Elixpo ecosystem. One identity,
-                        everywhere.
+                        <strong style={{ color: INK }}>Elixpo Accounts</strong> — the single, secure
+                        sign-on shared across the whole Elixpo ecosystem. One identity, everywhere.
                     </Typography>
-                    <Stack spacing={1}>
+                    <Stack spacing={1.4}>
                         {BENEFITS.map((b) => (
-                            <Stack key={b} direction="row" spacing={1} alignItems="flex-start">
+                            <Stack key={b} direction="row" spacing={1.2} alignItems="flex-start">
                                 <CheckCircleIcon
-                                    sx={{
-                                        fontSize: 15,
-                                        color: "#86efac",
-                                        mt: "2px",
-                                        flexShrink: 0,
-                                    }}
+                                    sx={{ fontSize: 16, color: CORAL, mt: "2px", flexShrink: 0 }}
                                 />
                                 <Typography
-                                    sx={{
-                                        color: "rgba(245,245,244,0.7)",
-                                        fontSize: "0.82rem",
-                                        lineHeight: 1.5,
-                                    }}
+                                    sx={{ color: INK, fontSize: "0.84rem", lineHeight: 1.5 }}
                                 >
                                     {b}
                                 </Typography>
@@ -236,20 +231,20 @@ function LoginInner() {
                             display: "inline-flex",
                             alignItems: "center",
                             gap: 0.5,
-                            mt: 1.5,
-                            color: "#9b7bf7",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
+                            mt: 2.5,
+                            color: "#1863dc", // Action Blue
+                            fontSize: "0.84rem",
+                            fontWeight: 500,
                             textDecoration: "none",
-                            "&:hover": { color: "#b69aff" },
+                            "&:hover": { textDecoration: "underline" },
                         }}
                     >
                         Learn more about Elixpo Accounts
-                        <OpenInNewIcon sx={{ fontSize: 13 }} />
+                        <OpenInNewIcon sx={{ fontSize: 12 }} />
                     </Box>
                 </Box>
 
-                <Stack direction="row" spacing={1.2} sx={{ mt: 2.5 }}>
+                <Stack direction="row" spacing={1.5} sx={{ mt: 3.5 }}>
                     <Button
                         component={Link}
                         href="/"
@@ -268,8 +263,16 @@ function LoginInner() {
                     </Button>
                 </Stack>
 
-                <Typography sx={{ color: "rgba(245,245,244,0.38)", fontSize: "0.74rem", mt: 2 }}>
-                    🔒 Secured by Elixpo Accounts · OAuth 2.0
+                <Typography
+                    sx={{
+                        color: SLATE,
+                        fontSize: "0.74rem",
+                        mt: 3,
+                        fontFamily: "var(--font-mono)",
+                        letterSpacing: "0.02em",
+                    }}
+                >
+                    🔒 SECURED BY ELIXPO ACCOUNTS · OAUTH 2.0
                 </Typography>
             </Box>
         </Box>

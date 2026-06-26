@@ -45,12 +45,12 @@ import { BORDER, GlassCard, SURFACE } from "./glass-card";
 import { useRole } from "./role-provider";
 
 // ── Palette ─────────────────────────────────────────────────────────────────
-const ACCENT = "#9b7bf7";
-const GREEN = "#86efac";
-const RED = "#fca5a5";
-const TEXT = "#f5f5f4";
-const TEXT_55 = "rgba(245,245,244,0.55)";
-const TEXT_40 = "rgba(245,245,244,0.4)";
+const ACCENT = "var(--accent)";
+const GREEN = "var(--success)";
+const RED = "var(--danger)";
+const TEXT = "var(--fg)";
+const TEXT_55 = "var(--fg-muted)";
+const TEXT_40 = "var(--fg-faint)";
 
 const GMAIL_HELP = "https://support.google.com/accounts/answer/185833";
 const SEND_AS_HELP = "https://support.google.com/mail/answer/22370";
@@ -111,17 +111,17 @@ const darkField = {
     "& .MuiOutlinedInput-root": {
         color: TEXT,
         borderRadius: "10px",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        background: "var(--field-bg)",
+        "& fieldset": { borderColor: "var(--field-border)" },
+        "&:hover fieldset": { borderColor: "var(--accent-border)" },
         "&.Mui-focused fieldset": { borderColor: ACCENT },
-        "&.Mui-disabled fieldset": { borderColor: "rgba(255,255,255,0.07)" },
+        "&.Mui-disabled fieldset": { borderColor: "var(--border)" },
     },
     "& .MuiInputBase-input": { fontSize: "0.92rem", py: 1.05 },
     "& .MuiInputBase-input.Mui-disabled": {
         WebkitTextFillColor: TEXT_40,
     },
-    "& .MuiInputBase-input::placeholder": { color: "rgba(245,245,244,0.35)", opacity: 1 },
+    "& .MuiInputBase-input::placeholder": { color: "var(--fg-faint)", opacity: 1 },
     "& .MuiInputAdornment-root .MuiSvgIcon-root": { color: TEXT_40 },
 };
 
@@ -155,9 +155,9 @@ function ReadOnlyChip() {
             label="Read-only access"
             size="small"
             sx={{
-                color: "rgba(245,245,244,0.5)",
-                bgcolor: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                color: "var(--fg-muted)",
+                bgcolor: "var(--overlay)",
+                border: "1px solid var(--border)",
             }}
         />
     );
@@ -176,7 +176,7 @@ function StatusChip({ status }: { status: string }) {
                 fontWeight: 700,
                 letterSpacing: "0.02em",
                 color: active ? GREEN : TEXT_55,
-                bgcolor: active ? "rgba(134,239,172,0.1)" : "rgba(255,255,255,0.05)",
+                bgcolor: active ? "rgba(134,239,172,0.1)" : "var(--overlay)",
                 border: `1px solid ${active ? "rgba(134,239,172,0.28)" : BORDER}`,
             }}
         />
@@ -195,8 +195,8 @@ function DefaultChip() {
                 fontWeight: 700,
                 letterSpacing: "0.02em",
                 color: ACCENT,
-                bgcolor: "rgba(155,123,247,0.1)",
-                border: "1px solid rgba(155,123,247,0.28)",
+                bgcolor: "var(--accent-tint)",
+                border: "1px solid var(--accent-border)",
             }}
         />
     );
@@ -216,9 +216,7 @@ function GmailHint() {
             }}
         >
             <InfoOutlinedIcon sx={{ fontSize: 18, color: "#5fb6ff", flexShrink: 0, mt: 0.2 }} />
-            <Typography
-                sx={{ fontSize: "0.8rem", color: "rgba(245,245,244,0.7)", lineHeight: 1.6 }}
-            >
+            <Typography sx={{ fontSize: "0.8rem", color: "var(--fg-muted)", lineHeight: 1.6 }}>
                 For Gmail you need 2-Step Verification enabled, then a 16-character{" "}
                 <MuiLink
                     href={GMAIL_HELP}
@@ -528,12 +526,12 @@ function SenderDialog({
                                         sx={{
                                             color: TEXT,
                                             borderRadius: "10px",
-                                            background: "rgba(255,255,255,0.02)",
+                                            background: "var(--field-bg)",
                                             "& .MuiOutlinedInput-notchedOutline": {
-                                                borderColor: "rgba(255,255,255,0.12)",
+                                                borderColor: "var(--field-border)",
                                             },
                                             "&:hover .MuiOutlinedInput-notchedOutline": {
-                                                borderColor: "rgba(155,123,247,0.4)",
+                                                borderColor: "var(--accent-border)",
                                             },
                                             "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                                                 borderColor: ACCENT,
@@ -556,7 +554,7 @@ function SenderDialog({
                                                             fontSize: "0.9rem",
                                                         },
                                                         "& .MuiMenuItem-root.Mui-selected": {
-                                                            background: "rgba(155,123,247,0.12)",
+                                                            background: "var(--accent-tint)",
                                                         },
                                                     },
                                                 },
@@ -606,14 +604,14 @@ function SenderDialog({
                         ...PRIMARY_BTN,
                         minWidth: 130,
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {saving ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : isEdit ? (
                         "Save changes"
                     ) : (
@@ -712,14 +710,14 @@ function DeleteDialog({
                             background: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)",
                         },
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {busy ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : (
                         "Remove"
                     )}
@@ -825,7 +823,7 @@ function AliasesSection({
                         sx={{
                             color: ACCENT,
                             fontWeight: 600,
-                            textDecorationColor: "rgba(155,123,247,0.4)",
+                            textDecorationColor: "var(--accent-border)",
                             display: "inline-flex",
                             alignItems: "center",
                             gap: 0.3,
@@ -874,7 +872,7 @@ function AliasesSection({
                                             px: 1.4,
                                             py: 0.9,
                                             borderRadius: "9px",
-                                            background: "rgba(255,255,255,0.02)",
+                                            background: "var(--field-bg)",
                                             border: `1px solid ${BORDER}`,
                                         }}
                                     >
@@ -958,8 +956,7 @@ function AliasesSection({
                                                             fontWeight: 600,
                                                             color: TEXT_55,
                                                             "&:hover": {
-                                                                background:
-                                                                    "rgba(255,255,255,0.05)",
+                                                                background: "var(--overlay)",
                                                             },
                                                         }}
                                                     >
@@ -1046,7 +1043,7 @@ function AliasesSection({
                                         px: 2,
                                         whiteSpace: "nowrap",
                                         "&.Mui-disabled": {
-                                            color: "rgba(245,245,244,0.4)",
+                                            color: "var(--fg-faint)",
                                             borderColor: BORDER,
                                         },
                                     }}
@@ -1054,7 +1051,7 @@ function AliasesSection({
                                     {saving ? (
                                         <CircularProgress
                                             size={16}
-                                            sx={{ color: "rgba(245,245,244,0.6)" }}
+                                            sx={{ color: "var(--fg-muted)" }}
                                         />
                                     ) : (
                                         "Add alias"
@@ -1268,13 +1265,13 @@ function SenderCard({
                                 sx={{
                                     color: TEXT,
                                     borderRadius: "11px",
-                                    background: "rgba(255,255,255,0.02)",
+                                    background: "var(--field-bg)",
                                     maxWidth: 200,
                                     "& .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "rgba(255,255,255,0.16)",
+                                        borderColor: "var(--field-border)",
                                     },
                                     "&:hover .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "rgba(155,123,247,0.5)",
+                                        borderColor: "var(--accent-border)",
                                     },
                                     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                                         borderColor: ACCENT,
@@ -1300,7 +1297,7 @@ function SenderCard({
                                                     fontSize: "0.84rem",
                                                 },
                                                 "& .MuiMenuItem-root.Mui-selected": {
-                                                    background: "rgba(155,123,247,0.12)",
+                                                    background: "var(--accent-tint)",
                                                 },
                                             },
                                         },
@@ -1342,7 +1339,7 @@ function SenderCard({
                                             test?.phase === "loading" ? (
                                                 <CircularProgress
                                                     size={15}
-                                                    sx={{ color: "rgba(245,245,244,0.6)" }}
+                                                    sx={{ color: "var(--fg-muted)" }}
                                                 />
                                             ) : (
                                                 <SendIcon sx={{ fontSize: "1rem !important" }} />
@@ -1352,7 +1349,7 @@ function SenderCard({
                                             ...GHOST_BTN,
                                             fontSize: "0.84rem",
                                             "&.Mui-disabled": {
-                                                color: "rgba(245,245,244,0.4)",
+                                                color: "var(--fg-faint)",
                                                 borderColor: BORDER,
                                             },
                                         }}
@@ -1367,11 +1364,11 @@ function SenderCard({
                                 size="small"
                                 sx={{
                                     color: TEXT_55,
-                                    border: "1px solid rgba(255,255,255,0.16)",
+                                    border: "1px solid var(--field-border)",
                                     borderRadius: "10px",
                                     "&:hover": {
-                                        borderColor: "rgba(155,123,247,0.5)",
-                                        background: "rgba(155,123,247,0.06)",
+                                        borderColor: "var(--accent-border)",
+                                        background: "var(--accent-tint)",
                                     },
                                 }}
                                 aria-label="More actions"

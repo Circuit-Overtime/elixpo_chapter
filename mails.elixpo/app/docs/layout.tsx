@@ -25,7 +25,10 @@ import type React from "react";
 import { useState } from "react";
 import CopyForLlm from "./_components/copy-for-llm";
 
-const ACCENT = "#9b7bf7";
+const CORAL = "#ff7759";
+const INK = "#212121";
+const SLATE = "#75758a";
+const HAIRLINE = "#d9d9dd";
 
 const DOCS_NAV = [
     { label: "Overview", href: "/docs" },
@@ -39,15 +42,17 @@ const DOCS_NAV = [
 ];
 
 const navBtn = {
-    color: ACCENT,
-    borderColor: "rgba(155,123,247,0.2)",
+    color: INK,
+    borderColor: HAIRLINE,
     textTransform: "none" as const,
-    fontWeight: 600,
-    px: 2,
-    py: 1,
+    fontWeight: 500,
+    px: 2.8,
+    py: 0.9,
     border: "1px solid",
-    borderRadius: "8px",
-    "&:hover": { borderColor: ACCENT, bgcolor: "rgba(155,123,247,0.05)" },
+    borderRadius: "32px", // Pill
+    fontFamily: "var(--font-sans)",
+    transition: "all 0.2s ease",
+    "&:hover": { borderColor: "#000000", bgcolor: "rgba(0, 0, 0, 0.02)" },
 };
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
@@ -71,23 +76,25 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                                 onClick={() => setMobileOpen(false)}
                                 sx={{
                                     borderRadius: "8px",
-                                    py: 0.9,
+                                    py: 0.8,
                                     px: 2,
-                                    bgcolor: active ? "rgba(155,123,247,0.1)" : "transparent",
-                                    color: active ? ACCENT : "rgba(245,245,244,0.6)",
+                                    bgcolor: active ? "rgba(255, 119, 89, 0.06)" : "transparent",
+                                    color: active ? CORAL : "rgba(33, 33, 33, 0.65)",
+                                    transition: "all 0.15s ease",
                                     "&:hover": {
                                         bgcolor: active
-                                            ? "rgba(155,123,247,0.15)"
-                                            : "rgba(255,255,255,0.05)",
-                                        color: active ? ACCENT : "rgba(245,245,244,0.9)",
+                                            ? "rgba(255, 119, 89, 0.1)"
+                                            : "rgba(0, 0, 0, 0.04)",
+                                        color: active ? CORAL : INK,
                                     },
                                 }}
                             >
                                 <ListItemText
                                     primary={item.label}
                                     primaryTypographyProps={{
-                                        fontSize: "0.9rem",
-                                        fontWeight: active ? 600 : 500,
+                                        fontSize: "0.88rem",
+                                        fontWeight: active ? 500 : 400,
+                                        fontFamily: "var(--font-sans)",
                                     }}
                                 />
                             </ListItemButton>
@@ -99,7 +106,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
     );
 
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
+        <Box sx={{ position: "relative", minHeight: "100vh", color: INK, background: "#ffffff" }}>
             <Box
                 sx={{
                     position: "relative",
@@ -113,9 +120,10 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                     position="sticky"
                     elevation={0}
                     sx={{
-                        bgcolor: "rgba(11,13,18,0.5)",
+                        bgcolor: "rgba(255, 255, 255, 0.85)",
                         backdropFilter: "blur(16px)",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
+                        borderBottom: `1px solid ${HAIRLINE}`,
+                        color: INK,
                     }}
                 >
                     <Toolbar
@@ -152,16 +160,14 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                             />
                             <Typography
                                 sx={{
-                                    fontWeight: 700,
-                                    color: "#f5f5f4",
+                                    fontWeight: 500,
+                                    color: "#000000",
                                     display: { xs: "none", sm: "block" },
+                                    fontFamily: "var(--font-display)",
                                 }}
                             >
                                 Elixpo Mails{" "}
-                                <Box
-                                    component="span"
-                                    sx={{ color: "rgba(245,245,244,0.4)", fontWeight: 500 }}
-                                >
+                                <Box component="span" sx={{ color: SLATE, fontWeight: 400 }}>
                                     Docs
                                 </Box>
                             </Typography>
@@ -187,7 +193,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                             width: 240,
                             flexShrink: 0,
                             display: { xs: "none", md: "block" },
-                            borderRight: "1px solid rgba(255,255,255,0.06)",
+                            borderRight: `1px solid ${HAIRLINE}`,
                             position: "sticky",
                             top: 64,
                             height: "calc(100vh - 64px)",
@@ -207,9 +213,8 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                             display: { xs: "block", md: "none" },
                             "& .MuiDrawer-paper": {
                                 width: 260,
-                                bgcolor: "rgba(11,13,18,0.96)",
-                                backdropFilter: "blur(20px)",
-                                borderRight: "1px solid rgba(255,255,255,0.08)",
+                                bgcolor: "#ffffff",
+                                borderRight: `1px solid ${HAIRLINE}`,
                             },
                         }}
                     >
@@ -221,7 +226,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                         sx={{
                             flexGrow: 1,
                             minWidth: 0,
-                            pt: 4,
+                            pt: 5,
                             pb: 8,
                             px: { xs: 0, md: 5 },
                             maxWidth: 820,
@@ -229,7 +234,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                     >
                         {children}
 
-                        <Divider sx={{ my: 4, borderColor: "rgba(255,255,255,0.06)" }} />
+                        <Divider sx={{ my: 5, borderColor: HAIRLINE }} />
                         <Box
                             sx={{
                                 display: "flex",

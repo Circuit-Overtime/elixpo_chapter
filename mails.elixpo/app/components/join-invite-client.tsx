@@ -4,10 +4,10 @@ import { Avatar, Box, Button, CircularProgress, Typography } from "@mui/material
 import { useState } from "react";
 import { GlassCard } from "./glass-card";
 
-const TEXT = "#f5f5f4";
-const MUTED = "rgba(245,245,244,0.55)";
-const ACCENT = "#9b7bf7";
-const GRADIENT = "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)";
+const TEXT = "var(--fg)";
+const MUTED = "var(--fg-muted)";
+const ACCENT = "var(--accent)";
+const GRADIENT = "var(--accent-gradient)";
 
 export interface JoinInviteClientProps {
     token: string;
@@ -49,10 +49,10 @@ function mapError(error: string | undefined): string {
 
 const primaryButtonSx = {
     background: GRADIENT,
-    boxShadow: "0 6px 18px rgba(124,92,255,0.32)",
+    boxShadow: "var(--accent-shadow)",
     textTransform: "none" as const,
     fontWeight: 700,
-    color: "#fff",
+    color: "var(--accent-contrast)",
     borderRadius: "10px",
     py: 1.1,
     "&:hover": { background: GRADIENT },
@@ -62,7 +62,7 @@ const secondaryButtonSx = {
     textTransform: "none" as const,
     fontWeight: 700,
     color: TEXT,
-    borderColor: "rgba(255,255,255,0.18)",
+    borderColor: "var(--field-border)",
     borderRadius: "10px",
     py: 1.1,
     "&:hover": { borderColor: ACCENT },
@@ -121,7 +121,7 @@ export function JoinInviteClient(props: JoinInviteClientProps) {
                         sx={{
                             width: 56,
                             height: 56,
-                            bgcolor: "rgba(155,123,247,0.18)",
+                            bgcolor: "var(--accent-tint-strong)",
                             color: ACCENT,
                             fontWeight: 700,
                         }}
@@ -193,7 +193,10 @@ export function JoinInviteClient(props: JoinInviteClientProps) {
                                 sx={primaryButtonSx}
                             >
                                 {loading ? (
-                                    <CircularProgress size={20} sx={{ color: "#fff" }} />
+                                    <CircularProgress
+                                        size={20}
+                                        sx={{ color: "var(--accent-contrast)" }}
+                                    />
                                 ) : (
                                     "Accept invite"
                                 )}
@@ -208,7 +211,7 @@ export function JoinInviteClient(props: JoinInviteClientProps) {
                     )}
 
                     {errorMsg && (
-                        <Typography sx={{ color: "#ff8d8d", fontSize: 13, mt: 1.75 }}>
+                        <Typography sx={{ color: "var(--danger)", fontSize: 13, mt: 1.75 }}>
                             {errorMsg}
                         </Typography>
                     )}

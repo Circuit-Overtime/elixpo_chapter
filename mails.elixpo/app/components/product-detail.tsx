@@ -41,9 +41,9 @@ import { EmptyState, GHOST_BTN, PRIMARY_BTN } from "./dashboard-ui";
 import { BORDER, GlassCard, SURFACE } from "./glass-card";
 import { useRole } from "./role-provider";
 
-const ACCENT = "#9b7bf7";
-const TEXT = "#f5f5f4";
-const TEXT_55 = "rgba(245,245,244,0.55)";
+const ACCENT = "var(--accent)";
+const TEXT = "var(--fg)";
+const TEXT_55 = "var(--fg-muted)";
 
 interface Product {
     id: string;
@@ -92,23 +92,23 @@ const darkField = {
     "& .MuiOutlinedInput-root": {
         color: TEXT,
         borderRadius: "10px",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        background: "var(--field-bg)",
+        "& fieldset": { borderColor: "var(--field-border)" },
+        "&:hover fieldset": { borderColor: "var(--accent-border)" },
         "&.Mui-focused fieldset": { borderColor: ACCENT },
     },
     "& .MuiInputBase-input": { fontSize: "0.92rem" },
-    "& .MuiInputBase-input::placeholder": { color: "rgba(245,245,244,0.35)", opacity: 1 },
+    "& .MuiInputBase-input::placeholder": { color: "var(--fg-faint)", opacity: 1 },
 };
 
 const selectSx = {
     color: TEXT,
     borderRadius: "10px",
-    background: "rgba(255,255,255,0.02)",
-    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.12)" },
-    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(155,123,247,0.4)" },
+    background: "var(--field-bg)",
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--field-border)" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--accent-border)" },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
-    "& .MuiSelect-icon": { color: "rgba(245,245,244,0.4)" },
+    "& .MuiSelect-icon": { color: "var(--fg-faint)" },
     "& .MuiSelect-select": { fontSize: "0.9rem", py: 1.1 },
 };
 
@@ -120,7 +120,7 @@ const menuProps = {
                 border: `1px solid ${BORDER}`,
                 backgroundImage: "none",
                 "& .MuiMenuItem-root": { color: TEXT, fontSize: "0.9rem" },
-                "& .MuiMenuItem-root.Mui-selected": { background: "rgba(155,123,247,0.12)" },
+                "& .MuiMenuItem-root.Mui-selected": { background: "var(--accent-tint)" },
             },
         },
     },
@@ -134,7 +134,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
                 fontWeight: 700,
                 letterSpacing: "0.04em",
                 textTransform: "uppercase",
-                color: "rgba(245,245,244,0.4)",
+                color: "var(--fg-faint)",
                 mb: 0.7,
             }}
         >
@@ -315,7 +315,7 @@ export default function ProductDetail({ id }: { id: string }) {
                             sx={{
                                 width: 56,
                                 height: 56,
-                                bgcolor: "rgba(155,123,247,0.15)",
+                                bgcolor: "var(--accent-tint-strong)",
                                 color: ACCENT,
                                 fontWeight: 800,
                                 border: `1px solid ${BORDER}`,
@@ -344,12 +344,12 @@ export default function ProductDetail({ id }: { id: string }) {
                                         fontWeight: 700,
                                         color:
                                             product.status === "active"
-                                                ? "#86efac"
-                                                : "rgba(245,245,244,0.6)",
+                                                ? "var(--success)"
+                                                : "var(--fg-muted)",
                                         bgcolor:
                                             product.status === "active"
                                                 ? "rgba(52,211,153,0.12)"
-                                                : "rgba(255,255,255,0.06)",
+                                                : "var(--overlay)",
                                         border: `1px solid ${product.status === "active" ? "rgba(52,211,153,0.3)" : BORDER}`,
                                     }}
                                 />
@@ -542,12 +542,12 @@ function Meta({ label, value }: { label: string; value: string }) {
                     fontWeight: 700,
                     letterSpacing: "0.04em",
                     textTransform: "uppercase",
-                    color: "rgba(245,245,244,0.4)",
+                    color: "var(--fg-faint)",
                 }}
             >
                 {label}
             </Typography>
-            <Typography sx={{ fontSize: "0.85rem", color: "rgba(245,245,244,0.8)", mt: 0.3 }}>
+            <Typography sx={{ fontSize: "0.85rem", color: "var(--fg-muted)", mt: 0.3 }}>
                 {value}
             </Typography>
         </Box>
@@ -564,7 +564,7 @@ function CopyField({ value, onCopy }: { value: string; onCopy: () => void }) {
                 py: 0.9,
                 borderRadius: "10px",
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.02)",
+                background: "var(--field-bg)",
                 gap: 1,
             }}
         >
@@ -572,7 +572,7 @@ function CopyField({ value, onCopy }: { value: string; onCopy: () => void }) {
                 sx={{
                     fontFamily: "var(--font-geist-mono)",
                     fontSize: "0.82rem",
-                    color: "rgba(245,245,244,0.85)",
+                    color: "var(--fg-muted)",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -709,7 +709,7 @@ function WebhooksSection({
                                     p: 1.6,
                                     borderRadius: "12px",
                                     border: `1px solid ${BORDER}`,
-                                    background: "rgba(255,255,255,0.015)",
+                                    background: "var(--field-bg)",
                                 }}
                             >
                                 <Stack
@@ -741,12 +741,12 @@ function WebhooksSection({
                                                     fontWeight: 700,
                                                     color:
                                                         wh.status === "active"
-                                                            ? "#86efac"
-                                                            : "rgba(245,245,244,0.6)",
+                                                            ? "var(--success)"
+                                                            : "var(--fg-muted)",
                                                     bgcolor:
                                                         wh.status === "active"
                                                             ? "rgba(52,211,153,0.12)"
-                                                            : "rgba(255,255,255,0.06)",
+                                                            : "var(--overlay)",
                                                     border: `1px solid ${wh.status === "active" ? "rgba(52,211,153,0.3)" : BORDER}`,
                                                 }}
                                             />
@@ -813,7 +813,7 @@ function WebhooksSection({
                                         sx={{
                                             fontFamily: "var(--font-geist-mono)",
                                             fontSize: "0.76rem",
-                                            color: "rgba(245,245,244,0.8)",
+                                            color: "var(--fg-muted)",
                                             overflow: "hidden",
                                             textOverflow: "ellipsis",
                                             whiteSpace: "nowrap",
@@ -848,7 +848,7 @@ function WebhooksSection({
                                                     fontWeight: 700,
                                                     letterSpacing: "0.04em",
                                                     textTransform: "uppercase",
-                                                    color: "rgba(245,245,244,0.4)",
+                                                    color: "var(--fg-faint)",
                                                 }}
                                             >
                                                 Send with Node.js
@@ -882,7 +882,7 @@ function WebhooksSection({
                                                 m: 0,
                                                 p: 1.4,
                                                 borderRadius: "8px",
-                                                background: "#0b0d12",
+                                                background: "var(--bg)",
                                                 border: `1px solid ${BORDER}`,
                                                 overflow: "auto",
                                                 fontFamily: "var(--font-geist-mono)",
@@ -899,7 +899,7 @@ function WebhooksSection({
                                         </Box>
                                         <Typography
                                             sx={{
-                                                color: "rgba(245,245,244,0.4)",
+                                                color: "var(--fg-faint)",
                                                 fontSize: "0.74rem",
                                                 mt: 0.8,
                                             }}
@@ -1115,13 +1115,13 @@ function SuppressionsSection({
                                         height: 18,
                                         fontSize: "0.62rem",
                                         color: TEXT_55,
-                                        bgcolor: "rgba(255,255,255,0.05)",
+                                        bgcolor: "var(--overlay)",
                                         border: `1px solid ${BORDER}`,
                                     }}
                                 />
                                 <Typography
                                     sx={{
-                                        color: "rgba(245,245,244,0.35)",
+                                        color: "var(--fg-faint)",
                                         fontSize: "0.76rem",
                                         display: { xs: "none", sm: "block" },
                                     }}
@@ -1136,7 +1136,7 @@ function SuppressionsSection({
                                         textTransform: "none",
                                         fontSize: "0.8rem",
                                         color: ACCENT,
-                                        "&:hover": { background: "rgba(155,123,247,0.08)" },
+                                        "&:hover": { background: "var(--accent-tint)" },
                                     }}
                                 >
                                     Re-subscribe
@@ -1198,7 +1198,7 @@ function LogoUploader({ value, onChange }: { value: string; onChange: (v: string
                 sx={{
                     width: 48,
                     height: 48,
-                    bgcolor: "rgba(155,123,247,0.15)",
+                    bgcolor: "var(--accent-tint-strong)",
                     color: ACCENT,
                     border: `1px solid ${BORDER}`,
                 }}
@@ -1226,7 +1226,9 @@ function LogoUploader({ value, onChange }: { value: string; onChange: (v: string
                     Remove
                 </Button>
             )}
-            {err && <Typography sx={{ color: "#fca5a5", fontSize: "0.78rem" }}>{err}</Typography>}
+            {err && (
+                <Typography sx={{ color: "var(--danger)", fontSize: "0.78rem" }}>{err}</Typography>
+            )}
             <input
                 ref={fileRef}
                 type="file"
@@ -1449,7 +1451,7 @@ function EditDialog({
                                 background: "rgba(248,113,113,0.06)",
                             }}
                         >
-                            <Typography sx={{ color: "#fca5a5", fontSize: "0.82rem", mb: 1 }}>
+                            <Typography sx={{ color: "var(--danger)", fontSize: "0.82rem", mb: 1 }}>
                                 Delete this product? Its webhooks are removed. This can&rsquo;t be
                                 undone.
                             </Typography>
@@ -1616,12 +1618,12 @@ function CreateWebhookDialog({
                                                 cursor: "pointer",
                                                 borderBottom: `1px solid ${BORDER}`,
                                                 background: active
-                                                    ? "rgba(155,123,247,0.14)"
+                                                    ? "var(--accent-tint-strong)"
                                                     : "transparent",
                                                 "&:hover": {
                                                     background: active
-                                                        ? "rgba(155,123,247,0.16)"
-                                                        : "rgba(255,255,255,0.03)",
+                                                        ? "var(--accent-tint-strong)"
+                                                        : "var(--field-bg)",
                                                 },
                                                 "&:last-of-type": { borderBottom: "none" },
                                             }}
@@ -1656,11 +1658,11 @@ function CreateWebhookDialog({
                                                     flexShrink: 0,
                                                     height: 20,
                                                     fontSize: "0.66rem",
-                                                    color: n ? "#c4b5fd" : TEXT_55,
+                                                    color: n ? "var(--accent)" : TEXT_55,
                                                     bgcolor: n
-                                                        ? "rgba(155,123,247,0.12)"
-                                                        : "rgba(255,255,255,0.05)",
-                                                    border: `1px solid ${n ? "rgba(155,123,247,0.3)" : BORDER}`,
+                                                        ? "var(--accent-tint)"
+                                                        : "var(--overlay)",
+                                                    border: `1px solid ${n ? "var(--accent-border)" : BORDER}`,
                                                 }}
                                             />
                                         </Box>
@@ -1744,7 +1746,7 @@ function SecretRevealDialog({
         <Dialog open={Boolean(secret)} onClose={onClose} slotProps={{ paper: dialogPaper }}>
             <DialogTitle sx={{ color: TEXT, fontWeight: 800 }}>New shared secret</DialogTitle>
             <DialogContent>
-                <Typography sx={{ color: "#fca5a5", fontSize: "0.84rem", mb: 1.5 }}>
+                <Typography sx={{ color: "var(--danger)", fontSize: "0.84rem", mb: 1.5 }}>
                     Copy it now — it won&rsquo;t be shown again. The previous secret stays valid for
                     a short grace window.
                 </Typography>
@@ -1764,7 +1766,7 @@ function SecretRevealDialog({
                         sx={{
                             fontFamily: "var(--font-geist-mono)",
                             fontSize: "0.82rem",
-                            color: "#86efac",
+                            color: "var(--success)",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",

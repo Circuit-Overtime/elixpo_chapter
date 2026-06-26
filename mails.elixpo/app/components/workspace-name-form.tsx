@@ -52,7 +52,7 @@ export default function WorkspaceNameForm({ initialName }: { initialName: string
                     fontWeight: 700,
                     letterSpacing: "0.04em",
                     textTransform: "uppercase",
-                    color: "rgba(245,245,244,0.4)",
+                    color: "var(--fg-faint)",
                     mb: 0.7,
                 }}
             >
@@ -78,16 +78,16 @@ export default function WorkspaceNameForm({ initialName }: { initialName: string
                     inputProps={{ maxLength: MAX_NAME }}
                     sx={{
                         "& .MuiOutlinedInput-root": {
-                            color: "#f5f5f4",
+                            color: "var(--fg)",
                             borderRadius: "10px",
-                            background: "rgba(255,255,255,0.02)",
-                            "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-                            "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
-                            "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
+                            background: "var(--field-bg)",
+                            "& fieldset": { borderColor: "var(--field-border)" },
+                            "&:hover fieldset": { borderColor: "var(--accent-border)" },
+                            "&.Mui-focused fieldset": { borderColor: "var(--accent)" },
                         },
                         "& .MuiInputBase-input": { fontSize: "0.95rem", py: 1.1 },
                         "& .MuiInputBase-input::placeholder": {
-                            color: "rgba(245,245,244,0.35)",
+                            color: "var(--fg-faint)",
                             opacity: 1,
                         },
                     }}
@@ -100,25 +100,25 @@ export default function WorkspaceNameForm({ initialName }: { initialName: string
                         textTransform: "none",
                         fontWeight: 700,
                         fontSize: "0.88rem",
-                        color: "#fff",
+                        color: "var(--accent-contrast)",
                         px: 2.4,
                         py: 1.05,
                         borderRadius: "10px",
                         minWidth: 96,
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        boxShadow: "0 6px 18px rgba(124,92,255,0.32)",
+                        background: "var(--accent-gradient)",
+                        boxShadow: "var(--accent-shadow)",
                         "&:hover": {
-                            background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                            background: "var(--accent-gradient-hover)",
                         },
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {saving ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : (
                         "Save"
                     )}
@@ -128,14 +128,14 @@ export default function WorkspaceNameForm({ initialName }: { initialName: string
             {msg && (
                 <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 1.2 }}>
                     {msg.type === "ok" ? (
-                        <CheckCircleIcon sx={{ fontSize: 16, color: "#86efac" }} />
+                        <CheckCircleIcon sx={{ fontSize: 16, color: "var(--success)" }} />
                     ) : (
-                        <ErrorOutlineIcon sx={{ fontSize: 16, color: "#fca5a5" }} />
+                        <ErrorOutlineIcon sx={{ fontSize: 16, color: "var(--danger)" }} />
                     )}
                     <Typography
                         sx={{
                             fontSize: "0.82rem",
-                            color: msg.type === "ok" ? "#86efac" : "#fca5a5",
+                            color: msg.type === "ok" ? "var(--success)" : "var(--danger)",
                         }}
                     >
                         {msg.text}

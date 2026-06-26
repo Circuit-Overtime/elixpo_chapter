@@ -1,513 +1,207 @@
 "use client";
 
+import { Box, Button, Chip, Container, Grid, Stack, Typography } from "@mui/material";
 import Link from "next/link";
-import {
-    type CSSProperties,
-    type ReactNode,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { useEffect, useState } from "react";
 
-/* -----------------------------------------------------------------------------
- * Staggered pixel-field physics engine (vanilla canvas — no deps).
- * Adapted to the Elixpo palette: mostly faint white motes with purple accents
- * rippling outward from centre, faded into the page background by a vignette.
- * -------------------------------------------------------------------------- */
-
-type Pixel = {
-    x: number;
-    y: number;
-    color: string;
-    size: number;
-    sizeStep: number;
-    minSize: number;
-    maxSizeInt: number;
-    maxSize: number;
-    delay: number;
-    counter: number;
-    counterStep: number;
-    speed: number;
-    isIdle: boolean;
-    isReverse: boolean;
-    isShimmer: boolean;
-    draw: () => void;
-    appear: () => void;
-};
-
-function createPixel(
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    x: number,
-    y: number,
-    color: string,
-    baseSpeed: number,
-    delay: number,
-): Pixel {
-    const rand = (min: number, max: number) => Math.random() * (max - min) + min;
-    const p: Pixel = {
-        x,
-        y,
-        color,
-        size: 0,
-        sizeStep: rand(0.12, 0.28),
-        minSize: 0.5,
-        maxSizeInt: 2,
-        maxSize: rand(0.5, 2),
-        delay,
-        counter: 0,
-        counterStep: rand(1.8, 3.2) + (canvas.width + canvas.height) * 0.008,
-        speed: rand(0.08, 0.4) * baseSpeed,
-        isIdle: false,
-        isReverse: false,
-        isShimmer: false,
-        draw() {
-            const offset = p.maxSizeInt * 0.5 - p.size * 0.5;
-            ctx.fillStyle = p.color;
-            ctx.fillRect(p.x + offset, p.y + offset, p.size, p.size);
-        },
-        appear() {
-            p.isIdle = false;
-            if (p.counter <= p.delay) {
-                p.counter += p.counterStep;
-                return;
-            }
-            if (p.size >= p.maxSize) p.isShimmer = true;
-            if (p.isShimmer) {
-                if (p.size >= p.maxSize) p.isReverse = true;
-                else if (p.size <= p.minSize) p.isReverse = false;
-                p.size += p.isReverse ? -p.speed : p.speed;
-            } else {
-                p.size += p.sizeStep;
-            }
-            p.draw();
-        },
-    };
-    return p;
-}
-
-function PixelCanvas({ colors, gap = 6 }: { colors: string[]; gap?: number }) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const wrapRef = useRef<HTMLDivElement>(null);
-    const pixelsRef = useRef<Pixel[]>([]);
-    const rafRef = useRef<number>(0);
-    const lastRef = useRef(0);
-    const reducedRef = useRef(false);
-
-    const init = useCallback(() => {
-        const canvas = canvasRef.current;
-        const wrap = wrapRef.current;
-        if (!canvas || !wrap || colors.length === 0) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        const { width, height } = wrap.getBoundingClientRect();
-        const w = Math.floor(width);
-        const h = Math.floor(height);
-        canvas.width = w;
-        canvas.height = h;
-        canvas.style.width = `${w}px`;
-        canvas.style.height = `${h}px`;
-
-        const speed = reducedRef.current ? 0 : 30 * 0.001;
-        const pixels: Pixel[] = [];
-        for (let x = 0; x < w; x += gap) {
-            for (let y = 0; y < h; y += gap) {
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const dx = x - w / 2;
-                const dy = y - h / 2;
-                const delay = reducedRef.current ? 0 : Math.sqrt(dx * dx + dy * dy) * 0.65;
-                pixels.push(createPixel(ctx, canvas, x, y, color, speed, delay));
-            }
-        }
-        pixelsRef.current = pixels;
-    }, [colors, gap]);
-
-    const animate = useCallback(() => {
-        cancelAnimationFrame(rafRef.current);
-        const frameInterval = 1000 / 60;
-        const loop = () => {
-            rafRef.current = requestAnimationFrame(loop);
-            const now = performance.now();
-            const elapsed = now - lastRef.current;
-            if (elapsed < frameInterval) return;
-            lastRef.current = now - (elapsed % frameInterval);
-
-            const canvas = canvasRef.current;
-            const ctx = canvas?.getContext("2d");
-            if (!canvas || !ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (const pixel of pixelsRef.current) pixel.appear();
-            if (pixelsRef.current.every((p) => p.isIdle)) cancelAnimationFrame(rafRef.current);
-        };
-        rafRef.current = requestAnimationFrame(loop);
-    }, []);
-
-    useEffect(() => {
-        reducedRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        init();
-        const ro = new ResizeObserver(() => init());
-        if (wrapRef.current) ro.observe(wrapRef.current);
-        animate();
-        return () => {
-            ro.disconnect();
-            cancelAnimationFrame(rafRef.current);
-        };
-    }, [init, animate]);
-
-    return (
-        <div ref={wrapRef} style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-            <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
-        </div>
-    );
-}
-
-/* -----------------------------------------------------------------------------
- * Hero
- * -------------------------------------------------------------------------- */
-
-const PIXELS = [
-    "rgba(245,245,244,0.16)",
-    "rgba(245,245,244,0.16)",
-    "rgba(245,245,244,0.10)",
-    "#9b7bf7",
-    "#7c5cff",
-];
-
-/* Raw mailbox-provider wordmarks for the hero strip (no boxes) — reinforces
- * "bring your own sender": Elixpo Mails relays through whichever mailbox you
- * connect. Brand colours are lifted slightly so they stay legible on dark. */
-const wordmark: CSSProperties = {
-    fontFamily: "var(--font-geist-sans), sans-serif",
-    fontWeight: 800,
-    fontSize: "1.35rem",
-    letterSpacing: "-0.01em",
-    whiteSpace: "nowrap",
-    display: "inline-flex",
-    alignItems: "center",
-    opacity: 0.95,
-    lineHeight: 1,
-};
-const tint = (color: string): CSSProperties => ({ ...wordmark, color });
-
-const MAIL_BRANDS: { name: string; node: ReactNode }[] = [
-    {
-        name: "Gmail",
-        node: (
-            <span style={wordmark}>
-                <b style={{ color: "#ea4335" }}>G</b>
-                <b style={{ color: "#f5f5f4" }}>mail</b>
-            </span>
-        ),
-    },
-    { name: "Outlook", node: <span style={tint("#3b9dff")}>Outlook</span> },
-    { name: "Yahoo Mail", node: <span style={tint("#a06bff")}>Yahoo</span> },
-    { name: "iCloud Mail", node: <span style={tint("#5ac8fa")}>iCloud</span> },
-    { name: "Zoho Mail", node: <span style={tint("#ff6a5a")}>Zoho</span> },
-    {
-        name: "Proton Mail",
-        node: (
-            <span style={wordmark}>
-                <b style={{ color: "#9b7bf7" }}>Proton</b>
-            </span>
-        ),
-    },
-    { name: "Fastmail", node: <span style={tint("#4d94ff")}>Fastmail</span> },
-    {
-        name: "Any SMTP",
-        node: (
-            <span style={{ ...tint("rgba(245,245,244,0.7)"), letterSpacing: "0.06em" }}>SMTP</span>
-        ),
-    },
-];
-
-const ArrowRight = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-            d="M5 12h14M13 6l6 6-6 6"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
-);
+// Senders brand list for the trust logos
+const SENDER_BRANDS = ["Gmail", "Outlook", "Yahoo", "iCloud", "Zoho", "Proton", "Fastmail", "SMTP"];
 
 export default function PixelHero({ authed }: { authed?: boolean | null }) {
     const signedIn = authed === true;
     const primaryHref = signedIn ? "/dashboard" : "/api/auth/login";
     const primaryLabel = signedIn ? "Go to your dashboard" : "Get started with Elixpo";
     const [mounted, setMounted] = useState(false);
+
     useEffect(() => {
-        const t = setTimeout(() => setMounted(true), 50);
-        return () => clearTimeout(t);
+        setMounted(true);
     }, []);
 
+    if (!mounted) return <Box sx={{ minHeight: "100vh" }} />;
+
     return (
-        <section
-            style={{
+        <Box
+            sx={{
                 position: "relative",
                 width: "100%",
-                minHeight: "calc(100dvh - 68px)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
+                background: "#ffffff", // White editorial canvas
+                color: "#212121", // Ink text
+                pt: { xs: 8, md: 12 },
+                pb: { xs: 6, md: 10 },
                 overflow: "hidden",
-                isolation: "isolate",
-                padding: "2rem 1rem 5.5rem",
-                textAlign: "center",
             }}
         >
             <style>{`
-                @keyframes pay-marquee { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
-                .pay-marquee { animation: pay-marquee 26s linear infinite; }
-                @keyframes pay-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes pulseSlow {
+                    0%, 100% { opacity: 0.15; transform: scale(1); }
+                    50% { opacity: 0.25; transform: scale(1.05); }
+                }
             `}</style>
 
-            {/* pixel field + vignette */}
-            <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
-                <PixelCanvas colors={PIXELS} gap={7} />
-                <div
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                            "radial-gradient(circle at 50% 42%, transparent 0%, rgba(11,13,18,0.5) 62%, #0b0d12 100%)",
-                    }}
-                />
-                {/* soft purple glow behind the headline */}
-                <div
-                    style={{
-                        position: "absolute",
-                        top: "30%",
-                        left: "50%",
-                        width: "60vmax",
-                        height: "40vmax",
-                        transform: "translate(-50%, -50%)",
-                        background:
-                            "radial-gradient(circle, rgba(155,123,247,0.16) 0%, transparent 60%)",
-                        filter: "blur(40px)",
-                    }}
-                />
-            </div>
-
-            {/* eyebrow */}
-            <div
-                style={{
-                    position: "relative",
-                    zIndex: 1,
-                    opacity: mounted ? 1 : 0,
-                    animation: mounted ? "pay-rise 0.7s ease both" : undefined,
-                    marginBottom: "1.4rem",
-                }}
-            >
-                <span
-                    style={{
+            {/* Centered Hero Header */}
+            <Box sx={{ maxWidth: 880, mx: "auto", px: 2.5, textAlign: "center" }}>
+                {/* Taxonomy Chip */}
+                <Typography
+                    sx={{
+                        color: "#ff7759", // Coral
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "13px",
+                        fontWeight: 500,
+                        letterSpacing: "0.2em",
+                        textTransform: "uppercase",
+                        mb: 2.5,
                         display: "inline-block",
-                        padding: "6px 14px",
-                        borderRadius: 999,
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        color: "#b69aff",
-                        background: "rgba(155,123,247,0.1)",
-                        border: "1px solid rgba(155,123,247,0.25)",
-                        backdropFilter: "blur(8px)",
                     }}
                 >
                     Event-based transactional email
-                </span>
-            </div>
+                </Typography>
 
-            {/* headline — serif italic + sans extrabold gradient */}
-            <h1
-                style={{
-                    position: "relative",
-                    zIndex: 1,
-                    margin: 0,
-                    lineHeight: 1.0,
-                    letterSpacing: "-0.03em",
-                    display: "flex",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
-                    gap: "0 0.4em",
-                    fontSize: "clamp(2.8rem, 8vw, 6rem)",
-                    opacity: mounted ? 1 : 0,
-                    animation: mounted ? "pay-rise 0.8s ease 0.05s both" : undefined,
-                }}
-            >
-                <span
-                    style={{
-                        fontFamily: "Georgia, 'Times New Roman', serif",
-                        fontStyle: "italic",
+                {/* Monumental Display Headline */}
+                <Typography
+                    component="h1"
+                    sx={{
+                        fontFamily: "var(--font-display)",
                         fontWeight: 500,
-                        color: "rgba(245,245,244,0.92)",
-                        textShadow: "0 12px 40px rgba(0,0,0,0.5)",
+                        fontSize: { xs: "3.2rem", sm: "4.8rem", md: "5.5rem" },
+                        lineHeight: 0.95,
+                        letterSpacing: "-0.04em",
+                        color: "#000000",
+                        mb: 3,
+                        "& span": {
+                            fontFamily: "Georgia, serif",
+                            fontStyle: "italic",
+                            fontWeight: 400,
+                            color: "#75758a",
+                        },
                     }}
                 >
-                    Email
-                </span>
-                <span
-                    style={{
-                        fontWeight: 800,
-                        background:
-                            "linear-gradient(135deg, #f5f5f4 0%, #9b7bf7 38%, #86efac 68%, #fbbf24 100%)",
-                        WebkitBackgroundClip: "text",
-                        backgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                    }}
-                >
-                    infrastructure.
-                </span>
-            </h1>
+                    Email <span>infrastructure</span> <br />
+                    built for developers.
+                </Typography>
 
-            {/* subhead */}
-            <p
-                style={{
-                    position: "relative",
-                    zIndex: 1,
-                    maxWidth: 600,
-                    margin: "1.7rem auto 0",
-                    fontSize: "clamp(1rem, 2.4vw, 1.16rem)",
-                    lineHeight: 1.7,
-                    color: "rgba(245,245,244,0.72)",
-                    opacity: mounted ? 1 : 0,
-                    animation: mounted ? "pay-rise 0.8s ease 0.15s both" : undefined,
-                }}
-            >
-                Bring your own sender, design templates with {"{{variables}}"} in a live editor, and
-                trigger sends from your service via a webhook — without building mail
-                infrastructure.
-            </p>
+                {/* Body paragraph */}
+                <Typography
+                    sx={{
+                        fontFamily: "var(--font-sans)",
+                        color: "#4a4a52",
+                        fontSize: { xs: "1.05rem", md: "1.18rem" },
+                        lineHeight: 1.6,
+                        maxWidth: 620,
+                        mx: "auto",
+                        mb: 4.5,
+                    }}
+                >
+                    Bring your own sender, design templates with a live preview, and send them
+                    one-time to anyone — no login — or trigger them from your app via a signed
+                    webhook. One branded workspace for your whole team.
+                </Typography>
 
-            {/* CTAs — Tahoe glass buttons */}
-            <div
-                style={{
-                    position: "relative",
-                    zIndex: 1,
-                    display: "flex",
-                    gap: 12,
-                    marginTop: "2.2rem",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
-                    opacity: mounted ? 1 : 0,
-                    transform: mounted ? "translateY(0)" : "translateY(24px)",
-                    transition: "opacity 0.8s ease, transform 0.8s ease",
-                    transitionDelay: "0.35s",
-                }}
-            >
-                {/* Plain <a>: /api/auth/login 302-redirects cross-origin to Elixpo
-                    Accounts — a Next <Link> would RSC-prefetch it and hit CORS. */}
-                <a
-                    href={primaryHref}
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        height: 50,
-                        padding: "0 30px",
-                        borderRadius: 14,
-                        fontSize: "0.95rem",
-                        fontWeight: 700,
-                        color: "#fff",
-                        textDecoration: "none",
-                        background: "linear-gradient(180deg, #a98cff 0%, #7c5cff 100%)",
-                        boxShadow:
-                            "inset 0 1px 1px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.2), 0 14px 30px rgba(124,92,255,0.35)",
-                    }}
+                {/* Actions: Pill CTA & Underlined Action Link */}
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={3}
+                    justifyContent="center"
+                    alignItems="center"
+                    sx={{ mb: 8 }}
                 >
-                    {primaryLabel}
-                    <ArrowRight />
-                </a>
-                <Link
-                    href="/docs"
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        height: 50,
-                        padding: "0 28px",
-                        borderRadius: 14,
-                        fontSize: "0.95rem",
-                        fontWeight: 700,
-                        color: "#f5f5f4",
-                        textDecoration: "none",
-                        background:
-                            "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)",
-                        border: "1px solid rgba(255,255,255,0.14)",
-                        backdropFilter: "blur(12px)",
-                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.1)",
-                    }}
-                >
-                    Read the docs
-                </Link>
-            </div>
-
-            {/* powered-by marquee */}
-            <div
-                style={{
-                    position: "absolute",
-                    bottom: "2rem",
-                    left: 0,
-                    right: 0,
-                    zIndex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 14,
-                    opacity: mounted ? 1 : 0,
-                    transition: "opacity 1s ease",
-                    transitionDelay: "0.55s",
-                }}
-            >
-                <span
-                    style={{
-                        fontSize: "0.78rem",
-                        fontWeight: 600,
-                        letterSpacing: "0.04em",
-                        color: "rgba(245,245,244,0.45)",
-                        textTransform: "uppercase",
-                    }}
-                >
-                    Bring your own sender — works with any mailbox
-                </span>
-                <div
-                    style={{
-                        position: "relative",
-                        width: "100%",
-                        maxWidth: 880,
-                        overflow: "hidden",
-                        WebkitMaskImage:
-                            "linear-gradient(to right, transparent, white 15%, white 85%, transparent)",
-                        maskImage:
-                            "linear-gradient(to right, transparent, white 15%, white 85%, transparent)",
-                    }}
-                >
-                    <div
-                        className="pay-marquee"
-                        style={{ display: "flex", width: "max-content", gap: 52, padding: "4px 0" }}
+                    <Button
+                        component="a"
+                        href={primaryHref}
+                        sx={{
+                            background: "#17171c", // Near-black Primary
+                            color: "#ffffff",
+                            borderRadius: "32px", // Pill
+                            px: 3.5,
+                            py: 1.4,
+                            fontSize: "0.95rem",
+                            fontWeight: 500,
+                            textTransform: "none",
+                            boxShadow: "none",
+                            "&:hover": {
+                                background: "#000000",
+                            },
+                        }}
                     >
-                        {[0, 1].map((dup) => (
-                            <div
-                                key={dup}
-                                style={{ display: "flex", gap: 52, alignItems: "center" }}
-                                aria-hidden={dup === 1}
-                            >
-                                {MAIL_BRANDS.map((b) => (
-                                    <span
-                                        key={`${dup}-${b.name}`}
-                                        aria-label={b.name}
-                                        style={{ display: "inline-flex", alignItems: "center" }}
-                                    >
-                                        {b.node}
-                                    </span>
-                                ))}
-                            </div>
+                        {primaryLabel}
+                    </Button>
+                    <Button
+                        component={Link}
+                        href="/docs"
+                        sx={{
+                            color: "#17171c", // Near-black Primary text
+                            fontSize: "0.95rem",
+                            fontWeight: 500,
+                            textTransform: "none",
+                            borderRadius: "32px", // Pill
+                            px: 3.5,
+                            py: 1.4,
+                            background: "rgba(238, 236, 231, 0.45)", // Semi-transparent Soft Stone
+                            backdropFilter: "blur(12px)",
+                            border: "1px solid rgba(0, 0, 0, 0.08)",
+                            boxShadow:
+                                "inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 10px rgba(0, 0, 0, 0.02)",
+                            fontFamily: "var(--font-sans)",
+                            transition: "all 0.22s ease-in-out",
+                            "&:hover": {
+                                background: "rgba(238, 236, 231, 0.75)",
+                                borderColor: "rgba(0, 0, 0, 0.16)",
+                                boxShadow:
+                                    "inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 4px 15px rgba(0, 0, 0, 0.05)",
+                            },
+                        }}
+                    >
+                        Explore the documentation →
+                    </Button>
+                </Stack>
+            </Box>
+
+            {/* Centered monochrome quiet Trust Logo Strip */}
+            <Box sx={{ borderTop: "1px solid #f2f2f2", pt: 6, mt: 4 }}>
+                <Container maxWidth="lg">
+                    <Typography
+                        sx={{
+                            textAlign: "center",
+                            fontSize: "12px",
+                            fontWeight: 500,
+                            letterSpacing: "0.08em",
+                            color: "#93939f", // Muted Slate
+                            textTransform: "uppercase",
+                            mb: 4,
+                            fontFamily: "var(--font-mono)",
+                        }}
+                    >
+                        Compatible with any mailbox provider
+                    </Typography>
+
+                    <Stack
+                        direction="row"
+                        spacing={{ xs: 4, sm: 6, md: 8 }}
+                        justifyContent="center"
+                        alignItems="center"
+                        sx={{
+                            flexWrap: "wrap",
+                            rowGap: 3,
+                            "& span": {
+                                fontSize: "1.1rem",
+                                fontWeight: 700,
+                                color: "#93939f",
+                                letterSpacing: "-0.01em",
+                                transition: "color 0.2s ease",
+                                cursor: "default",
+                                "&:hover": {
+                                    color: "#17171c",
+                                },
+                            },
+                        }}
+                    >
+                        {SENDER_BRANDS.map((brand) => (
+                            <Typography key={brand} component="span">
+                                {brand}
+                            </Typography>
                         ))}
-                    </div>
-                </div>
-            </div>
-        </section>
+                    </Stack>
+                </Container>
+            </Box>
+        </Box>
     );
 }

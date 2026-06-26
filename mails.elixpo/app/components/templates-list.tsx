@@ -24,31 +24,31 @@ import { BORDER, SURFACE } from "./glass-card";
 import { GlassCard } from "./glass-card";
 import { useRole } from "./role-provider";
 
-const ACCENT = "#9b7bf7";
-const TEXT_60 = "rgba(245,245,244,0.6)";
-const TEXT_40 = "rgba(245,245,244,0.4)";
+const ACCENT = "var(--accent)";
+const TEXT_60 = "var(--fg-muted)";
+const TEXT_40 = "var(--fg-faint)";
 
 // Shared dark field / select styling (matches webhooks/products managers).
 const darkField = {
     "& .MuiOutlinedInput-root": {
-        color: "#f5f5f4",
+        color: "var(--fg)",
         borderRadius: "10px",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        background: "var(--field-bg)",
+        "& fieldset": { borderColor: "var(--field-border)" },
+        "&:hover fieldset": { borderColor: "var(--accent-border)" },
         "&.Mui-focused fieldset": { borderColor: ACCENT },
     },
     "& .MuiInputBase-input": { fontSize: "0.92rem", py: 1.05 },
-    "& .MuiInputBase-input::placeholder": { color: "rgba(245,245,244,0.35)", opacity: 1 },
+    "& .MuiInputBase-input::placeholder": { color: "var(--fg-faint)", opacity: 1 },
 };
 
 const darkSelect = {
-    color: "#f5f5f4",
+    color: "var(--fg)",
     borderRadius: "10px",
-    background: "rgba(255,255,255,0.02)",
+    background: "var(--field-bg)",
     minWidth: 150,
-    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.12)" },
-    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(155,123,247,0.4)" },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--field-border)" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--accent-border)" },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
     "& .MuiSelect-icon": { color: TEXT_40 },
     "& .MuiSelect-select": { fontSize: "0.9rem", py: 1.05 },
@@ -61,8 +61,8 @@ const darkMenuProps = {
                 background: SURFACE,
                 border: `1px solid ${BORDER}`,
                 backgroundImage: "none",
-                "& .MuiMenuItem-root": { color: "#f5f5f4", fontSize: "0.9rem" },
-                "& .MuiMenuItem-root.Mui-selected": { background: "rgba(155,123,247,0.12)" },
+                "& .MuiMenuItem-root": { color: "var(--fg)", fontSize: "0.9rem" },
+                "& .MuiMenuItem-root.Mui-selected": { background: "var(--accent-tint)" },
             },
         },
     },
@@ -85,13 +85,13 @@ const NEW_BTN = {
     textTransform: "none" as const,
     fontWeight: 700,
     fontSize: "0.9rem",
-    color: "#fff",
+    color: "var(--accent-contrast)",
     px: 2.4,
     py: 1.05,
     borderRadius: "10px",
-    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-    boxShadow: "0 6px 18px rgba(124,92,255,0.32)",
-    "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+    background: "var(--accent-gradient)",
+    boxShadow: "0 6px 18px var(--accent-shadow)",
+    "&:hover": { background: "var(--accent-gradient-hover)" },
 };
 
 function ReadOnlyChip() {
@@ -100,9 +100,9 @@ function ReadOnlyChip() {
             label="Read-only access"
             size="small"
             sx={{
-                color: "rgba(245,245,244,0.5)",
-                bgcolor: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                color: "var(--fg-muted)",
+                bgcolor: "var(--overlay)",
+                border: "1px solid var(--border)",
             }}
         />
     );
@@ -249,7 +249,7 @@ export default function TemplatesList() {
                         borderRadius: "10px",
                         background: "rgba(239,68,68,0.1)",
                         border: "1px solid rgba(239,68,68,0.3)",
-                        color: "#fca5a5",
+                        color: "var(--danger)",
                         fontSize: "0.85rem",
                     }}
                 >
@@ -309,8 +309,8 @@ export default function TemplatesList() {
                                             borderRadius: "11px",
                                             display: "grid",
                                             placeItems: "center",
-                                            background: "rgba(155,123,247,0.12)",
-                                            border: "1px solid rgba(155,123,247,0.28)",
+                                            background: "var(--accent-tint)",
+                                            border: "1px solid var(--accent-border)",
                                             flexShrink: 0,
                                         }}
                                     >
@@ -323,7 +323,7 @@ export default function TemplatesList() {
                                                 sx={{
                                                     fontWeight: 700,
                                                     fontSize: "1rem",
-                                                    color: "#f5f5f4",
+                                                    color: "var(--fg)",
                                                     overflow: "hidden",
                                                     textOverflow: "ellipsis",
                                                     whiteSpace: "nowrap",
@@ -339,9 +339,9 @@ export default function TemplatesList() {
                                                     height: 20,
                                                     fontFamily: "var(--font-geist-mono)",
                                                     fontSize: "0.68rem",
-                                                    color: "rgba(245,245,244,0.6)",
-                                                    bgcolor: "rgba(255,255,255,0.05)",
-                                                    border: "1px solid rgba(255,255,255,0.08)",
+                                                    color: "var(--fg-muted)",
+                                                    bgcolor: "var(--overlay)",
+                                                    border: "1px solid var(--border)",
                                                 }}
                                             />
                                             {t.variables.length > 0 && (
@@ -351,9 +351,9 @@ export default function TemplatesList() {
                                                     sx={{
                                                         height: 20,
                                                         fontSize: "0.68rem",
-                                                        color: "#c4b5fd",
-                                                        bgcolor: "rgba(155,123,247,0.12)",
-                                                        border: "1px solid rgba(155,123,247,0.3)",
+                                                        color: "var(--accent)",
+                                                        bgcolor: "var(--accent-tint)",
+                                                        border: "1px solid var(--accent-border)",
                                                     }}
                                                 />
                                             )}
@@ -383,11 +383,11 @@ export default function TemplatesList() {
                                         sx={{
                                             textTransform: "none",
                                             fontSize: "0.85rem",
-                                            color: "rgba(245,245,244,0.8)",
+                                            color: "var(--fg-muted)",
                                             borderRadius: "9px",
                                             "&:hover": {
-                                                background: "rgba(255,255,255,0.05)",
-                                                color: "#fff",
+                                                background: "var(--overlay)",
+                                                color: "var(--fg)",
                                             },
                                         }}
                                     >
@@ -400,18 +400,18 @@ export default function TemplatesList() {
                                             sx={{
                                                 minWidth: 0,
                                                 p: 1,
-                                                color: "rgba(245,245,244,0.5)",
+                                                color: "var(--fg-muted)",
                                                 borderRadius: "9px",
                                                 "&:hover": {
                                                     background: "rgba(239,68,68,0.1)",
-                                                    color: "#fca5a5",
+                                                    color: "var(--danger)",
                                                 },
                                             }}
                                         >
                                             {deleting === t.id ? (
                                                 <CircularProgress
                                                     size={16}
-                                                    sx={{ color: "rgba(245,245,244,0.5)" }}
+                                                    sx={{ color: "var(--fg-muted)" }}
                                                 />
                                             ) : (
                                                 <DeleteOutlineIcon sx={{ fontSize: 19 }} />

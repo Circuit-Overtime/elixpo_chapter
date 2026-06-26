@@ -32,8 +32,8 @@ import { useRole } from "./role-provider";
 import TemplateSendDialog from "./template-send-dialog";
 import TemplateTestDialog from "./template-test-dialog";
 
-const ACCENT = "#9b7bf7";
-const TEXT_60 = "rgba(245,245,244,0.6)";
+const ACCENT = "var(--accent)";
+const TEXT_60 = "var(--fg-muted)";
 
 // Common email canvas colours offered as quick swatches (plus a custom picker).
 const BG_PRESETS = ["#f4f4f7", "#ffffff", "#eef2ff", "#f0fdf4", "#0b0d12"];
@@ -55,29 +55,29 @@ const EMAIL_FEATURES = {
 
 const darkField = {
     "& .MuiOutlinedInput-root": {
-        color: "#f5f5f4",
+        color: "var(--fg)",
         borderRadius: "10px",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        background: "var(--field-bg)",
+        "& fieldset": { borderColor: "var(--field-border)" },
+        "&:hover fieldset": { borderColor: "var(--accent-border)" },
         "&.Mui-focused fieldset": { borderColor: ACCENT },
     },
     "& .MuiInputBase-input": { fontSize: "0.92rem", py: 0.95 },
-    "& .MuiInputBase-input::placeholder": { color: "rgba(245,245,244,0.35)", opacity: 1 },
+    "& .MuiInputBase-input::placeholder": { color: "var(--fg-faint)", opacity: 1 },
 };
 
 const SAVE_BTN_SX = {
     textTransform: "none" as const,
     fontWeight: 700,
     fontSize: "0.9rem",
-    color: "#fff",
+    color: "var(--accent-contrast)",
     px: 2.6,
     py: 1.1,
     borderRadius: "10px",
-    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-    boxShadow: "0 6px 18px rgba(124,92,255,0.32)",
-    "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
-    "&.Mui-disabled": { background: "rgba(255,255,255,0.06)", color: "rgba(245,245,244,0.4)" },
+    background: "var(--accent-gradient)",
+    boxShadow: "0 6px 18px var(--accent-shadow)",
+    "&:hover": { background: "var(--accent-gradient-hover)" },
+    "&.Mui-disabled": { background: "var(--overlay)", color: "var(--fg-faint)" },
 };
 
 /**
@@ -321,7 +321,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                             textTransform: "none",
                             color: TEXT_60,
                             minWidth: 0,
-                            "&:hover": { color: "#f5f5f4" },
+                            "&:hover": { color: "var(--fg)" },
                         }}
                     >
                         Templates
@@ -330,7 +330,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                         sx={{
                             fontWeight: 800,
                             fontSize: "1.3rem",
-                            color: "#f5f5f4",
+                            color: "var(--fg)",
                             letterSpacing: "-0.01em",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -342,7 +342,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                 </Stack>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                     {savedMsg && (
-                        <Typography sx={{ color: "#86efac", fontSize: "0.85rem" }}>
+                        <Typography sx={{ color: "var(--success)", fontSize: "0.85rem" }}>
                             Saved
                         </Typography>
                     )}
@@ -364,8 +364,8 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                             ...GHOST_BTN,
                                             fontSize: "0.9rem",
                                             "&.Mui-disabled": {
-                                                color: "rgba(245,245,244,0.4)",
-                                                borderColor: "rgba(255,255,255,0.07)",
+                                                color: "var(--fg-faint)",
+                                                borderColor: "var(--border)",
                                             },
                                         }}
                                     >
@@ -389,8 +389,8 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                             ...GHOST_BTN,
                                             fontSize: "0.9rem",
                                             "&.Mui-disabled": {
-                                                color: "rgba(245,245,244,0.4)",
-                                                borderColor: "rgba(255,255,255,0.07)",
+                                                color: "var(--fg-faint)",
+                                                borderColor: "var(--border)",
                                             },
                                         }}
                                     >
@@ -411,7 +411,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                             saving ? (
                                                 <CircularProgress
                                                     size={16}
-                                                    sx={{ color: "rgba(245,245,244,0.6)" }}
+                                                    sx={{ color: "var(--fg-muted)" }}
                                                 />
                                             ) : (
                                                 <SaveIcon sx={{ fontSize: "1.1rem !important" }} />
@@ -437,7 +437,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                         borderRadius: "10px",
                         background: "rgba(239,68,68,0.1)",
                         border: "1px solid rgba(239,68,68,0.3)",
-                        color: "#fca5a5",
+                        color: "var(--danger)",
                         fontSize: "0.85rem",
                         flexShrink: 0,
                     }}
@@ -454,7 +454,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
             >
                 <DataObjectIcon sx={{ fontSize: 17, color: ACCENT, mr: 0.4 }} />
                 <Typography
-                    sx={{ fontWeight: 700, fontSize: "0.85rem", color: "#f5f5f4", mr: 0.5 }}
+                    sx={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--fg)", mr: 0.5 }}
                 >
                     Variables{variables.length > 0 ? ` (${variables.length})` : ""}
                 </Typography>
@@ -468,9 +468,9 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                 height: 22,
                                 fontFamily: "var(--font-geist-mono)",
                                 fontSize: "0.72rem",
-                                color: "#c4b5fd",
-                                bgcolor: "rgba(155,123,247,0.12)",
-                                border: "1px solid rgba(155,123,247,0.3)",
+                                color: "var(--accent)",
+                                bgcolor: "var(--accent-tint)",
+                                border: "1px solid var(--accent-border)",
                             }}
                         />
                     ))
@@ -479,7 +479,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                         — type{" "}
                         <Box
                             component="span"
-                            sx={{ fontFamily: "var(--font-geist-mono)", color: "#86efac" }}
+                            sx={{ fontFamily: "var(--font-geist-mono)", color: "var(--success)" }}
                         >
                             {"{{name}}"}
                         </Box>{" "}
@@ -513,7 +513,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                     <Box
                         sx={{
                             p: 1.6,
-                            borderBottom: "1px solid rgba(255,255,255,0.07)",
+                            borderBottom: "1px solid var(--border)",
                             display: "flex",
                             flexDirection: "column",
                             gap: 1.2,
@@ -564,9 +564,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                     },
                                 }}
                             />
-                            <Typography
-                                sx={{ fontSize: "0.82rem", color: "rgba(245,245,244,0.7)" }}
-                            >
+                            <Typography sx={{ fontSize: "0.82rem", color: "var(--fg-muted)" }}>
                                 Transactional
                             </Typography>
                             <Tooltip
@@ -578,7 +576,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                         fontSize: "0.78rem",
                                         color: TEXT_60,
                                         cursor: "help",
-                                        borderBottom: "1px dotted rgba(245,245,244,0.3)",
+                                        borderBottom: "1px dotted var(--fg-faint)",
                                     }}
                                 >
                                     what's this?
@@ -643,7 +641,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                         sx={{
                             px: 2,
                             py: 1.3,
-                            borderBottom: "1px solid rgba(255,255,255,0.07)",
+                            borderBottom: "1px solid var(--border)",
                             flexWrap: "wrap",
                             gap: 1,
                             flexShrink: 0,
@@ -652,7 +650,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                         <Stack direction="row" alignItems="center" spacing={1}>
                             <VisibilityIcon sx={{ fontSize: 18, color: ACCENT }} />
                             <Typography
-                                sx={{ fontWeight: 700, fontSize: "0.92rem", color: "#f5f5f4" }}
+                                sx={{ fontWeight: 700, fontSize: "0.92rem", color: "var(--fg)" }}
                             >
                                 Inbox preview
                             </Typography>
@@ -682,7 +680,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                         border:
                                             bgColor.toLowerCase() === c.toLowerCase()
                                                 ? `2px solid ${ACCENT}`
-                                                : "1px solid rgba(255,255,255,0.18)",
+                                                : "1px solid var(--border)",
                                     }}
                                 />
                             ))}
@@ -698,7 +696,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                     borderRadius: "6px",
                                     overflow: "hidden",
                                     cursor: "pointer",
-                                    border: "1px solid rgba(255,255,255,0.18)",
+                                    border: "1px solid var(--border)",
                                     background:
                                         "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)",
                                 }}
@@ -740,7 +738,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                             <Box sx={{ mb: 1, px: 0.5, flexShrink: 0 }}>
                                 <Typography
                                     sx={{
-                                        color: "rgba(245,245,244,0.45)",
+                                        color: "var(--fg-faint)",
                                         fontSize: "0.72rem",
                                         textTransform: "uppercase",
                                         letterSpacing: "0.04em",
@@ -750,7 +748,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                 </Typography>
                                 <Typography
                                     sx={{
-                                        color: "#f5f5f4",
+                                        color: "var(--fg)",
                                         fontSize: "0.92rem",
                                         fontWeight: 600,
                                         overflow: "hidden",
@@ -769,7 +767,7 @@ export default function TemplateComposer({ templateId }: { templateId?: string }
                                     flex: 1,
                                     minHeight: 0,
                                     width: "100%",
-                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    border: "1px solid var(--border)",
                                     borderRadius: "10px",
                                     background: "#fff",
                                     display: "block",

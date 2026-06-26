@@ -4,9 +4,10 @@ import { Box, Container, Stack, Typography } from "@mui/material";
 import type React from "react";
 import PageShell from "./page-shell";
 
-const ACCENT = "#9b7bf7";
-const TEXT = "#f5f5f4";
-const TEXT_70 = "rgba(245,245,244,0.72)";
+const CORAL = "#ff7759";
+const INK = "#212121";
+const SLATE = "#75758a";
+const HAIRLINE = "#d9d9dd";
 
 /** Chrome for a legal/policy document: aurora shell + centered prose column. */
 export function LegalShell({
@@ -22,16 +23,17 @@ export function LegalShell({
 }) {
     return (
         <PageShell variant="docs">
-            <Container maxWidth="md" sx={{ pt: { xs: 7, md: 11 }, pb: { xs: 8, md: 12 } }}>
-                <Box sx={{ maxWidth: 760, mx: "auto" }}>
+            <Container maxWidth="md" sx={{ pt: { xs: 7, md: 10 }, pb: { xs: 8, md: 12 } }}>
+                <Box sx={{ maxWidth: 720, mx: "auto" }}>
                     <Typography
                         sx={{
-                            color: ACCENT,
-                            fontWeight: 700,
-                            fontSize: "0.76rem",
-                            letterSpacing: "0.14em",
+                            color: CORAL,
+                            fontWeight: 500,
+                            fontSize: "12px",
+                            letterSpacing: "0.15em",
                             textTransform: "uppercase",
-                            mb: 1.5,
+                            mb: 2.5,
+                            fontFamily: "var(--font-mono)",
                         }}
                     >
                         Legal
@@ -39,42 +41,50 @@ export function LegalShell({
                     <Typography
                         component="h1"
                         sx={{
-                            fontWeight: 800,
-                            fontSize: { xs: "2.1rem", md: "2.8rem" },
-                            letterSpacing: "-0.02em",
-                            lineHeight: 1.08,
-                            color: TEXT,
-                            mb: 1.5,
+                            fontWeight: 500,
+                            fontSize: { xs: "2.2rem", md: "3.2rem" },
+                            letterSpacing: "-0.03em",
+                            lineHeight: 1.05,
+                            color: "#000000",
+                            mb: 2,
+                            fontFamily: "var(--font-display)",
                         }}
                     >
                         {title}
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.45)",
+                            color: SLATE,
                             fontSize: "0.85rem",
-                            mb: intro ? 2.5 : 4,
+                            mb: intro ? 3.5 : 5,
+                            fontFamily: "var(--font-sans)",
                         }}
                     >
                         Last updated {updated}
                     </Typography>
                     {intro && (
                         <Typography
-                            sx={{ color: TEXT_70, fontSize: "1.05rem", lineHeight: 1.75, mb: 4 }}
+                            sx={{
+                                color: INK,
+                                fontSize: "1.05rem",
+                                lineHeight: 1.65,
+                                mb: 5,
+                                fontFamily: "var(--font-sans)",
+                            }}
                         >
                             {intro}
                         </Typography>
                     )}
-                    <Stack spacing={4}>{children}</Stack>
+                    <Stack spacing={4.5}>{children}</Stack>
 
                     <Box
                         sx={{
-                            mt: 6,
+                            mt: 7,
                             pt: 3,
-                            borderTop: "1px solid rgba(255,255,255,0.08)",
-                            color: "rgba(245,245,244,0.45)",
-                            fontSize: "0.85rem",
-                            lineHeight: 1.7,
+                            borderTop: `1px solid ${HAIRLINE}`,
+                            color: SLATE,
+                            fontSize: "0.88rem",
+                            lineHeight: 1.6,
                         }}
                     >
                         Questions about this policy? Contact us at{" "}
@@ -82,9 +92,9 @@ export function LegalShell({
                             component="a"
                             href="mailto:hello@elixpo.com"
                             sx={{
-                                color: ACCENT,
-                                textDecoration: "none",
-                                "&:hover": { textDecoration: "underline" },
+                                color: "#1863dc",
+                                textDecoration: "underline",
+                                "&:hover": { color: "#003c33" },
                             }}
                         >
                             hello@elixpo.com
@@ -107,16 +117,17 @@ export function LegalSection({
             <Typography
                 component="h2"
                 sx={{
-                    fontWeight: 700,
-                    fontSize: { xs: "1.25rem", md: "1.4rem" },
-                    letterSpacing: "-0.01em",
-                    color: TEXT,
-                    mb: 1.5,
+                    fontWeight: 500,
+                    fontSize: { xs: "1.3rem", md: "1.5rem" },
+                    letterSpacing: "-0.018em",
+                    color: "#000000",
+                    mb: 2,
+                    fontFamily: "var(--font-display)",
                 }}
             >
                 {heading}
             </Typography>
-            <Stack spacing={1.5}>{children}</Stack>
+            <Stack spacing={1.8}>{children}</Stack>
         </Box>
     );
 }
@@ -124,7 +135,14 @@ export function LegalSection({
 /** A paragraph of legal prose. */
 export function LegalP({ children }: { children: React.ReactNode }) {
     return (
-        <Typography sx={{ color: TEXT_70, fontSize: "0.98rem", lineHeight: 1.78 }}>
+        <Typography
+            sx={{
+                color: INK,
+                fontSize: "0.95rem",
+                lineHeight: 1.65,
+                fontFamily: "var(--font-sans)",
+            }}
+        >
             {children}
         </Typography>
     );
@@ -133,9 +151,9 @@ export function LegalP({ children }: { children: React.ReactNode }) {
 /** A bulleted list of points. */
 export function LegalList({ items }: { items: React.ReactNode[] }) {
     return (
-        <Stack component="ul" spacing={1} sx={{ m: 0, pl: 0, listStyle: "none" }}>
+        <Stack component="ul" spacing={1.2} sx={{ m: 0, pl: 0, listStyle: "none" }}>
             {items.map((item, i) => (
-                <Stack key={i} component="li" direction="row" spacing={1.4} alignItems="flex-start">
+                <Stack key={i} component="li" direction="row" spacing={1.5} alignItems="flex-start">
                     <Box
                         aria-hidden
                         sx={{
@@ -144,10 +162,17 @@ export function LegalList({ items }: { items: React.ReactNode[] }) {
                             width: 6,
                             height: 6,
                             borderRadius: "50%",
-                            background: ACCENT,
+                            background: CORAL,
                         }}
                     />
-                    <Typography sx={{ color: TEXT_70, fontSize: "0.98rem", lineHeight: 1.75 }}>
+                    <Typography
+                        sx={{
+                            color: INK,
+                            fontSize: "0.95rem",
+                            lineHeight: 1.65,
+                            fontFamily: "var(--font-sans)",
+                        }}
+                    >
                         {item}
                     </Typography>
                 </Stack>
