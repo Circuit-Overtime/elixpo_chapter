@@ -1,6 +1,7 @@
 "use client";
 
 import { Box } from "@mui/material";
+import { usePathname } from "next/navigation";
 import type React from "react";
 import Footer from "./footer";
 import Navbar from "./navbar";
@@ -16,8 +17,11 @@ export default function PageShell({
     children: React.ReactNode;
     variant?: "default" | "auth" | "warm" | "docs";
 }) {
+    const pathname = usePathname() || "";
+    const isDashboard = pathname.startsWith("/dashboard");
+
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
+        <Box sx={{ position: "relative", minHeight: "100vh", color: "var(--fg)" }}>
             <Box sx={{ position: "sticky", top: 0, zIndex: 1000 }}>
                 <Navbar />
             </Box>

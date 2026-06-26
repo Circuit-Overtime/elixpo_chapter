@@ -3,9 +3,9 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from "@mui/material";
 
-const TEXT = "#f5f5f4";
-const TEXT_65 = "rgba(245,245,244,0.65)";
-const BORDER = "rgba(255,255,255,0.07)";
+const INK = "#212121";
+const SLATE = "#75758a";
+const HAIRLINE = "#d9d9dd";
 
 export interface Faq {
     q: string;
@@ -14,7 +14,7 @@ export interface Faq {
 
 export default function PricingFaq({ items }: { items: Faq[] }) {
     return (
-        <Box>
+        <Box sx={{ borderTop: `1px solid ${HAIRLINE}` }}>
             {items.map((item, i) => (
                 <Accordion
                     key={item.q}
@@ -23,27 +23,39 @@ export default function PricingFaq({ items }: { items: Faq[] }) {
                     defaultExpanded={i === 0}
                     sx={{
                         background: "transparent",
-                        border: `1px solid ${BORDER}`,
-                        borderRadius: "12px !important",
-                        mb: 1.5,
+                        borderBottom: `1px solid ${HAIRLINE}`,
+                        borderRadius: "0px !important",
                         "&:before": { display: "none" },
-                        overflow: "hidden",
                     }}
                 >
                     <AccordionSummary
-                        expandIcon={<ExpandMoreIcon sx={{ color: "rgba(245,245,244,0.55)" }} />}
+                        expandIcon={<ExpandMoreIcon sx={{ color: SLATE }} />}
                         sx={{
-                            px: 2.5,
-                            py: 0.5,
-                            "& .MuiAccordionSummary-content": { my: 1.6 },
+                            px: 1,
+                            py: 1,
+                            "& .MuiAccordionSummary-content": { my: 1.5 },
                         }}
                     >
-                        <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: TEXT }}>
+                        <Typography
+                            sx={{
+                                fontWeight: 500,
+                                fontSize: "1.08rem",
+                                color: "#000000",
+                                fontFamily: "var(--font-display)",
+                            }}
+                        >
                             {item.q}
                         </Typography>
                     </AccordionSummary>
-                    <AccordionDetails sx={{ px: 2.5, pb: 2.5, pt: 0 }}>
-                        <Typography sx={{ color: TEXT_65, fontSize: "0.95rem", lineHeight: 1.7 }}>
+                    <AccordionDetails sx={{ px: 1, pb: 3, pt: 0 }}>
+                        <Typography
+                            sx={{
+                                color: INK,
+                                fontSize: "0.95rem",
+                                lineHeight: 1.65,
+                                fontFamily: "var(--font-sans)",
+                            }}
+                        >
                             {item.a}
                         </Typography>
                     </AccordionDetails>

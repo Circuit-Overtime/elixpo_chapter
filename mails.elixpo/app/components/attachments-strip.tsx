@@ -25,8 +25,8 @@ import { openDrivePicker } from "./drive-picker";
 import { BORDER, SURFACE } from "./glass-card";
 import { useRole } from "./role-provider";
 
-const ACCENT = "#9b7bf7";
-const TEXT_55 = "rgba(245,245,244,0.55)";
+const ACCENT = "var(--accent)";
+const TEXT_55 = "var(--fg-muted)";
 
 export interface Attachment {
     id?: string;
@@ -39,11 +39,11 @@ export interface Attachment {
 
 const darkField = {
     "& .MuiOutlinedInput-root": {
-        color: "#f5f5f4",
+        color: "var(--fg)",
         borderRadius: "10px",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        background: "var(--field-bg)",
+        "& fieldset": { borderColor: "var(--field-border)" },
+        "&:hover fieldset": { borderColor: "var(--accent-border)" },
         "&.Mui-focused fieldset": { borderColor: ACCENT },
     },
     "& .MuiInputBase-input": { fontSize: "0.9rem" },
@@ -124,7 +124,7 @@ export default function AttachmentsStrip({
     }
 
     return (
-        <Box sx={{ px: 1.5, py: 1, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+        <Box sx={{ px: 1.5, py: 1, borderTop: "1px solid var(--border)" }}>
             <Stack direction="row" alignItems="center" sx={{ flexWrap: "wrap", gap: 0.8 }}>
                 {canWrite && (
                     <Button
@@ -153,14 +153,14 @@ export default function AttachmentsStrip({
                                     <LinkIcon
                                         sx={{
                                             fontSize: 15,
-                                            color: "rgba(245,245,244,0.6) !important",
+                                            color: "var(--fg-muted) !important",
                                         }}
                                     />
                                 ) : (
                                     <InsertDriveFileIcon
                                         sx={{
                                             fontSize: 15,
-                                            color: "rgba(245,245,244,0.6) !important",
+                                            color: "var(--fg-muted) !important",
                                         }}
                                     />
                                 )
@@ -177,15 +177,13 @@ export default function AttachmentsStrip({
                                 maxWidth: 240,
                                 height: 26,
                                 fontSize: "0.74rem",
-                                color: "#e7e5e4",
+                                color: "var(--fg)",
                                 bgcolor:
-                                    a.kind === "variable"
-                                        ? "rgba(155,123,247,0.12)"
-                                        : "rgba(255,255,255,0.05)",
-                                border: `1px solid ${a.kind === "variable" ? "rgba(155,123,247,0.3)" : BORDER}`,
+                                    a.kind === "variable" ? "var(--accent-tint)" : "var(--overlay)",
+                                border: `1px solid ${a.kind === "variable" ? "var(--accent-border)" : BORDER}`,
                                 "& .MuiChip-deleteIcon": {
-                                    color: "rgba(245,245,244,0.5)",
-                                    "&:hover": { color: "#f87171" },
+                                    color: "var(--fg-muted)",
+                                    "&:hover": { color: "var(--danger)" },
                                 },
                             }}
                         />
@@ -204,7 +202,7 @@ export default function AttachmentsStrip({
                             border: `1px solid ${BORDER}`,
                             backgroundImage: "none",
                             "& .MuiMenuItem-root": {
-                                color: "#f5f5f4",
+                                color: "var(--fg)",
                                 fontSize: "0.85rem",
                                 gap: 1,
                             },
@@ -268,7 +266,9 @@ function UrlDialog({
     const valid = /^https?:\/\//i.test(url.trim());
     return (
         <Dialog open onClose={onClose} slotProps={{ paper: dialogPaper }}>
-            <DialogTitle sx={{ color: "#f5f5f4", fontWeight: 800 }}>Attach from a URL</DialogTitle>
+            <DialogTitle sx={{ color: "var(--fg)", fontWeight: 800 }}>
+                Attach from a URL
+            </DialogTitle>
             <DialogContent>
                 <Stack spacing={2} sx={{ mt: 0.5 }}>
                     <TextField
@@ -315,7 +315,7 @@ function VariableDialog({
     const clean = varName.trim().replace(/[^a-zA-Z0-9_.]/g, "");
     return (
         <Dialog open onClose={onClose} slotProps={{ paper: dialogPaper }}>
-            <DialogTitle sx={{ color: "#f5f5f4", fontWeight: 800 }}>
+            <DialogTitle sx={{ color: "var(--fg)", fontWeight: 800 }}>
                 Variable attachment
             </DialogTitle>
             <DialogContent>
@@ -333,7 +333,7 @@ function VariableDialog({
                         sx={darkField}
                         placeholder="invoice_url"
                         helperText={clean ? `Resolves {{${clean}}} at send` : "variable name"}
-                        FormHelperTextProps={{ sx: { color: "rgba(245,245,244,0.4)" } }}
+                        FormHelperTextProps={{ sx: { color: "var(--fg-faint)" } }}
                     />
                     <TextField
                         value={filename}

@@ -22,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
     return (
         <RoleProvider role={role}>
-            <Box sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}>
+            <Box sx={{ position: "relative", minHeight: "100vh", color: "var(--fg)" }}>
                 {/* Aurora background is global (root layout). Top nav, full-width content. */}
                 <DashboardTopbar user={user} />
                 <Box component="main">

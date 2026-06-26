@@ -1,47 +1,45 @@
 "use client";
 
-// NOTE: Prices below are PLACEHOLDERS and billing is NOT wired yet.
-// All CTAs route to /api/auth/login (sign-up via Elixpo Accounts); no
-// checkout exists today. Future: paid plans + metered billing via Elixpo Pay.
-
 import type { SvgIconComponent } from "@mui/icons-material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import BusinessIcon from "@mui/icons-material/Business";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import Check from "@mui/icons-material/Check";
+import CheckIcon from "@mui/icons-material/Check";
 import { Box, Button, Chip, Container, Stack, Typography } from "@mui/material";
 import PageShell from "../components/page-shell";
 import PricingFaq, { type Faq } from "../components/pricing-faq";
 
-const ACCENT = "#9b7bf7";
-const TEXT = "#f5f5f4";
-const TEXT_60 = "rgba(245,245,244,0.6)";
-const TEXT_65 = "rgba(245,245,244,0.65)";
-const BORDER = "rgba(255,255,255,0.07)";
-const SURFACE = "#13161d";
+const CORAL = "#ff7759";
+const INK = "#212121";
+const SLATE = "#75758a";
+const HAIRLINE = "#d9d9dd";
 
 const PRIMARY_BTN = {
     textTransform: "none" as const,
-    fontWeight: 700,
-    fontSize: "0.95rem",
+    fontWeight: 500,
+    fontSize: "0.92rem",
     color: "#fff",
     px: 3,
-    py: 1.2,
-    borderRadius: "12px",
-    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-    boxShadow: "0 8px 24px rgba(124,92,255,0.4)",
-    "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+    py: 1.1,
+    borderRadius: "32px", // Pill
+    background: "#17171c",
+    boxShadow: "none",
+    fontFamily: "var(--font-sans)",
+    "&:hover": { background: "#000000" },
 };
 
-const GHOST_BTN = {
+const OUTLINE_BTN = {
     textTransform: "none" as const,
-    fontWeight: 700,
-    fontSize: "0.95rem",
-    color: TEXT,
+    fontWeight: 500,
+    fontSize: "0.92rem",
+    color: INK,
     px: 3,
-    py: 1.2,
-    borderRadius: "12px",
-    border: "1px solid rgba(255,255,255,0.16)",
-    "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+    py: 1.1,
+    borderRadius: "32px", // Pill outline
+    border: `1px solid ${INK}`,
+    background: "transparent",
+    fontFamily: "var(--font-sans)",
+    "&:hover": { background: "rgba(0,0,0,0.03)", borderColor: "#000" },
 };
 
 interface Tier {
@@ -134,63 +132,68 @@ function TierCard({ tier }: { tier: Tier }) {
                 position: "relative",
                 display: "flex",
                 flexDirection: "column",
-                borderRadius: "16px",
-                p: { xs: 3, md: 3.5 },
-                background: tier.popular
-                    ? "linear-gradient(160deg, rgba(155,123,247,0.12) 0%, rgba(124,92,255,0.04) 100%)"
-                    : SURFACE,
-                border: tier.popular ? "1.5px solid rgba(155,123,247,0.55)" : `1px solid ${BORDER}`,
-                boxShadow: tier.popular
-                    ? "0 16px 48px rgba(124,92,255,0.18)"
-                    : "0 1px 2px rgba(0,0,0,0.35)",
+                borderRadius: "16px", // md radius token
+                p: { xs: 3.5, md: 4 },
+                background: tier.popular ? "#ffffff" : "#ffffff",
+                border: tier.popular ? `2px solid ${INK}` : `1px solid ${HAIRLINE}`,
+                boxShadow: "none",
                 height: "100%",
             }}
         >
             {tier.popular && (
                 <Chip
-                    label="Most popular"
+                    label="Popular"
                     size="small"
                     sx={{
                         position: "absolute",
                         top: -12,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        height: 24,
+                        left: 24,
+                        height: 22,
                         fontSize: "0.68rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.04em",
+                        fontWeight: 500,
+                        letterSpacing: "0.08em",
                         color: "#fff",
-                        background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        boxShadow: "0 6px 18px rgba(124,92,255,0.4)",
+                        background: INK,
+                        borderRadius: "4px",
+                        fontFamily: "var(--font-mono)",
+                        textTransform: "uppercase",
                     }}
                 />
             )}
-            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: TEXT }}>
+            <Typography
+                sx={{
+                    fontWeight: 500,
+                    fontSize: "1.25rem",
+                    color: INK,
+                    fontFamily: "var(--font-display)",
+                }}
+            >
                 {tier.name}
             </Typography>
-            <Stack direction="row" alignItems="baseline" spacing={0.6} sx={{ mt: 1.2 }}>
+            <Stack direction="row" alignItems="baseline" spacing={0.6} sx={{ mt: 2 }}>
                 <Typography
                     sx={{
-                        fontWeight: 800,
-                        fontSize: "2.6rem",
-                        color: TEXT,
+                        fontWeight: 500,
+                        fontSize: "2.8rem",
+                        color: INK,
                         letterSpacing: "-0.03em",
                         lineHeight: 1,
+                        fontFamily: "var(--font-display)",
                     }}
                 >
                     {tier.price}
                 </Typography>
-                <Typography sx={{ color: TEXT_60, fontSize: "0.95rem", fontWeight: 600 }}>
+                <Typography sx={{ color: SLATE, fontSize: "0.95rem", fontWeight: 500 }}>
                     {tier.cadence}
                 </Typography>
             </Stack>
             <Typography
                 sx={{
-                    color: TEXT_65,
+                    color: SLATE,
                     fontSize: "0.9rem",
-                    lineHeight: 1.6,
-                    mt: 1.2,
-                    minHeight: { md: 44 },
+                    lineHeight: 1.55,
+                    mt: 2.2,
+                    minHeight: { md: 50 },
                 }}
             >
                 {tier.blurb}
@@ -199,26 +202,18 @@ function TierCard({ tier }: { tier: Tier }) {
             <Button
                 component="a"
                 href="/api/auth/login"
-                endIcon={<ArrowForwardIcon sx={{ fontSize: "1.05rem !important" }} />}
+                endIcon={<ArrowForwardIcon sx={{ fontSize: "1rem !important" }} />}
                 fullWidth
-                sx={{ ...(tier.popular ? PRIMARY_BTN : GHOST_BTN), mt: 2.5 }}
+                sx={{ ...(tier.popular ? PRIMARY_BTN : OUTLINE_BTN), mt: 3.5, py: 1.2 }}
             >
                 {tier.cta}
             </Button>
 
-            <Stack spacing={1.3} sx={{ mt: 3 }}>
+            <Stack spacing={1.6} sx={{ mt: 4.5, borderTop: `1px solid ${HAIRLINE}`, pt: 3.5 }}>
                 {tier.features.map((f) => (
-                    <Stack key={f} direction="row" spacing={1.2} alignItems="flex-start">
-                        <CheckCircleIcon
-                            sx={{ fontSize: 18, color: "#86efac", mt: "1px", flexShrink: 0 }}
-                        />
-                        <Typography
-                            sx={{
-                                color: "rgba(245,245,244,0.82)",
-                                fontSize: "0.9rem",
-                                lineHeight: 1.5,
-                            }}
-                        >
+                    <Stack key={f} direction="row" spacing={1.5} alignItems="flex-start">
+                        <Check sx={{ fontSize: 16, color: CORAL, mt: "2px", flexShrink: 0 }} />
+                        <Typography sx={{ color: INK, fontSize: "0.88rem", lineHeight: 1.5 }}>
                             {f}
                         </Typography>
                     </Stack>
@@ -231,50 +226,50 @@ function TierCard({ tier }: { tier: Tier }) {
 export default function PricingPage() {
     return (
         <PageShell variant="default">
-            <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 12 }, pb: { xs: 4, md: 6 } }}>
+            <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 12 }, pb: { xs: 6, md: 10 } }}>
                 {/* Heading */}
                 <Stack
                     alignItems="center"
                     textAlign="center"
-                    spacing={2}
-                    sx={{ mb: { xs: 5, md: 7 } }}
+                    spacing={2.5}
+                    sx={{ mb: { xs: 6, md: 9 } }}
                 >
-                    <Chip
-                        label="Pricing"
+                    <Typography
                         sx={{
-                            bgcolor: "rgba(155,123,247,0.12)",
-                            color: "#c4b5fd",
-                            fontWeight: 600,
-                            letterSpacing: "0.04em",
-                            border: "1px solid rgba(155,123,247,0.3)",
+                            color: CORAL,
+                            fontFamily: "var(--font-mono)",
+                            fontSize: "12px",
+                            fontWeight: 500,
+                            letterSpacing: "0.18em",
+                            textTransform: "uppercase",
                         }}
-                    />
+                    >
+                        Pricing
+                    </Typography>
                     <Typography
                         component="h1"
                         sx={{
-                            fontWeight: 800,
-                            fontSize: { xs: "2.2rem", md: "3.2rem" },
-                            letterSpacing: "-0.025em",
-                            lineHeight: 1.06,
-                            color: TEXT,
+                            fontWeight: 500,
+                            fontSize: { xs: "2.4rem", md: "3.6rem" },
+                            letterSpacing: "-0.03em",
+                            lineHeight: 1.05,
+                            color: INK,
                             maxWidth: 760,
+                            fontFamily: "var(--font-display)",
                         }}
                     >
-                        Simple pricing that scales{" "}
-                        <Box component="span" sx={{ color: ACCENT }}>
-                            with your sends.
-                        </Box>
+                        Simple pricing that scales with your sending.
                     </Typography>
                     <Typography
                         sx={{
                             maxWidth: 560,
-                            color: TEXT_65,
-                            fontSize: { xs: "1rem", md: "1.15rem" },
-                            lineHeight: 1.7,
+                            color: SLATE,
+                            fontSize: { xs: "1rem", md: "1.12rem" },
+                            lineHeight: 1.65,
                         }}
                     >
                         Start free, bring your own sender, and only pay as your transactional volume
-                        grows. No mail infra to build, no surprises.
+                        grows. No mail infra to build, no lock-in.
                     </Typography>
                 </Stack>
 
@@ -282,7 +277,7 @@ export default function PricingPage() {
                 <Box
                     sx={{
                         display: "grid",
-                        gap: { xs: 3, md: 2.5 },
+                        gap: 3.5,
                         gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
                         alignItems: "stretch",
                         mt: 2,
@@ -294,22 +289,22 @@ export default function PricingPage() {
                 </Box>
             </Container>
 
-            {/* Enterprise strip */}
-            <Container maxWidth="lg" sx={{ pb: { xs: 4, md: 6 } }}>
+            {/* Enterprise Strip: Soft Stone panel with thin rule boundaries */}
+            <Container maxWidth="lg" sx={{ pb: { xs: 6, md: 8 } }}>
                 <Box
                     sx={{
-                        borderRadius: "16px",
-                        border: `1px solid ${BORDER}`,
-                        background: SURFACE,
-                        p: { xs: 3, md: 4 },
+                        borderRadius: "22px", // lg radius token
+                        border: `1px solid ${HAIRLINE}`,
+                        background: "#eeece7", // Soft Stone
+                        p: { xs: 3.5, md: 5 },
                         display: "flex",
                         flexDirection: { xs: "column", md: "row" },
                         alignItems: { xs: "flex-start", md: "center" },
                         justifyContent: "space-between",
-                        gap: 2.5,
+                        gap: 3.5,
                     }}
                 >
-                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                    <Stack direction="row" spacing={2.5} alignItems="flex-start">
                         <Box
                             sx={{
                                 width: 52,
@@ -318,25 +313,31 @@ export default function PricingPage() {
                                 display: "grid",
                                 placeItems: "center",
                                 flexShrink: 0,
-                                color: ACCENT,
-                                background: "rgba(155,123,247,0.12)",
-                                border: "1px solid rgba(155,123,247,0.3)",
+                                color: CORAL,
+                                background: "rgba(255, 119, 89, 0.08)",
+                                border: "1px solid rgba(255, 119, 89, 0.2)",
                             }}
                         >
-                            <BusinessIcon sx={{ fontSize: 26 }} />
+                            <BusinessIcon sx={{ fontSize: 24 }} />
                         </Box>
                         <Box>
                             <Typography
-                                sx={{ fontWeight: 700, fontSize: "1.25rem", color: TEXT, mb: 0.5 }}
+                                sx={{
+                                    fontWeight: 500,
+                                    fontSize: "1.3rem",
+                                    color: INK,
+                                    mb: 0.8,
+                                    fontFamily: "var(--font-display)",
+                                }}
                             >
                                 Enterprise
                             </Typography>
                             <Typography
                                 sx={{
-                                    color: TEXT_65,
+                                    color: SLATE,
                                     fontSize: "0.95rem",
-                                    lineHeight: 1.65,
-                                    maxWidth: 560,
+                                    lineHeight: 1.6,
+                                    maxWidth: 580,
                                 }}
                             >
                                 Custom send volume, dedicated support, security review, and tailored
@@ -347,29 +348,28 @@ export default function PricingPage() {
                     <Button
                         component="a"
                         href="mailto:hello@elixpo.com"
-                        endIcon={<ArrowForwardIcon sx={{ fontSize: "1.05rem !important" }} />}
-                        sx={{ ...GHOST_BTN, flexShrink: 0, whiteSpace: "nowrap" }}
+                        endIcon={<ArrowForwardIcon sx={{ fontSize: "1rem !important" }} />}
+                        sx={{ ...OUTLINE_BTN, flexShrink: 0, whiteSpace: "nowrap" }}
                     >
                         Contact sales
                     </Button>
                 </Box>
             </Container>
 
-            {/* FAQ */}
-            <Container maxWidth="md" sx={{ py: { xs: 5, md: 9 } }}>
-                <Stack
-                    alignItems="center"
-                    textAlign="center"
-                    spacing={1.5}
-                    sx={{ mb: { xs: 4, md: 5 } }}
-                >
+            {/* FAQ: Clean rule-separated list */}
+            <Container
+                maxWidth="md"
+                sx={{ py: { xs: 6, md: 10 }, borderTop: `1px solid ${HAIRLINE}` }}
+            >
+                <Stack alignItems="center" textAlign="center" spacing={1.5} sx={{ mb: 6 }}>
                     <Typography
                         sx={{
-                            color: ACCENT,
-                            fontWeight: 700,
+                            color: CORAL,
+                            fontWeight: 500,
                             fontSize: "0.78rem",
-                            letterSpacing: "0.14em",
+                            letterSpacing: "0.15em",
                             textTransform: "uppercase",
+                            fontFamily: "var(--font-mono)",
                         }}
                     >
                         FAQ
@@ -377,15 +377,18 @@ export default function PricingPage() {
                     <Typography
                         component="h2"
                         sx={{
-                            fontWeight: 800,
+                            fontWeight: 500,
                             fontSize: { xs: "1.8rem", md: "2.4rem" },
                             letterSpacing: "-0.02em",
-                            color: TEXT,
+                            color: INK,
+                            fontFamily: "var(--font-display)",
                         }}
                     >
                         Questions, answered
                     </Typography>
                 </Stack>
+
+                {/* Embedded custom styling on FAQ rows for rule-separated look */}
                 <PricingFaq items={FAQS} />
             </Container>
         </PageShell>

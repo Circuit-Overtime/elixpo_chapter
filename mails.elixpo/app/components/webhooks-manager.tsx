@@ -41,13 +41,13 @@ import { BORDER, GlassCard, SURFACE } from "./glass-card";
 import { useRole } from "./role-provider";
 
 // ── Palette ─────────────────────────────────────────────────────────────────
-const ACCENT = "#9b7bf7";
+const ACCENT = "var(--accent)";
 const HOOK_ACCENT = "#5fb6ff";
-const GREEN = "#86efac";
-const RED = "#fca5a5";
-const TEXT = "#f5f5f4";
-const TEXT_55 = "rgba(245,245,244,0.55)";
-const TEXT_40 = "rgba(245,245,244,0.4)";
+const GREEN = "var(--success)";
+const RED = "var(--danger)";
+const TEXT = "var(--fg)";
+const TEXT_55 = "var(--fg-muted)";
+const TEXT_40 = "var(--fg-faint)";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface WebhookSummary {
@@ -87,23 +87,23 @@ const darkField = {
     "& .MuiOutlinedInput-root": {
         color: TEXT,
         borderRadius: "10px",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        background: "var(--field-bg)",
+        "& fieldset": { borderColor: "var(--field-border)" },
+        "&:hover fieldset": { borderColor: "var(--accent-border)" },
         "&.Mui-focused fieldset": { borderColor: ACCENT },
-        "&.Mui-disabled fieldset": { borderColor: "rgba(255,255,255,0.07)" },
+        "&.Mui-disabled fieldset": { borderColor: "var(--border)" },
     },
     "& .MuiInputBase-input": { fontSize: "0.92rem", py: 1.05 },
-    "& .MuiInputBase-input::placeholder": { color: "rgba(245,245,244,0.35)", opacity: 1 },
+    "& .MuiInputBase-input::placeholder": { color: "var(--fg-faint)", opacity: 1 },
     "& .MuiFormHelperText-root": { color: TEXT_40, fontSize: "0.74rem", mx: 0, mt: 0.6 },
 };
 
 const darkSelect = {
     color: TEXT,
     borderRadius: "10px",
-    background: "rgba(255,255,255,0.02)",
-    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.12)" },
-    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(155,123,247,0.4)" },
+    background: "var(--field-bg)",
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--field-border)" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--accent-border)" },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
     "& .MuiSelect-icon": { color: TEXT_40 },
     "& .MuiSelect-select": { fontSize: "0.92rem", py: 1.05 },
@@ -119,7 +119,7 @@ const darkMenuProps = {
                 maxHeight: 360,
                 "& .MuiMenuItem-root": { color: TEXT, fontSize: "0.9rem" },
                 "& .MuiMenuItem-root.Mui-selected": {
-                    background: "rgba(155,123,247,0.12)",
+                    background: "var(--accent-tint)",
                 },
                 "& .MuiListSubheader-root": {
                     background: SURFACE,
@@ -170,9 +170,9 @@ function ReadOnlyChip() {
             label="Read-only access"
             size="small"
             sx={{
-                color: "rgba(245,245,244,0.5)",
-                bgcolor: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                color: "var(--fg-muted)",
+                bgcolor: "var(--overlay)",
+                border: "1px solid var(--border)",
             }}
         />
     );
@@ -191,7 +191,7 @@ function StatusChip({ status }: { status: string }) {
                 fontWeight: 700,
                 letterSpacing: "0.02em",
                 color: active ? GREEN : TEXT_55,
-                bgcolor: active ? "rgba(134,239,172,0.1)" : "rgba(255,255,255,0.05)",
+                bgcolor: active ? "rgba(134,239,172,0.1)" : "var(--overlay)",
                 border: `1px solid ${active ? "rgba(134,239,172,0.28)" : BORDER}`,
             }}
         />
@@ -228,7 +228,7 @@ function CopyButton({
                     color: copied ? GREEN : TEXT_40,
                     "&:hover": {
                         color: copied ? GREEN : ACCENT,
-                        background: "rgba(155,123,247,0.06)",
+                        background: "var(--accent-tint)",
                     },
                 }}
                 aria-label={label}
@@ -377,7 +377,7 @@ function CreateDialog({
                                     return (
                                         <Typography
                                             sx={{
-                                                color: "rgba(245,245,244,0.35)",
+                                                color: "var(--fg-faint)",
                                                 fontSize: "0.92rem",
                                             }}
                                         >
@@ -445,7 +445,7 @@ function CreateDialog({
                                         overflowY: "auto",
                                         borderRadius: "10px",
                                         border: `1px solid ${BORDER}`,
-                                        background: "rgba(255,255,255,0.02)",
+                                        background: "var(--field-bg)",
                                     }}
                                 >
                                     {filteredTemplates.length === 0 ? (
@@ -477,12 +477,12 @@ function CreateDialog({
                                                         borderBottom: `1px solid ${BORDER}`,
                                                         "&:last-of-type": { borderBottom: "none" },
                                                         background: selected
-                                                            ? "rgba(155,123,247,0.12)"
+                                                            ? "var(--accent-tint)"
                                                             : "transparent",
                                                         "&:hover": {
                                                             background: selected
-                                                                ? "rgba(155,123,247,0.16)"
-                                                                : "rgba(255,255,255,0.03)",
+                                                                ? "var(--accent-tint-strong)"
+                                                                : "var(--field-bg)",
                                                         },
                                                     }}
                                                 >
@@ -521,7 +521,7 @@ function CreateDialog({
                                                             fontSize: "0.68rem",
                                                             fontWeight: 600,
                                                             color: TEXT_55,
-                                                            bgcolor: "rgba(255,255,255,0.04)",
+                                                            bgcolor: "var(--overlay)",
                                                             border: `1px solid ${BORDER}`,
                                                             flexShrink: 0,
                                                         }}
@@ -575,14 +575,14 @@ function CreateDialog({
                         ...PRIMARY_BTN,
                         minWidth: 140,
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {saving ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : (
                         "Create webhook"
                     )}
@@ -697,14 +697,14 @@ function RenameDialog({
                         ...PRIMARY_BTN,
                         minWidth: 120,
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {saving ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : (
                         "Save"
                     )}
@@ -798,14 +798,14 @@ function DeleteDialog({
                             background: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)",
                         },
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {busy ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : (
                         "Delete"
                     )}
@@ -850,7 +850,7 @@ function WebhookRow({
             sx={{
                 p: { xs: 1.8, md: 2.2 },
                 borderRadius: "12px",
-                background: "rgba(255,255,255,0.02)",
+                background: "var(--field-bg)",
                 border: `1px solid ${BORDER}`,
             }}
         >
@@ -910,11 +910,11 @@ function WebhookRow({
                                 disabled={busy}
                                 sx={{
                                     color: TEXT_55,
-                                    border: "1px solid rgba(255,255,255,0.16)",
+                                    border: "1px solid var(--field-border)",
                                     borderRadius: "10px",
                                     "&:hover": {
-                                        borderColor: "rgba(155,123,247,0.5)",
-                                        background: "rgba(155,123,247,0.06)",
+                                        borderColor: "var(--accent-border)",
+                                        background: "var(--accent-tint)",
                                     },
                                 }}
                                 aria-label="More actions"
@@ -1001,7 +1001,7 @@ function WebhookRow({
                     p: 1,
                     pl: 1.4,
                     borderRadius: "10px",
-                    background: "rgba(255,255,255,0.03)",
+                    background: "var(--field-bg)",
                     border: `1px solid ${BORDER}`,
                 }}
             >
@@ -1054,7 +1054,7 @@ function WebhookRow({
                             fontFamily: "var(--font-geist-mono)",
                             fontSize: "0.76rem",
                             lineHeight: 1.7,
-                            color: "rgba(245,245,244,0.85)",
+                            color: "var(--fg-muted)",
                             whiteSpace: "pre",
                         }}
                     >
@@ -1112,7 +1112,7 @@ function WebhookRow({
                                         fontSize: "0.68rem",
                                         fontFamily: "var(--font-geist-mono)",
                                         color: TEXT_55,
-                                        bgcolor: "rgba(255,255,255,0.04)",
+                                        bgcolor: "var(--overlay)",
                                         border: `1px solid ${BORDER}`,
                                     }}
                                 />
@@ -1334,8 +1334,8 @@ export default function WebhooksManager() {
             sx={{
                 ...PRIMARY_BTN,
                 "&.Mui-disabled": {
-                    background: "rgba(255,255,255,0.06)",
-                    color: "rgba(245,245,244,0.35)",
+                    background: "var(--overlay)",
+                    color: "var(--fg-faint)",
                     boxShadow: "none",
                 },
             }}

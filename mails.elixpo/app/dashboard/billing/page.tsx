@@ -12,10 +12,10 @@ import Link from "next/link";
 import { GHOST_BTN, PRIMARY_BTN, PageHeader } from "../../components/dashboard-ui";
 import { GlassCard } from "../../components/glass-card";
 
-const TEXT = "#f5f5f4";
-const TEXT_55 = "rgba(245,245,244,0.55)";
-const ACCENT = "#9b7bf7";
-const BORDER = "rgba(255,255,255,0.07)";
+const TEXT = "var(--fg)";
+const TEXT_55 = "var(--fg-muted)";
+const ACCENT = "var(--accent)";
+const BORDER = "var(--border)";
 
 const STARTER_LIMITS: { label: string; value: string }[] = [
     { label: "Products", value: "1" },
@@ -34,9 +34,7 @@ function UsageRow({ label, used, limit }: { label: string; used: string; limit: 
             alignItems="center"
             sx={{ py: 1.1, borderBottom: `1px solid ${BORDER}` }}
         >
-            <Typography sx={{ fontSize: "0.88rem", color: "rgba(245,245,244,0.75)" }}>
-                {label}
-            </Typography>
+            <Typography sx={{ fontSize: "0.88rem", color: "var(--fg-muted)" }}>{label}</Typography>
             <Typography
                 sx={{ fontSize: "0.86rem", color: TEXT_55, fontFamily: "var(--font-geist-mono)" }}
             >
@@ -70,9 +68,8 @@ export default async function BillingPage() {
                 {/* Current plan card */}
                 <GlassCard
                     sx={{
-                        background:
-                            "linear-gradient(160deg, rgba(155,123,247,0.10) 0%, rgba(124,92,255,0.04) 100%)",
-                        border: "1px solid rgba(155,123,247,0.25)",
+                        background: "var(--accent-tint)",
+                        border: "1px solid var(--accent-border)",
                     }}
                 >
                     <Stack
@@ -106,7 +103,11 @@ export default async function BillingPage() {
                                     Starter
                                 </Typography>
                                 <Typography
-                                    sx={{ fontWeight: 700, fontSize: "1rem", color: "#86efac" }}
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "1rem",
+                                        color: "var(--success)",
+                                    }}
                                 >
                                     Free
                                 </Typography>
@@ -119,7 +120,7 @@ export default async function BillingPage() {
                                 height: 24,
                                 fontSize: "0.7rem",
                                 fontWeight: 700,
-                                color: "#86efac",
+                                color: "var(--success)",
                                 bgcolor: "rgba(134,239,172,0.12)",
                                 border: "1px solid rgba(134,239,172,0.3)",
                             }}
@@ -136,10 +137,10 @@ export default async function BillingPage() {
                     >
                         {STARTER_LIMITS.map((l) => (
                             <Stack key={l.label} direction="row" spacing={1} alignItems="center">
-                                <CheckIcon sx={{ fontSize: 16, color: "#86efac", flexShrink: 0 }} />
-                                <Typography
-                                    sx={{ fontSize: "0.86rem", color: "rgba(245,245,244,0.78)" }}
-                                >
+                                <CheckIcon
+                                    sx={{ fontSize: 16, color: "var(--success)", flexShrink: 0 }}
+                                />
+                                <Typography sx={{ fontSize: "0.86rem", color: "var(--fg-muted)" }}>
                                     {l.value}{" "}
                                     <Box component="span" sx={{ color: TEXT_55 }}>
                                         {l.label.toLowerCase()}
@@ -185,7 +186,7 @@ export default async function BillingPage() {
                         alignItems="center"
                         sx={{ pt: 1.1 }}
                     >
-                        <Typography sx={{ fontSize: "0.88rem", color: "rgba(245,245,244,0.75)" }}>
+                        <Typography sx={{ fontSize: "0.88rem", color: "var(--fg-muted)" }}>
                             Senders
                         </Typography>
                         <Typography
@@ -204,7 +205,7 @@ export default async function BillingPage() {
                 </GlassCard>
             </Box>
 
-            <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.8rem", mt: 2.5 }}>
+            <Typography sx={{ color: "var(--fg-faint)", fontSize: "0.8rem", mt: 2.5 }}>
                 Paid plans and metered billing are coming soon, powered by Elixpo Pay.
             </Typography>
         </Box>

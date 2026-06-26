@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import BackgroundAurora from "./components/background-aurora";
+import { THEME_BOOT_SCRIPT, ThemeProvider } from "./components/theme-provider";
 import "./globals.css";
 
 const SITE_URL = "https://mails.elixpo.com";
@@ -137,20 +138,28 @@ const JSON_LD = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en" data-theme="light" suppressHydrationWarning>
+            <head>
+                {/* Set the saved theme before first paint (no flash). */}
+                <script
+                    // eslint-disable-next-line react/no-danger
+                    dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
+                />
+            </head>
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <script
                     type="application/ld+json"
                     // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
                 />
-                {/* Single dark aurora behind every route. Individual shells no
-                    longer render their own — this guarantees a consistent
-                    background everywhere, including bare/404/error routes. */}
-                <BackgroundAurora />
-                <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
-                    {children}
-                </div>
+                <ThemeProvider>
+                    {/* Aurora behind every route — fades out in light theme via
+                        the --aurora-opacity token. */}
+                    <BackgroundAurora />
+                    <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
+                        {children}
+                    </div>
+                </ThemeProvider>
             </body>
         </html>
     );

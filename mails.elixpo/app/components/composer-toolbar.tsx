@@ -23,7 +23,7 @@ import {
 } from "@mui/material";
 import { useRef, useState } from "react";
 
-const ACCENT = "#9b7bf7";
+const ACCENT = "var(--accent)";
 
 /**
  * Gmail-style formatting bar at the foot of the editor. Drives the underlying
@@ -109,10 +109,10 @@ export default function ComposerToolbar({
     }
 
     const btn = {
-        color: "rgba(245,245,244,0.72)",
+        color: "var(--fg-muted)",
         borderRadius: "8px",
         p: 0.7,
-        "&:hover": { color: "#f5f5f4", background: "rgba(155,123,247,0.12)" },
+        "&:hover": { color: "var(--fg)", background: "var(--accent-tint)" },
     };
 
     return (
@@ -123,8 +123,8 @@ export default function ComposerToolbar({
             sx={{
                 px: 1.5,
                 py: 0.8,
-                borderTop: "1px solid rgba(255,255,255,0.07)",
-                background: "rgba(255,255,255,0.015)",
+                borderTop: "1px solid var(--border)",
+                background: "var(--overlay)",
                 flexWrap: "wrap",
                 rowGap: 0.5,
             }}
@@ -153,7 +153,7 @@ export default function ComposerToolbar({
             <Divider
                 orientation="vertical"
                 flexItem
-                sx={{ mx: 0.6, my: 0.6, borderColor: "rgba(255,255,255,0.1)" }}
+                sx={{ mx: 0.6, my: 0.6, borderColor: "var(--border)" }}
             />
 
             {[1, 2].map((level) => (
@@ -180,7 +180,7 @@ export default function ComposerToolbar({
             <Divider
                 orientation="vertical"
                 flexItem
-                sx={{ mx: 0.6, my: 0.6, borderColor: "rgba(255,255,255,0.1)" }}
+                sx={{ mx: 0.6, my: 0.6, borderColor: "var(--border)" }}
             />
 
             <Tooltip title="Bulleted list">
@@ -202,7 +202,7 @@ export default function ComposerToolbar({
             <Divider
                 orientation="vertical"
                 flexItem
-                sx={{ mx: 0.6, my: 0.6, borderColor: "rgba(255,255,255,0.1)" }}
+                sx={{ mx: 0.6, my: 0.6, borderColor: "var(--border)" }}
             />
 
             <Tooltip title="Insert image">
@@ -239,8 +239,8 @@ export default function ComposerToolbar({
                     paper: {
                         sx: {
                             p: 1.2,
-                            background: "#15161c",
-                            border: "1px solid rgba(255,255,255,0.1)",
+                            background: "var(--menu-surface)",
+                            border: "1px solid var(--border)",
                             borderRadius: "12px",
                         },
                     },
@@ -257,8 +257,8 @@ export default function ComposerToolbar({
                             if (e.key === "Enter") applyLink();
                         }}
                         sx={{
-                            "& .MuiOutlinedInput-root": { color: "#f5f5f4", borderRadius: "8px" },
-                            "& fieldset": { borderColor: "rgba(255,255,255,0.16)" },
+                            "& .MuiOutlinedInput-root": { color: "var(--fg)", borderRadius: "8px" },
+                            "& fieldset": { borderColor: "var(--field-border)" },
                         }}
                     />
                     <Stack direction="row" spacing={1} alignItems="center">
@@ -273,10 +273,10 @@ export default function ComposerToolbar({
                             sx={{
                                 flex: 1,
                                 "& .MuiOutlinedInput-root": {
-                                    color: "#f5f5f4",
+                                    color: "var(--fg)",
                                     borderRadius: "8px",
                                 },
-                                "& fieldset": { borderColor: "rgba(255,255,255,0.16)" },
+                                "& fieldset": { borderColor: "var(--field-border)" },
                             }}
                         />
                         <Button
@@ -285,13 +285,13 @@ export default function ComposerToolbar({
                             sx={{
                                 textTransform: "none",
                                 fontWeight: 700,
-                                color: "#fff",
+                                color: "var(--accent-contrast)",
                                 px: 1.8,
                                 borderRadius: "8px",
-                                background: `linear-gradient(135deg, ${ACCENT} 0%, #7c5cff 100%)`,
+                                background: "var(--accent-gradient)",
                                 "&.Mui-disabled": {
-                                    background: "rgba(255,255,255,0.08)",
-                                    color: "rgba(245,245,244,0.4)",
+                                    background: "var(--overlay)",
+                                    color: "var(--fg-faint)",
                                 },
                             }}
                         >

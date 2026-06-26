@@ -3,12 +3,16 @@
 import { Box } from "@mui/material";
 import type React from "react";
 
-/** Surface tokens — solid, neutral, commercial. No gradients. */
-export const SURFACE = "#13161d";
-export const SURFACE_HOVER = "#171b23";
-export const BORDER = "rgba(255,255,255,0.07)";
+/** Theme-aware surface tokens (resolve against the active data-theme). */
+export const SURFACE = "var(--surface)";
+export const BORDER = "var(--border)";
+export const SURFACE_DARK = "var(--surface)"; // compatibility exports
+export const BORDER_DARK = "var(--border)";
+export const SURFACE_LIGHT = "var(--surface)";
+export const BORDER_LIGHT = "var(--border)";
 
-/** Frosted-glass surface card used across marketing and dashboard surfaces. */
+/** Surface card used across marketing and dashboard surfaces. Adapts to the
+ *  active theme via CSS variables. */
 export function GlassCard({
     children,
     sx,
@@ -19,11 +23,12 @@ export function GlassCard({
     return (
         <Box
             sx={{
-                background: SURFACE,
-                border: `1px solid ${BORDER}`,
-                borderRadius: "12px",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "16px", // md radius token
                 p: { xs: 2.5, md: 3 },
-                boxShadow: "0 1px 2px rgba(0,0,0,0.35)",
+                boxShadow: "var(--card-shadow)",
+                color: "var(--fg)",
                 ...sx,
             }}
         >

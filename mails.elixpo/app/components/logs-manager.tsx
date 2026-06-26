@@ -26,13 +26,13 @@ import { EmptyState } from "./dashboard-ui";
 import { BORDER, GlassCard, SURFACE } from "./glass-card";
 
 // ── Palette ─────────────────────────────────────────────────────────────────
-const ACCENT = "#9b7bf7";
+const ACCENT = "var(--accent)";
 const GREEN = "#34d399";
 const RED = "#f87171";
 const AMBER = "#fbbf24";
-const TEXT = "#f5f5f4";
-const TEXT_55 = "rgba(245,245,244,0.55)";
-const TEXT_40 = "rgba(245,245,244,0.4)";
+const TEXT = "var(--fg)";
+const TEXT_55 = "var(--fg-muted)";
+const TEXT_40 = "var(--fg-faint)";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface DeliverySummary {
@@ -132,10 +132,10 @@ function formatAbsolute(s: string | null): string {
 const darkSelect = {
     color: TEXT,
     borderRadius: "11px",
-    background: "rgba(255,255,255,0.02)",
+    background: "var(--field-bg)",
     minWidth: 160,
-    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.16)" },
-    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(155,123,247,0.5)" },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--field-border)" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--accent-border)" },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
     "& .MuiSelect-icon": { color: TEXT_40 },
     "& .MuiSelect-select": { fontSize: "0.88rem", py: 1 },
@@ -145,11 +145,11 @@ const darkSearchField = {
     "& .MuiInputBase-root": {
         color: TEXT,
         borderRadius: "11px",
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--field-bg)",
         fontSize: "0.88rem",
     },
-    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.16)" },
-    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(155,123,247,0.5)" },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--field-border)" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--accent-border)" },
     "& .Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
     "& .MuiInputBase-input": { py: 1 },
     "& .MuiInputBase-input::placeholder": { color: TEXT_40, opacity: 1 },
@@ -165,7 +165,7 @@ const darkMenuProps = {
                 maxHeight: 360,
                 "& .MuiMenuItem-root": { color: TEXT, fontSize: "0.88rem" },
                 "& .MuiMenuItem-root.Mui-selected": {
-                    background: "rgba(155,123,247,0.12)",
+                    background: "var(--accent-tint)",
                 },
             },
         },
@@ -363,7 +363,7 @@ function DeliveryDetail({ d }: { d: DeliverySummary }) {
                         sx={{
                             p: 1.2,
                             borderRadius: "8px",
-                            background: "rgba(255,255,255,0.03)",
+                            background: "var(--field-bg)",
                             border: `1px solid ${BORDER}`,
                         }}
                     >
@@ -403,7 +403,7 @@ function DeliveryDetail({ d }: { d: DeliverySummary }) {
                                     px: 1.2,
                                     py: 0.7,
                                     borderRadius: "8px",
-                                    background: "rgba(255,255,255,0.02)",
+                                    background: "var(--field-bg)",
                                     border: `1px solid ${BORDER}`,
                                 }}
                             >
@@ -519,7 +519,7 @@ function DeliveryRow({ d }: { d: DeliverySummary }) {
                         sx={{
                             color: TEXT_40,
                             flexShrink: 0,
-                            "&:hover": { color: ACCENT, background: "rgba(155,123,247,0.06)" },
+                            "&:hover": { color: ACCENT, background: "var(--accent-tint)" },
                         }}
                         aria-label={open ? "Hide delivery details" : "Show delivery details"}
                     >
@@ -710,11 +710,11 @@ export default function LogsManager() {
                             disabled={refreshing}
                             sx={{
                                 color: TEXT_55,
-                                border: "1px solid rgba(255,255,255,0.16)",
+                                border: "1px solid var(--field-border)",
                                 borderRadius: "11px",
                                 "&:hover": {
-                                    borderColor: "rgba(155,123,247,0.5)",
-                                    background: "rgba(155,123,247,0.06)",
+                                    borderColor: "var(--accent-border)",
+                                    background: "var(--accent-tint)",
                                 },
                             }}
                             aria-label="Refresh delivery logs"

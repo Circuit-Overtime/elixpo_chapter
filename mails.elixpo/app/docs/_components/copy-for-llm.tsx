@@ -33,13 +33,16 @@ export default function CopyForLlm() {
                 textTransform: "none",
                 fontWeight: 600,
                 fontSize: "0.85rem",
-                color: copied ? "#86efac" : "#f5f5f4",
+                color: copied ? "var(--success)" : "var(--fg)",
                 px: 1.8,
                 py: 0.8,
                 borderRadius: "10px",
-                border: "1px solid rgba(155,123,247,0.3)",
-                background: "rgba(155,123,247,0.08)",
-                "&:hover": { borderColor: "#9b7bf7", background: "rgba(155,123,247,0.14)" },
+                border: "1px solid var(--accent-border)",
+                background: "var(--accent-tint)",
+                "&:hover": {
+                    borderColor: "var(--accent)",
+                    background: "var(--accent-tint-strong)",
+                },
             }}
         >
             {copied ? "Copied" : "Copy for LLM"}

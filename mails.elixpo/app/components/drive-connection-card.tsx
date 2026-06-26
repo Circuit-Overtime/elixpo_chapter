@@ -7,9 +7,9 @@ import { useEffect, useState } from "react";
 import { GlassCard } from "./glass-card";
 import { useRole } from "./role-provider";
 
-const TEXT = "#f5f5f4";
-const TEXT_55 = "rgba(245,245,244,0.55)";
-const ACCENT = "#9b7bf7";
+const TEXT = "var(--fg)";
+const TEXT_55 = "var(--fg-muted)";
+const ACCENT = "var(--accent)";
 
 interface Status {
     configured: boolean;
@@ -30,9 +30,9 @@ function ReadOnlyChip() {
             label="Read-only access"
             size="small"
             sx={{
-                color: "rgba(245,245,244,0.5)",
-                bgcolor: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                color: "var(--fg-muted)",
+                bgcolor: "var(--overlay)",
+                border: "1px solid var(--border)",
             }}
         />
     );
@@ -97,8 +97,8 @@ export default function DriveConnectionCard() {
                         fontSize: "0.62rem",
                         fontWeight: 700,
                         color: TEXT_55,
-                        bgcolor: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.07)",
+                        bgcolor: "var(--overlay)",
+                        border: "1px solid var(--border)",
                     }}
                 />
             </Stack>
@@ -135,7 +135,7 @@ export default function DriveConnectionCard() {
                     }}
                 >
                     <Stack direction="row" alignItems="center" spacing={1.2}>
-                        <CheckCircleIcon sx={{ color: "#34d399", fontSize: 22 }} />
+                        <CheckCircleIcon sx={{ color: "var(--success)", fontSize: 22 }} />
                         <Box>
                             <Typography sx={{ color: TEXT, fontWeight: 600, fontSize: "0.92rem" }}>
                                 Connected
@@ -153,7 +153,7 @@ export default function DriveConnectionCard() {
                                 textTransform: "none",
                                 fontWeight: 600,
                                 fontSize: "0.85rem",
-                                color: "#f87171",
+                                color: "var(--danger)",
                                 borderRadius: "10px",
                                 border: "1px solid rgba(248,113,113,0.3)",
                                 px: 2,
@@ -182,18 +182,18 @@ export default function DriveConnectionCard() {
                                 textTransform: "none",
                                 fontWeight: 700,
                                 fontSize: "0.9rem",
-                                color: "#fff",
+                                color: "var(--accent-contrast)",
                                 px: 2.6,
                                 py: 1,
                                 borderRadius: "11px",
-                                background: `linear-gradient(135deg, ${ACCENT} 0%, #7c5cff 100%)`,
-                                boxShadow: "0 8px 24px rgba(124,92,255,0.35)",
+                                background: "var(--accent-gradient)",
+                                boxShadow: "var(--accent-shadow)",
                                 "&:hover": {
-                                    background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                    background: "var(--accent-gradient-hover)",
                                 },
                                 "&.Mui-disabled": {
-                                    background: "rgba(255,255,255,0.06)",
-                                    color: "rgba(245,245,244,0.4)",
+                                    background: "var(--overlay)",
+                                    color: "var(--fg-faint)",
                                     boxShadow: "none",
                                 },
                             }}
@@ -202,7 +202,7 @@ export default function DriveConnectionCard() {
                         </Button>
                     )}
                     {!status.configured && (
-                        <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.8rem" }}>
+                        <Typography sx={{ color: "var(--fg-faint)", fontSize: "0.8rem" }}>
                             Drive isn&rsquo;t configured on this deployment yet.
                         </Typography>
                     )}

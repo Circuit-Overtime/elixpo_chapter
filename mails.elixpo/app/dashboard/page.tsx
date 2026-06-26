@@ -22,10 +22,10 @@ import Link from "next/link";
 import { PRIMARY_BTN } from "../components/dashboard-ui";
 import { GlassCard } from "../components/glass-card";
 
-const ACCENT = "#9b7bf7";
-const TEXT = "#f5f5f4";
-const TEXT_55 = "rgba(245,245,244,0.55)";
-const BORDER = "rgba(255,255,255,0.07)";
+const ACCENT = "#ff7759";
+const TEXT = "var(--fg)";
+const TEXT_55 = "var(--fg-muted)";
+const BORDER = "var(--border)";
 
 interface Snapshot {
     senders: number;
@@ -115,7 +115,7 @@ export default async function OverviewPage() {
     const snap = await loadSnapshot(session.tenantId);
 
     const stats = [
-        { label: "Products", value: String(snap.products), icon: InventoryIcon, accent: "#9b7bf7" },
+        { label: "Products", value: String(snap.products), icon: InventoryIcon, accent: "#ff7759" },
         {
             label: "Templates",
             value: String(snap.templates),
@@ -126,7 +126,7 @@ export default async function OverviewPage() {
             label: "Sends this month",
             value: String(snap.sentThisMonth),
             icon: SendIcon,
-            accent: "#5fb6ff",
+            accent: "#1863dc",
         },
         {
             label: "Deliverability",
@@ -143,7 +143,7 @@ export default async function OverviewPage() {
             body: "Add the mailbox you'll send from — email + app password, encrypted at rest.",
             cta: "Add sender",
             href: "/dashboard/senders",
-            accent: "#9b7bf7",
+            accent: "#ff7759",
             done: snap.senders > 0,
         },
         {
@@ -161,7 +161,7 @@ export default async function OverviewPage() {
             body: "Compose in the visual editor with {{variables}} and a live preview.",
             cta: "Create template",
             href: "/dashboard/templates",
-            accent: "#5fb6ff",
+            accent: "#1863dc",
             done: snap.templates > 0,
         },
         {
@@ -209,7 +209,7 @@ export default async function OverviewPage() {
                             fontSize: "0.66rem",
                             textTransform: "uppercase",
                             letterSpacing: "0.08em",
-                            color: "rgba(245,245,244,0.4)",
+                            color: "var(--fg-faint)",
                             fontWeight: 700,
                         }}
                     >
@@ -218,11 +218,11 @@ export default async function OverviewPage() {
                     <Chip
                         label={session.tenantId}
                         sx={{
-                            fontFamily: "var(--font-geist-mono)",
+                            fontFamily: "var(--font-mono)",
                             fontSize: "0.76rem",
-                            bgcolor: "rgba(155,123,247,0.12)",
-                            color: "#c4b5fd",
-                            border: "1px solid rgba(155,123,247,0.3)",
+                            bgcolor: "rgba(255, 119, 89, 0.12)",
+                            color: "#ffad9b",
+                            border: "1px solid rgba(255, 119, 89, 0.3)",
                         }}
                     />
                 </Stack>
@@ -299,11 +299,11 @@ export default async function OverviewPage() {
                                 height: 20,
                                 fontSize: "0.66rem",
                                 fontWeight: 700,
-                                color: allDone ? "#86efac" : "#c4b5fd",
+                                color: allDone ? "#86efac" : "#ffad9b",
                                 bgcolor: allDone
                                     ? "rgba(52,211,153,0.12)"
-                                    : "rgba(155,123,247,0.12)",
-                                border: `1px solid ${allDone ? "rgba(52,211,153,0.3)" : "rgba(155,123,247,0.3)"}`,
+                                    : "rgba(255, 119, 89, 0.12)",
+                                border: `1px solid ${allDone ? "rgba(52,211,153,0.3)" : "rgba(255, 119, 89, 0.3)"}`,
                             }}
                         />
                     </Stack>
@@ -326,7 +326,7 @@ export default async function OverviewPage() {
                                     border: `1px solid ${step.done ? "rgba(52,211,153,0.22)" : BORDER}`,
                                     background: step.done
                                         ? "rgba(52,211,153,0.05)"
-                                        : "rgba(255,255,255,0.015)",
+                                        : "var(--overlay)",
                                     flexDirection: { xs: "column", sm: "row" },
                                 }}
                             >
@@ -359,7 +359,7 @@ export default async function OverviewPage() {
                                             placeItems: "center",
                                             fontSize: "0.66rem",
                                             fontWeight: 800,
-                                            color: "#0b0d12",
+                                            color: "var(--bg)",
                                             background: step.done ? "#34d399" : step.accent,
                                         }}
                                     >
@@ -404,8 +404,8 @@ export default async function OverviewPage() {
                                         border: `1px solid ${step.done ? "rgba(52,211,153,0.3)" : BORDER}`,
                                         whiteSpace: "nowrap",
                                         "&:hover": {
-                                            borderColor: "rgba(155,123,247,0.5)",
-                                            background: "rgba(155,123,247,0.06)",
+                                            borderColor: "var(--accent-border)",
+                                            background: "var(--overlay)",
                                         },
                                     }}
                                 >
@@ -495,7 +495,7 @@ export default async function OverviewPage() {
                                     </Box>
                                     <Typography
                                         sx={{
-                                            color: "rgba(245,245,244,0.4)",
+                                            color: "var(--fg-faint)",
                                             fontSize: "0.74rem",
                                             flexShrink: 0,
                                         }}
@@ -519,8 +519,8 @@ export default async function OverviewPage() {
                                     borderRadius: "16px",
                                     display: "grid",
                                     placeItems: "center",
-                                    color: "rgba(245,245,244,0.4)",
-                                    background: "rgba(255,255,255,0.03)",
+                                    color: "var(--fg-faint)",
+                                    background: "var(--overlay)",
                                     border: `1px solid ${BORDER}`,
                                 }}
                             >

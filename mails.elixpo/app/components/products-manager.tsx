@@ -38,13 +38,13 @@ import { BORDER, GlassCard, SURFACE } from "./glass-card";
 import { useRole } from "./role-provider";
 
 // ── Palette ─────────────────────────────────────────────────────────────────
-const ACCENT = "#9b7bf7";
-const GREEN = "#86efac";
-const RED = "#fca5a5";
+const ACCENT = "var(--accent)";
+const GREEN = "var(--success)";
+const RED = "var(--danger)";
 const AMBER = "#fbbf24";
-const TEXT = "#f5f5f4";
-const TEXT_55 = "rgba(245,245,244,0.55)";
-const TEXT_40 = "rgba(245,245,244,0.4)";
+const TEXT = "var(--fg)";
+const TEXT_55 = "var(--fg-muted)";
+const TEXT_40 = "var(--fg-faint)";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface ProductSummary {
@@ -104,23 +104,23 @@ const darkField = {
     "& .MuiOutlinedInput-root": {
         color: TEXT,
         borderRadius: "10px",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        background: "var(--field-bg)",
+        "& fieldset": { borderColor: "var(--field-border)" },
+        "&:hover fieldset": { borderColor: "var(--accent-border)" },
         "&.Mui-focused fieldset": { borderColor: ACCENT },
-        "&.Mui-disabled fieldset": { borderColor: "rgba(255,255,255,0.07)" },
+        "&.Mui-disabled fieldset": { borderColor: "var(--border)" },
     },
     "& .MuiInputBase-input": { fontSize: "0.92rem", py: 1.05 },
-    "& .MuiInputBase-input::placeholder": { color: "rgba(245,245,244,0.35)", opacity: 1 },
+    "& .MuiInputBase-input::placeholder": { color: "var(--fg-faint)", opacity: 1 },
 };
 
 // ── Shared dark Select styling (matches senders-manager) ─────────────────────
 const darkSelect = {
     color: TEXT,
     borderRadius: "10px",
-    background: "rgba(255,255,255,0.02)",
-    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.12)" },
-    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(155,123,247,0.4)" },
+    background: "var(--field-bg)",
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--field-border)" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--accent-border)" },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
     "& .MuiSelect-icon": { color: TEXT_40 },
     "& .MuiSelect-select": { fontSize: "0.92rem", py: 1.05 },
@@ -135,7 +135,7 @@ const darkMenuProps = {
                 backgroundImage: "none",
                 "& .MuiMenuItem-root": { color: TEXT, fontSize: "0.9rem" },
                 "& .MuiMenuItem-root.Mui-selected": {
-                    background: "rgba(155,123,247,0.12)",
+                    background: "var(--accent-tint)",
                 },
             },
         },
@@ -177,9 +177,9 @@ function ReadOnlyChip() {
             label="Read-only access"
             size="small"
             sx={{
-                color: "rgba(245,245,244,0.5)",
-                bgcolor: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                color: "var(--fg-muted)",
+                bgcolor: "var(--overlay)",
+                border: "1px solid var(--border)",
             }}
         />
     );
@@ -198,7 +198,7 @@ function StatusChip({ status }: { status: string }) {
                 fontWeight: 700,
                 letterSpacing: "0.02em",
                 color: active ? GREEN : TEXT_55,
-                bgcolor: active ? "rgba(134,239,172,0.1)" : "rgba(255,255,255,0.05)",
+                bgcolor: active ? "rgba(134,239,172,0.1)" : "var(--overlay)",
                 border: `1px solid ${active ? "rgba(134,239,172,0.28)" : BORDER}`,
             }}
         />
@@ -216,7 +216,7 @@ function CountChip({ label }: { label: string }) {
                 fontSize: "0.7rem",
                 fontWeight: 600,
                 color: TEXT_55,
-                bgcolor: "rgba(255,255,255,0.04)",
+                bgcolor: "var(--overlay)",
                 border: `1px solid ${BORDER}`,
             }}
         />
@@ -244,7 +244,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
                     color: copied ? GREEN : TEXT_40,
                     "&:hover": {
                         color: copied ? GREEN : ACCENT,
-                        background: "rgba(155,123,247,0.06)",
+                        background: "var(--accent-tint)",
                     },
                 }}
                 aria-label={label}
@@ -317,7 +317,7 @@ function SecretRevealDialog({
                         <Typography
                             sx={{
                                 fontSize: "0.84rem",
-                                color: "rgba(245,245,244,0.78)",
+                                color: "var(--fg-muted)",
                                 lineHeight: 1.6,
                             }}
                         >
@@ -336,7 +336,7 @@ function SecretRevealDialog({
                                 gap: 1,
                                 p: 1.4,
                                 borderRadius: "10px",
-                                background: "rgba(255,255,255,0.03)",
+                                background: "var(--field-bg)",
                                 border: `1px solid ${BORDER}`,
                             }}
                         >
@@ -576,14 +576,14 @@ function CreateDialog({
                         ...PRIMARY_BTN,
                         minWidth: 140,
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {saving ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : (
                         "Create product"
                     )}
@@ -793,14 +793,14 @@ function EditDialog({
                         ...PRIMARY_BTN,
                         minWidth: 130,
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {saving ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : (
                         "Save changes"
                     )}
@@ -885,14 +885,14 @@ function RotateDialog({
                         ...PRIMARY_BTN,
                         minWidth: 120,
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {busy ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : (
                         "Rotate secret"
                     )}
@@ -982,14 +982,14 @@ function DeleteDialog({
                             background: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)",
                         },
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}
                 >
                     {busy ? (
-                        <CircularProgress size={18} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
                     ) : (
                         "Delete"
                     )}
@@ -1121,11 +1121,11 @@ function ProductCard({
                                 size="small"
                                 sx={{
                                     color: TEXT_55,
-                                    border: "1px solid rgba(255,255,255,0.16)",
+                                    border: "1px solid var(--field-border)",
                                     borderRadius: "10px",
                                     "&:hover": {
-                                        borderColor: "rgba(155,123,247,0.5)",
-                                        background: "rgba(155,123,247,0.06)",
+                                        borderColor: "var(--accent-border)",
+                                        background: "var(--accent-tint)",
                                     },
                                 }}
                                 aria-label="More actions"

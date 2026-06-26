@@ -27,12 +27,12 @@ import { GHOST_BTN, PRIMARY_BTN } from "./dashboard-ui";
 import { BORDER, SURFACE } from "./glass-card";
 
 // ── Palette ─────────────────────────────────────────────────────────────────
-const ACCENT = "#9b7bf7";
-const GREEN = "#86efac";
-const RED = "#fca5a5";
-const TEXT = "#f5f5f4";
-const TEXT_55 = "rgba(245,245,244,0.55)";
-const TEXT_40 = "rgba(245,245,244,0.4)";
+const ACCENT = "var(--accent)";
+const GREEN = "var(--success)";
+const RED = "var(--danger)";
+const TEXT = "var(--fg)";
+const TEXT_55 = "var(--fg-muted)";
+const TEXT_40 = "var(--fg-faint)";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface Sender {
@@ -61,21 +61,21 @@ const darkField = {
     "& .MuiOutlinedInput-root": {
         color: TEXT,
         borderRadius: "10px",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
+        background: "var(--field-bg)",
+        "& fieldset": { borderColor: "var(--field-border)" },
+        "&:hover fieldset": { borderColor: "var(--accent-border)" },
         "&.Mui-focused fieldset": { borderColor: ACCENT },
     },
     "& .MuiInputBase-input": { fontSize: "0.92rem", py: 1.05 },
-    "& .MuiInputBase-input::placeholder": { color: "rgba(245,245,244,0.35)", opacity: 1 },
+    "& .MuiInputBase-input::placeholder": { color: "var(--fg-faint)", opacity: 1 },
 };
 
 const darkSelect = {
     color: TEXT,
     borderRadius: "10px",
-    background: "rgba(255,255,255,0.02)",
-    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.12)" },
-    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(155,123,247,0.4)" },
+    background: "var(--field-bg)",
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--field-border)" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--accent-border)" },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
     "& .MuiSelect-icon": { color: TEXT_40 },
     "& .MuiSelect-select": { fontSize: "0.92rem", py: 1.05 },
@@ -90,7 +90,7 @@ const selectMenuProps = {
                 backgroundImage: "none",
                 maxWidth: 360,
                 "& .MuiMenuItem-root": { color: TEXT, fontSize: "0.9rem" },
-                "& .MuiMenuItem-root.Mui-selected": { background: "rgba(155,123,247,0.12)" },
+                "& .MuiMenuItem-root.Mui-selected": { background: "var(--accent-tint)" },
             },
         },
     },
@@ -408,7 +408,7 @@ export default function TemplateTestDialog({
                                     <Typography
                                         sx={{
                                             fontSize: "0.82rem",
-                                            color: "rgba(245,245,244,0.7)",
+                                            color: "var(--fg-muted)",
                                             lineHeight: 1.6,
                                         }}
                                     >
@@ -464,7 +464,7 @@ export default function TemplateTestDialog({
                                                 sx={{
                                                     fontFamily: "var(--font-geist-mono)",
                                                     fontSize: "0.76rem",
-                                                    color: "#c4b5fd",
+                                                    color: "var(--accent)",
                                                     mb: 0.5,
                                                 }}
                                             >
@@ -516,7 +516,7 @@ export default function TemplateTestDialog({
                                     px: 1,
                                     minWidth: 0,
                                     "&:hover": {
-                                        background: "rgba(155,123,247,0.06)",
+                                        background: "var(--accent-tint)",
                                         color: TEXT,
                                     },
                                     "&.Mui-disabled": { color: TEXT_40 },
@@ -611,7 +611,7 @@ export default function TemplateTestDialog({
                     disabled={!canSend}
                     startIcon={
                         send.phase === "loading" ? (
-                            <CircularProgress size={16} sx={{ color: "rgba(245,245,244,0.6)" }} />
+                            <CircularProgress size={16} sx={{ color: "var(--fg-muted)" }} />
                         ) : (
                             <SendIcon sx={{ fontSize: "1.05rem !important" }} />
                         )
@@ -620,8 +620,8 @@ export default function TemplateTestDialog({
                         ...PRIMARY_BTN,
                         minWidth: 140,
                         "&.Mui-disabled": {
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(245,245,244,0.35)",
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
                             boxShadow: "none",
                         },
                     }}

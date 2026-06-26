@@ -2,30 +2,35 @@ import { Box, Button, Stack, Typography } from "@mui/material";
 import Image from "next/image";
 import Link from "next/link";
 
-const ACCENT = "#9b7bf7";
+const INK = "#212121";
+const SLATE = "#75758a";
+const HAIRLINE = "#d9d9dd";
 
 const PRIMARY = {
     textTransform: "none" as const,
-    fontWeight: 700,
+    fontWeight: 500,
     fontSize: "0.92rem",
     color: "#fff",
-    px: 2.8,
+    px: 3,
     py: 1.1,
-    borderRadius: "11px",
-    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-    boxShadow: "0 8px 24px rgba(124,92,255,0.35)",
-    "&:hover": { background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)" },
+    borderRadius: "32px", // Pill
+    background: "#17171c",
+    boxShadow: "none",
+    fontFamily: "var(--font-sans)",
+    "&:hover": { background: "#000" },
 };
+
 const GHOST = {
     textTransform: "none" as const,
-    fontWeight: 600,
-    fontSize: "0.9rem",
-    color: "#f5f5f4",
-    px: 2.6,
+    fontWeight: 500,
+    fontSize: "0.92rem",
+    color: INK,
+    px: 2.8,
     py: 1.1,
-    borderRadius: "11px",
-    border: "1px solid rgba(255,255,255,0.16)",
-    "&:hover": { borderColor: "rgba(155,123,247,0.5)", background: "rgba(155,123,247,0.06)" },
+    borderRadius: "32px", // Pill outline
+    border: `1px solid ${HAIRLINE}`,
+    fontFamily: "var(--font-sans)",
+    "&:hover": { borderColor: INK, background: "rgba(0,0,0,0.02)" },
 };
 
 export default function NotFound() {
@@ -36,10 +41,11 @@ export default function NotFound() {
                 display: "grid",
                 placeItems: "center",
                 px: 3,
-                color: "#f5f5f4",
+                background: "#ffffff",
+                color: INK,
             }}
         >
-            <Stack alignItems="center" textAlign="center" spacing={3} sx={{ maxWidth: 460 }}>
+            <Stack alignItems="center" textAlign="center" spacing={3.5} sx={{ maxWidth: 460 }}>
                 <Image
                     src="/logo.png"
                     alt="Elixpo Mails"
@@ -50,40 +56,46 @@ export default function NotFound() {
                 <Box>
                     <Typography
                         sx={{
-                            fontWeight: 900,
-                            fontSize: { xs: "4.5rem", md: "6rem" },
+                            fontWeight: 500,
+                            fontSize: { xs: "5rem", md: "6.5rem" },
                             lineHeight: 1,
                             letterSpacing: "-0.04em",
-                            background: "linear-gradient(135deg, #f5f5f4 0%, #9b7bf7 120%)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
+                            color: "#000000",
+                            fontFamily: "var(--font-display)",
                         }}
                     >
                         404
                     </Typography>
                     <Typography
                         sx={{
-                            fontWeight: 800,
-                            fontSize: "1.4rem",
-                            mt: 1,
-                            letterSpacing: "-0.01em",
+                            fontWeight: 500,
+                            fontSize: "1.45rem",
+                            mt: 1.5,
+                            letterSpacing: "-0.02em",
+                            color: "#000000",
+                            fontFamily: "var(--font-display)",
                         }}
                     >
                         Lost in the outbox
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.55)",
+                            color: SLATE,
                             fontSize: "0.98rem",
-                            mt: 1,
+                            mt: 1.5,
                             lineHeight: 1.6,
+                            fontFamily: "var(--font-sans)",
                         }}
                     >
                         This page didn&rsquo;t make it to the inbox. The link may be broken or the
                         page may have moved.
                     </Typography>
                 </Box>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={2}
+                    sx={{ width: "100%", justifyContent: "center" }}
+                >
                     <Button component={Link} href="/" sx={PRIMARY}>
                         Back home
                     </Button>
