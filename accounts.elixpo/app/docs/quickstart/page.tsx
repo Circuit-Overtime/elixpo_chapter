@@ -50,7 +50,7 @@ export default function QuickstartPage() {
                 sx={{
                     fontSize: "2rem",
                     fontWeight: 800,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mb: 2,
                     letterSpacing: "-0.02em",
                 }}
@@ -59,7 +59,7 @@ export default function QuickstartPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 4,
                     fontSize: "1rem",
                     lineHeight: 1.7,
@@ -74,9 +74,9 @@ export default function QuickstartPage() {
                 <Chip
                     label="Base URL: https://accounts.elixpo.com"
                     sx={{
-                        bgcolor: "rgba(155, 123, 247, 0.1)",
-                        color: "#9b7bf7",
-                        border: "1px solid rgba(155, 123, 247, 0.2)",
+                        bgcolor: "rgba(255, 119, 89, 0.1)",
+                        color: "#ff7759",
+                        border: "1px solid rgba(255, 119, 89, 0.2)",
                         fontFamily: "var(--font-geist-mono), monospace",
                         fontSize: "0.85rem",
                     }}
@@ -88,7 +88,7 @@ export default function QuickstartPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -98,7 +98,7 @@ export default function QuickstartPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -110,7 +110,7 @@ export default function QuickstartPage() {
             <Box
                 component="ul"
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     pl: 3,
                     mb: 4,
                     "& li": { mb: 1, lineHeight: 1.6 },
@@ -138,7 +138,7 @@ export default function QuickstartPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -148,7 +148,7 @@ export default function QuickstartPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 4,
                     lineHeight: 1.6,
                 }}
@@ -166,7 +166,7 @@ export default function QuickstartPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -176,7 +176,7 @@ export default function QuickstartPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 3,
                     lineHeight: 1.6,
                 }}

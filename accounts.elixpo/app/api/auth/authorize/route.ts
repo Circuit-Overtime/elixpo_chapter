@@ -278,9 +278,10 @@ export async function POST(request: NextRequest) {
                      WHERE oc.client_id = ? AND oc.is_active = 1`,
                 )
                 .bind((authRequest as any).client_id)
-                .first()) as
-                | { tier: string | null; is_internal: number }
-                | null;
+                .first()) as {
+                tier: string | null;
+                is_internal: number;
+            } | null;
             if (owner) {
                 const { checkMauGate } = await import("@/lib/mau");
                 const { tierFromUserRow } = await import("@/lib/billing");

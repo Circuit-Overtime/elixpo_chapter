@@ -44,11 +44,9 @@ const HOOK_ENV: Record<MailTemplate, string> = {
     account_suspended: "MAILS_HOOK_ACCOUNT_SUSPENDED",
     sign_in_device: "MAILS_HOOK_SIGN_IN_DEVICE",
     webhook_fail: "MAILS_HOOK_WEBHOOK_FAIL",
-    billing_subscription_activated:
-        "MAILS_HOOK_BILLING_SUBSCRIPTION_ACTIVATED",
+    billing_subscription_activated: "MAILS_HOOK_BILLING_SUBSCRIPTION_ACTIVATED",
     billing_payment_failed: "MAILS_HOOK_BILLING_PAYMENT_FAILED",
-    billing_subscription_cancelled:
-        "MAILS_HOOK_BILLING_SUBSCRIPTION_CANCELLED",
+    billing_subscription_cancelled: "MAILS_HOOK_BILLING_SUBSCRIPTION_CANCELLED",
 };
 
 interface SendOptions {
@@ -161,7 +159,7 @@ export async function sendMail(
                     error: "Recipient has unsubscribed from this address",
                 };
             }
-            if (j && j.id) {
+            if (j?.id) {
                 return { ok: true, delivery_id: j.id };
             }
             return { ok: true };
@@ -170,8 +168,7 @@ export async function sendMail(
             return { ok: true };
         }
     } catch (err) {
-        const message =
-            err instanceof Error ? err.message : String(err);
+        const message = err instanceof Error ? err.message : String(err);
         console.error(
             "[mails] %s to %s delivery error: %s",
             template,

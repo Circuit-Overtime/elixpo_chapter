@@ -68,8 +68,8 @@ interface MeStatus {
 const cardSx = {
     p: 3,
     borderRadius: "16px",
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.07)",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
 };
 
 const kindLabel: Record<Factor["kind"], string> = {
@@ -78,9 +78,9 @@ const kindLabel: Record<Factor["kind"], string> = {
     email_otp: "Email code",
 };
 const kindIcon: Record<Factor["kind"], React.ReactNode> = {
-    passkey: <KeyIcon fontSize="small" sx={{ color: "#9b7bf7" }} />,
-    totp: <PhoneAndroidIcon fontSize="small" sx={{ color: "#9b7bf7" }} />,
-    email_otp: <MailOutlineIcon fontSize="small" sx={{ color: "#9b7bf7" }} />,
+    passkey: <KeyIcon fontSize="small" sx={{ color: "#ff7759" }} />,
+    totp: <PhoneAndroidIcon fontSize="small" sx={{ color: "#ff7759" }} />,
+    email_otp: <MailOutlineIcon fontSize="small" sx={{ color: "#ff7759" }} />,
 };
 
 export default function SecurityPage() {
@@ -214,7 +214,10 @@ export default function SecurityPage() {
         const qr = await QRCode.toDataURL(data.otpauth_uri, {
             margin: 1,
             width: 240,
-            color: { dark: "#f5f5f4", light: "#161c18" },
+            // QR renders to a static canvas/data-URL — CSS vars don't resolve
+            // here and the qrcode lib's color parser is hex-only. Keep a fixed
+            // dark-on-white plate so it scans regardless of the UI theme.
+            color: { dark: "#161c18", light: "#ffffff" },
         });
         setTotpData({ ...data, qr_dataurl: qr });
         setTotpCode("");
@@ -392,12 +395,12 @@ export default function SecurityPage() {
     const removeFactor = (target: Factor) =>
         askConfirm({
             title: "Remove this 2FA method?",
-            icon: <DeleteIcon sx={{ color: "#f87171" }} />,
+            icon: <DeleteIcon sx={{ color: "#b91c1c" }} />,
             body: (
                 <>
-                    <Typography sx={{ color: "rgba(255,255,255,0.7)", mb: 2 }}>
+                    <Typography sx={{ color: "var(--fg-muted)", mb: 2 }}>
                         You're about to remove{" "}
-                        <strong style={{ color: "#f5f5f4" }}>
+                        <strong style={{ color: "var(--fg)" }}>
                             {target.name || kindLabel[target.kind]}
                         </strong>{" "}
                         from your 2FA methods.
@@ -408,7 +411,7 @@ export default function SecurityPage() {
                             borderRadius: "8px",
                             bgcolor: "rgba(239,68,68,0.08)",
                             border: "1px solid rgba(239,68,68,0.25)",
-                            color: "#fca5a5",
+                            color: "#b91c1c",
                             fontSize: "0.85rem",
                         }}
                     >
@@ -464,9 +467,9 @@ export default function SecurityPage() {
     const disableMfa = () =>
         askConfirm({
             title: "Disable 2FA?",
-            icon: <SecurityIcon sx={{ color: "#fbbf24" }} />,
+            icon: <SecurityIcon sx={{ color: "#b45309" }} />,
             body: (
-                <Typography sx={{ color: "rgba(255,255,255,0.7)" }}>
+                <Typography sx={{ color: "var(--fg-muted)" }}>
                     Your enrolled methods stay enrolled, but they won't be
                     required at login. You can re-enable 2FA at any time.
                 </Typography>
@@ -494,10 +497,10 @@ export default function SecurityPage() {
     const regenerateBackupCodes = () =>
         askConfirm({
             title: "Regenerate backup codes?",
-            icon: <SecurityIcon sx={{ color: "#fbbf24" }} />,
+            icon: <SecurityIcon sx={{ color: "#b45309" }} />,
             body: (
                 <>
-                    <Typography sx={{ color: "rgba(255,255,255,0.7)", mb: 2 }}>
+                    <Typography sx={{ color: "var(--fg-muted)", mb: 2 }}>
                         A fresh set of 8 codes will be generated. You'll see
                         them once — make sure you save them.
                     </Typography>
@@ -507,7 +510,7 @@ export default function SecurityPage() {
                             borderRadius: "8px",
                             bgcolor: "rgba(251,146,60,0.08)",
                             border: "1px solid rgba(251,146,60,0.25)",
-                            color: "#fed7aa",
+                            color: "#b45309",
                             fontSize: "0.85rem",
                         }}
                     >
@@ -547,9 +550,9 @@ export default function SecurityPage() {
     const revokeDevice = (id: string) =>
         askConfirm({
             title: "Revoke trusted device?",
-            icon: <LaptopIcon sx={{ color: "#fbbf24" }} />,
+            icon: <LaptopIcon sx={{ color: "#b45309" }} />,
             body: (
-                <Typography sx={{ color: "rgba(255,255,255,0.7)" }}>
+                <Typography sx={{ color: "var(--fg-muted)" }}>
                     This device will be asked for 2FA on the next sign-in.
                     Existing sessions on that device keep working until they
                     expire.
@@ -618,9 +621,9 @@ export default function SecurityPage() {
             title: s.is_current
                 ? "Sign out from this device?"
                 : "Sign out other session?",
-            icon: <LaptopIcon sx={{ color: "#fbbf24" }} />,
+            icon: <LaptopIcon sx={{ color: "#b45309" }} />,
             body: (
-                <Typography sx={{ color: "rgba(255,255,255,0.7)" }}>
+                <Typography sx={{ color: "var(--fg-muted)" }}>
                     {s.is_current
                         ? "You'll be returned to the login page on this device."
                         : `The session on ${s.device} will be signed out the next time it tries to refresh its token.`}
@@ -653,7 +656,7 @@ export default function SecurityPage() {
     if (loading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress sx={{ color: "#9b7bf7" }} />
+                <CircularProgress sx={{ color: "#ff7759" }} />
             </Box>
         );
     }
@@ -665,16 +668,16 @@ export default function SecurityPage() {
                     variant="h4"
                     sx={{
                         fontWeight: 700,
-                        color: "#f5f5f4",
+                        color: "var(--fg)",
                         mb: 1,
                         display: "flex",
                         alignItems: "center",
                         gap: 1.5,
                     }}
                 >
-                    <SecurityIcon sx={{ color: "#9b7bf7" }} /> Security
+                    <SecurityIcon sx={{ color: "#ff7759" }} /> Security
                 </Typography>
-                <Typography sx={{ color: "rgba(255,255,255,0.6)" }}>
+                <Typography sx={{ color: "var(--fg-faint)" }}>
                     Two-factor authentication and trusted devices.
                 </Typography>
             </Box>
@@ -685,7 +688,7 @@ export default function SecurityPage() {
                     sx={{
                         mb: 3,
                         bgcolor: "rgba(251,146,60,0.1)",
-                        color: "#fed7aa",
+                        color: "#b45309",
                         border: "1px solid rgba(251,146,60,0.3)",
                     }}
                 >
@@ -717,7 +720,7 @@ export default function SecurityPage() {
                 >
                     <Typography
                         sx={{
-                            color: "#f5f5f4",
+                            color: "var(--fg)",
                             fontWeight: 600,
                             fontSize: "1.1rem",
                         }}
@@ -732,18 +735,18 @@ export default function SecurityPage() {
                         sx={{
                             bgcolor: status?.mfa_enabled
                                 ? "rgba(134,239,172,0.1)"
-                                : "rgba(255,255,255,0.05)",
+                                : "var(--overlay)",
                             color: status?.mfa_enabled
-                                ? "#86efac"
-                                : "rgba(255,255,255,0.5)",
-                            border: `1px solid ${status?.mfa_enabled ? "rgba(134,239,172,0.3)" : "rgba(255,255,255,0.1)"}`,
+                                ? "#15803d"
+                                : "var(--fg-faint)",
+                            border: `1px solid ${status?.mfa_enabled ? "rgba(134,239,172,0.3)" : "var(--border)"}`,
                             fontWeight: 600,
                         }}
                     />
                 </Box>
 
                 {(status?.factors || []).length === 0 ? (
-                    <Typography sx={{ color: "rgba(255,255,255,0.4)", py: 2 }}>
+                    <Typography sx={{ color: "var(--fg-faint)", py: 2 }}>
                         No methods enrolled yet. Pick one below to get started.
                     </Typography>
                 ) : (
@@ -764,8 +767,8 @@ export default function SecurityPage() {
                                     gap: 1.5,
                                     p: 1.5,
                                     borderRadius: "10px",
-                                    bgcolor: "rgba(255,255,255,0.025)",
-                                    border: "1px solid rgba(255,255,255,0.06)",
+                                    bgcolor: "var(--surface)",
+                                    border: "1px solid var(--border)",
                                     opacity: f.confirmed ? 1 : 0.5,
                                 }}
                             >
@@ -773,7 +776,7 @@ export default function SecurityPage() {
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
                                     <Typography
                                         sx={{
-                                            color: "#f5f5f4",
+                                            color: "var(--fg)",
                                             fontWeight: 600,
                                             fontSize: "0.9rem",
                                         }}
@@ -782,7 +785,7 @@ export default function SecurityPage() {
                                     </Typography>
                                     <Typography
                                         sx={{
-                                            color: "rgba(255,255,255,0.45)",
+                                            color: "var(--fg-faint)",
                                             fontSize: "0.75rem",
                                         }}
                                     >
@@ -813,16 +816,16 @@ export default function SecurityPage() {
                                         onClick={startEmailEnroll}
                                         disabled={emailResendCd.active}
                                         sx={{
-                                            color: "#c8b6ff",
+                                            color: "#ff7759",
                                             textTransform: "none",
                                             fontSize: "0.8rem",
                                             mr: 0.5,
                                             "&:hover": {
                                                 bgcolor:
-                                                    "rgba(155,123,247,0.08)",
+                                                    "rgba(255, 119, 89,0.08)",
                                             },
                                             "&.Mui-disabled": {
-                                                color: "rgba(255,255,255,0.35)",
+                                                color: "var(--fg-faint)",
                                             },
                                         }}
                                     >
@@ -836,13 +839,13 @@ export default function SecurityPage() {
                                         size="small"
                                         onClick={startTotp}
                                         sx={{
-                                            color: "#c8b6ff",
+                                            color: "#ff7759",
                                             textTransform: "none",
                                             fontSize: "0.8rem",
                                             mr: 0.5,
                                             "&:hover": {
                                                 bgcolor:
-                                                    "rgba(155,123,247,0.08)",
+                                                    "rgba(255, 119, 89,0.08)",
                                             },
                                         }}
                                     >
@@ -852,7 +855,7 @@ export default function SecurityPage() {
                                 <IconButton
                                     size="small"
                                     onClick={() => removeFactor(f)}
-                                    sx={{ color: "#ef4444" }}
+                                    sx={{ color: "#b91c1c" }}
                                 >
                                     <DeleteIcon fontSize="small" />
                                 </IconButton>
@@ -874,16 +877,16 @@ export default function SecurityPage() {
                         (f) => f.kind === "email_otp" && f.confirmed,
                     );
                     const enrollSx = {
-                        color: "#c8b6ff",
-                        borderColor: "rgba(155,123,247,0.4)",
+                        color: "#ff7759",
+                        borderColor: "rgba(255, 119, 89,0.4)",
                         textTransform: "none" as const,
                         "&:hover": {
-                            borderColor: "#9b7bf7",
-                            bgcolor: "rgba(155,123,247,0.06)",
+                            borderColor: "#ff7759",
+                            bgcolor: "rgba(255, 119, 89,0.06)",
                         },
                         "&.Mui-disabled": {
-                            color: "rgba(255,255,255,0.3)",
-                            borderColor: "rgba(255,255,255,0.08)",
+                            color: "var(--fg-faint)",
+                            borderColor: "var(--border)",
                         },
                     };
                     return (
@@ -934,7 +937,7 @@ export default function SecurityPage() {
                     sx={{
                         mt: 3,
                         pt: 3,
-                        borderTop: "1px solid rgba(255,255,255,0.06)",
+                        borderTop: "1px solid var(--border)",
                         display: "flex",
                         gap: 1.5,
                     }}
@@ -950,7 +953,7 @@ export default function SecurityPage() {
                             }
                             sx={{
                                 background:
-                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                    "linear-gradient(135deg, #ff7759 0%, #ff7759 100%)",
                                 textTransform: "none",
                                 fontWeight: 600,
                             }}
@@ -962,8 +965,8 @@ export default function SecurityPage() {
                             variant="outlined"
                             onClick={disableMfa}
                             sx={{
-                                color: "rgba(255,255,255,0.7)",
-                                borderColor: "rgba(255,255,255,0.15)",
+                                color: "var(--fg-muted)",
+                                borderColor: "var(--border)",
                                 textTransform: "none",
                             }}
                         >
@@ -978,7 +981,7 @@ export default function SecurityPage() {
                 <Box sx={{ ...cardSx, mb: 3 }}>
                     <Typography
                         sx={{
-                            color: "#f5f5f4",
+                            color: "var(--fg)",
                             fontWeight: 600,
                             fontSize: "1.1rem",
                             mb: 0.5,
@@ -988,14 +991,14 @@ export default function SecurityPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.85rem",
                             mb: 2,
                         }}
                     >
                         Single-use codes for when you lose access to your other
                         methods. You have{" "}
-                        <strong style={{ color: "#f5f5f4" }}>
+                        <strong style={{ color: "var(--fg)" }}>
                             {status.unused_backup_codes}
                         </strong>{" "}
                         unused.
@@ -1008,13 +1011,13 @@ export default function SecurityPage() {
                                 mb: 2,
                                 borderRadius: "10px",
                                 background:
-                                    "linear-gradient(135deg, rgba(155,123,247,0.12), rgba(95,182,255,0.05))",
-                                border: "1px solid rgba(155,123,247,0.35)",
+                                    "linear-gradient(135deg, rgba(255, 119, 89,0.12), rgba(255, 119, 89,0.05))",
+                                border: "1px solid rgba(255, 119, 89,0.35)",
                             }}
                         >
                             <Typography
                                 sx={{
-                                    color: "#fde7a4",
+                                    color: "#b45309",
                                     fontSize: "0.75rem",
                                     fontWeight: 700,
                                     mb: 1.5,
@@ -1037,8 +1040,8 @@ export default function SecurityPage() {
                                         sx={{
                                             fontFamily:
                                                 "var(--font-geist-mono), monospace",
-                                            color: "#e8e8ed",
-                                            bgcolor: "rgba(0,0,0,0.25)",
+                                            color: "var(--fg)",
+                                            bgcolor: "var(--overlay)",
                                             p: 1,
                                             borderRadius: "6px",
                                             fontSize: "0.9rem",
@@ -1064,12 +1067,12 @@ export default function SecurityPage() {
                                         downloadBackupCodes(revealedCodes)
                                     }
                                     sx={{
-                                        color: "#c8b6ff",
+                                        color: "#ff7759",
                                         textTransform: "none",
-                                        bgcolor: "rgba(155,123,247,0.1)",
-                                        border: "1px solid rgba(155,123,247,0.3)",
+                                        bgcolor: "rgba(255, 119, 89,0.1)",
+                                        border: "1px solid rgba(255, 119, 89,0.3)",
                                         "&:hover": {
-                                            bgcolor: "rgba(155,123,247,0.18)",
+                                            bgcolor: "rgba(255, 119, 89,0.18)",
                                         },
                                     }}
                                 >
@@ -1082,11 +1085,11 @@ export default function SecurityPage() {
                                         copyBackupCodes(revealedCodes)
                                     }
                                     sx={{
-                                        color: "rgba(255,255,255,0.7)",
+                                        color: "var(--fg-muted)",
                                         textTransform: "none",
-                                        border: "1px solid rgba(255,255,255,0.15)",
+                                        border: "1px solid var(--border)",
                                         "&:hover": {
-                                            bgcolor: "rgba(255,255,255,0.05)",
+                                            bgcolor: "var(--overlay)",
                                         },
                                     }}
                                 >
@@ -1096,7 +1099,7 @@ export default function SecurityPage() {
                                     size="small"
                                     onClick={() => setRevealedCodes(null)}
                                     sx={{
-                                        color: "rgba(255,255,255,0.4)",
+                                        color: "var(--fg-faint)",
                                         textTransform: "none",
                                         ml: "auto",
                                     }}
@@ -1111,8 +1114,8 @@ export default function SecurityPage() {
                         variant="outlined"
                         onClick={regenerateBackupCodes}
                         sx={{
-                            color: "#c8b6ff",
-                            borderColor: "rgba(155,123,247,0.4)",
+                            color: "#ff7759",
+                            borderColor: "rgba(255, 119, 89,0.4)",
                             textTransform: "none",
                         }}
                     >
@@ -1125,7 +1128,7 @@ export default function SecurityPage() {
             <Box sx={{ ...cardSx, mb: 3 }}>
                 <Typography
                     sx={{
-                        color: "#f5f5f4",
+                        color: "var(--fg)",
                         fontWeight: 600,
                         fontSize: "1.1rem",
                         mb: 0.5,
@@ -1135,7 +1138,7 @@ export default function SecurityPage() {
                 </Typography>
                 <Typography
                     sx={{
-                        color: "rgba(255,255,255,0.5)",
+                        color: "var(--fg-faint)",
                         fontSize: "0.85rem",
                         mb: 2,
                     }}
@@ -1144,7 +1147,7 @@ export default function SecurityPage() {
                     you don't recognize.
                 </Typography>
                 {sessions.length === 0 ? (
-                    <Typography sx={{ color: "rgba(255,255,255,0.4)", py: 2 }}>
+                    <Typography sx={{ color: "var(--fg-faint)", py: 2 }}>
                         No active sessions.
                     </Typography>
                 ) : (
@@ -1165,12 +1168,12 @@ export default function SecurityPage() {
                                     p: 1.5,
                                     borderRadius: "10px",
                                     bgcolor: s.is_current
-                                        ? "rgba(155,123,247,0.06)"
-                                        : "rgba(255,255,255,0.025)",
-                                    border: `1px solid ${s.is_current ? "rgba(155,123,247,0.3)" : "rgba(255,255,255,0.06)"}`,
+                                        ? "rgba(255, 119, 89,0.06)"
+                                        : "var(--surface)",
+                                    border: `1px solid ${s.is_current ? "rgba(255, 119, 89,0.3)" : "var(--border)"}`,
                                 }}
                             >
-                                <LaptopIcon sx={{ color: "#9b7bf7" }} />
+                                <LaptopIcon sx={{ color: "#ff7759" }} />
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
                                     <Box
                                         sx={{
@@ -1182,7 +1185,7 @@ export default function SecurityPage() {
                                     >
                                         <Typography
                                             sx={{
-                                                color: "#f5f5f4",
+                                                color: "var(--fg)",
                                                 fontSize: "0.9rem",
                                                 fontWeight: 600,
                                             }}
@@ -1198,7 +1201,7 @@ export default function SecurityPage() {
                                                     fontSize: "0.65rem",
                                                     bgcolor:
                                                         "rgba(134,239,172,0.1)",
-                                                    color: "#86efac",
+                                                    color: "#15803d",
                                                     border: "1px solid rgba(134,239,172,0.3)",
                                                     fontWeight: 600,
                                                 }}
@@ -1207,7 +1210,7 @@ export default function SecurityPage() {
                                     </Box>
                                     <Typography
                                         sx={{
-                                            color: "rgba(255,255,255,0.45)",
+                                            color: "var(--fg-faint)",
                                             fontSize: "0.75rem",
                                         }}
                                     >
@@ -1225,11 +1228,11 @@ export default function SecurityPage() {
                                     size="small"
                                     onClick={() => revokeSession(s)}
                                     sx={{
-                                        color: "rgba(255,255,255,0.5)",
+                                        color: "var(--fg-faint)",
                                         textTransform: "none",
                                         fontSize: "0.8rem",
                                         "&:hover": {
-                                            color: "#f87171",
+                                            color: "#b91c1c",
                                             bgcolor: "rgba(239,68,68,0.08)",
                                         },
                                     }}
@@ -1246,7 +1249,7 @@ export default function SecurityPage() {
             <Box sx={cardSx}>
                 <Typography
                     sx={{
-                        color: "#f5f5f4",
+                        color: "var(--fg)",
                         fontWeight: 600,
                         fontSize: "1.1rem",
                         mb: 0.5,
@@ -1256,7 +1259,7 @@ export default function SecurityPage() {
                 </Typography>
                 <Typography
                     sx={{
-                        color: "rgba(255,255,255,0.5)",
+                        color: "var(--fg-faint)",
                         fontSize: "0.85rem",
                         mb: 2,
                     }}
@@ -1265,7 +1268,7 @@ export default function SecurityPage() {
                     don't recognize.
                 </Typography>
                 {devices.length === 0 ? (
-                    <Typography sx={{ color: "rgba(255,255,255,0.4)", py: 2 }}>
+                    <Typography sx={{ color: "var(--fg-faint)", py: 2 }}>
                         No trusted devices.
                     </Typography>
                 ) : (
@@ -1285,22 +1288,22 @@ export default function SecurityPage() {
                                     gap: 1.5,
                                     p: 1.5,
                                     borderRadius: "10px",
-                                    bgcolor: "rgba(255,255,255,0.025)",
-                                    border: "1px solid rgba(255,255,255,0.06)",
+                                    bgcolor: "var(--surface)",
+                                    border: "1px solid var(--border)",
                                     opacity: d.is_active ? 1 : 0.4,
                                 }}
                             >
                                 <LaptopIcon
                                     sx={{
                                         color: d.is_active
-                                            ? "#9b7bf7"
-                                            : "rgba(255,255,255,0.3)",
+                                            ? "#ff7759"
+                                            : "var(--fg-faint)",
                                     }}
                                 />
                                 <Box sx={{ flex: 1 }}>
                                     <Typography
                                         sx={{
-                                            color: "#f5f5f4",
+                                            color: "var(--fg)",
                                             fontSize: "0.9rem",
                                             fontWeight: 600,
                                         }}
@@ -1311,7 +1314,7 @@ export default function SecurityPage() {
                                     </Typography>
                                     <Typography
                                         sx={{
-                                            color: "rgba(255,255,255,0.45)",
+                                            color: "var(--fg-faint)",
                                             fontSize: "0.75rem",
                                         }}
                                     >
@@ -1324,7 +1327,7 @@ export default function SecurityPage() {
                                     <IconButton
                                         size="small"
                                         onClick={() => revokeDevice(d.id)}
-                                        sx={{ color: "#ef4444" }}
+                                        sx={{ color: "#b91c1c" }}
                                     >
                                         <DeleteIcon fontSize="small" />
                                     </IconButton>
@@ -1341,14 +1344,14 @@ export default function SecurityPage() {
                 onClose={() => setTotpDialog(false)}
                 PaperProps={{
                     sx: {
-                        bgcolor: "rgba(22,28,24,0.97)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        bgcolor: "rgba(255,255,255,0.95)",
+                        border: "1px solid var(--border)",
                         borderRadius: "16px",
                         backdropFilter: "blur(20px)",
                     },
                 }}
             >
-                <DialogTitle sx={{ color: "#f5f5f4", fontWeight: 700 }}>
+                <DialogTitle sx={{ color: "var(--fg)", fontWeight: 700 }}>
                     Set up authenticator app
                 </DialogTitle>
                 <DialogContent>
@@ -1356,7 +1359,7 @@ export default function SecurityPage() {
                         <>
                             <Typography
                                 sx={{
-                                    color: "rgba(255,255,255,0.7)",
+                                    color: "var(--fg-muted)",
                                     mb: 2,
                                     fontSize: "0.9rem",
                                 }}
@@ -1385,7 +1388,7 @@ export default function SecurityPage() {
                             </Box>
                             <Typography
                                 sx={{
-                                    color: "rgba(255,255,255,0.5)",
+                                    color: "var(--fg-faint)",
                                     fontSize: "0.75rem",
                                     textAlign: "center",
                                     mb: 2,
@@ -1399,8 +1402,8 @@ export default function SecurityPage() {
                                     display: "block",
                                     fontFamily:
                                         "var(--font-geist-mono), monospace",
-                                    bgcolor: "rgba(0,0,0,0.25)",
-                                    color: "#c8b6ff",
+                                    bgcolor: "var(--overlay)",
+                                    color: "#ff7759",
                                     p: 1,
                                     borderRadius: "6px",
                                     fontSize: "0.8rem",
@@ -1413,7 +1416,7 @@ export default function SecurityPage() {
                             </Box>
                             <Typography
                                 sx={{
-                                    color: "rgba(255,255,255,0.7)",
+                                    color: "var(--fg-muted)",
                                     mb: 1,
                                     fontSize: "0.9rem",
                                 }}
@@ -1442,17 +1445,16 @@ export default function SecurityPage() {
                                 }}
                                 sx={{
                                     "& .MuiOutlinedInput-root": {
-                                        color: "#f5f5f4",
+                                        color: "var(--fg)",
                                         "& fieldset": {
-                                            borderColor:
-                                                "rgba(255,255,255,0.15)",
+                                            borderColor: "var(--border)",
                                         },
                                         "&:hover fieldset": {
                                             borderColor:
-                                                "rgba(155,123,247,0.4)",
+                                                "rgba(255, 119, 89,0.4)",
                                         },
                                         "&.Mui-focused fieldset": {
-                                            borderColor: "#9b7bf7",
+                                            borderColor: "#ff7759",
                                         },
                                     },
                                 }}
@@ -1461,11 +1463,11 @@ export default function SecurityPage() {
                     )}
                 </DialogContent>
                 <DialogActions
-                    sx={{ borderTop: "1px solid rgba(255,255,255,0.1)", p: 2 }}
+                    sx={{ borderTop: "1px solid var(--border)", p: 2 }}
                 >
                     <Button
                         onClick={() => setTotpDialog(false)}
-                        sx={{ color: "rgba(255,255,255,0.6)" }}
+                        sx={{ color: "var(--fg-faint)" }}
                     >
                         Cancel
                     </Button>
@@ -1475,7 +1477,7 @@ export default function SecurityPage() {
                         disabled={totpBusy || totpCode.length !== 6}
                         sx={{
                             background:
-                                "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                "linear-gradient(135deg, #ff7759 0%, #ff7759 100%)",
                             textTransform: "none",
                             fontWeight: 600,
                         }}
@@ -1494,8 +1496,8 @@ export default function SecurityPage() {
                 onClose={() => !confirmBusy && setConfirmCfg(null)}
                 PaperProps={{
                     sx: {
-                        bgcolor: "rgba(22,28,24,0.97)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        bgcolor: "rgba(255,255,255,0.95)",
+                        border: "1px solid var(--border)",
                         borderRadius: "16px",
                         backdropFilter: "blur(20px)",
                         maxWidth: 440,
@@ -1504,7 +1506,7 @@ export default function SecurityPage() {
             >
                 <DialogTitle
                     sx={{
-                        color: "#f5f5f4",
+                        color: "var(--fg)",
                         fontWeight: 700,
                         display: "flex",
                         alignItems: "center",
@@ -1517,7 +1519,7 @@ export default function SecurityPage() {
                 <DialogContent>{confirmCfg?.body}</DialogContent>
                 <DialogActions
                     sx={{
-                        borderTop: "1px solid rgba(255,255,255,0.1)",
+                        borderTop: "1px solid var(--border)",
                         p: 2,
                     }}
                 >
@@ -1525,7 +1527,7 @@ export default function SecurityPage() {
                         onClick={() => setConfirmCfg(null)}
                         disabled={confirmBusy}
                         sx={{
-                            color: "rgba(255,255,255,0.6)",
+                            color: "var(--fg-faint)",
                             textTransform: "none",
                         }}
                     >
@@ -1538,7 +1540,7 @@ export default function SecurityPage() {
                         sx={{
                             background: confirmCfg?.destructive
                                 ? "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)"
-                                : "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                : "linear-gradient(135deg, #ff7759 0%, #ff7759 100%)",
                             textTransform: "none",
                             fontWeight: 600,
                         }}
@@ -1554,8 +1556,8 @@ export default function SecurityPage() {
                 onClose={() => !emailEnrollBusy && setEmailEnrollDialog(false)}
                 PaperProps={{
                     sx: {
-                        bgcolor: "rgba(22,28,24,0.97)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        bgcolor: "rgba(255,255,255,0.95)",
+                        border: "1px solid var(--border)",
                         borderRadius: "16px",
                         backdropFilter: "blur(20px)",
                         maxWidth: 440,
@@ -1564,26 +1566,26 @@ export default function SecurityPage() {
             >
                 <DialogTitle
                     sx={{
-                        color: "#f5f5f4",
+                        color: "var(--fg)",
                         fontWeight: 700,
                         display: "flex",
                         alignItems: "center",
                         gap: 1.5,
                     }}
                 >
-                    <MailOutlineIcon sx={{ color: "#9b7bf7" }} />
+                    <MailOutlineIcon sx={{ color: "#ff7759" }} />
                     Enable email code
                 </DialogTitle>
                 <DialogContent>
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.7)",
+                            color: "var(--fg-muted)",
                             fontSize: "0.9rem",
                             mb: 2,
                         }}
                     >
                         We sent a 6-digit verification code to{" "}
-                        <strong style={{ color: "#f5f5f4" }}>
+                        <strong style={{ color: "var(--fg)" }}>
                             {emailEnrollData?.sent_to}
                         </strong>
                         . Enter it below to confirm you control this address.
@@ -1609,15 +1611,15 @@ export default function SecurityPage() {
                         }}
                         sx={{
                             "& .MuiOutlinedInput-root": {
-                                color: "#f5f5f4",
+                                color: "var(--fg)",
                                 "& fieldset": {
-                                    borderColor: "rgba(255,255,255,0.15)",
+                                    borderColor: "var(--border)",
                                 },
                                 "&:hover fieldset": {
-                                    borderColor: "rgba(155,123,247,0.4)",
+                                    borderColor: "rgba(255, 119, 89,0.4)",
                                 },
                                 "&.Mui-focused fieldset": {
-                                    borderColor: "#9b7bf7",
+                                    borderColor: "#ff7759",
                                 },
                             },
                         }}
@@ -1628,11 +1630,11 @@ export default function SecurityPage() {
                         disabled={emailEnrollBusy || emailResendCd.active}
                         sx={{
                             mt: 1,
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                             textTransform: "none",
                             fontSize: "0.8rem",
                             "&.Mui-disabled": {
-                                color: "rgba(255,255,255,0.3)",
+                                color: "var(--fg-faint)",
                             },
                         }}
                     >
@@ -1643,7 +1645,7 @@ export default function SecurityPage() {
                 </DialogContent>
                 <DialogActions
                     sx={{
-                        borderTop: "1px solid rgba(255,255,255,0.1)",
+                        borderTop: "1px solid var(--border)",
                         p: 2,
                     }}
                 >
@@ -1651,7 +1653,7 @@ export default function SecurityPage() {
                         onClick={() => setEmailEnrollDialog(false)}
                         disabled={emailEnrollBusy}
                         sx={{
-                            color: "rgba(255,255,255,0.6)",
+                            color: "var(--fg-faint)",
                             textTransform: "none",
                         }}
                     >
@@ -1665,7 +1667,7 @@ export default function SecurityPage() {
                         variant="contained"
                         sx={{
                             background:
-                                "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                "linear-gradient(135deg, #ff7759 0%, #ff7759 100%)",
                             textTransform: "none",
                             fontWeight: 600,
                         }}

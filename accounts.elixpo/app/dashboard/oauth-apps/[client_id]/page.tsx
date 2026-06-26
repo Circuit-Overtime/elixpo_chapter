@@ -23,30 +23,30 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const cardSx = {
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: "16px",
     p: 3,
 };
 
 const textFieldSx = {
     "& .MuiOutlinedInput-root": {
-        color: "#f5f5f4",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.1)" },
-        "&:hover fieldset": { borderColor: "rgba(255,255,255,0.2)" },
-        "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
+        color: "var(--fg)",
+        "& fieldset": { borderColor: "var(--border)" },
+        "&:hover fieldset": { borderColor: "var(--border)" },
+        "&.Mui-focused fieldset": { borderColor: "#ff7759" },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.7)" },
-    "& .MuiInputLabel-root.Mui-focused": { color: "#9b7bf7" },
-    "& .MuiFormHelperText-root": { color: "rgba(255,255,255,0.4)" },
+    "& .MuiInputLabel-root": { color: "var(--fg-muted)" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "#ff7759" },
+    "& .MuiFormHelperText-root": { color: "var(--fg-faint)" },
 };
 
 const monoBox = {
     display: "flex",
     alignItems: "center",
     gap: 1,
-    background: "rgba(255,255,255,0.05)",
-    border: "1px solid rgba(155, 123, 247,0.2)",
+    background: "var(--surface)",
+    border: "1px solid rgba(255, 119, 89,0.2)",
     borderRadius: "8px",
     p: 1.5,
 };
@@ -444,7 +444,7 @@ export default function OAuthAppSettingsPage() {
                     py: 10,
                 }}
             >
-                <CircularProgress sx={{ color: "#9b7bf7" }} />
+                <CircularProgress sx={{ color: "#ff7759" }} />
             </Box>
         );
     }
@@ -456,10 +456,10 @@ export default function OAuthAppSettingsPage() {
                 startIcon={<ArrowBackIcon />}
                 onClick={() => router.push("/dashboard/oauth-apps")}
                 sx={{
-                    color: "rgba(255,255,255,0.5)",
+                    color: "var(--fg-faint)",
                     mb: 2,
                     textTransform: "none",
-                    "&:hover": { color: "#fff" },
+                    "&:hover": { color: "var(--fg)" },
                 }}
             >
                 Back to OAuth Apps
@@ -476,7 +476,7 @@ export default function OAuthAppSettingsPage() {
                             width: 40,
                             height: 40,
                             borderRadius: "10px",
-                            bgcolor: "rgba(255,255,255,0.05)",
+                            bgcolor: "var(--overlay)",
                             p: 0.5,
                         }}
                         onError={(e: any) => {
@@ -489,11 +489,11 @@ export default function OAuthAppSettingsPage() {
                             width: 40,
                             height: 40,
                             borderRadius: "10px",
-                            bgcolor: "rgba(155, 123, 247,0.1)",
+                            bgcolor: "rgba(255, 119, 89,0.1)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            color: "#9b7bf7",
+                            color: "#ff7759",
                             fontSize: "1.2rem",
                             fontWeight: 700,
                         }}
@@ -504,7 +504,7 @@ export default function OAuthAppSettingsPage() {
                 <Box>
                     <Typography
                         variant="h5"
-                        sx={{ fontWeight: 700, color: "#f5f5f4" }}
+                        sx={{ fontWeight: 700, color: "var(--fg)" }}
                     >
                         {app?.name || "Application Settings"}
                     </Typography>
@@ -515,11 +515,11 @@ export default function OAuthAppSettingsPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             sx={{
-                                color: "rgba(255,255,255,0.3)",
+                                color: "var(--fg-faint)",
                                 fontSize: "0.8rem",
                                 textDecoration: "none",
                                 fontFamily: "monospace",
-                                "&:hover": { color: "#9b7bf7" },
+                                "&:hover": { color: "#ff7759" },
                             }}
                         >
                             {(() => {
@@ -538,7 +538,7 @@ export default function OAuthAppSettingsPage() {
                         size="small"
                         sx={{
                             bgcolor: "rgba(107,114,128,0.2)",
-                            color: "#9ca3af",
+                            color: "var(--fg-faint)",
                         }}
                     />
                 )}
@@ -552,16 +552,16 @@ export default function OAuthAppSettingsPage() {
                         mb: 3,
                         bgcolor:
                             message.type === "success"
-                                ? "rgba(155, 123, 247,0.1)"
+                                ? "rgba(255, 119, 89,0.1)"
                                 : "rgba(239,68,68,0.1)",
                         color:
-                            message.type === "success" ? "#9b7bf7" : "#ef4444",
-                        border: `1px solid ${message.type === "success" ? "rgba(155, 123, 247,0.3)" : "rgba(239,68,68,0.3)"}`,
+                            message.type === "success" ? "#ff7759" : "#b91c1c",
+                        border: `1px solid ${message.type === "success" ? "rgba(255, 119, 89,0.3)" : "rgba(239,68,68,0.3)"}`,
                         "& .MuiAlert-icon": {
                             color:
                                 message.type === "success"
-                                    ? "#9b7bf7"
-                                    : "#ef4444",
+                                    ? "#ff7759"
+                                    : "#b91c1c",
                         },
                     }}
                 >
@@ -582,7 +582,7 @@ export default function OAuthAppSettingsPage() {
                 <Box sx={cardSx}>
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.8rem",
                             mb: 1,
                             fontWeight: 500,
@@ -593,7 +593,7 @@ export default function OAuthAppSettingsPage() {
                     <Box sx={monoBox}>
                         <Typography
                             sx={{
-                                color: "#9b7bf7",
+                                color: "#ff7759",
                                 fontFamily: "monospace",
                                 fontSize: "0.8rem",
                                 flex: 1,
@@ -615,7 +615,7 @@ export default function OAuthAppSettingsPage() {
                                         "client_id",
                                     )
                                 }
-                                sx={{ color: "#9b7bf7" }}
+                                sx={{ color: "#ff7759" }}
                             >
                                 <ContentCopyIcon fontSize="small" />
                             </IconButton>
@@ -627,7 +627,7 @@ export default function OAuthAppSettingsPage() {
                 <Box sx={cardSx}>
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.8rem",
                             mb: 1,
                             fontWeight: 500,
@@ -640,12 +640,12 @@ export default function OAuthAppSettingsPage() {
                             <Box
                                 sx={{
                                     ...monoBox,
-                                    border: "1px solid rgba(155, 123, 247,0.4)",
+                                    border: "1px solid rgba(255, 119, 89,0.4)",
                                 }}
                             >
                                 <Typography
                                     sx={{
-                                        color: "#9b7bf7",
+                                        color: "#ff7759",
                                         fontFamily: "monospace",
                                         fontSize: "0.8rem",
                                         flex: 1,
@@ -669,7 +669,7 @@ export default function OAuthAppSettingsPage() {
                                                 "secret",
                                             )
                                         }
-                                        sx={{ color: "#9b7bf7" }}
+                                        sx={{ color: "#ff7759" }}
                                     >
                                         <ContentCopyIcon fontSize="small" />
                                     </IconButton>
@@ -678,7 +678,7 @@ export default function OAuthAppSettingsPage() {
                             <Typography
                                 variant="caption"
                                 sx={{
-                                    color: "#9b7bf7",
+                                    color: "#ff7759",
                                     mt: 0.5,
                                     display: "block",
                                 }}
@@ -696,7 +696,7 @@ export default function OAuthAppSettingsPage() {
                             >
                                 <Typography
                                     sx={{
-                                        color: "#9ca3af",
+                                        color: "var(--fg-faint)",
                                         fontFamily: "monospace",
                                         fontSize: "0.85rem",
                                         flex: 1,
@@ -709,7 +709,7 @@ export default function OAuthAppSettingsPage() {
                                         size="small"
                                         onClick={handleRegenerateSecret}
                                         disabled={regenerating}
-                                        sx={{ color: "#9b7bf7" }}
+                                        sx={{ color: "#ff7759" }}
                                     >
                                         <RefreshIcon fontSize="small" />
                                     </IconButton>
@@ -718,7 +718,7 @@ export default function OAuthAppSettingsPage() {
                             <Typography
                                 variant="caption"
                                 sx={{
-                                    color: "rgba(255,255,255,0.25)",
+                                    color: "var(--fg-faint)",
                                     mt: 0.5,
                                     display: "block",
                                 }}
@@ -732,7 +732,7 @@ export default function OAuthAppSettingsPage() {
                 {/* General Settings (spans full width on lg) */}
                 <Box sx={{ ...cardSx, gridColumn: { lg: "1 / -1" } }}>
                     <Typography
-                        sx={{ color: "#f5f5f4", fontWeight: 600, mb: 2 }}
+                        sx={{ color: "var(--fg)", fontWeight: 600, mb: 2 }}
                     >
                         General
                     </Typography>
@@ -788,14 +788,14 @@ export default function OAuthAppSettingsPage() {
                 {/* Redirect URIs */}
                 <Box sx={cardSx}>
                     <Typography
-                        sx={{ color: "#f5f5f4", fontWeight: 600, mb: 0.5 }}
+                        sx={{ color: "var(--fg)", fontWeight: 600, mb: 0.5 }}
                     >
                         Redirect URIs
                     </Typography>
                     <Typography
                         variant="caption"
                         sx={{
-                            color: "rgba(255,255,255,0.35)",
+                            color: "var(--fg-faint)",
                             display: "block",
                             mb: 2,
                         }}
@@ -841,7 +841,7 @@ export default function OAuthAppSettingsPage() {
                                         });
                                     }}
                                     sx={{
-                                        color: "#ef4444",
+                                        color: "#b91c1c",
                                         "&:hover": {
                                             bgcolor: "rgba(239,68,68,0.1)",
                                         },
@@ -863,7 +863,7 @@ export default function OAuthAppSettingsPage() {
                                 })
                             }
                             sx={{
-                                color: "#9b7bf7",
+                                color: "#ff7759",
                                 textTransform: "none",
                                 fontSize: "0.8rem",
                                 mt: 0.5,
@@ -877,7 +877,7 @@ export default function OAuthAppSettingsPage() {
                 {/* Scopes + Stats */}
                 <Box sx={cardSx}>
                     <Typography
-                        sx={{ color: "#f5f5f4", fontWeight: 600, mb: 2 }}
+                        sx={{ color: "var(--fg)", fontWeight: 600, mb: 2 }}
                     >
                         Info
                     </Typography>
@@ -885,7 +885,7 @@ export default function OAuthAppSettingsPage() {
                     <Box sx={{ mb: 2 }}>
                         <Typography
                             sx={{
-                                color: "rgba(255,255,255,0.5)",
+                                color: "var(--fg-faint)",
                                 fontSize: "0.8rem",
                                 mb: 0.75,
                             }}
@@ -908,9 +908,9 @@ export default function OAuthAppSettingsPage() {
                                     label={s}
                                     size="small"
                                     sx={{
-                                        bgcolor: "rgba(155, 123, 247,0.1)",
-                                        color: "#9b7bf7",
-                                        border: "1px solid rgba(155, 123, 247,0.2)",
+                                        bgcolor: "rgba(255, 119, 89,0.1)",
+                                        color: "#ff7759",
+                                        border: "1px solid rgba(255, 119, 89,0.2)",
                                     }}
                                 />
                             ))}
@@ -921,7 +921,7 @@ export default function OAuthAppSettingsPage() {
                         <Box sx={{ mb: 2 }}>
                             <Typography
                                 sx={{
-                                    color: "rgba(255,255,255,0.5)",
+                                    color: "var(--fg-faint)",
                                     fontSize: "0.8rem",
                                     mb: 0.25,
                                 }}
@@ -930,7 +930,7 @@ export default function OAuthAppSettingsPage() {
                             </Typography>
                             <Typography
                                 sx={{
-                                    color: "#f5f5f4",
+                                    color: "var(--fg)",
                                     fontWeight: 600,
                                     fontSize: "1.5rem",
                                 }}
@@ -944,7 +944,7 @@ export default function OAuthAppSettingsPage() {
                         <Box>
                             <Typography
                                 sx={{
-                                    color: "rgba(255,255,255,0.5)",
+                                    color: "var(--fg-faint)",
                                     fontSize: "0.8rem",
                                     mb: 0.25,
                                 }}
@@ -953,7 +953,7 @@ export default function OAuthAppSettingsPage() {
                             </Typography>
                             <Typography
                                 sx={{
-                                    color: "rgba(255,255,255,0.6)",
+                                    color: "var(--fg-faint)",
                                     fontSize: "0.9rem",
                                 }}
                             >
@@ -970,13 +970,13 @@ export default function OAuthAppSettingsPage() {
             {stats && (
                 <Box sx={{ ...cardSx, mb: 3 }}>
                     <Typography
-                        sx={{ color: "#f5f5f4", fontWeight: 600, mb: 0.5 }}
+                        sx={{ color: "var(--fg)", fontWeight: 600, mb: 0.5 }}
                     >
                         Activity
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.85rem",
                             mb: 2.5,
                         }}
@@ -1015,7 +1015,7 @@ export default function OAuthAppSettingsPage() {
 
                     <Typography
                         sx={{
-                            color: "rgba(255,255,255,0.45)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.72rem",
                             fontWeight: 700,
                             letterSpacing: "0.08em",
@@ -1028,7 +1028,7 @@ export default function OAuthAppSettingsPage() {
                     {stats.sign_in_timeline.length === 0 ? (
                         <Typography
                             sx={{
-                                color: "rgba(255,255,255,0.35)",
+                                color: "var(--fg-faint)",
                                 fontStyle: "italic",
                                 fontSize: "0.9rem",
                                 py: 3,
@@ -1048,17 +1048,17 @@ export default function OAuthAppSettingsPage() {
                         sx={{
                             mt: 2.5,
                             pt: 2,
-                            borderTop: "1px solid rgba(255,255,255,0.08)",
+                            borderTop: "1px solid var(--border)",
                             display: "flex",
                             gap: 2,
                             flexWrap: "wrap",
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.8rem",
                         }}
                     >
                         <span>
                             Last used:{" "}
-                            <strong style={{ color: "#e5e7eb" }}>
+                            <strong style={{ color: "var(--fg)" }}>
                                 {stats.last_used
                                     ? new Date(stats.last_used).toLocaleString()
                                     : "Never"}
@@ -1067,7 +1067,7 @@ export default function OAuthAppSettingsPage() {
                         <span>•</span>
                         <span>
                             Webhooks:{" "}
-                            <strong style={{ color: "#e5e7eb" }}>
+                            <strong style={{ color: "var(--fg)" }}>
                                 {stats.webhooks.total_endpoints === 0
                                     ? "none configured"
                                     : `${stats.webhooks.active_endpoints}/${stats.webhooks.total_endpoints} active${
@@ -1083,12 +1083,14 @@ export default function OAuthAppSettingsPage() {
 
             {/* Webhooks panel — multi-endpoint event subscription */}
             <Box sx={{ ...cardSx, mb: 3 }}>
-                <Typography sx={{ color: "#f5f5f4", fontWeight: 600, mb: 0.5 }}>
+                <Typography
+                    sx={{ color: "var(--fg)", fontWeight: 600, mb: 0.5 }}
+                >
                     Webhook endpoints
                 </Typography>
                 <Typography
                     sx={{
-                        color: "rgba(255,255,255,0.55)",
+                        color: "var(--fg-faint)",
                         fontSize: "0.85rem",
                         mb: 2.5,
                     }}
@@ -1102,9 +1104,9 @@ export default function OAuthAppSettingsPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
-                            color: "#9b7bf7",
+                            color: "#ff7759",
                             textDecoration: "underline",
-                            textDecorationColor: "rgba(155,123,247,0.4)",
+                            textDecorationColor: "rgba(255, 119, 89,0.4)",
                         }}
                     >
                         integration guide
@@ -1119,8 +1121,8 @@ export default function OAuthAppSettingsPage() {
                             mb: 2,
                             color:
                                 webhookMessage.type === "error"
-                                    ? "#f87171"
-                                    : "#86efac",
+                                    ? "#b91c1c"
+                                    : "#15803d",
                             fontSize: "0.85rem",
                         }}
                     >
@@ -1134,10 +1136,10 @@ export default function OAuthAppSettingsPage() {
                         sx={{
                             py: 3,
                             textAlign: "center",
-                            color: "rgba(255,255,255,0.4)",
+                            color: "var(--fg-faint)",
                         }}
                     >
-                        <CircularProgress size={20} sx={{ color: "#9b7bf7" }} />
+                        <CircularProgress size={20} sx={{ color: "#ff7759" }} />
                     </Box>
                 ) : endpoints.length === 0 ? (
                     <Box
@@ -1147,9 +1149,9 @@ export default function OAuthAppSettingsPage() {
                             mb: 2.5,
                             textAlign: "center",
                             borderRadius: "10px",
-                            background: "rgba(255,255,255,0.02)",
-                            border: "1px dashed rgba(255,255,255,0.1)",
-                            color: "rgba(255,255,255,0.45)",
+                            background: "var(--surface)",
+                            border: "1px dashed var(--border)",
+                            color: "var(--fg-faint)",
                             fontSize: "0.88rem",
                         }}
                     >
@@ -1199,13 +1201,13 @@ export default function OAuthAppSettingsPage() {
                     sx={{
                         p: 2.5,
                         borderRadius: "12px",
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.07)",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
                     }}
                 >
                     <Typography
                         sx={{
-                            color: "#f5f5f4",
+                            color: "var(--fg)",
                             fontWeight: 600,
                             fontSize: "0.92rem",
                             mb: 1.5,
@@ -1237,7 +1239,7 @@ export default function OAuthAppSettingsPage() {
                             }
                             InputProps={{
                                 sx: {
-                                    color: "#f5f5f4",
+                                    color: "var(--fg)",
                                     fontFamily:
                                         "var(--font-geist-mono), monospace",
                                     fontSize: "0.82rem",
@@ -1258,7 +1260,7 @@ export default function OAuthAppSettingsPage() {
                             }
                             InputProps={{
                                 sx: {
-                                    color: "#f5f5f4",
+                                    color: "var(--fg)",
                                     fontSize: "0.85rem",
                                 },
                             }}
@@ -1296,15 +1298,15 @@ export default function OAuthAppSettingsPage() {
                                             "var(--font-geist-mono), monospace",
                                         fontSize: "0.72rem",
                                         bgcolor: checked
-                                            ? "rgba(155,123,247,0.15)"
-                                            : "rgba(255,255,255,0.04)",
+                                            ? "rgba(255, 119, 89,0.15)"
+                                            : "var(--overlay)",
                                         color: checked
-                                            ? "#c8b6ff"
-                                            : "rgba(255,255,255,0.6)",
+                                            ? "#ff7759"
+                                            : "var(--fg-faint)",
                                         border: `1px solid ${
                                             checked
-                                                ? "rgba(155,123,247,0.4)"
-                                                : "rgba(255,255,255,0.1)"
+                                                ? "rgba(255, 119, 89,0.4)"
+                                                : "var(--border)"
                                         }`,
                                     }}
                                 />
@@ -1320,10 +1322,10 @@ export default function OAuthAppSettingsPage() {
                         sx={{
                             textTransform: "none",
                             background:
-                                "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                "linear-gradient(135deg, #ff7759 0%, #ff7759 100%)",
                             "&:hover": {
                                 background:
-                                    "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                    "linear-gradient(135deg, #ff7759 0%, #ff7759 100%)",
                             },
                         }}
                     >
@@ -1340,12 +1342,12 @@ export default function OAuthAppSettingsPage() {
                     onClick={handleSave}
                     disabled={saving}
                     sx={{
-                        background: "rgba(155, 123, 247,0.15)",
-                        color: "#9b7bf7",
-                        border: "1px solid rgba(155, 123, 247,0.3)",
+                        background: "rgba(255, 119, 89,0.15)",
+                        color: "#ff7759",
+                        border: "1px solid rgba(255, 119, 89,0.3)",
                         fontWeight: 600,
                         textTransform: "none",
-                        "&:hover": { background: "rgba(155, 123, 247,0.25)" },
+                        "&:hover": { background: "rgba(255, 119, 89,0.25)" },
                     }}
                 >
                     {saving ? "Saving..." : "Save Changes"}
@@ -1354,7 +1356,7 @@ export default function OAuthAppSettingsPage() {
 
             {/* Danger Zone */}
             <Box sx={{ ...cardSx, border: "1px solid rgba(239,68,68,0.3)" }}>
-                <Typography sx={{ color: "#ef4444", fontWeight: 600, mb: 1 }}>
+                <Typography sx={{ color: "#b91c1c", fontWeight: 600, mb: 1 }}>
                     Danger Zone
                 </Typography>
                 <Divider sx={{ borderColor: "rgba(239,68,68,0.15)", mb: 2 }} />
@@ -1366,12 +1368,14 @@ export default function OAuthAppSettingsPage() {
                     }}
                 >
                     <Box>
-                        <Typography sx={{ color: "#f5f5f4", fontWeight: 500 }}>
+                        <Typography
+                            sx={{ color: "var(--fg)", fontWeight: 500 }}
+                        >
                             Delete application
                         </Typography>
                         <Typography
                             variant="caption"
-                            sx={{ color: "rgba(255,255,255,0.4)" }}
+                            sx={{ color: "var(--fg-faint)" }}
                         >
                             Permanently delete this app and revoke all issued
                             tokens
@@ -1383,7 +1387,7 @@ export default function OAuthAppSettingsPage() {
                         onClick={handleDelete}
                         sx={{
                             borderColor: "rgba(239,68,68,0.4)",
-                            color: "#ef4444",
+                            color: "#b91c1c",
                             textTransform: "none",
                             "&:hover": {
                                 bgcolor: "rgba(239,68,68,0.1)",
@@ -1405,13 +1409,13 @@ function StatTile({ label, value }: { label: string; value: string }) {
             sx={{
                 p: 2,
                 borderRadius: "12px",
-                bgcolor: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                bgcolor: "var(--surface)",
+                border: "1px solid var(--border)",
             }}
         >
             <Typography
                 sx={{
-                    color: "rgba(255,255,255,0.45)",
+                    color: "var(--fg-faint)",
                     fontSize: "0.7rem",
                     fontWeight: 700,
                     letterSpacing: "0.06em",
@@ -1423,7 +1427,7 @@ function StatTile({ label, value }: { label: string; value: string }) {
             </Typography>
             <Typography
                 sx={{
-                    color: "#f5f5f4",
+                    color: "var(--fg)",
                     fontWeight: 700,
                     fontSize: "1.5rem",
                     fontVariantNumeric: "tabular-nums",
@@ -1475,8 +1479,8 @@ function EndpointRow({
             sx={{
                 p: 2,
                 borderRadius: "12px",
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
                 opacity: ep.is_active ? 1 : 0.55,
             }}
         >
@@ -1505,9 +1509,9 @@ function EndpointRow({
                                 sx={{
                                     height: 20,
                                     fontSize: "0.7rem",
-                                    bgcolor: "rgba(155,123,247,0.12)",
-                                    color: "#c8b6ff",
-                                    border: "1px solid rgba(155,123,247,0.3)",
+                                    bgcolor: "rgba(255, 119, 89,0.12)",
+                                    color: "#ff7759",
+                                    border: "1px solid rgba(255, 119, 89,0.3)",
                                 }}
                             />
                         )}
@@ -1519,14 +1523,14 @@ function EndpointRow({
                                 fontSize: "0.7rem",
                                 bgcolor: ep.is_active
                                     ? "rgba(134,239,172,0.08)"
-                                    : "rgba(255,255,255,0.05)",
+                                    : "var(--overlay)",
                                 color: ep.is_active
-                                    ? "#86efac"
-                                    : "rgba(255,255,255,0.5)",
+                                    ? "#15803d"
+                                    : "var(--fg-faint)",
                                 border: `1px solid ${
                                     ep.is_active
                                         ? "rgba(134,239,172,0.2)"
-                                        : "rgba(255,255,255,0.1)"
+                                        : "var(--border)"
                                 }`,
                             }}
                         />
@@ -1542,7 +1546,7 @@ function EndpointRow({
                                     bgcolor: statusOk
                                         ? "rgba(134,239,172,0.08)"
                                         : "rgba(239,68,68,0.1)",
-                                    color: statusOk ? "#86efac" : "#f87171",
+                                    color: statusOk ? "#15803d" : "#b91c1c",
                                     border: `1px solid ${
                                         statusOk
                                             ? "rgba(134,239,172,0.2)"
@@ -1556,7 +1560,7 @@ function EndpointRow({
                         component="code"
                         sx={{
                             display: "block",
-                            color: "#e8e8ed",
+                            color: "var(--fg)",
                             fontFamily: "var(--font-geist-mono), monospace",
                             fontSize: "0.82rem",
                             wordBreak: "break-all",
@@ -1580,8 +1584,8 @@ function EndpointRow({
                                     fontFamily:
                                         "var(--font-geist-mono), monospace",
                                     fontSize: "0.7rem",
-                                    color: "rgba(255,255,255,0.5)",
-                                    bgcolor: "rgba(255,255,255,0.04)",
+                                    color: "var(--fg-faint)",
+                                    bgcolor: "var(--overlay)",
                                     px: 0.75,
                                     py: 0.25,
                                     borderRadius: "4px",
@@ -1601,7 +1605,7 @@ function EndpointRow({
                                 size="small"
                                 onClick={onToggle}
                                 disabled={busy}
-                                sx={{ color: "rgba(255,255,255,0.5)" }}
+                                sx={{ color: "var(--fg-faint)" }}
                             >
                                 <RefreshIcon fontSize="small" />
                             </IconButton>
@@ -1613,7 +1617,7 @@ function EndpointRow({
                                 size="small"
                                 onClick={onRotate}
                                 disabled={busy}
-                                sx={{ color: "rgba(255,255,255,0.5)" }}
+                                sx={{ color: "var(--fg-faint)" }}
                             >
                                 <RefreshIcon
                                     fontSize="small"
@@ -1628,7 +1632,7 @@ function EndpointRow({
                                 size="small"
                                 onClick={onDelete}
                                 disabled={busy}
-                                sx={{ color: "#ef4444" }}
+                                sx={{ color: "#b91c1c" }}
                             >
                                 <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -1643,9 +1647,9 @@ function EndpointRow({
                     flexWrap: "wrap",
                     pt: 1,
                     mt: 1,
-                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                    borderTop: "1px solid var(--border)",
                     fontSize: "0.74rem",
-                    color: "rgba(255,255,255,0.45)",
+                    color: "var(--fg-faint)",
                 }}
             >
                 <span>
@@ -1659,7 +1663,7 @@ function EndpointRow({
                         : "never"}
                 </span>
                 {ep.last_error && (
-                    <span style={{ color: "#fca5a5" }}>
+                    <span style={{ color: "#b91c1c" }}>
                         Last error: {ep.last_error}
                     </span>
                 )}
@@ -1672,13 +1676,13 @@ function EndpointRow({
                         p: 2,
                         borderRadius: "10px",
                         background:
-                            "linear-gradient(135deg, rgba(155,123,247,0.12) 0%, rgba(95,182,255,0.05) 100%)",
-                        border: "1px solid rgba(155,123,247,0.35)",
+                            "linear-gradient(135deg, rgba(255, 119, 89,0.12) 0%, rgba(255, 119, 89,0.05) 100%)",
+                        border: "1px solid rgba(255, 119, 89,0.35)",
                     }}
                 >
                     <Typography
                         sx={{
-                            color: "#fde7a4",
+                            color: "#b45309",
                             fontSize: "0.72rem",
                             fontWeight: 700,
                             textTransform: "uppercase",
@@ -1693,7 +1697,7 @@ function EndpointRow({
                             display: "flex",
                             alignItems: "center",
                             gap: 1,
-                            background: "rgba(0,0,0,0.25)",
+                            background: "var(--overlay)",
                             borderRadius: "8px",
                             p: 1.25,
                         }}
@@ -1701,7 +1705,7 @@ function EndpointRow({
                         <Box
                             component="code"
                             sx={{
-                                color: "#e8e8ed",
+                                color: "var(--fg)",
                                 fontFamily: "var(--font-geist-mono), monospace",
                                 fontSize: "0.82rem",
                                 wordBreak: "break-all",
@@ -1715,7 +1719,7 @@ function EndpointRow({
                             onClick={onCopySecret}
                             sx={{
                                 textTransform: "none",
-                                color: "#c8b6ff",
+                                color: "#ff7759",
                                 minWidth: 0,
                             }}
                         >
@@ -1730,7 +1734,7 @@ function EndpointRow({
                         sx={{
                             mt: 1,
                             textTransform: "none",
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                         }}
                     >
                         I&apos;ve saved it
@@ -1768,7 +1772,7 @@ function SignInBars({
                         height: `${Math.max((p.count / max) * 100, 4)}%`,
                         borderRadius: "3px 3px 0 0",
                         background:
-                            "linear-gradient(180deg, rgba(155,123,247,0.95) 0%, rgba(124,92,255,0.55) 100%)",
+                            "linear-gradient(180deg, rgba(255, 119, 89,0.95) 0%, rgba(255, 119, 89,0.55) 100%)",
                         transition: "filter 0.15s ease",
                         "&:hover": { filter: "brightness(1.25)" },
                     }}

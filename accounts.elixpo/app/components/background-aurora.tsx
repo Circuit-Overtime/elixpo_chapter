@@ -5,10 +5,10 @@ import { Box } from "@mui/material";
 type Variant = "default" | "auth" | "warm" | "docs";
 
 const PALETTES: Record<Variant, [string, string, string]> = {
-    default: ["#9b7bf7", "#5fb6ff", "#7c5cff"],
-    auth: ["#9b7bf7", "#ff7cc9", "#5fb6ff"],
-    warm: ["#ff8a5b", "#ff5b9a", "#9b7bf7"],
-    docs: ["#6366f1", "#a855f7", "#3b82f6"],
+    default: ["#ff7759", "#ff7759", "#ff7759"],
+    auth: ["#ff7759", "#ff7759", "#ff7759"],
+    warm: ["#ff7759", "#ff7759", "#ff7759"],
+    docs: ["#ff7759", "#ff7759", "#ff7759"],
 };
 
 interface Props {
@@ -28,7 +28,7 @@ const BackgroundAurora = ({ variant = "default" }: Props) => {
                 pointerEvents: "none",
                 overflow: "hidden",
                 background:
-                    "linear-gradient(180deg, #0b0d12 0%, #11151c 50%, #0b0d12 100%)",
+                    "linear-gradient(180deg, var(--bg) 0%, var(--bg) 50%, var(--bg) 100%)",
                 "&::before, &::after": {
                     content: '""',
                     position: "absolute",
@@ -36,7 +36,7 @@ const BackgroundAurora = ({ variant = "default" }: Props) => {
                     height: "55vmax",
                     borderRadius: "50%",
                     filter: "blur(110px)",
-                    opacity: 0.32,
+                    opacity: 0.1,
                     willChange: "transform",
                 },
                 "&::before": {
@@ -63,7 +63,7 @@ const BackgroundAurora = ({ variant = "default" }: Props) => {
                     height: "40vmax",
                     borderRadius: "50%",
                     filter: "blur(120px)",
-                    opacity: 0.18,
+                    opacity: 0.07,
                     background: `radial-gradient(circle, ${c} 0%, transparent 65%)`,
                     animation: "auroraDriftC 40s ease-in-out infinite",
                     willChange: "transform",

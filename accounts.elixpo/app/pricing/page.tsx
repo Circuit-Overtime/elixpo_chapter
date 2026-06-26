@@ -1,23 +1,10 @@
 "use client";
 
-import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import gsap from "gsap";
+import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
-import BackgroundAurora from "../components/background-aurora";
+import Footer from "../components/footer";
 import Navbar from "../components/navbar";
-
-/**
- * /pricing — public pricing page.
- *
- * Three tiers (Hobby free, Indie ₹1, Studio ₹2 — test amounts until we
- * validate autopay end-to-end, then we bump to real prices ₹1,599 / ₹8,299).
- *
- * The Indie/Studio buttons POST to /api/billing/checkout which forwards to
- * payouts.elixpo and returns a hosted-checkout URL we redirect to. Hobby
- * is the default state — no action needed.
- *
- * If the user is signed out, the upgrade buttons send them to /login?next=/pricing
- * so they sign in, then come back and can upgrade in one click.
- */
 
 interface Tier {
     id: "hobby" | "indie" | "studio";
@@ -37,8 +24,9 @@ const TIERS: Tier[] = [
         name: "Hobby",
         priceLabel: "₹0",
         priceCaption: "Forever free",
-        accent: "rgba(245,245,244,0.85)",
-        description: "Get started with personal OAuth apps and a Studio's worth of fun.",
+        accent: "#192837",
+        description:
+            "Get started with personal OAuth apps and a Studio's worth of fun.",
         features: [
             "Up to 1,000 MAU per app",
             "3 OAuth apps",
@@ -53,8 +41,9 @@ const TIERS: Tier[] = [
         name: "Indie",
         priceLabel: "₹1,599",
         priceCaption: "per month · billed in INR",
-        accent: "#9b7bf7",
-        description: "Ship real products to real users. Lift the small-app caps.",
+        accent: "#ff7759",
+        description:
+            "Ship real products to real users. Lift the small-app caps.",
         features: [
             "Up to 10,000 MAU per app",
             "10 OAuth apps",
@@ -70,8 +59,9 @@ const TIERS: Tier[] = [
         name: "Studio",
         priceLabel: "₹8,299",
         priceCaption: "per month · billed in INR",
-        accent: "#5fb6ff",
-        description: "For studios shipping at scale. Audit logs and unlimited apps.",
+        accent: "#3B82F6",
+        description:
+            "For studios shipping at scale. Audit logs and unlimited apps.",
         features: [
             "Up to 100,000 MAU per app",
             "Unlimited OAuth apps",
@@ -103,10 +93,36 @@ export default function PricingPage() {
             .finally(() => setLoading(false));
     }, []);
 
+    useEffect(() => {
+        // GSAP entrance animations
+        gsap.fromTo(
+            ".gsap-pricing-hero",
+            { opacity: 0, y: 30 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                stagger: 0.12,
+                ease: "power3.out",
+            },
+        );
+
+        gsap.fromTo(
+            ".gsap-pricing-card",
+            { opacity: 0, y: 35 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                stagger: 0.1,
+                ease: "power3.out",
+                delay: 0.3,
+            },
+        );
+    }, []);
+
     const startCheckout = async (tierId: "indie" | "studio") => {
         setError(null);
-        // If signed out, route through login. /login?next=... brings them
-        // back here after auth.
         if (!me?.id) {
             window.location.href = `/login?next=${encodeURIComponent("/pricing")}`;
             return;
@@ -119,11 +135,6 @@ export default function PricingPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     tier: tierId,
-                    // Where to send the user back from the payouts hosted
-                    // checkout — both on cancel (immediately) and on
-                    // success (after the mandate is set up). This page is
-                    // the natural landing spot: it reads /api/auth/me
-                    // and will show the new tier as "Current plan".
                     return_to: `${window.location.origin}/pricing`,
                 }),
             });
@@ -150,314 +161,172 @@ export default function PricingPage() {
     };
 
     return (
-        <>
-            <BackgroundAurora variant="default" />
-            <Box sx={{ position: "relative", zIndex: 1 }}>
-                <Navbar />
-            </Box>
-            <Box
-                sx={{
-                    position: "relative",
-                    zIndex: 1,
-                    minHeight: "calc(100dvh - 68px)",
-                    px: { xs: 2.5, sm: 4 },
-                    py: { xs: 4, sm: 7 },
-                    color: "#f5f5f4",
-                }}
-            >
-                <Box sx={{ maxWidth: 1100, mx: "auto" }}>
-                    <Stack spacing={1.5} alignItems="center" sx={{ mb: 6 }}>
-                        <Typography
-                            sx={{
-                                fontSize: { xs: "2rem", sm: "2.6rem" },
-                                fontWeight: 800,
-                                letterSpacing: "-0.02em",
-                                textAlign: "center",
-                            }}
-                        >
-                            Pricing built for indie devs and studios alike
-                        </Typography>
-                        <Typography
-                            sx={{
-                                color: "rgba(245,245,244,0.65)",
-                                fontSize: "1.05rem",
-                                textAlign: "center",
-                                maxWidth: 640,
-                            }}
-                        >
-                            Start free. Scale only when your apps actually have
-                            users. No per-seat tax — pricing tracks monthly active
-                            users so we win when you do.
-                        </Typography>
-                        {loading ? null : me?.is_internal ? (
-                            <Box
-                                sx={{
-                                    mt: 2,
-                                    px: 1.4,
-                                    py: 0.5,
-                                    borderRadius: "999px",
-                                    background: "rgba(155,123,247,0.12)",
-                                    border: "1px solid rgba(155,123,247,0.4)",
-                                    fontSize: "0.8rem",
-                                    color: "#c4b5fd",
-                                }}
+        <div className="relative w-full min-h-screen font-body text-[var(--fg)] bg-[var(--bg)] selection:bg-[#ff7759] selection:text-white overflow-x-hidden">
+            <style>{`
+                .font-heading { font-family: var(--font-heading), sans-serif; }
+                .font-body { font-family: var(--font-body), sans-serif; }
+            `}</style>
+
+            <Navbar />
+
+            <main className="w-full max-w-[1280px] mx-auto px-5 sm:px-8 py-8 sm:py-16 relative z-10">
+                {/* Header */}
+                <div className="flex flex-col items-center text-center gap-4 mb-16 max-w-[700px] mx-auto">
+                    <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] gsap-pricing-hero">
+                        Pricing built for indie devs{" "}
+                        <span className="text-[#ff7759]">and studios.</span>
+                    </h1>
+                    <p className="font-body text-base sm:text-lg text-[var(--fg)] opacity-80 leading-relaxed gsap-pricing-hero">
+                        Start free. Scale only when your apps actually have
+                        users. No per-seat tax — pricing tracks monthly active
+                        users so we win when you do.
+                    </p>
+
+                    {loading ? null : me?.is_internal ? (
+                        <div className="mt-4 px-4 py-1.5 rounded-full bg-[#ff7759]/10 border border-[#ff7759]/30 text-xs font-semibold text-[#ff7759] gsap-pricing-hero">
+                            You're on an internal account — billing is bypassed.
+                        </div>
+                    ) : null}
+                </div>
+
+                {/* Error Banner */}
+                {error && (
+                    <div className="mb-8 p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-semibold max-w-[800px] mx-auto text-center">
+                        {error}
+                    </div>
+                )}
+
+                {/* Tiers Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-[1100px] mx-auto mb-16">
+                    {TIERS.map((tier) => {
+                        const isCurrent =
+                            (me?.tier ?? "hobby") === tier.id ||
+                            (me?.is_internal && tier.id === "studio");
+                        const isBusy = busyTier === tier.id;
+                        return (
+                            <div
+                                key={tier.id}
+                                className={`bg-[var(--surface)] border rounded-2xl p-6 sm:p-8 flex flex-col justify-between min-h-[480px] relative transition-all gsap-pricing-card ${
+                                    tier.highlight
+                                        ? "border-2 border-[#ff7759] shadow-[0_14px_60px_-20px_rgba(255, 119, 89,0.22)]"
+                                        : "border-[var(--border)] shadow-[0_4px_24px_rgba(25,40,55,0.015)] hover:shadow-[0_12px_32px_rgba(255, 119, 89,0.04)]"
+                                }`}
                             >
-                                You're on an internal account — billing is bypassed.
-                            </Box>
-                        ) : null}
-                    </Stack>
+                                {tier.highlight && (
+                                    <span className="absolute top-4 right-4 bg-[#ff7759]/10 border border-[#ff7759]/35 text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-[#ff7759]">
+                                        Most Popular
+                                    </span>
+                                )}
 
-                    {error && (
-                        <Box
-                            sx={{
-                                mb: 3,
-                                p: 1.5,
-                                borderRadius: "10px",
-                                border: "1px solid rgba(248,113,113,0.4)",
-                                background: "rgba(248,113,113,0.08)",
-                                color: "#fca5a5",
-                                fontSize: "0.92rem",
-                                textAlign: "center",
-                            }}
-                        >
-                            {error}
-                        </Box>
-                    )}
+                                <div>
+                                    <h3
+                                        className="font-heading text-lg font-bold mb-4"
+                                        style={{ color: tier.accent }}
+                                    >
+                                        {tier.name}
+                                    </h3>
 
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gap: 3,
-                            gridTemplateColumns: {
-                                xs: "1fr",
-                                md: "repeat(3, 1fr)",
-                            },
-                        }}
-                    >
-                        {TIERS.map((tier) => {
-                            const isCurrent =
-                                (me?.tier ?? "hobby") === tier.id ||
-                                (me?.is_internal && tier.id === "studio");
-                            return (
-                                <TierCard
-                                    key={tier.id}
-                                    tier={tier}
-                                    isCurrent={!!isCurrent}
-                                    busy={busyTier === tier.id}
-                                    // While /api/auth/me is still in flight,
-                                    // disable the upgrade buttons. Otherwise a
-                                    // fast-clicker could fire `/api/billing/
-                                    // checkout` before we know the user's
-                                    // current tier — and our same-tier guard
-                                    // wouldn't run, letting them mint a
-                                    // duplicate sub via /v1/checkout/sessions.
-                                    // The defensive auto-cancel on payouts
-                                    // would catch it, but better not to.
-                                    disabled={loading}
-                                    onSelect={() => {
+                                    <div className="flex items-baseline gap-1 mb-2">
+                                        <span className="font-heading text-4xl font-extrabold tracking-tight">
+                                            {tier.priceLabel}
+                                        </span>
+                                    </div>
+                                    <p className="font-body text-xs text-[var(--fg-faint)] mb-6 font-medium">
+                                        {tier.priceCaption}
+                                    </p>
+
+                                    <p className="font-body text-sm text-[var(--fg-muted)] leading-relaxed mb-8 min-h-[44px]">
+                                        {tier.description}
+                                    </p>
+
+                                    <ul className="flex flex-col gap-3.5 mb-8">
+                                        {tier.features.map((feature) => (
+                                            <li
+                                                key={feature}
+                                                className="flex gap-2.5 items-start text-sm"
+                                            >
+                                                <div
+                                                    className="p-0.5 rounded-full flex-shrink-0 mt-0.5"
+                                                    style={{
+                                                        backgroundColor: `${tier.accent}15`,
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className="w-3.5 h-3.5"
+                                                        style={{
+                                                            color: tier.accent,
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="font-body text-[var(--fg)] leading-normal font-medium">
+                                                    {feature}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <button
+                                    disabled={
+                                        loading ||
+                                        isBusy ||
+                                        isCurrent ||
+                                        tier.id === "hobby"
+                                    }
+                                    onClick={() => {
                                         if (tier.id === "hobby") return;
                                         startCheckout(tier.id);
                                     }}
-                                />
-                            );
-                        })}
-                    </Box>
+                                    className={`w-full py-3.5 rounded-xl font-body font-bold text-sm tracking-wide transition-all select-none flex items-center justify-center ${
+                                        tier.id === "hobby"
+                                            ? "bg-[var(--overlay)] text-[var(--fg-faint)] border border-[var(--border)]"
+                                            : isCurrent
+                                              ? "bg-[#ff7759]/10 text-[#ff7759] border border-[#ff7759]/25 cursor-default"
+                                              : tier.highlight
+                                                ? "bg-[#ff7759] hover:brightness-110 text-white shadow-md active:scale-[0.98]"
+                                                : "bg-[var(--overlay)] hover:bg-[#192837]/10 border border-[var(--border)] text-[var(--fg)] active:scale-[0.98]"
+                                    }`}
+                                >
+                                    {isBusy ? (
+                                        <svg
+                                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            />
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            />
+                                        </svg>
+                                    ) : null}
+                                    <span>
+                                        {isCurrent ? "Current Plan" : tier.cta}
+                                    </span>
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
 
-                    <Typography
-                        sx={{
-                            mt: 5,
-                            textAlign: "center",
-                            color: "rgba(245,245,244,0.5)",
-                            fontSize: "0.85rem",
-                        }}
-                    >
-                        Charged in INR via Razorpay. Cancel any time — you keep
-                        access through the period you've paid for. No hidden
-                        fees, no per-seat tax.
-                    </Typography>
-                </Box>
-            </Box>
-        </>
-    );
-}
+                {/* Sub-note */}
+                <p className="text-center text-xs opacity-60 font-body leading-relaxed max-w-md mx-auto">
+                    Charged in INR via Razorpay. Cancel any time — you keep
+                    access through the period you've paid for. No hidden fees,
+                    no per-seat tax.
+                </p>
+            </main>
 
-function TierCard({
-    tier,
-    isCurrent,
-    busy,
-    disabled,
-    onSelect,
-}: {
-    tier: Tier;
-    isCurrent: boolean;
-    busy: boolean;
-    /** True while /api/auth/me is still in flight — blocks clicks
-     *  until we know which tier the user is already on. */
-    disabled: boolean;
-    onSelect: () => void;
-}) {
-    return (
-        <Box
-            sx={{
-                position: "relative",
-                p: { xs: 3, sm: 3.5 },
-                borderRadius: "20px",
-                background: "rgba(20,18,28,0.78)",
-                border: tier.highlight
-                    ? "1px solid rgba(155,123,247,0.55)"
-                    : "1px solid rgba(255,255,255,0.08)",
-                boxShadow: tier.highlight
-                    ? "0 14px 60px -20px rgba(155,123,247,0.45)"
-                    : "0 4px 28px -10px rgba(0,0,0,0.4)",
-                backdropFilter: "blur(14px)",
-                display: "flex",
-                flexDirection: "column",
-                minHeight: 460,
-            }}
-        >
-            {tier.highlight && (
-                <Box
-                    sx={{
-                        position: "absolute",
-                        top: 14,
-                        right: 14,
-                        px: 1,
-                        py: 0.2,
-                        borderRadius: "999px",
-                        background: "rgba(155,123,247,0.18)",
-                        border: "1px solid rgba(155,123,247,0.4)",
-                        fontSize: "0.66rem",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                        color: "#c4b5fd",
-                    }}
-                >
-                    Most popular
-                </Box>
-            )}
-            <Typography
-                sx={{
-                    fontWeight: 700,
-                    fontSize: "1.1rem",
-                    color: tier.accent,
-                    mb: 1,
-                }}
-            >
-                {tier.name}
-            </Typography>
-            <Stack direction="row" alignItems="baseline" spacing={0.5}>
-                <Typography
-                    sx={{
-                        fontWeight: 800,
-                        fontSize: "2.4rem",
-                        letterSpacing: "-0.02em",
-                    }}
-                >
-                    {tier.priceLabel}
-                </Typography>
-            </Stack>
-            <Typography
-                sx={{
-                    fontSize: "0.82rem",
-                    color: "rgba(245,245,244,0.55)",
-                    mb: 1.4,
-                }}
-            >
-                {tier.priceCaption}
-            </Typography>
-            <Typography
-                sx={{
-                    fontSize: "0.92rem",
-                    color: "rgba(245,245,244,0.75)",
-                    mb: 2.5,
-                    minHeight: 44,
-                }}
-            >
-                {tier.description}
-            </Typography>
-            <Stack spacing={1} sx={{ mb: 3, flex: 1 }}>
-                {tier.features.map((f) => (
-                    <Stack
-                        key={f}
-                        direction="row"
-                        spacing={1}
-                        alignItems="flex-start"
-                    >
-                        <Box
-                            sx={{
-                                width: 16,
-                                height: 16,
-                                borderRadius: "50%",
-                                background: tier.accent,
-                                opacity: 0.18,
-                                flexShrink: 0,
-                                mt: 0.4,
-                                position: "relative",
-                                "&::after": {
-                                    content: '""',
-                                    position: "absolute",
-                                    inset: 4,
-                                    borderRadius: "50%",
-                                    background: tier.accent,
-                                },
-                            }}
-                        />
-                        <Typography
-                            sx={{
-                                fontSize: "0.9rem",
-                                color: "rgba(245,245,244,0.85)",
-                            }}
-                        >
-                            {f}
-                        </Typography>
-                    </Stack>
-                ))}
-            </Stack>
-            <Button
-                fullWidth
-                disabled={
-                    disabled || busy || isCurrent || tier.id === "hobby"
-                }
-                onClick={onSelect}
-                sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    fontSize: "0.95rem",
-                    py: 1.1,
-                    borderRadius: "12px",
-                    background:
-                        tier.id === "hobby"
-                            ? "rgba(255,255,255,0.04)"
-                            : tier.highlight
-                              ? "linear-gradient(135deg, #9b7bf7, #7c5cff)"
-                              : `${tier.accent}22`,
-                    color: tier.id === "hobby" ? "rgba(245,245,244,0.7)" : "#fff",
-                    border:
-                        tier.id === "hobby"
-                            ? "1px solid rgba(255,255,255,0.12)"
-                            : `1px solid ${tier.accent}55`,
-                    "&:hover": {
-                        background:
-                            tier.id === "hobby"
-                                ? "rgba(255,255,255,0.06)"
-                                : tier.highlight
-                                  ? "linear-gradient(135deg, #a78bfa, #8b6cff)"
-                                  : `${tier.accent}33`,
-                    },
-                    "&.Mui-disabled": {
-                        color: "rgba(245,245,244,0.4)",
-                    },
-                }}
-            >
-                {busy || disabled ? (
-                    <CircularProgress size={20} sx={{ color: "#fff" }} />
-                ) : isCurrent ? (
-                    "Current plan"
-                ) : (
-                    tier.cta
-                )}
-            </Button>
-        </Box>
+            <Footer />
+        </div>
     );
 }

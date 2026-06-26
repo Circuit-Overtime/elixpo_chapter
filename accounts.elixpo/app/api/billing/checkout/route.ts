@@ -48,12 +48,15 @@ export async function POST(request: NextRequest) {
     const tier = String(body?.tier || "").toLowerCase();
     if (!KNOWN_TIERS.includes(tier as PayableTier)) {
         return NextResponse.json(
-            { error: `Unknown tier '${tier}'. Must be one of: ${KNOWN_TIERS.join(", ")}` },
+            {
+                error: `Unknown tier '${tier}'. Must be one of: ${KNOWN_TIERS.join(", ")}`,
+            },
             { status: 400 },
         );
     }
 
-    const apiBase = process.env.PAYOUTS_API_BASE || "https://payouts.elixpo.com";
+    const apiBase =
+        process.env.PAYOUTS_API_BASE || "https://payouts.elixpo.com";
     // Single source of truth — the payouts.elixpo app client secret
     // (lix_pay_…). Same env var name everywhere: .env.local, CF Pages
     // Production env, and GH repo secrets.
@@ -70,9 +73,7 @@ export async function POST(request: NextRequest) {
 
     const db = await getDatabase();
     const user = (await db
-        .prepare(
-            "SELECT id, email, tier, is_internal FROM users WHERE id = ?",
-        )
+        .prepare("SELECT id, email, tier, is_internal FROM users WHERE id = ?")
         .bind(auth.sub)
         .first()) as {
         id: string;
@@ -116,7 +117,8 @@ export async function POST(request: NextRequest) {
     // Validate it's same-origin to prevent open-redirect smuggling.
     const requestOrigin = new URL(request.url).origin;
     let successUrl = `${requestOrigin}/pricing`;
-    const rawReturnTo = typeof body?.return_to === "string" ? body.return_to : "";
+    const rawReturnTo =
+        typeof body?.return_to === "string" ? body.return_to : "";
     if (rawReturnTo) {
         try {
             const u = new URL(rawReturnTo, requestOrigin);

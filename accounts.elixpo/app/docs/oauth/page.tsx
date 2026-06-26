@@ -55,7 +55,7 @@ export default function OAuthPage() {
                 sx={{
                     fontSize: "2rem",
                     fontWeight: 800,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mb: 2,
                     letterSpacing: "-0.02em",
                 }}
@@ -64,7 +64,7 @@ export default function OAuthPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 4,
                     fontSize: "1rem",
                     lineHeight: 1.7,
@@ -81,7 +81,7 @@ export default function OAuthPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -91,7 +91,7 @@ export default function OAuthPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -107,7 +107,7 @@ export default function OAuthPage() {
                 sx={{
                     fontSize: "1.1rem",
                     fontWeight: 600,
-                    color: "#9b7bf7",
+                    color: "#ff7759",
                     mt: 3,
                     mb: 2,
                 }}
@@ -116,41 +116,38 @@ export default function OAuthPage() {
             </Typography>
             <TableContainer
                 sx={{
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    border: "1px solid var(--border)",
                     borderRadius: "8px",
                     mb: 4,
-                    background: "rgba(255, 255, 255, 0.01)",
+                    background: "var(--surface)",
                 }}
             >
                 <Table size="small">
-                    <TableHead sx={{ bgcolor: "rgba(255, 255, 255, 0.02)" }}>
+                    <TableHead sx={{ bgcolor: "var(--overlay)" }}>
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#9ca3af",
+                                    color: "var(--fg-faint)",
                                     fontWeight: 600,
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Parameter
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#9ca3af",
+                                    color: "var(--fg-faint)",
                                     fontWeight: 600,
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Required
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#9ca3af",
+                                    color: "var(--fg-faint)",
                                     fontWeight: 600,
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Description
@@ -161,27 +158,24 @@ export default function OAuthPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>response_type</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#ef4444",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "#b91c1c",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Yes
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Must be set to <code>code</code>.
@@ -190,27 +184,24 @@ export default function OAuthPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>client_id</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#ef4444",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "#b91c1c",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Yes
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Your application's Client ID.
@@ -219,27 +210,24 @@ export default function OAuthPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>redirect_uri</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#ef4444",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "#b91c1c",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Yes
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Must exactly match one of your registered
@@ -249,27 +237,24 @@ export default function OAuthPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>state</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#ef4444",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "#b91c1c",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Yes
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 A high-entropy random string to mitigate CSRF
@@ -279,27 +264,24 @@ export default function OAuthPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>scope</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.4)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-faint)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 No
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Space-separated scopes. Defaults to{" "}
@@ -315,7 +297,7 @@ export default function OAuthPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -325,7 +307,7 @@ export default function OAuthPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -335,10 +317,10 @@ export default function OAuthPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 1,
                     pl: 2,
-                    borderLeft: "2px solid #9b7bf7",
+                    borderLeft: "2px solid #ff7759",
                 }}
             >
                 <strong>Approved:</strong>{" "}
@@ -348,10 +330,10 @@ export default function OAuthPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 3,
                     pl: 2,
-                    borderLeft: "2px solid #ef4444",
+                    borderLeft: "2px solid #b91c1c",
                 }}
             >
                 <strong>Denied:</strong>{" "}
@@ -361,7 +343,7 @@ export default function OAuthPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 4,
                     lineHeight: 1.6,
                 }}
@@ -375,7 +357,7 @@ export default function OAuthPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -385,7 +367,7 @@ export default function OAuthPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -397,7 +379,7 @@ export default function OAuthPage() {
             <CodeBlock code={TOKEN_EXCHANGE_REQ} language="json" />
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -411,7 +393,7 @@ export default function OAuthPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -421,7 +403,7 @@ export default function OAuthPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}

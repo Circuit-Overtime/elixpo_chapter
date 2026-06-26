@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { THEME_BOOT_SCRIPT, ThemeProvider } from "./components/theme-provider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -95,11 +96,23 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en" data-theme="light" suppressHydrationWarning>
+            <head>
+                {/* Set the saved theme before first paint (no flash). */}
+                {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
+                <script
+                    dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
+                />
+                <link
+                    rel="stylesheet"
+                    href="https://db.onlinewebfonts.com/c/04e6981992c0e2e7642af2074ebe3901?family=Helvetica+Now+Display+Bold"
+                    type="text/css"
+                />
+            </head>
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
-                {children}
+                <ThemeProvider>{children}</ThemeProvider>
             </body>
         </html>
     );

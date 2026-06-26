@@ -31,7 +31,7 @@ export default function UsersApiPage() {
                 sx={{
                     fontSize: "2rem",
                     fontWeight: 800,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mb: 2,
                     letterSpacing: "-0.02em",
                 }}
@@ -40,7 +40,7 @@ export default function UsersApiPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 4,
                     fontSize: "1rem",
                     lineHeight: 1.7,
@@ -56,7 +56,7 @@ export default function UsersApiPage() {
                 sx={{
                     fontSize: "1.4rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--fg)",
                     mt: 4,
                     mb: 2,
                     letterSpacing: "-0.01em",
@@ -66,7 +66,7 @@ export default function UsersApiPage() {
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -78,7 +78,7 @@ export default function UsersApiPage() {
 
             <Typography
                 sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--fg-muted)",
                     mb: 2,
                     lineHeight: 1.6,
                 }}
@@ -92,7 +92,7 @@ export default function UsersApiPage() {
                 sx={{
                     fontSize: "1.1rem",
                     fontWeight: 600,
-                    color: "#9b7bf7",
+                    color: "#ff7759",
                     mt: 3,
                     mb: 2,
                 }}
@@ -101,41 +101,38 @@ export default function UsersApiPage() {
             </Typography>
             <TableContainer
                 sx={{
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    border: "1px solid var(--border)",
                     borderRadius: "8px",
                     mb: 4,
-                    background: "rgba(255, 255, 255, 0.01)",
+                    background: "var(--surface)",
                 }}
             >
                 <Table size="small">
-                    <TableHead sx={{ bgcolor: "rgba(255, 255, 255, 0.02)" }}>
+                    <TableHead sx={{ bgcolor: "var(--overlay)" }}>
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#9ca3af",
+                                    color: "var(--fg-faint)",
                                     fontWeight: 600,
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Field
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#9ca3af",
+                                    color: "var(--fg-faint)",
                                     fontWeight: 600,
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Type
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#9ca3af",
+                                    color: "var(--fg-faint)",
                                     fontWeight: 600,
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Description
@@ -146,27 +143,24 @@ export default function UsersApiPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>id</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#9b7bf7",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "#ff7759",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 String
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 The stable, unique UUID representing the user
@@ -176,27 +170,24 @@ export default function UsersApiPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>email</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#9b7bf7",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "#ff7759",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 String
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 The user's registered email address.
@@ -205,27 +196,24 @@ export default function UsersApiPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>displayName</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#9b7bf7",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "#ff7759",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 String
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 The user's username/nickname (e.g.{" "}
@@ -235,27 +223,24 @@ export default function UsersApiPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>provider</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#9b7bf7",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "#ff7759",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 String
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Authentication provider (e.g. <code>email</code>
@@ -265,27 +250,24 @@ export default function UsersApiPage() {
                         <TableRow>
                             <TableCell
                                 sx={{
-                                    color: "#fff",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 <code>emailVerified</code>
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "#9b7bf7",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "#ff7759",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Boolean
                             </TableCell>
                             <TableCell
                                 sx={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.08)",
+                                    color: "var(--fg-muted)",
+                                    borderBottom: "1px solid var(--border)",
                                 }}
                             >
                                 Whether the user's email has been verified via

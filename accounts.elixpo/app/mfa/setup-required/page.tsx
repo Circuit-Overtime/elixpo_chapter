@@ -27,20 +27,20 @@ export default function SetupRequiredPage() {
                     maxWidth: 520,
                     p: 4,
                     borderRadius: "20px",
-                    background: "rgba(22,28,24,0.85)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                     backdropFilter: "blur(20px)",
                     textAlign: "center",
                 }}
             >
-                <LockIcon sx={{ color: "#fbbf24", fontSize: 48, mb: 2 }} />
+                <LockIcon sx={{ color: "#b45309", fontSize: 48, mb: 2 }} />
                 <Typography
                     variant="h5"
-                    sx={{ color: "#f5f5f4", fontWeight: 700, mb: 1 }}
+                    sx={{ color: "var(--fg)", fontWeight: 700, mb: 1 }}
                 >
                     Two-factor authentication required
                 </Typography>
-                <Typography sx={{ color: "rgba(255,255,255,0.6)", mb: 3 }}>
+                <Typography sx={{ color: "var(--fg-faint)", mb: 3 }}>
                     You're managing 3 or more OAuth apps on Elixpo. To protect
                     those apps and the users who sign in with them, we now
                     require 2FA on your account.
@@ -52,7 +52,7 @@ export default function SetupRequiredPage() {
                         textAlign: "left",
                         mb: 3,
                         bgcolor: "rgba(251,146,60,0.08)",
-                        color: "#fed7aa",
+                        color: "#b45309",
                         border: "1px solid rgba(251,146,60,0.25)",
                     }}
                 >
@@ -68,11 +68,14 @@ export default function SetupRequiredPage() {
                         href="/dashboard/security"
                         variant="contained"
                         sx={{
-                            background:
-                                "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                            background: "#ff7759",
+                            color: "#fff",
                             textTransform: "none",
                             fontWeight: 600,
                             px: 3,
+                            "&:hover": {
+                                background: "rgba(255, 119, 89, 0.9)",
+                            },
                         }}
                     >
                         Set up 2FA now
@@ -80,7 +83,7 @@ export default function SetupRequiredPage() {
                     <Button
                         href="/api/auth/logout"
                         sx={{
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--fg-faint)",
                             textTransform: "none",
                         }}
                     >
