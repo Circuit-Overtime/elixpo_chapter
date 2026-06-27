@@ -243,7 +243,7 @@
   background: transparent;
   border: none;
   color: var(--color-text-primary);
-  font-family: var(--font-family-primary);
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-base);
   outline: none;
   min-width: 0;
@@ -820,6 +820,7 @@
 .usageLabel {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
+  font-family: var(--font-family-mono);
 }
 
 .usageLink {

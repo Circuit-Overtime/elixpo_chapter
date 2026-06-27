@@ -3,7 +3,7 @@
    Artsy, brushy, gradient-heavy dark theme for an AI art platform.
    ═══════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Caveat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ─── Design Tokens ─────────────────────────────────────────────── */
 :root {
@@ -56,10 +56,9 @@
   --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
 
   /* Typography */
-  --font-family-display: 'Playfair Display', 'Georgia', serif;
   --font-family-heading: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-  --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-family-accent: 'Caveat', 'Segoe Script', cursive;
+  --font-family-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-family-primary: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   --font-size-xs: 0.75rem;
@@ -124,6 +123,13 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+input,
+textarea,
+button,
+select {
+  font-family: inherit;
 }
 
 body {
