@@ -14,11 +14,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: {
-        default: "Elixpo Status — Live service health & uptime",
-        template: "%s · Elixpo Status",
+        default: "Elixpo Status - Live service health & uptime",
+        template: "%s - Elixpo Status",
     },
     description:
-        "Real-time operational status and uptime history for every Elixpo service — elixpo.com, blogs, sketch, accounts, payouts, mail, portfolio and more. Cloudflare-native, no third-party uptime tool.",
+        "Check the real-time operational status of all Elixpo services - including Sketch, Blogs, Accounts, Payouts, Mail, Portfolio and more. View 90 days of uptime history, live incident updates, and service health indicators powered directly by real Cloudflare traffic data. No third-party tool, no manual updates - always accurate.",
     applicationName: "Elixpo Status",
     keywords: [
         "Elixpo",
@@ -30,6 +30,14 @@ export const metadata: Metadata = {
         "incident",
         "system status",
         "Cloudflare",
+        "uptime history",
+        "live incidents",
+        "elixpo sketch status",
+        "elixpo accounts status",
+        "elixpo blogs status",
+        "elixpo payouts status",
+        "is elixpo down",
+        "elixpo service health",
     ],
     authors: [{ name: "Elixpo", url: "https://elixpo.com" }],
     creator: "Elixpo",
@@ -52,24 +60,24 @@ export const metadata: Metadata = {
         type: "website",
         siteName: "Elixpo Status",
         locale: "en_US",
-        title: "Elixpo Status — Live service health & uptime",
+        title: "Elixpo Status - Live service health & uptime",
         description:
-            "Real-time operational status and 90-day uptime history for every Elixpo service.",
+            "Live health dashboard for all Elixpo services. See which services are operational, degraded, or experiencing an outage - with 90 days of uptime history.",
         url: "https://status.elixpo.com",
         images: [
             {
                 url: "/og-image.png",
                 width: 1200,
                 height: 630,
-                alt: "Elixpo Status — live health of every Elixpo service",
+                alt: "Elixpo Status - live health of every Elixpo service",
             },
         ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Elixpo Status — Live service health & uptime",
+        title: "Elixpo Status - Live service health & uptime",
         description:
-            "Real-time operational status and 90-day uptime history for every Elixpo service.",
+            "Live health dashboard for all Elixpo services. See which services are operational, degraded, or experiencing an outage - with 90 days of uptime history.",
         images: ["/og-image.png"],
     },
     icons: {
