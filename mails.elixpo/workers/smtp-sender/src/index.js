@@ -2,7 +2,8 @@
 // The one component that opens raw TCP (Pages edge routes can't). The Pages app
 // calls POST /send server-to-server with a shared secret; this Worker relays the
 // message through the tenant's own SMTP credentials over cloudflare:sockets.
-// Later (step 5) this same Worker also becomes the Cloudflare Queue consumer.
+// It is ALSO the Cloudflare Queue consumer for elixpo-mail-send (retries) and
+// elixpo-mail-send-retry (failed-email last chance) — see the queue() handler.
 
 import { sendMail } from "./smtp.js";
 
@@ -66,7 +67,53 @@ export default {
             return json({ ok: false, error: String(err?.message || err) }, 502);
         }
     },
+
+    // Cloudflare Queue consumer. Two queues are bound (see wrangler.toml):
+    //   elixpo-mail-send        — (re)send attempts; CF retries with backoff.
+    //   elixpo-mail-send-retry  — the failed-email queue: messages the send
+    //                             queue gave up on get one last attempt here,
+    //                             then the delivery is resolved sent/failed.
+    // The Worker stays thin: it can't reach D1 / the encryption key / the render
+    // logic, so it calls back into the Pages app's /v1/internal/redeliver, which
+    // owns the full pipeline. The shared SMTP_SENDER_SECRET authenticates us.
+    async queue(batch, env) {
+        const isLastChance = batch.queue && batch.queue.endsWith("-retry");
+        for (const msg of batch.messages) {
+            const deliveryId = msg.body?.deliveryId;
+            if (!deliveryId) {
+                msg.ack(); // malformed — nothing we can do, don't loop on it.
+                continue;
+            }
+            try {
+                const res = await redeliver(env, deliveryId, isLastChance);
+                // The retry queue always resolves the row, so ack. The send
+                // queue acks on a terminal outcome (sent / hard-failed) and asks
+                // CF to retry while the failure is still transient.
+                if (isLastChance || res.retryable !== true) msg.ack();
+                else msg.retry();
+            } catch (_err) {
+                // Couldn't even reach the Pages app — let the queue retry the
+                // whole job later so the delivery isn't silently dropped.
+                msg.retry();
+            }
+        }
+    },
 };
+
+/** Call the Pages app to (re)run the send pipeline for one delivery. */
+async function redeliver(env, deliveryId, final) {
+    const base = env.PAGES_INTERNAL_URL;
+    const secret = env.SMTP_SENDER_SECRET;
+    if (!base || !secret)
+        throw new Error("redeliver not configured (PAGES_INTERNAL_URL / SMTP_SENDER_SECRET)");
+    const res = await fetch(`${base.replace(/\/$/, "")}/v1/internal/redeliver`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-sender-secret": secret },
+        body: JSON.stringify({ deliveryId, final: final === true }),
+    });
+    if (!res.ok) throw new Error(`redeliver endpoint ${res.status}`);
+    return res.json();
+}
 
 function json(obj, status = 200) {
     return new Response(JSON.stringify(obj), {

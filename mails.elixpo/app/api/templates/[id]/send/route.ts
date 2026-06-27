@@ -122,10 +122,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         const sent = results.filter((r) => r.status === "sent").length;
         const suppressed = results.filter((r) => r.status === "suppressed").length;
         const failed = results.filter((r) => r.status === "failed").length;
+        // Transient failures handed to the retry queue — accepted, not failed.
+        const queued = results.filter((r) => r.status === "queued").length;
 
         return NextResponse.json({
             ok: failed === 0,
-            summary: { total: results.length, sent, suppressed, failed },
+            summary: { total: results.length, sent, suppressed, failed, queued },
             results,
         });
     } catch (e: any) {

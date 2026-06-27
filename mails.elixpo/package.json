@@ -53,7 +53,9 @@
         "db:migrate": "wrangler d1 migrations apply elixpo_mail --remote",
         "db:migrate:local": "wrangler d1 migrations apply elixpo_mail --local",
         "db:query:remote": "wrangler d1 execute elixpo_mail --remote",
-        "db:tables": "wrangler d1 execute elixpo_mail --remote --command \"SELECT name FROM sqlite_master WHERE type='table';\""
+        "db:tables": "wrangler d1 execute elixpo_mail --remote --command \"SELECT name FROM sqlite_master WHERE type='table';\"",
+        "queues:create": "wrangler queues create elixpo-mail-send && wrangler queues create elixpo-mail-send-retry",
+        "worker:deploy": "cd workers/smtp-sender && wrangler deploy"
     },
     "dependencies": {
         "@blocknote/core": "^0.51.4",

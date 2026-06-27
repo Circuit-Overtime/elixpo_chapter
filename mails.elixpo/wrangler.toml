@@ -20,7 +20,9 @@ migrations_dir = "src/workers/migrations"
 binding = "KV"
 id = "8321b41a7111472ca7944506774ae628"
 
-# Cloudflare Queue — /v1/send enqueues here; the consumer Worker does the SMTP send.
+# Cloudflare Queue (producer) — the send pipeline enqueues a retry job here when
+# a /v1/hooks/:key send hits a transient error. The consumer is the SMTP-sender
+# Worker (workers/smtp-sender), which also owns the elixpo-mail-send-retry queue.
 [[queues.producers]]
 binding = "SEND_QUEUE"
 queue = "elixpo-mail-send"
@@ -56,3 +58,7 @@ vars = { ENVIRONMENT = "preview" }
   [[env.preview.kv_namespaces]]
   binding = "KV"
   id = "8321b41a7111472ca7944506774ae628"
+
+  [[env.preview.queues.producers]]
+  binding = "SEND_QUEUE"
+  queue = "elixpo-mail-send"
