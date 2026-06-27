@@ -1,110 +1,99 @@
-# 🐼 Oreo Badge — Code of Conduct
+# Elixpo Community Code of Conduct
 
-This is a friendly project. It's about a small panda badge that boots
-into a cream-coloured home screen. We'd like the community around it
-to feel the same way.
+Elixpo is an open, ethical, and accessible ecosystem built by a worldwide
+community. This Code of Conduct applies to **every Elixpo repository, product,
+and community space** - the websites and SaaS services (elixpo.com,
+blogs.elixpo.com, sketch.elixpo.com, accounts.elixpo.com, and the rest), our
+packages, GitHub repositories and Discussions, issue trackers, and any official
+chat or event.
 
-## The short version
+It is adapted from the [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
 
-**Be the kind of person you'd want to swap badges with at a conference.**
+## Our pledge
 
-If you're not sure what that means, the rest of this document explains.
+We as members, contributors, and leaders pledge to make participation in the
+Elixpo community a harassment-free experience for everyone, regardless of age,
+body size, visible or invisible disability, ethnicity, sex characteristics,
+gender identity and expression, level of experience, education, socio-economic
+status, nationality, personal appearance, race, religion, or sexual identity
+and orientation.
 
----
+We pledge to act and interact in ways that contribute to an open, welcoming,
+diverse, inclusive, and healthy community - the warm, celebratory spirit that
+Oreo, our mascot, stands for.
 
-## What we want
+## Our standards
 
-This project welcomes contributions from people of any age,
-experience level, body, background, identity, ability, language, or
-toolchain. Whether your last commit was today or your first one is
-about to be: you are welcome here.
+Examples of behavior that contributes to a positive environment:
 
-The bar to participate is low. The bar to be unkind is high.
+* Being kind, patient, and welcoming, especially to newcomers and first-time
+  contributors.
+* Being respectful of differing opinions, viewpoints, and experiences.
+* Giving and gracefully accepting constructive feedback.
+* Taking responsibility, apologizing to those affected by our mistakes, and
+  learning from the experience.
+* Focusing on what is best for the whole community, not just for us as
+  individuals.
 
-We want collaboration that feels like:
+Examples of unacceptable behavior:
 
-- **Curious.** Questions are good. "Why is this written this way?" is
-  almost always a more interesting opener than "this is wrong."
-- **Generous.** When you spot something off, suggest a fix. When
-  someone else does, assume they're trying to help.
-- **Patient.** Hardware is slow. Solder joints are slow. Conference
-  weeks are exhausting. People will be late to reply. That's okay.
-- **Specific.** "The Pet app crashes when hunger is 0" beats "the Pet
-  app is broken." Help us help you.
+* The use of sexualized language or imagery, and sexual attention or advances of
+  any kind.
+* Trolling, insulting or derogatory comments, and personal or political attacks.
+* Public or private harassment.
+* Publishing others' private information, such as a physical or email address,
+  without their explicit permission.
+* Misusing the Elixpo or Oreo brand to impersonate the project or deceive
+  others.
+* Other conduct which could reasonably be considered inappropriate in a
+  professional setting.
 
----
+## Enforcement responsibilities
 
-## What we don't want
+Community leaders and maintainers are responsible for clarifying and enforcing
+these standards and will take appropriate and fair corrective action in
+response to any behavior they deem inappropriate, threatening, offensive, or
+harmful. They have the right to remove, edit, or reject comments, commits, code,
+issues, and other contributions that are not aligned with this Code of Conduct,
+and will communicate reasons for moderation decisions when appropriate.
 
-In short: anything that would make a first-time contributor close the
-tab.
+## Scope
 
-That includes (non-exhaustive):
+This Code of Conduct applies within all community spaces, and also applies when
+an individual is officially representing the community in public spaces.
+Examples include using an official email address, posting via an official social
+media account, or acting as an appointed representative at an online or offline
+event.
 
-- Harassment, intimidation, or discrimination of any kind.
-- Personal attacks. Critique code, not people. "This is wrong"
-  about a function is fine. "You're stupid" is not.
-- Unwelcome sexual attention, imagery, or language.
-- Doxxing, sharing private information without consent, or repeated
-  contact with someone who has asked you to stop.
-- Sustained derailing of issue threads / PR reviews with off-topic
-  argument.
-- Using the project, its assets, or the panda mascot to promote
-  hateful causes.
+## Reporting
 
-These apply everywhere project conversation happens: GitHub issues,
-PRs, code review comments, the mailing list, any future Discord /
-Matrix / IRC channel, in-person events that gather around the badge.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be
+reported to the maintainers responsible for enforcement at:
 
----
+**hello@elixpo.com**
 
-## What happens when something goes wrong
+All complaints will be reviewed and investigated promptly and fairly. All
+community leaders are obligated to respect the privacy and security of the
+reporter of any incident.
 
-We assume good faith first. Most friction in open source is
-miscommunication, time-zone gaps, and someone having a hard day.
+## Enforcement guidelines
 
-That said, if something is making you uncomfortable, **tell us**.
+Community leaders will follow these Community Impact Guidelines in determining
+the consequences for any action they deem in violation of this Code of Conduct:
 
-- **Email:** hello@elixpo.com  ← maintainer inbox, monitored
-- **Private DM** on GitHub to the maintainer:
-  [@Circuit-Overtime](https://github.com/Circuit-Overtime)
-
-Reports are read by Elixpo. We won't share the report or your identity
-without your consent except as required to resolve the issue. You
-won't be retaliated against for raising a concern in good faith.
-
-We will:
-
-1. Acknowledge receipt within a week.
-2. Talk to the people involved.
-3. Decide on a response. Possible outcomes range from "let's clear up
-   a misunderstanding" to a private warning, temporary suspension from
-   the project's spaces, or — in rare cases — a permanent ban.
-4. Tell you what we did, to the extent privacy allows.
-
-The maintainers are not infallible. If you disagree with a decision,
-say so; we'd rather argue with you than lose you to a bad call.
-
----
-
-## A note on tone
-
-Tech communities often default to terse, sarcastic, or "actually-"-y
-exchanges that are exhausting to be on the receiving end of. We're not
-going to police phrasing, but we do notice it.
-
-The mascot is a panda. Try to write like one.
-
----
+1. **Correction** - A private, written warning providing clarity around the
+   nature of the violation and an explanation of why the behavior was
+   inappropriate. A public apology may be requested.
+2. **Warning** - A warning with consequences for continued behavior. No
+   interaction with the people involved for a specified period of time.
+3. **Temporary ban** - A temporary ban from any sort of interaction or public
+   communication with the community for a specified period of time.
+4. **Permanent ban** - A permanent ban from any sort of public interaction
+   within the community.
 
 ## Attribution
 
-This document is loosely modelled on the
-[Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/),
-rewritten so it's worth actually reading. If your project wants to
-borrow this text, that's encouraged — but please credit the original
-Contributor Covenant project as well.
-
----
-
-📨 Questions about the Code of Conduct itself? **hello@elixpo.com**
+This Code of Conduct is adapted from the
+[Contributor Covenant](https://www.contributor-covenant.org), version 2.1.
+Community Impact Guidelines were inspired by
+[Mozilla's code of conduct enforcement ladder](https://github.com/mozilla/diversity).
