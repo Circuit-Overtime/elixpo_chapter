@@ -23,6 +23,11 @@ real-time collaboration, and organizations — all on the edge.
 [![Tailwind](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![BlockNote](https://img.shields.io/badge/BlockNote-Editor-9b7bf7?style=flat-square)](https://blocknotejs.org)
 
+[Website](https://blogs.elixpo.com) ·
+[Discussions](https://github.com/orgs/elixpo/discussions) ·
+[Monorepo](https://github.com/elixpo/elixpo_chapter) ·
+[Sponsor](https://github.com/sponsors/Circuit-Overtime)
+
 </div>
 
 <br />
@@ -33,11 +38,22 @@ real-time collaboration, and organizations — all on the edge.
 
 <br />
 
-## What is LixBlogs?
+## About
 
-LixBlogs is a **free, open-source blogging platform** designed for creators, developers, and teams. It gives you a beautiful writing experience with powerful tools built right in — no plugins to install, no complicated setup.
+LixBlogs (also called **Elixpo Blogs**) is a **free, open-source blogging
+platform** designed for creators, developers, and teams. It gives you a
+beautiful writing experience with powerful tools built right in — a rich block
+editor, an AI writing assistant, real-time collaboration, and organizations —
+all deployed on **Cloudflare's edge** and hosted at
+[blogs.elixpo.com](https://blogs.elixpo.com).
 
-Whether you're writing a personal blog, publishing under your organization, or co-authoring with teammates in real-time, LixBlogs has you covered.
+Whether you're writing a personal blog, publishing under your organization, or
+co-authoring with teammates in real-time, LixBlogs has you covered. No plugins
+to install, no complicated setup, no premium tiers.
+
+This is a monorepo: alongside the platform it ships **`@elixpo/lixeditor`** (the
+editor on npm) and the **LixEditor** VS Code extension. It is part of the wider
+Elixpo ecosystem.
 
 <br />
 
@@ -57,6 +73,24 @@ Whether you're writing a personal blog, publishing under your organization, or c
 | :bookmark_tabs: | **Library & Bookmarks** | Save posts, organize into collections, track reading history |
 
 </div>
+
+## The ecosystem
+
+| Tool | What it does | Link |
+| --- | --- | --- |
+| 🎨 **Elixpo Art** | AI image generation _(under dev)_ | [art.elixpo.com](https://elixpo.com) |
+| ✍️ **Elixpo Blogs** | A rich, modern writing and publishing space | [blogs.elixpo.com](https://blogs.elixpo.com) |
+| 🖊️ **LixSketch** | A hand-drawn style whiteboard for ideas and diagrams | [sketch.elixpo.com](https://sketch.elixpo.com) |
+| 💬 **Elixpo Chat** | A fluid, real-time AI chat experience _(under dev)_ | [chat.elixpo.com](https://chat.elixpo.com) |
+| 🔎 **Elixpo Search** | Fast, AI-assisted search | [search.elixpo.com](https://search.elixpo.com) |
+| 👤 **Elixpo Accounts** | One identity (SSO) across the ecosystem | [accounts.elixpo.com](https://accounts.elixpo.com) |
+| 🔗 **lixrl** | Our flagship URL shortener | [lixrl.com](https://lixrl.com) |
+| 🪪 **Portfolios** | Personal pages to showcase your work | [me.elixpo.com](https://me.elixpo.com) |
+| 🐼 **Oreo** | The mascot's home | [oreo.elixpo.com](https://oreo.elixpo.com) |
+
+Developers can drop our editors into their own projects with the
+**`@elixpo/lixsketch`** and **`@elixpo/lixeditor`** packages, on npm and as VS
+Code extensions.
 
 <br />
 
@@ -200,6 +234,22 @@ The heart of LixBlogs is a **powerful block editor** built on [BlockNote](https:
 
 <br />
 
+## Monorepo layout
+
+```
+.
+├── app/                       # Next.js App Router pages, layouts, API routes
+├── src/                       # React components (Editor/), views, context, AI
+├── lib/                       # Server-side utilities (auth, media, tiers)
+├── migrations/                # Cloudflare D1 SQL migrations
+├── worker/                    # Cloudflare Worker code
+├── packages/
+│   ├── lixeditor/             # @elixpo/lixeditor — the editor (npm)
+│   ├── vscode-lixeditor/      # elixpo.lixeditor — VS Code extension
+│   └── lixsketch/             # @elixpo/lixsketch — the whiteboard editor
+└── public/                    # Static assets, brand marks, fonts
+```
+
 ## Architecture
 
 ```mermaid
@@ -239,6 +289,47 @@ graph TB
 
 <br />
 
+## Running locally
+
+```bash
+npm install
+npm run dev
+```
+
+Then open [http://localhost:3000](http://localhost:3000).
+
+```bash
+npm run build       # Build for Cloudflare Pages (@cloudflare/next-on-pages)
+npm run preview     # Local Cloudflare Pages preview (wrangler)
+npm run deploy      # Build + deploy to Cloudflare Pages
+npm run db:migrate  # Run D1 migrations (remote)
+```
+
+<br />
+
+## Built by the community
+
+Elixpo is made by people, in the open. **45+ contributors** have shaped these
+tools, with a small core team steering the way:
+
+- **Ayushman Bhattacharya** - Founder & Lead ([@Circuit-Overtime](https://github.com/Circuit-Overtime))
+- **Vivek Yadav** - Lead Co-Dev ([@ez-vivek](https://github.com/ez-vivek))
+- **Anwesha Chakraborty** - Core Maintainer ([@anwe-ch](https://github.com/anwe-ch))
+
+Everyone is welcome. See **[CONTRIBUTING.md](CONTRIBUTING.md)** and our
+**[Code of Conduct](CODE_OF_CONDUCT.md)**.
+
+## Recognition & programs
+
+Elixpo has taken part in and been supported by **GSSOC**, **Hacktoberfest**,
+**Pollinations.AI**, **MS Startup Foundations**, and **OSCI**.
+
+## Get involved
+
+- 💬 **Join the conversation** in [GitHub Discussions](https://github.com/orgs/elixpo/discussions).
+- 🚀 **Submit your project** to be featured across the ecosystem.
+- 🛠️ **Contribute** - browse good first issues in the [monorepo](https://github.com/elixpo/elixpo_chapter).
+- ❤️ **Support us** via [GitHub Sponsors](https://github.com/sponsors/Circuit-Overtime).
 
 ## Project Activity
 
@@ -258,9 +349,37 @@ graph TB
 
 <br />
 
+## Brand assets
+
+Brand-ready marks and per-service icons live under [`public/`](public/) (logos,
+mascot marks, `og-image`, and the Lix\* brand fonts under
+[`public/fonts/`](public/fonts/)). A browsable kit is at
+**[elixpo.com/assets](https://elixpo.com/assets)**.
+
 ## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+Elixpo uses one **licensing standard** across every repository:
+
+- **Code** - [MIT](LICENSES/preferred/MIT) (with the [Oreo-trademarks exception](LICENSES/exceptions/Oreo-trademarks)).
+- **Brand & visual assets** - [CC-BY-4.0](LICENSES/preferred/CC-BY-4.0) (with the same exception).
+
+The Oreo mascot, the chest E-badge, and the "Elixpo" and "Oreo" names, domains,
+and palette are reserved - this protects the brand and its royalties while
+keeping the code and assets free. See [`LICENSE`](LICENSE) and the per-product
+notice board, [`NOTICE`](LICENSES/NOTICE).
+
+## Exclusive
+
+> Per-repo "exclusive" artifacts (an npm package, a VS Code extension, a hosted
+> SaaS, a paid tier) are declared here and in [`NOTICE`](LICENSES/NOTICE).
+
+**This repository ships:**
+
+- **npm package `@elixpo/lixeditor`** (from [`packages/lixeditor/`](packages/lixeditor/)) — the published package name on the npm registry is reserved to Elixpo; forks must publish under a different name. The MIT-licensed source may be reused.
+- **VS Code Marketplace extension `elixpo.lixeditor`** (publisher `elixpo`, from [`packages/vscode-lixeditor/`](packages/vscode-lixeditor/)) — the Marketplace listing and the `elixpo` publisher identity are reserved to Elixpo; the extension source is MIT but the listing/publisher are not transferred.
+- **Hosted SaaS `blogs.elixpo.com`** — the official hosted LixBlogs deployment; the brand, hosted deployment, and operational data are reserved; the source is MIT.
+
+Developers can use **[`@elixpo/lixeditor`](https://www.npmjs.com/package/@elixpo/lixeditor)** (npm) and the **[LixEditor VS Code extension](https://marketplace.visualstudio.com/items?itemName=elixpo.lixeditor)** in their own projects under MIT.
 
 <img width="100%" src="https://capsule-render.vercel.app/api?type=wave&color=9b7bf7&height=120&section=footer&text=&fontSize=0" />
 
@@ -269,5 +388,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 **Made with :purple_heart: by [Elixpo](https://github.com/elixpo)**
 
 [Website](https://blogs.elixpo.com) · [npm Package](https://www.npmjs.com/package/@elixpo/lixeditor) · [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=elixpo.lixeditor) · [Report Bug](https://github.com/elixpo/lixblogs/issues) · [Request Feature](https://github.com/elixpo/lixblogs/issues)
+
+<sub>Made in the open, together. © 2023-2026 Elixpo.</sub>
 
 </div>
