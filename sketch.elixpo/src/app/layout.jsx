@@ -5,8 +5,7 @@ const SITE_URL = 'https://sketch.elixpo.com'
 const SITE_NAME = 'Elixpo Sketch'
 const SITE_TAGLINE = 'Open Source Infinite Canvas, Hand Drawn Aesthetics, Built In Docs Editor'
 const SITE_DESCRIPTION =
-  'Elixpo Sketch is an open source infinite canvas for sketching, diagrams, wireframes, and architecture drawings. It pairs a Notion style WYSIWYG docs editor with a hand drawn RoughJS canvas, end to end encrypted save and share, optional real time collaboration, and LixScript, a one line DSL for generating flowcharts, sequence diagrams, and graphs without leaving the canvas. Free forever, runs entirely in the browser, no account required.'
-
+  'LixSketch is a free, open-source collaborative whiteboard for technical diagrams, wireframes, flowcharts, architecture drawings, and presentations. No login required — start drawing instantly as a guest. Features AI-powered smart editing (Beta), end-to-end encrypted sharing, real-time collaboration with live cursors, a Notion-style docs editor, LixScript DSL for scripted diagrams, 250K+ icons, and a VS Code extension. Runs entirely in the browser. Forever free.'
 export const metadata = {
   metadataBase: new URL(SITE_URL),
 
@@ -50,6 +49,14 @@ export const metadata = {
     'developer tools',
     'product design',
     'system design',
+    'free whiteboard',
+    'no login whiteboard',
+    'collaborative canvas',
+    'AI diagram tool',
+    'VS Code whiteboard extension',
+    'LixSketch',
+    'technical presentation tool',
+    'online diagramming',
   ],
 
   icons: {
