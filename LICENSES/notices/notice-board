@@ -1,0 +1,29 @@
+THIRD-PARTY NOTICES
+===================
+
+The application code in this repository is licensed under the Elixpo standard
+(MIT for code, CC-BY-4.0 for assets); see ../../LICENSE.
+
+This repository is the Elixpo community umbrella / monorepo. It has no
+root-level dependency manifest (no top-level package.json or requirements.txt)
+and therefore no significant third-party runtime dependencies of its own.
+
+Each product and shared service lives in its own sub-directory and ships its
+own dependency manifest and, where relevant, its own third-party notices. Refer
+to the per-project manifest for the authoritative dependency list and versions,
+for example:
+
+  * accounts.elixpo, admin.elixpo, agent.elixpo, art.elixpo, blogs.elixpo,
+    chat.elixpo, claudeOps.elixpo, jackey.elixpo, lixrl.com, mails.elixpo,
+    me.elixpo, payouts.elixpo, rewrite.elixpo, sketch.elixpo, wish.elixpo,
+    elixpo  - see each directory's package.json
+  * rewrite.elixpo, search.elixpo, tommy.elixpo  - see each directory's
+    requirements.txt
+
+Those sub-projects build on widely used open-source components (for example
+Next.js / React / Tailwind CSS / Node tooling under MIT, and Python libraries
+under their respective licenses). The authoritative, versioned list always
+lives in each sub-project's own manifest.
+
+If you believe a component is missing from this list, please open an issue or
+email hello@elixpo.com.

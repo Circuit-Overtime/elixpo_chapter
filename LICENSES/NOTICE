@@ -1,0 +1,38 @@
+NOTICE - the Elixpo notice board
+================================
+
+This repository is licensed under the Elixpo License (see ../LICENSE). This
+NOTICE file is the "notice board": it records reservations and product-specific
+terms that sit ON TOP of the base license for this repository. Read it together
+with LICENSE and LICENSES/exceptions/Oreo-trademarks.
+
+REPOSITORY
+----------
+
+  Name:        elixpo_chapter (Elixpo Chapter)
+  What it is:  The open-source umbrella / monorepo for the whole Elixpo
+               ecosystem - the org's flagship repository, started in 2023.
+               The individual products in the ecosystem (Art, Blogs, Sketch,
+               Chat, Search, Accounts, lixrl, Portfolios, Oreo, and the shared
+               platform services) live here as sub-projects, each declaring its
+               own product-specific reservations in its own notice board.
+
+EXCLUSIVE ARTIFACTS IN THIS REPOSITORY
+--------------------------------------
+
+  None. The umbrella repository itself does not publish an npm package, a
+  marketplace extension, or a separately-licensed binary; it is the community
+  monorepo. Exclusive artifacts (npm packages such as @elixpo/lixsketch and
+  @elixpo/lixeditor, VS Code Marketplace extensions, hosted SaaS deployments,
+  and reserved domains) belong to the individual products and are declared in
+  those products' own notice boards.
+
+BRAND ASSETS
+------------
+
+  The Elixpo and Oreo brand assets are provided under CC-BY-4.0 WITH
+  Oreo-trademarks. The Oreo mascot, the chest E-badge, and the Elixpo / Oreo
+  names, domains (*.elixpo.com), and palette remain reserved
+  (see LICENSES/exceptions/Oreo-trademarks).
+
+Contact: hello@elixpo.com

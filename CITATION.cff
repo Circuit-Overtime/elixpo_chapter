@@ -7,11 +7,11 @@ authors:
   - family-names: "Bhattacharya"
     given-names: "Ayushman"
     orcid: "https://orcid.org/0009-0006-5960-6308"
-repository-code: "https://github.com/Circuit-Overtime/elixpo_chapter"
+repository-code: "https://github.com/elixpo/elixpo_chapter"
 url: "https://elixpo.com"
-license: "GPL-3.0"
+license: "MIT AND CC-BY-4.0"
 version: "2.0.0"
-date-released: "2025-02-14"
+date-released: "2026-06-27"
 keywords:
   - "artificial intelligence"
   - "open source"
@@ -28,4 +28,4 @@ preferred-citation:
       given-names: "Ayushman"
     - name: "Elixpo Contributors"
   year: 2025
-  url: "https://github.com/Circuit-Overtime/elixpo_chapter"
+  url: "https://github.com/elixpo/elixpo_chapter"
