@@ -51,7 +51,7 @@ const instrumentSerif = Instrument_Serif({
 const SITE_URL = "https://elixpo.com";
 
 const SITE_DESCRIPTION =
-  "Elixpo is a developer-first, open-source ecosystem of interconnected AI and developer tools - LixSketch whiteboards, LixEditor, Elixpo Blogs, Accounts, URL, and more. Free and open under MIT and CC-BY-4.0, built by 45+ contributors.";
+  "Elixpo is a developer-first, open-source ecosystem that brings together AI-powered applications, developer tools, creative platforms, and community-driven services. From collaborative whiteboards and code editors to blogging, authentication, URL management, and intelligent workflows, Elixpo empowers developers to build, collaborate, and innovate together. Proudly open source and maintained by a global community of contributors under MIT and CC BY 4.0 licenses.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -64,6 +64,8 @@ export const metadata: Metadata = {
   keywords: [
     "Elixpo",
     "open source",
+    "AI",
+    "Artificial Intelligence",
     "AI tools",
     "developer tools",
     "LixSketch",
@@ -78,6 +80,11 @@ export const metadata: Metadata = {
     "Pollinations AI",
     "Hacktoberfest",
     "MIT license",
+    "Developer Platform",
+    "Developer Tools",
+    "Open Source Software",
+    "Productivity",
+    "Next.js",
   ],
   authors: [{ name: "Ayushman Bhattacharya", url: "https://github.com/Circuit-Overtime" }],
   creator: "Elixpo",
@@ -105,7 +112,7 @@ export const metadata: Metadata = {
         width: 1852,
         height: 813,
         type: "image/webp",
-        alt: "Elixpo - Open Source Ecosystem of AI and Developer Tools",
+        alt: "Elixpo — Developer-first open-source ecosystem"
       },
     ],
   },
@@ -113,7 +120,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Elixpo - Open Source Ecosystem of AI and Developer Tools",
     description:
-      "A free, open-source ecosystem of interconnected AI and developer tools, built by 45+ contributors.",
+      "Build, collaborate, and innovate with Elixpo—an open-source ecosystem of AI-powered applications, developer tools, and community-drven platforms for modern developers.",
     images: ["/og-image.webp"],
     creator: "@elixpo",
   },
