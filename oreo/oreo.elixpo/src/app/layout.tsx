@@ -12,24 +12,46 @@ import PageTransition from "@/components/PageTransition";
 
 const SITE_TITLE       = "OreoOS — an open-source OS in a pocket-sized badge";
 const SITE_DESCRIPTION =
-  "OreoOS - Micropython inside your pocket";
+    "OreoOS is an open-source operating system for the Elixpo Badge, bringing MicroPython, wireless connectivity, file sharing, apps, games, hardware integrations, and developer tools into a pocket-sized programmable device built for makers, hackers, students, and communities.";
 const SITE_URL  = "https://oreo.elixpo.com";
-const OG_IMAGE  = "/og-banner.jpg";
+const OG_IMAGE  = "/og-banner.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default:  SITE_TITLE,
-    template: "%s · Oreo",
+    template: "%s | OreoOS",
   },
   description: SITE_DESCRIPTION,
   applicationName: "OreoOS",
   authors: [{ name: "Elixpo", url: "https://github.com/elixpo" }],
   generator: "Next.js",
   keywords: [
-    "OreoOS", "Elixpo Badge", "conference badge", "MicroPython",
-    "ESP32-S3", "open hardware", "open source OS", "app store",
-    "file transfer", "BLE", "WiFi", "IR quest",
+  "OreoOS",
+  "Elixpo Badge",
+  "Open Source",
+  "Open Source OS",
+  "Open Hardware",
+  "Embedded Systems",
+  "MicroPython",
+  "ESP32-S3",
+  "open hardware",
+  "Developer Badge",
+  "Conference Badge",
+  "IoT",
+  "Wireless Development",
+  "BLE",
+  "WiFi",
+  "Infrared",
+  "File Sharing",
+  "File Transfer",
+  "App Store",
+  "Developer Tools",
+  "Makers",
+  "Hackers",
+  "Electronics",
+  "Hardware Projects",
+  "IR quest"
   ],
   // Per-route titles override `default` via Next's metadata API;
   // robots gets allow-everywhere here because the site is fully public.
@@ -39,7 +61,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
+    description:  "Explore OreoOS, the open-source operating system powering the Elixpo Badge with MicroPython, wireless connectivity, apps, developer tools, and hardware integrations for makers and developers.",
     url: SITE_URL,
     siteName: "Oreo",
     type: "website",
@@ -54,7 +76,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
+    description:  "Build, hack, and create with OreoOS—an open-source operating system for the Elixpo Badge featuring MicroPython, apps, wireless connectivity, and developer-friendly tools.",
     images: [OG_IMAGE],
   },
   // Icons — generated from public/oreo.elixpo.png (the brand mark) into a
