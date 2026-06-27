@@ -62,48 +62,48 @@ export default function ProductDetailPage() {
     const [changeIdBusy, setChangeIdBusy] = useState(false);
     const [changeIdErr, setChangeIdErr] = useState("");
     // Test send
-const [testEmailInput, setTestEmailInput] = useState("");
-const [testEmailChips, setTestEmailChips] = useState<string[]>([]);
-const [testSendBusy, setTestSendBusy] = useState(false);
-const [testSendResults, setTestSendResults] = useState<
-  Array<{
-    email: string;
-    ok: boolean;
-    error?: string;
-  }>
->([]);
+    const [testEmailInput, setTestEmailInput] = useState("");
+    const [testEmailChips, setTestEmailChips] = useState<string[]>([]);
+    const [testSendBusy, setTestSendBusy] = useState(false);
+    const [testSendResults, setTestSendResults] = useState<
+    Array<{
+        email: string;
+        ok: boolean;
+        error?: string;
+    }>
+    >([]);
 
-const commitEmailInput = () => {
-    const raw = testEmailInput.trim();
-    if (!raw) return;
-    const incoming = raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-    setTestEmailChips(prev => [...prev, ...incoming.filter(e => !prev.includes(e))]);
-    setTestEmailInput("");
-};
+    const commitEmailInput = () => {
+        const raw = testEmailInput.trim();
+        if (!raw) return;
+        const incoming = raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+        setTestEmailChips(prev => [...prev, ...incoming.filter(e => !prev.includes(e))]);
+        setTestEmailInput("");
+    };
 
-const removeEmailChip = (email: string) =>
-    setTestEmailChips(prev => prev.filter(e => e !== email));
+    const removeEmailChip = (email: string) =>
+        setTestEmailChips(prev => prev.filter(e => e !== email));
 
-const doTestSend = async () => {
-    if (testEmailChips.length === 0) return;
-    setTestSendBusy(true);
-    setTestSendResults([]);
-    try {
-        const r = await fetch(`/api/dashboard/products/${id}/test-send`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ emails: testEmailChips }),
-        });
-        const d: any = await r.json();
-        if (!r.ok) throw new Error(d.error_description || d.error || "failed");
-        setTestSendResults(d.results ?? []);
-    } catch (e: any) {
-        setTestSendResults(testEmailChips.map(email => ({ email, ok: false, error: e?.message })));
-    } finally {
-        setTestSendBusy(false);
-    }
-};
+    const doTestSend = async () => {
+        if (testEmailChips.length === 0) return;
+        setTestSendBusy(true);
+        setTestSendResults([]);
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}/test-send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ emails: testEmailChips }),
+            });
+            const d: any = await r.json();
+            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
+            setTestSendResults(d.results ?? []);
+        } catch (e: any) {
+            setTestSendResults(testEmailChips.map(email => ({ email, ok: false, error: e?.message })));
+        } finally {
+            setTestSendBusy(false);
+        }
+    };
     // App links (homepage / pricing) editing
     const [homepageDraft, setHomepageDraft] = useState("");
     const [pricingDraft, setPricingDraft] = useState("");
