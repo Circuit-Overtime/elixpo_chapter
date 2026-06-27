@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const RAW_URL =
-  "https://raw.githubusercontent.com/elixpo/elixpo_chapter/main/CONTRIBUTING.md";
+  "https://raw.githubusercontent.com/elixpo/elixpo/main/CONTRIBUTING.md";
 
 export default function ContributingPage() {
   const [markdown, setMarkdown] = useState("");

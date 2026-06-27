@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, ArrowUpRight, BookOpen, GitPullRequest, Scale, type LucideIcon } from "lucide-react";
+import { Menu, X, ArrowUpRight, BookOpen, GitPullRequest, Scale, Network, Palette, type LucideIcon } from "lucide-react";
 import { ELIXPO_LINKS } from "@/lib/elixpo-links";
 
 interface NavLink {
@@ -23,6 +23,8 @@ const PRIMARY_LINKS: NavLink[] = [
 
 // Secondary routes condensed to icons (tooltip on hover) to keep the bar light.
 const ICON_LINKS: NavLink[] = [
+  { label: "Architecture", href: "/architecture", icon: Network },
+  { label: "Brand", href: "/assets", icon: Palette },
   { label: "Open Source", href: "/resources", icon: BookOpen },
   { label: "Contributing", href: "/contributing", icon: GitPullRequest },
   { label: "Code of Conduct", href: "/code-of-conduct", icon: Scale },

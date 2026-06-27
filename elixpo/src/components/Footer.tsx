@@ -178,6 +178,12 @@ export function Footer() {
             © 2026 Elixpo Chapter · MIT &amp; CC-BY-4.0 · Built in the open
           </span>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+            <Link href={ELIXPO_LINKS.architecture} className="text-[#DEDBC8]/60 hover:text-white transition-colors">
+              Architecture
+            </Link>
+            <Link href={ELIXPO_LINKS.assets} className="text-[#DEDBC8]/60 hover:text-white transition-colors">
+              Brand
+            </Link>
             <a href={ELIXPO_LINKS.blog} target="_blank" rel="noopener noreferrer" className="text-[#DEDBC8]/60 hover:text-white transition-colors">
               Blog
             </a>

@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const RAW_URL =
-  "https://raw.githubusercontent.com/elixpo/elixpo_chapter/main/CODE_OF_CONDUCT.md";
+  "https://raw.githubusercontent.com/elixpo/elixpo/main/CODE_OF_CONDUCT.md";
 
 export default function CodeOfConductPage() {
   const [markdown, setMarkdown] = useState("");
