@@ -75,8 +75,13 @@ export async function POST(
     const { db, merchantId } = ctx;
     const { id } = await params;
 
-    const body: any = await request.json().catch(() => ({}));
-    const rawEmails: unknown = body.emails;
+    const body: unknown = await request.json().catch(() => ({}));
+    const rawEmails: unknown =
+        typeof body === "object" &&
+        body !== null &&
+        "emails" in body
+            ? (body as Record<"emails", unknown>).emails
+            : undefined;
 
     if (!Array.isArray(rawEmails) || rawEmails.length === 0) {
         return NextResponse.json(
@@ -99,17 +104,6 @@ export async function POST(
         );
     }
 
-    const invalid = emails.filter((e) => !EMAIL_RE.test(e));
-    if (invalid.length > 0) {
-        return NextResponse.json(
-            {
-                error: "invalid_email",
-                error_description: `Invalid address(es): ${invalid.join(", ")}`,
-            },
-            { status: 400 },
-        );
-    }
-
     const row = await appAndProductForId(db, merchantId, id);
     if (!row) {
         return NextResponse.json({ error: "forbidden" }, { status: 403 });
@@ -126,62 +120,71 @@ export async function POST(
         );
     }
 
-    // Fire one simulated fulfillment per email, collecting individual results.
-    const results = await Promise.all(
-        emails.map(async (email) => {
-            try {
-                // Each email is a distinct synthetic buyer uid so entitlements
-                // don't collide between addresses in the same test batch.
-                const uid = `test_${email.replace(/[^a-z0-9]/g, "_")}`;
-                const customerId = await upsertCustomer(
-                    db,
-                    row.app_id,
-                    uid,
-                    email,
-                );
+    // Process each email sequentially — D1 can reject concurrent writes within
+    // a single invocation, so a `Promise.all` over (upsert + createSession +
+    // fulfill) is a sporadic-failure risk. One bad address never aborts the
+    // batch: invalid emails are reported per-row and skipped.
+    const results = [];
+    for (const email of emails) {
+        if (!EMAIL_RE.test(email)) {
+            results.push({ email, ok: false, error: "invalid_email" });
+            continue;
+        }
+        try {
+            // Each email is a distinct synthetic buyer uid so entitlements
+            // don't collide between addresses in the same test batch.
+            const uid = `test_${email.replace(/[^a-z0-9]/g, "_")}`;
+            const customerId = await upsertCustomer(
+                db,
+                row.app_id,
+                uid,
+                email,
+            );
 
-                const sessionId = await createCheckoutSession(db, {
-                    appId: row.app_id,
-                    customerId,
-                    externalUid: uid,
-                    productId: row.product_id,
-                    priceId: row.price_id,
-                    currency: row.currency!,
-                    amount: row.unit_amount!,
-                    returnUrl: null,
-                    metadata: { source: "dashboard_test_send", email },
-                    expiresInMinutes: 5,
-                });
+            const sessionId = await createCheckoutSession(db, {
+                appId: row.app_id,
+                customerId,
+                externalUid: uid,
+                productId: row.product_id,
+                priceId: row.price_id,
+                currency: row.currency!,
+                amount: row.unit_amount!,
+                returnUrl: null,
+                metadata: { source: "dashboard_test_send", email },
+                expiresInMinutes: 5,
+            });
 
-                const session = await getCheckoutSession(db, sessionId);
-                if (!session) throw new Error("session not found after create");
+            const session = await getCheckoutSession(db, sessionId);
+            if (!session) throw new Error("session not found after create");
 
-                const paymentId = `pay_test_${crypto
-                    .randomUUID()
-                    .replace(/-/g, "")
-                    .slice(0, 18)}`;
-                const orderId = `order_test_${sessionId}`;
+            const paymentId = `pay_test_${crypto
+                .randomUUID()
+                .replace(/-/g, "")
+                .slice(0, 18)}`;
+            const orderId = `order_test_${sessionId}`;
 
-                await fulfillPayment(db, {
-                    session,
-                    appSlug: row.app_slug,
-                    providerOrderId: orderId,
-                    providerPaymentId: paymentId,
-                    amount: row.unit_amount!,
-                    currency: row.currency!,
-                    raw: { source: "dashboard_test_send", test: true, email },
-                });
+            await fulfillPayment(db, {
+                session,
+                appSlug: row.app_slug,
+                providerOrderId: orderId,
+                providerPaymentId: paymentId,
+                amount: row.unit_amount!,
+                currency: row.currency!,
+                raw: { source: "dashboard_test_send", test: true, email },
+            });
 
-                return { email, ok: true };
-            } catch (err: any) {
-                return {
-                    email,
-                    ok: false,
-                    error: String(err?.message || err),
-                };
-            }
-        }),
-    );
+            results.push({ email, ok: true });
+        } catch (err) {
+            results.push({
+                email,
+                ok: false,
+                error:
+                    err instanceof Error
+                        ? err.message
+                        : String(err),
+            });
+        }
+    }
 
     return NextResponse.json({ results });
 }

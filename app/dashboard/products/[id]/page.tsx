@@ -95,11 +95,21 @@ export default function ProductDetailPage() {
                 credentials: "include",
                 body: JSON.stringify({ emails: testEmailChips }),
             });
-            const d: any = await r.json();
-            if (!r.ok) throw new Error(d.error_description || d.error || "failed");
-            setTestSendResults(d.results ?? []);
-        } catch (e: any) {
-            setTestSendResults(testEmailChips.map(email => ({ email, ok: false, error: e?.message })));
+            const d = (await r.json()) as Record<string, unknown>;
+            if (!r.ok)
+                throw new Error(
+                    String(d.error_description || d.error || "failed"),
+                );
+            setTestSendResults(
+                (d.results as Array<{
+                    email: string;
+                    ok: boolean;
+                    error?: string;
+                }>) ?? [],
+            );
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setTestSendResults(testEmailChips.map(email => ({ email, ok: false, error: msg })));
         } finally {
             setTestSendBusy(false);
         }
@@ -1668,7 +1678,7 @@ export default function ProductDetailPage() {
                                 >
                                     {r.email}
                                     {!r.ok && r.error
-                                        ? ` — ${r.error}`
+                                        ? ` — ${r.error === "invalid_email" ? "invalid email address" : r.error}`
                                         : ""}
                                 </Typography>
                             </Stack>
