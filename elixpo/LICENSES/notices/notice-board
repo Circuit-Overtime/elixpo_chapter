@@ -1,9 +1,25 @@
-NOTICES
-=======
+THIRD-PARTY NOTICES
+===================
 
-This project incorporates and depends on third-party components, each
-distributed under its own license. Source code in this repository is
-licensed under MIT (see LICENSE and LICENSES/preferred/MIT).
+This repository depends on third-party components, each distributed under its
+own license. The application code in this repository is licensed under the
+Elixpo standard (MIT for code, CC-BY-4.0 for assets); see ../../LICENSE.
 
-If you believe an upstream component is missing from this list, please
-open an issue or email hello@elixpo.com.
+Primary runtime dependencies (see package.json for the authoritative list and
+versions):
+
+  * Next.js, React, React DOM        - MIT
+  * Tailwind CSS                     - MIT
+  * motion (Framer Motion)           - MIT
+  * lenis                            - MIT
+  * lucide-react                     - ISC
+  * react-markdown, remark-gfm       - MIT
+
+Brand fonts (loaded via next/font):
+
+  * Geist, Geist Mono                - SIL OFL 1.1
+  * Almarai                          - SIL OFL 1.1
+  * Instrument Serif                 - SIL OFL 1.1
+
+If you believe a component is missing from this list, please open an issue or
+email hello@elixpo.com.

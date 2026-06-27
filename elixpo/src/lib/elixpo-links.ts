@@ -33,6 +33,8 @@ export const ELIXPO_LINKS = {
   email: "hello@elixpo.com",
   terms: "/terms",
   privacy: "/privacy",
+  architecture: "/architecture",
+  assets: "/assets",
   github: "https://github.com/elixpo",
   githubChapter: "https://github.com/elixpo/elixpo_chapter",
   submitProject: "https://github.com/orgs/elixpo/discussions/new?category=show-and-tell",
