@@ -8,7 +8,7 @@
 
 **A handheld panda-themed conference badge that runs a real operating system.**
 
-[![License: Oreo-PCL](https://img.shields.io/badge/license-Oreo--PCL-FF5D68?style=for-the-badge)](LICENSE)
+[![License: MIT & CC-BY-4.0](https://img.shields.io/badge/license-MIT_%26_CC--BY--4.0-FF5D68?style=for-the-badge)](LICENSE)
 [![MicroPython 1.28](https://img.shields.io/badge/MicroPython-1.28-00B4A5?style=for-the-badge&logo=python&logoColor=white)](https://micropython.org)
 [![ESP32-S3](https://img.shields.io/badge/ESP32--S3-N16R8-2E2E2E?style=for-the-badge&logo=espressif&logoColor=white)](https://www.espressif.com/en/products/socs/esp32-s3)
 [![OTA Updates](https://img.shields.io/badge/OTA-yes-FFBE1E?style=for-the-badge)](#-updates)
@@ -429,6 +429,90 @@ We love new contributors. The bar is low; the welcome is warm.
 - 🔧 Code: read [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - 🧑‍🤝‍🧑 Community: read the [`Code of Conduct`](CODE_OF_CONDUCT.md)
 - 🔐 Security disclosures: read [`SECURITY.md`](SECURITY.md)
+
+---
+
+## The ecosystem
+
+Oreo Badge is part of **Elixpo** - an open, ethical, and accessible ecosystem
+of AI and developer tools, built by a global community of 45+ contributors.
+
+| Tool | What it does | Link |
+| --- | --- | --- |
+| 🎨 **Elixpo Art** | AI image generation _(under dev)_ | [art.elixpo.com](https://elixpo.com) |
+| ✍️ **Elixpo Blogs** | A rich, modern writing and publishing space | [blogs.elixpo.com](https://blogs.elixpo.com) |
+| 🖊️ **LixSketch** | A hand-drawn style whiteboard for ideas and diagrams | [sketch.elixpo.com](https://sketch.elixpo.com) |
+| 💬 **Elixpo Chat** | A fluid, real-time AI chat experience _(under dev)_ | [chat.elixpo.com](https://chat.elixpo.com) |
+| 🔎 **Elixpo Search** | Fast, AI-assisted search | [search.elixpo.com](https://search.elixpo.com) |
+| 👤 **Elixpo Accounts** | One identity (SSO) across the ecosystem | [accounts.elixpo.com](https://accounts.elixpo.com) |
+| 🔗 **lixrl** | Our flagship URL shortener | [lixrl.com](https://lixrl.com) |
+| 🪪 **Portfolios** | Personal pages to showcase your work | [me.elixpo.com](https://me.elixpo.com) |
+| 🐼 **Oreo** | The mascot's home | [oreo.elixpo.com](https://oreo.elixpo.com) |
+
+## Built by the community
+
+Elixpo is made by people, in the open. **45+ contributors** have shaped these
+tools, with a small core team steering the way:
+
+- **Ayushman Bhattacharya** - Founder & Lead ([@Circuit-Overtime](https://github.com/Circuit-Overtime))
+- **Vivek Yadav** - Lead Co-Dev ([@ez-vivek](https://github.com/ez-vivek))
+- **Anwesha Chakraborty** - Core Maintainer ([@anwe-ch](https://github.com/anwe-ch))
+
+Everyone is welcome. See **[CONTRIBUTING.md](CONTRIBUTING.md)** and our
+**[Code of Conduct](CODE_OF_CONDUCT.md)**.
+
+## Recognition & programs
+
+Elixpo has taken part in and been supported by **GSSOC**, **Hacktoberfest**,
+**Pollinations.AI**, **MS Startup Foundations**, and **OSCI**.
+
+## Get involved
+
+- 💬 **Join the conversation** in [GitHub Discussions](https://github.com/orgs/elixpo/discussions).
+- 🚀 **Submit your project** to be featured across the ecosystem.
+- 🛠️ **Contribute** - browse good first issues in the [monorepo](https://github.com/elixpo/elixpo_chapter).
+- ❤️ **Support us** via [GitHub Sponsors](https://github.com/sponsors/Circuit-Overtime).
+
+## Brand assets
+
+The Oreo mascot, badge sprites, and app icons live under
+[`assets/`](assets/). They are CC-BY-4.0, but the Oreo mascot, the chest
+E-badge, and the "Elixpo"/"Oreo" names and palette are reserved - see the
+[Oreo-trademarks exception](LICENSES/exceptions/Oreo-trademarks). A browsable
+brand kit is at **[elixpo.com/assets](https://elixpo.com/assets)**.
+
+## License
+
+Oreo Badge uses the Elixpo **licensing standard**:
+
+- **Code** (OreoOS, oreoWare, apps, tooling) - [MIT](LICENSES/preferred/MIT)
+  (with the [Oreo-trademarks exception](LICENSES/exceptions/Oreo-trademarks)).
+- **Brand & visual assets** (mascot, sprites, icons) -
+  [CC-BY-4.0](LICENSES/preferred/CC-BY-4.0) (with the same exception).
+- **Upstream firmware components** - the firmware image incorporates
+  MicroPython (MIT) and Espressif ESP-IDF
+  ([Apache-2.0](LICENSES/preferred/Apache-2.0)); downstream distributors of
+  compiled firmware must retain those licenses. See
+  [`LICENSES/notices/notice-board`](LICENSES/notices/notice-board).
+
+The Oreo mascot, the chest E-badge, the "Elixpo", "Oreo", "Oreo Badge", and
+"OreoOS" names, domains, and palette are reserved - this protects the brand and
+its royalties while keeping the code and assets free. See [`LICENSE`](LICENSE)
+and the per-product notice board, [`LICENSES/NOTICE`](LICENSES/NOTICE).
+
+## Exclusive
+
+This repository ships firmware and hardware and reserves, on top of the
+MIT / CC-BY-4.0 grant (full text in [`LICENSES/NOTICE`](LICENSES/NOTICE)):
+
+- The **`oreoos`** published package name.
+- The official **firmware / OTA release bundles** distributed from GitHub
+  Releases and the "Oreo" OTA identity.
+- The **Oreo Badge hardware design**, the panda mascot, and the chest E-badge
+  as brand-reserved product identity.
+
+You may build, modify, and redistribute boards and firmware from the open
+source - just not under the reserved Elixpo / Oreo names or mascot.
 
 ---
 

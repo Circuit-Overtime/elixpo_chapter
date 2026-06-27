@@ -1,27 +1,38 @@
-NOTICES
-=======
+THIRD-PARTY NOTICES
+===================
 
-This project incorporates and depends on third-party components, each
-distributed under its own license. Source code in this repository is
-licensed under MIT (see LICENSE and LICENSES/preferred/MIT). Trademark
-policy is described in LICENSES/exceptions/Oreo-trademarks.
+This repository depends on and incorporates third-party components, each
+distributed under its own license. The source code in this repository is
+licensed under the Elixpo standard (MIT for code, CC-BY-4.0 for assets); see
+../../LICENSE.
 
-Upstream components
--------------------
+On-device runtime / firmware
+----------------------------
 
-MicroPython
-  Copyright (c) 2013-present Damien P. George and contributors.
-  Licensed under the MIT License.
-  https://github.com/micropython/micropython
+  * MicroPython                      - MIT
+      Copyright (c) 2013-present Damien P. George and contributors.
+      https://github.com/micropython/micropython
+  * Espressif ESP-IDF                - Apache-2.0
+      Copyright (c) Espressif Systems (Shanghai) Co. Ltd.
+      Ships as binary components inside the firmware image. See
+      ../preferred/Apache-2.0 for the full text.
+      https://github.com/espressif/esp-idf
+  * ESP32-S3 toolchain               - respective upstream licenses
+      (xtensa-esp32s3-elf, newlib, FreeRTOS components)
 
-Espressif ESP-IDF
-  Copyright (c) Espressif Systems (Shanghai) Co. Ltd.
-  Licensed under the Apache License, Version 2.0.
-  See LICENSES/preferred/Apache-2.0 for the full license text.
-  https://github.com/espressif/esp-idf
+Host-side tooling (see oreoOS/requirements.txt for versions)
+------------------------------------------------------------
 
-ESP32 toolchain (xtensa-esp32s3-elf, newlib, FreeRTOS components)
-  Licensed under their respective upstream licenses.
+  * esptool                          - GPL-2.0
+  * mpremote                         - MIT
+  * pygame-ce                        - LGPL-2.1
+  * Pillow                           - HPND (MIT-style)
 
-If you believe an upstream component is missing from this list, please
-open an issue or email hello@elixpo.com.
+Fonts
+-----
+
+  * Pixelify Sans                    - SIL OFL 1.1
+      Baked into the optimized bitmaps under assets/fonts/.
+
+If you believe a component is missing from this list, please open an issue or
+email hello@elixpo.com.
