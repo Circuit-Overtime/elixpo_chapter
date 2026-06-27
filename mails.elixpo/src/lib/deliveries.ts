@@ -154,6 +154,39 @@ export async function markDeliveryFailed(
         .run();
 }
 
+/**
+ * Park a delivery as awaiting an asynchronous retry. The last transient error
+ * is kept on the row so the logs explain *why* it's still in flight, but the
+ * status stays `queued` until a retry resolves it to sent/failed.
+ */
+export async function markDeliveryQueued(
+    db: D1Database,
+    id: string,
+    lastError?: string | null,
+): Promise<void> {
+    await db
+        .prepare("UPDATE deliveries SET status = 'queued', error = ? WHERE id = ?")
+        .bind(lastError ? lastError.slice(0, 1000) : null, id)
+        .run();
+}
+
+/** Count this attempt against the row (used by the retry consumer). */
+export async function incrementAttempts(db: D1Database, id: string): Promise<number> {
+    const row = (await db
+        .prepare("UPDATE deliveries SET attempts = attempts + 1 WHERE id = ? RETURNING attempts")
+        .bind(id)
+        .first()) as { attempts?: number } | null;
+    return row?.attempts ?? 0;
+}
+
+/** Load a single delivery row by id (used by the retry consumer). */
+export async function getDelivery(db: D1Database, id: string): Promise<DeliveryRow | null> {
+    return (await db
+        .prepare("SELECT * FROM deliveries WHERE id = ? LIMIT 1")
+        .bind(id)
+        .first()) as DeliveryRow | null;
+}
+
 /** Find a prior delivery by idempotency key (per tenant) to dedupe retries. */
 export async function findByIdempotencyKey(
     db: D1Database,

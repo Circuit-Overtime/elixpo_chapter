@@ -145,7 +145,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         ...(result.ok ? {} : { error: result.error }),
     };
     // 200 when accepted by SMTP, or skipped because the recipient unsubscribed
-    // (a successful no-op, not an error). 502 only on a real downstream failure.
-    const status = result.ok || result.status === "suppressed" ? 200 : 502;
+    // (a successful no-op, not an error). 202 when the first attempt hit a
+    // transient error and the send was handed to the retry queue — the final
+    // outcome resolves in the delivery log. 502 only on a real downstream failure.
+    const status =
+        result.status === "queued" ? 202 : result.ok || result.status === "suppressed" ? 200 : 502;
     return json(payload, status);
 }

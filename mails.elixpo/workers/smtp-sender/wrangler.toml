@@ -4,10 +4,33 @@ compatibility_date = "2025-09-23"
 # cloudflare:sockets is a native Workers API — no flags needed.
 
 # Secret (set via `wrangler secret put SMTP_SENDER_SECRET`, or .dev.vars locally):
-#   SMTP_SENDER_SECRET — shared secret the Pages app sends as X-Sender-Secret.
+#   SMTP_SENDER_SECRET — shared secret the Pages app sends as X-Sender-Secret,
+#                        and that this Worker sends back when calling Pages.
 #
-# Step 5 will add the Cloudflare Queue consumer binding here so this Worker also
-# drains the elixpo-mail-send queue.
+# Where this Worker calls back to re-run the send pipeline on a retry. Point it
+# at the Pages app origin (no trailing slash).
+[vars]
+PAGES_INTERNAL_URL = "https://mails.elixpo.com"
+
+# Cloudflare Queue consumers. This Worker drains both queues (create them with
+# `npm run queues:create`):
+#   elixpo-mail-send        — a transient send failure is retried up to
+#                             max_retries with CF's backoff; once exhausted the
+#                             message dead-letters into the retry queue.
+#   elixpo-mail-send-retry  — the failed-email queue: one last attempt, then the
+#                             delivery is resolved (sent or permanently failed).
+[[queues.consumers]]
+queue = "elixpo-mail-send"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+dead_letter_queue = "elixpo-mail-send-retry"
+
+[[queues.consumers]]
+queue = "elixpo-mail-send-retry"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 3
 
 # Observability — capture invocation + console logs of each send so failures are
 # visible (dashboard → Worker → Logs, or `wrangler tail`). Takes effect on the
