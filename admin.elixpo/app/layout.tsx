@@ -18,11 +18,18 @@ export const metadata: Metadata = {
         template: "%s | Elixpo Admin",
     },
     description:
-        "The admin control plane for the Elixpo Cloudflare account. Auto-discovers every Pages project, Worker, D1, KV, Queue, Durable Object and Workflow with full observability. Admins only.",
+        "Elixpo Admin is the centralized control plane for the Elixpo platform, providing real-time observability across Cloudflare Pages, Workers, D1, KV, Queues, Durable Objects, Workflows, deployments, analytics, and platform health from a single secure dashboard.",
     applicationName: "Elixpo Admin",
     keywords: [
         "Elixpo",
+        "Elixpo Admin",
         "Cloudflare",
+        "Cloudflare Pages",
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare KV",
+        "Cloudflare Queues",
+        "Cloudflare Workflows",
         "admin",
         "dashboard",
         "observability",
@@ -31,6 +38,11 @@ export const metadata: Metadata = {
         "D1",
         "KV",
         "Workers",
+        "Infrastructure",
+        "Infrastructure Management",
+        "Admin Dashboard",
+        "Platform Monitoring",
+        "Platform Health",
     ],
     authors: [{ name: "Elixpo", url: "https://elixpo.com" }],
     creator: "Elixpo",
@@ -42,24 +54,24 @@ export const metadata: Metadata = {
     openGraph: {
         type: "website",
         siteName: "Elixpo Admin",
-        title: "Elixpo Admin — Cloudflare Control Plane",
+        title: "Elixpo Admin — Platform Operations & Cloudflare Control Plane",
         description:
-            "Auto-discovered observability for the entire Elixpo Cloudflare account.",
+            "Monitor and manage the entire Elixpo platform with centralized infrastructure management, live platform health, deployment insights, and Cloudflare observability.",
         url: "https://admin.elixpo.com",
         images: [
             {
                 url: "/og-image.png",
                 width: 1200,
                 height: 630,
-                alt: "Elixpo Admin",
+                alt: "Elixpo Admin Dashboard",
             },
         ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Elixpo Admin — Cloudflare Control Plane",
+        title: "Elixpo Admin — Platform Operations & Cloudflare Control Plane",
         description:
-            "Auto-discovered observability for the entire Elixpo Cloudflare account.",
+            "Monitor and manage the entire Elixpo platform with centralized infrastructure management, live platform health, deployment insights, and Cloudflare observability.",
         images: ["/og-image.png"],
     },
     icons: {
