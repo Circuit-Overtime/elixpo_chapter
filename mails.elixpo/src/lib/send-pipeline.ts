@@ -22,7 +22,7 @@ import { decryptSecret } from "./encryption";
 import { appUrl } from "./env";
 import { type ProductRow, getProduct, productToFooter } from "./products";
 import { enqueueRetry } from "./queue";
-import { renderTemplate } from "./render";
+import { type EmailFooter, renderTemplate } from "./render";
 import { type SenderRow, getSender } from "./senders";
 import { relayViaSender } from "./smtp-sender";
 import { isSuppressed, signUnsub } from "./suppressions";
@@ -34,6 +34,16 @@ import { type TemplateRow, getTemplate } from "./templates";
  *   2. the product's default sender, else
  *   3. the tenant's default sender (is_default = 1).
  */
+/** Per-template footer (one-time templates store their own footer JSON). */
+function parseTemplateFooter(t: TemplateRow): EmailFooter | null {
+    if (!t.footer_json) return null;
+    try {
+        return JSON.parse(t.footer_json) as EmailFooter;
+    } catch {
+        return null;
+    }
+}
+
 export async function resolveSender(
     db: D1Database,
     tenantId: string,
@@ -129,13 +139,18 @@ async function executeSend(
     const productId = product?.id ?? template.product_id;
     const isTransactional = template.transactional === 1;
 
-    // Per-recipient one-click unsubscribe link (non-transactional only).
-    const unsubscribeUrl = isTransactional
-        ? null
-        : `${await appUrl()}/u/${await signUnsub(productId, to)}`;
+    // Per-recipient one-click unsubscribe link (non-transactional only). The
+    // unsubscribe + suppression list are product-scoped, so one-time templates
+    // (no product) carry no unsubscribe link.
+    const unsubscribeUrl =
+        isTransactional || !productId
+            ? null
+            : `${await appUrl()}/u/${await signUnsub(productId, to)}`;
 
     const sender = await resolveSender(db, tenantId, template, product);
-    const footer = product ? productToFooter(product) : null;
+    // Footer: the product's brand footer when attached, else the template's own
+    // per-template footer (one-time templates).
+    const footer = product ? productToFooter(product) : parseTemplateFooter(template);
     if (footer && unsubscribeUrl) footer.unsubscribeUrl = unsubscribeUrl;
     const rendered = renderTemplate(
         {
@@ -225,8 +240,9 @@ export async function deliverTemplate(db: D1Database, input: DeliverInput): Prom
     const isTransactional = template.transactional === 1;
 
     // Honor unsubscribes — except for transactional templates (receipts etc.),
-    // which are CAN-SPAM exempt and always send.
-    if (!isTransactional && (await isSuppressed(db, productId, to))) {
+    // which are CAN-SPAM exempt and always send. Suppression is product-scoped,
+    // so one-time templates (no product) have nothing to check against.
+    if (!isTransactional && productId && (await isSuppressed(db, productId, to))) {
         const deliveryId = await createDelivery(db, {
             tenantId,
             productId,
@@ -312,12 +328,16 @@ export interface RedeliverResult {
 
 /**
  * Re-attempt a previously-queued delivery, rebuilding everything from its row.
- * Called by the consumer Worker (workers/smtp-sender) via /v1/internal/redeliver
- * for both queues:
- *   send queue  (final=false) — attempt; a still-transient failure leaves the
- *               row `queued` and asks CF to retry with backoff.
- *   retry queue (final=true)  — the failed-email queue's last attempt; it always
- *               resolves the row to sent or failed (never asks for more retries).
+ * Called by the consumer Worker (workers/smtp-sender) via /v1/internal/redeliver.
+ * One attempt, and it reports the outcome — the *orchestrator* decides what to
+ * do next (the send queue retries on `retryable`; the retry queue escalates to
+ * the durable Workflow; the Workflow sleeps and re-attempts):
+ *   sent      → row marked sent.
+ *   permanent → row marked failed.
+ *   transient → row left `queued`, retryable=true.
+ *
+ * `final: true` is the Workflow's terminal give-up: no attempt is made, the row
+ * is marked permanently failed because even long-horizon retries are exhausted.
  */
 export async function redeliverById(
     db: D1Database,
@@ -327,6 +347,16 @@ export async function redeliverById(
     const row = await getDelivery(db, deliveryId);
     if (!row) return { ok: false, status: "failed", retryable: false, error: "delivery_not_found" };
     if (row.status === "sent") return { ok: true, status: "sent", retryable: false };
+
+    if (opts.final) {
+        await markDeliveryFailed(
+            db,
+            deliveryId,
+            row.error || "Retries exhausted after extended backoff.",
+            row.smtp_response ?? null,
+        );
+        return { ok: false, status: "failed", retryable: false, error: "retries_exhausted" };
+    }
 
     const template = row.template_id ? await getTemplate(db, row.tenant_id, row.template_id) : null;
     if (!template) {
@@ -355,9 +385,9 @@ export async function redeliverById(
         await markDeliverySent(db, deliveryId, r.smtpResponse ?? null);
         return { ok: true, status: "sent", retryable: false };
     }
-    // Still transient AND we're not on the last-chance retry queue → keep queued
-    // and let the consumer retry. Otherwise (permanent, or final attempt) resolve.
-    if (r.retryable && !opts.final) {
+    // Transient → keep the row queued and report retryable so the orchestrator
+    // (queue backoff, or the durable Workflow) attempts again later.
+    if (r.retryable) {
         await markDeliveryQueued(db, deliveryId, r.error ?? null);
         return { ok: false, status: "queued", retryable: true, error: r.error };
     }

@@ -11,6 +11,12 @@ export const metadata: Metadata = {
     description:
         "How mail.elixpo collects, uses, encrypts, and retains data — account identity, sender credentials, template content, and delivery logs.",
     alternates: { canonical: "/privacy" },
+    openGraph: {
+        title: "Privacy Policy — Elixpo Mails",
+        description:
+            "How mail.elixpo collects, uses, encrypts, and retains data — account identity, sender credentials, template content, and delivery logs.",
+        images: ["/og-image.png"],
+    },
 };
 
 export default function PrivacyPage() {

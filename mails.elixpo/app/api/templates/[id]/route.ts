@@ -27,13 +27,15 @@ export async function GET(request: NextRequest, { params }: Ctx) {
     const row = await getTemplate(db, session.tenantId, id);
     if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
     const attachments = await listAttachments(db, session.tenantId, id);
-    const product = await getProduct(db, session.tenantId, row.product_id);
+    const product = row.product_id ? await getProduct(db, session.tenantId, row.product_id) : null;
     return NextResponse.json({
         ok: true,
         template: {
             ...toPublic(row),
             attachments: attachments.map(attachmentToPublic),
-            footer: product ? productToFooter(product) : null,
+            // Webhook templates inherit the product footer; one-time templates
+            // keep their own footer from toPublic (parsed from footer_json).
+            ...(product ? { footer: productToFooter(product) } : {}),
         },
     });
 }
@@ -58,8 +60,34 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     const existing = await getTemplate(db, session.tenantId, id);
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+    // Resolve the product change: a non-empty string attaches that product
+    // (webhook template) — validate it belongs to the tenant; null/"" detaches
+    // it (one-time template). undefined leaves it unchanged.
+    let productId: string | null | undefined;
+    if (body?.productId !== undefined) {
+        if (typeof body.productId === "string" && body.productId) {
+            const product = await getProduct(db, session.tenantId, body.productId);
+            if (!product) {
+                return NextResponse.json(
+                    { error: "invalid_product", message: "Choose a valid product." },
+                    { status: 400 },
+                );
+            }
+            productId = product.id;
+        } else {
+            productId = null;
+        }
+    }
+
     try {
         const row = await updateTemplate(db, session.tenantId, id, {
+            productId,
+            footer:
+                body?.footer !== undefined
+                    ? body.footer && typeof body.footer === "object"
+                        ? body.footer
+                        : null
+                    : undefined,
             name: typeof body?.name === "string" ? body.name.trim() : undefined,
             slug:
                 typeof body?.slug === "string" && body.slug.trim() ? slugify(body.slug) : undefined,

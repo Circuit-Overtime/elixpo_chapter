@@ -7,12 +7,13 @@
 
 import type { D1Database } from "@cloudflare/workers-types";
 import { newId } from "./ids";
+import type { EmailFooter } from "./render";
 import { extractVariables } from "./template-vars";
 
 export interface TemplateRow {
     id: string;
     tenant_id: string;
-    product_id: string;
+    product_id: string | null;
     slug: string;
     name: string;
     kind: string;
@@ -23,6 +24,7 @@ export interface TemplateRow {
     sender_id: string | null;
     bg_color: string | null;
     transactional: number;
+    footer_json: string | null;
     status: string;
     created_at: string;
     updated_at: string;
@@ -31,7 +33,9 @@ export interface TemplateRow {
 /** Summary for list views — no heavy content. */
 export interface TemplateSummary {
     id: string;
-    product_id: string;
+    product_id: string | null;
+    /** Derived: true when no product is attached (compose-and-send). */
+    oneTime: boolean;
     slug: string;
     name: string;
     kind: string;
@@ -48,6 +52,8 @@ export interface TemplatePublic extends TemplateSummary {
     content: any[] | null;
     content_html: string | null;
     bg_color: string | null;
+    /** Per-template footer (one-time templates); null = none / inherit product. */
+    footer: EmailFooter | null;
     created_at: string;
 }
 
@@ -64,6 +70,7 @@ export function toSummary(row: TemplateRow): TemplateSummary {
     return {
         id: row.id,
         product_id: row.product_id,
+        oneTime: row.product_id == null,
         slug: row.slug,
         name: row.name,
         kind: row.kind,
@@ -82,6 +89,7 @@ export function toPublic(row: TemplateRow): TemplatePublic {
         content: parseJson<any[] | null>(row.content_json, null),
         content_html: row.content_html,
         bg_color: row.bg_color,
+        footer: parseJson<EmailFooter | null>(row.footer_json, null),
         created_at: row.created_at,
     };
 }
@@ -115,12 +123,14 @@ export interface TemplateInput {
     senderId?: string | null;
     bgColor?: string | null;
     transactional?: boolean;
+    footer?: EmailFooter | null;
 }
 
 export async function createTemplate(
     db: D1Database,
     tenantId: string,
-    productId: string,
+    /** null = a one-time template (no product attached). */
+    productId: string | null,
     input: TemplateInput,
 ): Promise<TemplateRow> {
     const id = newId("template");
@@ -131,8 +141,8 @@ export async function createTemplate(
     await db
         .prepare(
             `INSERT INTO templates
-                (id, tenant_id, product_id, slug, name, kind, subject, content_json, content_html, variables_json, sender_id, bg_color, transactional)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                (id, tenant_id, product_id, slug, name, kind, subject, content_json, content_html, variables_json, sender_id, bg_color, transactional, footer_json)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(
             id,
@@ -148,6 +158,7 @@ export async function createTemplate(
             input.senderId || null,
             input.bgColor || null,
             input.transactional ? 1 : 0,
+            input.footer ? JSON.stringify(input.footer) : null,
         )
         .run();
 
@@ -167,6 +178,10 @@ export interface TemplateUpdate {
     bgColor?: string | null;
     transactional?: boolean;
     status?: string;
+    /** null detaches the product (makes it a one-time template). */
+    productId?: string | null;
+    /** null clears the per-template footer. */
+    footer?: EmailFooter | null;
 }
 
 export async function updateTemplate(
@@ -208,6 +223,14 @@ export async function updateTemplate(
     if (update.status !== undefined) {
         sets.push("status = ?");
         vals.push(update.status);
+    }
+    if (update.productId !== undefined) {
+        sets.push("product_id = ?");
+        vals.push(update.productId);
+    }
+    if (update.footer !== undefined) {
+        sets.push("footer_json = ?");
+        vals.push(update.footer ? JSON.stringify(update.footer) : null);
     }
     if (update.contentJson !== undefined) {
         sets.push("content_json = ?");

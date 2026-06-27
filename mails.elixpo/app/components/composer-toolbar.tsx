@@ -111,7 +111,7 @@ export default function ComposerToolbar({
     const btn = {
         color: "var(--fg-muted)",
         borderRadius: "8px",
-        p: 0.7,
+        p: 0.5,
         "&:hover": { color: "var(--fg)", background: "var(--accent-tint)" },
     };
 
@@ -122,7 +122,7 @@ export default function ComposerToolbar({
             spacing={0.3}
             sx={{
                 px: 1.5,
-                py: 0.8,
+                py: 0.55,
                 borderTop: "1px solid var(--border)",
                 background: "var(--overlay)",
                 flexWrap: "wrap",

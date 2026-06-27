@@ -140,6 +140,14 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
     }
 
     const activeWorkspace = workspaces.find((w) => w.active);
+    // The workspace the user administers — prefer the active one if they're an
+    // admin/owner there, else the first they administer. Shown as a prominent
+    // full-width chip in the profile dropdown.
+    const isAdminRole = (r: string) => r === "owner" || r === "admin";
+    const adminWorkspace =
+        (activeWorkspace && isAdminRole(activeWorkspace.role) && activeWorkspace) ||
+        workspaces.find((w) => isAdminRole(w.role)) ||
+        null;
 
     return (
         <>
@@ -209,6 +217,7 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
                 >
                     <Avatar
                         src={user.avatar || undefined}
+                        slotProps={{ img: { referrerPolicy: "no-referrer" } }}
                         sx={{
                             width: 28,
                             height: 28,
@@ -285,6 +294,7 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
                         <Stack direction="row" spacing={1.2} alignItems="center">
                             <Avatar
                                 src={user.avatar || undefined}
+                                slotProps={{ img: { referrerPolicy: "no-referrer" } }}
                                 sx={{
                                     width: 38,
                                     height: 38,
@@ -336,25 +346,91 @@ export default function DashboardTopbar({ user }: { user: DashboardUser }) {
                                     border: "1px solid var(--accent-border)",
                                 }}
                             />
-                            <Chip
-                                size="small"
-                                label={`Workspace · ${activeWorkspace?.name || user.tenantId}`}
-                                sx={{
-                                    height: 22,
-                                    width: "100%",
-                                    justifyContent: "flex-start",
-                                    fontSize: "0.66rem",
-                                    fontWeight: 600,
-                                    color: "var(--fg-muted)",
-                                    bgcolor: "var(--overlay)",
-                                    border: "1px solid var(--border)",
-                                    "& .MuiChip-label": {
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                    },
-                                }}
-                            />
+                            {adminWorkspace ? (
+                                // The workspace the user administers — a big,
+                                // standalone, full-width chip (name + role).
+                                <Chip
+                                    icon={
+                                        <GroupsIcon
+                                            sx={{ fontSize: 18, color: "var(--accent) !important" }}
+                                        />
+                                    }
+                                    label={
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                lineHeight: 1.15,
+                                                minWidth: 0,
+                                            }}
+                                        >
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    fontSize: "0.82rem",
+                                                    fontWeight: 800,
+                                                    color: "var(--accent)",
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                {adminWorkspace.name}
+                                            </Box>
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    fontSize: "0.58rem",
+                                                    fontWeight: 700,
+                                                    letterSpacing: "0.07em",
+                                                    textTransform: "uppercase",
+                                                    color: "var(--accent)",
+                                                    opacity: 0.75,
+                                                }}
+                                            >
+                                                {adminWorkspace.role === "owner"
+                                                    ? "Owner"
+                                                    : "Admin"}
+                                            </Box>
+                                        </Box>
+                                    }
+                                    sx={{
+                                        width: "100%",
+                                        height: "auto",
+                                        py: 0.7,
+                                        justifyContent: "flex-start",
+                                        borderRadius: "10px",
+                                        bgcolor: "var(--accent-tint)",
+                                        border: "1px solid var(--accent-border)",
+                                        "& .MuiChip-icon": { ml: 1, mr: 0.2 },
+                                        "& .MuiChip-label": {
+                                            flex: 1,
+                                            minWidth: 0,
+                                            px: 0.8,
+                                        },
+                                    }}
+                                />
+                            ) : (
+                                <Chip
+                                    size="small"
+                                    label={`Workspace · ${activeWorkspace?.name || user.tenantId}`}
+                                    sx={{
+                                        height: 22,
+                                        width: "100%",
+                                        justifyContent: "flex-start",
+                                        fontSize: "0.66rem",
+                                        fontWeight: 600,
+                                        color: "var(--fg-muted)",
+                                        bgcolor: "var(--overlay)",
+                                        border: "1px solid var(--border)",
+                                        "& .MuiChip-label": {
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                        },
+                                    }}
+                                />
+                            )}
                         </Stack>
                     </Box>
                     <Divider sx={{ borderColor: BORDER }} />

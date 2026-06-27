@@ -3,7 +3,7 @@ export const runtime = "edge";
 import { parseAttachmentInputs, replaceAttachments } from "@/lib/attachments";
 import { cleanupOrphanImages } from "@/lib/cloudinary";
 import { getDatabase } from "@/lib/d1-client";
-import { getOrCreateDefaultProduct, getProduct, slugify } from "@/lib/products";
+import { getProduct, slugify } from "@/lib/products";
 import { getSession } from "@/lib/session";
 import { createTemplate, listTemplates, toSummary } from "@/lib/templates";
 import { requireWriteRole } from "@/lib/workspace-guard";
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, templates: rows.map(toSummary) });
 }
 
-/** POST /api/templates — create a template (under the tenant's default product). */
+/** POST /api/templates — create a template (one-time by default; product optional). */
 export async function POST(request: NextRequest) {
     const session = await getSession(request);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -51,23 +51,23 @@ export async function POST(request: NextRequest) {
         typeof body?.slug === "string" && body.slug.trim() ? slugify(body.slug) : slugify(name);
 
     const db = await getDatabase();
-    // A template must belong to a product. Use the one the caller chose; fall
-    // back to the tenant's default product only if none was supplied.
-    let product;
+    // Templates are created as one-time (no product) by default — the user
+    // attaches a product later from the Settings page to make it webhook-based.
+    // If a productId is supplied up front, validate and use it.
+    let productId: string | null = null;
     if (typeof body?.productId === "string" && body.productId) {
-        product = await getProduct(db, session.tenantId, body.productId);
+        const product = await getProduct(db, session.tenantId, body.productId);
         if (!product) {
             return NextResponse.json(
                 { error: "invalid_product", message: "Choose a valid product for this template." },
                 { status: 400 },
             );
         }
-    } else {
-        product = await getOrCreateDefaultProduct(db, session.tenantId);
+        productId = product.id;
     }
 
     try {
-        const row = await createTemplate(db, session.tenantId, product.id, {
+        const row = await createTemplate(db, session.tenantId, productId, {
             name,
             slug,
             subject: typeof body?.subject === "string" ? body.subject : "",
