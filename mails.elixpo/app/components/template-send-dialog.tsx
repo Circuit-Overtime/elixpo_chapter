@@ -8,11 +8,13 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
     Box,
     Button,
+    Chip,
     CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
+    InputBase,
     MenuItem,
     Link as MuiLink,
     Select,
@@ -171,8 +173,37 @@ export default function TemplateSendDialog({
     getContentHtml,
     bgColor,
 }: TemplateSendDialogProps) {
-    // Recipients + senders
-    const [recipients, setRecipients] = useState("");
+    // Recipients as chips. `chips` holds the committed emails; `recipInput` is
+    // the in-progress text. Typing a comma / space / Enter commits the token.
+    const [chips, setChips] = useState<string[]>([]);
+    const [recipInput, setRecipInput] = useState("");
+
+    const addTokens = (raw: string) => {
+        const found: string[] = [];
+        for (const tok of raw.split(/[\s,]+/)) {
+            const e = tok.trim().toLowerCase();
+            if (e && EMAIL_RE.test(e)) found.push(e);
+        }
+        if (found.length) setChips((c) => Array.from(new Set([...c, ...found])));
+    };
+    const onRecipInputChange = (val: string) => {
+        // A separator commits everything before the last token.
+        if (/[\s,]/.test(val)) {
+            const parts = val.split(/[\s,]+/);
+            const last = parts.pop() ?? "";
+            addTokens(parts.join(","));
+            setRecipInput(last);
+        } else {
+            setRecipInput(val);
+        }
+    };
+    const commitRecipInput = () => {
+        const e = recipInput.trim().toLowerCase();
+        if (e && EMAIL_RE.test(e)) {
+            addTokens(e);
+            setRecipInput("");
+        }
+    };
     const [senders, setSenders] = useState<Sender[] | null>(null);
     const [sendersError, setSendersError] = useState<string | null>(null);
     const [senderId, setSenderId] = useState("");
@@ -332,7 +363,8 @@ export default function TemplateSendDialog({
     const currentAliases = aliasesBySender[senderId] ?? [];
     const hasSenders = (senders?.length ?? 0) > 0;
 
-    const parsed = parseRecipients(recipients);
+    // Committed chips plus any valid email still in the input box.
+    const parsed = parseRecipients([...chips, recipInput].join(","));
     const recipientCount = parsed.length;
     const overLimit = recipientCount > MAX_RECIPIENTS;
 
@@ -344,7 +376,7 @@ export default function TemplateSendDialog({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    to: recipients,
+                    to: parsed.join(", "),
                     vars,
                     senderId,
                     aliasId: aliasId || undefined,
@@ -417,21 +449,94 @@ export default function TemplateSendDialog({
                     <Stack spacing={2.2}>
                         <Box>
                             <FieldLabel>Recipients (required)</FieldLabel>
-                            <TextField
-                                value={recipients}
-                                onChange={(e) => setRecipients(e.target.value)}
-                                placeholder="alice@example.com, bob@example.com"
-                                fullWidth
-                                multiline
-                                minRows={3}
-                                maxRows={8}
-                                size="small"
-                                sx={darkField}
-                                helperText="Separate with commas, spaces, or new lines. Up to 50."
-                                FormHelperTextProps={{
-                                    sx: { color: TEXT_40, fontSize: "0.74rem", mx: 0.2 },
+                            <Box
+                                onClick={(e) => {
+                                    const input = (
+                                        e.currentTarget as HTMLElement
+                                    ).querySelector("input");
+                                    (input as HTMLInputElement | null)?.focus();
                                 }}
-                            />
+                                sx={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 0.6,
+                                    alignItems: "center",
+                                    minHeight: 80,
+                                    alignContent: "flex-start",
+                                    p: 1,
+                                    borderRadius: "10px",
+                                    border: `1px solid ${BORDER}`,
+                                    background: "var(--surface-2)",
+                                    cursor: "text",
+                                    "&:focus-within": { borderColor: "var(--accent)" },
+                                }}
+                            >
+                                {chips.map((email) => (
+                                    <Chip
+                                        key={email}
+                                        label={email}
+                                        size="small"
+                                        onDelete={() =>
+                                            setChips((c) => c.filter((x) => x !== email))
+                                        }
+                                        sx={{
+                                            height: 24,
+                                            fontSize: "0.76rem",
+                                            color: "var(--fg)",
+                                            bgcolor: "var(--accent-tint)",
+                                            border: "1px solid var(--accent-border)",
+                                            "& .MuiChip-deleteIcon": {
+                                                color: "var(--fg-muted)",
+                                                "&:hover": { color: "var(--danger)" },
+                                            },
+                                        }}
+                                    />
+                                ))}
+                                <InputBase
+                                    value={recipInput}
+                                    onChange={(e) => onRecipInputChange(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === ",") {
+                                            e.preventDefault();
+                                            commitRecipInput();
+                                        } else if (
+                                            e.key === "Backspace" &&
+                                            recipInput === "" &&
+                                            chips.length
+                                        ) {
+                                            setChips((c) => c.slice(0, -1));
+                                        }
+                                    }}
+                                    onBlur={commitRecipInput}
+                                    onPaste={(e) => {
+                                        const text = e.clipboardData.getData("text");
+                                        if (/[\s,]/.test(text)) {
+                                            e.preventDefault();
+                                            onRecipInputChange(`${recipInput}${text} `);
+                                        }
+                                    }}
+                                    placeholder={
+                                        chips.length ? "Add another…" : "alice@example.com, bob@…"
+                                    }
+                                    sx={{
+                                        flex: 1,
+                                        minWidth: 140,
+                                        px: 0.5,
+                                        color: "var(--fg)",
+                                        fontSize: "0.86rem",
+                                        "& input::placeholder": {
+                                            color: "var(--fg-faint)",
+                                            opacity: 1,
+                                        },
+                                    }}
+                                />
+                            </Box>
+                            <Typography
+                                sx={{ mt: 0.5, fontSize: "0.72rem", color: TEXT_40, mx: 0.2 }}
+                            >
+                                Type an email then comma or Enter to add it. Up to{" "}
+                                {MAX_RECIPIENTS}.
+                            </Typography>
                             <Typography
                                 sx={{
                                     mt: 0.6,
@@ -790,7 +895,7 @@ export default function TemplateSendDialog({
             </DialogActions>
             <Snackbar
                 open={Boolean(toast)}
-                autoHideDuration={toast?.ok ? 6000 : 12000}
+                autoHideDuration={toast?.ok ? 11000 : 14000}
                 onClose={(_e, reason) => reason !== "clickaway" && setToast(null)}
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
                 message={

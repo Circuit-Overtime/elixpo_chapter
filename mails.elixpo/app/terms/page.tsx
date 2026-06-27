@@ -11,6 +11,12 @@ export const metadata: Metadata = {
     description:
         "The terms governing your use of mail.elixpo — accounts, sender credentials, acceptable use, API credentials, availability, and liability.",
     alternates: { canonical: "/terms" },
+    openGraph: {
+        title: "Terms of Service — Elixpo Mails",
+        description:
+            "The terms governing your use of mail.elixpo — accounts, sender credentials, acceptable use, API credentials, availability, and liability.",
+        images: ["/og-image.png"],
+    },
 };
 
 export default function TermsPage() {

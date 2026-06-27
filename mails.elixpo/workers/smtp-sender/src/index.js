@@ -2,9 +2,11 @@
 // The one component that opens raw TCP (Pages edge routes can't). The Pages app
 // calls POST /send server-to-server with a shared secret; this Worker relays the
 // message through the tenant's own SMTP credentials over cloudflare:sockets.
-// It is ALSO the Cloudflare Queue consumer for elixpo-mail-send (retries) and
-// elixpo-mail-send-retry (failed-email last chance) — see the queue() handler.
+// It is ALSO the Cloudflare Queue consumer for elixpo-mail-send (fast retries)
+// and elixpo-mail-send-retry (the bridge to the Workflow) — see queue() — and it
+// hosts MailRetryWorkflow, the durable long-horizon retry (see bottom of file).
 
+import { WorkflowEntrypoint } from "cloudflare:workers";
 import { sendMail } from "./smtp.js";
 
 const REQUIRED = ["host", "user", "pass", "from", "to"];
@@ -69,15 +71,18 @@ export default {
     },
 
     // Cloudflare Queue consumer. Two queues are bound (see wrangler.toml):
-    //   elixpo-mail-send        — (re)send attempts; CF retries with backoff.
-    //   elixpo-mail-send-retry  — the failed-email queue: messages the send
-    //                             queue gave up on get one last attempt here,
-    //                             then the delivery is resolved sent/failed.
+    //   elixpo-mail-send        — fast (re)send attempts; CF retries with backoff
+    //                             over minutes, then dead-letters into the retry
+    //                             queue once max_retries is hit.
+    //   elixpo-mail-send-retry  — the bridge: if a message that exhausted the fast
+    //                             retries is STILL only transiently failing, hand
+    //                             it to MailRetryWorkflow for durable, hour-scale
+    //                             backoff. Permanent/sent outcomes just resolve.
     // The Worker stays thin: it can't reach D1 / the encryption key / the render
     // logic, so it calls back into the Pages app's /v1/internal/redeliver, which
     // owns the full pipeline. The shared SMTP_SENDER_SECRET authenticates us.
     async queue(batch, env) {
-        const isLastChance = batch.queue && batch.queue.endsWith("-retry");
+        const isRetryQueue = batch.queue && batch.queue.endsWith("-retry");
         for (const msg of batch.messages) {
             const deliveryId = msg.body?.deliveryId;
             if (!deliveryId) {
@@ -85,12 +90,18 @@ export default {
                 continue;
             }
             try {
-                const res = await redeliver(env, deliveryId, isLastChance);
-                // The retry queue always resolves the row, so ack. The send
-                // queue acks on a terminal outcome (sent / hard-failed) and asks
-                // CF to retry while the failure is still transient.
-                if (isLastChance || res.retryable !== true) msg.ack();
-                else msg.retry();
+                const res = await redeliver(env, deliveryId, false);
+                if (res.retryable === true && isRetryQueue) {
+                    // Fast retries are spent and it's still transient → escalate
+                    // to the durable Workflow for long-horizon backoff, then ack.
+                    await startRetryWorkflow(env, deliveryId);
+                    msg.ack();
+                } else if (res.retryable === true) {
+                    // Still on the fast queue → let CF retry with backoff.
+                    msg.retry();
+                } else {
+                    msg.ack(); // terminal: sent or hard-failed.
+                }
             } catch (_err) {
                 // Couldn't even reach the Pages app — let the queue retry the
                 // whole job later so the delivery isn't silently dropped.
@@ -99,6 +110,51 @@ export default {
         }
     },
 };
+
+/**
+ * MailRetryWorkflow — durable, long-horizon retry. A delivery only lands here
+ * after the queue's fast retries are exhausted and it's still failing for a
+ * transient reason. Each step is durable: the Worker can evict between sleeps and
+ * resume hours later without losing place. After the schedule is exhausted the
+ * delivery is marked permanently failed.
+ *
+ * (Future: item #5 — emit a "delivery permanently failed" notification to the
+ * tenant from the give-up step.)
+ */
+const RETRY_SCHEDULE = ["30 minutes", "2 hours", "6 hours", "24 hours"];
+
+export class MailRetryWorkflow extends WorkflowEntrypoint {
+    async run(event, step) {
+        const deliveryId = event.payload?.deliveryId;
+        if (!deliveryId) return;
+
+        for (let i = 0; i < RETRY_SCHEDULE.length; i++) {
+            await step.sleep(`backoff-${i}`, RETRY_SCHEDULE[i]);
+            const res = await step.do(`attempt-${i}`, () => redeliver(this.env, deliveryId, false));
+            // Resolved (sent, or hard-failed and already marked) → we're done.
+            if (res.retryable !== true) return;
+        }
+
+        // Schedule exhausted and still transiently failing → give up for good.
+        await step.do("give-up", () => redeliver(this.env, deliveryId, true));
+    }
+}
+
+/** Kick off the durable retry Workflow, keyed by delivery id so a delivery can't
+ *  have two concurrent retry instances. Falls back to marking the delivery failed
+ *  if the Workflow binding isn't available (e.g. not yet deployed). */
+async function startRetryWorkflow(env, deliveryId) {
+    if (!env.RETRY_WORKFLOW) {
+        await redeliver(env, deliveryId, true); // no Workflow → resolve as failed.
+        return;
+    }
+    try {
+        await env.RETRY_WORKFLOW.create({ id: `retry-${deliveryId}`, params: { deliveryId } });
+    } catch (_err) {
+        // An instance for this delivery already exists — it's already being
+        // retried, so there's nothing more to do.
+    }
+}
 
 /** Call the Pages app to (re)run the send pipeline for one delivery. */
 async function redeliver(env, deliveryId, final) {

@@ -1,20 +1,30 @@
-/* Elixpo Mails — dark-theme fixes for the BlockNote/lixeditor surface.
-   Imported AFTER the package styles in lix-editor-inner.tsx so these win. */
+/* Elixpo Mails — theme fixes for the BlockNote/lixeditor surface.
+   Imported AFTER the package styles in lix-editor-inner.tsx so these win.
+   Colors use the app CSS vars (--fg/--border) so the editor tracks the
+   light/dark toggle instead of assuming a dark canvas. */
 
-/* 1. Visible, blinking text caret (the BlockNote dark theme washed it out). */
+/* 1. Visible, blinking text caret (the BlockNote theme washes it out). */
 .lix-editor,
 .lix-editor .ProseMirror,
 .lix-editor-wrapper [contenteditable="true"] {
-    caret-color: #f5f5f4 !important;
+    caret-color: var(--fg) !important;
 }
 
-/* 2. Horizontal rule (the `---` divider) — lift contrast on the dark canvas. */
+/* 1b. Slightly smaller default body size so more of the email is on screen.
+   This is the editing surface only — the sent email keeps its own styles. */
+.lix-editor .ProseMirror,
+.lix-editor .bn-block-content,
+.lix-editor .bn-inline-content {
+    font-size: 0.9rem;
+}
+
+/* 2. Horizontal rule (the `---` divider) — lift contrast on either canvas. */
 .lix-editor hr,
 .lix-editor-wrapper hr,
 .lix-divider,
 .bn-block-content[data-content-type="divider"] {
     border: none !important;
-    border-top: 2px solid rgba(255, 255, 255, 0.24) !important;
+    border-top: 2px solid var(--border) !important;
     background: transparent !important;
     opacity: 1 !important;
 }

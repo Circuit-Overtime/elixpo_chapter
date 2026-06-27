@@ -102,7 +102,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         }
 
         const vars = body?.vars && typeof body.vars === "object" ? body.vars : {};
-        const product = await getProduct(db, session.tenantId, template.product_id);
+        const product = template.product_id ? await getProduct(db, session.tenantId, template.product_id) : null;
 
         const results = [];
         for (const to of recipients) {

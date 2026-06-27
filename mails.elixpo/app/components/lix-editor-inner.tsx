@@ -14,6 +14,7 @@ import {
     LixThemeProvider,
 } from "@elixpo/lixeditor";
 import { useRef } from "react";
+import { useTheme } from "./theme-provider";
 
 export interface LixEditorInnerProps {
     initialContent?: LixEditorProps["initialContent"];
@@ -41,8 +42,9 @@ export default function LixEditorInner({
     buttonDefaults,
 }: LixEditorInnerProps) {
     const ref = useRef<LixEditorHandle>(null);
+    const { theme } = useTheme();
     return (
-        <LixThemeProvider theme="dark">
+        <LixThemeProvider theme={theme}>
             <LixEditor
                 ref={ref}
                 initialContent={initialContent}

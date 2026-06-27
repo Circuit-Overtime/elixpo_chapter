@@ -301,6 +301,7 @@ const Navbar = () => {
                         >
                             <Avatar
                                 src={me.avatar || undefined}
+                                slotProps={{ img: { referrerPolicy: "no-referrer" } }}
                                 sx={{
                                     width: 28,
                                     height: 28,

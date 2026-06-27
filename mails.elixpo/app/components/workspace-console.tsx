@@ -857,7 +857,7 @@ function MembersCard({
                         >
                             <Avatar
                                 src={m.avatar ?? undefined}
-                                imgProps={{ referrerPolicy: "no-referrer" }}
+                                slotProps={{ img: { referrerPolicy: "no-referrer" } }}
                                 sx={{
                                     width: 38,
                                     height: 38,
