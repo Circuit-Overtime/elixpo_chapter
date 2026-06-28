@@ -77,29 +77,29 @@ const makeTheme = (mode: "light" | "dark") => {
         typography: {
             fontFamily: "var(--font-geist-sans), Arial, sans-serif",
         },
-    components: {
-        MuiCard: {
-            styleOverrides: {
-                root: {
-                    background: "var(--surface)",
-                    backdropFilter: "blur(20px)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "16px",
-                    boxShadow: "0 8px 32px 0 var(--overlay)",
+        components: {
+            MuiCard: {
+                styleOverrides: {
+                    root: {
+                        background: "var(--surface)",
+                        backdropFilter: "blur(20px)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "16px",
+                        boxShadow: "0 8px 32px 0 var(--overlay)",
+                    },
+                },
+            },
+            MuiPaper: {
+                styleOverrides: {
+                    root: {
+                        background: "var(--surface)",
+                        backdropFilter: "blur(20px)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "16px",
+                    },
                 },
             },
         },
-        MuiPaper: {
-            styleOverrides: {
-                root: {
-                    background: "var(--surface)",
-                    backdropFilter: "blur(20px)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "16px",
-                },
-            },
-        },
-    },
     });
 };
 

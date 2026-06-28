@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
-import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import Navbar from "../components/navbar";
 import PrivacyContent from "./content";
 
 export const metadata: Metadata = {
-    title: "Privacy Policy — Elixpo Accounts",
+    title: "Privacy Policy",
     description:
-        "How Elixpo Accounts collects, uses, and protects your personal information.",
+        "Understand how Elixpo Accounts collects, uses, encrypts, and protects your personal information, active sessions, and client credentials.",
+    openGraph: {
+        title: "Privacy Policy — Elixpo Accounts",
+        description:
+            "Understand how Elixpo Accounts collects, uses, encrypts, and protects your personal information.",
+        images: ["/og-image.png"],
+    },
 };
 
 export default function PrivacyPage() {
