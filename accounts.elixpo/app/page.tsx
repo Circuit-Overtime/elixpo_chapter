@@ -274,8 +274,10 @@ export default function LandingPage() {
                 </main>
 
                 {/* Arrow to scroll down */}
-                <div
-                    className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 opacity-60 text-xs font-semibold tracking-widest text-[var(--fg)] cursor-pointer animate-bounce select-none"
+                <button
+                    type="button"
+                    aria-label="Scroll to features"
+                    className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 opacity-60 text-xs font-semibold tracking-widest text-[var(--fg)] cursor-pointer animate-bounce select-none border-0 bg-transparent p-0"
                     onClick={() =>
                         document
                             .getElementById("features")
@@ -297,7 +299,7 @@ export default function LandingPage() {
                             d="M19 14l-7 7m0 0l-7-7m7 7V3"
                         />
                     </svg>
-                </div>
+                </button>
             </section>
 
             {/* TWO STEPS SECTION */}

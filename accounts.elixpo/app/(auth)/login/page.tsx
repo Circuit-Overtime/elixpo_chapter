@@ -246,10 +246,14 @@ const LoginContent = () => {
                     >
                         {/* Email Input */}
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-bold uppercase tracking-wider opacity-60">
+                            <label
+                                htmlFor="email"
+                                className="text-xs font-bold uppercase tracking-wider opacity-60"
+                            >
                                 Email Address
                             </label>
                             <input
+                                id="email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -261,11 +265,15 @@ const LoginContent = () => {
 
                         {/* Password Input */}
                         <div className="flex flex-col gap-1.5 relative">
-                            <label className="text-xs font-bold uppercase tracking-wider opacity-60">
+                            <label
+                                htmlFor="password"
+                                className="text-xs font-bold uppercase tracking-wider opacity-60"
+                            >
                                 Password
                             </label>
                             <div className="relative">
                                 <input
+                                    id="password"
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) =>

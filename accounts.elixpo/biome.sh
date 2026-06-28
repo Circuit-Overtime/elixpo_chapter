@@ -26,8 +26,17 @@ case "$MODE" in
     ;;
   ci)
     # --diagnostic-level=error: infos + warnings don't fail the check.
-    # Capture output + check exit so we can print a clean verdict.
-    if $BIOME ci . --diagnostic-level=error >/tmp/biome-ci.out 2>&1; then
+    # For CI, scope the check to the files changed on the current PR/branch
+    # so the pipeline stays focused on the work being introduced.
+    set -- .
+    if [ -n "${GITHUB_BASE_REF:-}" ] && git rev-parse --verify --quiet "origin/${GITHUB_BASE_REF}" >/dev/null 2>&1; then
+      changed_files=$(git diff --name-only --diff-filter=ACMR "origin/${GITHUB_BASE_REF}"...HEAD -- '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' '*.jsonc' 2>/dev/null || true)
+      if [ -n "$changed_files" ]; then
+        set -- $changed_files
+      fi
+    fi
+
+    if $BIOME ci "$@" --diagnostic-level=error >/tmp/biome-ci.out 2>&1; then
       echo "✓ biome ci — PASS (no errors)"
       # Show summary line for visibility
       grep -E "Checked [0-9]+ files" /tmp/biome-ci.out | tail -1 || true

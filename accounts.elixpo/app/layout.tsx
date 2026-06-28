@@ -15,24 +15,23 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: {
-        default: "Elixpo Accounts: Secure Sign In & Authentication",
+        default: "Elixpo Accounts — Secure Single Sign-On & OAuth Provider",
         template: "%s | Elixpo Accounts",
     },
     description:
-        "Sign in to Elixpo Accounts with Google, GitHub, or email. Secure OAuth 2.0 authentication, single sign-on (SSO), and identity management for all Elixpo services.",
+        "Access the developer portal and authenticate securely across all Elixpo services. Built with edge-native runtime, Web Crypto API, and passwordless authentication.",
     keywords: [
         "Elixpo",
         "Elixpo Accounts",
-        "sign in",
-        "login",
-        "OAuth",
+        "OAuth 2.0 Provider",
+        "Single Sign-On",
         "SSO",
-        "single sign-on",
-        "authentication",
-        "Google sign in",
-        "GitHub sign in",
-        "identity provider",
-        "secure login",
+        "Passkeys",
+        "WebAuthn",
+        "Edge authentication",
+        "Identity Provider",
+        "Developer dashboard",
+        "Secure login",
     ],
     authors: [{ name: "Elixpo", url: "https://elixpo.com" }],
     creator: "Elixpo",
@@ -46,23 +45,23 @@ export const metadata: Metadata = {
         locale: "en_US",
         url: "https://accounts.elixpo.com",
         siteName: "Elixpo Accounts",
-        title: "Elixpo Accounts: Secure Sign In & Authentication",
+        title: "Elixpo Accounts — Secure Single Sign-On & OAuth Provider",
         description:
-            "Sign in to Elixpo Accounts with Google, GitHub, or email. Secure OAuth 2.0 single sign-on for all Elixpo services.",
+            "Access the developer portal and authenticate securely across all Elixpo services. Built with edge-native runtime, Web Crypto API, and passwordless authentication.",
         images: [
             {
                 url: "/og-image.png",
-                width: 1845,
-                height: 880,
-                alt: "Elixpo Accounts: Secure Sign In & Authentication",
+                width: 1280,
+                height: 720,
+                alt: "Elixpo Accounts — Secure Single Sign-On & OAuth Provider",
             },
         ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Elixpo Accounts: Secure Sign In & Authentication",
+        title: "Elixpo Accounts — Secure Single Sign-On & OAuth Provider",
         description:
-            "Sign in with Google, GitHub, or email. Secure OAuth 2.0 authentication for all Elixpo services.",
+            "Access the developer portal and authenticate securely across all Elixpo services. Built with edge-native runtime, Web Crypto API, and passwordless authentication.",
         images: ["/og-image.png"],
     },
     icons: {
