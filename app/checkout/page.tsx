@@ -322,8 +322,8 @@ function CheckoutInner() {
         <Shell split={split}>
             {phase === "loading" && (
                 <Centered>
-                    <CircularProgress sx={{ color: "#9b7bf7" }} />
-                    <Typography sx={{ color: "rgba(245,245,244,0.7)", mt: 2 }}>
+                    <CircularProgress sx={{ color: "#CF4500" }} />
+                    <Typography sx={{ color: "#696969", mt: 2, fontFamily: "var(--font-sofia-sans)" }}>
                         Preparing your secure checkout…
                     </Typography>
                 </Centered>
@@ -333,18 +333,19 @@ function CheckoutInner() {
                 <Centered>
                     <Typography sx={{ fontSize: "2rem" }}>⚠️</Typography>
                     <Typography
-                        sx={{ fontWeight: 700, fontSize: "1.15rem", mt: 1 }}
+                        sx={{ fontWeight: 500, fontSize: "1.3rem", mt: 1, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}
                     >
                         Checkout unavailable
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.6)",
+                            color: "#696969",
                             textAlign: "center",
                             fontSize: "0.9rem",
                             lineHeight: 1.6,
                             mt: 1,
                             maxWidth: 360,
+                            fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
                         {error}
@@ -368,28 +369,29 @@ function CheckoutInner() {
                             borderRadius: "50%",
                             display: "grid",
                             placeItems: "center",
-                            background: "rgba(74,222,128,0.12)",
-                            border: "1px solid rgba(74,222,128,0.3)",
-                            mb: 0.5,
+                            background: "rgba(40,200,64,0.06)",
+                            border: "1px solid rgba(40,200,64,0.2)",
+                            mb: 1.5,
                         }}
                     >
                         <CheckCircleIcon
-                            sx={{ fontSize: 40, color: "#4ade80" }}
+                            sx={{ fontSize: 40, color: "#28C840" }}
                         />
                     </Box>
                     <Typography
-                        sx={{ fontWeight: 800, fontSize: "1.35rem", mt: 1 }}
+                        sx={{ fontWeight: 500, fontSize: "1.5rem", mt: 1, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}
                     >
                         You're all set
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.7)",
+                            color: "#262627",
                             textAlign: "center",
-                            fontSize: "0.95rem",
+                            fontSize: "0.98rem",
                             mt: 1,
                             maxWidth: 360,
                             lineHeight: 1.6,
+                            fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
                         Your{" "}
@@ -407,9 +409,10 @@ function CheckoutInner() {
                     {hostOf(session?.return_url) && (
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.45)",
+                                color: "#696969",
                                 fontSize: "0.82rem",
                                 mt: 1,
+                                fontFamily: "var(--font-sofia-sans)",
                             }}
                         >
                             Taking you back to {hostOf(session?.return_url)}…
@@ -475,10 +478,10 @@ function SummaryPanel({
                 flex: { xs: "1 1 auto", md: "0 0 46%" },
                 p: { xs: 3, md: 3.5 },
                 background:
-                    "linear-gradient(160deg, rgba(155,123,247,0.22) 0%, rgba(124,92,255,0.10) 45%, rgba(255,255,255,0.02) 100%)",
-                borderRight: { md: "1px solid rgba(255,255,255,0.08)" },
+                    "linear-gradient(160deg, rgba(206, 69, 0, 0.04) 0%, rgba(243, 115, 56, 0.02) 100%)",
+                borderRight: { md: "1.5px solid rgba(20, 20, 19, 0.06)" },
                 borderBottom: {
-                    xs: "1px solid rgba(255,255,255,0.08)",
+                    xs: "1.5px solid rgba(20, 20, 19, 0.06)",
                     md: "none",
                 },
                 display: "flex",
@@ -503,9 +506,9 @@ function SummaryPanel({
                             display: "block",
                         }}
                     />
-                    <Typography sx={{ fontWeight: 700 }}>
+                    <Typography sx={{ fontWeight: 700, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}>
                         Elixpo{" "}
-                        <Box component="span" sx={{ color: "#c4b5fd" }}>
+                        <Box component="span" sx={{ color: "#CF4500", fontWeight: 500 }}>
                             Pay
                         </Box>
                     </Typography>
@@ -518,9 +521,10 @@ function SummaryPanel({
                             height: 20,
                             fontSize: "0.6rem",
                             fontWeight: 700,
-                            color: "#fbbf24",
-                            bgcolor: "rgba(251,191,36,0.12)",
-                            border: "1px solid rgba(251,191,36,0.3)",
+                            color: "#CF4500",
+                            bgcolor: "rgba(206,69,0,0.06)",
+                            border: "1px solid rgba(206,69,0,0.2)",
+                            fontFamily: "var(--font-sofia-sans)",
                         }}
                     />
                 )}
@@ -534,16 +538,17 @@ function SummaryPanel({
                     sx={{ mb: 1.5 }}
                 >
                     <StorefrontIcon
-                        sx={{ fontSize: 14, color: "rgba(245,245,244,0.5)" }}
+                        sx={{ fontSize: 14, color: "rgba(20,20,19,0.5)" }}
                     />
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.6)",
-                            fontSize: "0.8rem",
+                            color: "#696969",
+                            fontSize: "0.85rem",
+                            fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
                         Payment for{" "}
-                        <strong style={{ color: "#f5f5f4" }}>
+                        <strong style={{ color: "#141413" }}>
                             {session.app_name}
                         </strong>
                     </Typography>
@@ -557,7 +562,7 @@ function SummaryPanel({
                 flexWrap="wrap"
                 sx={{ mb: 0.5 }}
             >
-                <Typography sx={{ fontWeight: 700, fontSize: "1.3rem" }}>
+                <Typography sx={{ fontWeight: 500, fontSize: "1.4rem", color: "#141413", fontFamily: "var(--font-sofia-sans)" }}>
                     {session.product_name}
                 </Typography>
                 <Chip
@@ -566,9 +571,10 @@ function SummaryPanel({
                     sx={{
                         height: 22,
                         fontSize: "0.7rem",
-                        color: "#86efac",
-                        bgcolor: "rgba(134,239,172,0.12)",
-                        border: "1px solid rgba(134,239,172,0.3)",
+                        color: "#CF4500",
+                        bgcolor: "rgba(206,69,0,0.06)",
+                        border: "1px solid rgba(206,69,0,0.2)",
+                        fontFamily: "var(--font-sofia-sans)",
                     }}
                 />
             </Stack>
@@ -583,12 +589,12 @@ function SummaryPanel({
                 }}
             >
                 <Typography
-                    sx={{ fontWeight: 800, fontSize: "2.4rem", lineHeight: 1 }}
+                    sx={{ fontWeight: 500, fontSize: "2.4rem", lineHeight: 1, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}
                 >
                     {formatAmount(session.amount, session.currency)}
                 </Typography>
                 <Typography
-                    sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.9rem" }}
+                    sx={{ color: "#696969", fontSize: "0.9rem", fontFamily: "var(--font-sofia-sans)" }}
                 >
                     {periodShort(session.interval, session.interval_count)}
                 </Typography>
@@ -596,7 +602,7 @@ function SummaryPanel({
 
             <Box
                 sx={{
-                    borderTop: "1px solid rgba(255,255,255,0.08)",
+                    borderTop: "1px solid rgba(20, 20, 19, 0.08)",
                     pt: 2,
                     mt: "auto",
                 }}
@@ -629,10 +635,10 @@ function SummaryPanel({
                 sx={{ mt: 2.5 }}
             >
                 <LockIcon
-                    sx={{ fontSize: 13, color: "rgba(245,245,244,0.4)" }}
+                    sx={{ fontSize: 13, color: "rgba(20,20,19,0.4)" }}
                 />
                 <Typography
-                    sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.74rem" }}
+                    sx={{ color: "rgba(20,20,19,0.4)", fontSize: "0.74rem", fontFamily: "var(--font-sofia-sans)" }}
                 >
                     Secured by Razorpay
                 </Typography>
@@ -664,18 +670,20 @@ function ActionPanel({
                 justifyContent: "center",
             }}
         >
-            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", mb: 0.5 }}>
+            <Typography sx={{ fontWeight: 500, fontSize: "1.3rem", mb: 0.5, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}>
                 Complete your payment
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(245,245,244,0.55)",
+                    color: "#696969",
                     fontSize: "0.9rem",
                     mb: 3,
+                    fontFamily: "var(--font-sofia-sans)",
+                    lineHeight: 1.5,
                 }}
             >
                 You'll be charged{" "}
-                <strong style={{ color: "#f5f5f4" }}>
+                <strong style={{ color: "#141413" }}>
                     {formatAmount(session.amount, session.currency)}
                 </strong>{" "}
                 {periodLabel(session.interval, session.interval_count)}, you can
@@ -710,10 +718,11 @@ function ActionPanel({
 
             <Typography
                 sx={{
-                    color: "rgba(245,245,244,0.4)",
+                    color: "#696969",
                     fontSize: "0.76rem",
                     textAlign: "center",
                     mt: 2.5,
+                    fontFamily: "var(--font-sofia-sans)",
                 }}
             >
                 By paying you agree to our{" "}
@@ -721,7 +730,7 @@ function ActionPanel({
                     component="a"
                     href="/terms"
                     target="_blank"
-                    sx={{ color: "#9b7bf7", textDecoration: "none" }}
+                    sx={{ color: "#CF4500", textDecoration: "none", fontWeight: 500 }}
                 >
                     Terms
                 </Box>{" "}
@@ -730,7 +739,7 @@ function ActionPanel({
                     component="a"
                     href="/refunds"
                     target="_blank"
-                    sx={{ color: "#9b7bf7", textDecoration: "none" }}
+                    sx={{ color: "#CF4500", textDecoration: "none", fontWeight: 500 }}
                 >
                     Refund policy
                 </Box>
@@ -758,19 +767,20 @@ function Meta({
         >
             <Typography
                 sx={{
-                    color: "rgba(245,245,244,0.45)",
+                    color: "#696969",
                     fontSize: "0.78rem",
                     flexShrink: 0,
+                    fontFamily: "var(--font-sofia-sans)",
                 }}
             >
                 {label}
             </Typography>
             <Typography
                 sx={{
-                    color: "rgba(245,245,244,0.8)",
+                    color: "#141413",
                     fontSize: "0.78rem",
                     textAlign: "right",
-                    fontFamily: mono ? "var(--font-geist-mono)" : undefined,
+                    fontFamily: mono ? "var(--font-geist-mono)" : "var(--font-sofia-sans)",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -810,7 +820,7 @@ function Shell({ children, split }: { children: ReactNode; split: boolean }) {
                 display: "grid",
                 placeItems: "center",
                 p: 2,
-                color: "#f5f5f4",
+                color: "#141413",
             }}
         >
             <BackgroundAurora variant="auth" />
@@ -820,13 +830,11 @@ function Shell({ children, split }: { children: ReactNode; split: boolean }) {
                     zIndex: 1,
                     width: "100%",
                     maxWidth: split ? { xs: 440, md: 760 } : 460,
-                    borderRadius: "20px",
+                    borderRadius: "24px",
                     overflow: "hidden",
-                    background:
-                        "linear-gradient(135deg, rgba(20,23,30,0.92) 0%, rgba(14,17,23,0.94) 100%)",
-                    backdropFilter: "blur(24px)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    boxShadow: "0 24px 60px rgba(0,0,0,0.55)",
+                    background: "#FCFBFA", // Lifted Cream
+                    border: "1.5px solid rgba(20, 20, 19, 0.08)",
+                    boxShadow: "rgba(0, 0, 0, 0.05) 0px 24px 60px 0px",
                     display: "flex",
                     flexDirection: {
                         xs: "column",
@@ -842,41 +850,43 @@ function Shell({ children, split }: { children: ReactNode; split: boolean }) {
 
 const primaryBtn = {
     textTransform: "none",
-    fontWeight: 700,
-    fontSize: "1rem",
-    color: "#fff",
+    fontWeight: 650,
+    fontSize: "15px",
+    color: "#F3F0EE", // Canvas Cream
     py: 1.4,
-    borderRadius: "12px",
-    background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-    boxShadow: "0 6px 20px rgba(155,123,247,0.4)",
+    borderRadius: "20px", // 20px radius
+    background: "#141413", // Ink Black
+    border: "1.5px solid #141413",
     "&:hover": {
-        background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+        background: "#262627",
+        borderColor: "#262627",
     },
     "&.Mui-disabled": { opacity: 0.6, color: "#fff" },
 };
 
 const cancelBtn = {
     textTransform: "none",
-    fontWeight: 600,
+    fontWeight: 500,
     fontSize: "0.9rem",
-    color: "rgba(245,245,244,0.6)",
+    color: "#696969",
     py: 0.8,
-    borderRadius: "12px",
-    "&:hover": { color: "#fff", background: "rgba(255,255,255,0.04)" },
+    borderRadius: "20px",
+    "&:hover": { color: "#141413", background: "rgba(20,20,19,0.03)" },
     "&.Mui-disabled": { opacity: 0.4 },
 };
 
 const ghostBtn = {
     textTransform: "none",
-    fontWeight: 600,
-    color: "#f5f5f4",
+    fontWeight: 500,
+    color: "#141413",
     px: 2.6,
     py: 1,
-    borderRadius: "12px",
-    border: "1px solid rgba(255,255,255,0.16)",
+    borderRadius: "20px",
+    border: "1.5px solid rgba(20, 20, 19, 0.15)",
+    background: "#FFFFFF",
     "&:hover": {
-        borderColor: "rgba(155,123,247,0.5)",
-        background: "rgba(155,123,247,0.06)",
+        borderColor: "#141413",
+        background: "#F4F4F4",
     },
 };
 

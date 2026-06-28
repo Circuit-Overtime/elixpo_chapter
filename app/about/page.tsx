@@ -1,39 +1,39 @@
 "use client";
 
-import { Box, Container, Stack, Typography } from "@mui/material";
+import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import Link from "next/link";
 import PageShell from "../components/page-shell";
 
-const BLOCKS: { title: string; body: string; accent: string }[] = [
+const BLOCKS: { title: string; body: string; category: string }[] = [
     {
         title: "Hosted checkout",
-        body: "A signed handoff from your app opens a branded, edge-served payment page. Razorpay (INR) ships first; Stripe, PayPal and UPI slot in behind one adapter interface. Your servers never see card data, keeping PCI scope minimal.",
-        accent: "#9b7bf7",
+        body: "A secure, signed handoff from your application opens a branded, edge-served checkout. Your servers never handle sensitive payment credentials, keeping compliance simple.",
+        category: "PAYMENTS",
     },
     {
         title: "Unified ledger",
-        body: "Every money movement is recorded as an immutable, double-entry transaction. Idempotency keys guard each operation and webhooks are replay-safe — so balances reconcile against provider reports and nothing is charged twice.",
-        accent: "#5fb6ff",
+        body: "Record all cash flows in an immutable, double-entry ledger. Guard operations with idempotency keys and cryptographically verified webhooks to reconcile against records.",
+        category: "LEDGER",
     },
     {
         title: "Entitlements & grants",
-        body: "A successful charge grants a tier with an expiry, emits a signed entitlement.updated webhook, and is queryable at /v1/entitlements. Your app stores the resulting tier locally and trusts a single source of truth for access.",
-        accent: "#86efac",
+        body: "Successful charges issue entitlement grants with automated expiration. Query user access tier statuses via the API to resolve entitlement grants securely.",
+        category: "ACCESS",
     },
     {
         title: "Provider adapters",
-        body: "Charge-in and pay-out rails sit behind a common interface — createCheckout, charge, refund, verifyWebhook, createPayout. Add a provider once and every product on Elixpo Pay can use it.",
-        accent: "#fbbf24",
+        body: "Unified collection and payout interfaces. Switch downstream processors or connect your own gateway credentials seamlessly without editing application logic.",
+        category: "ROUTING",
     },
     {
         title: "Creator payouts",
-        body: "Subscriber-pool splits, marketplace payouts and revenue-share credit creator wallets and settle via RazorpayX or Stripe Connect, with payout thresholds, schedules and KYC gating built in.",
-        accent: "#c4b5fd",
+        body: "Distribute split balances and marketplace revenue shares to creator wallets automatically, settling payouts directly to their bank accounts on schedules.",
+        category: "PAYOUTS",
     },
     {
         title: "Merchant dashboard",
-        body: "Sign in with Elixpo Accounts to manage products, regional pricing, API keys and webhooks, and watch revenue, entitlements and transactions update in real time.",
-        accent: "#ff7cc9",
+        body: "Authenticate via Elixpo Accounts to monitor transactional ledger entries, manage pricing structures, configure api keys, and trace system webhooks in real time.",
+        category: "PORTAL",
     },
 ];
 
@@ -45,58 +45,65 @@ const ROADMAP: {
 }[] = [
     {
         phase: "P0",
-        title: "First-party billing",
-        body: "Razorpay INR, hosted checkout with signed handoff, subscriptions, the grant webhook and entitlements API, and a merchant dashboard — powering blogs.elixpo today.",
+        title: "First-party billing core",
+        body: "Edge-hosted checkouts, split subscriptions, webhook engines, and basic merchant dashboards. Powering active billing across Elixpo applications today.",
         done: true,
     },
     {
         phase: "P1",
-        title: "Ledger & payouts",
-        body: "Creator wallets, the subscriber-pool split engine, and payouts via RazorpayX / Stripe Connect with KYC.",
+        title: "Ledger ledgering & payouts",
+        body: "Settle merchant and creator balances to connected bank accounts. Pool subscription splits and KYC verification gates.",
     },
     {
         phase: "P2",
         title: "Open multi-tenant SaaS",
-        body: "Self-serve merchant signup, bring-your-own provider keys, API keys, webhooks, multi-provider, customer portal and tax.",
+        body: "Self-serve merchant registrations, custom payment gateway adapters, multi-provider credentials, and automated sales tax configurations.",
     },
     {
         phase: "P3",
-        title: "Marketplace & intelligence",
-        body: "Marketplace and usage-based billing, more providers, merchant-of-record, analytics and fraud tooling.",
+        title: "Marketplace intelligence",
+        body: "Usage-based metered billing engines, advanced analytics dashboards, automated fraud detection, and localized checkout support.",
     },
 ];
 
 export default function AboutPage() {
     return (
-        <PageShell>
+        <PageShell variant="default">
             <Container
                 maxWidth="lg"
-                sx={{ pt: { xs: 6, md: 9 }, pb: { xs: 6, md: 10 } }}
+                sx={{ pb: { xs: 8, md: 14 } }}
             >
+                {/* Header */}
                 <Stack
                     alignItems="center"
                     textAlign="center"
                     spacing={2}
-                    sx={{ mb: { xs: 5, md: 8 } }}
+                    sx={{ mb: { xs: 6, md: 10 } }}
                 >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: "#CF4500" }} />
+                        <Typography
+                            sx={{
+                                fontSize: "14px",
+                                fontWeight: 700,
+                                letterSpacing: "0.06em",
+                                color: "#696969",
+                                textTransform: "uppercase",
+                                fontFamily: "var(--font-sofia-sans)",
+                            }}
+                        >
+                            THE PLATFORM
+                        </Typography>
+                    </Stack>
                     <Typography
+                        variant="h2"
                         sx={{
-                            color: "#b69aff",
-                            fontWeight: 700,
-                            fontSize: "0.8rem",
-                            letterSpacing: "0.12em",
-                            textTransform: "uppercase",
-                        }}
-                    >
-                        The platform
-                    </Typography>
-                    <Typography
-                        sx={{
-                            fontWeight: 800,
-                            fontSize: { xs: "2.2rem", md: "3rem" },
-                            letterSpacing: "-0.02em",
-                            lineHeight: 1.05,
-                            color: "#f5f5f4",
+                            fontWeight: 500,
+                            fontSize: { xs: "32px", md: "48px" },
+                            letterSpacing: "-2%",
+                            lineHeight: 1.1,
+                            color: "#141413",
+                            fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
                         One money stack, six building blocks
@@ -104,73 +111,87 @@ export default function AboutPage() {
                     <Typography
                         sx={{
                             maxWidth: 640,
-                            color: "rgba(245,245,244,0.65)",
-                            fontSize: "1.05rem",
-                            lineHeight: 1.7,
+                            color: "#262627",
+                            fontSize: "16px",
+                            lineHeight: 1.6,
+                            fontFamily: "var(--font-sofia-sans)",
+                            fontWeight: 450,
                         }}
                     >
-                        Elixpo Pay abstracts providers and rails behind one API,
-                        ledger and dashboard — built end to end on Cloudflare's
-                        edge with D1, KV and Workers, so money moves reliably
-                        for every Elixpo product and every business building on
-                        it.
+                        Elixpo Pay streamlines payment collection, ledger reconciliation, and payout processes into a unified edge-native developer API.
                     </Typography>
                 </Stack>
 
-                {/* Building blocks */}
+                {/* Building Blocks Grid */}
                 <Box
                     sx={{
                         display: "grid",
-                        gap: 2,
+                        gap: 4,
                         gridTemplateColumns: {
                             xs: "1fr",
                             md: "repeat(2, 1fr)",
                         },
-                        mb: { xs: 6, md: 9 },
+                        mb: { xs: 8, md: 12 },
                     }}
                 >
                     {BLOCKS.map((b) => (
                         <Box
                             key={b.title}
                             sx={{
-                                p: { xs: 2.6, md: 3 },
-                                borderRadius: "18px",
-                                background: "#0e1117",
-                                border: "1px solid rgba(255,255,255,0.05)",
-                                boxShadow:
-                                    "8px 8px 24px rgba(0,0,0,0.45), -6px -6px 18px rgba(255,255,255,0.02)",
+                                p: { xs: 3.5, md: 4 },
+                                borderRadius: "24px",
+                                background: "#FCFBFA", // Lifted Cream
+                                border: "1.5px solid rgba(20, 20, 19, 0.06)",
+                                boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
                             }}
                         >
                             <Stack
                                 direction="row"
-                                spacing={1.4}
+                                spacing={1.5}
                                 alignItems="center"
-                                sx={{ mb: 1 }}
+                                sx={{ mb: 2 }}
                             >
                                 <Box
                                     sx={{
-                                        width: 10,
-                                        height: 10,
-                                        borderRadius: "3px",
-                                        background: b.accent,
-                                        boxShadow: `0 0 10px ${b.accent}aa`,
+                                        width: 6,
+                                        height: 6,
+                                        borderRadius: "50%",
+                                        background: "#CF4500", // Signal Orange eyebrow dot
                                     }}
                                 />
                                 <Typography
                                     sx={{
                                         fontWeight: 700,
-                                        fontSize: "1.1rem",
-                                        color: "#f5f5f4",
+                                        fontSize: "11px",
+                                        letterSpacing: "0.04em",
+                                        color: "#696969",
+                                        textTransform: "uppercase",
+                                        fontFamily: "var(--font-sofia-sans)",
                                     }}
                                 >
-                                    {b.title}
+                                    {b.category}
                                 </Typography>
                             </Stack>
                             <Typography
+                                variant="h3"
                                 sx={{
-                                    color: "rgba(245,245,244,0.62)",
-                                    fontSize: "0.92rem",
-                                    lineHeight: 1.65,
+                                    fontWeight: 500,
+                                    fontSize: "22px",
+                                    letterSpacing: "-1%",
+                                    color: "#141413",
+                                    mb: 1.5,
+                                    fontFamily: "var(--font-sofia-sans)",
+                                }}
+                            >
+                                {b.title}
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    color: "#262627", // Charcoal
+                                    fontSize: "15px",
+                                    lineHeight: 1.6,
+                                    fontFamily: "var(--font-sofia-sans)",
+                                    fontWeight: 450,
                                 }}
                             >
                                 {b.body}
@@ -179,141 +200,186 @@ export default function AboutPage() {
                     ))}
                 </Box>
 
-                {/* Roadmap */}
+                {/* Roadmap Header */}
                 <Typography
+                    variant="h2"
                     sx={{
                         textAlign: "center",
-                        fontWeight: 800,
-                        fontSize: { xs: "1.7rem", md: "2.2rem" },
-                        letterSpacing: "-0.02em",
-                        color: "#f5f5f4",
+                        fontWeight: 500,
+                        fontSize: { xs: "28px", md: "36px" },
+                        letterSpacing: "-2%",
+                        color: "#141413",
                         mb: { xs: 4, md: 6 },
+                        fontFamily: "var(--font-sofia-sans)",
                     }}
                 >
-                    Where it's headed
+                    Where the platform is headed
                 </Typography>
-                <Stack spacing={2}>
+
+                {/* Roadmap Stack */}
+                <Stack spacing={3} sx={{ mb: { xs: 8, md: 12 } }}>
                     {ROADMAP.map((r) => (
                         <Stack
                             key={r.phase}
                             direction={{ xs: "column", sm: "row" }}
-                            spacing={2}
+                            spacing={4}
                             sx={{
-                                p: { xs: 2.6, md: 3 },
-                                borderRadius: "16px",
-                                background: "#0e1117",
-                                border: r.done
-                                    ? "1px solid rgba(134,239,172,0.3)"
-                                    : "1px solid rgba(255,255,255,0.05)",
-                                boxShadow:
-                                    "8px 8px 24px rgba(0,0,0,0.4), -6px -6px 16px rgba(255,255,255,0.02)",
+                                p: { xs: 3.5, md: 4 },
+                                borderRadius: "24px",
+                                background: "#FCFBFA", // Lifted Cream
+                                border: "1.5px solid rgba(20, 20, 19, 0.06)",
+                                boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
                             }}
                         >
                             <Stack
                                 direction="row"
-                                spacing={1.2}
+                                spacing={2}
                                 alignItems="center"
-                                sx={{ minWidth: 140 }}
+                                sx={{ minWidth: 160 }}
                             >
                                 <Typography
                                     sx={{
-                                        fontFamily: "var(--font-geist-mono)",
-                                        fontWeight: 800,
-                                        fontSize: "1.1rem",
-                                        color: r.done ? "#86efac" : "#9b7bf7",
+                                        fontSize: "18px",
+                                        fontWeight: 700,
+                                        color: r.done ? "#CF4500" : "#696969",
+                                        fontFamily: "var(--font-sofia-sans)",
                                     }}
                                 >
                                     {r.phase}
                                 </Typography>
                                 <Typography
                                     sx={{
-                                        fontWeight: 700,
-                                        fontSize: "1.05rem",
-                                        color: "#f5f5f4",
+                                        fontWeight: 500,
+                                        fontSize: "18px",
+                                        color: "#141413",
+                                        fontFamily: "var(--font-sofia-sans)",
                                     }}
                                 >
                                     {r.title}
                                 </Typography>
-                                {r.done && (
+                            </Stack>
+
+                            <Box sx={{ flexGrow: 1 }}>
+                                <Typography
+                                    sx={{
+                                        color: "#262627",
+                                        fontSize: "15px",
+                                        lineHeight: 1.5,
+                                        fontFamily: "var(--font-sofia-sans)",
+                                        fontWeight: 450,
+                                    }}
+                                >
+                                    {r.body}
+                                </Typography>
+                            </Box>
+
+                            {r.done && (
+                                <Box sx={{ display: "flex", alignItems: "center" }}>
                                     <Box
                                         sx={{
-                                            px: 0.9,
-                                            py: 0.2,
+                                            px: 2,
+                                            py: 0.5,
                                             borderRadius: "999px",
-                                            fontSize: "0.62rem",
+                                            fontSize: "11px",
                                             fontWeight: 700,
                                             textTransform: "uppercase",
-                                            color: "#86efac",
-                                            background:
-                                                "rgba(134,239,172,0.12)",
-                                            border: "1px solid rgba(134,239,172,0.3)",
+                                            color: "#FFFFFF",
+                                            background: "#CF4500", // Signal Orange for compliance/consents
+                                            border: "none",
+                                            fontFamily: "var(--font-sofia-sans)",
                                         }}
                                     >
-                                        Live
+                                        Active
                                     </Box>
-                                )}
-                            </Stack>
-                            <Typography
-                                sx={{
-                                    color: "rgba(245,245,244,0.62)",
-                                    fontSize: "0.92rem",
-                                    lineHeight: 1.65,
-                                }}
-                            >
-                                {r.body}
-                            </Typography>
+                                </Box>
+                            )}
                         </Stack>
                     ))}
                 </Stack>
 
-                {/* CTA */}
+                {/* Call to Action (CTA) */}
                 <Stack
                     alignItems="center"
-                    spacing={2}
-                    sx={{ mt: { xs: 6, md: 9 } }}
+                    spacing={3}
+                    sx={{
+                        p: { xs: 4, md: 6 },
+                        borderRadius: "32px",
+                        background: "#141413", // Ink Black surface
+                        color: "#F3F0EE",
+                        textAlign: "center",
+                    }}
                 >
                     <Typography
+                        variant="h3"
                         sx={{
-                            fontWeight: 700,
-                            fontSize: "1.4rem",
-                            color: "#f5f5f4",
-                            textAlign: "center",
+                            fontWeight: 500,
+                            fontSize: { xs: "24px", md: "32px" },
+                            letterSpacing: "-2%",
+                            fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
                         Ready to start charging?
                     </Typography>
-                    <Stack direction="row" spacing={2}>
-                        <Box
+                    <Typography
+                        sx={{
+                            color: "rgba(243, 240, 238, 0.7)",
+                            fontSize: "16px",
+                            maxWidth: "500px",
+                            fontFamily: "var(--font-sofia-sans)",
+                        }}
+                    >
+                        Create your merchant credential, adapt your pricing schema, and capture checkout revenue globally.
+                    </Typography>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ width: { xs: "100%", sm: "auto" } }}>
+                        {/* Primary Button — Ink Pill (Canvas Cream bg here since background is Ink Black) */}
+                        <Button
                             component={Link}
                             href="/login"
+                            variant="contained"
+                            disableElevation
                             sx={{
-                                textDecoration: "none",
-                                fontWeight: 700,
-                                color: "#fff",
-                                px: 3,
-                                py: 1.2,
-                                borderRadius: "12px",
-                                background:
-                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                background: "#F3F0EE", // Canvas Cream background
+                                color: "#141413", // Ink Black text
+                                border: "1.5px solid #F3F0EE",
+                                borderRadius: "20px",
+                                px: 4,
+                                py: 1.5,
+                                fontSize: "16px",
+                                fontWeight: 500,
+                                textTransform: "none",
+                                fontFamily: "var(--font-sofia-sans)",
+                                "&:hover": {
+                                    background: "#FFFFFF",
+                                    borderColor: "#FFFFFF",
+                                },
                             }}
                         >
-                            Start building
-                        </Box>
-                        <Box
+                            Start Building
+                        </Button>
+                        {/* Secondary Button — Outlined Pill */}
+                        <Button
                             component={Link}
                             href="/docs"
+                            variant="outlined"
+                            disableElevation
                             sx={{
-                                textDecoration: "none",
-                                fontWeight: 700,
-                                color: "#f5f5f4",
-                                px: 3,
-                                py: 1.2,
-                                borderRadius: "12px",
-                                border: "1px solid rgba(255,255,255,0.16)",
+                                color: "#F3F0EE",
+                                border: "1.5px solid rgba(243, 240, 238, 0.4)",
+                                borderRadius: "20px",
+                                px: 4,
+                                py: 1.5,
+                                fontSize: "16px",
+                                fontWeight: 500,
+                                textTransform: "none",
+                                fontFamily: "var(--font-sofia-sans)",
+                                "&:hover": {
+                                    borderColor: "#F3F0EE",
+                                    background: "rgba(255, 255, 255, 0.05)",
+                                },
                             }}
                         >
-                            Read the docs
-                        </Box>
+                            Read the Docs
+                        </Button>
                     </Stack>
                 </Stack>
             </Container>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Sofia_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const SITE_URL = "https://payouts.elixpo.com";
@@ -12,12 +12,12 @@ const OG_IMAGE = {
 };
 
 export const viewport: Viewport = {
-    themeColor: "#0b0d12",
-    colorScheme: "dark",
+    themeColor: "#F3F0EE",
+    colorScheme: "light",
 };
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
+const sofiaSans = Sofia_Sans({
+    variable: "--font-sofia-sans",
     subsets: ["latin"],
 });
 
@@ -71,8 +71,6 @@ export const metadata: Metadata = {
         images: [OG_IMAGE.url],
     },
     icons: {
-        // Served as static assets from public/. Kept out of app/ so
-        // @cloudflare/next-on-pages doesn't turn each into an edge route.
         icon: [
             { url: "/icon.png", sizes: "256x256", type: "image/png" },
             { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
@@ -92,7 +90,6 @@ export const metadata: Metadata = {
     },
 };
 
-// Structured data so search engines render rich results for the org + product.
 const JSON_LD = {
     "@context": "https://schema.org",
     "@graph": [
@@ -130,11 +127,10 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body
-                className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+                className={`${sofiaSans.variable} ${geistMono.variable} antialiased`}
             >
                 <script
                     type="application/ld+json"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{
                         __html: JSON.stringify(JSON_LD),
                     }}

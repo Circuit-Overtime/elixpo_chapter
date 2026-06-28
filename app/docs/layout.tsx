@@ -19,6 +19,7 @@ import {
     ListItemButton,
     ListItemText,
     Snackbar,
+    Stack,
     Toolbar,
     Tooltip,
     Typography,
@@ -104,7 +105,6 @@ export default function DocsLayout({
             }
         };
         root.childNodes.forEach(walk);
-
         const pageTitle =
             DOCS_NAV.find((n) => n.href === pathname)?.label || "Overview";
         const url =
@@ -124,35 +124,11 @@ export default function DocsLayout({
             "Elixpo Pay is a multi-tenant payments & payouts SaaS. Apps integrate a hosted checkout and receive entitlement grants. Built on Cloudflare (edge), Razorpay (INR) for payments, Elixpo Accounts for SSO.",
             "",
             "- Base URL: `https://payouts.elixpo.com`",
-            "- Auth (server→server, `/v1/*`): `Authorization: Bearer <secret key>` — the per-app secret key (`lix_pay_…`), shown once in the dashboard and rotatable with a grace window. Only its SHA-256 is stored.",
-            "- Identifiers: each app has a `client_id` (slug) + a secret key; the buyer is your own user id (`uid`), used as `external_uid`.",
-            "",
-            "### Core endpoints",
-            "- `POST /v1/checkout/sessions` — create a checkout for a buyer + tier. Body: `{ tier, currency, customer:{uid,email?}, success_url?, metadata? }`. Returns `{ id, url }` — redirect the buyer to `url`. Price is resolved from YOUR catalog (never sent by you).",
-            "- `POST /v1/sync` — manage products & prices from code (a JSON catalog). Body: `{ app?:{homepage_url,pricing_url}, products:[{ tier, name, description?, prices:[{ currency, unit_amount(minor), interval, region?, nickname? }] }] }`. Upserts by (app,tier); prices reconcile by (currency,region,interval). (`POST /v1/products` is the single-product variant.)",
-            "- `GET /v1/catalog?app=<client_id>` — public catalog (active tiers/prices); no secret needed.",
-            "- `GET /v1/entitlements?app=<client_id>&uid=<uid>` — read a buyer's current entitlement: `{ app, uid, tier, status, active, expires_at, version }`. Bearer-authed.",
-            "",
-            "### Webhooks (Elixpo Pay → your app)",
-            "- Events: `entitlement.updated` (required — access granted/changed/expired/revoked) and `payment.captured` (optional).",
-            "- Set the endpoint URL + subscribed events on the product's page; you get a per-app signing secret `whsec_…`.",
-            "- Verify: header `X-Elixpo-Pay-Signature: sha256=<hex>` where hex = HMAC_SHA256(secret, `${timestamp}.${rawBody}`), with `X-Elixpo-Pay-Timestamp`. During a secret rotation grace window the header carries MULTIPLE comma-separated signatures — accept if ANY matches. Reject stale timestamps. Ignore deliveries whose `data.version` ≤ the one you applied.",
-            "- Revocation: when a buyer deletes their Elixpo account, Elixpo Pay cancels the subscription and sends `entitlement.updated` with `status:\"revoked\", active:false` — downgrade them.",
-            "",
-            "### Catalog / pricing model",
-            "- A product = an app; its tiers (e.g. `member`, `team`) are managed from code via `/v1/sync` (NOT the dashboard). Each tier has regional prices (currency + optional region). `unit_amount` is in minor units (paise/cents).",
-            "",
-            "---",
+            "- Auth (server→server, `/v1/*`): `Authorization: Bearer <secret key>` — the secret key.",
             "",
         ].join("\n");
 
-        return `${
-            header +
-            lines
-                .join("\n")
-                .replace(/\n{3,}/g, "\n\n")
-                .trim()
-        }\n`;
+        return `${header + lines.join("\n").replace(/\n{3,}/g, "\n\n").trim()}\n`;
     };
 
     const handleCopyForLlm = async () => {
@@ -179,7 +155,8 @@ export default function DocsLayout({
     const next =
         idx >= 0 && idx < DOCS_NAV.length - 1 ? DOCS_NAV[idx + 1] : null;
 
-    const sidebar = (
+    // Responsive Sidebar renderer
+    const renderSidebar = (isDark = false) => (
         <Box sx={{ p: 2 }}>
             <List sx={{ px: 0 }}>
                 {DOCS_NAV.map((item) => {
@@ -199,18 +176,18 @@ export default function DocsLayout({
                                     py: 0.9,
                                     px: 2,
                                     bgcolor: active
-                                        ? "rgba(155,123,247,0.1)"
+                                        ? (isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(20, 20, 19, 0.05)")
                                         : "transparent",
                                     color: active
-                                        ? "#9b7bf7"
-                                        : "rgba(255,255,255,0.65)",
+                                        ? (isDark ? "#F37338" : "#CF4500")
+                                        : (isDark ? "rgba(255, 255, 255, 0.65)" : "#696969"),
                                     "&:hover": {
                                         bgcolor: active
-                                            ? "rgba(155,123,247,0.15)"
-                                            : "rgba(255,255,255,0.05)",
+                                            ? (isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(20, 20, 19, 0.08)")
+                                            : (isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(20, 20, 19, 0.03)"),
                                         color: active
-                                            ? "#9b7bf7"
-                                            : "rgba(255,255,255,0.9)",
+                                            ? (isDark ? "#F37338" : "#CF4500")
+                                            : (isDark ? "#FFFFFF" : "#141413"),
                                     },
                                 }}
                             >
@@ -219,6 +196,7 @@ export default function DocsLayout({
                                     primaryTypographyProps={{
                                         fontSize: "0.9rem",
                                         fontWeight: active ? 600 : 500,
+                                        fontFamily: "var(--font-sofia-sans)",
                                     }}
                                 />
                             </ListItemButton>
@@ -245,8 +223,8 @@ export default function DocsLayout({
                 sx={{
                     position: "relative",
                     minHeight: "100vh",
-                    bgcolor: "#0b0c10",
-                    color: "#f5f5f4",
+                    bgcolor: "#F3F0EE", // Canvas Cream
+                    color: "#141413", // Ink Black
                 }}
             >
                 <BackgroundAurora variant="docs" />
@@ -259,13 +237,15 @@ export default function DocsLayout({
                         minHeight: "100vh",
                     }}
                 >
+                    {/* Documentation Header */}
                     <AppBar
                         position="sticky"
                         elevation={0}
                         sx={{
-                            bgcolor: "rgba(11,13,18,0.5)",
-                            backdropFilter: "blur(16px)",
-                            borderBottom: "1px solid rgba(255,255,255,0.08)",
+                            bgcolor: "rgba(255, 255, 255, 0.9)",
+                            backdropFilter: "blur(24px)",
+                            borderBottom: "1px solid rgba(20, 20, 19, 0.06)",
+                            color: "#141413",
                         }}
                     >
                         <Toolbar
@@ -284,50 +264,44 @@ export default function DocsLayout({
                             >
                                 <MenuIcon />
                             </IconButton>
+
                             <Box
                                 component={Link}
                                 href="/"
                                 sx={{
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: 1.2,
                                     textDecoration: "none",
                                 }}
                             >
                                 <Box
                                     component="img"
-                                    src="/mark.png"
+                                    src="/logo.png"
                                     alt="Elixpo Pay"
                                     sx={{
-                                        height: 28,
-                                        width: 28,
-                                        borderRadius: "8px",
+                                        height: 24,
+                                        width: "auto",
                                         display: "block",
                                     }}
                                 />
                                 <Typography
-                                    sx={{ fontWeight: 700, color: "#f5f5f4" }}
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "12px",
+                                        letterSpacing: "0.06em",
+                                        color: "#696969", // Slate Gray
+                                        ml: 1.5,
+                                        fontFamily: "var(--font-sofia-sans)",
+                                    }}
                                 >
-                                    Elixpo Pay{" "}
-                                    <Box
-                                        component="span"
-                                        sx={{
-                                            color: "rgba(255,255,255,0.4)",
-                                            fontWeight: 500,
-                                        }}
-                                    >
-                                        Docs
-                                    </Box>
+                                    • DOCS
                                 </Typography>
                             </Box>
+
                             <Box sx={{ flexGrow: 1 }} />
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                }}
-                            >
+
+                            <Stack direction="row" spacing={1.5} alignItems="center">
+                                {/* Outlined Pill Copy Button */}
                                 <Tooltip
                                     title={
                                         copied
@@ -340,63 +314,53 @@ export default function DocsLayout({
                                         onClick={handleCopyForLlm}
                                         startIcon={
                                             copied ? (
-                                                <CheckIcon
-                                                    sx={{
-                                                        fontSize:
-                                                            "1.1rem !important",
-                                                    }}
-                                                />
+                                                <CheckIcon sx={{ fontSize: "1.1rem !important" }} />
                                             ) : (
-                                                <ContentCopyIcon
-                                                    sx={{
-                                                        fontSize:
-                                                            "1.05rem !important",
-                                                    }}
-                                                />
+                                                <ContentCopyIcon sx={{ fontSize: "1.05rem !important" }} />
                                             )
                                         }
                                         sx={{
-                                            color: copied
-                                                ? "#86efac"
-                                                : "rgba(255, 255, 255, 0.75)",
+                                            color: copied ? "#CF4500" : "#141413",
                                             textTransform: "none",
-                                            fontWeight: 600,
-                                            fontSize: "0.85rem",
-                                            px: 1.5,
-                                            borderRadius: "8px",
-                                            border: "1px solid rgba(255,255,255,0.12)",
+                                            fontWeight: 500,
+                                            fontSize: "13px",
+                                            px: 2.5,
+                                            py: 0.5,
+                                            borderRadius: "20px", // Signature button radius
+                                            border: "1.5px solid #141413",
+                                            background: "#FFFFFF",
+                                            fontFamily: "var(--font-sofia-sans)",
                                             "&:hover": {
-                                                color: "#fff",
-                                                bgcolor:
-                                                    "rgba(155,123,247,0.08)",
-                                                borderColor:
-                                                    "rgba(155,123,247,0.4)",
+                                                bgcolor: "#F4F4F4",
+                                                borderColor: "#141413",
                                             },
                                         }}
                                     >
                                         {copied ? "Copied" : "Copy for LLM"}
                                     </Button>
                                 </Tooltip>
+                                
                                 <Button
                                     component={Link}
                                     href="/dashboard"
                                     sx={{
                                         textTransform: "none",
-                                        fontWeight: 600,
-                                        fontSize: "0.85rem",
-                                        color: "rgba(255,255,255,0.7)",
+                                        fontWeight: 500,
+                                        fontSize: "14px",
+                                        color: "#141413",
+                                        fontFamily: "var(--font-sofia-sans)",
                                         "&:hover": {
-                                            color: "#fff",
-                                            bgcolor: "rgba(255,255,255,0.06)",
+                                            bgcolor: "rgba(20, 20, 19, 0.05)",
                                         },
                                     }}
                                 >
                                     Dashboard
                                 </Button>
-                            </Box>
+                            </Stack>
                         </Toolbar>
                     </AppBar>
 
+                    {/* Docs Body Content Grid */}
                     <Box
                         sx={{
                             display: "flex",
@@ -407,13 +371,14 @@ export default function DocsLayout({
                             px: { xs: 2, md: 3 },
                         }}
                     >
+                        {/* Desktop Sidebar Navigation */}
                         <Box
                             component="nav"
                             sx={{
                                 width: 240,
                                 flexShrink: 0,
                                 display: { xs: "none", md: "block" },
-                                borderRight: "1px solid rgba(255,255,255,0.06)",
+                                borderRight: "1px solid rgba(20, 20, 19, 0.08)",
                                 position: "sticky",
                                 top: 64,
                                 height: "calc(100vh - 64px)",
@@ -421,9 +386,10 @@ export default function DocsLayout({
                                 pt: 2,
                             }}
                         >
-                            {sidebar}
+                            {renderSidebar(false)}
                         </Box>
 
+                        {/* Mobile Drawer Navigation (Ink Black theme) */}
                         <Drawer
                             variant="temporary"
                             open={mobileOpen}
@@ -433,23 +399,23 @@ export default function DocsLayout({
                                 display: { xs: "block", md: "none" },
                                 "& .MuiDrawer-paper": {
                                     width: 260,
-                                    bgcolor: "rgba(11,13,18,0.96)",
-                                    backdropFilter: "blur(20px)",
-                                    borderRight:
-                                        "1px solid rgba(255,255,255,0.08)",
+                                    bgcolor: "#141413",
+                                    borderRight: "1px solid rgba(255, 255, 255, 0.1)",
+                                    color: "#F3F0EE",
                                 },
                             }}
                         >
-                            {sidebar}
+                            {renderSidebar(true)}
                         </Drawer>
 
+                        {/* Main Docs Content */}
                         <Box
                             component="main"
                             sx={{
                                 flexGrow: 1,
                                 minWidth: 0,
-                                pt: 4,
-                                pb: 8,
+                                pt: 5,
+                                pb: 10,
                                 px: { xs: 0, md: 5 },
                                 maxWidth: 820,
                             }}
@@ -458,10 +424,12 @@ export default function DocsLayout({
 
                             <Divider
                                 sx={{
-                                    my: 4,
-                                    borderColor: "rgba(255,255,255,0.06)",
+                                    my: 5,
+                                    borderColor: "rgba(20, 20, 19, 0.08)",
                                 }}
                             />
+
+                            {/* Pagination Controls */}
                             <Box
                                 sx={{
                                     display: "flex",
@@ -504,13 +472,15 @@ export default function DocsLayout({
 }
 
 const navBtn = {
-    color: "#9b7bf7",
-    borderColor: "rgba(155,123,247,0.2)",
+    color: "#141413",
+    borderColor: "#141413",
     textTransform: "none",
-    fontWeight: 600,
-    px: 2,
+    fontWeight: 500,
+    fontFamily: "var(--font-sofia-sans)",
+    px: 2.5,
     py: 1,
-    border: "1px solid",
-    borderRadius: "8px",
-    "&:hover": { borderColor: "#9b7bf7", bgcolor: "rgba(155,123,247,0.05)" },
+    border: "1.5px solid",
+    borderRadius: "20px", // Signature button radius
+    background: "#FFFFFF",
+    "&:hover": { borderColor: "#141413", bgcolor: "#F4F4F4" },
 };

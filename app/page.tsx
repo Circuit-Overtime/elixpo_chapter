@@ -10,308 +10,514 @@ import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import Link from "next/link";
-import BackgroundAurora from "./components/background-aurora";
-import Footer from "./components/footer";
-import Navbar from "./components/navbar";
+import { useEffect } from "react";
+import PageShell from "./components/page-shell";
 import PixelHero from "./components/pixel-hero";
 import RoadmapSteps from "./components/roadmap-steps";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 interface Tile {
     icon: SvgIconComponent;
     title: string;
     body: string;
     accent: string;
+    category: string;
 }
 
 const TILES: Tile[] = [
     {
         icon: ShoppingCartCheckoutIcon,
         title: "Hosted checkout",
-        body: "A signed handoff opens a branded, edge-served checkout — your code never touches a card.",
-        accent: "#9b7bf7",
+        body: "A secure signed handoff redirects customers to a branded edge checkout. Card details never hit your server.",
+        accent: "#CF4500",
+        category: "PAYMENTS",
     },
     {
         icon: WorkspacePremiumIcon,
         title: "Entitlements & grants",
-        body: "Each charge grants a tier with an expiry, fires a signed webhook, and is queryable via API.",
-        accent: "#86efac",
+        body: "Successful transactions generate access grants with expiries, firing cryptographically signed webhooks.",
+        accent: "#F37338",
+        category: "ENTITLEMENTS",
     },
     {
         icon: VpnKeyIcon,
         title: "Bring your own keys",
-        body: "Connect your own Razorpay/Stripe, or let Elixpo be merchant-of-record. You own the funds.",
-        accent: "#5fb6ff",
+        body: "Connect your custom Razorpay or Stripe accounts in seconds, or let Elixpo serve as merchant-of-record.",
+        accent: "#9A3A0A",
+        category: "PROVIDER KEYS",
     },
     {
         icon: AccountBalanceIcon,
         title: "Unified ledger",
-        body: "Immutable double-entry, idempotent money ops, and replay-safe webhooks from day one.",
-        accent: "#fbbf24",
+        body: "An immutable double-entry ledger ensures precise tracking, idempotency, and replay-safe money ops.",
+        accent: "#141413",
+        category: "ACCOUNTING",
     },
     {
         icon: AccountBalanceWalletIcon,
         title: "Creator payouts",
-        body: "Pool splits, marketplace and revenue-share — settled via RazorpayX or Stripe Connect.",
-        accent: "#c4b5fd",
+        body: "Split subscriptions, handle marketplace commissions, and settle creator bank balances on schedule.",
+        accent: "#CF4500",
+        category: "REVENUE SPLITS",
     },
     {
         icon: HubIcon,
         title: "One identity, one API",
-        body: "Sign in with Elixpo Accounts, manage products and pricing, and call a single API.",
-        accent: "#ff7cc9",
+        body: "Sign in with Elixpo Accounts, configure pricing and catalogs, and invoke a single integrated payments API.",
+        accent: "#F37338",
+        category: "PLATFORM API",
     },
 ];
 
 export default function Home() {
+    // GSAP ScrollTrigger stagger animation for Bento items
+    useEffect(() => {
+        gsap.registerPlugin(ScrollTrigger);
+
+        gsap.fromTo(
+            ".bento-card",
+            { y: 50, opacity: 0 },
+            {
+                y: 0,
+                opacity: 1,
+                duration: 0.8,
+                stagger: 0.15,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: "#platform-grid",
+                    start: "top 80%",
+                },
+            }
+        );
+    }, []);
+
     return (
-        <Box
-            sx={{ position: "relative", minHeight: "100vh", color: "#f5f5f4" }}
-        >
-            <BackgroundAurora variant="default" />
-            <Box sx={{ position: "relative", zIndex: 1 }}>
-                <Box sx={{ position: "sticky", top: 0, zIndex: 1000 }}>
-                    <Navbar />
-                </Box>
+        <PageShell variant="default">
+            {/* Hero Section */}
+            <PixelHero />
 
-                <PixelHero />
+            {/* 3-Step Onboarding Constellation */}
+            <RoadmapSteps />
 
-                {/* ── Section 2: roadmap, right after the hero ────────────────── */}
-                <RoadmapSteps />
-
-                {/* ── Open source strip ───────────────────────────────────────── */}
-                <Container maxWidth="md" sx={{ py: { xs: 2, md: 3 } }}>
-                    <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={2}
-                        alignItems="center"
-                        justifyContent="space-between"
+            {/* Open Source Strip */}
+            <Container maxWidth="md" sx={{ py: 4 }}>
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={3}
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{
+                        p: { xs: 3, md: 4 },
+                        borderRadius: "24px",
+                        border: "1.5px solid rgba(20, 20, 19, 0.06)",
+                        background: "#FCFBFA", // Lifted Cream
+                        boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
+                    }}
+                >
+                    <Box sx={{ textAlign: { xs: "center", sm: "left" } }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1, justifyContent: { xs: "center", sm: "flex-start" } }}>
+                            <Box sx={{ width: 5, height: 5, borderRadius: "50%", background: "#CF4500" }} />
+                            <Typography
+                                sx={{
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.04em",
+                                    color: "#696969",
+                                    textTransform: "uppercase",
+                                    fontFamily: "var(--font-sofia-sans)",
+                                }}
+                            >
+                                OPEN SOURCE
+                            </Typography>
+                        </Stack>
+                        <Typography
+                            sx={{
+                                fontWeight: 500,
+                                fontSize: "1.3rem",
+                                color: "#141413",
+                                letterSpacing: "-1%",
+                                fontFamily: "var(--font-sofia-sans)",
+                            }}
+                        >
+                            100% transparent payouts layer
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "#696969",
+                                fontSize: "0.95rem",
+                                mt: 0.5,
+                                fontFamily: "var(--font-sofia-sans)",
+                                fontWeight: 450,
+                            }}
+                        >
+                            Audit every line, host it yourself, or contribute. No black boxes handling your revenue.
+                        </Typography>
+                    </Box>
+                    <Button
+                        component="a"
+                        href="https://github.com/elixpo/payouts.elixpo"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        startIcon={<GitHubIcon />}
                         sx={{
-                            p: { xs: 2.5, md: 3 },
-                            borderRadius: "16px",
-                            border: "1px solid rgba(155,123,247,0.25)",
-                            background:
-                                "linear-gradient(120deg, rgba(155,123,247,0.08), rgba(155,123,247,0.02))",
+                            flexShrink: 0,
+                            textTransform: "none",
+                            fontWeight: 500,
+                            fontSize: "15px",
+                            color: "#F3F0EE",
+                            background: "#141413",
+                            border: "1.5px solid #141413",
+                            borderRadius: "20px",
+                            px: 3,
+                            py: 1.2,
+                            fontFamily: "var(--font-sofia-sans)",
+                            letterSpacing: "-0.32px",
+                            "&:hover": {
+                                background: "#262627",
+                                borderColor: "#262627",
+                            },
                         }}
                     >
-                        <Box sx={{ textAlign: { xs: "center", sm: "left" } }}>
+                        View on GitHub
+                    </Button>
+                </Stack>
+            </Container>
+
+            {/* Section 3: The Platform Bento Grid */}
+            <Box
+                id="platform"
+                sx={{
+                    position: "relative",
+                    py: { xs: 8, md: 12 },
+                    scrollMarginTop: "80px",
+                }}
+            >
+                <Container maxWidth="lg">
+                    {/* Platform Header */}
+                    <Stack
+                        alignItems="center"
+                        textAlign="center"
+                        spacing={1.5}
+                        sx={{ mb: { xs: 6, md: 9 } }}
+                    >
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                            <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: "#CF4500" }} />
                             <Typography
-                                sx={{ fontWeight: 800, fontSize: "1.15rem", color: "#f5f5f4" }}
+                                sx={{
+                                    fontSize: "14px",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.06em",
+                                    color: "#696969",
+                                    textTransform: "uppercase",
+                                    fontFamily: "var(--font-sofia-sans)",
+                                }}
                             >
-                                100% open source
+                                SYSTEM ARCHITECTURE
+                            </Typography>
+                        </Stack>
+                        <Typography
+                            variant="h2"
+                            sx={{
+                                fontWeight: 500,
+                                fontSize: { xs: "28px", md: "42px" },
+                                letterSpacing: "-2%",
+                                color: "#141413",
+                                fontFamily: "var(--font-sofia-sans)",
+                            }}
+                        >
+                            The Elixpo Pay Platform
+                        </Typography>
+                        <Typography
+                            sx={{
+                                maxWidth: 600,
+                                color: "#696969",
+                                fontSize: "16px",
+                                lineHeight: 1.6,
+                                fontFamily: "var(--font-sofia-sans)",
+                                fontWeight: 450,
+                            }}
+                        >
+                            Consolidate payment collection and payout workflows behind a unified ledger and developer API, eliminating payment integration overhead.
+                        </Typography>
+                    </Stack>
+
+                    {/* Bento Grid Container */}
+                    <Box
+                        id="platform-grid"
+                        sx={{
+                            display: "grid",
+                            rowGap: 4,
+                            columnGap: 4,
+                            gridTemplateColumns: {
+                                xs: "1fr",
+                                sm: "repeat(2, 1fr)",
+                                md: "repeat(3, 1fr)",
+                            },
+                        }}
+                    >
+                        {TILES.map((tile, idx) => {
+                            // Bento spans: index 0, 3, 5 span 2 columns on desktop
+                            const isSpan2 = idx === 0 || idx === 3 || idx === 5;
+                            return (
+                                <Box
+                                    key={tile.title}
+                                    className="bento-card"
+                                    sx={{
+                                        gridColumn: { xs: "span 1", md: isSpan2 ? "span 2" : "span 1" },
+                                        p: 3.5,
+                                        borderRadius: "24px",
+                                        border: "1.5px solid rgba(20, 20, 19, 0.06)",
+                                        background: "#FCFBFA",
+                                        boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
+                                        transition: "all 0.2s ease",
+                                        opacity: 0, // Animated via GSAP
+                                        "&:hover": {
+                                            transform: "translateY(-4px)",
+                                            borderColor: "rgba(20, 20, 19, 0.15)",
+                                        },
+                                        display: "flex",
+                                        flexDirection: { xs: "column", sm: isSpan2 ? "row" : "column" },
+                                        alignItems: "stretch",
+                                        gap: 3,
+                                    }}
+                                >
+                                    {/* Left: Info Stack */}
+                                    <Stack spacing={2} sx={{ flex: 1, justifyContent: "center" }}>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Box
+                                                sx={{
+                                                    width: 48,
+                                                    height: 48,
+                                                    borderRadius: "14px",
+                                                    display: "grid",
+                                                    placeItems: "center",
+                                                    color: "#141413",
+                                                    background: "rgba(20, 20, 19, 0.05)",
+                                                }}
+                                            >
+                                                <tile.icon sx={{ fontSize: 22 }} />
+                                            </Box>
+                                            <Stack direction="row" alignItems="center" spacing={0.6}>
+                                                <Box sx={{ width: 4, height: 4, borderRadius: "50%", background: "#CF4500" }} />
+                                                <Typography sx={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.04em", color: "#696969", fontFamily: "var(--font-sofia-sans)" }}>
+                                                    {tile.category}
+                                                </Typography>
+                                            </Stack>
+                                        </Stack>
+
+                                        <Stack spacing={1}>
+                                            <Typography
+                                                sx={{
+                                                    fontWeight: 500,
+                                                    fontSize: "1.15rem",
+                                                    color: "#141413",
+                                                    fontFamily: "var(--font-sofia-sans)",
+                                                    letterSpacing: "-1%",
+                                                }}
+                                            >
+                                                {tile.title}
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    color: "#696969",
+                                                    fontSize: "0.92rem",
+                                                    lineHeight: 1.5,
+                                                    fontFamily: "var(--font-sofia-sans)",
+                                                    fontWeight: 450,
+                                                }}
+                                            >
+                                                {tile.body}
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+
+                                    {/* Right: Graphic (only for span-2 cards on md+) */}
+                                    {isSpan2 && (
+                                        <Box
+                                            sx={{
+                                                display: { xs: "none", sm: "flex" },
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flex: 1,
+                                                background: "rgba(20, 20, 19, 0.02)",
+                                                borderRadius: "16px",
+                                                p: 2,
+                                                overflow: "hidden",
+                                                border: "1px dashed rgba(20, 20, 19, 0.08)",
+                                                minHeight: 150,
+                                            }}
+                                        >
+                                            {idx === 0 && <HostedCheckoutMiniGraphic />}
+                                            {idx === 3 && <LedgerMiniGraphic />}
+                                            {idx === 5 && <ApiMiniGraphic />}
+                                        </Box>
+                                    )}
+                                </Box>
+                            );
+                        })}
+                    </Box>
+
+                    {/* Checkout showcase sub-block */}
+                    <Box
+                        sx={{
+                            mt: { xs: 8, md: 12 },
+                            display: "flex",
+                            flexDirection: { xs: "column", md: "row" },
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: { xs: 4, md: 8 },
+                            p: { xs: 4, md: 6 },
+                            borderRadius: "32px",
+                            border: "1.5px solid rgba(20, 20, 19, 0.06)",
+                            background: "#FCFBFA",
+                            boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                maxWidth: 420,
+                                textAlign: { xs: "center", md: "left" },
+                            }}
+                        >
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1, justifyContent: { xs: "center", md: "flex-start" } }}>
+                                <Box sx={{ width: 5, height: 5, borderRadius: "50%", background: "#CF4500" }} />
+                                <Typography
+                                    sx={{
+                                        fontSize: "12px",
+                                        fontWeight: 700,
+                                        letterSpacing: "0.04em",
+                                        color: "#696969",
+                                        textTransform: "uppercase",
+                                        fontFamily: "var(--font-sofia-sans)",
+                                    }}
+                                >
+                                    PCI-LIGHT GATEWAY
+                                </Typography>
+                            </Stack>
+                            <Typography
+                                sx={{
+                                    fontWeight: 500,
+                                    fontSize: "1.6rem",
+                                    color: "#141413",
+                                    letterSpacing: "-2%",
+                                    lineHeight: 1.2,
+                                    mb: 2,
+                                    fontFamily: "var(--font-sofia-sans)",
+                                }}
+                            >
+                                A checkout experience designed for absolute trust.
                             </Typography>
                             <Typography
-                                sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.9rem", mt: 0.3 }}
+                                sx={{
+                                    color: "#696969",
+                                    fontSize: "15px",
+                                    lineHeight: 1.6,
+                                    fontFamily: "var(--font-sofia-sans)",
+                                    fontWeight: 450,
+                                }}
                             >
-                                Audit every line, self-host it, or contribute — no black boxes
-                                handling your money.
+                                Branded, responsive, and hosted securely on Cloudflare. Buyers view transparent pricing options and authorize charges in two clicks, while your systems receive instant cryptographically verified ledger entries.
                             </Typography>
                         </Box>
+                        <MockCheckout />
+                    </Box>
+
+                    {/* Explore CTA Button */}
+                    <Stack
+                        alignItems="center"
+                        sx={{ mt: 8 }}
+                    >
                         <Button
-                            component="a"
-                            href="https://github.com/elixpo/payouts.elixpo"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            startIcon={<GitHubIcon />}
+                            component={Link}
+                            href="/about"
+                            variant="outlined"
+                            disableElevation
                             sx={{
-                                flexShrink: 0,
+                                background: "#FFFFFF",
+                                color: "#141413",
+                                border: "1.5px solid #141413",
+                                borderRadius: "20px",
+                                px: 4,
+                                py: 1.2,
+                                fontSize: "16px",
+                                fontWeight: 500,
                                 textTransform: "none",
-                                fontWeight: 700,
-                                color: "#fff",
-                                px: 2.6,
-                                py: 1,
-                                borderRadius: "12px",
-                                background: "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                fontFamily: "var(--font-sofia-sans)",
                                 "&:hover": {
-                                    background: "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                    background: "#F4F4F4",
+                                    borderColor: "#141413",
                                 },
                             }}
                         >
-                            View on GitHub
+                            Explore the Platform Components →
                         </Button>
                     </Stack>
                 </Container>
-
-                {/* ── Section 3: The platform ─────────────────────────────────── */}
-                <Box
-                    id="platform"
-                    sx={{
-                        position: "relative",
-                        py: { xs: 7, md: 11 },
-                        scrollMarginTop: "80px",
-                    }}
-                >
-                    <Container maxWidth="lg" sx={{ position: "relative" }}>
-                        <Stack
-                            alignItems="center"
-                            textAlign="center"
-                            spacing={1.5}
-                            sx={{ mb: { xs: 4, md: 6 } }}
-                        >
-                            <Typography
-                                sx={{
-                                    fontWeight: 800,
-                                    fontSize: { xs: "2.2rem", md: "3rem" },
-                                    letterSpacing: "-0.02em",
-                                    lineHeight: 1.05,
-                                    color: "#f5f5f4",
-                                }}
-                            >
-                                The platform
-                            </Typography>
-                            <Typography
-                                sx={{
-                                    maxWidth: 600,
-                                    color: "rgba(245,245,244,0.65)",
-                                    fontSize: "1.05rem",
-                                    lineHeight: 1.7,
-                                }}
-                            >
-                                Charge-in and pay-out, abstracted behind a
-                                single API, ledger and dashboard — so you ship
-                                monetization instead of plumbing.
-                            </Typography>
-                        </Stack>
-
-                        <Box
-                            sx={{
-                                display: "grid",
-                                rowGap: { xs: 4, md: 6 },
-                                columnGap: 3,
-                                gridTemplateColumns: {
-                                    xs: "1fr",
-                                    sm: "repeat(2, 1fr)",
-                                    md: "repeat(3, 1fr)",
-                                },
-                            }}
-                        >
-                            {TILES.map((tile) => (
-                                <Stack
-                                    key={tile.title}
-                                    alignItems="center"
-                                    spacing={1.4}
-                                    sx={{
-                                        textAlign: "center",
-                                        maxWidth: 280,
-                                        mx: "auto",
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            width: 54,
-                                            height: 54,
-                                            borderRadius: "16px",
-                                            display: "grid",
-                                            placeItems: "center",
-                                            color: tile.accent,
-                                            background: `${tile.accent}14`,
-                                            border: `1px solid ${tile.accent}40`,
-                                            boxShadow: `0 8px 26px ${tile.accent}26`,
-                                        }}
-                                    >
-                                        <tile.icon sx={{ fontSize: 26 }} />
-                                    </Box>
-                                    <Typography
-                                        sx={{
-                                            fontWeight: 700,
-                                            fontSize: "1.05rem",
-                                            color: "#f5f5f4",
-                                        }}
-                                    >
-                                        {tile.title}
-                                    </Typography>
-                                    <Typography
-                                        sx={{
-                                            color: "rgba(245,245,244,0.6)",
-                                            fontSize: "0.88rem",
-                                            lineHeight: 1.6,
-                                        }}
-                                    >
-                                        {tile.body}
-                                    </Typography>
-                                </Stack>
-                            ))}
-                        </Box>
-
-                        {/* Checkout artifact showcase */}
-                        <Box
-                            sx={{
-                                mt: { xs: 5, md: 7 },
-                                display: "flex",
-                                flexDirection: { xs: "column", md: "row" },
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: { xs: 3, md: 6 },
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    maxWidth: 380,
-                                    textAlign: { xs: "center", md: "left" },
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        fontWeight: 700,
-                                        fontSize: "1.3rem",
-                                        mb: 1,
-                                    }}
-                                >
-                                    A checkout your customers trust
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        color: "rgba(245,245,244,0.6)",
-                                        fontSize: "0.92rem",
-                                        lineHeight: 1.65,
-                                    }}
-                                >
-                                    Branded, edge-served, and PCI-light — the
-                                    buyer sees your plan and pays in two taps,
-                                    while you receive a signed grant the moment
-                                    money clears.
-                                </Typography>
-                            </Box>
-                            <MockCheckout />
-                        </Box>
-
-                        <Stack
-                            alignItems="center"
-                            sx={{ mt: { xs: 5, md: 7 } }}
-                        >
-                            <Button
-                                component={Link}
-                                href="/about"
-                                sx={{
-                                    textTransform: "none",
-                                    fontWeight: 700,
-                                    fontSize: "0.95rem",
-                                    color: "#f5f5f4",
-                                    px: 3,
-                                    py: 1.2,
-                                    borderRadius: "12px",
-                                    border: "1px solid rgba(255,255,255,0.16)",
-                                    "&:hover": {
-                                        borderColor: "rgba(155,123,247,0.5)",
-                                        background: "rgba(155,123,247,0.06)",
-                                    },
-                                }}
-                            >
-                                Explore the full platform →
-                            </Button>
-                        </Stack>
-                    </Container>
-                </Box>
-
-                <Footer />
             </Box>
+        </PageShell>
+    );
+}
+
+/**
+ * Bento Grid Mini Graphics
+ */
+function HostedCheckoutMiniGraphic() {
+    return (
+        <Box sx={{ width: "100%", maxWidth: 180, background: "#FFFFFF", borderRadius: "10px", border: "1px solid rgba(20, 20, 19, 0.08)", p: 1.2, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 1.5, pb: 0.5, borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+                <Box sx={{ width: 5, height: 5, borderRadius: "50%", background: "#EB001B" }} />
+                <Box sx={{ width: 5, height: 5, borderRadius: "50%", background: "#F79E1B" }} />
+                <Box sx={{ width: 5, height: 5, borderRadius: "50%", background: "#28C840" }} />
+            </Stack>
+            <Stack alignItems="center" spacing={0.8}>
+                <Box sx={{ width: 22, height: 22, borderRadius: "50%", background: "#CF4500", display: "grid", placeItems: "center", color: "#FFFFFF", fontSize: "11px", fontWeight: 700 }}>✓</Box>
+                <Box sx={{ width: 70, height: 6, background: "#141413", borderRadius: 1 }} />
+                <Box sx={{ width: 45, height: 4, background: "#696969", borderRadius: 1 }} />
+            </Stack>
+        </Box>
+    );
+}
+
+function LedgerMiniGraphic() {
+    return (
+        <Stack spacing={0.8} sx={{ width: "100%", maxWidth: 200, fontFamily: "var(--font-geist-mono)", fontSize: "9px" }}>
+            <Stack direction="row" justifyContent="space-between" sx={{ pb: 0.5, borderBottom: "1.5px solid #141413", fontWeight: 700 }}>
+                <span>ACCOUNT</span>
+                <span>DEBIT / CREDIT</span>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between" sx={{ color: "#CF4500" }}>
+                <span>usr_wallet</span>
+                <span>- ₹1,999.00</span>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between" sx={{ color: "#28C840" }}>
+                <span>merch_ledger</span>
+                <span>+ ₹1,969.00</span>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between" sx={{ color: "rgba(20,20,19,0.5)" }}>
+                <span>elixpo_fees</span>
+                <span>+ ₹30.00</span>
+            </Stack>
+        </Stack>
+    );
+}
+
+function ApiMiniGraphic() {
+    return (
+        <Box sx={{ background: "#141413", borderRadius: "8px", p: 1.5, width: "100%", maxWidth: 190, color: "#86efac", fontFamily: "var(--font-geist-mono)", fontSize: "9px", textAlign: "left" }}>
+            <span style={{ color: "#F37338" }}>GET</span> /v1/entitlements
+            <br />
+            <span style={{ color: "#FFFFFF" }}>status: </span> "active",
+            <br />
+            <span style={{ color: "#FFFFFF" }}>tier: </span> "developer",
+            <br />
+            <span style={{ color: "#FFFFFF" }}>expires: </span> "30d"
         </Box>
     );
 }
 
 /**
- * A faithful but NON-INTERACTIVE artifact of the hosted checkout — framed in a
- * faux browser window and tagged "preview" so it reads as an interface render,
- * not a button a visitor could click by mistake. pointerEvents disabled.
+ * Redesigned MockCheckout card matching the Mastercard Warm/White themes.
  */
 function MockCheckout() {
     return (
@@ -319,13 +525,13 @@ function MockCheckout() {
             aria-hidden
             sx={{
                 position: "relative",
-                maxWidth: 360,
+                maxWidth: 350,
                 width: "100%",
-                borderRadius: "16px",
+                borderRadius: "24px",
                 overflow: "hidden",
-                border: "1px solid rgba(255,255,255,0.08)",
-                background: "#0b0d12",
-                boxShadow: "0 24px 60px rgba(0,0,0,0.55)",
+                border: "1.5px solid rgba(20, 20, 19, 0.08)",
+                background: "#FFFFFF",
+                boxShadow: "rgba(0, 0, 0, 0.08) 0px 24px 48px 0px",
                 userSelect: "none",
                 pointerEvents: "none",
             }}
@@ -335,22 +541,21 @@ function MockCheckout() {
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
-                    px: 1.5,
-                    py: 1,
-                    borderBottom: "1px solid rgba(255,255,255,0.06)",
-                    background: "rgba(255,255,255,0.025)",
+                    px: 2,
+                    py: 1.2,
+                    borderBottom: "1px solid rgba(20, 20, 19, 0.06)",
+                    background: "rgba(20, 20, 19, 0.02)",
                 }}
             >
                 <Box sx={{ display: "flex", gap: 0.6 }}>
-                    {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
+                    {["#EB001B", "#F79E1B", "#28c840"].map((c) => (
                         <Box
                             key={c}
                             sx={{
-                                width: 9,
-                                height: 9,
+                                width: 8,
+                                height: 8,
                                 borderRadius: "50%",
                                 background: c,
-                                opacity: 0.55,
                             }}
                         />
                     ))}
@@ -359,117 +564,126 @@ function MockCheckout() {
                     sx={{
                         flexGrow: 1,
                         ml: 0.5,
-                        px: 1,
-                        py: 0.3,
+                        px: 1.2,
+                        py: 0.25,
                         borderRadius: "6px",
-                        background: "rgba(0,0,0,0.35)",
+                        background: "#FFFFFF",
+                        border: "1px solid rgba(20, 20, 19, 0.08)",
                         fontFamily: "var(--font-geist-mono)",
-                        fontSize: "0.66rem",
-                        color: "rgba(245,245,244,0.4)",
+                        fontSize: "0.68rem",
+                        color: "rgba(20, 20, 19, 0.5)",
                         textAlign: "center",
-                        whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                     }}
                 >
                     payouts.elixpo.com/checkout
                 </Box>
             </Box>
 
-            <Box
-                sx={{
-                    position: "absolute",
-                    top: 44,
-                    right: 12,
-                    px: 0.9,
-                    py: 0.2,
-                    borderRadius: "999px",
-                    fontSize: "0.6rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    color: "rgba(245,245,244,0.5)",
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                }}
-            >
-                Preview
-            </Box>
-
-            <Box sx={{ p: 2.2 }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        mb: 1.5,
-                    }}
-                >
+            <Box sx={{ p: 3 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <Box
+                            sx={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: "6px",
+                                background: "#CF4500",
+                                display: "grid",
+                                placeItems: "center",
+                                fontSize: "11px",
+                                fontWeight: 800,
+                                color: "#FFFFFF",
+                            }}
+                        >
+                            ₹
+                        </Box>
+                        <Typography
+                            sx={{
+                                fontSize: "12px",
+                                fontWeight: 700,
+                                color: "#696969",
+                                fontFamily: "var(--font-sofia-sans)",
+                            }}
+                        >
+                            Elixpo Pay
+                        </Typography>
+                    </Stack>
                     <Box
+                        component="img"
+                        src="/logo.png"
+                        alt="Elixpo Pay"
                         sx={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: "6px",
-                            background:
-                                "linear-gradient(135deg, #9b7bf7, #7c5cff)",
-                            display: "grid",
-                            placeItems: "center",
-                            fontSize: 12,
-                            fontWeight: 800,
-                            color: "#fff",
+                            height: 14,
+                            width: "auto",
                         }}
-                    >
-                        ₹
-                    </Box>
-                    <Typography
-                        sx={{
-                            fontSize: "0.8rem",
-                            color: "rgba(245,245,244,0.6)",
-                        }}
-                    >
-                        Elixpo Pay
-                    </Typography>
-                </Box>
+                    />
+                </Stack>
+
                 <Typography
                     sx={{
-                        fontSize: "0.75rem",
-                        color: "rgba(245,245,244,0.45)",
+                        fontSize: "13px",
+                        color: "#696969",
+                        fontFamily: "var(--font-sofia-sans)",
                     }}
                 >
-                    Blogs Member
+                    Premium Membership
                 </Typography>
                 <Typography
-                    sx={{ fontWeight: 800, fontSize: "1.6rem", mt: 0.2 }}
+                    sx={{
+                        fontWeight: 700,
+                        fontSize: "24px",
+                        mt: 0.5,
+                        mb: 2.5,
+                        color: "#141413",
+                        letterSpacing: "-0.5px",
+                        fontFamily: "var(--font-sofia-sans)",
+                    }}
                 >
                     ₹199{" "}
                     <Box
                         component="span"
                         sx={{
-                            fontSize: "0.8rem",
+                            fontSize: "13px",
                             fontWeight: 400,
-                            color: "rgba(245,245,244,0.45)",
+                            color: "#696969",
                         }}
                     >
-                        / 30 days
+                        / month
                     </Box>
                 </Typography>
-                <Box
+
+                {/* Simulated credit card input styling */}
+                <Stack spacing={1.2} sx={{ mb: 3 }}>
+                    <Box sx={{ background: "#F4F4F4", border: "1px solid rgba(20,20,19,0.06)", borderRadius: "10px", px: 1.5, py: 0.8 }}>
+                        <Typography sx={{ fontSize: "8px", fontWeight: 700, color: "#696969", letterSpacing: "0.05em" }}>CARD NUMBER</Typography>
+                        <Typography sx={{ fontSize: "12px", color: "#141413", mt: 0.2, fontWeight: 500 }}>••••  ••••  ••••  9084</Typography>
+                    </Box>
+                </Stack>
+
+                {/* Primary Button — Ink Pill */}
+                <Button
+                    fullWidth
+                    variant="contained"
+                    disableElevation
                     sx={{
-                        mt: 1.5,
-                        height: 38,
-                        borderRadius: "10px",
-                        display: "grid",
-                        placeItems: "center",
-                        fontSize: "0.85rem",
+                        background: "#141413",
+                        color: "#F3F0EE",
+                        borderRadius: "20px",
+                        py: 1.4,
+                        fontSize: "14px",
                         fontWeight: 700,
-                        color: "#fff",
-                        background:
-                            "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                        opacity: 0.92,
+                        textTransform: "none",
+                        fontFamily: "var(--font-sofia-sans)",
+                        "&:hover": {
+                            background: "#262627",
+                        },
                     }}
                 >
-                    Pay ₹199
-                </Box>
+                    Authorize ₹199
+                </Button>
             </Box>
         </Box>
     );
