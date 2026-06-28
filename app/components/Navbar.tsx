@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const REPO_URL = 'https://github.com/elixpo/elixpourl';
-const ACCENT = '#9b7bf7';
+const ACCENT = '#e53935';
 
 const Icons = {
   pricing: (
@@ -39,7 +39,7 @@ const Icons = {
     </svg>
   ),
   github: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
     </svg>
   ),
@@ -70,18 +70,18 @@ export default function Navbar() {
   return (
     <header
       className="sticky top-0 z-50 backdrop-blur-xl"
-      style={{ background: 'rgba(15, 17, 23, 0.72)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+      style={{ background: 'rgba(255, 255, 255, 0.92)', borderBottom: '1px solid var(--line)' }}
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-6 h-[64px] flex items-center gap-3">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 h-[60px] flex items-center gap-3">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 no-underline text-white shrink-0">
+        <Link href="/" className="flex items-center gap-2.5 no-underline text-[#111] shrink-0">
           <img src="/base_logo.png" alt="ElixpoURL" width={30} height={30} className="rounded-lg" />
-          <span className="font-bold text-[1.05rem] tracking-tight">
+          <span className="font-bold text-[1.05rem] tracking-tight text-[#111]">
             Elixpo<span style={{ color: ACCENT }}>URL</span>
           </span>
           <span
             className="hidden sm:inline-flex items-center text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-full"
-            style={{ background: 'rgba(155,123,247,0.12)', color: ACCENT, border: '1px solid rgba(155,123,247,0.3)' }}
+            style={{ background: '#f5f5f5', color: '#555', border: '1px solid var(--line)' }}
           >
             EDGE
           </span>
@@ -97,8 +97,8 @@ export default function Navbar() {
               href={l.href}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg no-underline transition-colors"
               style={{
-                color: isActive(l.href) ? '#fff' : 'rgba(255,255,255,0.7)',
-                background: isActive(l.href) ? 'rgba(155,123,247,0.12)' : 'transparent',
+                color: isActive(l.href) ? '#111' : '#555',
+                background: isActive(l.href) ? 'rgba(229,57,53,0.08)' : 'transparent',
               }}
             >
               <span style={{ color: isActive(l.href) ? ACCENT : 'currentColor' }}>{l.icon}</span>
@@ -115,16 +115,21 @@ export default function Navbar() {
             rel="noopener noreferrer"
             aria-label="View source on GitHub"
             title="View source on GitHub"
-            className="hidden sm:flex w-[38px] h-[38px] items-center justify-center rounded-[10px] text-white/85 hover:text-white transition-all"
-            style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] text-[#555] hover:text-[#111] no-underline transition-all"
+            style={{ border: '1px solid var(--line)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#bbb')}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
           >
             {Icons.github}
+            ★ 1
           </a>
 
           <Link
             href={isLoggedIn ? '/dashboard' : '/api/auth/login'}
-            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-[10px] font-semibold text-sm text-white no-underline transition-all"
-            style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)', boxShadow: '0 4px 14px rgba(155,123,247,0.32)' }}
+            className="hidden sm:inline-flex items-center gap-2 px-[18px] py-2 rounded-full font-semibold text-sm text-white no-underline transition-colors"
+            style={{ background: ACCENT }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#c62828')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = ACCENT)}
           >
             {isLoggedIn ? 'Dashboard' : 'Sign in'}
           </Link>
@@ -135,8 +140,8 @@ export default function Navbar() {
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
-            className="md:hidden w-[38px] h-[38px] flex items-center justify-center rounded-[10px] text-white cursor-pointer bg-transparent"
-            style={{ border: '1px solid rgba(255,255,255,0.12)' }}
+            className="md:hidden w-[38px] h-[38px] flex items-center justify-center rounded-[10px] text-[#111] cursor-pointer bg-transparent"
+            style={{ border: '1px solid var(--line)' }}
           >
             {menuOpen ? Icons.close : Icons.menu}
           </button>
@@ -147,7 +152,7 @@ export default function Navbar() {
       {menuOpen && (
         <div
           className="md:hidden px-4 pb-4 pt-1 flex flex-col gap-1"
-          style={{ background: 'rgba(15,17,23,0.96)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+          style={{ background: 'rgba(255,255,255,0.98)', borderBottom: '1px solid var(--line)' }}
         >
           {links.map((l) => (
             <Link
@@ -155,19 +160,19 @@ export default function Navbar() {
               href={l.href}
               className="inline-flex items-center gap-3 px-3 py-2.5 rounded-lg no-underline text-sm transition-colors"
               style={{
-                color: isActive(l.href) ? '#fff' : 'rgba(255,255,255,0.8)',
-                background: isActive(l.href) ? 'rgba(155,123,247,0.12)' : 'transparent',
+                color: isActive(l.href) ? '#111' : '#333',
+                background: isActive(l.href) ? 'rgba(229,57,53,0.08)' : 'transparent',
               }}
             >
-              <span style={{ color: isActive(l.href) ? ACCENT : 'rgba(255,255,255,0.55)' }}>{l.icon}</span>
+              <span style={{ color: isActive(l.href) ? ACCENT : '#888' }}>{l.icon}</span>
               {l.label}
             </Link>
           ))}
           <div className="flex items-center gap-2 mt-2">
             <Link
               href={isLoggedIn ? '/dashboard' : '/api/auth/login'}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] font-semibold text-sm text-white no-underline"
-              style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)', boxShadow: '0 4px 14px rgba(155,123,247,0.32)' }}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full font-semibold text-sm text-white no-underline"
+              style={{ background: ACCENT }}
             >
               {isLoggedIn ? 'Open dashboard' : 'Sign in with Elixpo'}
             </Link>
@@ -176,8 +181,8 @@ export default function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View source on GitHub"
-              className="w-[42px] h-[42px] flex items-center justify-center rounded-[10px] text-white/85"
-              style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+              className="w-[42px] h-[42px] flex items-center justify-center rounded-[10px] text-[#555]"
+              style={{ border: '1px solid var(--line)' }}
             >
               {Icons.github}
             </a>
