@@ -8,6 +8,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EditIcon from "@mui/icons-material/Edit";
 import LaunchIcon from "@mui/icons-material/Launch";
+import SendIcon from "@mui/icons-material/Send";
 import {
     Box,
     Button,
@@ -16,6 +17,7 @@ import {
     Stack,
     Switch,
     TextField,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import Link from "next/link";
@@ -59,6 +61,59 @@ export default function ProductDetailPage() {
     const [changeIdOpen, setChangeIdOpen] = useState(false);
     const [changeIdBusy, setChangeIdBusy] = useState(false);
     const [changeIdErr, setChangeIdErr] = useState("");
+    // Test send
+    const [testEmailInput, setTestEmailInput] = useState("");
+    const [testEmailChips, setTestEmailChips] = useState<string[]>([]);
+    const [testSendBusy, setTestSendBusy] = useState(false);
+    const [testSendResults, setTestSendResults] = useState<
+    Array<{
+        email: string;
+        ok: boolean;
+        error?: string;
+    }>
+    >([]);
+
+    const commitEmailInput = () => {
+        const raw = testEmailInput.trim();
+        if (!raw) return;
+        const incoming = raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+        setTestEmailChips(prev => [...prev, ...incoming.filter(e => !prev.includes(e))]);
+        setTestEmailInput("");
+    };
+
+    const removeEmailChip = (email: string) =>
+        setTestEmailChips(prev => prev.filter(e => e !== email));
+
+    const doTestSend = async () => {
+        if (testEmailChips.length === 0) return;
+        setTestSendBusy(true);
+        setTestSendResults([]);
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}/test-send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ emails: testEmailChips }),
+            });
+            const d = (await r.json()) as Record<string, unknown>;
+            if (!r.ok)
+                throw new Error(
+                    String(d.error_description || d.error || "failed"),
+                );
+            setTestSendResults(
+                (d.results as Array<{
+                    email: string;
+                    ok: boolean;
+                    error?: string;
+                }>) ?? [],
+            );
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setTestSendResults(testEmailChips.map(email => ({ email, ok: false, error: msg })));
+        } finally {
+            setTestSendBusy(false);
+        }
+    };
     // App links (homepage / pricing) editing
     const [homepageDraft, setHomepageDraft] = useState("");
     const [pricingDraft, setPricingDraft] = useState("");
@@ -1420,8 +1475,219 @@ export default function ProductDetailPage() {
                     </Stack>
                 )}
             </GlassCard>
+            
+            <GlassCard sx={{ mt: 2 }}>
+                <Box sx={{ mb: 1.5 }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                        Test send
+                    </Typography>
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.5)",
+                            fontSize: "0.82rem",
+                        }}
+                    >
+                        Simulate a completed checkout for one or more email
+                        addresses without a real payment. Disabled in
+                        production.
+                    </Typography>
+                </Box>
 
+                {/* Chip input */}
+                <Box
+                    sx={{
+                        minHeight: 48,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.75,
+                        alignItems: "center",
+                        p: 1,
+                        borderRadius: "12px",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.02)",
+                        cursor: "text",
+                        "&:focus-within": {
+                            borderColor: "#9b7bf7",
+                        },
+                    }}
+                    onClick={() =>
+                        document
+                            .getElementById("test-send-email-input")
+                            ?.focus()
+                    }
+                >
+                    {testEmailChips.map((email) => (
+                        <Tooltip key={email} title="Remove" placement="top">
+                            <Chip
+                                label={email}
+                                size="small"
+                                onDelete={() => removeEmailChip(email)}
+                                sx={{
+                                    height: 26,
+                                    fontSize: "0.78rem",
+                                    color: "#c4b5fd",
+                                    bgcolor: "rgba(155,123,247,0.12)",
+                                    border: "1px solid rgba(155,123,247,0.3)",
+                                    "& .MuiChip-deleteIcon": {
+                                        color: "rgba(196,181,253,0.5)",
+                                        "&:hover": { color: "#c4b5fd" },
+                                    },
+                                }}
+                            />
+                        </Tooltip>
+                    ))}
+                    <Box
+                        id="test-send-email-input"
+                        component="input"
+                        value={testEmailInput}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setTestEmailInput(e.target.value)
+                        }
+                        onKeyDown={(
+                            e: React.KeyboardEvent<HTMLInputElement>,
+                        ) => {
+                            if (
+                                e.key === "Enter" ||
+                                e.key === "Tab" ||
+                                e.key === ","
+                            ) {
+                                e.preventDefault();
+                                commitEmailInput();
+                            }
+                            if (
+                                e.key === "Backspace" &&
+                                testEmailInput === "" &&
+                                testEmailChips.length > 0
+                            ) {
+                                removeEmailChip(
+                                    testEmailChips[testEmailChips.length - 1],
+                                );
+                            }
+                        }}
+                        onBlur={commitEmailInput}
+                        placeholder={
+                            testEmailChips.length === 0
+                                ? "Enter emails separated by commas…"
+                                : ""
+                        }
+                        sx={{
+                            flexGrow: 1,
+                            minWidth: 180,
+                            border: "none",
+                            outline: "none",
+                            background: "transparent",
+                            color: "#e5e7eb",
+                            fontSize: "0.85rem",
+                            fontFamily: "inherit",
+                            "::placeholder": {
+                                color: "rgba(245,245,244,0.35)",
+                            },
+                        }}
+                    />
+                </Box>
+
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mt: 1.5 }}
+                >
+                    {testEmailChips.length > 0 && (
+                        <Typography
+                            sx={{
+                                fontSize: "0.76rem",
+                                color: "rgba(245,245,244,0.4)",
+                            }}
+                        >
+                            {testEmailChips.length} recipient
+                            {testEmailChips.length !== 1 ? "s" : ""}
+                        </Typography>
+                    )}
+                    <Box sx={{ ml: "auto" }}>
+                        <Button
+                            onClick={doTestSend}
+                            disabled={
+                                testSendBusy ||
+                                testEmailChips.length === 0
+                            }
+                            startIcon={
+                                testSendBusy ? (
+                                    <CircularProgress
+                                        size={14}
+                                        sx={{ color: "#fff" }}
+                                    />
+                                ) : (
+                                    <SendIcon
+                                        sx={{
+                                            fontSize: "1rem !important",
+                                        }}
+                                    />
+                                )
+                            }
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 600,
+                                color: "#fff",
+                                px: 2.2,
+                                py: 0.85,
+                                borderRadius: "10px",
+                                background:
+                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                "&:hover": {
+                                    background:
+                                        "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                },
+                                "&.Mui-disabled": {
+                                    opacity: 0.4,
+                                    color: "#fff",
+                                },
+                            }}
+                        >
+                            {testSendBusy ? "Sending…" : "Send test"}
+                        </Button>
+                    </Box>
+                </Stack>
+
+                {/* Per-email results */}
+                {testSendResults.length > 0 && (
+                    <Stack spacing={0.75} sx={{ mt: 1.5 }}>
+                        {testSendResults.map((r) => (
+                            <Stack
+                                key={r.email}
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                            >
+                                <CheckCircleIcon
+                                    sx={{
+                                        fontSize: 15,
+                                        color: r.ok
+                                            ? "#86efac"
+                                            : "rgba(248,113,113,0.85)",
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.82rem",
+                                        color: r.ok
+                                            ? "rgba(245,245,244,0.75)"
+                                            : "rgba(248,113,113,0.85)",
+                                        fontFamily: "var(--font-geist-mono)",
+                                    }}
+                                >
+                                    {r.email}
+                                    {!r.ok && r.error
+                                        ? ` — ${r.error === "invalid_email" ? "invalid email address" : r.error}`
+                                        : ""}
+                                </Typography>
+                            </Stack>
+                        ))}
+                    </Stack>
+                )}
+            </GlassCard>
             {/* Developer: how to sync tiers (full guide lives in the docs) */}
+            
             <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
                 <Button
                     component={Link}
