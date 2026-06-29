@@ -45,7 +45,7 @@ export default function RoadmapSteps() {
             watermark: "CONNECT",
             eyebrow: "INTEGRATION",
             title: "Connect your product",
-            desc: "Register your application, retrieve your API credentials, and sync your regional pricing catalogs in minutes.",
+            desc: "Register your app, grab your API keys, and add your prices. It takes minutes.",
             href: "/docs/quickstart",
             graphic: (
                 <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #CF4500, #F37338)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: 3, position: "relative" }}>
@@ -65,7 +65,7 @@ export default function RoadmapSteps() {
             watermark: "SETTLE",
             eyebrow: "CREATOR POOLS",
             title: "Set up creator payouts",
-            desc: "Link payout rails. Automated pool splits distribute merchant balances to creator wallets seamlessly.",
+            desc: "Add your creators' bank details. We split every payment and pay them automatically — you keep your cut.",
             href: "/docs/payouts",
             graphic: (
                 <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, var(--app-ink), var(--app-ink))", display: "flex", justifyContent: "center", alignItems: "center", p: 3, position: "relative" }}>
@@ -86,7 +86,7 @@ export default function RoadmapSteps() {
             watermark: "MONETIZE",
             eyebrow: "LAUNCH",
             title: "Go live in production",
-            desc: "Trigger the edge checkout page. Trust cryptographically signed webhooks to grant system entitlements.",
+            desc: "Send customers to our checkout. When they pay, we notify your app instantly so you can grant access.",
             href: "/docs/checkout",
             graphic: (
                 <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, var(--app-bg-2), var(--app-bg))", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: 3, position: "relative", border: "1px solid var(--app-overlay)" }}>
@@ -180,7 +180,7 @@ export default function RoadmapSteps() {
                             fontWeight: 450,
                         }}
                     >
-                        Integration is straightforward. Connect, configure your splits, and drop in our SDK.
+                        Connect your app, set how payments are split, and go live. No payment system to build.
                     </Typography>
                 </Stack>
 

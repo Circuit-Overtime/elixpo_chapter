@@ -133,7 +133,7 @@ export default function PixelHero() {
                             opacity: 0,
                         }}
                     >
-                        Payments & creator payouts, built for builders.
+                        Add payments and payouts to your platform.
                     </Typography>
 
                     {/* Subhead */}
@@ -149,7 +149,11 @@ export default function PixelHero() {
                             opacity: 0,
                         }}
                     >
-                        Accept charges, split pool revenue, and settle creator balances directly to their banks. One ledger and one API on the edge.
+                        Your platform doesn't need its own payment system.
+                        Integrate Elixpo Pay once — we charge your customers and
+                        pay each creator their share, straight to their bank.
+                        Powered by Razorpay today, with Stripe coming soon for
+                        international payments.
                     </Typography>
 
                     {/* Buttons */}

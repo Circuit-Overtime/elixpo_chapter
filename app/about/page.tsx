@@ -7,32 +7,32 @@ import PageShell from "../components/page-shell";
 const BLOCKS: { title: string; body: string; category: string }[] = [
     {
         title: "Hosted checkout",
-        body: "A secure, signed handoff from your application opens a branded, edge-served checkout. Your servers never handle sensitive payment credentials, keeping compliance simple.",
+        body: "We host the checkout page and send your customer there to pay. Their card details never touch your servers, so you stay out of scope for compliance.",
         category: "PAYMENTS",
     },
     {
-        title: "Unified ledger",
-        body: "Record all cash flows in an immutable, double-entry ledger. Guard operations with idempotency keys and cryptographically verified webhooks to reconcile against records.",
+        title: "Every payment tracked",
+        body: "Every charge, split, and payout is recorded in one place — accurate, and safe to retry. So your numbers always reconcile.",
         category: "LEDGER",
     },
     {
-        title: "Entitlements & grants",
-        body: "Successful charges issue entitlement grants with automated expiration. Query user access tier statuses via the API to resolve entitlement grants securely.",
+        title: "Instant access on payment",
+        body: "When a payment succeeds, we notify your app with a signed webhook so you can unlock access right away. You can also check a user's access anytime via the API.",
         category: "ACCESS",
     },
     {
-        title: "Provider adapters",
-        body: "Unified collection and payout interfaces. Switch downstream processors or connect your own gateway credentials seamlessly without editing application logic.",
+        title: "Razorpay now, Stripe soon",
+        body: "Use your own Razorpay account today. Stripe for international payments is coming soon — and you can switch or add providers without changing your code.",
         category: "ROUTING",
     },
     {
         title: "Creator payouts",
-        body: "Distribute split balances and marketplace revenue shares to creator wallets automatically, settling payouts directly to their bank accounts on schedules.",
+        body: "Keep your commission and pay the rest to your creators or sellers automatically — directly to their bank accounts, on a schedule.",
         category: "PAYOUTS",
     },
     {
         title: "Merchant dashboard",
-        body: "Authenticate via Elixpo Accounts to monitor transactional ledger entries, manage pricing structures, configure api keys, and trace system webhooks in real time.",
+        body: "Sign in with Elixpo Accounts to see your payments, set your prices, manage API keys, and track webhooks — all in real time.",
         category: "PORTAL",
     },
 ];
@@ -45,24 +45,24 @@ const ROADMAP: {
 }[] = [
     {
         phase: "P0",
-        title: "First-party billing core",
-        body: "Edge-hosted checkouts, split subscriptions, webhook engines, and basic merchant dashboards. Powering active billing across Elixpo applications today.",
+        title: "Billing core",
+        body: "Hosted checkout, subscriptions with revenue splits, webhooks, and a merchant dashboard. Already powering billing across Elixpo's own apps.",
         done: true,
     },
     {
         phase: "P1",
-        title: "Ledger ledgering & payouts",
-        body: "Settle merchant and creator balances to connected bank accounts. Pool subscription splits and KYC verification gates.",
+        title: "Payouts to banks",
+        body: "Pay merchant and creator balances to their connected bank accounts, with subscription splits and KYC verification.",
     },
     {
         phase: "P2",
-        title: "Open multi-tenant SaaS",
-        body: "Self-serve merchant registrations, custom payment gateway adapters, multi-provider credentials, and automated sales tax configurations.",
+        title: "Open to any platform",
+        body: "Self-serve sign-up: register your own product, connect your own payment providers, and handle sales tax automatically.",
     },
     {
         phase: "P3",
-        title: "Marketplace intelligence",
-        body: "Usage-based metered billing engines, advanced analytics dashboards, automated fraud detection, and localized checkout support.",
+        title: "More for marketplaces",
+        body: "Usage-based billing, analytics dashboards, fraud detection, and localized checkout — including Stripe for international payments.",
     },
 ];
 
@@ -106,7 +106,7 @@ export default function AboutPage() {
                             fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
-                        One money stack, six building blocks
+                        Everything you need to take payments — in six parts
                     </Typography>
                     <Typography
                         sx={{
@@ -118,7 +118,7 @@ export default function AboutPage() {
                             fontWeight: 450,
                         }}
                     >
-                        Elixpo Pay streamlines payment collection, ledger reconciliation, and payout processes into a unified edge-native developer API.
+                        Elixpo Pay lets your platform charge customers and pay your creators through one simple integration — so you never have to build payments yourself.
                     </Typography>
                 </Stack>
 
