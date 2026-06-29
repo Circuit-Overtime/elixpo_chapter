@@ -234,30 +234,42 @@ export default function RoadmapSteps() {
                                 {step.watermark}
                             </Typography>
 
-                            {/* Service / Solution Portrait Card (Perfect Circle) */}
+                            {/* Circle + CTA wrapper — NOT clipped, so the satellite
+                                arrow can sit on the circle's edge instead of being
+                                cut off by the circular mask. */}
                             <Box
                                 sx={{
+                                    position: "relative",
                                     width: "280px",
                                     height: "280px",
-                                    borderRadius: "50%",
-                                    overflow: "hidden",
-                                    position: "relative",
                                     zIndex: 1,
-                                    boxShadow: "rgba(0, 0, 0, 0.08) 0px 24px 48px 0px", // Soft halo shadow
-                                    border: "1.5px solid var(--app-overlay)",
                                     mb: 4,
                                 }}
                             >
-                                {step.graphic}
+                                {/* Service / Solution Portrait Card (Perfect Circle) */}
+                                <Box
+                                    sx={{
+                                        width: "100%",
+                                        height: "100%",
+                                        borderRadius: "50%",
+                                        overflow: "hidden",
+                                        position: "relative",
+                                        boxShadow:
+                                            "rgba(0, 0, 0, 0.08) 0px 24px 48px 0px", // Soft halo shadow
+                                        border: "1.5px solid var(--app-overlay)",
+                                    }}
+                                >
+                                    {step.graphic}
+                                </Box>
 
-                                {/* White Satellite CTA docked bottom-right (protruding 40% outside) */}
+                                {/* Satellite CTA — protrudes off the circle's right edge */}
                                 <Box
                                     component={Link}
                                     href={step.href}
                                     sx={{
                                         position: "absolute",
-                                        bottom: "12px",
-                                        right: "12px",
+                                        bottom: "24px",
+                                        right: "-14px",
                                         width: "56px",
                                         height: "56px",
                                         borderRadius: "50%",
@@ -268,7 +280,8 @@ export default function RoadmapSteps() {
                                         color: "var(--app-fg)",
                                         boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
                                         border: "1px solid var(--app-overlay)",
-                                        transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                                        transition:
+                                            "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                                         "&:hover": {
                                             transform: "scale(1.08) rotate(45deg)",
                                             boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
