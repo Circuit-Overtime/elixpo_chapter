@@ -38,7 +38,12 @@ const Footer = () => {
                         width: "auto",
                         mb: 4,
                         display: "block",
-                        filter: "brightness(0) invert(1)",
+                        // logo.png is a dark mark: invert to white only on the
+                        // dark (dark-mode) footer; show it as-is on the light footer.
+                        filter:
+                            mode === "dark"
+                                ? "brightness(0) invert(1)"
+                                : "none",
                     }}
                 />
                 {/* Large Conversational Headline */}
