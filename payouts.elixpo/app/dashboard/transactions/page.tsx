@@ -68,7 +68,7 @@ export default function TransactionsPage() {
                 </Typography>
                 <Typography
                     sx={{
-                        color: "rgba(245,245,244,0.55)",
+                        color: "var(--app-fg-muted)",
                         fontSize: "0.92rem",
                     }}
                 >
@@ -97,7 +97,7 @@ export default function TransactionsPage() {
                                     <SearchIcon
                                         sx={{
                                             fontSize: 18,
-                                            color: "rgba(245,245,244,0.4)",
+                                            color: "var(--app-fg-faint)",
                                         }}
                                     />
                                 </InputAdornment>
@@ -122,22 +122,22 @@ export default function TransactionsPage() {
                                     color:
                                         statusFilter === s
                                             ? "#fff"
-                                            : "rgba(245,245,244,0.6)",
+                                            : "var(--app-fg-muted)",
                                     background:
                                         statusFilter === s
                                             ? "#7c5cff"
-                                            : "rgba(255,255,255,0.04)",
+                                            : "var(--app-overlay)",
                                     border:
                                         statusFilter === s
                                             ? "1px solid #7c5cff"
-                                            : "1px solid rgba(255,255,255,0.1)",
+                                            : "1px solid var(--app-border)",
                                     "&:hover": {
                                         background:
                                             statusFilter === s
                                                 ? "#8a6dff"
                                                 : "rgba(155,123,247,0.1)",
                                         borderColor: "rgba(155,123,247,0.4)",
-                                        color: "#fff",
+                                        color: "var(--app-fg)",
                                     },
                                 }}
                             >
@@ -155,13 +155,13 @@ export default function TransactionsPage() {
                     </Box>
                 ) : rows.length === 0 ? (
                     <Box sx={{ py: 6, textAlign: "center" }}>
-                        <Typography sx={{ color: "rgba(245,245,244,0.55)" }}>
+                        <Typography sx={{ color: "var(--app-fg-muted)" }}>
                             No transactions yet.
                         </Typography>
                     </Box>
                 ) : filtered.length === 0 ? (
                     <Box sx={{ py: 6, textAlign: "center" }}>
-                        <Typography sx={{ color: "rgba(245,245,244,0.55)" }}>
+                        <Typography sx={{ color: "var(--app-fg-muted)" }}>
                             No transactions match your filters.
                         </Typography>
                     </Box>
@@ -186,7 +186,7 @@ export default function TransactionsPage() {
                                             fontSize: "0.72rem",
                                             textTransform: "uppercase",
                                             letterSpacing: "0.05em",
-                                            color: "rgba(245,245,244,0.4)",
+                                            color: "var(--app-fg-faint)",
                                             fontWeight: 600,
                                         },
                                     }}
@@ -206,7 +206,7 @@ export default function TransactionsPage() {
                                         key={t.id}
                                         sx={{
                                             borderTop:
-                                                "1px solid rgba(255,255,255,0.06)",
+                                                "1px solid var(--app-border)",
                                             "& td": {
                                                 py: 1.3,
                                                 px: 1,
@@ -228,7 +228,7 @@ export default function TransactionsPage() {
                                                 sx={{
                                                     fontFamily:
                                                         "var(--font-geist-mono)",
-                                                    color: "rgba(245,245,244,0.7)",
+                                                    color: "var(--app-fg-muted)",
                                                 }}
                                             >
                                                 {t.uid || "—"}
@@ -251,7 +251,7 @@ export default function TransactionsPage() {
                                                 sx={{
                                                     fontFamily:
                                                         "var(--font-geist-mono)",
-                                                    color: "rgba(245,245,244,0.45)",
+                                                    color: "var(--app-fg-faint)",
                                                     fontSize: "0.78rem",
                                                 }}
                                             >
@@ -262,7 +262,7 @@ export default function TransactionsPage() {
                                             <Box
                                                 component="span"
                                                 sx={{
-                                                    color: "rgba(245,245,244,0.5)",
+                                                    color: "var(--app-fg-muted)",
                                                 }}
                                             >
                                                 {fmtDate(t.created_at)}
@@ -281,11 +281,11 @@ export default function TransactionsPage() {
 
 const field = {
     "& .MuiOutlinedInput-root": {
-        color: "#e5e7eb",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+        color: "var(--app-fg)",
+        background: "var(--app-overlay)",
+        "& fieldset": { borderColor: "var(--app-border)" },
         "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
         "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+    "& .MuiInputLabel-root": { color: "var(--app-fg-muted)" },
 };

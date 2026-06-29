@@ -160,7 +160,7 @@ export default function ProductsPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.55)",
+                            color: "var(--app-fg-muted)",
                             fontSize: "0.92rem",
                         }}
                     >
@@ -192,7 +192,7 @@ export default function ProductsPage() {
                     <Typography
                         sx={{
                             fontSize: "0.72rem",
-                            color: "rgba(245,245,244,0.45)",
+                            color: "var(--app-fg-faint)",
                             textTransform: "uppercase",
                             letterSpacing: "0.06em",
                             mb: 0.5,
@@ -206,7 +206,7 @@ export default function ProductsPage() {
                     <Typography
                         sx={{
                             fontSize: "0.72rem",
-                            color: "rgba(245,245,244,0.45)",
+                            color: "var(--app-fg-faint)",
                             textTransform: "uppercase",
                             letterSpacing: "0.06em",
                             mb: 0.5,
@@ -221,7 +221,7 @@ export default function ProductsPage() {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                             }}
                         >
                             <CheckCircleIcon
@@ -281,7 +281,7 @@ export default function ProductsPage() {
                                 <SearchIcon
                                     sx={{
                                         fontSize: 18,
-                                        color: "rgba(245,245,244,0.4)",
+                                        color: "var(--app-fg-faint)",
                                     }}
                                 />
                             </InputAdornment>
@@ -299,7 +299,7 @@ export default function ProductsPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.55)",
+                            color: "var(--app-fg-muted)",
                             mb: 3,
                             fontSize: "0.9rem",
                         }}
@@ -319,7 +319,7 @@ export default function ProductsPage() {
                 <GlassCard sx={{ textAlign: "center", py: 5 }}>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.55)",
+                            color: "var(--app-fg-muted)",
                             fontSize: "0.9rem",
                         }}
                     >
@@ -367,7 +367,7 @@ export default function ProductsPage() {
                                                 sx={{
                                                     fontWeight: 700,
                                                     fontSize: "1.15rem",
-                                                    color: "#f5f5f4",
+                                                    color: "var(--app-fg)",
                                                     textDecoration: "none",
                                                     "&:hover": {
                                                         color: "#c4b5fd",
@@ -468,7 +468,7 @@ export default function ProductsPage() {
                                         </Stack>
                                         <Typography
                                             sx={{
-                                                color: "rgba(245,245,244,0.5)",
+                                                color: "var(--app-fg-muted)",
                                                 fontSize: "0.85rem",
                                                 mt: 0.9,
                                             }}
@@ -513,11 +513,11 @@ export default function ProductsPage() {
                         textTransform: "none",
                         fontWeight: 700,
                         fontSize: "0.95rem",
-                        color: "#f5f5f4",
+                        color: "var(--app-fg)",
                         px: 3,
                         py: 1.2,
                         borderRadius: "12px",
-                        border: "1px solid rgba(255,255,255,0.14)",
+                        border: "1px solid var(--app-border)",
                         "&:hover": {
                             borderColor: "rgba(155,123,247,0.5)",
                             background: "rgba(155,123,247,0.06)",
@@ -597,7 +597,7 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
                     />
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.45)",
+                            color: "var(--app-fg-faint)",
                             fontSize: "0.82rem",
                         }}
                     >
@@ -618,7 +618,7 @@ function RegisterDialog({ open, busy, err, onClose, onSubmit }: any) {
                     onClick={onClose}
                     sx={{
                         textTransform: "none",
-                        color: "rgba(255,255,255,0.6)",
+                        color: "var(--app-fg-muted)",
                     }}
                 >
                     Cancel
@@ -680,13 +680,13 @@ function slugPreview(name: string): string {
 
 const field = {
     "& .MuiOutlinedInput-root": {
-        color: "#e5e7eb",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+        color: "var(--app-fg)",
+        background: "var(--app-overlay)",
+        "& fieldset": { borderColor: "var(--app-border)" },
         "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
         "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+    "& .MuiInputLabel-root": { color: "var(--app-fg-muted)" },
 };
 
 const mono = {
@@ -695,31 +695,31 @@ const mono = {
     p: 1.2,
     borderRadius: "10px",
     background: "rgba(0,0,0,0.3)",
-    border: "1px solid rgba(255,255,255,0.1)",
+    border: "1px solid var(--app-border)",
 };
 
 const chipBtn = {
     textTransform: "none",
     fontWeight: 600,
     fontSize: "0.74rem",
-    color: "rgba(245,245,244,0.7)",
+    color: "var(--app-fg-muted)",
     minWidth: 0,
     px: 1.1,
     py: 0.2,
     borderRadius: "8px",
-    border: "1px solid rgba(255,255,255,0.12)",
+    border: "1px solid var(--app-border)",
     "&:hover": {
         borderColor: "rgba(155,123,247,0.5)",
         background: "rgba(155,123,247,0.06)",
-        color: "#fff",
+        color: "var(--app-fg)",
     },
 };
 
 const dialogPaper = {
-    bgcolor: "#14171e",
-    border: "1px solid rgba(255,255,255,0.1)",
+    bgcolor: "var(--app-surface)",
+    border: "1px solid var(--app-border)",
     borderRadius: "16px",
-    color: "#f5f5f4",
+    color: "var(--app-fg)",
     backgroundImage: "none",
 };
 
