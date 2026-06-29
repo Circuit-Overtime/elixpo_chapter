@@ -244,7 +244,7 @@ export default function WebhooksPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.55)",
+                            color: "var(--app-fg-muted)",
                             fontSize: "0.92rem",
                         }}
                     >
@@ -277,7 +277,7 @@ export default function WebhooksPage() {
                     <Typography
                         sx={{
                             fontSize: "0.72rem",
-                            color: "rgba(245,245,244,0.45)",
+                            color: "var(--app-fg-faint)",
                             textTransform: "uppercase",
                             letterSpacing: "0.06em",
                             mb: 0.5,
@@ -292,7 +292,7 @@ export default function WebhooksPage() {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                             }}
                         >
                             <CheckCircleIcon
@@ -354,8 +354,8 @@ export default function WebhooksPage() {
                             sx={{
                                 p: 1.4,
                                 borderRadius: "10px",
-                                border: "1px solid rgba(255,255,255,0.07)",
-                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid var(--app-border)",
+                                background: "var(--app-overlay)",
                             }}
                         >
                             <Box sx={{ minWidth: 0 }}>
@@ -384,9 +384,9 @@ export default function WebhooksPage() {
                                             sx={{
                                                 height: 18,
                                                 fontSize: "0.6rem",
-                                                color: "rgba(245,245,244,0.6)",
+                                                color: "var(--app-fg-muted)",
                                                 bgcolor:
-                                                    "rgba(255,255,255,0.06)",
+                                                    "var(--app-overlay)",
                                             }}
                                         />
                                     )}
@@ -407,7 +407,7 @@ export default function WebhooksPage() {
                                 </Stack>
                                 <Typography
                                     sx={{
-                                        color: "rgba(245,245,244,0.5)",
+                                        color: "var(--app-fg-muted)",
                                         fontSize: "0.8rem",
                                     }}
                                 >
@@ -434,7 +434,7 @@ export default function WebhooksPage() {
                                 <SearchIcon
                                     sx={{
                                         fontSize: 18,
-                                        color: "rgba(245,245,244,0.4)",
+                                        color: "var(--app-fg-faint)",
                                     }}
                                 />
                             </InputAdornment>
@@ -453,7 +453,7 @@ export default function WebhooksPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.55)",
+                            color: "var(--app-fg-muted)",
                             mb: 3,
                             fontSize: "0.9rem",
                         }}
@@ -474,7 +474,7 @@ export default function WebhooksPage() {
                 <GlassCard sx={{ textAlign: "center", py: 5 }}>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.55)",
+                            color: "var(--app-fg-muted)",
                             fontSize: "0.9rem",
                         }}
                     >
@@ -511,7 +511,7 @@ export default function WebhooksPage() {
                                             sx={{
                                                 fontWeight: 700,
                                                 fontSize: "1rem",
-                                                color: "#f5f5f4",
+                                                color: "var(--app-fg)",
                                             }}
                                         >
                                             {wh.productName}
@@ -540,7 +540,7 @@ export default function WebhooksPage() {
                                             fontFamily:
                                                 "var(--font-geist-mono)",
                                             fontSize: "0.78rem",
-                                            color: "rgba(245,245,244,0.5)",
+                                            color: "var(--app-fg-muted)",
                                             mb: 0.8,
                                             wordBreak: "break-all",
                                         }}
@@ -680,7 +680,7 @@ function RegisterWebhookDialog({
                         <Typography
                             sx={{
                                 fontSize: "0.78rem",
-                                color: "rgba(245,245,244,0.55)",
+                                color: "var(--app-fg-muted)",
                                 mb: 0.8,
                                 fontWeight: 600,
                             }}
@@ -700,7 +700,7 @@ function RegisterWebhookDialog({
                                         <SearchIcon
                                             sx={{
                                                 fontSize: 16,
-                                                color: "rgba(245,245,244,0.4)",
+                                                color: "var(--app-fg-faint)",
                                             }}
                                         />
                                     </InputAdornment>
@@ -711,7 +711,7 @@ function RegisterWebhookDialog({
                             {filteredProducts.length === 0 ? (
                                 <Typography
                                     sx={{
-                                        color: "rgba(245,245,244,0.4)",
+                                        color: "var(--app-fg-faint)",
                                         fontSize: "0.82rem",
                                         py: 1,
                                         textAlign: "center",
@@ -729,11 +729,11 @@ function RegisterWebhookDialog({
                                         sx={{
                                             p: 1.2,
                                             borderRadius: "10px",
-                                            border: `1px solid ${selectedProductId === p.id ? "rgba(155,123,247,0.5)" : "rgba(255,255,255,0.08)"}`,
+                                            border: `1px solid ${selectedProductId === p.id ? "rgba(155,123,247,0.5)" : "var(--app-border)"}`,
                                             background:
                                                 selectedProductId === p.id
                                                     ? "rgba(155,123,247,0.1)"
-                                                    : "rgba(255,255,255,0.02)",
+                                                    : "var(--app-overlay)",
                                             cursor: "pointer",
                                             transition: "all 0.15s ease",
                                             "&:hover": {
@@ -754,7 +754,7 @@ function RegisterWebhookDialog({
                                                     sx={{
                                                         fontWeight: 600,
                                                         fontSize: "0.88rem",
-                                                        color: "#f5f5f4",
+                                                        color: "var(--app-fg)",
                                                     }}
                                                 >
                                                     {p.app_name}
@@ -802,7 +802,7 @@ function RegisterWebhookDialog({
                         <Typography
                             sx={{
                                 fontSize: "0.78rem",
-                                color: "rgba(245,245,244,0.55)",
+                                color: "var(--app-fg-muted)",
                                 mb: 0.8,
                                 fontWeight: 600,
                             }}
@@ -824,9 +824,9 @@ function RegisterWebhookDialog({
                                         sx={{
                                             p: 1.2,
                                             borderRadius: "10px",
-                                            border: "1px solid rgba(255,255,255,0.07)",
+                                            border: "1px solid var(--app-border)",
                                             background:
-                                                "rgba(255,255,255,0.02)",
+                                                "var(--app-overlay)",
                                         }}
                                     >
                                         <Box sx={{ minWidth: 0 }}>
@@ -855,16 +855,16 @@ function RegisterWebhookDialog({
                                                         sx={{
                                                             height: 16,
                                                             fontSize: "0.58rem",
-                                                            color: "rgba(245,245,244,0.6)",
+                                                            color: "var(--app-fg-muted)",
                                                             bgcolor:
-                                                                "rgba(255,255,255,0.06)",
+                                                                "var(--app-overlay)",
                                                         }}
                                                     />
                                                 )}
                                             </Stack>
                                             <Typography
                                                 sx={{
-                                                    color: "rgba(245,245,244,0.5)",
+                                                    color: "var(--app-fg-muted)",
                                                     fontSize: "0.77rem",
                                                 }}
                                             >
@@ -909,7 +909,7 @@ function RegisterWebhookDialog({
                     onClick={onClose}
                     sx={{
                         textTransform: "none",
-                        color: "rgba(255,255,255,0.6)",
+                        color: "var(--app-fg-muted)",
                     }}
                 >
                     Cancel
@@ -928,14 +928,14 @@ function RegisterWebhookDialog({
 
 const field = {
     "& .MuiOutlinedInput-root": {
-        color: "#e5e7eb",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+        color: "var(--app-fg)",
+        background: "var(--app-overlay)",
+        "& fieldset": { borderColor: "var(--app-border)" },
         "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
         "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
-    "& .MuiFormHelperText-root": { color: "rgba(245,245,244,0.4)" },
+    "& .MuiInputLabel-root": { color: "var(--app-fg-muted)" },
+    "& .MuiFormHelperText-root": { color: "var(--app-fg-faint)" },
 };
 
 const mono = {
@@ -944,16 +944,16 @@ const mono = {
     p: 1.2,
     borderRadius: "10px",
     background: "rgba(0,0,0,0.3)",
-    border: "1px solid rgba(255,255,255,0.1)",
+    border: "1px solid var(--app-border)",
     overflowX: "auto",
     whiteSpace: "nowrap",
 };
 
 const dialogPaper = {
-    bgcolor: "#14171e",
-    border: "1px solid rgba(255,255,255,0.1)",
+    bgcolor: "var(--app-surface)",
+    border: "1px solid var(--app-border)",
     borderRadius: "16px",
-    color: "#f5f5f4",
+    color: "var(--app-fg)",
     backgroundImage: "none",
 };
 

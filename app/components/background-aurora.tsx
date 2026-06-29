@@ -4,11 +4,12 @@ import { Box } from "@mui/material";
 
 type Variant = "default" | "auth" | "warm" | "docs";
 
+// Overlapping light brand tones used as extremely soft background glowing blobs
 const PALETTES: Record<Variant, [string, string, string]> = {
-    default: ["#9b7bf7", "#5fb6ff", "#7c5cff"],
-    auth: ["#9b7bf7", "#ff7cc9", "#5fb6ff"],
-    warm: ["#ff8a5b", "#ff5b9a", "#9b7bf7"],
-    docs: ["#6366f1", "#a855f7", "#3b82f6"],
+    default: ["rgba(243, 115, 56, 0.07)", "rgba(247, 158, 27, 0.05)", "rgba(235, 0, 27, 0.03)"],
+    auth: ["rgba(243, 115, 56, 0.08)", "rgba(247, 158, 27, 0.06)", "rgba(235, 0, 27, 0.04)"],
+    warm: ["rgba(243, 115, 56, 0.1)", "rgba(247, 158, 27, 0.07)", "rgba(155, 123, 247, 0.04)"],
+    docs: ["rgba(243, 115, 56, 0.06)", "rgba(247, 158, 27, 0.04)", "rgba(235, 0, 27, 0.02)"],
 };
 
 interface Props {
@@ -27,29 +28,27 @@ const BackgroundAurora = ({ variant = "default" }: Props) => {
                 zIndex: 0,
                 pointerEvents: "none",
                 overflow: "hidden",
-                background:
-                    "linear-gradient(180deg, #0b0d12 0%, #11151c 50%, #0b0d12 100%)",
+                background: "var(--app-bg)", // Warm Canvas Cream
                 "&::before, &::after": {
                     content: '""',
                     position: "absolute",
-                    width: "55vmax",
-                    height: "55vmax",
+                    width: "60vmax",
+                    height: "60vmax",
                     borderRadius: "50%",
-                    filter: "blur(110px)",
-                    opacity: 0.32,
+                    filter: "blur(120px)",
                     willChange: "transform",
                 },
                 "&::before": {
-                    top: "-20vmax",
+                    top: "-25vmax",
                     left: "-15vmax",
-                    background: `radial-gradient(circle, ${a} 0%, transparent 65%)`,
-                    animation: "auroraDriftA 28s ease-in-out infinite",
+                    background: `radial-gradient(circle, ${a} 0%, transparent 70%)`,
+                    animation: "auroraDriftA 30s ease-in-out infinite",
                 },
                 "&::after": {
                     bottom: "-25vmax",
                     right: "-20vmax",
-                    background: `radial-gradient(circle, ${b} 0%, transparent 65%)`,
-                    animation: "auroraDriftB 34s ease-in-out infinite",
+                    background: `radial-gradient(circle, ${b} 0%, transparent 70%)`,
+                    animation: "auroraDriftB 35s ease-in-out infinite",
                 },
             }}
         >
@@ -57,15 +56,14 @@ const BackgroundAurora = ({ variant = "default" }: Props) => {
                 aria-hidden
                 sx={{
                     position: "absolute",
-                    top: "40%",
-                    left: "55%",
-                    width: "40vmax",
-                    height: "40vmax",
+                    top: "35%",
+                    left: "50%",
+                    width: "45vmax",
+                    height: "45vmax",
                     borderRadius: "50%",
-                    filter: "blur(120px)",
-                    opacity: 0.18,
-                    background: `radial-gradient(circle, ${c} 0%, transparent 65%)`,
-                    animation: "auroraDriftC 40s ease-in-out infinite",
+                    filter: "blur(130px)",
+                    background: `radial-gradient(circle, ${c} 0%, transparent 70%)`,
+                    animation: "auroraDriftC 45s ease-in-out infinite",
                     willChange: "transform",
                 }}
             />

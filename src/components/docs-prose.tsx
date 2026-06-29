@@ -8,11 +8,12 @@ export function DocTitle({ children }: { children: React.ReactNode }) {
         <Typography
             component="h1"
             sx={{
-                fontWeight: 800,
-                fontSize: "2rem",
-                letterSpacing: "-0.02em",
+                fontWeight: 500,
+                fontSize: "2.4rem",
+                letterSpacing: "-2%",
                 mb: 2,
-                color: "#fff",
+                color: "var(--app-fg)", // Ink Black
+                fontFamily: "var(--font-sofia-sans)",
             }}
         >
             {children}
@@ -24,10 +25,12 @@ export function DocLead({ children }: { children: React.ReactNode }) {
     return (
         <Typography
             sx={{
-                color: "rgba(255,255,255,0.7)",
-                fontSize: "1.02rem",
+                color: "var(--app-fg)", // Charcoal
+                fontSize: "1.05rem",
                 lineHeight: 1.7,
-                mb: 3,
+                mb: 3.5,
+                fontFamily: "var(--font-sofia-sans)",
+                fontWeight: 450,
             }}
         >
             {children}
@@ -40,12 +43,13 @@ export function DocH2({ children }: { children: React.ReactNode }) {
         <Typography
             component="h2"
             sx={{
-                fontWeight: 700,
-                fontSize: "1.35rem",
-                mt: 4,
-                mb: 1.5,
-                color: "#fff",
-                letterSpacing: "-0.01em",
+                fontWeight: 500,
+                fontSize: "1.5rem",
+                mt: 5,
+                mb: 2,
+                color: "var(--app-fg)", // Ink Black
+                letterSpacing: "-1%",
+                fontFamily: "var(--font-sofia-sans)",
             }}
         >
             {children}
@@ -57,10 +61,12 @@ export function DocP({ children }: { children: React.ReactNode }) {
     return (
         <Typography
             sx={{
-                color: "rgba(255,255,255,0.72)",
-                lineHeight: 1.75,
-                mb: 1.5,
-                fontSize: "0.98rem",
+                color: "var(--app-fg)", // Charcoal
+                lineHeight: 1.7,
+                mb: 2,
+                fontSize: "1rem",
+                fontFamily: "var(--font-sofia-sans)",
+                fontWeight: 450,
             }}
         >
             {children}
@@ -73,10 +79,11 @@ export function DocList({ items }: { items: React.ReactNode[] }) {
         <Box
             component="ul"
             sx={{
-                color: "rgba(255,255,255,0.72)",
+                color: "var(--app-fg)",
                 pl: 3,
-                mb: 2,
-                "& li": { mb: 0.8, lineHeight: 1.65 },
+                mb: 2.5,
+                fontFamily: "var(--font-sofia-sans)",
+                "& li": { mb: 0.8, lineHeight: 1.65, fontWeight: 450 },
             }}
         >
             {items.map((it, i) => (
@@ -93,11 +100,11 @@ export function Code({ children }: { children: React.ReactNode }) {
             sx={{
                 fontFamily: "var(--font-geist-mono)",
                 fontSize: "0.85rem",
-                background: "rgba(155,123,247,0.12)",
-                color: "#c4b5fd",
+                background: "var(--app-overlay)",
+                color: "#CF4500", // Signal Orange
                 px: 0.6,
                 py: 0.2,
-                borderRadius: "6px",
+                borderRadius: "4px",
             }}
         >
             {children}
@@ -110,12 +117,12 @@ export function BaseUrlChip() {
         <Chip
             label="Base URL: https://payouts.elixpo.com"
             sx={{
-                bgcolor: "rgba(155,123,247,0.1)",
-                color: "#9b7bf7",
-                border: "1px solid rgba(155,123,247,0.2)",
+                bgcolor: "var(--app-overlay)",
+                color: "var(--app-fg)",
+                border: "1.5px solid var(--app-overlay)",
                 fontFamily: "var(--font-geist-mono)",
                 fontSize: "0.82rem",
-                mb: 3,
+                mb: 4,
             }}
         />
     );

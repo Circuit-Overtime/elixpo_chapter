@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeModeProvider, ThemeModeScript } from "@/components/theme-mode";
+import { Sofia_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const SITE_URL = "https://payouts.elixpo.com";
@@ -12,12 +13,12 @@ const OG_IMAGE = {
 };
 
 export const viewport: Viewport = {
-    themeColor: "#0b0d12",
-    colorScheme: "dark",
+    themeColor: "var(--app-bg)",
+    colorScheme: "light",
 };
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
+const sofiaSans = Sofia_Sans({
+    variable: "--font-sofia-sans",
     subsets: ["latin"],
 });
 
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
         template: "%s | Elixpo Pay",
     },
     description:
-        "Elixpo Pay is the centralized payments + payouts layer for Elixpo. Hosted checkout, a unified ledger, entitlements, and creator payouts on Cloudflare's edge.",
+        "Add payments and payouts to your platform with one integration. Elixpo Pay charges your customers and pays your creators straight to their banks — Razorpay today, Stripe coming soon for international.",
     keywords: [
         "Elixpo",
         "Elixpo Pay",
@@ -60,19 +61,17 @@ export const metadata: Metadata = {
         siteName: "Elixpo Pay",
         title: "Elixpo Pay — Payments & Payouts",
         description:
-            "Hosted checkout, unified ledger, entitlements, and creator payouts for the Elixpo ecosystem.",
+            "Add payments and payouts to your platform with one integration — we charge your customers and pay your creators. Razorpay today, Stripe coming soon.",
         images: [OG_IMAGE],
     },
     twitter: {
         card: "summary_large_image",
         title: "Elixpo Pay — Payments & Payouts",
         description:
-            "The complete money stack for modern software — checkout, subscriptions, entitlements, and payouts.",
+            "Payments and payouts for your platform, in one integration. We charge your customers and pay your creators — Razorpay today, Stripe coming soon.",
         images: [OG_IMAGE.url],
     },
     icons: {
-        // Served as static assets from public/. Kept out of app/ so
-        // @cloudflare/next-on-pages doesn't turn each into an edge route.
         icon: [
             { url: "/icon.png", sizes: "256x256", type: "image/png" },
             { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
@@ -92,7 +91,6 @@ export const metadata: Metadata = {
     },
 };
 
-// Structured data so search engines render rich results for the org + product.
 const JSON_LD = {
     "@context": "https://schema.org",
     "@graph": [
@@ -117,7 +115,7 @@ const JSON_LD = {
             operatingSystem: "Web",
             url: SITE_URL,
             description:
-                "Payments and payouts for the Elixpo ecosystem — hosted checkout, a unified ledger, entitlements, and creator payouts on Cloudflare's edge.",
+                "Add payments and payouts to your platform with one integration. We charge your customers and pay your creators — Razorpay today, Stripe coming soon for international.",
             offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             publisher: { "@id": `${SITE_URL}/#organization` },
         },
@@ -129,17 +127,19 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
     return (
         <html lang="en" suppressHydrationWarning>
+            <head>
+                <ThemeModeScript />
+            </head>
             <body
-                className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+                className={`${sofiaSans.variable} ${geistMono.variable} antialiased`}
             >
                 <script
                     type="application/ld+json"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{
                         __html: JSON.stringify(JSON_LD),
                     }}
                 />
-                {children}
+                <ThemeModeProvider>{children}</ThemeModeProvider>
             </body>
         </html>
     );

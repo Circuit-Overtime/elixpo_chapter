@@ -3,23 +3,23 @@
 import CloseIcon from "@mui/icons-material/Close";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import MenuIcon from "@mui/icons-material/Menu";
+import SearchIcon from "@mui/icons-material/Search";
 import StarIcon from "@mui/icons-material/Star";
-import PersonIcon from "@mui/icons-material/Person";
 import {
     Avatar,
     Box,
     Button,
-    Chip,
-    Divider,
     Drawer,
     IconButton,
     Stack,
-    Toolbar,
-    Typography,
 } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import gsap from "gsap";
+import { ThemeToggle } from "@/components/theme-mode";
 
 interface Me {
     name: string;
@@ -27,7 +27,6 @@ interface Me {
     avatar: string | null;
 }
 
-const ACCENT = "#9b7bf7";
 const REPO = "elixpo/payouts.elixpo";
 const REPO_URL = `https://github.com/${REPO}`;
 
@@ -44,14 +43,24 @@ function formatStars(n: number): string {
 }
 
 const Navbar = () => {
+    const pathname = usePathname();
     const [stars, setStars] = useState<number | null>(null);
-    // undefined = checking, null = signed out, Me = signed in
     const [me, setMe] = useState<Me | null | undefined>(undefined);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [searchExpanded, setSearchExpanded] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
+
+    // GSAP Intro slide down animation
+    useEffect(() => {
+        gsap.fromTo(".nav-pill-container",
+            { y: -100, opacity: 0 },
+            { y: 0, opacity: 1, duration: 1, ease: "power4.out", delay: 0.15 }
+        );
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -101,402 +110,278 @@ const Navbar = () => {
 
     return (
         <AppBar
-            position="sticky"
+            position="fixed"
             elevation={0}
             sx={{
-                background: "rgba(11, 13, 18, 0.72)",
-                backdropFilter: "blur(20px)",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                background: "transparent",
                 zIndex: 1000,
+                pt: { xs: 1.5, md: 3 }, // floats below the viewport top
+                left: 0,
+                right: 0,
             }}
         >
             <Toolbar
+                disableGutters
                 sx={{
-                    maxWidth: "1240px",
+                    justifyContent: "center",
                     width: "100%",
-                    mx: "auto",
-                    px: { xs: 2, md: 4 },
-                    minHeight: { xs: 60, md: 68 },
-                    gap: 1,
+                    px: 2,
                 }}
             >
-                <Link
-                    href="/"
-                    style={{
-                        textDecoration: "none",
-                        color: "inherit",
+                {/* Floating Nav Pill Container */}
+                <Box
+                    className="nav-pill-container"
+                    sx={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "12px",
+                        justifyContent: "space-between",
+                        width: "100%",
+                        maxWidth: "1280px",
+                        background: "var(--app-surface)",
+                        backdropFilter: "blur(24px)",
+                        borderRadius: "999px",
+                        px: { xs: 2.5, md: 4 },
+                        py: 1,
+                        boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
+                        border: "1px solid var(--app-overlay)",
+                        opacity: 0, // Controlled by GSAP anim
                     }}
                 >
-                    <Box
-                        component="img"
-                        src="/mark.png"
-                        alt="Elixpo Pay"
-                        sx={{
-                            height: 32,
-                            width: 32,
-                            borderRadius: "8px",
-                            display: "block",
-                        }}
-                    />
-                    <Typography
-                        sx={{
-                            fontWeight: 700,
-                            fontSize: "1.15rem",
-                            color: "#f4f4f6",
-                            letterSpacing: "-0.01em",
-                        }}
-                    >
-                        Elixpo{" "}
-                        <Box component="span" sx={{ color: ACCENT }}>
-                            Pay
-                        </Box>
-                    </Typography>
-                    <Chip
-                        label="PAYMENTS"
-                        size="small"
-                        sx={{
-                            display: {
-                                xs: "none",
-                                "@media (min-width: 640px)": {
-                                    display: "inline-flex",
-                                },
-                            },
-                            bgcolor: "rgba(155, 123, 247, 0.12)",
-                            color: ACCENT,
-                            fontSize: "10px",
-                            height: "22px",
-                            fontWeight: 600,
-                            letterSpacing: "0.04em",
-                            border: "1px solid rgba(155, 123, 247, 0.3)",
-                        }}
-                    />
-                </Link>
-
-                <Stack
-                    direction="row"
-                    spacing={0.5}
-                    sx={{
-                        flexGrow: 1,
-                        justifyContent: "center",
-                        display: {
-                            xs: "none",
-                            "@media (min-width: 640px)": { display: "flex" },
-                        },
-                    }}
-                >
-                    {LINKS.map((l) => (
-                        <Button
-                            key={l.label}
-                            component={Link}
-                            href={l.href}
-                            sx={{
-                                textTransform: "none",
-                                fontWeight: 600,
-                                fontSize: "0.88rem",
-                                color: "rgba(244,244,246,0.7)",
-                                px: 1.6,
-                                borderRadius: "9px",
-                                "&:hover": {
-                                    color: "#fff",
-                                    background: "rgba(255,255,255,0.05)",
-                                },
-                            }}
-                        >
-                            {l.label}
-                        </Button>
-                    ))}
-                </Stack>
-
-                <Box
-                    sx={{
-                        flexGrow: {
-                            xs: 1,
-                            "@media (min-width: 640px)": { flexGrow: 0 },
-                        },
-                    }}
-                />
-
-                <Stack
-                    direction="row"
-                    spacing={{ xs: 1, md: 1.2 }}
-                    alignItems="center"
-                >
-                    {/* GitHub: icon | star count */}
-                    <Box
-                        component="a"
-                        href={REPO_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="GitHub repository"
-                        sx={{
-                            display: {
-                                xs: "none",
-                                "@media (min-width: 640px)": {
-                                    display: "inline-flex",
-                                },
-                            },
-                            alignItems: "center",
-                            height: 38,
-                            px: 1.3,
-                            gap: 0.9,
-                            borderRadius: "10px",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            color: "rgba(244,244,246,0.8)",
+                    {/* Logo Image from public folder */}
+                    <Link
+                        href="/"
+                        style={{
                             textDecoration: "none",
-                            fontSize: "0.85rem",
-                            fontWeight: 700,
-                            transition: "all 0.18s ease",
-                            "&:hover": {
-                                color: "#fff",
-                                borderColor: "rgba(155,123,247,0.45)",
-                                background: "rgba(155,123,247,0.08)",
-                            },
+                            color: "inherit",
+                            display: "flex",
+                            alignItems: "center",
                         }}
                     >
-                        <GitHubIcon sx={{ fontSize: 19 }} />
-                        {stars !== null && (
-                            <>
-                                <Box
-                                    sx={{
-                                        width: "1px",
-                                        height: 16,
-                                        background: "rgba(255,255,255,0.15)",
-                                    }}
-                                />
-                                <Stack
-                                    direction="row"
-                                    spacing={0.3}
-                                    alignItems="center"
-                                >
-                                    <StarIcon
-                                        sx={{ fontSize: 14, color: "#fbbf24" }}
-                                    />
-                                    <Box component="span">
-                                        {formatStars(stars)}
-                                    </Box>
-                                </Stack>
-                            </>
-                        )}
-                    </Box>
-
-                    {me === undefined ? (
-                        // Placeholder while we resolve the session — avoids flashing
-                        // "Sign in" to an already-signed-in user.
                         <Box
+                            component="img"
+                            src="/logo.png"
+                            alt="Elixpo Pay"
                             sx={{
-                                width: {
-                                    xs: 44,
-                                    "@media (min-width: 640px)": 104,
-                                },
-                                height: 38,
+                                height: { xs: 24, md: 28 },
+                                width: "auto",
+                                display: "block",
                             }}
                         />
-                    ) : me ? (
-                        <Button
-                            component={Link}
-                            href="/dashboard"
-                            disableElevation
+                    </Link>
+
+                    {/* Central Link Group (Desktop) */}
+                    <Stack
+                        direction="row"
+                        spacing={0}
+                        sx={{
+                            display: { xs: "none", lg: "flex" },
+                            gap: "48px",
+                            ml: 4,
+                        }}
+                    >
+                        {LINKS.map((l) => {
+                            const active = pathname === l.href;
+                            return (
+                                <Link
+                                    key={l.label}
+                                    href={l.href}
+                                    style={{
+                                        textDecoration: "none",
+                                        fontWeight: active ? 600 : 500,
+                                        fontSize: "16px",
+                                        color: "var(--app-fg)",
+                                        letterSpacing: "-0.48px",
+                                        fontFamily: "var(--font-sofia-sans)",
+                                        padding: "8px 12px",
+                                        borderRadius: "999px",
+                                        background: active ? "var(--app-overlay)" : "transparent",
+                                        transition: "all 0.2s ease",
+                                    }}
+                                >
+                                    {l.label}
+                                </Link>
+                            );
+                        })}
+                    </Stack>
+
+                    {/* Right side controls: Search, GitHub, Sign In, Hamburguer */}
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                        {/* Slide-out Search Input (Desktop/Tablet) */}
+
+                        <ThemeToggle size={44} />
+
+                        {/* GitHub Stars (Desktop only) */}
+                        <Box
+                            component="a"
+                            href={REPO_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="GitHub repository"
                             sx={{
-                                textTransform: "none",
-                                fontWeight: 600,
-                                fontSize: "0.9rem",
-                                color: "#f4f4f6",
-                                borderRadius: "10px",
-                                pl: 0.6,
-                                pr: {
-                                    xs: 0.6,
-                                    "@media (min-width: 640px)": 1.4,
-                                },
-                                py: 0.5,
-                                gap: 0.9,
-                                border: "1px solid rgba(255,255,255,0.1)",
+                                display: { xs: "none", md: "inline-flex" },
+                                alignItems: "center",
+                                height: 44,
+                                px: 2,
+                                gap: 1,
+                                borderRadius: "20px",
+                                border: "1.5px solid var(--app-border)",
+                                color: "var(--app-fg)",
+                                textDecoration: "none",
+                                fontSize: "14px",
+                                fontWeight: 500,
+                                fontFamily: "var(--font-sofia-sans)",
+                                transition: "all 0.2s ease",
                                 "&:hover": {
-                                    borderColor: "rgba(155,123,247,0.45)",
-                                    background: "rgba(155,123,247,0.08)",
+                                    background: "var(--app-overlay)",
+                                    borderColor: "var(--app-fg)",
                                 },
                             }}
                         >
-                            <Avatar
-                                src={me.avatar || undefined}
+                            <GitHubIcon sx={{ fontSize: 18 }} />
+                            {stars !== null && (
+                                <>
+                                    <Box
+                                        sx={{
+                                            width: "1px",
+                                            height: 14,
+                                            background: "var(--app-border)",
+                                        }}
+                                    />
+                                    <Stack direction="row" spacing={0.3} alignItems="center">
+                                        <StarIcon sx={{ fontSize: 13, color: "#CF4500" }} />
+                                        <span>{formatStars(stars)}</span>
+                                    </Stack>
+                                </>
+                            )}
+                        </Box>
+
+                        {/* Authentication Button: Ink Pill */}
+                        {me === undefined ? (
+                            <Box sx={{ width: 104, height: 44 }} />
+                        ) : me ? (
+                            <Button
+                                component={Link}
+                                href="/dashboard"
+                                disableElevation
                                 sx={{
-                                    width: 32,
-                                    height: 32,
-                                    fontSize: "0.9rem",
-                                    bgcolor: "rgba(155,123,247,0.4)",
-                                }}
-                            >
-                                {(me.name || me.email || "?")
-                                    .charAt(0)
-                                    .toUpperCase()}
-                            </Avatar>
-                            <Box
-                                sx={{
-                                    display: {
-                                        xs: "none",
-                                        "@media (min-width: 640px)": {
-                                            display: "flex",
-                                        },
+                                    textTransform: "none",
+                                    fontWeight: 500,
+                                    fontSize: "14px",
+                                    color: "var(--app-fg)",
+                                    borderRadius: "20px",
+                                    pl: 0.6,
+                                    pr: 2,
+                                    py: 0.5,
+                                    gap: 1,
+                                    border: "1.5px solid var(--app-border)",
+                                    fontFamily: "var(--font-sofia-sans)",
+                                    "&:hover": {
+                                        background: "var(--app-overlay)",
+                                        borderColor: "var(--app-fg)",
                                     },
-                                    flexDirection: "column",
-                                    alignItems: "flex-start",
-                                    minWidth: 0,
-                                    lineHeight: 1.15,
+                                    "&:active": {
+                                        transform: "scale(0.98)",
+                                    },
                                 }}
                             >
+                                <Avatar
+                                    src={me.avatar || undefined}
+                                    sx={{
+                                        width: 28,
+                                        height: 28,
+                                        fontSize: "0.85rem",
+                                        bgcolor: "#CF4500",
+                                        color: "#FFFFFF",
+                                    }}
+                                >
+                                    {(me.name || me.email || "?").charAt(0).toUpperCase()}
+                                </Avatar>
                                 <Box
                                     component="span"
                                     sx={{
-                                        fontSize: "0.86rem",
-                                        fontWeight: 600,
-                                        color: "#f4f4f6",
-                                        maxWidth: 150,
+                                        maxWidth: 100,
                                         overflow: "hidden",
                                         textOverflow: "ellipsis",
                                         whiteSpace: "nowrap",
                                     }}
                                 >
-                                    {me.name || me.email}
+                                    Dashboard
                                 </Box>
-                                {me.name && me.email && (
-                                    <Box
-                                        component="span"
-                                        sx={{
-                                            fontSize: "0.7rem",
-                                            fontWeight: 500,
-                                            color: "rgba(244,244,246,0.5)",
-                                            maxWidth: 150,
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            whiteSpace: "nowrap",
-                                        }}
-                                    >
-                                        {me.email}
-                                    </Box>
-                                )}
-                            </Box>
-                        </Button>
-                    ) : (
-                        <>
-                            {/* Mobile user profile / sign-in icon */}
-                            <IconButton
-                                component={Link}
-                                href="/login"
-                                sx={{
-                                    display: {
-                                        xs: "inline-flex",
-                                        "@media (min-width: 640px)": {
-                                            display: "none",
-                                        },
-                                    },
-                                    p: 0.5,
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: "10px",
-                                    "&:hover": {
-                                        borderColor: "rgba(155,123,247,0.45)",
-                                        background: "rgba(155,123,247,0.08)",
-                                    },
-                                }}
-                            >
-                                <Avatar
-                                    sx={{
-                                        width: 32,
-                                        height: 32,
-                                        bgcolor: "rgba(155,123,247,0.15)",
-                                        color: ACCENT,
-                                    }}
-                                >
-                                    <PersonIcon sx={{ fontSize: 20 }} />
-                                </Avatar>
-                            </IconButton>
-
-                            {/* Desktop Sign in button */}
+                            </Button>
+                        ) : (
                             <Button
                                 component={Link}
                                 href="/login"
                                 disableElevation
                                 sx={{
-                                    display: {
-                                        xs: "none",
-                                        "@media (min-width: 640px)": {
-                                            display: "inline-flex",
-                                        },
-                                    },
                                     textTransform: "none",
-                                    fontWeight: 600,
-                                    fontSize: "0.9rem",
-                                    color: "#fff",
-                                    background:
-                                        "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                                    borderRadius: "10px",
-                                    px: 2.2,
+                                    fontWeight: 500,
+                                    fontSize: "16px",
+                                    color: "var(--app-on-ink)", // Canvas Cream text
+                                    background: "var(--app-ink)", // Ink Black background
+                                    borderRadius: "20px",
+                                    px: 3,
                                     py: 0.8,
-                                    boxShadow: "0 4px 14px rgba(155,123,247,0.32)",
+                                    border: "1.5px solid var(--app-ink)",
+                                    fontFamily: "var(--font-sofia-sans)",
+                                    letterSpacing: "-0.32px",
                                     "&:hover": {
-                                        background:
-                                            "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
-                                        boxShadow:
-                                            "0 6px 20px rgba(155,123,247,0.45)",
+                                        background: "var(--app-ink)",
+                                        borderColor: "var(--app-ink)",
+                                    },
+                                    "&:active": {
+                                        transform: "scale(0.97)",
                                     },
                                 }}
                             >
                                 Sign in
                             </Button>
-                        </>
-                    )}
+                        )}
 
-                    <IconButton
-                        color="inherit"
-                        aria-label="open drawer"
-                        edge="end"
-                        onClick={handleDrawerToggle}
-                        sx={{
-                            display: {
-                                xs: "inline-flex",
-                                "@media (min-width: 640px)": {
-                                    display: "none",
+                        {/* Hamburger Button (Mobile / Tablet) */}
+                        <IconButton
+                            color="inherit"
+                            aria-label="open drawer"
+                            edge="end"
+                            onClick={handleDrawerToggle}
+                            sx={{
+                                display: { xs: "inline-flex", lg: "none" },
+                                color: "var(--app-fg)",
+                                width: 44,
+                                height: 44,
+                                borderRadius: "50%",
+                                border: "1.5px solid var(--app-border)",
+                                "&:hover": {
+                                    background: "var(--app-overlay)",
                                 },
-                            },
-                            color: "rgba(244,244,246,0.8)",
-                            ml: 0.5,
-                            "&:hover": {
-                                color: "#fff",
-                                background: "rgba(255,255,255,0.08)",
-                            },
-                        }}
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                </Stack>
+                            }}
+                        >
+                            <MenuIcon />
+                        </IconButton>
+                    </Stack>
+                </Box>
             </Toolbar>
 
+            {/* Mobile Drawer (Warm Black background) */}
             <Drawer
                 anchor="right"
                 open={mobileOpen}
                 onClose={handleDrawerToggle}
                 ModalProps={{
-                    keepMounted: true, // Better open performance on mobile.
+                    keepMounted: true,
                 }}
                 PaperProps={{
                     sx: {
                         width: 280,
-                        background: "rgba(11, 13, 18, 0.96)",
-                        backdropFilter: "blur(20px)",
-                        borderLeft: "1px solid rgba(255,255,255,0.08)",
-                        boxShadow: "-10px 0 30px rgba(0,0,0,0.5)",
-                        color: "#f4f4f6",
+                        background: "var(--app-ink)", // Ink Black
+                        color: "var(--app-on-ink)",
                         p: 3,
+                        boxShadow: "-10px 0 40px rgba(0,0,0,0.3)",
                     },
                 }}
             >
                 <Stack spacing={3} sx={{ height: "100%" }}>
-                    <Stack
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="space-between"
-                    >
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
                         <Link
                             href="/"
                             onClick={handleDrawerToggle}
@@ -505,39 +390,25 @@ const Navbar = () => {
                                 color: "inherit",
                                 display: "flex",
                                 alignItems: "center",
-                                gap: "10px",
                             }}
                         >
                             <Box
                                 component="img"
-                                src="/mark.png"
+                                src="/logo.png"
                                 alt="Elixpo Pay"
                                 sx={{
-                                    height: 28,
-                                    width: 28,
-                                    borderRadius: "6px",
+                                    height: 24,
+                                    width: "auto",
                                     display: "block",
+                                    filter: "brightness(0) invert(1)", // Invert colors to render logo as pure white
                                 }}
                             />
-                            <Typography
-                                sx={{
-                                    fontWeight: 700,
-                                    fontSize: "1.05rem",
-                                    color: "#f4f4f6",
-                                }}
-                            >
-                                Elixpo{" "}
-                                <Box component="span" sx={{ color: ACCENT }}>
-                                    Pay
-                                </Box>
-                            </Typography>
                         </Link>
                         <IconButton
                             onClick={handleDrawerToggle}
                             sx={{
-                                color: "rgba(244,244,246,0.7)",
+                                color: "var(--app-on-ink)",
                                 "&:hover": {
-                                    color: "#fff",
                                     background: "rgba(255,255,255,0.08)",
                                 },
                             }}
@@ -546,89 +417,9 @@ const Navbar = () => {
                         </IconButton>
                     </Stack>
 
-                    <Divider sx={{ borderColor: "rgba(255,255,255,0.08)" }} />
+                    <Box sx={{ width: "100%", height: "1px", background: "var(--app-on-ink-muted)" }} />
 
-                    {me === undefined ? null : me ? (
-                        <Box
-                            sx={{
-                                p: 1.5,
-                                borderRadius: "12px",
-                                background: "rgba(255,255,255,0.03)",
-                                border: "1px solid rgba(255,255,255,0.06)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1.5,
-                            }}
-                        >
-                            <Avatar
-                                src={me.avatar || undefined}
-                                sx={{
-                                    width: 36,
-                                    height: 36,
-                                    fontSize: "0.9rem",
-                                    bgcolor: "rgba(155,123,247,0.4)",
-                                }}
-                            >
-                                {(me.name || me.email || "?")
-                                    .charAt(0)
-                                    .toUpperCase()}
-                            </Avatar>
-                            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                                <Typography
-                                    sx={{
-                                        fontWeight: 600,
-                                        fontSize: "0.88rem",
-                                        color: "#f4f4f6",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                    }}
-                                >
-                                    {me.name || me.email}
-                                </Typography>
-                                {me.name && me.email && (
-                                    <Typography
-                                        sx={{
-                                            fontSize: "0.72rem",
-                                            color: "rgba(244,244,246,0.5)",
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            whiteSpace: "nowrap",
-                                        }}
-                                    >
-                                        {me.email}
-                                    </Typography>
-                                )}
-                            </Box>
-                        </Box>
-                    ) : (
-                        <Button
-                            component={Link}
-                            href="/login"
-                            onClick={handleDrawerToggle}
-                            fullWidth
-                            disableElevation
-                            sx={{
-                                textTransform: "none",
-                                fontWeight: 600,
-                                fontSize: "0.95rem",
-                                color: "#fff",
-                                background:
-                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
-                                borderRadius: "10px",
-                                py: 1.2,
-                                boxShadow: "0 4px 14px rgba(155,123,247,0.2)",
-                                "&:hover": {
-                                    background:
-                                        "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
-                                },
-                            }}
-                        >
-                            Sign in
-                        </Button>
-                    )}
-
-                    <Stack spacing={1} sx={{ flexGrow: 1 }}>
+                    <Stack spacing={1.5} sx={{ flexGrow: 1 }}>
                         {LINKS.map((l) => (
                             <Button
                                 key={l.label}
@@ -639,18 +430,16 @@ const Navbar = () => {
                                 sx={{
                                     justifyContent: "flex-start",
                                     textTransform: "none",
-                                    fontWeight: 600,
-                                    fontSize: "0.95rem",
-                                    color: "rgba(244,244,246,0.8)",
-                                    py: 1.2,
+                                    fontWeight: 500,
+                                    fontSize: "18px",
+                                    color: "var(--app-on-ink)",
+                                    py: 1,
                                     px: 2,
-                                    borderRadius: "10px",
+                                    borderRadius: "12px",
+                                    fontFamily: "var(--font-sofia-sans)",
                                     transition: "all 0.2s ease",
                                     "&:hover": {
-                                        color: "#fff",
-                                        background: "rgba(155, 123, 247, 0.08)",
-                                        borderLeft: `3px solid ${ACCENT}`,
-                                        pl: 1.7, // compensate for border to avoid shifting text
+                                        background: "rgba(255,255,255,0.08)",
                                     },
                                 }}
                             >
@@ -660,9 +449,7 @@ const Navbar = () => {
                     </Stack>
 
                     <Stack spacing={2} sx={{ mt: "auto" }}>
-                        <Divider
-                            sx={{ borderColor: "rgba(255,255,255,0.08)" }}
-                        />
+                        <Box sx={{ width: "100%", height: "1px", background: "var(--app-on-ink-muted)" }} />
                         <Box
                             component="a"
                             href={REPO_URL}
@@ -673,46 +460,35 @@ const Navbar = () => {
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                height: 42,
-                                px: 2,
-                                gap: 1,
-                                borderRadius: "10px",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                color: "rgba(244,244,246,0.9)",
+                                height: 44,
+                                borderRadius: "20px",
+                                border: "1.5px solid var(--app-on-ink-muted)",
+                                color: "var(--app-on-ink)",
                                 textDecoration: "none",
-                                fontSize: "0.9rem",
-                                fontWeight: 700,
-                                transition: "all 0.18s ease",
+                                fontSize: "14px",
+                                fontWeight: 500,
+                                fontFamily: "var(--font-sofia-sans)",
+                                transition: "all 0.2s ease",
                                 "&:hover": {
-                                    color: "#fff",
-                                    borderColor: "rgba(155,123,247,0.45)",
-                                    background: "rgba(155,123,247,0.08)",
+                                    background: "rgba(255,255,255,0.08)",
+                                    borderColor: "var(--app-on-ink)",
                                 },
                             }}
                         >
-                            <GitHubIcon sx={{ fontSize: 20 }} />
+                            <GitHubIcon sx={{ fontSize: 18, mr: 1 }} />
                             <span>GitHub</span>
                             {stars !== null && (
                                 <>
                                     <Box
                                         sx={{
                                             width: "1px",
-                                            height: 16,
-                                            background:
-                                                "rgba(255,255,255,0.15)",
+                                            height: 12,
+                                            background: "var(--app-on-ink-muted)",
+                                            mx: 1,
                                         }}
                                     />
-                                    <Stack
-                                        direction="row"
-                                        spacing={0.3}
-                                        alignItems="center"
-                                    >
-                                        <StarIcon
-                                            sx={{
-                                                fontSize: 14,
-                                                color: "#fbbf24",
-                                            }}
-                                        />
+                                    <Stack direction="row" spacing={0.3} alignItems="center">
+                                        <StarIcon sx={{ fontSize: 13, color: "#F37338" }} />
                                         <span>{formatStars(stars)}</span>
                                     </Stack>
                                 </>

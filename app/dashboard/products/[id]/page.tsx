@@ -8,6 +8,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EditIcon from "@mui/icons-material/Edit";
 import LaunchIcon from "@mui/icons-material/Launch";
+import SendIcon from "@mui/icons-material/Send";
 import {
     Box,
     Button,
@@ -16,6 +17,7 @@ import {
     Stack,
     Switch,
     TextField,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import Link from "next/link";
@@ -59,6 +61,59 @@ export default function ProductDetailPage() {
     const [changeIdOpen, setChangeIdOpen] = useState(false);
     const [changeIdBusy, setChangeIdBusy] = useState(false);
     const [changeIdErr, setChangeIdErr] = useState("");
+    // Test send
+    const [testEmailInput, setTestEmailInput] = useState("");
+    const [testEmailChips, setTestEmailChips] = useState<string[]>([]);
+    const [testSendBusy, setTestSendBusy] = useState(false);
+    const [testSendResults, setTestSendResults] = useState<
+    Array<{
+        email: string;
+        ok: boolean;
+        error?: string;
+    }>
+    >([]);
+
+    const commitEmailInput = () => {
+        const raw = testEmailInput.trim();
+        if (!raw) return;
+        const incoming = raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+        setTestEmailChips(prev => [...prev, ...incoming.filter(e => !prev.includes(e))]);
+        setTestEmailInput("");
+    };
+
+    const removeEmailChip = (email: string) =>
+        setTestEmailChips(prev => prev.filter(e => e !== email));
+
+    const doTestSend = async () => {
+        if (testEmailChips.length === 0) return;
+        setTestSendBusy(true);
+        setTestSendResults([]);
+        try {
+            const r = await fetch(`/api/dashboard/products/${id}/test-send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ emails: testEmailChips }),
+            });
+            const d = (await r.json()) as Record<string, unknown>;
+            if (!r.ok)
+                throw new Error(
+                    String(d.error_description || d.error || "failed"),
+                );
+            setTestSendResults(
+                (d.results as Array<{
+                    email: string;
+                    ok: boolean;
+                    error?: string;
+                }>) ?? [],
+            );
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setTestSendResults(testEmailChips.map(email => ({ email, ok: false, error: msg })));
+        } finally {
+            setTestSendBusy(false);
+        }
+    };
     // App links (homepage / pricing) editing
     const [homepageDraft, setHomepageDraft] = useState("");
     const [pricingDraft, setPricingDraft] = useState("");
@@ -345,7 +400,7 @@ export default function ProductDetailPage() {
     if (!data) {
         return (
             <GlassCard sx={{ textAlign: "center", py: 6 }}>
-                <Typography sx={{ color: "rgba(245,245,244,0.6)" }}>
+                <Typography sx={{ color: "var(--app-fg-muted)" }}>
                     Product not found.
                 </Typography>
                 <Button
@@ -386,10 +441,10 @@ export default function ProductDetailPage() {
                 }
                 sx={{
                     textTransform: "none",
-                    color: "rgba(245,245,244,0.6)",
+                    color: "var(--app-fg-muted)",
                     mb: 2,
                     px: 0,
-                    "&:hover": { color: "#fff", background: "transparent" },
+                    "&:hover": { color: "var(--app-fg)", background: "transparent" },
                 }}
             >
                 Products
@@ -455,7 +510,7 @@ export default function ProductDetailPage() {
                                     sx={{
                                         minWidth: 0,
                                         textTransform: "none",
-                                        color: "rgba(255,255,255,0.5)",
+                                        color: "var(--app-fg-muted)",
                                     }}
                                 >
                                     Cancel
@@ -487,7 +542,7 @@ export default function ProductDetailPage() {
                                         borderRadius: "8px",
                                         border: "none",
                                         cursor: "pointer",
-                                        color: "rgba(245,245,244,0.5)",
+                                        color: "var(--app-fg-muted)",
                                         background: "transparent",
                                         "&:hover": {
                                             color: "#c4b5fd",
@@ -540,7 +595,7 @@ export default function ProductDetailPage() {
                                 border: "none",
                                 cursor: "pointer",
                                 background: "transparent",
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.76rem",
                                 textDecoration: "underline",
                                 textUnderlineOffset: "2px",
@@ -561,7 +616,7 @@ export default function ProductDetailPage() {
                     {product.description && (
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.55)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.9rem",
                                 mt: 1,
                                 maxWidth: 620,
@@ -732,7 +787,7 @@ export default function ProductDetailPage() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.82rem",
                             }}
                         >
@@ -776,7 +831,7 @@ export default function ProductDetailPage() {
                 <Typography
                     sx={{
                         fontSize: "0.7rem",
-                        color: "rgba(245,245,244,0.45)",
+                        color: "var(--app-fg-faint)",
                         textTransform: "uppercase",
                         letterSpacing: "0.06em",
                         mb: 0.5,
@@ -793,7 +848,7 @@ export default function ProductDetailPage() {
                         <Typography
                             sx={{
                                 fontSize: "0.7rem",
-                                color: "rgba(245,245,244,0.45)",
+                                color: "var(--app-fg-faint)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.06em",
                                 mb: 0.5,
@@ -808,7 +863,7 @@ export default function ProductDetailPage() {
                                     display: "flex",
                                     alignItems: "center",
                                     gap: 1,
-                                    color: "rgba(245,245,244,0.5)",
+                                    color: "var(--app-fg-muted)",
                                 }}
                             >
                                 <CheckCircleIcon
@@ -882,7 +937,7 @@ export default function ProductDetailPage() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.82rem",
                             }}
                         >
@@ -918,7 +973,7 @@ export default function ProductDetailPage() {
                 <Typography
                     sx={{
                         fontSize: "0.7rem",
-                        color: "rgba(245,245,244,0.45)",
+                        color: "var(--app-fg-faint)",
                         textTransform: "uppercase",
                         letterSpacing: "0.06em",
                         mb: 0.5,
@@ -972,7 +1027,7 @@ export default function ProductDetailPage() {
                         <Typography
                             sx={{
                                 fontSize: "0.7rem",
-                                color: "rgba(245,245,244,0.45)",
+                                color: "var(--app-fg-faint)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.06em",
                                 mb: 1,
@@ -995,9 +1050,9 @@ export default function ProductDetailPage() {
                                         sx={{
                                             p: 1.4,
                                             borderRadius: "12px",
-                                            border: "1px solid rgba(255,255,255,0.08)",
+                                            border: "1px solid var(--app-border)",
                                             background:
-                                                "rgba(255,255,255,0.02)",
+                                                "var(--app-overlay)",
                                         }}
                                     >
                                         <Box sx={{ minWidth: 0 }}>
@@ -1027,16 +1082,16 @@ export default function ProductDetailPage() {
                                                         sx={{
                                                             height: 18,
                                                             fontSize: "0.6rem",
-                                                            color: "rgba(245,245,244,0.6)",
+                                                            color: "var(--app-fg-muted)",
                                                             bgcolor:
-                                                                "rgba(255,255,255,0.06)",
+                                                                "var(--app-overlay)",
                                                         }}
                                                     />
                                                 )}
                                             </Stack>
                                             <Typography
                                                 sx={{
-                                                    color: "rgba(245,245,244,0.5)",
+                                                    color: "var(--app-fg-muted)",
                                                     fontSize: "0.8rem",
                                                 }}
                                             >
@@ -1066,7 +1121,7 @@ export default function ProductDetailPage() {
                         <Typography
                             sx={{
                                 fontSize: "0.7rem",
-                                color: "rgba(245,245,244,0.45)",
+                                color: "var(--app-fg-faint)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.06em",
                                 mb: 0.5,
@@ -1081,7 +1136,7 @@ export default function ProductDetailPage() {
                                     display: "flex",
                                     alignItems: "center",
                                     gap: 1,
-                                    color: "rgba(245,245,244,0.5)",
+                                    color: "var(--app-fg-muted)",
                                 }}
                             >
                                 <CheckCircleIcon
@@ -1134,7 +1189,7 @@ export default function ProductDetailPage() {
                                 </Stack>
                                 <Typography
                                     sx={{
-                                        color: "rgba(245,245,244,0.5)",
+                                        color: "var(--app-fg-muted)",
                                         fontSize: "0.78rem",
                                         mt: 0.8,
                                     }}
@@ -1173,7 +1228,7 @@ export default function ProductDetailPage() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.82rem",
                             }}
                         >
@@ -1201,15 +1256,15 @@ export default function ProductDetailPage() {
                     <Box
                         sx={{
                             borderRadius: "12px",
-                            border: "1px dashed rgba(255,255,255,0.14)",
-                            background: "rgba(255,255,255,0.02)",
+                            border: "1px dashed var(--app-border)",
+                            background: "var(--app-overlay)",
                             p: 2.5,
                             textAlign: "center",
                         }}
                     >
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.6)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.9rem",
                                 mb: 0.5,
                             }}
@@ -1218,7 +1273,7 @@ export default function ProductDetailPage() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.45)",
+                                color: "var(--app-fg-faint)",
                                 fontSize: "0.82rem",
                             }}
                         >
@@ -1233,8 +1288,8 @@ export default function ProductDetailPage() {
                                 key={t.id}
                                 sx={{
                                     borderRadius: "14px",
-                                    border: "1px solid rgba(255,255,255,0.08)",
-                                    background: "rgba(255,255,255,0.02)",
+                                    border: "1px solid var(--app-border)",
+                                    background: "var(--app-overlay)",
                                     p: { xs: 1.8, sm: 2.2 },
                                     opacity: t.active ? 1 : 0.5,
                                 }}
@@ -1255,7 +1310,7 @@ export default function ProductDetailPage() {
                                             sx={{
                                                 fontWeight: 700,
                                                 fontSize: "1rem",
-                                                color: "#f5f5f4",
+                                                color: "var(--app-fg)",
                                             }}
                                         >
                                             {t.name}
@@ -1298,7 +1353,7 @@ export default function ProductDetailPage() {
                                 {t.prices.length === 0 ? (
                                     <Typography
                                         sx={{
-                                            color: "rgba(245,245,244,0.45)",
+                                            color: "var(--app-fg-faint)",
                                             fontSize: "0.82rem",
                                         }}
                                     >
@@ -1321,7 +1376,7 @@ export default function ProductDetailPage() {
                                                 sx={{
                                                     p: 1.4,
                                                     borderRadius: "10px",
-                                                    border: "1px solid rgba(255,255,255,0.07)",
+                                                    border: "1px solid var(--app-border)",
                                                     background:
                                                         "rgba(0,0,0,0.18)",
                                                     opacity: pr.active
@@ -1380,12 +1435,12 @@ export default function ProductDetailPage() {
                                                                     fontSize:
                                                                         "0.66rem",
                                                                     fontWeight: 700,
-                                                                    color: "rgba(245,245,244,0.6)",
+                                                                    color: "var(--app-fg-muted)",
                                                                     px: 0.7,
                                                                     py: 0.15,
                                                                     borderRadius:
                                                                         "6px",
-                                                                    border: "1px solid rgba(255,255,255,0.12)",
+                                                                    border: "1px solid var(--app-border)",
                                                                 }}
                                                             >
                                                                 {pr.region}
@@ -1395,7 +1450,7 @@ export default function ProductDetailPage() {
                                                 </Stack>
                                                 <Typography
                                                     sx={{
-                                                        color: "rgba(245,245,244,0.5)",
+                                                        color: "var(--app-fg-muted)",
                                                         fontSize: "0.76rem",
                                                         mt: 0.2,
                                                     }}
@@ -1420,8 +1475,219 @@ export default function ProductDetailPage() {
                     </Stack>
                 )}
             </GlassCard>
+            
+            <GlassCard sx={{ mt: 2 }}>
+                <Box sx={{ mb: 1.5 }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                        Test send
+                    </Typography>
+                    <Typography
+                        sx={{
+                            color: "rgba(245,245,244,0.5)",
+                            fontSize: "0.82rem",
+                        }}
+                    >
+                        Simulate a completed checkout for one or more email
+                        addresses without a real payment. Disabled in
+                        production.
+                    </Typography>
+                </Box>
 
+                {/* Chip input */}
+                <Box
+                    sx={{
+                        minHeight: 48,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.75,
+                        alignItems: "center",
+                        p: 1,
+                        borderRadius: "12px",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.02)",
+                        cursor: "text",
+                        "&:focus-within": {
+                            borderColor: "#9b7bf7",
+                        },
+                    }}
+                    onClick={() =>
+                        document
+                            .getElementById("test-send-email-input")
+                            ?.focus()
+                    }
+                >
+                    {testEmailChips.map((email) => (
+                        <Tooltip key={email} title="Remove" placement="top">
+                            <Chip
+                                label={email}
+                                size="small"
+                                onDelete={() => removeEmailChip(email)}
+                                sx={{
+                                    height: 26,
+                                    fontSize: "0.78rem",
+                                    color: "#c4b5fd",
+                                    bgcolor: "rgba(155,123,247,0.12)",
+                                    border: "1px solid rgba(155,123,247,0.3)",
+                                    "& .MuiChip-deleteIcon": {
+                                        color: "rgba(196,181,253,0.5)",
+                                        "&:hover": { color: "#c4b5fd" },
+                                    },
+                                }}
+                            />
+                        </Tooltip>
+                    ))}
+                    <Box
+                        id="test-send-email-input"
+                        component="input"
+                        value={testEmailInput}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setTestEmailInput(e.target.value)
+                        }
+                        onKeyDown={(
+                            e: React.KeyboardEvent<HTMLInputElement>,
+                        ) => {
+                            if (
+                                e.key === "Enter" ||
+                                e.key === "Tab" ||
+                                e.key === ","
+                            ) {
+                                e.preventDefault();
+                                commitEmailInput();
+                            }
+                            if (
+                                e.key === "Backspace" &&
+                                testEmailInput === "" &&
+                                testEmailChips.length > 0
+                            ) {
+                                removeEmailChip(
+                                    testEmailChips[testEmailChips.length - 1],
+                                );
+                            }
+                        }}
+                        onBlur={commitEmailInput}
+                        placeholder={
+                            testEmailChips.length === 0
+                                ? "Enter emails separated by commas…"
+                                : ""
+                        }
+                        sx={{
+                            flexGrow: 1,
+                            minWidth: 180,
+                            border: "none",
+                            outline: "none",
+                            background: "transparent",
+                            color: "#e5e7eb",
+                            fontSize: "0.85rem",
+                            fontFamily: "inherit",
+                            "::placeholder": {
+                                color: "rgba(245,245,244,0.35)",
+                            },
+                        }}
+                    />
+                </Box>
+
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mt: 1.5 }}
+                >
+                    {testEmailChips.length > 0 && (
+                        <Typography
+                            sx={{
+                                fontSize: "0.76rem",
+                                color: "rgba(245,245,244,0.4)",
+                            }}
+                        >
+                            {testEmailChips.length} recipient
+                            {testEmailChips.length !== 1 ? "s" : ""}
+                        </Typography>
+                    )}
+                    <Box sx={{ ml: "auto" }}>
+                        <Button
+                            onClick={doTestSend}
+                            disabled={
+                                testSendBusy ||
+                                testEmailChips.length === 0
+                            }
+                            startIcon={
+                                testSendBusy ? (
+                                    <CircularProgress
+                                        size={14}
+                                        sx={{ color: "#fff" }}
+                                    />
+                                ) : (
+                                    <SendIcon
+                                        sx={{
+                                            fontSize: "1rem !important",
+                                        }}
+                                    />
+                                )
+                            }
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 600,
+                                color: "#fff",
+                                px: 2.2,
+                                py: 0.85,
+                                borderRadius: "10px",
+                                background:
+                                    "linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)",
+                                "&:hover": {
+                                    background:
+                                        "linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)",
+                                },
+                                "&.Mui-disabled": {
+                                    opacity: 0.4,
+                                    color: "#fff",
+                                },
+                            }}
+                        >
+                            {testSendBusy ? "Sending…" : "Send test"}
+                        </Button>
+                    </Box>
+                </Stack>
+
+                {/* Per-email results */}
+                {testSendResults.length > 0 && (
+                    <Stack spacing={0.75} sx={{ mt: 1.5 }}>
+                        {testSendResults.map((r) => (
+                            <Stack
+                                key={r.email}
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                            >
+                                <CheckCircleIcon
+                                    sx={{
+                                        fontSize: 15,
+                                        color: r.ok
+                                            ? "#86efac"
+                                            : "rgba(248,113,113,0.85)",
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.82rem",
+                                        color: r.ok
+                                            ? "rgba(245,245,244,0.75)"
+                                            : "rgba(248,113,113,0.85)",
+                                        fontFamily: "var(--font-geist-mono)",
+                                    }}
+                                >
+                                    {r.email}
+                                    {!r.ok && r.error
+                                        ? ` — ${r.error === "invalid_email" ? "invalid email address" : r.error}`
+                                        : ""}
+                                </Typography>
+                            </Stack>
+                        ))}
+                    </Stack>
+                )}
+            </GlassCard>
             {/* Developer: how to sync tiers (full guide lives in the docs) */}
+            
             <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
                 <Button
                     component={Link}
@@ -1451,12 +1717,12 @@ export default function ProductDetailPage() {
             {/* App links — homepage & pricing page (editable) */}
             <GlassCard sx={{ mt: 2 }}>
                 <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Links</Typography>
-                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem", mb: 2 }}>
+                <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.82rem", mb: 2 }}>
                     Your homepage and pricing page — shown to buyers and surfaced on this product.
                 </Typography>
                 <Stack spacing={1.6}>
                     <Box>
-                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        <Typography sx={{ fontSize: "0.7rem", color: "var(--app-fg-faint)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
                             Homepage URL
                         </Typography>
                         <TextField
@@ -1469,7 +1735,7 @@ export default function ProductDetailPage() {
                         />
                     </Box>
                     <Box>
-                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        <Typography sx={{ fontSize: "0.7rem", color: "var(--app-fg-faint)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
                             Pricing page URL
                         </Typography>
                         <TextField
@@ -1501,7 +1767,7 @@ export default function ProductDetailPage() {
                         <Typography sx={{ color: "#f87171", fontSize: "0.82rem" }}>{linksErr}</Typography>
                     )}
                 </Stack>
-                <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.72rem", mt: 1 }}>
+                <Typography sx={{ color: "var(--app-fg-faint)", fontSize: "0.72rem", mt: 1 }}>
                     Must be a <code>https://</code> URL. Leave blank to clear.
                 </Typography>
             </GlassCard>
@@ -1512,7 +1778,7 @@ export default function ProductDetailPage() {
                     Danger zone
                 </Typography>
                 <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ mt: 1 }}>
-                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.85rem", maxWidth: 540 }}>
+                    <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.85rem", maxWidth: 540 }}>
                         Permanently delete this product and everything in it — all tiers, prices,
                         webhook config, and API credentials. This <strong>cannot be undone</strong>.
                         Prefer <strong>Archive</strong> if you might bring it back.
@@ -1621,13 +1887,13 @@ export default function ProductDetailPage() {
 
 const field = {
     "& .MuiOutlinedInput-root": {
-        color: "#e5e7eb",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+        color: "var(--app-fg)",
+        background: "var(--app-overlay)",
+        "& fieldset": { borderColor: "var(--app-border)" },
         "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
         "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+    "& .MuiInputLabel-root": { color: "var(--app-fg-muted)" },
 };
 
 const mono = {
@@ -1636,7 +1902,7 @@ const mono = {
     p: 1.2,
     borderRadius: "10px",
     background: "rgba(0,0,0,0.3)",
-    border: "1px solid rgba(255,255,255,0.1)",
+    border: "1px solid var(--app-border)",
     overflowX: "auto",
     whiteSpace: "nowrap",
 };
