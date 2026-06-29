@@ -207,7 +207,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         position="sticky"
                         elevation={0}
                         sx={{
-                            bgcolor: "rgba(242,242,238,0.8)",
+                            bgcolor:
+                                appTheme === "dark"
+                                    ? "rgba(15, 17, 23, 0.8)"
+                                    : "rgba(242, 242, 238, 0.8)",
                             backdropFilter: "blur(16px)",
                             borderBottom: "1px solid var(--border)",
                         }}
@@ -414,7 +417,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                     paper: {
                                         sx: {
                                             mt: 1,
-                                            bgcolor: "rgba(255,255,255,0.95)",
+                                            bgcolor:
+                                                appTheme === "dark"
+                                                    ? "rgba(24, 27, 34, 0.95)"
+                                                    : "rgba(255, 255, 255, 0.95)",
                                             backdropFilter: "blur(16px)",
                                             border: "1px solid var(--border)",
                                             borderRadius: "12px",
