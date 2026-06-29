@@ -1,277 +1,43 @@
 "use client";
 
-import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
-import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import CreditCardIcon from "@mui/icons-material/CreditCard";
-import QrCode2Icon from "@mui/icons-material/QrCode2";
-import ScheduleIcon from "@mui/icons-material/Schedule";
-import type { SvgIconComponent } from "@mui/icons-material";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import ShieldIcon from "@mui/icons-material/VerifiedUser";
+import ContactlessIcon from "@mui/icons-material/Contactless";
+import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import Link from "next/link";
-import {
-    type CSSProperties,
-    type ReactNode,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
-
-/* -----------------------------------------------------------------------------
- * Staggered pixel-field physics engine (vanilla canvas — no deps).
- * Adapted to the Elixpo palette: mostly faint white motes with purple accents
- * rippling outward from centre, faded into the page background by a vignette.
- * -------------------------------------------------------------------------- */
-
-type Pixel = {
-    x: number;
-    y: number;
-    color: string;
-    size: number;
-    sizeStep: number;
-    minSize: number;
-    maxSizeInt: number;
-    maxSize: number;
-    delay: number;
-    counter: number;
-    counterStep: number;
-    speed: number;
-    isIdle: boolean;
-    isReverse: boolean;
-    isShimmer: boolean;
-    draw: () => void;
-    appear: () => void;
-};
-
-function createPixel(
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    x: number,
-    y: number,
-    color: string,
-    baseSpeed: number,
-    delay: number,
-): Pixel {
-    const rand = (min: number, max: number) =>
-        Math.random() * (max - min) + min;
-    const p: Pixel = {
-        x,
-        y,
-        color,
-        size: 0,
-        sizeStep: rand(0.12, 0.28),
-        minSize: 0.5,
-        maxSizeInt: 2,
-        maxSize: rand(0.5, 2),
-        delay,
-        counter: 0,
-        counterStep: rand(1.8, 3.2) + (canvas.width + canvas.height) * 0.008,
-        speed: rand(0.08, 0.4) * baseSpeed,
-        isIdle: false,
-        isReverse: false,
-        isShimmer: false,
-        draw() {
-            const offset = p.maxSizeInt * 0.5 - p.size * 0.5;
-            ctx.fillStyle = p.color;
-            ctx.fillRect(p.x + offset, p.y + offset, p.size, p.size);
-        },
-        appear() {
-            p.isIdle = false;
-            if (p.counter <= p.delay) {
-                p.counter += p.counterStep;
-                return;
-            }
-            if (p.size >= p.maxSize) p.isShimmer = true;
-            if (p.isShimmer) {
-                if (p.size >= p.maxSize) p.isReverse = true;
-                else if (p.size <= p.minSize) p.isReverse = false;
-                p.size += p.isReverse ? -p.speed : p.speed;
-            } else {
-                p.size += p.sizeStep;
-            }
-            p.draw();
-        },
-    };
-    return p;
-}
-
-function PixelCanvas({ colors, gap = 6 }: { colors: string[]; gap?: number }) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const wrapRef = useRef<HTMLDivElement>(null);
-    const pixelsRef = useRef<Pixel[]>([]);
-    const rafRef = useRef<number>(0);
-    const lastRef = useRef(0);
-    const reducedRef = useRef(false);
-
-    const init = useCallback(() => {
-        const canvas = canvasRef.current;
-        const wrap = wrapRef.current;
-        if (!canvas || !wrap || colors.length === 0) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        const { width, height } = wrap.getBoundingClientRect();
-        const w = Math.floor(width);
-        const h = Math.floor(height);
-        canvas.width = w;
-        canvas.height = h;
-        canvas.style.width = `${w}px`;
-        canvas.style.height = `${h}px`;
-
-        const speed = reducedRef.current ? 0 : 30 * 0.001;
-        const pixels: Pixel[] = [];
-        for (let x = 0; x < w; x += gap) {
-            for (let y = 0; y < h; y += gap) {
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const dx = x - w / 2;
-                const dy = y - h / 2;
-                const delay = reducedRef.current
-                    ? 0
-                    : Math.sqrt(dx * dx + dy * dy) * 0.65;
-                pixels.push(
-                    createPixel(ctx, canvas, x, y, color, speed, delay),
-                );
-            }
-        }
-        pixelsRef.current = pixels;
-    }, [colors, gap]);
-
-    const animate = useCallback(() => {
-        cancelAnimationFrame(rafRef.current);
-        const frameInterval = 1000 / 60;
-        const loop = () => {
-            rafRef.current = requestAnimationFrame(loop);
-            const now = performance.now();
-            const elapsed = now - lastRef.current;
-            if (elapsed < frameInterval) return;
-            lastRef.current = now - (elapsed % frameInterval);
-
-            const canvas = canvasRef.current;
-            const ctx = canvas?.getContext("2d");
-            if (!canvas || !ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (const pixel of pixelsRef.current) pixel.appear();
-            if (pixelsRef.current.every((p) => p.isIdle))
-                cancelAnimationFrame(rafRef.current);
-        };
-        rafRef.current = requestAnimationFrame(loop);
-    }, []);
-
-    useEffect(() => {
-        reducedRef.current = window.matchMedia(
-            "(prefers-reduced-motion: reduce)",
-        ).matches;
-        init();
-        const ro = new ResizeObserver(() => init());
-        if (wrapRef.current) ro.observe(wrapRef.current);
-        animate();
-        return () => {
-            ro.disconnect();
-            cancelAnimationFrame(rafRef.current);
-        };
-    }, [init, animate]);
-
-    return (
-        <div
-            ref={wrapRef}
-            style={{ position: "absolute", inset: 0, overflow: "hidden" }}
-        >
-            <canvas
-                ref={canvasRef}
-                style={{ display: "block", width: "100%", height: "100%" }}
-            />
-        </div>
-    );
-}
-
-/* -----------------------------------------------------------------------------
- * Hero
- * -------------------------------------------------------------------------- */
-
-const PIXELS = [
-    "rgba(245,245,244,0.16)",
-    "rgba(245,245,244,0.16)",
-    "rgba(245,245,244,0.10)",
-    "#9b7bf7",
-    "#7c5cff",
-];
-
-/* Raw payment-brand logos for the hero strip (no boxes). Brand colours are
- * lifted slightly so they stay legible on the dark hero. */
-const wordmark: CSSProperties = {
-    fontFamily: "var(--font-geist-sans), sans-serif",
-    fontWeight: 800,
-    fontSize: "1.35rem",
-    letterSpacing: "-0.01em",
-    whiteSpace: "nowrap",
-    display: "inline-flex",
-    alignItems: "center",
-    opacity: 0.95,
-    lineHeight: 1,
-};
-const methodChip: CSSProperties = {
-    ...wordmark,
-    fontSize: "1.05rem",
-    fontWeight: 700,
-    color: "rgba(245,245,244,0.8)",
-    gap: 9,
-};
-
-function method(Icon: SvgIconComponent, label: string, color: string): ReactNode {
-    return (
-        <span style={methodChip}>
-            <Icon sx={{ fontSize: 26, color }} />
-            {label}
-        </span>
-    );
-}
-
-// The payment methods buyers can pay with (via Razorpay), shown in the hero
-// marquee so visitors see what's accepted at a glance.
-const PAY_BRANDS: { name: string; node: ReactNode }[] = [
-    {
-        name: "UPI",
-        node: (
-            <span style={methodChip}>
-                <span>
-                    <b style={{ color: "#2ecc71" }}>U</b>
-                    <b style={{ color: "#ff7a2f" }}>P</b>
-                    <b style={{ color: "#2ecc71" }}>I</b>
-                </span>
-            </span>
-        ),
-    },
-    { name: "Cards", node: method(CreditCardIcon, "Cards", "#9b7bf7") },
-    { name: "Netbanking", node: method(AccountBalanceIcon, "Netbanking", "#5b9bff") },
-    { name: "Wallets", node: method(AccountBalanceWalletIcon, "Wallets", "#86efac") },
-    { name: "Pay Later", node: method(ScheduleIcon, "Pay Later", "#fbbf24") },
-    { name: "EMI", node: method(CalendarMonthIcon, "EMI", "#f472b6") },
-    { name: "QR", node: method(QrCode2Icon, "Scan & Pay", "#c4b5fd") },
-];
-
-const ArrowRight = () => (
-    <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        aria-hidden="true"
-    >
-        <path
-            d="M5 12h14M13 6l6 6-6 6"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
-);
+import { useEffect } from "react";
+import gsap from "gsap";
 
 export default function PixelHero() {
-    const [mounted, setMounted] = useState(false);
+    // GSAP Intro Timeline Animation
     useEffect(() => {
-        const t = setTimeout(() => setMounted(true), 50);
-        return () => clearTimeout(t);
+        const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
+
+        tl.fromTo(".hero-eyebrow",
+            { y: 25, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.8, delay: 0.2 }
+        )
+        .fromTo(".hero-headline",
+            { y: 35, opacity: 0 },
+            { y: 0, opacity: 1, duration: 1.0 },
+            "-=0.6"
+        )
+        .fromTo(".hero-subhead",
+            { y: 25, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.8 },
+            "-=0.7"
+        )
+        .fromTo(".hero-button",
+            { y: 20, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.6, stagger: 0.15 },
+            "-=0.6"
+        )
+        .fromTo(".hero-stadium",
+            { y: 50, scale: 0.97, opacity: 0 },
+            { y: 0, scale: 1, opacity: 1, duration: 1.2, ease: "power3.out" },
+            "-=0.5"
+        );
     }, []);
 
     return (
@@ -279,276 +45,457 @@ export default function PixelHero() {
             style={{
                 position: "relative",
                 width: "100%",
-                minHeight: "calc(100dvh - 68px)",
+                background: "transparent",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "center",
                 alignItems: "center",
+                justifyContent: "center",
                 overflow: "hidden",
-                isolation: "isolate",
-                padding: "2rem 1rem 5.5rem",
-                textAlign: "center",
+                padding: "4rem 0 6rem",
             }}
         >
-            <style>{`
-                @keyframes pay-marquee { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
-                .pay-marquee { animation: pay-marquee 26s linear infinite; }
-                @keyframes pay-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-            `}</style>
-
-            {/* pixel field + vignette */}
-            <div
-                style={{
+            {/* Decorative Orbital Lines in Background */}
+            <Box
+                component="svg"
+                viewBox="0 0 1440 600"
+                preserveAspectRatio="none"
+                sx={{
                     position: "absolute",
-                    inset: 0,
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
                     zIndex: 0,
                     pointerEvents: "none",
+                    opacity: 0.5,
                 }}
             >
-                <PixelCanvas colors={PIXELS} gap={7} />
-                <div
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                            "radial-gradient(circle at 50% 42%, transparent 0%, rgba(11,13,18,0.5) 62%, #0b0d12 100%)",
-                    }}
+                <path
+                    d="M-100 200 C 300 50, 700 400, 1100 150 S 1500 450, 1600 300"
+                    fill="none"
+                    stroke="#F37338"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 4"
                 />
-                {/* soft purple glow behind the headline */}
-                <div
-                    style={{
-                        position: "absolute",
-                        top: "30%",
-                        left: "50%",
-                        width: "60vmax",
-                        height: "40vmax",
-                        transform: "translate(-50%, -50%)",
-                        background:
-                            "radial-gradient(circle, rgba(155,123,247,0.16) 0%, transparent 60%)",
-                        filter: "blur(40px)",
-                    }}
+                <path
+                    d="M100 500 C 400 350, 800 550, 1200 400"
+                    fill="none"
+                    stroke="#F37338"
+                    strokeWidth="1"
+                    opacity="0.7"
                 />
-            </div>
+            </Box>
 
-            {/* eyebrow */}
-            <div
-                style={{
-                    position: "relative",
-                    zIndex: 1,
-                    opacity: mounted ? 1 : 0,
-                    animation: mounted ? "pay-rise 0.7s ease both" : undefined,
-                    marginBottom: "1.4rem",
-                }}
-            >
-                <span
-                    style={{
-                        display: "inline-block",
-                        padding: "6px 14px",
-                        borderRadius: 999,
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        color: "#b69aff",
-                        background: "rgba(155,123,247,0.1)",
-                        border: "1px solid rgba(155,123,247,0.25)",
-                        backdropFilter: "blur(8px)",
-                    }}
-                >
-                    Centralized Distributed Payments
-                </span>
-            </div>
+            <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
+                <Stack alignItems="center" spacing={3} sx={{ textAlign: "center", mb: 8 }}>
+                    {/* Eyebrow Label with Accent Dot */}
+                    <Stack
+                        className="hero-eyebrow"
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                        sx={{ opacity: 0 }}
+                    >
+                        <Box
+                            sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: "50%",
+                                background: "#CF4500",
+                            }}
+                        />
+                        <Typography
+                            sx={{
+                                fontSize: "14px",
+                                fontWeight: 700,
+                                letterSpacing: "0.06em",
+                                color: "var(--app-fg-muted)",
+                                textTransform: "uppercase",
+                                fontFamily: "var(--font-sofia-sans)",
+                            }}
+                        >
+                            Payments for your SaaS
+                        </Typography>
+                    </Stack>
 
-            {/* headline — serif italic + sans extrabold gradient */}
-            <h1
-                style={{
-                    position: "relative",
-                    zIndex: 1,
-                    margin: 0,
-                    lineHeight: 1.0,
-                    letterSpacing: "-0.03em",
-                    display: "flex",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
-                    gap: "0 0.4em",
-                    fontSize: "clamp(2.8rem, 8vw, 6rem)",
-                    opacity: mounted ? 1 : 0,
-                    animation: mounted
-                        ? "pay-rise 0.8s ease 0.05s both"
-                        : undefined,
-                }}
-            >
-                <span
-                    style={{
-                        fontFamily: "Georgia, 'Times New Roman', serif",
-                        fontStyle: "italic",
-                        fontWeight: 500,
-                        color: "rgba(245,245,244,0.92)",
-                        textShadow: "0 12px 40px rgba(0,0,0,0.5)",
-                    }}
-                >
-                    Payments
-                </span>
-                <span
-                    style={{
-                        fontWeight: 800,
-                        background:
-                            "linear-gradient(135deg, #f5f5f4 0%, #9b7bf7 38%, #86efac 68%, #fbbf24 100%)",
-                        WebkitBackgroundClip: "text",
-                        backgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                    }}
-                >
-                    infrastructure.
-                </span>
-            </h1>
-
-            {/* subhead */}
-            <p
-                style={{
-                    position: "relative",
-                    zIndex: 1,
-                    maxWidth: 600,
-                    margin: "1.7rem auto 0",
-                    fontSize: "clamp(1rem, 2.4vw, 1.16rem)",
-                    lineHeight: 1.7,
-                    color: "rgba(245,245,244,0.72)",
-                    opacity: mounted ? 1 : 0,
-                    animation: mounted
-                        ? "pay-rise 0.8s ease 0.15s both"
-                        : undefined,
-                }}
-            >
-                Accept payments, grant entitlements, and settle payouts — one
-                API and one dashboard for every product you ship.
-            </p>
-
-            {/* CTAs — Tahoe glass buttons */}
-            <div
-                style={{
-                    position: "relative",
-                    zIndex: 1,
-                    display: "flex",
-                    gap: 12,
-                    marginTop: "2.2rem",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
-                    opacity: mounted ? 1 : 0,
-                    transform: mounted ? "translateY(0)" : "translateY(24px)",
-                    transition: "opacity 0.8s ease, transform 0.8s ease",
-                    transitionDelay: "0.35s",
-                }}
-            >
-                <Link
-                    href="/login"
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        height: 50,
-                        padding: "0 30px",
-                        borderRadius: 14,
-                        fontSize: "0.95rem",
-                        fontWeight: 700,
-                        color: "#fff",
-                        textDecoration: "none",
-                        background:
-                            "linear-gradient(180deg, #a98cff 0%, #7c5cff 100%)",
-                        boxShadow:
-                            "inset 0 1px 1px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.2), 0 14px 30px rgba(124,92,255,0.35)",
-                    }}
-                >
-                    Prepare for Payouts
-                    <ArrowRight />
-                </Link>
-                <Link
-                    href="/docs"
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        height: 50,
-                        padding: "0 28px",
-                        borderRadius: 14,
-                        fontSize: "0.95rem",
-                        fontWeight: 700,
-                        color: "#f5f5f4",
-                        textDecoration: "none",
-                        background:
-                            "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)",
-                        border: "1px solid rgba(255,255,255,0.14)",
-                        backdropFilter: "blur(12px)",
-                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.1)",
-                    }}
-                >
-                    Read the docs
-                </Link>
-            </div>
-
-            {/* powered-by marquee */}
-            <div
-                style={{
-                    position: "absolute",
-                    bottom: "2rem",
-                    left: 0,
-                    right: 0,
-                    zIndex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 14,
-                    opacity: mounted ? 1 : 0,
-                    transition: "opacity 1s ease",
-                    transitionDelay: "0.55s",
-                }}
-            >
-                <div
-                    style={{
-                        position: "relative",
-                        width: "100%",
-                        maxWidth: 880,
-                        overflow: "hidden",
-                        WebkitMaskImage:
-                            "linear-gradient(to right, transparent, white 15%, white 85%, transparent)",
-                        maskImage:
-                            "linear-gradient(to right, transparent, white 15%, white 85%, transparent)",
-                    }}
-                >
-                    <div
-                        className="pay-marquee"
-                        style={{
-                            display: "flex",
-                            width: "max-content",
-                            gap: 52,
-                            padding: "4px 0",
+                    {/* Headline */}
+                    <Typography
+                        variant="h1"
+                        className="hero-headline"
+                        sx={{
+                            fontSize: { xs: "40px", sm: "60px", md: "72px" },
+                            fontWeight: 500,
+                            letterSpacing: "-2%",
+                            lineHeight: 1.0,
+                            color: "var(--app-fg)",
+                            maxWidth: "900px",
+                            fontFamily: "var(--font-sofia-sans)",
+                            opacity: 0,
                         }}
                     >
-                        {[0, 1].map((dup) => (
-                            <div
-                                key={dup}
-                                style={{
-                                    display: "flex",
-                                    gap: 52,
-                                    alignItems: "center",
+                        Add payments and payouts to your platform.
+                    </Typography>
+
+                    {/* Subhead */}
+                    <Typography
+                        className="hero-subhead"
+                        sx={{
+                            fontSize: { xs: "16px", md: "20px" },
+                            fontWeight: 450,
+                            lineHeight: 1.5,
+                            color: "var(--app-fg)",
+                            maxWidth: "640px",
+                            fontFamily: "var(--font-sofia-sans)",
+                            opacity: 0,
+                        }}
+                    >
+                        Your platform doesn't need its own payment system.
+                        Integrate Elixpo Pay once — we charge your customers and
+                        pay each creator their share, straight to their bank.
+                        Powered by Razorpay today, with Stripe coming soon for
+                        international payments.
+                    </Typography>
+
+                    {/* Buttons */}
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
+                        sx={{
+                            pt: 1,
+                            width: { xs: "100%", sm: "auto" },
+                            justifyContent: "center",
+                        }}
+                    >
+                        {/* Primary Button — Ink Pill */}
+                        <Button
+                            component={Link}
+                            href="/login"
+                            className="hero-button"
+                            variant="contained"
+                            disableElevation
+                            endIcon={<ArrowForwardIcon />}
+                            sx={{
+                                background: "var(--app-fg)",
+                                color: "var(--app-bg)",
+                                border: "1.5px solid var(--app-fg)",
+                                borderRadius: "20px",
+                                px: 4,
+                                py: 1.5,
+                                fontSize: "16px",
+                                fontWeight: 500,
+                                letterSpacing: "-0.32px",
+                                textTransform: "none",
+                                fontFamily: "var(--font-sofia-sans)",
+                                opacity: 0,
+                                "&:hover": {
+                                    background: "var(--app-fg)",
+                                    borderColor: "var(--app-fg)",
+                                },
+                                "&:active": {
+                                    transform: "scale(0.97)",
+                                },
+                            }}
+                        >
+                            Get Started
+                        </Button>
+
+                        {/* Secondary Button — Outlined Pill */}
+                        <Button
+                            component={Link}
+                            href="/docs"
+                            className="hero-button"
+                            variant="outlined"
+                            disableElevation
+                            startIcon={<MenuBookIcon />}
+                            sx={{
+                                background: "var(--app-surface)",
+                                color: "var(--app-fg)",
+                                border: "1.5px solid var(--app-fg)",
+                                borderRadius: "20px",
+                                px: 4,
+                                py: 1.5,
+                                fontSize: "16px",
+                                fontWeight: 500,
+                                textTransform: "none",
+                                fontFamily: "var(--font-sofia-sans)",
+                                opacity: 0,
+                                "&:hover": {
+                                    background: "var(--app-overlay)",
+                                    borderColor: "var(--app-fg)",
+                                },
+                                "&:active": {
+                                    transform: "scale(0.97)",
+                                },
+                            }}
+                        >
+                            Read Documentation
+                        </Button>
+                    </Stack>
+                </Stack>
+
+                {/* Hero Media Frame (Stadium) - Redesigned for seamless connection */}
+                <Box
+                    className="hero-stadium"
+                    sx={{
+                        width: "100%",
+                        background: "var(--app-ink)", // Ink Black background
+                        borderRadius: "40px",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        boxShadow: "rgba(0, 0, 0, 0.12) 0px 30px 60px 0px",
+                        overflow: "hidden",
+                        display: "flex",
+                        flexDirection: { xs: "column", md: "row" },
+                        alignItems: "stretch",
+                        mt: 4,
+                        opacity: 0,
+                    }}
+                >
+                    {/* Left: Product Value Showcase */}
+                    <Box
+                        sx={{
+                            flex: 1.1,
+                            p: { xs: 4, md: 6 },
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            alignItems: "flex-start",
+                            textAlign: "left",
+                            color: "var(--app-on-ink)",
+                        }}
+                    >
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                            <ShieldIcon sx={{ color: "#F37338", fontSize: 20 }} />
+                            <Typography
+                                sx={{
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.06em",
+                                    textTransform: "uppercase",
+                                    color: "var(--app-on-ink-muted)",
+                                    fontFamily: "var(--font-sofia-sans)",
                                 }}
-                                aria-hidden={dup === 1}
                             >
-                                {PAY_BRANDS.map((b) => (
-                                    <span
-                                        key={`${dup}-${b.name}`}
-                                        role="img"
-                                        aria-label={b.name}
-                                        style={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
+                                SECURE COMPLIANCE
+                            </Typography>
+                        </Stack>
+
+                        <Typography
+                            variant="h3"
+                            sx={{
+                                fontSize: { xs: "24px", md: "34px" },
+                                fontWeight: 500,
+                                letterSpacing: "-1px",
+                                mb: 2.5,
+                                color: "var(--app-on-ink)",
+                                fontFamily: "var(--font-sofia-sans)",
+                                lineHeight: 1.15,
+                            }}
+                        >
+                            A secure, trusted checkout — with PCI compliance handled for you.
+                        </Typography>
+
+                        <Typography
+                            sx={{
+                                color: "var(--app-on-ink-muted)",
+                                fontSize: "15px",
+                                lineHeight: 1.6,
+                                mb: 4.5,
+                                fontFamily: "var(--font-sofia-sans)",
+                                fontWeight: 450,
+                            }}
+                        >
+                            Your customers pay on our secure hosted checkout — their card details never touch your servers. The moment a payment succeeds, your app gets an instant, verified notification, so you can grant access right away.
+                        </Typography>
+
+                        <Stack direction="row" spacing={5}>
+                            <Box>
+                                <Typography sx={{ fontSize: "30px", fontWeight: 700, color: "#F37338", fontFamily: "var(--font-sofia-sans)" }}>&lt; 50ms</Typography>
+                                <Typography sx={{ fontSize: "12px", color: "var(--app-on-ink-muted)", fontFamily: "var(--font-sofia-sans)" }}>Checkout response time</Typography>
+                            </Box>
+                            <Box>
+                                <Typography sx={{ fontSize: "30px", fontWeight: 700, color: "#F37338", fontFamily: "var(--font-sofia-sans)" }}>100%</Typography>
+                                <Typography sx={{ fontSize: "12px", color: "var(--app-on-ink-muted)", fontFamily: "var(--font-sofia-sans)" }}>Payments accounted for</Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    {/* Right: Floating 3D Wallet Card Panel (Connected Layout) */}
+                    <Box
+                        sx={{
+                            flex: 1,
+                            background: "rgba(255, 255, 255, 0.015)",
+                            p: { xs: 4, md: 6 },
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            position: "relative",
+                            overflow: "hidden",
+                            perspective: "1000px", // Enables 3D context
+                        }}
+                    >
+                        {/* Decorative background grid element behind card */}
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                width: "200%",
+                                height: "200%",
+                                background: "radial-gradient(circle, rgba(243, 115, 56, 0.06) 0%, transparent 60%)",
+                                pointerEvents: "none",
+                                zIndex: 0,
+                            }}
+                        />
+
+                        {/* High-Fidelity 3D Credit Card Component */}
+                        <Box
+                            sx={{
+                                width: "100%",
+                                maxWidth: "340px",
+                                height: "215px",
+                                background: "linear-gradient(135deg, #181817 0%, #2a2a29 50%, #1e1e1e 100%)",
+                                borderRadius: "16px",
+                                p: 3,
+                                color: "var(--app-on-ink)",
+                                border: "1px solid rgba(255, 255, 255, 0.12)",
+                                boxShadow: "rgba(0, 0, 0, 0.45) 0px 30px 60px 0px, inset 0px 1px 1px rgba(255, 255, 255, 0.15)",
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "space-between",
+                                zIndex: 1,
+                                transform: "rotateY(-18deg) rotateX(12deg) rotateZ(-3deg)",
+                                transformStyle: "preserve-3d",
+                                transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+                                cursor: "pointer",
+                                "&:hover": {
+                                    transform: "rotateY(-5deg) rotateX(5deg) rotateZ(-1deg) scale(1.04)",
+                                    boxShadow: "rgba(0, 0, 0, 0.6) 0px 40px 80px 0px, inset 0px 1px 1px rgba(255, 255, 255, 0.25)",
+                                },
+                            }}
+                        >
+                            {/* Card Top Row */}
+                            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ transform: "translateZ(20px)" }}>
+                                <Box
+                                    component="img"
+                                    src="/logo.png"
+                                    alt="Elixpo Pay Logo"
+                                    sx={{
+                                        height: 18,
+                                        width: "auto",
+                                        filter: "brightness(0) invert(1)",
+                                    }}
+                                />
+                                <ContactlessIcon sx={{ color: "var(--app-on-ink-muted)", fontSize: 20 }} />
+                            </Stack>
+
+                            {/* Gold Microchip & contactless receiver */}
+                            <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 1, transform: "translateZ(25px)" }}>
+                                {/* Gold Chip */}
+                                <Box
+                                    sx={{
+                                        width: 44,
+                                        height: 32,
+                                        borderRadius: "6px",
+                                        background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                                        position: "relative",
+                                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.25)",
+                                        border: "1px solid rgba(0,0,0,0.1)",
+                                        "&::after": {
+                                            content: '""',
+                                            position: "absolute",
+                                            top: "10%",
+                                            left: "10%",
+                                            right: "10%",
+                                            bottom: "10%",
+                                            border: "1.2px solid var(--app-border)",
+                                            borderRadius: "4px",
+                                        }
+                                    }}
+                                />
+                            </Stack>
+
+                            {/* Card Number */}
+                            <Typography
+                                sx={{
+                                    fontFamily: "var(--font-geist-mono)",
+                                    fontSize: "18px",
+                                    fontWeight: 500,
+                                    letterSpacing: "2.5px",
+                                    mt: 1.5,
+                                    color: "var(--app-on-ink)",
+                                    textShadow: "0px 1px 2px rgba(0,0,0,0.5)",
+                                    transform: "translateZ(30px)",
+                                }}
+                            >
+                                ••••  ••••  ••••  4821
+                            </Typography>
+
+                            {/* Card Holder & Expiry Row */}
+                            <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 1, transform: "translateZ(20px)" }}>
+                                <Stack spacing={0.3}>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "7px",
+                                            fontWeight: 700,
+                                            color: "var(--app-on-ink-muted)",
+                                            letterSpacing: "0.06em",
+                                            fontFamily: "var(--font-sofia-sans)",
                                         }}
                                     >
-                                        {b.node}
-                                    </span>
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
+                                        CARDHOLDER NAME
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "11px",
+                                            fontWeight: 500,
+                                            color: "var(--app-on-ink)",
+                                            letterSpacing: "0.5px",
+                                            fontFamily: "var(--font-sofia-sans)",
+                                        }}
+                                    >
+                                        AYUSHMAN BHATTACHARYA
+                                    </Typography>
+                                </Stack>
+
+                                <Stack spacing={0.3} sx={{ mr: 2 }}>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "7px",
+                                            fontWeight: 700,
+                                            color: "var(--app-on-ink-muted)",
+                                            letterSpacing: "0.06em",
+                                            fontFamily: "var(--font-sofia-sans)",
+                                        }}
+                                    >
+                                        EXPIRY
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "11px",
+                                            fontWeight: 500,
+                                            color: "var(--app-on-ink)",
+                                            fontFamily: "var(--font-geist-mono)",
+                                        }}
+                                    >
+                                        12 / 29
+                                    </Typography>
+                                </Stack>
+
+                                {/* Brand Logo Image */}
+                                <Box
+                                    component="img"
+                                    src="/logo.png"
+                                    alt="Elixpo Pay"
+                                    sx={{
+                                        height: 14,
+                                        width: "auto",
+                                        filter: "brightness(0) invert(1)",
+                                        opacity: 0.85,
+                                    }}
+                                />
+                            </Stack>
+                        </Box>
+                    </Box>
+                </Box>
+            </Container>
         </section>
     );
 }

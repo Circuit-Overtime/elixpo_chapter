@@ -4,32 +4,56 @@ import { Box, Typography } from "@mui/material";
 import { createTheme } from "@mui/material/styles";
 import type React from "react";
 
-/** Surface tokens — solid, neutral, commercial. No gradients. */
-export const SURFACE = "#13161d";
-export const SURFACE_HOVER = "#171b23";
-export const BORDER = "rgba(255,255,255,0.07)";
+/** Surface tokens — reference the CSS theme variables so they flip light/dark. */
+export const SURFACE = "var(--app-surface)";
+export const SURFACE_HOVER = "var(--app-surface-2)";
+export const BORDER = "var(--app-border)";
 
-/** Shared dark theme for all dashboard surfaces. */
-export const dashboardTheme = createTheme({
-    palette: {
-        mode: "dark",
-        primary: { main: "#9b7bf7" },
-        background: { default: "#0c0e13", paper: SURFACE },
-    },
-    typography: { fontFamily: "var(--font-geist-sans), Arial, sans-serif" },
-    components: {
-        MuiPaper: {
-            styleOverrides: {
-                root: {
-                    backgroundImage: "none",
-                    background: SURFACE,
-                    border: `1px solid ${BORDER}`,
-                    borderRadius: "12px",
+/** Build the MUI theme for the dashboard in either mode. */
+export function makeDashboardTheme(mode: "light" | "dark") {
+    return createTheme({
+        palette: {
+            mode,
+            primary: { main: mode === "dark" ? "#9b7bf7" : "#7c5cff" },
+            // Concrete colors (not CSS vars): MUI runs decomposeColor/alpha on
+            // palette values internally and throws on var(...). The theme is
+            // rebuilt per-mode via makeDashboardTheme, so these track the toggle.
+            background: {
+                default: mode === "dark" ? "#0b0d12" : "#ffffff",
+                paper: mode === "dark" ? "#13161d" : "#ffffff",
+            },
+            text: {
+                primary: mode === "dark" ? "#f5f5f4" : "#141413",
+                secondary:
+                    mode === "dark"
+                        ? "rgba(245,245,244,0.62)"
+                        : "rgba(20,20,19,0.66)",
+            },
+            // Concrete color (not a CSS var): MUI runs alpha()/decomposeColor on
+            // palette.divider (e.g. inside <Divider>), which throws on var(...).
+            divider:
+                mode === "dark"
+                    ? "rgba(255,255,255,0.09)"
+                    : "rgba(20,20,19,0.12)",
+        },
+        typography: { fontFamily: "var(--font-geist-sans), Arial, sans-serif" },
+        components: {
+            MuiPaper: {
+                styleOverrides: {
+                    root: {
+                        backgroundImage: "none",
+                        background: "var(--app-surface)",
+                        border: "1px solid var(--app-border)",
+                        borderRadius: "12px",
+                    },
                 },
             },
         },
-    },
-});
+    });
+}
+
+/** Default (dark) theme — kept for any caller that doesn't switch modes. */
+export const dashboardTheme = makeDashboardTheme("dark");
 
 const SYMBOLS: Record<string, string> = {
     INR: "₹",
@@ -168,7 +192,7 @@ export function StatCard({
                 />
                 <Typography
                     sx={{
-                        color: "rgba(245,245,244,0.5)",
+                        color: "var(--app-fg-muted)",
                         fontSize: "0.76rem",
                         textTransform: "uppercase",
                         letterSpacing: "0.06em",
@@ -182,7 +206,7 @@ export function StatCard({
                 sx={{
                     fontWeight: 700,
                     fontSize: "1.85rem",
-                    color: "#f5f5f4",
+                    color: "var(--app-fg)",
                     lineHeight: 1.1,
                 }}
             >
@@ -191,7 +215,7 @@ export function StatCard({
             {sub && (
                 <Typography
                     sx={{
-                        color: "rgba(245,245,244,0.42)",
+                        color: "var(--app-fg-faint)",
                         fontSize: "0.82rem",
                         mt: 0.6,
                     }}

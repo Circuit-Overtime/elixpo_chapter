@@ -47,7 +47,7 @@ export default function PrivacyPage() {
                 </li>
                 <li>To deliver signed webhooks back to your application.</li>
                 <li>
-                    To power your merchant dashboard, ledger, and reporting.
+                    To power your merchant dashboard and reporting.
                 </li>
                 <li>
                     To detect fraud, reconcile against provider reports, and
