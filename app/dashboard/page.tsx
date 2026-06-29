@@ -143,7 +143,7 @@ export default function OverviewPage() {
                                 spacing={1.5}
                                 alignItems={{ xs: "flex-start", sm: "center" }}
                                 justifyContent="space-between"
-                                sx={{ p: 1.6, borderRadius: "12px", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}
+                                sx={{ p: 1.6, borderRadius: "12px", border: "1px solid var(--app-border)", background: "var(--app-overlay)" }}
                             >
                                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
                                     <Box sx={{ flexShrink: 0, width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", fontWeight: 800, fontSize: "0.85rem", color: "#c4b5fd", background: "rgba(155,123,247,0.12)", border: "1px solid rgba(155,123,247,0.3)" }}>
@@ -235,8 +235,8 @@ export default function OverviewPage() {
                                 sx={{
                                     p: 2,
                                     borderRadius: "12px",
-                                    border: "1px solid rgba(255,255,255,0.08)",
-                                    background: "rgba(255,255,255,0.02)",
+                                    border: "1px solid var(--app-border)",
+                                    background: "var(--app-overlay)",
                                 }}
                             >
                                 <Typography
@@ -340,7 +340,7 @@ export default function OverviewPage() {
                                         key={t.id}
                                         sx={{
                                             borderTop:
-                                                "1px solid rgba(255,255,255,0.06)",
+                                                "1px solid var(--app-border)",
                                             "& td": {
                                                 py: 1.2,
                                                 px: 1,

@@ -44,7 +44,7 @@ export default function ConfirmDialog({
             PaperProps={{
                 sx: {
                     bgcolor: "var(--app-surface)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    border: "1px solid var(--app-border)",
                     borderRadius: "16px",
                     color: "var(--app-fg)",
                     backgroundImage: "none",
@@ -96,7 +96,7 @@ export default function ConfirmDialog({
                     disabled={busy}
                     sx={{
                         textTransform: "none",
-                        color: "rgba(255,255,255,0.6)",
+                        color: "var(--app-fg-muted)",
                     }}
                 >
                     {cancelLabel}

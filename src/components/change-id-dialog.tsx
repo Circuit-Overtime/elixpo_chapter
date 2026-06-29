@@ -48,7 +48,7 @@ export default function ChangeIdDialog({
             PaperProps={{
                 sx: {
                     bgcolor: "var(--app-surface)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    border: "1px solid var(--app-border)",
                     borderRadius: "16px",
                     color: "var(--app-fg)",
                     backgroundImage: "none",
@@ -112,10 +112,10 @@ export default function ChangeIdDialog({
                     autoFocus
                     sx={{
                         "& .MuiOutlinedInput-root": {
-                            color: "#e5e7eb",
-                            background: "rgba(255,255,255,0.02)",
+                            color: "var(--app-fg)",
+                            background: "var(--app-overlay)",
                             "& fieldset": {
-                                borderColor: "rgba(255,255,255,0.12)",
+                                borderColor: "var(--app-border)",
                             },
                             "&:hover fieldset": {
                                 borderColor: "rgba(155,123,247,0.4)",
@@ -125,7 +125,7 @@ export default function ChangeIdDialog({
                             },
                         },
                         "& .MuiInputLabel-root": {
-                            color: "rgba(255,255,255,0.5)",
+                            color: "var(--app-fg-muted)",
                         },
                     }}
                 />
@@ -153,7 +153,7 @@ export default function ChangeIdDialog({
                     disabled={busy}
                     sx={{
                         textTransform: "none",
-                        color: "rgba(255,255,255,0.6)",
+                        color: "var(--app-fg-muted)",
                     }}
                 >
                     Cancel

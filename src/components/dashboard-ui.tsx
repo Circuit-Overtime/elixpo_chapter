@@ -15,18 +15,26 @@ export function makeDashboardTheme(mode: "light" | "dark") {
         palette: {
             mode,
             primary: { main: mode === "dark" ? "#9b7bf7" : "#7c5cff" },
+            // Concrete colors (not CSS vars): MUI runs decomposeColor/alpha on
+            // palette values internally and throws on var(...). The theme is
+            // rebuilt per-mode via makeDashboardTheme, so these track the toggle.
             background: {
-                default: mode === "dark" ? "var(--app-bg)" : "#ffffff",
-                paper: mode === "dark" ? "var(--app-surface)" : "#ffffff",
+                default: mode === "dark" ? "#0b0d12" : "#ffffff",
+                paper: mode === "dark" ? "#13161d" : "#ffffff",
             },
             text: {
-                primary: mode === "dark" ? "var(--app-fg)" : "#141413",
+                primary: mode === "dark" ? "#f5f5f4" : "#141413",
                 secondary:
                     mode === "dark"
-                        ? "var(--app-fg-muted)"
+                        ? "rgba(245,245,244,0.62)"
                         : "rgba(20,20,19,0.66)",
             },
-            divider: "var(--app-border)",
+            // Concrete color (not a CSS var): MUI runs alpha()/decomposeColor on
+            // palette.divider (e.g. inside <Divider>), which throws on var(...).
+            divider:
+                mode === "dark"
+                    ? "rgba(255,255,255,0.09)"
+                    : "rgba(20,20,19,0.12)",
         },
         typography: { fontFamily: "var(--font-geist-sans), Arial, sans-serif" },
         components: {

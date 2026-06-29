@@ -65,7 +65,7 @@ export default function RotateDialog({
             PaperProps={{
                 sx: {
                     bgcolor: "var(--app-surface)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    border: "1px solid var(--app-border)",
                     borderRadius: "16px",
                     color: "var(--app-fg)",
                     backgroundImage: "none",
@@ -128,12 +128,12 @@ export default function RotateDialog({
                                     cursor: busy ? "default" : "pointer",
                                     p: 1.3,
                                     borderRadius: "12px",
-                                    border: `1px solid ${on ? (danger ? "rgba(248,113,113,0.6)" : "rgba(155,123,247,0.6)") : "rgba(255,255,255,0.1)"}`,
+                                    border: `1px solid ${on ? (danger ? "rgba(248,113,113,0.6)" : "rgba(155,123,247,0.6)") : "var(--app-border)"}`,
                                     background: on
                                         ? danger
                                             ? "rgba(248,113,113,0.08)"
                                             : "rgba(155,123,247,0.08)"
-                                        : "rgba(255,255,255,0.02)",
+                                        : "var(--app-overlay)",
                                     transition:
                                         "border-color .15s, background .15s",
                                 }}
@@ -149,7 +149,7 @@ export default function RotateDialog({
                                             height: 16,
                                             borderRadius: "50%",
                                             flexShrink: 0,
-                                            border: `2px solid ${on ? (danger ? "#f87171" : "#9b7bf7") : "rgba(255,255,255,0.3)"}`,
+                                            border: `2px solid ${on ? (danger ? "#f87171" : "#9b7bf7") : "var(--app-border)"}`,
                                             display: "grid",
                                             placeItems: "center",
                                         }}
@@ -197,7 +197,7 @@ export default function RotateDialog({
                     disabled={busy}
                     sx={{
                         textTransform: "none",
-                        color: "rgba(255,255,255,0.6)",
+                        color: "var(--app-fg-muted)",
                     }}
                 >
                     Cancel

@@ -126,18 +126,18 @@ export default function TransactionsPage() {
                                     background:
                                         statusFilter === s
                                             ? "#7c5cff"
-                                            : "rgba(255,255,255,0.04)",
+                                            : "var(--app-overlay)",
                                     border:
                                         statusFilter === s
                                             ? "1px solid #7c5cff"
-                                            : "1px solid rgba(255,255,255,0.1)",
+                                            : "1px solid var(--app-border)",
                                     "&:hover": {
                                         background:
                                             statusFilter === s
                                                 ? "#8a6dff"
                                                 : "rgba(155,123,247,0.1)",
                                         borderColor: "rgba(155,123,247,0.4)",
-                                        color: "#fff",
+                                        color: "var(--app-fg)",
                                     },
                                 }}
                             >
@@ -206,7 +206,7 @@ export default function TransactionsPage() {
                                         key={t.id}
                                         sx={{
                                             borderTop:
-                                                "1px solid rgba(255,255,255,0.06)",
+                                                "1px solid var(--app-border)",
                                             "& td": {
                                                 py: 1.3,
                                                 px: 1,
@@ -281,11 +281,11 @@ export default function TransactionsPage() {
 
 const field = {
     "& .MuiOutlinedInput-root": {
-        color: "#e5e7eb",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+        color: "var(--app-fg)",
+        background: "var(--app-overlay)",
+        "& fieldset": { borderColor: "var(--app-border)" },
         "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
         "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+    "& .MuiInputLabel-root": { color: "var(--app-fg-muted)" },
 };

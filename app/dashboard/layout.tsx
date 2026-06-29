@@ -257,14 +257,14 @@ export default function DashboardLayout({
                                                 borderRadius: "8px",
                                                 color: active
                                                     ? "var(--app-fg)"
-                                                    : "rgba(255,255,255,0.5)",
+                                                    : "var(--app-fg-muted)",
                                                 bgcolor: active
-                                                    ? "rgba(255,255,255,0.07)"
+                                                    ? "var(--app-overlay)"
                                                     : "transparent",
                                                 "&:hover": {
                                                     bgcolor:
-                                                        "rgba(255,255,255,0.05)",
-                                                    color: "#fff",
+                                                        "var(--app-overlay)",
+                                                    color: "var(--app-fg)",
                                                 },
                                             }}
                                         >
@@ -368,7 +368,7 @@ export default function DashboardLayout({
                                             mt: 1,
                                             minWidth: 272,
                                             bgcolor: "var(--app-surface)",
-                                            border: "1px solid rgba(255,255,255,0.08)",
+                                            border: "1px solid var(--app-border)",
                                             borderRadius: "14px",
                                             boxShadow:
                                                 "0 16px 48px rgba(0,0,0,0.55)",
@@ -394,7 +394,7 @@ export default function DashboardLayout({
                                             height: 42,
                                             borderRadius: "50%",
                                             overflow: "hidden",
-                                            border: "1px solid rgba(255,255,255,0.14)",
+                                            border: "1px solid var(--app-border)",
                                             flexShrink: 0,
                                         }}
                                     >
@@ -415,7 +415,7 @@ export default function DashboardLayout({
                                         </Typography>
                                         <Typography
                                             sx={{
-                                                color: "rgba(255,255,255,0.45)",
+                                                color: "var(--app-fg-muted)",
                                                 fontSize: "0.78rem",
                                                 overflow: "hidden",
                                                 textOverflow: "ellipsis",
@@ -436,15 +436,15 @@ export default function DashboardLayout({
                                             py: 1,
                                             borderRadius: "10px",
                                             background:
-                                                "rgba(255,255,255,0.04)",
-                                            border: "1px solid rgba(255,255,255,0.06)",
+                                                "var(--app-overlay)",
+                                            border: "1px solid var(--app-border)",
                                         }}
                                     >
                                         <Box sx={{ minWidth: 0 }}>
                                             <Typography
                                                 sx={{
                                                     fontSize: "0.68rem",
-                                                    color: "rgba(255,255,255,0.4)",
+                                                    color: "var(--app-fg-muted)",
                                                     textTransform: "uppercase",
                                                     letterSpacing: "0.06em",
                                                 }}
@@ -486,7 +486,7 @@ export default function DashboardLayout({
 
                                 <Divider
                                     sx={{
-                                        borderColor: "rgba(255,255,255,0.07)",
+                                        borderColor: "var(--app-border)",
                                     }}
                                 />
                                 <SectionLabel>Account</SectionLabel>
@@ -512,7 +512,7 @@ export default function DashboardLayout({
 
                                 <Divider
                                     sx={{
-                                        borderColor: "rgba(255,255,255,0.07)",
+                                        borderColor: "var(--app-border)",
                                     }}
                                 />
                                 <SectionLabel>Resources</SectionLabel>
@@ -532,14 +532,14 @@ export default function DashboardLayout({
 
                                 <Divider
                                     sx={{
-                                        borderColor: "rgba(255,255,255,0.07)",
+                                        borderColor: "var(--app-border)",
                                     }}
                                 />
                                 <MenuItem
                                     onClick={logout}
                                     sx={{
                                         py: 1.25,
-                                        color: "rgba(255,255,255,0.6)",
+                                        color: "var(--app-fg-muted)",
                                         "&:hover": {
                                             bgcolor: "rgba(239,68,68,0.08)",
                                             color: "#ef4444",
@@ -592,7 +592,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
                 fontWeight: 700,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "rgba(255,255,255,0.35)",
+                color: "var(--app-fg-muted)",
             }}
         >
             {children}
@@ -627,8 +627,8 @@ function AccountItem({
             onClick={onClick}
             sx={{
                 py: 1.05,
-                color: "rgba(255,255,255,0.72)",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "#fff" },
+                color: "var(--app-fg-muted)",
+                "&:hover": { bgcolor: "var(--app-fg-muted)", color: "var(--app-fg)" },
             }}
         >
             <ListItemIcon sx={{ color: "inherit", minWidth: 34 }}>

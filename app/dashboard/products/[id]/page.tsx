@@ -389,7 +389,7 @@ export default function ProductDetailPage() {
                     color: "var(--app-fg-muted)",
                     mb: 2,
                     px: 0,
-                    "&:hover": { color: "#fff", background: "transparent" },
+                    "&:hover": { color: "var(--app-fg)", background: "transparent" },
                 }}
             >
                 Products
@@ -455,7 +455,7 @@ export default function ProductDetailPage() {
                                     sx={{
                                         minWidth: 0,
                                         textTransform: "none",
-                                        color: "rgba(255,255,255,0.5)",
+                                        color: "var(--app-fg-muted)",
                                     }}
                                 >
                                     Cancel
@@ -995,9 +995,9 @@ export default function ProductDetailPage() {
                                         sx={{
                                             p: 1.4,
                                             borderRadius: "12px",
-                                            border: "1px solid rgba(255,255,255,0.08)",
+                                            border: "1px solid var(--app-border)",
                                             background:
-                                                "rgba(255,255,255,0.02)",
+                                                "var(--app-overlay)",
                                         }}
                                     >
                                         <Box sx={{ minWidth: 0 }}>
@@ -1029,7 +1029,7 @@ export default function ProductDetailPage() {
                                                             fontSize: "0.6rem",
                                                             color: "var(--app-fg-muted)",
                                                             bgcolor:
-                                                                "rgba(255,255,255,0.06)",
+                                                                "var(--app-overlay)",
                                                         }}
                                                     />
                                                 )}
@@ -1201,8 +1201,8 @@ export default function ProductDetailPage() {
                     <Box
                         sx={{
                             borderRadius: "12px",
-                            border: "1px dashed rgba(255,255,255,0.14)",
-                            background: "rgba(255,255,255,0.02)",
+                            border: "1px dashed var(--app-border)",
+                            background: "var(--app-overlay)",
                             p: 2.5,
                             textAlign: "center",
                         }}
@@ -1233,8 +1233,8 @@ export default function ProductDetailPage() {
                                 key={t.id}
                                 sx={{
                                     borderRadius: "14px",
-                                    border: "1px solid rgba(255,255,255,0.08)",
-                                    background: "rgba(255,255,255,0.02)",
+                                    border: "1px solid var(--app-border)",
+                                    background: "var(--app-overlay)",
                                     p: { xs: 1.8, sm: 2.2 },
                                     opacity: t.active ? 1 : 0.5,
                                 }}
@@ -1321,7 +1321,7 @@ export default function ProductDetailPage() {
                                                 sx={{
                                                     p: 1.4,
                                                     borderRadius: "10px",
-                                                    border: "1px solid rgba(255,255,255,0.07)",
+                                                    border: "1px solid var(--app-border)",
                                                     background:
                                                         "rgba(0,0,0,0.18)",
                                                     opacity: pr.active
@@ -1385,7 +1385,7 @@ export default function ProductDetailPage() {
                                                                     py: 0.15,
                                                                     borderRadius:
                                                                         "6px",
-                                                                    border: "1px solid rgba(255,255,255,0.12)",
+                                                                    border: "1px solid var(--app-border)",
                                                                 }}
                                                             >
                                                                 {pr.region}
@@ -1621,13 +1621,13 @@ export default function ProductDetailPage() {
 
 const field = {
     "& .MuiOutlinedInput-root": {
-        color: "#e5e7eb",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+        color: "var(--app-fg)",
+        background: "var(--app-overlay)",
+        "& fieldset": { borderColor: "var(--app-border)" },
         "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
         "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+    "& .MuiInputLabel-root": { color: "var(--app-fg-muted)" },
 };
 
 const mono = {
@@ -1636,7 +1636,7 @@ const mono = {
     p: 1.2,
     borderRadius: "10px",
     background: "rgba(0,0,0,0.3)",
-    border: "1px solid rgba(255,255,255,0.1)",
+    border: "1px solid var(--app-border)",
     overflowX: "auto",
     whiteSpace: "nowrap",
 };

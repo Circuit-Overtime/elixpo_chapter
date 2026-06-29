@@ -19,13 +19,13 @@ import { formatMoney, GlassCard } from "@/components/dashboard-ui";
 
 const field = {
     "& .MuiOutlinedInput-root": {
-        color: "#e5e7eb",
-        background: "rgba(255,255,255,0.02)",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+        color: "var(--app-fg)",
+        background: "var(--app-overlay)",
+        "& fieldset": { borderColor: "var(--app-border)" },
         "&:hover fieldset": { borderColor: "rgba(155,123,247,0.4)" },
         "&.Mui-focused fieldset": { borderColor: "#9b7bf7" },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+    "& .MuiInputLabel-root": { color: "var(--app-fg-muted)" },
 };
 
 const labelSx = {
