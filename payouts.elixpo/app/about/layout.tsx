@@ -4,12 +4,12 @@ import type React from "react";
 export const metadata: Metadata = {
     title: "The Platform",
     description:
-        "Elixpo Pay is one money stack — hosted checkout, a unified ledger, entitlements, provider adapters, and creator payouts — built on Cloudflare's edge.",
+        "Add payments and payouts to your platform with one integration. Elixpo Pay charges your customers and pays your creators — Razorpay today, Stripe coming soon for international.",
     alternates: { canonical: "/about" },
     openGraph: {
         title: "The Platform | Elixpo Pay",
         description:
-            "Hosted checkout, unified ledger, entitlements, and creator payouts — one money stack on the edge.",
+            "Add payments and payouts to your platform with one integration — we charge your customers and pay your creators. Razorpay today, Stripe coming soon.",
         url: "https://payouts.elixpo.com/about",
     },
 };

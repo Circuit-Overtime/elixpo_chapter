@@ -72,7 +72,7 @@ export default function SubscriptionsPage() {
                 </Typography>
                 <Typography
                     sx={{
-                        color: "rgba(245,245,244,0.55)",
+                        color: "var(--app-fg-muted)",
                         fontSize: "0.92rem",
                     }}
                 >
@@ -90,7 +90,7 @@ export default function SubscriptionsPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.55)",
+                            color: "var(--app-fg-muted)",
                             fontSize: "0.9rem",
                         }}
                     >
@@ -122,7 +122,7 @@ export default function SubscriptionsPage() {
                                             sx={{
                                                 fontWeight: 700,
                                                 fontSize: "1.1rem",
-                                                color: "#f5f5f4",
+                                                color: "var(--app-fg)",
                                             }}
                                         >
                                             {s.app_name}
@@ -204,7 +204,7 @@ export default function SubscriptionsPage() {
                                     </Stack>
                                     <Typography
                                         sx={{
-                                            color: "rgba(245,245,244,0.6)",
+                                            color: "var(--app-fg-muted)",
                                             fontSize: "0.86rem",
                                             mt: 0.6,
                                         }}
@@ -238,7 +238,7 @@ export default function SubscriptionsPage() {
                                     </Typography>
                                     <Typography
                                         sx={{
-                                            color: "rgba(245,245,244,0.45)",
+                                            color: "var(--app-fg-faint)",
                                             fontSize: "0.78rem",
                                             mt: 0.5,
                                         }}
@@ -270,7 +270,7 @@ export default function SubscriptionsPage() {
                                         sx={{
                                             fontWeight: 800,
                                             fontSize: "1.15rem",
-                                            color: "#f5f5f4",
+                                            color: "var(--app-fg)",
                                         }}
                                     >
                                         {rateLabel(s.rate)}
@@ -278,7 +278,7 @@ export default function SubscriptionsPage() {
                                     {s.rate?.nickname && (
                                         <Typography
                                             sx={{
-                                                color: "rgba(245,245,244,0.45)",
+                                                color: "var(--app-fg-faint)",
                                                 fontSize: "0.74rem",
                                             }}
                                         >

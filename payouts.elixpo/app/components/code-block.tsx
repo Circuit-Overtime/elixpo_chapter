@@ -31,7 +31,7 @@ export default function CodeBlock({
                 my: 2.5,
                 borderRadius: "12px",
                 border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(0,0,0,0.35)",
+                background: "var(--app-ink)",
                 overflow: "hidden",
             }}
         >
@@ -44,7 +44,7 @@ export default function CodeBlock({
                         fontSize: "0.72rem",
                         letterSpacing: "0.06em",
                         textTransform: "uppercase",
-                        color: "rgba(245,245,244,0.4)",
+                        color: "var(--app-on-ink-muted)",
                         fontFamily: "var(--font-geist-mono)",
                     }}
                 >
@@ -59,9 +59,9 @@ export default function CodeBlock({
                         position: "absolute",
                         top: 6,
                         right: 6,
-                        color: copied ? "#86efac" : "rgba(255,255,255,0.5)",
+                        color: copied ? "#86efac" : "var(--app-on-ink-muted)",
                         "&:hover": {
-                            color: "#fff",
+                            color: "var(--app-on-ink)",
                             background: "rgba(255,255,255,0.06)",
                         },
                     }}
@@ -82,7 +82,7 @@ export default function CodeBlock({
                     fontFamily: "var(--font-geist-mono)",
                     fontSize: "0.82rem",
                     lineHeight: 1.65,
-                    color: "#e5e7eb",
+                    color: "var(--app-on-ink)",
                 }}
             >
                 <code>{code}</code>
