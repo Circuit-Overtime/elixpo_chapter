@@ -628,7 +628,10 @@ function AccountItem({
             sx={{
                 py: 1.05,
                 color: "var(--app-fg-muted)",
-                "&:hover": { bgcolor: "var(--app-fg-muted)", color: "var(--app-fg)" },
+                "&:hover": {
+                    bgcolor: "var(--app-accent-soft)",
+                    color: "var(--app-accent)",
+                },
             }}
         >
             <ListItemIcon sx={{ color: "inherit", minWidth: 34 }}>
