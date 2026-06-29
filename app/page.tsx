@@ -504,14 +504,14 @@ function LedgerMiniGraphic() {
 
 function ApiMiniGraphic() {
     return (
-        <Box sx={{ background: "var(--app-fg)", borderRadius: "8px", p: 1.5, width: "100%", maxWidth: 190, color: "#86efac", fontFamily: "var(--font-geist-mono)", fontSize: "9px", textAlign: "left" }}>
+        <Box sx={{ background: "var(--app-ink)", borderRadius: "8px", p: 1.5, width: "100%", maxWidth: 190, color: "#86efac", fontFamily: "var(--font-geist-mono)", fontSize: "9px", textAlign: "left" }}>
             <span style={{ color: "#F37338" }}>GET</span> /v1/entitlements
             <br />
-            <span style={{ color: "#FFFFFF" }}>status: </span> "active",
+            <span style={{ color: "var(--app-on-ink)" }}>status: </span> "active",
             <br />
-            <span style={{ color: "#FFFFFF" }}>tier: </span> "developer",
+            <span style={{ color: "var(--app-on-ink)" }}>tier: </span> "developer",
             <br />
-            <span style={{ color: "#FFFFFF" }}>expires: </span> "30d"
+            <span style={{ color: "var(--app-on-ink)" }}>expires: </span> "30d"
         </Box>
     );
 }

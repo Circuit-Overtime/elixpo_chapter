@@ -182,8 +182,8 @@ export default function PricingPage() {
                                         fontWeight: 700,
                                         letterSpacing: "0.06em",
                                         textTransform: "uppercase",
-                                        color: "var(--app-bg)",
-                                        background: "var(--app-fg)", // Ink Black pill badge
+                                        color: "var(--app-on-ink)",
+                                        background: "var(--app-ink)", // Ink Black pill badge
                                         fontFamily: "var(--font-sofia-sans)",
                                     }}
                                 >
@@ -295,9 +295,9 @@ export default function PricingPage() {
                                     variant="contained"
                                     disableElevation
                                     sx={{
-                                        background: "var(--app-fg)",
-                                        color: "var(--app-bg)",
-                                        border: "1.5px solid var(--app-fg)",
+                                        background: "var(--app-ink)",
+                                        color: "var(--app-on-ink)",
+                                        border: "1.5px solid var(--app-ink)",
                                         borderRadius: "20px",
                                         py: 1.4,
                                         fontSize: "15px",
@@ -305,8 +305,8 @@ export default function PricingPage() {
                                         textTransform: "none",
                                         fontFamily: "var(--font-sofia-sans)",
                                         "&:hover": {
-                                            background: "var(--app-fg)",
-                                            borderColor: "var(--app-fg)",
+                                            background: "var(--app-ink)",
+                                            borderColor: "var(--app-ink)",
                                         },
                                     }}
                                 >

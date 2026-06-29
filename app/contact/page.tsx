@@ -128,16 +128,16 @@ export default function ContactPage() {
                                 textTransform: "none",
                                 fontWeight: 500,
                                 fontSize: "16px",
-                                color: "var(--app-bg)", // Canvas Cream text
-                                background: "var(--app-fg)", // Ink Black background
-                                border: "1.5px solid var(--app-fg)",
+                                color: "var(--app-on-ink)", // Light text on ink
+                                background: "var(--app-ink)", // Ink Black background
+                                border: "1.5px solid var(--app-ink)",
                                 borderRadius: "20px", // Signature button radius
                                 py: 1.4,
                                 fontFamily: "var(--font-sofia-sans)",
                                 letterSpacing: "-0.32px",
                                 "&:hover": {
-                                    background: "var(--app-fg)",
-                                    borderColor: "var(--app-fg)",
+                                    background: "var(--app-ink)",
+                                    borderColor: "var(--app-ink)",
                                 },
                             }}
                         >

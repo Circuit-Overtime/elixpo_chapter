@@ -852,16 +852,16 @@ const primaryBtn = {
     textTransform: "none",
     fontWeight: 650,
     fontSize: "15px",
-    color: "var(--app-bg)", // Canvas Cream
+    color: "var(--app-on-ink)", // Light text on ink
     py: 1.4,
     borderRadius: "20px", // 20px radius
-    background: "var(--app-fg)", // Ink Black
-    border: "1.5px solid var(--app-fg)",
+    background: "var(--app-ink)", // Ink Black (dark in both modes)
+    border: "1.5px solid var(--app-ink)",
     "&:hover": {
-        background: "var(--app-fg)",
-        borderColor: "var(--app-fg)",
+        background: "var(--app-ink)",
+        borderColor: "var(--app-ink)",
     },
-    "&.Mui-disabled": { opacity: 0.6, color: "#fff" },
+    "&.Mui-disabled": { opacity: 0.6, color: "var(--app-on-ink)" },
 };
 
 const cancelBtn = {

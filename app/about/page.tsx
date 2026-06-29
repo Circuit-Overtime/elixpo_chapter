@@ -304,8 +304,8 @@ export default function AboutPage() {
                     sx={{
                         p: { xs: 4, md: 6 },
                         borderRadius: "32px",
-                        background: "var(--app-fg)", // Ink Black surface
-                        color: "var(--app-bg)",
+                        background: "var(--app-ink)", // Ink Black surface
+                        color: "var(--app-on-ink)",
                         textAlign: "center",
                     }}
                 >
@@ -322,7 +322,7 @@ export default function AboutPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "var(--app-overlay)",
+                            color: "var(--app-on-ink-muted)",
                             fontSize: "16px",
                             maxWidth: "500px",
                             fontFamily: "var(--font-sofia-sans)",
@@ -338,9 +338,9 @@ export default function AboutPage() {
                             variant="contained"
                             disableElevation
                             sx={{
-                                background: "var(--app-bg)", // Canvas Cream background
-                                color: "var(--app-fg)", // Ink Black text
-                                border: "1.5px solid var(--app-bg)",
+                                background: "var(--app-on-ink)", // Light pill on ink slab
+                                color: "var(--app-ink)", // Ink text
+                                border: "1.5px solid var(--app-on-ink)",
                                 borderRadius: "20px",
                                 px: 4,
                                 py: 1.5,
@@ -349,8 +349,8 @@ export default function AboutPage() {
                                 textTransform: "none",
                                 fontFamily: "var(--font-sofia-sans)",
                                 "&:hover": {
-                                    background: "var(--app-surface)",
-                                    borderColor: "#FFFFFF",
+                                    background: "var(--app-on-ink-muted)",
+                                    borderColor: "var(--app-on-ink-muted)",
                                 },
                             }}
                         >
@@ -363,8 +363,8 @@ export default function AboutPage() {
                             variant="outlined"
                             disableElevation
                             sx={{
-                                color: "var(--app-bg)",
-                                border: "1.5px solid var(--app-overlay)",
+                                color: "var(--app-on-ink)",
+                                border: "1.5px solid var(--app-on-ink-muted)",
                                 borderRadius: "20px",
                                 px: 4,
                                 py: 1.5,
@@ -373,7 +373,7 @@ export default function AboutPage() {
                                 textTransform: "none",
                                 fontFamily: "var(--font-sofia-sans)",
                                 "&:hover": {
-                                    borderColor: "var(--app-bg)",
+                                    borderColor: "var(--app-on-ink)",
                                     background: "rgba(255, 255, 255, 0.05)",
                                 },
                             }}

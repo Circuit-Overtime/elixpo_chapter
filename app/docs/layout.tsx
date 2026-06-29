@@ -31,7 +31,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
-import { dashboardTheme } from "@/components/dashboard-ui";
+import { makeDashboardTheme } from "@/components/dashboard-ui";
+import { ThemeToggle, useThemeMode } from "@/components/theme-mode";
 import BackgroundAurora from "../components/background-aurora";
 
 const DOCS_NAV = [
@@ -50,6 +51,8 @@ export default function DocsLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const { mode } = useThemeMode();
+    const theme = makeDashboardTheme(mode);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -156,7 +159,7 @@ export default function DocsLayout({
         idx >= 0 && idx < DOCS_NAV.length - 1 ? DOCS_NAV[idx + 1] : null;
 
     // Responsive Sidebar renderer
-    const renderSidebar = (isDark = false) => (
+    const renderSidebar = () => (
         <Box sx={{ p: 2 }}>
             <List sx={{ px: 0 }}>
                 {DOCS_NAV.map((item) => {
@@ -176,18 +179,14 @@ export default function DocsLayout({
                                     py: 0.9,
                                     px: 2,
                                     bgcolor: active
-                                        ? (isDark ? "rgba(255, 255, 255, 0.1)" : "var(--app-overlay)")
+                                        ? "var(--app-overlay)"
                                         : "transparent",
                                     color: active
-                                        ? (isDark ? "#F37338" : "#CF4500")
-                                        : (isDark ? "rgba(255, 255, 255, 0.65)" : "var(--app-fg-muted)"),
+                                        ? "#CF4500"
+                                        : "var(--app-fg-muted)",
                                     "&:hover": {
-                                        bgcolor: active
-                                            ? (isDark ? "rgba(255, 255, 255, 0.15)" : "var(--app-overlay)")
-                                            : (isDark ? "rgba(255, 255, 255, 0.05)" : "var(--app-overlay)"),
-                                        color: active
-                                            ? (isDark ? "#F37338" : "#CF4500")
-                                            : (isDark ? "#FFFFFF" : "var(--app-fg)"),
+                                        bgcolor: "var(--app-overlay)",
+                                        color: active ? "#CF4500" : "var(--app-fg)",
                                     },
                                 }}
                             >
@@ -208,7 +207,7 @@ export default function DocsLayout({
     );
 
     return (
-        <ThemeProvider theme={dashboardTheme}>
+        <ThemeProvider theme={theme}>
             <Snackbar
                 open={copied}
                 autoHideDuration={2400}
@@ -307,6 +306,7 @@ export default function DocsLayout({
                             <Box sx={{ flexGrow: 1 }} />
 
                             <Stack direction="row" spacing={1.5} alignItems="center">
+                                <ThemeToggle size={40} />
                                 {/* Outlined Pill Copy Button */}
                                 <Tooltip
                                     title={
@@ -337,7 +337,7 @@ export default function DocsLayout({
                                             background: "var(--app-surface)",
                                             fontFamily: "var(--font-sofia-sans)",
                                             "&:hover": {
-                                                bgcolor: "#F4F4F4",
+                                                bgcolor: "var(--app-overlay)",
                                                 borderColor: "var(--app-fg)",
                                             },
                                         }}
@@ -392,10 +392,10 @@ export default function DocsLayout({
                                 pt: 2,
                             }}
                         >
-                            {renderSidebar(false)}
+                            {renderSidebar()}
                         </Box>
 
-                        {/* Mobile Drawer Navigation (Ink Black theme) */}
+                        {/* Mobile Drawer Navigation */}
                         <Drawer
                             variant="temporary"
                             open={mobileOpen}
@@ -405,13 +405,13 @@ export default function DocsLayout({
                                 display: { xs: "block", md: "none" },
                                 "& .MuiDrawer-paper": {
                                     width: 260,
-                                    bgcolor: "var(--app-fg)",
-                                    borderRight: "1px solid rgba(255, 255, 255, 0.1)",
-                                    color: "var(--app-bg)",
+                                    bgcolor: "var(--app-surface)",
+                                    borderRight: "1px solid var(--app-border)",
+                                    color: "var(--app-fg)",
                                 },
                             }}
                         >
-                            {renderSidebar(true)}
+                            {renderSidebar()}
                         </Drawer>
 
                         {/* Main Docs Content */}

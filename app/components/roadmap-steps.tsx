@@ -68,7 +68,7 @@ export default function RoadmapSteps() {
             desc: "Link payout rails. Automated pool splits distribute merchant balances to creator wallets seamlessly.",
             href: "/docs/payouts",
             graphic: (
-                <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, var(--app-fg), var(--app-fg))", display: "flex", justifyContent: "center", alignItems: "center", p: 3, position: "relative" }}>
+                <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, var(--app-ink), var(--app-ink))", display: "flex", justifyContent: "center", alignItems: "center", p: 3, position: "relative" }}>
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                         <Box sx={{ width: "60px", height: "60px", borderRadius: "50%", border: "2px dashed #F37338", display: "grid", placeItems: "center" }}>
                             <Box sx={{ width: "40px", height: "40px", borderRadius: "50%", background: "var(--app-surface)", display: "grid", placeItems: "center", fontSize: "14px", fontWeight: 700, color: "var(--app-fg)" }}>₹</Box>

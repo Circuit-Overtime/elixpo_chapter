@@ -158,16 +158,16 @@ function LoginInner() {
                         textTransform: "none",
                         fontWeight: 650,
                         fontSize: "15px",
-                        color: "var(--app-bg)", // Canvas Cream text
+                        color: "var(--app-on-ink)", // Light text on ink
                         py: 1.4,
                         borderRadius: "20px", // Button radius 20px
-                        background: "var(--app-fg)", // Ink Black
-                        border: "1.5px solid var(--app-fg)",
+                        background: "var(--app-ink)", // Ink Black
+                        border: "1.5px solid var(--app-ink)",
                         fontFamily: "var(--font-sofia-sans)",
                         letterSpacing: "-0.2px",
                         "&:hover": {
-                            background: "var(--app-fg)",
-                            borderColor: "var(--app-fg)",
+                            background: "var(--app-ink)",
+                            borderColor: "var(--app-ink)",
                         },
                         "&:active": {
                             transform: "scale(0.98)",

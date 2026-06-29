@@ -20,6 +20,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import gsap from "gsap";
+import { ThemeToggle } from "@/components/theme-mode";
 
 interface Me {
     name: string;
@@ -272,6 +273,8 @@ const Navbar = () => {
                             )}
                         </Box>
 
+                        <ThemeToggle size={44} />
+
                         {/* GitHub Stars (Desktop only) */}
                         <Box
                             component="a"
@@ -379,17 +382,17 @@ const Navbar = () => {
                                     textTransform: "none",
                                     fontWeight: 500,
                                     fontSize: "16px",
-                                    color: "var(--app-bg)", // Canvas Cream text
-                                    background: "var(--app-fg)", // Ink Black background
+                                    color: "var(--app-on-ink)", // Canvas Cream text
+                                    background: "var(--app-ink)", // Ink Black background
                                     borderRadius: "20px",
                                     px: 3,
                                     py: 0.8,
-                                    border: "1.5px solid var(--app-fg)",
+                                    border: "1.5px solid var(--app-ink)",
                                     fontFamily: "var(--font-sofia-sans)",
                                     letterSpacing: "-0.32px",
                                     "&:hover": {
-                                        background: "var(--app-fg)",
-                                        borderColor: "var(--app-fg)",
+                                        background: "var(--app-ink)",
+                                        borderColor: "var(--app-ink)",
                                     },
                                     "&:active": {
                                         transform: "scale(0.97)",
@@ -435,8 +438,8 @@ const Navbar = () => {
                 PaperProps={{
                     sx: {
                         width: 280,
-                        background: "var(--app-fg)", // Ink Black
-                        color: "var(--app-bg)",
+                        background: "var(--app-ink)", // Ink Black
+                        color: "var(--app-on-ink)",
                         p: 3,
                         boxShadow: "-10px 0 40px rgba(0,0,0,0.3)",
                     },
@@ -469,7 +472,7 @@ const Navbar = () => {
                         <IconButton
                             onClick={handleDrawerToggle}
                             sx={{
-                                color: "var(--app-bg)",
+                                color: "var(--app-on-ink)",
                                 "&:hover": {
                                     background: "rgba(255,255,255,0.08)",
                                 },
@@ -479,7 +482,7 @@ const Navbar = () => {
                         </IconButton>
                     </Stack>
 
-                    <Box sx={{ width: "100%", height: "1px", background: "var(--app-overlay)" }} />
+                    <Box sx={{ width: "100%", height: "1px", background: "var(--app-on-ink-muted)" }} />
 
                     <Stack spacing={1.5} sx={{ flexGrow: 1 }}>
                         {LINKS.map((l) => (
@@ -494,14 +497,14 @@ const Navbar = () => {
                                     textTransform: "none",
                                     fontWeight: 500,
                                     fontSize: "18px",
-                                    color: "var(--app-bg)",
+                                    color: "var(--app-on-ink)",
                                     py: 1,
                                     px: 2,
                                     borderRadius: "12px",
                                     fontFamily: "var(--font-sofia-sans)",
                                     transition: "all 0.2s ease",
                                     "&:hover": {
-                                        background: "var(--app-overlay)",
+                                        background: "rgba(255,255,255,0.08)",
                                     },
                                 }}
                             >
@@ -511,7 +514,7 @@ const Navbar = () => {
                     </Stack>
 
                     <Stack spacing={2} sx={{ mt: "auto" }}>
-                        <Box sx={{ width: "100%", height: "1px", background: "var(--app-overlay)" }} />
+                        <Box sx={{ width: "100%", height: "1px", background: "var(--app-on-ink-muted)" }} />
                         <Box
                             component="a"
                             href={REPO_URL}
@@ -524,16 +527,16 @@ const Navbar = () => {
                                 justifyContent: "center",
                                 height: 44,
                                 borderRadius: "20px",
-                                border: "1.5px solid var(--app-overlay)",
-                                color: "var(--app-bg)",
+                                border: "1.5px solid var(--app-on-ink-muted)",
+                                color: "var(--app-on-ink)",
                                 textDecoration: "none",
                                 fontSize: "14px",
                                 fontWeight: 500,
                                 fontFamily: "var(--font-sofia-sans)",
                                 transition: "all 0.2s ease",
                                 "&:hover": {
-                                    background: "var(--app-overlay)",
-                                    borderColor: "var(--app-bg)",
+                                    background: "rgba(255,255,255,0.08)",
+                                    borderColor: "var(--app-on-ink)",
                                 },
                             }}
                         >
@@ -545,7 +548,7 @@ const Navbar = () => {
                                         sx={{
                                             width: "1px",
                                             height: 12,
-                                            background: "var(--app-overlay)",
+                                            background: "var(--app-on-ink-muted)",
                                             mx: 1,
                                         }}
                                     />

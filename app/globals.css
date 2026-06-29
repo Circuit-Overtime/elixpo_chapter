@@ -39,6 +39,12 @@ html[data-theme="dark"] {
   --app-accent: #9b7bf7;
   --app-accent-2: #7c5cff;
   --app-accent-soft: rgba(155, 123, 247, 0.12);
+  /* "Ink" slabs (footer, CTAs, dark feature panels) stay dark in BOTH modes;
+     on-ink text stays light in both. They lift slightly in dark so they read
+     as elevated rather than vanishing into the page. */
+  --app-ink: #181b22;
+  --app-on-ink: #f5f5f4;
+  --app-on-ink-muted: rgba(245, 245, 244, 0.62);
   color-scheme: dark;
 }
 
@@ -57,6 +63,9 @@ html[data-theme="light"] {
   --app-accent: #7c5cff;
   --app-accent-2: #6d4ef0;
   --app-accent-soft: rgba(124, 92, 255, 0.1);
+  --app-ink: #141413;
+  --app-on-ink: #f5f5f4;
+  --app-on-ink-muted: rgba(245, 245, 244, 0.62);
   color-scheme: light;
 }
 

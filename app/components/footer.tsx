@@ -43,12 +43,12 @@ const Footer = () => {
         <Box
             component="footer"
             sx={{
-                background: "var(--app-fg)", // Ink Black
-                color: "#FFFFFF",
+                background: "var(--app-ink)", // Ink Black
+                color: "var(--app-on-ink)",
                 pt: { xs: 8, md: 10 },
                 pb: { xs: 12, md: 18 }, // very tall bottom padding (148px+)
                 px: { xs: 2.5, md: 6 },
-                borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+                borderTop: "1px solid var(--app-on-ink-muted)",
                 position: "relative",
                 zIndex: 1,
             }}
@@ -74,7 +74,7 @@ const Footer = () => {
                         fontSize: { xs: "28px", md: "40px" },
                         fontWeight: 500,
                         letterSpacing: "-2%",
-                        color: "var(--app-bg)", // Canvas Cream
+                        color: "var(--app-on-ink)", // Canvas Cream
                         mb: { xs: 6, md: 8 },
                         maxWidth: "600px",
                         lineHeight: 1.2,
@@ -93,7 +93,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "var(--app-overlay)", // Muted cream
+                                color: "var(--app-on-ink-muted)", // Muted cream
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -118,7 +118,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "var(--app-overlay)",
+                                color: "var(--app-on-ink-muted)",
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -145,7 +145,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "var(--app-overlay)",
+                                color: "var(--app-on-ink-muted)",
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -168,7 +168,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "var(--app-overlay)",
+                                color: "var(--app-on-ink-muted)",
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -202,7 +202,7 @@ const Footer = () => {
                     sx={{
                         width: "100%",
                         height: "1px",
-                        background: "rgba(255, 255, 255, 0.12)",
+                        background: "var(--app-on-ink-muted)",
                         mb: 4,
                     }}
                 />
@@ -219,7 +219,7 @@ const Footer = () => {
                         <Typography
                             sx={{
                                 fontSize: "14px",
-                                color: "var(--app-overlay)",
+                                color: "var(--app-on-ink-muted)",
                                 fontFamily: "var(--font-sofia-sans)",
                                 fontWeight: 450,
                             }}
@@ -229,7 +229,7 @@ const Footer = () => {
                         <Typography
                             sx={{
                                 fontSize: "12px",
-                                color: "var(--app-overlay)",
+                                color: "var(--app-on-ink-muted)",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
                         >
@@ -247,9 +247,9 @@ const Footer = () => {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
-                                background: "var(--app-fg)",
-                                color: "#FFFFFF",
-                                border: "1px solid rgba(255, 255, 255, 0.4)",
+                                background: "var(--app-ink)",
+                                color: "var(--app-on-ink)",
+                                border: "1px solid var(--app-on-ink-muted)",
                                 borderRadius: "999px",
                                 px: 2.5,
                                 py: 1,
@@ -258,7 +258,7 @@ const Footer = () => {
                                 fontFamily: "var(--font-sofia-sans)",
                                 transition: "all 0.2s ease",
                                 "&:hover": {
-                                    borderColor: "#FFFFFF",
+                                    borderColor: "var(--app-on-ink)",
                                     background: "rgba(255, 255, 255, 0.05)",
                                 },
                             }}
@@ -273,9 +273,9 @@ const Footer = () => {
                             onClose={() => handleLangClose()}
                             PaperProps={{
                                 sx: {
-                                    background: "var(--app-fg)",
-                                    border: "1px solid rgba(255, 255, 255, 0.15)",
-                                    color: "var(--app-bg)",
+                                    background: "var(--app-ink)",
+                                    border: "1px solid var(--app-on-ink-muted)",
+                                    color: "var(--app-on-ink)",
                                 },
                             }}
                         >
@@ -333,7 +333,7 @@ const Footer = () => {
 
 // Styling definitions
 const linkStyle: React.CSSProperties = {
-    color: "var(--app-bg)",
+    color: "var(--app-on-ink)",
     textDecoration: "none",
     fontSize: "14px",
     fontWeight: 450,
@@ -342,7 +342,7 @@ const linkStyle: React.CSSProperties = {
 };
 
 const textOnlyStyle: React.CSSProperties = {
-    color: "var(--app-overlay)",
+    color: "var(--app-on-ink-muted)",
     fontSize: "14px",
     fontWeight: 450,
     fontFamily: "var(--font-sofia-sans)",
@@ -356,17 +356,17 @@ const iconLinkStyle = {
 
 const iconStyle = {
     fontSize: 18,
-    color: "var(--app-overlay)",
+    color: "var(--app-on-ink-muted)",
 };
 
 const socialIconStyle = {
-    color: "var(--app-overlay)",
-    border: "1px solid rgba(255, 255, 255, 0.15)",
+    color: "var(--app-on-ink-muted)",
+    border: "1px solid var(--app-on-ink-muted)",
     width: 38,
     height: 38,
     "&:hover": {
-        color: "#FFFFFF",
-        borderColor: "#FFFFFF",
+        color: "var(--app-on-ink)",
+        borderColor: "var(--app-on-ink)",
         background: "rgba(255,255,255,0.08)",
     },
 };
