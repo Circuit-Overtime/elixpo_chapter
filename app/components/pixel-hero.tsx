@@ -216,7 +216,7 @@ export default function PixelHero() {
                                 fontFamily: "var(--font-sofia-sans)",
                                 opacity: 0,
                                 "&:hover": {
-                                    background: "#F4F4F4",
+                                    background: "var(--app-overlay)",
                                     borderColor: "var(--app-fg)",
                                 },
                                 "&:active": {

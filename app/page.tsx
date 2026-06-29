@@ -445,7 +445,7 @@ export default function Home() {
                                 textTransform: "none",
                                 fontFamily: "var(--font-sofia-sans)",
                                 "&:hover": {
-                                    background: "#F4F4F4",
+                                    background: "var(--app-overlay)",
                                     borderColor: "var(--app-fg)",
                                 },
                             }}
@@ -657,7 +657,7 @@ function MockCheckout() {
 
                 {/* Simulated credit card input styling */}
                 <Stack spacing={1.2} sx={{ mb: 3 }}>
-                    <Box sx={{ background: "#F4F4F4", border: "1px solid var(--app-overlay)", borderRadius: "10px", px: 1.5, py: 0.8 }}>
+                    <Box sx={{ background: "var(--app-overlay)", border: "1px solid var(--app-overlay)", borderRadius: "10px", px: 1.5, py: 0.8 }}>
                         <Typography sx={{ fontSize: "8px", fontWeight: 700, color: "var(--app-fg-muted)", letterSpacing: "0.05em" }}>CARD NUMBER</Typography>
                         <Typography sx={{ fontSize: "12px", color: "var(--app-fg)", mt: 0.2, fontWeight: 500 }}>••••  ••••  ••••  9084</Typography>
                     </Box>

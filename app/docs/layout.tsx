@@ -488,5 +488,5 @@ const navBtn = {
     border: "1.5px solid",
     borderRadius: "20px", // Signature button radius
     background: "var(--app-surface)",
-    "&:hover": { borderColor: "var(--app-fg)", bgcolor: "#F4F4F4" },
+    "&:hover": { borderColor: "var(--app-fg)", bgcolor: "var(--app-overlay)" },
 };

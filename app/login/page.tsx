@@ -326,7 +326,7 @@ const outlinedPillBtn = {
     fontFamily: "var(--font-sofia-sans)",
     "&:hover": {
         borderColor: "var(--app-fg)",
-        background: "#F4F4F4",
+        background: "var(--app-overlay)",
     },
 };
 

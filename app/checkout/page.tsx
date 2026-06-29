@@ -886,7 +886,7 @@ const ghostBtn = {
     background: "var(--app-surface)",
     "&:hover": {
         borderColor: "var(--app-fg)",
-        background: "#F4F4F4",
+        background: "var(--app-overlay)",
     },
 };
 

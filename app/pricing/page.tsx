@@ -330,7 +330,7 @@ export default function PricingPage() {
                                         textTransform: "none",
                                         fontFamily: "var(--font-sofia-sans)",
                                         "&:hover": {
-                                            background: "#F4F4F4",
+                                            background: "var(--app-overlay)",
                                             borderColor: "var(--app-fg)",
                                         },
                                     }}
