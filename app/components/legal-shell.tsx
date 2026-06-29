@@ -21,7 +21,7 @@ export default function LegalShell({
             sx={{
                 position: "relative",
                 minHeight: "100vh",
-                color: "#141413", // Ink Black
+                color: "var(--app-fg)", // Ink Black
                 fontFamily: "var(--font-sofia-sans), sans-serif",
             }}
         >
@@ -36,7 +36,7 @@ export default function LegalShell({
                             fontWeight: 500,
                             fontSize: { xs: "2rem", md: "2.6rem" },
                             letterSpacing: "-2%",
-                            color: "#141413",
+                            color: "var(--app-fg)",
                             fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
@@ -44,7 +44,7 @@ export default function LegalShell({
                     </Typography>
                     <Typography
                         sx={{
-                            color: "#696969", // Slate Gray
+                            color: "var(--app-fg-muted)", // Slate Gray
                             mt: 1,
                             mb: 5,
                             fontSize: "0.9rem",
@@ -61,18 +61,18 @@ export default function LegalShell({
                                 fontSize: "1.4rem",
                                 mt: 5,
                                 mb: 2,
-                                color: "#141413",
+                                color: "var(--app-fg)",
                                 letterSpacing: "-1%",
                             },
                             "& p": {
-                                color: "#262627", // Charcoal
+                                color: "var(--app-fg)", // Charcoal
                                 lineHeight: 1.7,
                                 mb: 2,
                                 fontSize: "1rem",
                                 fontWeight: 450,
                             },
                             "& ul": {
-                                color: "#262627",
+                                color: "var(--app-fg)",
                                 lineHeight: 1.7,
                                 pl: 3,
                                 mb: 2,
@@ -86,7 +86,7 @@ export default function LegalShell({
                             "& code": {
                                 fontFamily: "var(--font-geist-mono)",
                                 fontSize: "0.85rem",
-                                background: "rgba(20, 20, 19, 0.05)",
+                                background: "var(--app-overlay)",
                                 color: "#CF4500", // Signal Orange
                                 px: 0.8,
                                 py: 0.2,

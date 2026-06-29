@@ -20,7 +20,7 @@ export default function PageShell({
     useEffect(() => {
         const lenis = new Lenis({
             duration: 1.2,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            easing: (t) => Math.min(1, 1.001 - 2 ** (-10 * t)),
             touchMultiplier: 2,
         });
 
@@ -41,7 +41,7 @@ export default function PageShell({
             sx={{
                 position: "relative",
                 minHeight: "100vh",
-                color: "#141413", // Ink Black text
+                color: "var(--app-fg)", // Ink Black text
                 fontFamily: "var(--font-sofia-sans), sans-serif",
             }}
         >

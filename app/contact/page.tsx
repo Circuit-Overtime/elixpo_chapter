@@ -30,7 +30,7 @@ export default function ContactPage() {
                                 fontSize: "14px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "#696969",
+                                color: "var(--app-fg-muted)",
                                 textTransform: "uppercase",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
@@ -44,7 +44,7 @@ export default function ContactPage() {
                             fontWeight: 500,
                             fontSize: { xs: "32px", md: "42px" },
                             letterSpacing: "-2%",
-                            color: "#141413",
+                            color: "var(--app-fg)",
                             fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
@@ -53,7 +53,7 @@ export default function ContactPage() {
                     <Typography
                         sx={{
                             maxWidth: 480,
-                            color: "#262627",
+                            color: "var(--app-fg)",
                             fontSize: "16px",
                             lineHeight: 1.6,
                             fontFamily: "var(--font-sofia-sans)",
@@ -69,15 +69,15 @@ export default function ContactPage() {
                     sx={{
                         p: { xs: 4, md: 5 },
                         borderRadius: "24px",
-                        background: "#FCFBFA", // Lifted Cream
-                        border: "1.5px solid rgba(20, 20, 19, 0.06)",
+                        background: "var(--app-bg-2)", // Lifted Cream
+                        border: "1.5px solid var(--app-overlay)",
                         boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
                     }}
                 >
                     <Typography
                         sx={{
                             fontSize: "11px",
-                            color: "#696969",
+                            color: "var(--app-fg-muted)",
                             textTransform: "uppercase",
                             letterSpacing: "0.06em",
                             fontWeight: 700,
@@ -92,7 +92,7 @@ export default function ContactPage() {
                         sx={{
                             fontWeight: 500,
                             fontSize: "24px",
-                            color: "#141413",
+                            color: "var(--app-fg)",
                             letterSpacing: "-1px",
                             mb: 1,
                             fontFamily: "var(--font-sofia-sans)",
@@ -102,7 +102,7 @@ export default function ContactPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "#696969",
+                            color: "var(--app-fg-muted)",
                             fontSize: "14px",
                             mb: 4,
                             fontFamily: "var(--font-sofia-sans)",
@@ -128,16 +128,16 @@ export default function ContactPage() {
                                 textTransform: "none",
                                 fontWeight: 500,
                                 fontSize: "16px",
-                                color: "#F3F0EE", // Canvas Cream text
-                                background: "#141413", // Ink Black background
-                                border: "1.5px solid #141413",
+                                color: "var(--app-bg)", // Canvas Cream text
+                                background: "var(--app-fg)", // Ink Black background
+                                border: "1.5px solid var(--app-fg)",
                                 borderRadius: "20px", // Signature button radius
                                 py: 1.4,
                                 fontFamily: "var(--font-sofia-sans)",
                                 letterSpacing: "-0.32px",
                                 "&:hover": {
-                                    background: "#262627",
-                                    borderColor: "#262627",
+                                    background: "var(--app-fg)",
+                                    borderColor: "var(--app-fg)",
                                 },
                             }}
                         >
@@ -176,7 +176,7 @@ export default function ContactPage() {
                 <Typography
                     sx={{
                         textAlign: "center",
-                        color: "#696969",
+                        color: "var(--app-fg-muted)",
                         fontSize: "14px",
                         mt: 4,
                         fontFamily: "var(--font-sofia-sans)",
@@ -202,14 +202,14 @@ const outlinedButtonStyle = {
     textTransform: "none",
     fontWeight: 500,
     fontSize: "15px",
-    color: "#141413",
-    background: "#FFFFFF",
-    border: "1.5px solid #141413",
+    color: "var(--app-fg)",
+    background: "var(--app-surface)",
+    border: "1.5px solid var(--app-fg)",
     borderRadius: "20px",
     py: 1.2,
     fontFamily: "var(--font-sofia-sans)",
     "&:hover": {
         background: "#F4F4F4",
-        borderColor: "#141413",
+        borderColor: "var(--app-fg)",
     },
 };

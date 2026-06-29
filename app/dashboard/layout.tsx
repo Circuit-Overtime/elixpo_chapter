@@ -34,7 +34,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { dashboardTheme } from "@/components/dashboard-ui";
+import { makeDashboardTheme } from "@/components/dashboard-ui";
+import { ThemeToggle, useThemeMode } from "@/components/theme-mode";
 import BackgroundAurora from "../components/background-aurora";
 
 const NAV = [
@@ -77,6 +78,8 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const { mode } = useThemeMode();
+    const theme = makeDashboardTheme(mode);
     const [me, setMe] = useState<Me | null>(null);
     const [checked, setChecked] = useState(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -119,7 +122,7 @@ export default function DashboardLayout({
                     minHeight: "100vh",
                     display: "grid",
                     placeItems: "center",
-                    bgcolor: "#0c0e13",
+                    bgcolor: "var(--app-bg)",
                 }}
             >
                 <CircularProgress sx={{ color: "#9b7bf7" }} />
@@ -152,7 +155,7 @@ export default function DashboardLayout({
                 display: "grid",
                 placeItems: "center",
                 fontWeight: 700,
-                color: "#f5f5f4",
+                color: "var(--app-fg)",
                 background: "#272c38",
             }}
         >
@@ -161,12 +164,13 @@ export default function DashboardLayout({
     );
 
     return (
-        <ThemeProvider theme={dashboardTheme}>
+        <ThemeProvider theme={theme}>
             <Box
                 sx={{
                     position: "relative",
                     minHeight: "100vh",
-                    color: "#f5f5f4",
+                    color: "var(--app-fg)",
+                    background: "var(--app-bg)",
                 }}
             >
                 <BackgroundAurora variant="default" />
@@ -175,9 +179,9 @@ export default function DashboardLayout({
                         position="sticky"
                         elevation={0}
                         sx={{
-                            bgcolor: "rgba(12,14,19,0.88)",
+                            bgcolor: "color-mix(in srgb, var(--app-bg) 88%, transparent)",
                             backdropFilter: "blur(16px)",
-                            borderBottom: "1px solid rgba(255,255,255,0.07)",
+                            borderBottom: "1px solid var(--app-border)",
                         }}
                     >
                         <Toolbar
@@ -215,7 +219,7 @@ export default function DashboardLayout({
                                 <Typography
                                     sx={{
                                         fontWeight: 700,
-                                        color: "#f5f5f4",
+                                        color: "var(--app-fg)",
                                         display: { xs: "none", sm: "block" },
                                         letterSpacing: "-0.01em",
                                     }}
@@ -252,7 +256,7 @@ export default function DashboardLayout({
                                                 px: 1.6,
                                                 borderRadius: "8px",
                                                 color: active
-                                                    ? "#f5f5f4"
+                                                    ? "var(--app-fg)"
                                                     : "rgba(255,255,255,0.5)",
                                                 bgcolor: active
                                                     ? "rgba(255,255,255,0.07)"
@@ -280,9 +284,18 @@ export default function DashboardLayout({
                                 })}
                             </Stack>
 
+                            <ThemeToggle size={36} />
+
                             <IconButton
                                 onClick={(e) => setAnchorEl(e.currentTarget)}
-                                sx={{ p: 0 }}
+                                sx={{
+                                    p: 0.5,
+                                    pr: { xs: 0.5, sm: 1.4 },
+                                    gap: 1,
+                                    borderRadius: "999px",
+                                    border: "1px solid var(--app-border)",
+                                    "&:hover": { background: "var(--app-overlay)" },
+                                }}
                                 aria-label="Account menu"
                             >
                                 <Box
@@ -291,10 +304,49 @@ export default function DashboardLayout({
                                         height: 34,
                                         borderRadius: "50%",
                                         overflow: "hidden",
-                                        border: "1px solid rgba(255,255,255,0.14)",
+                                        border: "1px solid var(--app-border)",
+                                        flexShrink: 0,
                                     }}
                                 >
                                     {avatarNode}
+                                </Box>
+                                {/* Name + email stacked beside the pfp (desktop). */}
+                                <Box
+                                    sx={{
+                                        display: { xs: "none", sm: "flex" },
+                                        flexDirection: "column",
+                                        alignItems: "flex-start",
+                                        lineHeight: 1.15,
+                                        maxWidth: 180,
+                                    }}
+                                >
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            fontSize: "0.82rem",
+                                            fontWeight: 600,
+                                            color: "var(--app-fg)",
+                                            maxWidth: 180,
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {me?.name}
+                                    </Box>
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            fontSize: "0.72rem",
+                                            color: "var(--app-fg-faint)",
+                                            maxWidth: 180,
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {me?.email}
+                                    </Box>
                                 </Box>
                             </IconButton>
 
@@ -315,7 +367,7 @@ export default function DashboardLayout({
                                         sx: {
                                             mt: 1,
                                             minWidth: 272,
-                                            bgcolor: "#13161d",
+                                            bgcolor: "var(--app-surface)",
                                             border: "1px solid rgba(255,255,255,0.08)",
                                             borderRadius: "14px",
                                             boxShadow:
@@ -353,7 +405,7 @@ export default function DashboardLayout({
                                             sx={{
                                                 fontWeight: 600,
                                                 fontSize: "0.92rem",
-                                                color: "#f5f5f4",
+                                                color: "var(--app-fg)",
                                                 whiteSpace: "nowrap",
                                                 overflow: "hidden",
                                                 textOverflow: "ellipsis",
@@ -402,7 +454,7 @@ export default function DashboardLayout({
                                             <Typography
                                                 sx={{
                                                     fontSize: "0.85rem",
-                                                    color: "#f5f5f4",
+                                                    color: "var(--app-fg)",
                                                     fontWeight: 600,
                                                     overflow: "hidden",
                                                     textOverflow: "ellipsis",

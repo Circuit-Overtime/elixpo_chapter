@@ -44,7 +44,7 @@ export default function CodeBlock({
                         fontSize: "0.72rem",
                         letterSpacing: "0.06em",
                         textTransform: "uppercase",
-                        color: "rgba(245,245,244,0.4)",
+                        color: "var(--app-fg-faint)",
                         fontFamily: "var(--font-geist-mono)",
                     }}
                 >

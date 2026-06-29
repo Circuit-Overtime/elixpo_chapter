@@ -51,7 +51,7 @@ const TILES: Tile[] = [
         icon: AccountBalanceIcon,
         title: "Unified ledger",
         body: "An immutable double-entry ledger ensures precise tracking, idempotency, and replay-safe money ops.",
-        accent: "#141413",
+        accent: "var(--app-fg)",
         category: "ACCOUNTING",
     },
     {
@@ -110,8 +110,8 @@ export default function Home() {
                     sx={{
                         p: { xs: 3, md: 4 },
                         borderRadius: "24px",
-                        border: "1.5px solid rgba(20, 20, 19, 0.06)",
-                        background: "#FCFBFA", // Lifted Cream
+                        border: "1.5px solid var(--app-overlay)",
+                        background: "var(--app-bg-2)", // Lifted Cream
                         boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
                     }}
                 >
@@ -123,7 +123,7 @@ export default function Home() {
                                     fontSize: "12px",
                                     fontWeight: 700,
                                     letterSpacing: "0.04em",
-                                    color: "#696969",
+                                    color: "var(--app-fg-muted)",
                                     textTransform: "uppercase",
                                     fontFamily: "var(--font-sofia-sans)",
                                 }}
@@ -135,7 +135,7 @@ export default function Home() {
                             sx={{
                                 fontWeight: 500,
                                 fontSize: "1.3rem",
-                                color: "#141413",
+                                color: "var(--app-fg)",
                                 letterSpacing: "-1%",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
@@ -144,7 +144,7 @@ export default function Home() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "#696969",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.95rem",
                                 mt: 0.5,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -165,17 +165,17 @@ export default function Home() {
                             textTransform: "none",
                             fontWeight: 500,
                             fontSize: "15px",
-                            color: "#F3F0EE",
-                            background: "#141413",
-                            border: "1.5px solid #141413",
+                            color: "var(--app-bg)",
+                            background: "var(--app-fg)",
+                            border: "1.5px solid var(--app-fg)",
                             borderRadius: "20px",
                             px: 3,
                             py: 1.2,
                             fontFamily: "var(--font-sofia-sans)",
                             letterSpacing: "-0.32px",
                             "&:hover": {
-                                background: "#262627",
-                                borderColor: "#262627",
+                                background: "var(--app-fg)",
+                                borderColor: "var(--app-fg)",
                             },
                         }}
                     >
@@ -208,7 +208,7 @@ export default function Home() {
                                     fontSize: "14px",
                                     fontWeight: 700,
                                     letterSpacing: "0.06em",
-                                    color: "#696969",
+                                    color: "var(--app-fg-muted)",
                                     textTransform: "uppercase",
                                     fontFamily: "var(--font-sofia-sans)",
                                 }}
@@ -222,7 +222,7 @@ export default function Home() {
                                 fontWeight: 500,
                                 fontSize: { xs: "28px", md: "42px" },
                                 letterSpacing: "-2%",
-                                color: "#141413",
+                                color: "var(--app-fg)",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
                         >
@@ -231,7 +231,7 @@ export default function Home() {
                         <Typography
                             sx={{
                                 maxWidth: 600,
-                                color: "#696969",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "16px",
                                 lineHeight: 1.6,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -267,14 +267,14 @@ export default function Home() {
                                         gridColumn: { xs: "span 1", md: isSpan2 ? "span 2" : "span 1" },
                                         p: 3.5,
                                         borderRadius: "24px",
-                                        border: "1.5px solid rgba(20, 20, 19, 0.06)",
-                                        background: "#FCFBFA",
+                                        border: "1.5px solid var(--app-overlay)",
+                                        background: "var(--app-bg-2)",
                                         boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
                                         transition: "all 0.2s ease",
                                         opacity: 0, // Animated via GSAP
                                         "&:hover": {
                                             transform: "translateY(-4px)",
-                                            borderColor: "rgba(20, 20, 19, 0.15)",
+                                            borderColor: "var(--app-border)",
                                         },
                                         display: "flex",
                                         flexDirection: { xs: "column", sm: isSpan2 ? "row" : "column" },
@@ -292,15 +292,15 @@ export default function Home() {
                                                     borderRadius: "14px",
                                                     display: "grid",
                                                     placeItems: "center",
-                                                    color: "#141413",
-                                                    background: "rgba(20, 20, 19, 0.05)",
+                                                    color: "var(--app-fg)",
+                                                    background: "var(--app-overlay)",
                                                 }}
                                             >
                                                 <tile.icon sx={{ fontSize: 22 }} />
                                             </Box>
                                             <Stack direction="row" alignItems="center" spacing={0.6}>
                                                 <Box sx={{ width: 4, height: 4, borderRadius: "50%", background: "#CF4500" }} />
-                                                <Typography sx={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.04em", color: "#696969", fontFamily: "var(--font-sofia-sans)" }}>
+                                                <Typography sx={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.04em", color: "var(--app-fg-muted)", fontFamily: "var(--font-sofia-sans)" }}>
                                                     {tile.category}
                                                 </Typography>
                                             </Stack>
@@ -311,7 +311,7 @@ export default function Home() {
                                                 sx={{
                                                     fontWeight: 500,
                                                     fontSize: "1.15rem",
-                                                    color: "#141413",
+                                                    color: "var(--app-fg)",
                                                     fontFamily: "var(--font-sofia-sans)",
                                                     letterSpacing: "-1%",
                                                 }}
@@ -320,7 +320,7 @@ export default function Home() {
                                             </Typography>
                                             <Typography
                                                 sx={{
-                                                    color: "#696969",
+                                                    color: "var(--app-fg-muted)",
                                                     fontSize: "0.92rem",
                                                     lineHeight: 1.5,
                                                     fontFamily: "var(--font-sofia-sans)",
@@ -340,11 +340,11 @@ export default function Home() {
                                                 alignItems: "center",
                                                 justifyContent: "center",
                                                 flex: 1,
-                                                background: "rgba(20, 20, 19, 0.02)",
+                                                background: "var(--app-overlay)",
                                                 borderRadius: "16px",
                                                 p: 2,
                                                 overflow: "hidden",
-                                                border: "1px dashed rgba(20, 20, 19, 0.08)",
+                                                border: "1px dashed var(--app-overlay)",
                                                 minHeight: 150,
                                             }}
                                         >
@@ -369,8 +369,8 @@ export default function Home() {
                             gap: { xs: 4, md: 8 },
                             p: { xs: 4, md: 6 },
                             borderRadius: "32px",
-                            border: "1.5px solid rgba(20, 20, 19, 0.06)",
-                            background: "#FCFBFA",
+                            border: "1.5px solid var(--app-overlay)",
+                            background: "var(--app-bg-2)",
                             boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
                         }}
                     >
@@ -387,7 +387,7 @@ export default function Home() {
                                         fontSize: "12px",
                                         fontWeight: 700,
                                         letterSpacing: "0.04em",
-                                        color: "#696969",
+                                        color: "var(--app-fg-muted)",
                                         textTransform: "uppercase",
                                         fontFamily: "var(--font-sofia-sans)",
                                     }}
@@ -399,7 +399,7 @@ export default function Home() {
                                 sx={{
                                     fontWeight: 500,
                                     fontSize: "1.6rem",
-                                    color: "#141413",
+                                    color: "var(--app-fg)",
                                     letterSpacing: "-2%",
                                     lineHeight: 1.2,
                                     mb: 2,
@@ -410,7 +410,7 @@ export default function Home() {
                             </Typography>
                             <Typography
                                 sx={{
-                                    color: "#696969",
+                                    color: "var(--app-fg-muted)",
                                     fontSize: "15px",
                                     lineHeight: 1.6,
                                     fontFamily: "var(--font-sofia-sans)",
@@ -434,9 +434,9 @@ export default function Home() {
                             variant="outlined"
                             disableElevation
                             sx={{
-                                background: "#FFFFFF",
-                                color: "#141413",
-                                border: "1.5px solid #141413",
+                                background: "var(--app-surface)",
+                                color: "var(--app-fg)",
+                                border: "1.5px solid var(--app-fg)",
                                 borderRadius: "20px",
                                 px: 4,
                                 py: 1.2,
@@ -446,7 +446,7 @@ export default function Home() {
                                 fontFamily: "var(--font-sofia-sans)",
                                 "&:hover": {
                                     background: "#F4F4F4",
-                                    borderColor: "#141413",
+                                    borderColor: "var(--app-fg)",
                                 },
                             }}
                         >
@@ -464,7 +464,7 @@ export default function Home() {
  */
 function HostedCheckoutMiniGraphic() {
     return (
-        <Box sx={{ width: "100%", maxWidth: 180, background: "#FFFFFF", borderRadius: "10px", border: "1px solid rgba(20, 20, 19, 0.08)", p: 1.2, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+        <Box sx={{ width: "100%", maxWidth: 180, background: "var(--app-surface)", borderRadius: "10px", border: "1px solid var(--app-overlay)", p: 1.2, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
             <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 1.5, pb: 0.5, borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                 <Box sx={{ width: 5, height: 5, borderRadius: "50%", background: "#EB001B" }} />
                 <Box sx={{ width: 5, height: 5, borderRadius: "50%", background: "#F79E1B" }} />
@@ -472,8 +472,8 @@ function HostedCheckoutMiniGraphic() {
             </Stack>
             <Stack alignItems="center" spacing={0.8}>
                 <Box sx={{ width: 22, height: 22, borderRadius: "50%", background: "#CF4500", display: "grid", placeItems: "center", color: "#FFFFFF", fontSize: "11px", fontWeight: 700 }}>✓</Box>
-                <Box sx={{ width: 70, height: 6, background: "#141413", borderRadius: 1 }} />
-                <Box sx={{ width: 45, height: 4, background: "#696969", borderRadius: 1 }} />
+                <Box sx={{ width: 70, height: 6, background: "var(--app-fg)", borderRadius: 1 }} />
+                <Box sx={{ width: 45, height: 4, background: "var(--app-fg-muted)", borderRadius: 1 }} />
             </Stack>
         </Box>
     );
@@ -482,7 +482,7 @@ function HostedCheckoutMiniGraphic() {
 function LedgerMiniGraphic() {
     return (
         <Stack spacing={0.8} sx={{ width: "100%", maxWidth: 200, fontFamily: "var(--font-geist-mono)", fontSize: "9px" }}>
-            <Stack direction="row" justifyContent="space-between" sx={{ pb: 0.5, borderBottom: "1.5px solid #141413", fontWeight: 700 }}>
+            <Stack direction="row" justifyContent="space-between" sx={{ pb: 0.5, borderBottom: "1.5px solid var(--app-fg)", fontWeight: 700 }}>
                 <span>ACCOUNT</span>
                 <span>DEBIT / CREDIT</span>
             </Stack>
@@ -504,7 +504,7 @@ function LedgerMiniGraphic() {
 
 function ApiMiniGraphic() {
     return (
-        <Box sx={{ background: "#141413", borderRadius: "8px", p: 1.5, width: "100%", maxWidth: 190, color: "#86efac", fontFamily: "var(--font-geist-mono)", fontSize: "9px", textAlign: "left" }}>
+        <Box sx={{ background: "var(--app-fg)", borderRadius: "8px", p: 1.5, width: "100%", maxWidth: 190, color: "#86efac", fontFamily: "var(--font-geist-mono)", fontSize: "9px", textAlign: "left" }}>
             <span style={{ color: "#F37338" }}>GET</span> /v1/entitlements
             <br />
             <span style={{ color: "#FFFFFF" }}>status: </span> "active",
@@ -529,8 +529,8 @@ function MockCheckout() {
                 width: "100%",
                 borderRadius: "24px",
                 overflow: "hidden",
-                border: "1.5px solid rgba(20, 20, 19, 0.08)",
-                background: "#FFFFFF",
+                border: "1.5px solid var(--app-overlay)",
+                background: "var(--app-surface)",
                 boxShadow: "rgba(0, 0, 0, 0.08) 0px 24px 48px 0px",
                 userSelect: "none",
                 pointerEvents: "none",
@@ -543,8 +543,8 @@ function MockCheckout() {
                     gap: 1,
                     px: 2,
                     py: 1.2,
-                    borderBottom: "1px solid rgba(20, 20, 19, 0.06)",
-                    background: "rgba(20, 20, 19, 0.02)",
+                    borderBottom: "1px solid var(--app-overlay)",
+                    background: "var(--app-overlay)",
                 }}
             >
                 <Box sx={{ display: "flex", gap: 0.6 }}>
@@ -567,8 +567,8 @@ function MockCheckout() {
                         px: 1.2,
                         py: 0.25,
                         borderRadius: "6px",
-                        background: "#FFFFFF",
-                        border: "1px solid rgba(20, 20, 19, 0.08)",
+                        background: "var(--app-surface)",
+                        border: "1px solid var(--app-overlay)",
                         fontFamily: "var(--font-geist-mono)",
                         fontSize: "0.68rem",
                         color: "rgba(20, 20, 19, 0.5)",
@@ -604,7 +604,7 @@ function MockCheckout() {
                             sx={{
                                 fontSize: "12px",
                                 fontWeight: 700,
-                                color: "#696969",
+                                color: "var(--app-fg-muted)",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
                         >
@@ -625,7 +625,7 @@ function MockCheckout() {
                 <Typography
                     sx={{
                         fontSize: "13px",
-                        color: "#696969",
+                        color: "var(--app-fg-muted)",
                         fontFamily: "var(--font-sofia-sans)",
                     }}
                 >
@@ -637,7 +637,7 @@ function MockCheckout() {
                         fontSize: "24px",
                         mt: 0.5,
                         mb: 2.5,
-                        color: "#141413",
+                        color: "var(--app-fg)",
                         letterSpacing: "-0.5px",
                         fontFamily: "var(--font-sofia-sans)",
                     }}
@@ -648,7 +648,7 @@ function MockCheckout() {
                         sx={{
                             fontSize: "13px",
                             fontWeight: 400,
-                            color: "#696969",
+                            color: "var(--app-fg-muted)",
                         }}
                     >
                         / month
@@ -657,9 +657,9 @@ function MockCheckout() {
 
                 {/* Simulated credit card input styling */}
                 <Stack spacing={1.2} sx={{ mb: 3 }}>
-                    <Box sx={{ background: "#F4F4F4", border: "1px solid rgba(20,20,19,0.06)", borderRadius: "10px", px: 1.5, py: 0.8 }}>
-                        <Typography sx={{ fontSize: "8px", fontWeight: 700, color: "#696969", letterSpacing: "0.05em" }}>CARD NUMBER</Typography>
-                        <Typography sx={{ fontSize: "12px", color: "#141413", mt: 0.2, fontWeight: 500 }}>••••  ••••  ••••  9084</Typography>
+                    <Box sx={{ background: "#F4F4F4", border: "1px solid var(--app-overlay)", borderRadius: "10px", px: 1.5, py: 0.8 }}>
+                        <Typography sx={{ fontSize: "8px", fontWeight: 700, color: "var(--app-fg-muted)", letterSpacing: "0.05em" }}>CARD NUMBER</Typography>
+                        <Typography sx={{ fontSize: "12px", color: "var(--app-fg)", mt: 0.2, fontWeight: 500 }}>••••  ••••  ••••  9084</Typography>
                     </Box>
                 </Stack>
 
@@ -669,8 +669,8 @@ function MockCheckout() {
                     variant="contained"
                     disableElevation
                     sx={{
-                        background: "#141413",
-                        color: "#F3F0EE",
+                        background: "var(--app-fg)",
+                        color: "var(--app-bg)",
                         borderRadius: "20px",
                         py: 1.4,
                         fontSize: "14px",
@@ -678,7 +678,7 @@ function MockCheckout() {
                         textTransform: "none",
                         fontFamily: "var(--font-sofia-sans)",
                         "&:hover": {
-                            background: "#262627",
+                            background: "var(--app-fg)",
                         },
                     }}
                 >

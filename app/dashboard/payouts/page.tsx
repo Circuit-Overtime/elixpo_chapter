@@ -30,7 +30,7 @@ const field = {
 
 const labelSx = {
     fontSize: "0.7rem",
-    color: "rgba(245,245,244,0.45)",
+    color: "var(--app-fg-faint)",
     textTransform: "uppercase",
     letterSpacing: "0.06em",
     mb: 0.5,
@@ -140,7 +140,7 @@ export default function PayoutsPage() {
                 <Typography sx={{ fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.02em" }}>
                     Payouts
                 </Typography>
-                <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.92rem" }}>
+                <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.92rem" }}>
                     Connect your bank to receive your app's revenue. Once live, each payment
                     is split to you automatically — you get the amount minus a{" "}
                     <Box component="span" sx={{ color: "#c4b5fd", fontWeight: 600 }}>
@@ -158,7 +158,7 @@ export default function PayoutsPage() {
                             <Typography sx={{ fontWeight: 700, fontSize: "1.05rem" }}>
                                 Your products settle directly
                             </Typography>
-                            <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.88rem", mt: 0.5, maxWidth: 560 }}>
+                            <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.88rem", mt: 0.5, maxWidth: 560 }}>
                                 You're the platform owner, so revenue from your own products lands
                                 straight in the Elixpo Razorpay account — no payout connection
                                 needed. Connecting a bank is for third-party merchants whose
@@ -173,7 +173,7 @@ export default function PayoutsPage() {
                                     <Typography sx={{ fontWeight: 800, fontSize: "1.4rem" }}>
                                         {formatMoney(r.total, r.currency)}
                                     </Typography>
-                                    <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.76rem" }}>
+                                    <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.76rem" }}>
                                         {r.count} payment{r.count === 1 ? "" : "s"} · {r.currency}
                                     </Typography>
                                 </Box>
@@ -206,7 +206,7 @@ export default function PayoutsPage() {
                                     }}
                                 />
                             </Stack>
-                            <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.82rem", mt: 0.2 }}>
+                            <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.82rem", mt: 0.2 }}>
                                 {account.bank_ifsc} · A/C ••••{account.bank_last4}
                                 {account.razorpay_account_id ? ` · ${account.razorpay_account_id}` : ""}
                             </Typography>
@@ -234,7 +234,7 @@ export default function PayoutsPage() {
                 <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 0.3 }}>
                     {connected ? "Update bank details" : "Connect your bank"}
                 </Typography>
-                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem", mb: 2 }}>
+                <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.82rem", mb: 2 }}>
                     We verify these and set up your Razorpay payout account for you — you
                     don't touch Razorpay. Your account number is never stored in full
                     (only the last 4 digits, for display).
@@ -297,13 +297,13 @@ export default function PayoutsPage() {
                                 <Typography sx={{ fontWeight: 800, fontSize: "1.5rem" }}>
                                     {formatMoney(r.total, r.currency)}
                                 </Typography>
-                                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.78rem" }}>
+                                <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.78rem" }}>
                                     {r.count} payment{r.count === 1 ? "" : "s"} · {r.currency}
                                 </Typography>
                             </Box>
                         ))}
                     </Stack>
-                    <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.74rem", mt: 1.4 }}>
+                    <Typography sx={{ color: "var(--app-fg-faint)", fontSize: "0.74rem", mt: 1.4 }}>
                         This is what's flowed through your apps. When Route is live, your share (after
                         the platform fee) lands in your bank automatically on each payment.
                     </Typography>

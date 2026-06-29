@@ -109,7 +109,7 @@ export default function PixelHero() {
                                 fontSize: "14px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "#696969",
+                                color: "var(--app-fg-muted)",
                                 textTransform: "uppercase",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
@@ -127,7 +127,7 @@ export default function PixelHero() {
                             fontWeight: 500,
                             letterSpacing: "-2%",
                             lineHeight: 1.0,
-                            color: "#141413",
+                            color: "var(--app-fg)",
                             maxWidth: "900px",
                             fontFamily: "var(--font-sofia-sans)",
                             opacity: 0,
@@ -143,7 +143,7 @@ export default function PixelHero() {
                             fontSize: { xs: "16px", md: "20px" },
                             fontWeight: 450,
                             lineHeight: 1.5,
-                            color: "#262627",
+                            color: "var(--app-fg)",
                             maxWidth: "640px",
                             fontFamily: "var(--font-sofia-sans)",
                             opacity: 0,
@@ -171,9 +171,9 @@ export default function PixelHero() {
                             disableElevation
                             endIcon={<ArrowForwardIcon />}
                             sx={{
-                                background: "#141413",
-                                color: "#F3F0EE",
-                                border: "1.5px solid #141413",
+                                background: "var(--app-fg)",
+                                color: "var(--app-bg)",
+                                border: "1.5px solid var(--app-fg)",
                                 borderRadius: "20px",
                                 px: 4,
                                 py: 1.5,
@@ -184,8 +184,8 @@ export default function PixelHero() {
                                 fontFamily: "var(--font-sofia-sans)",
                                 opacity: 0,
                                 "&:hover": {
-                                    background: "#262627",
-                                    borderColor: "#262627",
+                                    background: "var(--app-fg)",
+                                    borderColor: "var(--app-fg)",
                                 },
                                 "&:active": {
                                     transform: "scale(0.97)",
@@ -204,9 +204,9 @@ export default function PixelHero() {
                             disableElevation
                             startIcon={<MenuBookIcon />}
                             sx={{
-                                background: "#FFFFFF",
-                                color: "#141413",
-                                border: "1.5px solid #141413",
+                                background: "var(--app-surface)",
+                                color: "var(--app-fg)",
+                                border: "1.5px solid var(--app-fg)",
                                 borderRadius: "20px",
                                 px: 4,
                                 py: 1.5,
@@ -217,7 +217,7 @@ export default function PixelHero() {
                                 opacity: 0,
                                 "&:hover": {
                                     background: "#F4F4F4",
-                                    borderColor: "#141413",
+                                    borderColor: "var(--app-fg)",
                                 },
                                 "&:active": {
                                     transform: "scale(0.97)",
@@ -234,7 +234,7 @@ export default function PixelHero() {
                     className="hero-stadium"
                     sx={{
                         width: "100%",
-                        background: "#141413", // Ink Black background
+                        background: "var(--app-fg)", // Ink Black background
                         borderRadius: "40px",
                         border: "1px solid rgba(255, 255, 255, 0.08)",
                         boxShadow: "rgba(0, 0, 0, 0.12) 0px 30px 60px 0px",
@@ -256,7 +256,7 @@ export default function PixelHero() {
                             justifyContent: "center",
                             alignItems: "flex-start",
                             textAlign: "left",
-                            color: "#F3F0EE",
+                            color: "var(--app-bg)",
                         }}
                     >
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
@@ -267,7 +267,7 @@ export default function PixelHero() {
                                     fontWeight: 700,
                                     letterSpacing: "0.06em",
                                     textTransform: "uppercase",
-                                    color: "rgba(243, 240, 238, 0.6)",
+                                    color: "var(--app-overlay)",
                                     fontFamily: "var(--font-sofia-sans)",
                                 }}
                             >
@@ -282,7 +282,7 @@ export default function PixelHero() {
                                 fontWeight: 500,
                                 letterSpacing: "-1px",
                                 mb: 2.5,
-                                color: "#F3F0EE",
+                                color: "var(--app-bg)",
                                 fontFamily: "var(--font-sofia-sans)",
                                 lineHeight: 1.15,
                             }}
@@ -292,7 +292,7 @@ export default function PixelHero() {
 
                         <Typography
                             sx={{
-                                color: "rgba(243, 240, 238, 0.75)",
+                                color: "var(--app-overlay)",
                                 fontSize: "15px",
                                 lineHeight: 1.6,
                                 mb: 4.5,
@@ -306,11 +306,11 @@ export default function PixelHero() {
                         <Stack direction="row" spacing={5}>
                             <Box>
                                 <Typography sx={{ fontSize: "30px", fontWeight: 700, color: "#F37338", fontFamily: "var(--font-sofia-sans)" }}>&lt; 50ms</Typography>
-                                <Typography sx={{ fontSize: "12px", color: "rgba(243, 240, 238, 0.5)", fontFamily: "var(--font-sofia-sans)" }}>Edge response time</Typography>
+                                <Typography sx={{ fontSize: "12px", color: "var(--app-overlay)", fontFamily: "var(--font-sofia-sans)" }}>Edge response time</Typography>
                             </Box>
                             <Box>
                                 <Typography sx={{ fontSize: "30px", fontWeight: 700, color: "#F37338", fontFamily: "var(--font-sofia-sans)" }}>100%</Typography>
-                                <Typography sx={{ fontSize: "12px", color: "rgba(243, 240, 238, 0.5)", fontFamily: "var(--font-sofia-sans)" }}>Replay-safe ledger</Typography>
+                                <Typography sx={{ fontSize: "12px", color: "var(--app-overlay)", fontFamily: "var(--font-sofia-sans)" }}>Replay-safe ledger</Typography>
                             </Box>
                         </Stack>
                     </Box>
@@ -350,7 +350,7 @@ export default function PixelHero() {
                                 background: "linear-gradient(135deg, #181817 0%, #2a2a29 50%, #1e1e1e 100%)",
                                 borderRadius: "16px",
                                 p: 3,
-                                color: "#F3F0EE",
+                                color: "var(--app-bg)",
                                 border: "1px solid rgba(255, 255, 255, 0.12)",
                                 boxShadow: "rgba(0, 0, 0, 0.45) 0px 30px 60px 0px, inset 0px 1px 1px rgba(255, 255, 255, 0.15)",
                                 display: "flex",
@@ -379,7 +379,7 @@ export default function PixelHero() {
                                         filter: "brightness(0) invert(1)",
                                     }}
                                 />
-                                <ContactlessIcon sx={{ color: "rgba(243, 240, 238, 0.5)", fontSize: 20 }} />
+                                <ContactlessIcon sx={{ color: "var(--app-overlay)", fontSize: 20 }} />
                             </Stack>
 
                             {/* Gold Microchip & contactless receiver */}
@@ -401,7 +401,7 @@ export default function PixelHero() {
                                             left: "10%",
                                             right: "10%",
                                             bottom: "10%",
-                                            border: "1.2px solid rgba(20,20,19,0.15)",
+                                            border: "1.2px solid var(--app-border)",
                                             borderRadius: "4px",
                                         }
                                     }}
@@ -416,7 +416,7 @@ export default function PixelHero() {
                                     fontWeight: 500,
                                     letterSpacing: "2.5px",
                                     mt: 1.5,
-                                    color: "#F3F0EE",
+                                    color: "var(--app-bg)",
                                     textShadow: "0px 1px 2px rgba(0,0,0,0.5)",
                                     transform: "translateZ(30px)",
                                 }}
@@ -431,7 +431,7 @@ export default function PixelHero() {
                                         sx={{
                                             fontSize: "7px",
                                             fontWeight: 700,
-                                            color: "rgba(243, 240, 238, 0.4)",
+                                            color: "var(--app-overlay)",
                                             letterSpacing: "0.06em",
                                             fontFamily: "var(--font-sofia-sans)",
                                         }}
@@ -442,7 +442,7 @@ export default function PixelHero() {
                                         sx={{
                                             fontSize: "11px",
                                             fontWeight: 500,
-                                            color: "#F3F0EE",
+                                            color: "var(--app-bg)",
                                             letterSpacing: "0.5px",
                                             fontFamily: "var(--font-sofia-sans)",
                                         }}
@@ -456,7 +456,7 @@ export default function PixelHero() {
                                         sx={{
                                             fontSize: "7px",
                                             fontWeight: 700,
-                                            color: "rgba(243, 240, 238, 0.4)",
+                                            color: "var(--app-overlay)",
                                             letterSpacing: "0.06em",
                                             fontFamily: "var(--font-sofia-sans)",
                                         }}
@@ -467,7 +467,7 @@ export default function PixelHero() {
                                         sx={{
                                             fontSize: "11px",
                                             fontWeight: 500,
-                                            color: "#F3F0EE",
+                                            color: "var(--app-bg)",
                                             fontFamily: "var(--font-geist-mono)",
                                         }}
                                     >

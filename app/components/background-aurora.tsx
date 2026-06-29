@@ -28,7 +28,7 @@ const BackgroundAurora = ({ variant = "default" }: Props) => {
                 zIndex: 0,
                 pointerEvents: "none",
                 overflow: "hidden",
-                background: "#F3F0EE", // Warm Canvas Cream
+                background: "var(--app-bg)", // Warm Canvas Cream
                 "&::before, &::after": {
                     content: '""',
                     position: "absolute",

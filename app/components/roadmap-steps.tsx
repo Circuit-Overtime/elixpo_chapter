@@ -50,11 +50,11 @@ export default function RoadmapSteps() {
             graphic: (
                 <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #CF4500, #F37338)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: 3, position: "relative" }}>
                     <Box sx={{ width: "80%", height: "60px", background: "rgba(255, 255, 255, 0.15)", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.2)", p: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
-                        <Box sx={{ width: "40%", height: "8px", background: "#FFFFFF", borderRadius: "4px" }} />
+                        <Box sx={{ width: "40%", height: "8px", background: "var(--app-surface)", borderRadius: "4px" }} />
                         <Box sx={{ width: "75%", height: "6px", background: "rgba(255, 255, 255, 0.6)", borderRadius: "4px" }} />
                         <Box sx={{ width: "60%", height: "6px", background: "rgba(255, 255, 255, 0.6)", borderRadius: "4px" }} />
                     </Box>
-                    <Box sx={{ width: "50px", height: "50px", borderRadius: "50%", background: "#FFFFFF", position: "absolute", bottom: "15px", right: "25px", boxShadow: "0 8px 16px rgba(0,0,0,0.15)", display: "grid", placeItems: "center" }}>
+                    <Box sx={{ width: "50px", height: "50px", borderRadius: "50%", background: "var(--app-surface)", position: "absolute", bottom: "15px", right: "25px", boxShadow: "0 8px 16px rgba(0,0,0,0.15)", display: "grid", placeItems: "center" }}>
                         <Box sx={{ width: "18px", height: "18px", border: "2px solid #CF4500", borderRadius: "4px" }} />
                     </Box>
                 </Box>
@@ -68,10 +68,10 @@ export default function RoadmapSteps() {
             desc: "Link payout rails. Automated pool splits distribute merchant balances to creator wallets seamlessly.",
             href: "/docs/payouts",
             graphic: (
-                <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #141413, #262627)", display: "flex", justifyContent: "center", alignItems: "center", p: 3, position: "relative" }}>
+                <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, var(--app-fg), var(--app-fg))", display: "flex", justifyContent: "center", alignItems: "center", p: 3, position: "relative" }}>
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                         <Box sx={{ width: "60px", height: "60px", borderRadius: "50%", border: "2px dashed #F37338", display: "grid", placeItems: "center" }}>
-                            <Box sx={{ width: "40px", height: "40px", borderRadius: "50%", background: "#FFFFFF", display: "grid", placeItems: "center", fontSize: "14px", fontWeight: 700, color: "#141413" }}>₹</Box>
+                            <Box sx={{ width: "40px", height: "40px", borderRadius: "50%", background: "var(--app-surface)", display: "grid", placeItems: "center", fontSize: "14px", fontWeight: 700, color: "var(--app-fg)" }}>₹</Box>
                         </Box>
                         <Box sx={{ width: "30px", height: "2px", background: "#F37338" }} />
                         <Box sx={{ width: "60px", height: "60px", borderRadius: "50%", border: "2px dashed #F37338", display: "grid", placeItems: "center" }}>
@@ -89,7 +89,7 @@ export default function RoadmapSteps() {
             desc: "Trigger the edge checkout page. Trust cryptographically signed webhooks to grant system entitlements.",
             href: "/docs/checkout",
             graphic: (
-                <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #FCFBFA, #F3F0EE)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: 3, position: "relative", border: "1px solid rgba(20, 20, 19, 0.08)" }}>
+                <Box sx={{ width: "100%", height: "100%", background: "linear-gradient(135deg, var(--app-bg-2), var(--app-bg))", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: 3, position: "relative", border: "1px solid var(--app-overlay)" }}>
                     <Box
                         component="img"
                         src="/logo.png"
@@ -100,7 +100,7 @@ export default function RoadmapSteps() {
                             mb: 2,
                         }}
                     />
-                    <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#141413", letterSpacing: "0.02em", fontFamily: "var(--font-sofia-sans)" }}>Elixpo Verified</Typography>
+                    <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "var(--app-fg)", letterSpacing: "0.02em", fontFamily: "var(--font-sofia-sans)" }}>Elixpo Verified</Typography>
                 </Box>
             )
         }
@@ -151,7 +151,7 @@ export default function RoadmapSteps() {
                                 fontSize: "14px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "#696969",
+                                color: "var(--app-fg-muted)",
                                 textTransform: "uppercase",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
@@ -165,7 +165,7 @@ export default function RoadmapSteps() {
                             fontSize: { xs: "28px", md: "42px" },
                             fontWeight: 500,
                             letterSpacing: "-2%",
-                            color: "#141413",
+                            color: "var(--app-fg)",
                             fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
@@ -174,7 +174,7 @@ export default function RoadmapSteps() {
                     <Typography
                         sx={{
                             fontSize: "16px",
-                            color: "#262627",
+                            color: "var(--app-fg)",
                             maxWidth: "500px",
                             fontFamily: "var(--font-sofia-sans)",
                             fontWeight: 450,
@@ -244,7 +244,7 @@ export default function RoadmapSteps() {
                                     position: "relative",
                                     zIndex: 1,
                                     boxShadow: "rgba(0, 0, 0, 0.08) 0px 24px 48px 0px", // Soft halo shadow
-                                    border: "1.5px solid rgba(20, 20, 19, 0.06)",
+                                    border: "1.5px solid var(--app-overlay)",
                                     mb: 4,
                                 }}
                             >
@@ -261,18 +261,18 @@ export default function RoadmapSteps() {
                                         width: "56px",
                                         height: "56px",
                                         borderRadius: "50%",
-                                        background: "#FFFFFF",
+                                        background: "var(--app-surface)",
                                         display: "grid",
                                         placeItems: "center",
                                         textDecoration: "none",
-                                        color: "#141413",
+                                        color: "var(--app-fg)",
                                         boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
-                                        border: "1px solid rgba(20, 20, 19, 0.06)",
+                                        border: "1px solid var(--app-overlay)",
                                         transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                                         "&:hover": {
                                             transform: "scale(1.08) rotate(45deg)",
                                             boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-                                            background: "#F3F0EE",
+                                            background: "var(--app-bg)",
                                         },
                                         "&:active": {
                                             transform: "scale(0.95)",
@@ -291,7 +291,7 @@ export default function RoadmapSteps() {
                                         fontSize: "12px",
                                         fontWeight: 700,
                                         letterSpacing: "0.04em",
-                                        color: "#696969",
+                                        color: "var(--app-fg-muted)",
                                         textTransform: "uppercase",
                                         fontFamily: "var(--font-sofia-sans)",
                                     }}
@@ -307,7 +307,7 @@ export default function RoadmapSteps() {
                                     fontSize: "24px",
                                     fontWeight: 500,
                                     letterSpacing: "-2%",
-                                    color: "#141413",
+                                    color: "var(--app-fg)",
                                     mb: 1.5,
                                     fontFamily: "var(--font-sofia-sans)",
                                     zIndex: 1,
@@ -320,7 +320,7 @@ export default function RoadmapSteps() {
                             <Typography
                                 sx={{
                                     fontSize: "15px",
-                                    color: "#696969",
+                                    color: "var(--app-fg-muted)",
                                     lineHeight: 1.5,
                                     px: 2,
                                     fontFamily: "var(--font-sofia-sans)",

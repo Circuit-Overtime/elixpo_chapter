@@ -12,7 +12,7 @@ export function DocTitle({ children }: { children: React.ReactNode }) {
                 fontSize: "2.4rem",
                 letterSpacing: "-2%",
                 mb: 2,
-                color: "#141413", // Ink Black
+                color: "var(--app-fg)", // Ink Black
                 fontFamily: "var(--font-sofia-sans)",
             }}
         >
@@ -25,7 +25,7 @@ export function DocLead({ children }: { children: React.ReactNode }) {
     return (
         <Typography
             sx={{
-                color: "#262627", // Charcoal
+                color: "var(--app-fg)", // Charcoal
                 fontSize: "1.05rem",
                 lineHeight: 1.7,
                 mb: 3.5,
@@ -47,7 +47,7 @@ export function DocH2({ children }: { children: React.ReactNode }) {
                 fontSize: "1.5rem",
                 mt: 5,
                 mb: 2,
-                color: "#141413", // Ink Black
+                color: "var(--app-fg)", // Ink Black
                 letterSpacing: "-1%",
                 fontFamily: "var(--font-sofia-sans)",
             }}
@@ -61,7 +61,7 @@ export function DocP({ children }: { children: React.ReactNode }) {
     return (
         <Typography
             sx={{
-                color: "#262627", // Charcoal
+                color: "var(--app-fg)", // Charcoal
                 lineHeight: 1.7,
                 mb: 2,
                 fontSize: "1rem",
@@ -79,7 +79,7 @@ export function DocList({ items }: { items: React.ReactNode[] }) {
         <Box
             component="ul"
             sx={{
-                color: "#262627",
+                color: "var(--app-fg)",
                 pl: 3,
                 mb: 2.5,
                 fontFamily: "var(--font-sofia-sans)",
@@ -100,7 +100,7 @@ export function Code({ children }: { children: React.ReactNode }) {
             sx={{
                 fontFamily: "var(--font-geist-mono)",
                 fontSize: "0.85rem",
-                background: "rgba(20, 20, 19, 0.05)",
+                background: "var(--app-overlay)",
                 color: "#CF4500", // Signal Orange
                 px: 0.6,
                 py: 0.2,
@@ -117,9 +117,9 @@ export function BaseUrlChip() {
         <Chip
             label="Base URL: https://payouts.elixpo.com"
             sx={{
-                bgcolor: "rgba(20, 20, 19, 0.04)",
-                color: "#141413",
-                border: "1.5px solid rgba(20, 20, 19, 0.08)",
+                bgcolor: "var(--app-overlay)",
+                color: "var(--app-fg)",
+                border: "1.5px solid var(--app-overlay)",
                 fontFamily: "var(--font-geist-mono)",
                 fontSize: "0.82rem",
                 mb: 4,

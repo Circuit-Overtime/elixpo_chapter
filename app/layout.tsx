@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ThemeModeProvider, ThemeModeScript } from "@/components/theme-mode";
 import { Sofia_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -12,7 +13,7 @@ const OG_IMAGE = {
 };
 
 export const viewport: Viewport = {
-    themeColor: "#F3F0EE",
+    themeColor: "var(--app-bg)",
     colorScheme: "light",
 };
 
@@ -126,6 +127,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
     return (
         <html lang="en" suppressHydrationWarning>
+            <head>
+                <ThemeModeScript />
+            </head>
             <body
                 className={`${sofiaSans.variable} ${geistMono.variable} antialiased`}
             >
@@ -135,7 +139,7 @@ export default function RootLayout({
                         __html: JSON.stringify(JSON_LD),
                     }}
                 />
-                {children}
+                <ThemeModeProvider>{children}</ThemeModeProvider>
             </body>
         </html>
     );

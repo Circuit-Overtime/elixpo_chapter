@@ -75,7 +75,7 @@ export default function OverviewPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(245,245,244,0.55)",
+                            color: "var(--app-fg-muted)",
                             fontSize: "0.92rem",
                         }}
                     >
@@ -110,7 +110,7 @@ export default function OverviewPage() {
                     <Typography sx={{ fontWeight: 800, fontSize: "1.15rem" }}>
                         Get set up in 3 steps
                     </Typography>
-                    <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.88rem", mb: 2 }}>
+                    <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.88rem", mb: 2 }}>
                         New here? This is the whole flow — each step links to where you do it.
                     </Typography>
                     <Stack spacing={1.4}>
@@ -151,7 +151,7 @@ export default function OverviewPage() {
                                     </Box>
                                     <Box sx={{ minWidth: 0 }}>
                                         <Typography sx={{ fontWeight: 700, fontSize: "0.95rem" }}>{s.t}</Typography>
-                                        <Typography sx={{ color: "rgba(245,245,244,0.55)", fontSize: "0.82rem" }}>{s.d}</Typography>
+                                        <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.82rem" }}>{s.d}</Typography>
                                     </Box>
                                 </Stack>
                                 <Button
@@ -242,7 +242,7 @@ export default function OverviewPage() {
                                 <Typography
                                     sx={{
                                         fontSize: "0.78rem",
-                                        color: "rgba(245,245,244,0.5)",
+                                        color: "var(--app-fg-muted)",
                                     }}
                                 >
                                     {r.currency} · {r.count} txn
@@ -286,13 +286,13 @@ export default function OverviewPage() {
                 {!data?.recentTransactions?.length ? (
                     <Box sx={{ py: 5, textAlign: "center" }}>
                         <Typography
-                            sx={{ color: "rgba(245,245,244,0.55)", mb: 0.5 }}
+                            sx={{ color: "var(--app-fg-muted)", mb: 0.5 }}
                         >
                             No transactions yet
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.4)",
+                                color: "var(--app-fg-faint)",
                                 fontSize: "0.85rem",
                             }}
                         >
@@ -321,7 +321,7 @@ export default function OverviewPage() {
                                             fontSize: "0.72rem",
                                             textTransform: "uppercase",
                                             letterSpacing: "0.05em",
-                                            color: "rgba(245,245,244,0.4)",
+                                            color: "var(--app-fg-faint)",
                                             fontWeight: 600,
                                         },
                                     }}
@@ -362,7 +362,7 @@ export default function OverviewPage() {
                                                 sx={{
                                                     fontFamily:
                                                         "var(--font-geist-mono)",
-                                                    color: "rgba(245,245,244,0.7)",
+                                                    color: "var(--app-fg-muted)",
                                                 }}
                                             >
                                                 {t.uid || "—"}
@@ -383,7 +383,7 @@ export default function OverviewPage() {
                                             <Box
                                                 component="span"
                                                 sx={{
-                                                    color: "rgba(245,245,244,0.5)",
+                                                    color: "var(--app-fg-muted)",
                                                 }}
                                             >
                                                 {fmtDate(t.created_at)}

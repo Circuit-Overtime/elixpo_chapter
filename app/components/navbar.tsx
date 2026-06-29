@@ -137,13 +137,13 @@ const Navbar = () => {
                         justifyContent: "space-between",
                         width: "100%",
                         maxWidth: "1280px",
-                        background: "rgba(255, 255, 255, 0.9)",
+                        background: "var(--app-surface)",
                         backdropFilter: "blur(24px)",
                         borderRadius: "999px",
                         px: { xs: 2.5, md: 4 },
                         py: 1,
                         boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
-                        border: "1px solid rgba(20, 20, 19, 0.06)",
+                        border: "1px solid var(--app-overlay)",
                         opacity: 0, // Controlled by GSAP anim
                     }}
                 >
@@ -189,12 +189,12 @@ const Navbar = () => {
                                         textDecoration: "none",
                                         fontWeight: active ? 600 : 500,
                                         fontSize: "16px",
-                                        color: "#141413",
+                                        color: "var(--app-fg)",
                                         letterSpacing: "-0.48px",
                                         fontFamily: "var(--font-sofia-sans)",
                                         padding: "8px 12px",
                                         borderRadius: "999px",
-                                        background: active ? "rgba(20, 20, 19, 0.05)" : "transparent",
+                                        background: active ? "var(--app-overlay)" : "transparent",
                                         transition: "all 0.2s ease",
                                     }}
                                 >
@@ -213,8 +213,8 @@ const Navbar = () => {
                                     sx={{
                                         display: "flex",
                                         alignItems: "center",
-                                        background: "#FFFFFF",
-                                        border: "1.5px solid #141413",
+                                        background: "var(--app-surface)",
+                                        border: "1.5px solid var(--app-fg)",
                                         borderRadius: "999px",
                                         px: 2,
                                         py: 0.5,
@@ -223,6 +223,7 @@ const Navbar = () => {
                                     }}
                                 >
                                     <input
+                                        // biome-ignore lint/a11y/noAutofocus: focus is intentional — the field only renders after the user clicks search
                                         autoFocus
                                         placeholder="Search..."
                                         value={searchQuery}
@@ -234,7 +235,7 @@ const Navbar = () => {
                                             border: "none",
                                             outline: "none",
                                             background: "transparent",
-                                            color: "#141413",
+                                            color: "var(--app-fg)",
                                             fontSize: "14px",
                                             width: "100%",
                                             fontFamily: "var(--font-sofia-sans)",
@@ -246,7 +247,7 @@ const Navbar = () => {
                                             setSearchQuery("");
                                             setSearchExpanded(false);
                                         }}
-                                        sx={{ p: 0, color: "#141413" }}
+                                        sx={{ p: 0, color: "var(--app-fg)" }}
                                     >
                                         <CloseIcon sx={{ fontSize: 16 }} />
                                     </IconButton>
@@ -258,11 +259,11 @@ const Navbar = () => {
                                         width: 44,
                                         height: 44,
                                         borderRadius: "50%",
-                                        border: "1.5px solid rgba(20, 20, 19, 0.15)",
-                                        color: "#141413",
+                                        border: "1.5px solid var(--app-border)",
+                                        color: "var(--app-fg)",
                                         "&:hover": {
-                                            background: "rgba(20, 20, 19, 0.05)",
-                                            borderColor: "#141413",
+                                            background: "var(--app-overlay)",
+                                            borderColor: "var(--app-fg)",
                                         },
                                     }}
                                 >
@@ -285,16 +286,16 @@ const Navbar = () => {
                                 px: 2,
                                 gap: 1,
                                 borderRadius: "20px",
-                                border: "1.5px solid rgba(20, 20, 19, 0.15)",
-                                color: "#141413",
+                                border: "1.5px solid var(--app-border)",
+                                color: "var(--app-fg)",
                                 textDecoration: "none",
                                 fontSize: "14px",
                                 fontWeight: 500,
                                 fontFamily: "var(--font-sofia-sans)",
                                 transition: "all 0.2s ease",
                                 "&:hover": {
-                                    background: "rgba(20, 20, 19, 0.05)",
-                                    borderColor: "#141413",
+                                    background: "var(--app-overlay)",
+                                    borderColor: "var(--app-fg)",
                                 },
                             }}
                         >
@@ -305,7 +306,7 @@ const Navbar = () => {
                                         sx={{
                                             width: "1px",
                                             height: 14,
-                                            background: "rgba(20, 20, 19, 0.15)",
+                                            background: "var(--app-border)",
                                         }}
                                     />
                                     <Stack direction="row" spacing={0.3} alignItems="center">
@@ -328,17 +329,17 @@ const Navbar = () => {
                                     textTransform: "none",
                                     fontWeight: 500,
                                     fontSize: "14px",
-                                    color: "#141413",
+                                    color: "var(--app-fg)",
                                     borderRadius: "20px",
                                     pl: 0.6,
                                     pr: 2,
                                     py: 0.5,
                                     gap: 1,
-                                    border: "1.5px solid rgba(20, 20, 19, 0.15)",
+                                    border: "1.5px solid var(--app-border)",
                                     fontFamily: "var(--font-sofia-sans)",
                                     "&:hover": {
-                                        background: "rgba(20, 20, 19, 0.05)",
-                                        borderColor: "#141413",
+                                        background: "var(--app-overlay)",
+                                        borderColor: "var(--app-fg)",
                                     },
                                     "&:active": {
                                         transform: "scale(0.98)",
@@ -378,17 +379,17 @@ const Navbar = () => {
                                     textTransform: "none",
                                     fontWeight: 500,
                                     fontSize: "16px",
-                                    color: "#F3F0EE", // Canvas Cream text
-                                    background: "#141413", // Ink Black background
+                                    color: "var(--app-bg)", // Canvas Cream text
+                                    background: "var(--app-fg)", // Ink Black background
                                     borderRadius: "20px",
                                     px: 3,
                                     py: 0.8,
-                                    border: "1.5px solid #141413",
+                                    border: "1.5px solid var(--app-fg)",
                                     fontFamily: "var(--font-sofia-sans)",
                                     letterSpacing: "-0.32px",
                                     "&:hover": {
-                                        background: "#262627",
-                                        borderColor: "#262627",
+                                        background: "var(--app-fg)",
+                                        borderColor: "var(--app-fg)",
                                     },
                                     "&:active": {
                                         transform: "scale(0.97)",
@@ -407,13 +408,13 @@ const Navbar = () => {
                             onClick={handleDrawerToggle}
                             sx={{
                                 display: { xs: "inline-flex", lg: "none" },
-                                color: "#141413",
+                                color: "var(--app-fg)",
                                 width: 44,
                                 height: 44,
                                 borderRadius: "50%",
-                                border: "1.5px solid rgba(20, 20, 19, 0.15)",
+                                border: "1.5px solid var(--app-border)",
                                 "&:hover": {
-                                    background: "rgba(20, 20, 19, 0.05)",
+                                    background: "var(--app-overlay)",
                                 },
                             }}
                         >
@@ -434,8 +435,8 @@ const Navbar = () => {
                 PaperProps={{
                     sx: {
                         width: 280,
-                        background: "#141413", // Ink Black
-                        color: "#F3F0EE",
+                        background: "var(--app-fg)", // Ink Black
+                        color: "var(--app-bg)",
                         p: 3,
                         boxShadow: "-10px 0 40px rgba(0,0,0,0.3)",
                     },
@@ -468,7 +469,7 @@ const Navbar = () => {
                         <IconButton
                             onClick={handleDrawerToggle}
                             sx={{
-                                color: "#F3F0EE",
+                                color: "var(--app-bg)",
                                 "&:hover": {
                                     background: "rgba(255,255,255,0.08)",
                                 },
@@ -478,7 +479,7 @@ const Navbar = () => {
                         </IconButton>
                     </Stack>
 
-                    <Box sx={{ width: "100%", height: "1px", background: "rgba(243,240,238,0.1)" }} />
+                    <Box sx={{ width: "100%", height: "1px", background: "var(--app-overlay)" }} />
 
                     <Stack spacing={1.5} sx={{ flexGrow: 1 }}>
                         {LINKS.map((l) => (
@@ -493,14 +494,14 @@ const Navbar = () => {
                                     textTransform: "none",
                                     fontWeight: 500,
                                     fontSize: "18px",
-                                    color: "#F3F0EE",
+                                    color: "var(--app-bg)",
                                     py: 1,
                                     px: 2,
                                     borderRadius: "12px",
                                     fontFamily: "var(--font-sofia-sans)",
                                     transition: "all 0.2s ease",
                                     "&:hover": {
-                                        background: "rgba(243,240,238,0.08)",
+                                        background: "var(--app-overlay)",
                                     },
                                 }}
                             >
@@ -510,7 +511,7 @@ const Navbar = () => {
                     </Stack>
 
                     <Stack spacing={2} sx={{ mt: "auto" }}>
-                        <Box sx={{ width: "100%", height: "1px", background: "rgba(243,240,238,0.1)" }} />
+                        <Box sx={{ width: "100%", height: "1px", background: "var(--app-overlay)" }} />
                         <Box
                             component="a"
                             href={REPO_URL}
@@ -523,16 +524,16 @@ const Navbar = () => {
                                 justifyContent: "center",
                                 height: 44,
                                 borderRadius: "20px",
-                                border: "1.5px solid rgba(243,240,238,0.3)",
-                                color: "#F3F0EE",
+                                border: "1.5px solid var(--app-overlay)",
+                                color: "var(--app-bg)",
                                 textDecoration: "none",
                                 fontSize: "14px",
                                 fontWeight: 500,
                                 fontFamily: "var(--font-sofia-sans)",
                                 transition: "all 0.2s ease",
                                 "&:hover": {
-                                    background: "rgba(243,240,238,0.08)",
-                                    borderColor: "#F3F0EE",
+                                    background: "var(--app-overlay)",
+                                    borderColor: "var(--app-bg)",
                                 },
                             }}
                         >
@@ -544,7 +545,7 @@ const Navbar = () => {
                                         sx={{
                                             width: "1px",
                                             height: 12,
-                                            background: "rgba(243,240,238,0.3)",
+                                            background: "var(--app-overlay)",
                                             mx: 1,
                                         }}
                                     />

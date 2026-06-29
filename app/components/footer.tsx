@@ -43,7 +43,7 @@ const Footer = () => {
         <Box
             component="footer"
             sx={{
-                background: "#141413", // Ink Black
+                background: "var(--app-fg)", // Ink Black
                 color: "#FFFFFF",
                 pt: { xs: 8, md: 10 },
                 pb: { xs: 12, md: 18 }, // very tall bottom padding (148px+)
@@ -74,7 +74,7 @@ const Footer = () => {
                         fontSize: { xs: "28px", md: "40px" },
                         fontWeight: 500,
                         letterSpacing: "-2%",
-                        color: "#F3F0EE", // Canvas Cream
+                        color: "var(--app-bg)", // Canvas Cream
                         mb: { xs: 6, md: 8 },
                         maxWidth: "600px",
                         lineHeight: 1.2,
@@ -93,7 +93,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "rgba(243, 240, 238, 0.45)", // Muted cream
+                                color: "var(--app-overlay)", // Muted cream
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -118,7 +118,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "rgba(243, 240, 238, 0.45)",
+                                color: "var(--app-overlay)",
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -145,7 +145,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "rgba(243, 240, 238, 0.45)",
+                                color: "var(--app-overlay)",
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -168,7 +168,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "rgba(243, 240, 238, 0.45)",
+                                color: "var(--app-overlay)",
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -219,7 +219,7 @@ const Footer = () => {
                         <Typography
                             sx={{
                                 fontSize: "14px",
-                                color: "rgba(243, 240, 238, 0.6)",
+                                color: "var(--app-overlay)",
                                 fontFamily: "var(--font-sofia-sans)",
                                 fontWeight: 450,
                             }}
@@ -229,7 +229,7 @@ const Footer = () => {
                         <Typography
                             sx={{
                                 fontSize: "12px",
-                                color: "rgba(243, 240, 238, 0.4)",
+                                color: "var(--app-overlay)",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
                         >
@@ -247,7 +247,7 @@ const Footer = () => {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
-                                background: "#141413",
+                                background: "var(--app-fg)",
                                 color: "#FFFFFF",
                                 border: "1px solid rgba(255, 255, 255, 0.4)",
                                 borderRadius: "999px",
@@ -273,9 +273,9 @@ const Footer = () => {
                             onClose={() => handleLangClose()}
                             PaperProps={{
                                 sx: {
-                                    background: "#141413",
+                                    background: "var(--app-fg)",
                                     border: "1px solid rgba(255, 255, 255, 0.15)",
-                                    color: "#F3F0EE",
+                                    color: "var(--app-bg)",
                                 },
                             }}
                         >
@@ -333,7 +333,7 @@ const Footer = () => {
 
 // Styling definitions
 const linkStyle: React.CSSProperties = {
-    color: "#F3F0EE",
+    color: "var(--app-bg)",
     textDecoration: "none",
     fontSize: "14px",
     fontWeight: 450,
@@ -342,7 +342,7 @@ const linkStyle: React.CSSProperties = {
 };
 
 const textOnlyStyle: React.CSSProperties = {
-    color: "rgba(243, 240, 238, 0.6)",
+    color: "var(--app-overlay)",
     fontSize: "14px",
     fontWeight: 450,
     fontFamily: "var(--font-sofia-sans)",
@@ -356,11 +356,11 @@ const iconLinkStyle = {
 
 const iconStyle = {
     fontSize: 18,
-    color: "rgba(243, 240, 238, 0.45)",
+    color: "var(--app-overlay)",
 };
 
 const socialIconStyle = {
-    color: "rgba(243, 240, 238, 0.6)",
+    color: "var(--app-overlay)",
     border: "1px solid rgba(255, 255, 255, 0.15)",
     width: 38,
     height: 38,

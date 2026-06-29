@@ -43,10 +43,10 @@ export default function ConfirmDialog({
             maxWidth="xs"
             PaperProps={{
                 sx: {
-                    bgcolor: "#14171e",
+                    bgcolor: "var(--app-surface)",
                     border: "1px solid rgba(255,255,255,0.1)",
                     borderRadius: "16px",
-                    color: "#f5f5f4",
+                    color: "var(--app-fg)",
                     backgroundImage: "none",
                 },
             }}
@@ -80,7 +80,7 @@ export default function ConfirmDialog({
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.65)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.9rem",
                                 lineHeight: 1.6,
                             }}

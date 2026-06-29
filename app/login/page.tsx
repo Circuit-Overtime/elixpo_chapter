@@ -52,8 +52,8 @@ function LoginInner() {
                     display: "grid",
                     placeItems: "center",
                     p: 2,
-                    color: "#141413", // Ink Black loader text color
-                    bgcolor: "#F3F0EE",
+                    color: "var(--app-fg)", // Ink Black loader text color
+                    bgcolor: "var(--app-bg)",
                 }}
             >
                 <BackgroundAurora variant="auth" />
@@ -72,8 +72,8 @@ function LoginInner() {
                 display: "grid",
                 placeItems: "center",
                 p: 2,
-                color: "#141413", // Ink Black text
-                bgcolor: "#F3F0EE",
+                color: "var(--app-fg)", // Ink Black text
+                bgcolor: "var(--app-bg)",
             }}
         >
             <BackgroundAurora variant="auth" />
@@ -88,8 +88,8 @@ function LoginInner() {
                     p: { xs: 3.5, md: 4 },
                     borderRadius: "24px",
                     textAlign: "center",
-                    background: "#FCFBFA", // Lifted Cream background
-                    border: "1.5px solid rgba(20, 20, 19, 0.08)",
+                    background: "var(--app-bg-2)", // Lifted Cream background
+                    border: "1.5px solid var(--app-overlay)",
                     boxShadow: "rgba(0, 0, 0, 0.05) 0px 16px 48px 0px", // Soft premium shadow
                 }}
             >
@@ -112,7 +112,7 @@ function LoginInner() {
                         fontWeight: 500,
                         fontSize: "1.8rem",
                         letterSpacing: "-2%",
-                        color: "#141413", // Ink Black
+                        color: "var(--app-fg)", // Ink Black
                         fontFamily: "var(--font-sofia-sans)",
                     }}
                 >
@@ -120,7 +120,7 @@ function LoginInner() {
                 </Typography>
                 <Typography
                     sx={{
-                        color: "#696969", // Slate Gray
+                        color: "var(--app-fg-muted)", // Slate Gray
                         fontSize: "0.95rem",
                         mt: 0.8,
                         fontFamily: "var(--font-sofia-sans)",
@@ -158,16 +158,16 @@ function LoginInner() {
                         textTransform: "none",
                         fontWeight: 650,
                         fontSize: "15px",
-                        color: "#F3F0EE", // Canvas Cream text
+                        color: "var(--app-bg)", // Canvas Cream text
                         py: 1.4,
                         borderRadius: "20px", // Button radius 20px
-                        background: "#141413", // Ink Black
-                        border: "1.5px solid #141413",
+                        background: "var(--app-fg)", // Ink Black
+                        border: "1.5px solid var(--app-fg)",
                         fontFamily: "var(--font-sofia-sans)",
                         letterSpacing: "-0.2px",
                         "&:hover": {
-                            background: "#262627",
-                            borderColor: "#262627",
+                            background: "var(--app-fg)",
+                            borderColor: "var(--app-fg)",
                         },
                         "&:active": {
                             transform: "scale(0.98)",
@@ -184,8 +184,8 @@ function LoginInner() {
                         p: 2.5,
                         borderRadius: "16px",
                         textAlign: "left",
-                        background: "rgba(20, 20, 19, 0.03)", // Soft Bone tint
-                        border: "1px solid rgba(20, 20, 19, 0.06)",
+                        background: "var(--app-overlay)", // Soft Bone tint
+                        border: "1px solid var(--app-overlay)",
                     }}
                 >
                     <Stack
@@ -196,7 +196,7 @@ function LoginInner() {
                     >
                         <ShieldIcon sx={{ fontSize: 18, color: "#CF4500" }} /> {/* Signal Orange icon */}
                         <Typography
-                            sx={{ fontWeight: 700, fontSize: "0.92rem", color: "#141413", fontFamily: "var(--font-sofia-sans)" }}
+                            sx={{ fontWeight: 700, fontSize: "0.92rem", color: "var(--app-fg)", fontFamily: "var(--font-sofia-sans)" }}
                         >
                             New here? What is Elixpo Accounts?
                         </Typography>
@@ -204,7 +204,7 @@ function LoginInner() {
                     
                     <Typography
                         sx={{
-                            color: "#262627", // Charcoal
+                            color: "var(--app-fg)", // Charcoal
                             fontSize: "0.85rem",
                             lineHeight: 1.6,
                             mb: 2,
@@ -213,7 +213,7 @@ function LoginInner() {
                         }}
                     >
                         Elixpo Pay doesn't have its own password. It uses{" "}
-                        <strong style={{ color: "#141413" }}>
+                        <strong style={{ color: "var(--app-fg)" }}>
                             Elixpo Accounts
                         </strong>{" "}
                         — the single, secure sign-on shared across the whole
@@ -238,7 +238,7 @@ function LoginInner() {
                                 />
                                 <Typography
                                     sx={{
-                                        color: "#262627",
+                                        color: "var(--app-fg)",
                                         fontSize: "0.84rem",
                                         lineHeight: 1.5,
                                         fontFamily: "var(--font-sofia-sans)",
@@ -299,7 +299,7 @@ function LoginInner() {
 
                 <Typography
                     sx={{
-                        color: "#696969",
+                        color: "var(--app-fg-muted)",
                         fontSize: "0.78rem",
                         mt: 3,
                         fontFamily: "var(--font-sofia-sans)",
@@ -318,14 +318,14 @@ const outlinedPillBtn = {
     textTransform: "none",
     fontWeight: 500,
     fontSize: "14px",
-    color: "#141413", // Ink Black
+    color: "var(--app-fg)", // Ink Black
     py: 1,
     borderRadius: "20px", // Outlined Pill radius 20px
-    background: "#FFFFFF",
-    border: "1.5px solid rgba(20, 20, 19, 0.15)",
+    background: "var(--app-surface)",
+    border: "1.5px solid var(--app-border)",
     fontFamily: "var(--font-sofia-sans)",
     "&:hover": {
-        borderColor: "#141413",
+        borderColor: "var(--app-fg)",
         background: "#F4F4F4",
     },
 };
@@ -339,7 +339,7 @@ export default function LoginPage() {
                         minHeight: "100vh",
                         display: "grid",
                         placeItems: "center",
-                        bgcolor: "#F3F0EE",
+                        bgcolor: "var(--app-bg)",
                     }}
                 >
                     <CircularProgress sx={{ color: "#CF4500" }} />

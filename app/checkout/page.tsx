@@ -323,7 +323,7 @@ function CheckoutInner() {
             {phase === "loading" && (
                 <Centered>
                     <CircularProgress sx={{ color: "#CF4500" }} />
-                    <Typography sx={{ color: "#696969", mt: 2, fontFamily: "var(--font-sofia-sans)" }}>
+                    <Typography sx={{ color: "var(--app-fg-muted)", mt: 2, fontFamily: "var(--font-sofia-sans)" }}>
                         Preparing your secure checkout…
                     </Typography>
                 </Centered>
@@ -333,13 +333,13 @@ function CheckoutInner() {
                 <Centered>
                     <Typography sx={{ fontSize: "2rem" }}>⚠️</Typography>
                     <Typography
-                        sx={{ fontWeight: 500, fontSize: "1.3rem", mt: 1, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}
+                        sx={{ fontWeight: 500, fontSize: "1.3rem", mt: 1, color: "var(--app-fg)", fontFamily: "var(--font-sofia-sans)" }}
                     >
                         Checkout unavailable
                     </Typography>
                     <Typography
                         sx={{
-                            color: "#696969",
+                            color: "var(--app-fg-muted)",
                             textAlign: "center",
                             fontSize: "0.9rem",
                             lineHeight: 1.6,
@@ -379,13 +379,13 @@ function CheckoutInner() {
                         />
                     </Box>
                     <Typography
-                        sx={{ fontWeight: 500, fontSize: "1.5rem", mt: 1, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}
+                        sx={{ fontWeight: 500, fontSize: "1.5rem", mt: 1, color: "var(--app-fg)", fontFamily: "var(--font-sofia-sans)" }}
                     >
                         You're all set
                     </Typography>
                     <Typography
                         sx={{
-                            color: "#262627",
+                            color: "var(--app-fg)",
                             textAlign: "center",
                             fontSize: "0.98rem",
                             mt: 1,
@@ -409,7 +409,7 @@ function CheckoutInner() {
                     {hostOf(session?.return_url) && (
                         <Typography
                             sx={{
-                                color: "#696969",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.82rem",
                                 mt: 1,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -479,9 +479,9 @@ function SummaryPanel({
                 p: { xs: 3, md: 3.5 },
                 background:
                     "linear-gradient(160deg, rgba(206, 69, 0, 0.04) 0%, rgba(243, 115, 56, 0.02) 100%)",
-                borderRight: { md: "1.5px solid rgba(20, 20, 19, 0.06)" },
+                borderRight: { md: "1.5px solid var(--app-overlay)" },
                 borderBottom: {
-                    xs: "1.5px solid rgba(20, 20, 19, 0.06)",
+                    xs: "1.5px solid var(--app-overlay)",
                     md: "none",
                 },
                 display: "flex",
@@ -506,7 +506,7 @@ function SummaryPanel({
                             display: "block",
                         }}
                     />
-                    <Typography sx={{ fontWeight: 700, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}>
+                    <Typography sx={{ fontWeight: 700, color: "var(--app-fg)", fontFamily: "var(--font-sofia-sans)" }}>
                         Elixpo{" "}
                         <Box component="span" sx={{ color: "#CF4500", fontWeight: 500 }}>
                             Pay
@@ -542,13 +542,13 @@ function SummaryPanel({
                     />
                     <Typography
                         sx={{
-                            color: "#696969",
+                            color: "var(--app-fg-muted)",
                             fontSize: "0.85rem",
                             fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
                         Payment for{" "}
-                        <strong style={{ color: "#141413" }}>
+                        <strong style={{ color: "var(--app-fg)" }}>
                             {session.app_name}
                         </strong>
                     </Typography>
@@ -562,7 +562,7 @@ function SummaryPanel({
                 flexWrap="wrap"
                 sx={{ mb: 0.5 }}
             >
-                <Typography sx={{ fontWeight: 500, fontSize: "1.4rem", color: "#141413", fontFamily: "var(--font-sofia-sans)" }}>
+                <Typography sx={{ fontWeight: 500, fontSize: "1.4rem", color: "var(--app-fg)", fontFamily: "var(--font-sofia-sans)" }}>
                     {session.product_name}
                 </Typography>
                 <Chip
@@ -589,12 +589,12 @@ function SummaryPanel({
                 }}
             >
                 <Typography
-                    sx={{ fontWeight: 500, fontSize: "2.4rem", lineHeight: 1, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}
+                    sx={{ fontWeight: 500, fontSize: "2.4rem", lineHeight: 1, color: "var(--app-fg)", fontFamily: "var(--font-sofia-sans)" }}
                 >
                     {formatAmount(session.amount, session.currency)}
                 </Typography>
                 <Typography
-                    sx={{ color: "#696969", fontSize: "0.9rem", fontFamily: "var(--font-sofia-sans)" }}
+                    sx={{ color: "var(--app-fg-muted)", fontSize: "0.9rem", fontFamily: "var(--font-sofia-sans)" }}
                 >
                     {periodShort(session.interval, session.interval_count)}
                 </Typography>
@@ -602,7 +602,7 @@ function SummaryPanel({
 
             <Box
                 sx={{
-                    borderTop: "1px solid rgba(20, 20, 19, 0.08)",
+                    borderTop: "1px solid var(--app-overlay)",
                     pt: 2,
                     mt: "auto",
                 }}
@@ -670,12 +670,12 @@ function ActionPanel({
                 justifyContent: "center",
             }}
         >
-            <Typography sx={{ fontWeight: 500, fontSize: "1.3rem", mb: 0.5, color: "#141413", fontFamily: "var(--font-sofia-sans)" }}>
+            <Typography sx={{ fontWeight: 500, fontSize: "1.3rem", mb: 0.5, color: "var(--app-fg)", fontFamily: "var(--font-sofia-sans)" }}>
                 Complete your payment
             </Typography>
             <Typography
                 sx={{
-                    color: "#696969",
+                    color: "var(--app-fg-muted)",
                     fontSize: "0.9rem",
                     mb: 3,
                     fontFamily: "var(--font-sofia-sans)",
@@ -683,7 +683,7 @@ function ActionPanel({
                 }}
             >
                 You'll be charged{" "}
-                <strong style={{ color: "#141413" }}>
+                <strong style={{ color: "var(--app-fg)" }}>
                     {formatAmount(session.amount, session.currency)}
                 </strong>{" "}
                 {periodLabel(session.interval, session.interval_count)}, you can
@@ -718,7 +718,7 @@ function ActionPanel({
 
             <Typography
                 sx={{
-                    color: "#696969",
+                    color: "var(--app-fg-muted)",
                     fontSize: "0.76rem",
                     textAlign: "center",
                     mt: 2.5,
@@ -767,7 +767,7 @@ function Meta({
         >
             <Typography
                 sx={{
-                    color: "#696969",
+                    color: "var(--app-fg-muted)",
                     fontSize: "0.78rem",
                     flexShrink: 0,
                     fontFamily: "var(--font-sofia-sans)",
@@ -777,7 +777,7 @@ function Meta({
             </Typography>
             <Typography
                 sx={{
-                    color: "#141413",
+                    color: "var(--app-fg)",
                     fontSize: "0.78rem",
                     textAlign: "right",
                     fontFamily: mono ? "var(--font-geist-mono)" : "var(--font-sofia-sans)",
@@ -820,7 +820,7 @@ function Shell({ children, split }: { children: ReactNode; split: boolean }) {
                 display: "grid",
                 placeItems: "center",
                 p: 2,
-                color: "#141413",
+                color: "var(--app-fg)",
             }}
         >
             <BackgroundAurora variant="auth" />
@@ -832,8 +832,8 @@ function Shell({ children, split }: { children: ReactNode; split: boolean }) {
                     maxWidth: split ? { xs: 440, md: 760 } : 460,
                     borderRadius: "24px",
                     overflow: "hidden",
-                    background: "#FCFBFA", // Lifted Cream
-                    border: "1.5px solid rgba(20, 20, 19, 0.08)",
+                    background: "var(--app-bg-2)", // Lifted Cream
+                    border: "1.5px solid var(--app-overlay)",
                     boxShadow: "rgba(0, 0, 0, 0.05) 0px 24px 60px 0px",
                     display: "flex",
                     flexDirection: {
@@ -852,14 +852,14 @@ const primaryBtn = {
     textTransform: "none",
     fontWeight: 650,
     fontSize: "15px",
-    color: "#F3F0EE", // Canvas Cream
+    color: "var(--app-bg)", // Canvas Cream
     py: 1.4,
     borderRadius: "20px", // 20px radius
-    background: "#141413", // Ink Black
-    border: "1.5px solid #141413",
+    background: "var(--app-fg)", // Ink Black
+    border: "1.5px solid var(--app-fg)",
     "&:hover": {
-        background: "#262627",
-        borderColor: "#262627",
+        background: "var(--app-fg)",
+        borderColor: "var(--app-fg)",
     },
     "&.Mui-disabled": { opacity: 0.6, color: "#fff" },
 };
@@ -868,24 +868,24 @@ const cancelBtn = {
     textTransform: "none",
     fontWeight: 500,
     fontSize: "0.9rem",
-    color: "#696969",
+    color: "var(--app-fg-muted)",
     py: 0.8,
     borderRadius: "20px",
-    "&:hover": { color: "#141413", background: "rgba(20,20,19,0.03)" },
+    "&:hover": { color: "var(--app-fg)", background: "var(--app-overlay)" },
     "&.Mui-disabled": { opacity: 0.4 },
 };
 
 const ghostBtn = {
     textTransform: "none",
     fontWeight: 500,
-    color: "#141413",
+    color: "var(--app-fg)",
     px: 2.6,
     py: 1,
     borderRadius: "20px",
-    border: "1.5px solid rgba(20, 20, 19, 0.15)",
-    background: "#FFFFFF",
+    border: "1.5px solid var(--app-border)",
+    background: "var(--app-surface)",
     "&:hover": {
-        borderColor: "#141413",
+        borderColor: "var(--app-fg)",
         background: "#F4F4F4",
     },
 };
@@ -899,7 +899,7 @@ export default function CheckoutPage() {
                         minHeight: "100vh",
                         display: "grid",
                         placeItems: "center",
-                        bgcolor: "#0b0d12",
+                        bgcolor: "var(--app-bg)",
                     }}
                 >
                     <CircularProgress sx={{ color: "#9b7bf7" }} />

@@ -68,7 +68,7 @@ export default function TransactionsPage() {
                 </Typography>
                 <Typography
                     sx={{
-                        color: "rgba(245,245,244,0.55)",
+                        color: "var(--app-fg-muted)",
                         fontSize: "0.92rem",
                     }}
                 >
@@ -97,7 +97,7 @@ export default function TransactionsPage() {
                                     <SearchIcon
                                         sx={{
                                             fontSize: 18,
-                                            color: "rgba(245,245,244,0.4)",
+                                            color: "var(--app-fg-faint)",
                                         }}
                                     />
                                 </InputAdornment>
@@ -122,7 +122,7 @@ export default function TransactionsPage() {
                                     color:
                                         statusFilter === s
                                             ? "#fff"
-                                            : "rgba(245,245,244,0.6)",
+                                            : "var(--app-fg-muted)",
                                     background:
                                         statusFilter === s
                                             ? "#7c5cff"
@@ -155,13 +155,13 @@ export default function TransactionsPage() {
                     </Box>
                 ) : rows.length === 0 ? (
                     <Box sx={{ py: 6, textAlign: "center" }}>
-                        <Typography sx={{ color: "rgba(245,245,244,0.55)" }}>
+                        <Typography sx={{ color: "var(--app-fg-muted)" }}>
                             No transactions yet.
                         </Typography>
                     </Box>
                 ) : filtered.length === 0 ? (
                     <Box sx={{ py: 6, textAlign: "center" }}>
-                        <Typography sx={{ color: "rgba(245,245,244,0.55)" }}>
+                        <Typography sx={{ color: "var(--app-fg-muted)" }}>
                             No transactions match your filters.
                         </Typography>
                     </Box>
@@ -186,7 +186,7 @@ export default function TransactionsPage() {
                                             fontSize: "0.72rem",
                                             textTransform: "uppercase",
                                             letterSpacing: "0.05em",
-                                            color: "rgba(245,245,244,0.4)",
+                                            color: "var(--app-fg-faint)",
                                             fontWeight: 600,
                                         },
                                     }}
@@ -228,7 +228,7 @@ export default function TransactionsPage() {
                                                 sx={{
                                                     fontFamily:
                                                         "var(--font-geist-mono)",
-                                                    color: "rgba(245,245,244,0.7)",
+                                                    color: "var(--app-fg-muted)",
                                                 }}
                                             >
                                                 {t.uid || "—"}
@@ -251,7 +251,7 @@ export default function TransactionsPage() {
                                                 sx={{
                                                     fontFamily:
                                                         "var(--font-geist-mono)",
-                                                    color: "rgba(245,245,244,0.45)",
+                                                    color: "var(--app-fg-faint)",
                                                     fontSize: "0.78rem",
                                                 }}
                                             >
@@ -262,7 +262,7 @@ export default function TransactionsPage() {
                                             <Box
                                                 component="span"
                                                 sx={{
-                                                    color: "rgba(245,245,244,0.5)",
+                                                    color: "var(--app-fg-muted)",
                                                 }}
                                             >
                                                 {fmtDate(t.created_at)}

@@ -87,7 +87,7 @@ export default function AboutPage() {
                                 fontSize: "14px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "#696969",
+                                color: "var(--app-fg-muted)",
                                 textTransform: "uppercase",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
@@ -102,7 +102,7 @@ export default function AboutPage() {
                             fontSize: { xs: "32px", md: "48px" },
                             letterSpacing: "-2%",
                             lineHeight: 1.1,
-                            color: "#141413",
+                            color: "var(--app-fg)",
                             fontFamily: "var(--font-sofia-sans)",
                         }}
                     >
@@ -111,7 +111,7 @@ export default function AboutPage() {
                     <Typography
                         sx={{
                             maxWidth: 640,
-                            color: "#262627",
+                            color: "var(--app-fg)",
                             fontSize: "16px",
                             lineHeight: 1.6,
                             fontFamily: "var(--font-sofia-sans)",
@@ -140,8 +140,8 @@ export default function AboutPage() {
                             sx={{
                                 p: { xs: 3.5, md: 4 },
                                 borderRadius: "24px",
-                                background: "#FCFBFA", // Lifted Cream
-                                border: "1.5px solid rgba(20, 20, 19, 0.06)",
+                                background: "var(--app-bg-2)", // Lifted Cream
+                                border: "1.5px solid var(--app-overlay)",
                                 boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
                             }}
                         >
@@ -164,7 +164,7 @@ export default function AboutPage() {
                                         fontWeight: 700,
                                         fontSize: "11px",
                                         letterSpacing: "0.04em",
-                                        color: "#696969",
+                                        color: "var(--app-fg-muted)",
                                         textTransform: "uppercase",
                                         fontFamily: "var(--font-sofia-sans)",
                                     }}
@@ -178,7 +178,7 @@ export default function AboutPage() {
                                     fontWeight: 500,
                                     fontSize: "22px",
                                     letterSpacing: "-1%",
-                                    color: "#141413",
+                                    color: "var(--app-fg)",
                                     mb: 1.5,
                                     fontFamily: "var(--font-sofia-sans)",
                                 }}
@@ -187,7 +187,7 @@ export default function AboutPage() {
                             </Typography>
                             <Typography
                                 sx={{
-                                    color: "#262627", // Charcoal
+                                    color: "var(--app-fg)", // Charcoal
                                     fontSize: "15px",
                                     lineHeight: 1.6,
                                     fontFamily: "var(--font-sofia-sans)",
@@ -208,7 +208,7 @@ export default function AboutPage() {
                         fontWeight: 500,
                         fontSize: { xs: "28px", md: "36px" },
                         letterSpacing: "-2%",
-                        color: "#141413",
+                        color: "var(--app-fg)",
                         mb: { xs: 4, md: 6 },
                         fontFamily: "var(--font-sofia-sans)",
                     }}
@@ -226,8 +226,8 @@ export default function AboutPage() {
                             sx={{
                                 p: { xs: 3.5, md: 4 },
                                 borderRadius: "24px",
-                                background: "#FCFBFA", // Lifted Cream
-                                border: "1.5px solid rgba(20, 20, 19, 0.06)",
+                                background: "var(--app-bg-2)", // Lifted Cream
+                                border: "1.5px solid var(--app-overlay)",
                                 boxShadow: "rgba(0, 0, 0, 0.04) 0px 4px 24px 0px",
                             }}
                         >
@@ -241,7 +241,7 @@ export default function AboutPage() {
                                     sx={{
                                         fontSize: "18px",
                                         fontWeight: 700,
-                                        color: r.done ? "#CF4500" : "#696969",
+                                        color: r.done ? "#CF4500" : "var(--app-fg-muted)",
                                         fontFamily: "var(--font-sofia-sans)",
                                     }}
                                 >
@@ -251,7 +251,7 @@ export default function AboutPage() {
                                     sx={{
                                         fontWeight: 500,
                                         fontSize: "18px",
-                                        color: "#141413",
+                                        color: "var(--app-fg)",
                                         fontFamily: "var(--font-sofia-sans)",
                                     }}
                                 >
@@ -262,7 +262,7 @@ export default function AboutPage() {
                             <Box sx={{ flexGrow: 1 }}>
                                 <Typography
                                     sx={{
-                                        color: "#262627",
+                                        color: "var(--app-fg)",
                                         fontSize: "15px",
                                         lineHeight: 1.5,
                                         fontFamily: "var(--font-sofia-sans)",
@@ -304,8 +304,8 @@ export default function AboutPage() {
                     sx={{
                         p: { xs: 4, md: 6 },
                         borderRadius: "32px",
-                        background: "#141413", // Ink Black surface
-                        color: "#F3F0EE",
+                        background: "var(--app-fg)", // Ink Black surface
+                        color: "var(--app-bg)",
                         textAlign: "center",
                     }}
                 >
@@ -322,7 +322,7 @@ export default function AboutPage() {
                     </Typography>
                     <Typography
                         sx={{
-                            color: "rgba(243, 240, 238, 0.7)",
+                            color: "var(--app-overlay)",
                             fontSize: "16px",
                             maxWidth: "500px",
                             fontFamily: "var(--font-sofia-sans)",
@@ -338,9 +338,9 @@ export default function AboutPage() {
                             variant="contained"
                             disableElevation
                             sx={{
-                                background: "#F3F0EE", // Canvas Cream background
-                                color: "#141413", // Ink Black text
-                                border: "1.5px solid #F3F0EE",
+                                background: "var(--app-bg)", // Canvas Cream background
+                                color: "var(--app-fg)", // Ink Black text
+                                border: "1.5px solid var(--app-bg)",
                                 borderRadius: "20px",
                                 px: 4,
                                 py: 1.5,
@@ -349,7 +349,7 @@ export default function AboutPage() {
                                 textTransform: "none",
                                 fontFamily: "var(--font-sofia-sans)",
                                 "&:hover": {
-                                    background: "#FFFFFF",
+                                    background: "var(--app-surface)",
                                     borderColor: "#FFFFFF",
                                 },
                             }}
@@ -363,8 +363,8 @@ export default function AboutPage() {
                             variant="outlined"
                             disableElevation
                             sx={{
-                                color: "#F3F0EE",
-                                border: "1.5px solid rgba(243, 240, 238, 0.4)",
+                                color: "var(--app-bg)",
+                                border: "1.5px solid var(--app-overlay)",
                                 borderRadius: "20px",
                                 px: 4,
                                 py: 1.5,
@@ -373,7 +373,7 @@ export default function AboutPage() {
                                 textTransform: "none",
                                 fontFamily: "var(--font-sofia-sans)",
                                 "&:hover": {
-                                    borderColor: "#F3F0EE",
+                                    borderColor: "var(--app-bg)",
                                     background: "rgba(255, 255, 255, 0.05)",
                                 },
                             }}

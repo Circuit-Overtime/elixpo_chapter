@@ -176,18 +176,18 @@ export default function DocsLayout({
                                     py: 0.9,
                                     px: 2,
                                     bgcolor: active
-                                        ? (isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(20, 20, 19, 0.05)")
+                                        ? (isDark ? "rgba(255, 255, 255, 0.1)" : "var(--app-overlay)")
                                         : "transparent",
                                     color: active
                                         ? (isDark ? "#F37338" : "#CF4500")
-                                        : (isDark ? "rgba(255, 255, 255, 0.65)" : "#696969"),
+                                        : (isDark ? "rgba(255, 255, 255, 0.65)" : "var(--app-fg-muted)"),
                                     "&:hover": {
                                         bgcolor: active
-                                            ? (isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(20, 20, 19, 0.08)")
-                                            : (isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(20, 20, 19, 0.03)"),
+                                            ? (isDark ? "rgba(255, 255, 255, 0.15)" : "var(--app-overlay)")
+                                            : (isDark ? "rgba(255, 255, 255, 0.05)" : "var(--app-overlay)"),
                                         color: active
                                             ? (isDark ? "#F37338" : "#CF4500")
-                                            : (isDark ? "#FFFFFF" : "#141413"),
+                                            : (isDark ? "#FFFFFF" : "var(--app-fg)"),
                                     },
                                 }}
                             >
@@ -223,8 +223,8 @@ export default function DocsLayout({
                 sx={{
                     position: "relative",
                     minHeight: "100vh",
-                    bgcolor: "#F3F0EE", // Canvas Cream
-                    color: "#141413", // Ink Black
+                    bgcolor: "var(--app-bg)", // Canvas Cream
+                    color: "var(--app-fg)", // Ink Black
                 }}
             >
                 <BackgroundAurora variant="docs" />
@@ -242,10 +242,10 @@ export default function DocsLayout({
                         position="sticky"
                         elevation={0}
                         sx={{
-                            bgcolor: "rgba(255, 255, 255, 0.9)",
+                            bgcolor: "var(--app-surface)",
                             backdropFilter: "blur(24px)",
-                            borderBottom: "1px solid rgba(20, 20, 19, 0.06)",
-                            color: "#141413",
+                            borderBottom: "1px solid var(--app-overlay)",
+                            color: "var(--app-fg)",
                         }}
                     >
                         <Toolbar
@@ -287,14 +287,20 @@ export default function DocsLayout({
                                 <Typography
                                     sx={{
                                         fontWeight: 700,
-                                        fontSize: "12px",
-                                        letterSpacing: "0.06em",
-                                        color: "#696969", // Slate Gray
+                                        fontSize: "14px",
+                                        letterSpacing: "-0.01em",
+                                        color: "var(--app-fg)",
                                         ml: 1.5,
                                         fontFamily: "var(--font-sofia-sans)",
                                     }}
                                 >
-                                    • DOCS
+                                    Elixpo{" "}
+                                    <Box
+                                        component="span"
+                                        sx={{ color: "var(--app-fg-muted)", fontWeight: 600 }}
+                                    >
+                                        Docs
+                                    </Box>
                                 </Typography>
                             </Box>
 
@@ -320,19 +326,19 @@ export default function DocsLayout({
                                             )
                                         }
                                         sx={{
-                                            color: copied ? "#CF4500" : "#141413",
+                                            color: copied ? "#CF4500" : "var(--app-fg)",
                                             textTransform: "none",
                                             fontWeight: 500,
                                             fontSize: "13px",
                                             px: 2.5,
                                             py: 0.5,
                                             borderRadius: "20px", // Signature button radius
-                                            border: "1.5px solid #141413",
-                                            background: "#FFFFFF",
+                                            border: "1.5px solid var(--app-fg)",
+                                            background: "var(--app-surface)",
                                             fontFamily: "var(--font-sofia-sans)",
                                             "&:hover": {
                                                 bgcolor: "#F4F4F4",
-                                                borderColor: "#141413",
+                                                borderColor: "var(--app-fg)",
                                             },
                                         }}
                                     >
@@ -347,10 +353,10 @@ export default function DocsLayout({
                                         textTransform: "none",
                                         fontWeight: 500,
                                         fontSize: "14px",
-                                        color: "#141413",
+                                        color: "var(--app-fg)",
                                         fontFamily: "var(--font-sofia-sans)",
                                         "&:hover": {
-                                            bgcolor: "rgba(20, 20, 19, 0.05)",
+                                            bgcolor: "var(--app-overlay)",
                                         },
                                     }}
                                 >
@@ -378,7 +384,7 @@ export default function DocsLayout({
                                 width: 240,
                                 flexShrink: 0,
                                 display: { xs: "none", md: "block" },
-                                borderRight: "1px solid rgba(20, 20, 19, 0.08)",
+                                borderRight: "1px solid var(--app-overlay)",
                                 position: "sticky",
                                 top: 64,
                                 height: "calc(100vh - 64px)",
@@ -399,9 +405,9 @@ export default function DocsLayout({
                                 display: { xs: "block", md: "none" },
                                 "& .MuiDrawer-paper": {
                                     width: 260,
-                                    bgcolor: "#141413",
+                                    bgcolor: "var(--app-fg)",
                                     borderRight: "1px solid rgba(255, 255, 255, 0.1)",
-                                    color: "#F3F0EE",
+                                    color: "var(--app-bg)",
                                 },
                             }}
                         >
@@ -425,7 +431,7 @@ export default function DocsLayout({
                             <Divider
                                 sx={{
                                     my: 5,
-                                    borderColor: "rgba(20, 20, 19, 0.08)",
+                                    borderColor: "var(--app-overlay)",
                                 }}
                             />
 
@@ -472,8 +478,8 @@ export default function DocsLayout({
 }
 
 const navBtn = {
-    color: "#141413",
-    borderColor: "#141413",
+    color: "var(--app-fg)",
+    borderColor: "var(--app-fg)",
     textTransform: "none",
     fontWeight: 500,
     fontFamily: "var(--font-sofia-sans)",
@@ -481,6 +487,6 @@ const navBtn = {
     py: 1,
     border: "1.5px solid",
     borderRadius: "20px", // Signature button radius
-    background: "#FFFFFF",
-    "&:hover": { borderColor: "#141413", bgcolor: "#F4F4F4" },
+    background: "var(--app-surface)",
+    "&:hover": { borderColor: "var(--app-fg)", bgcolor: "#F4F4F4" },
 };

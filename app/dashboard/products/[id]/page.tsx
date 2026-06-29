@@ -345,7 +345,7 @@ export default function ProductDetailPage() {
     if (!data) {
         return (
             <GlassCard sx={{ textAlign: "center", py: 6 }}>
-                <Typography sx={{ color: "rgba(245,245,244,0.6)" }}>
+                <Typography sx={{ color: "var(--app-fg-muted)" }}>
                     Product not found.
                 </Typography>
                 <Button
@@ -386,7 +386,7 @@ export default function ProductDetailPage() {
                 }
                 sx={{
                     textTransform: "none",
-                    color: "rgba(245,245,244,0.6)",
+                    color: "var(--app-fg-muted)",
                     mb: 2,
                     px: 0,
                     "&:hover": { color: "#fff", background: "transparent" },
@@ -487,7 +487,7 @@ export default function ProductDetailPage() {
                                         borderRadius: "8px",
                                         border: "none",
                                         cursor: "pointer",
-                                        color: "rgba(245,245,244,0.5)",
+                                        color: "var(--app-fg-muted)",
                                         background: "transparent",
                                         "&:hover": {
                                             color: "#c4b5fd",
@@ -540,7 +540,7 @@ export default function ProductDetailPage() {
                                 border: "none",
                                 cursor: "pointer",
                                 background: "transparent",
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.76rem",
                                 textDecoration: "underline",
                                 textUnderlineOffset: "2px",
@@ -561,7 +561,7 @@ export default function ProductDetailPage() {
                     {product.description && (
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.55)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.9rem",
                                 mt: 1,
                                 maxWidth: 620,
@@ -732,7 +732,7 @@ export default function ProductDetailPage() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.82rem",
                             }}
                         >
@@ -776,7 +776,7 @@ export default function ProductDetailPage() {
                 <Typography
                     sx={{
                         fontSize: "0.7rem",
-                        color: "rgba(245,245,244,0.45)",
+                        color: "var(--app-fg-faint)",
                         textTransform: "uppercase",
                         letterSpacing: "0.06em",
                         mb: 0.5,
@@ -793,7 +793,7 @@ export default function ProductDetailPage() {
                         <Typography
                             sx={{
                                 fontSize: "0.7rem",
-                                color: "rgba(245,245,244,0.45)",
+                                color: "var(--app-fg-faint)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.06em",
                                 mb: 0.5,
@@ -808,7 +808,7 @@ export default function ProductDetailPage() {
                                     display: "flex",
                                     alignItems: "center",
                                     gap: 1,
-                                    color: "rgba(245,245,244,0.5)",
+                                    color: "var(--app-fg-muted)",
                                 }}
                             >
                                 <CheckCircleIcon
@@ -882,7 +882,7 @@ export default function ProductDetailPage() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.82rem",
                             }}
                         >
@@ -918,7 +918,7 @@ export default function ProductDetailPage() {
                 <Typography
                     sx={{
                         fontSize: "0.7rem",
-                        color: "rgba(245,245,244,0.45)",
+                        color: "var(--app-fg-faint)",
                         textTransform: "uppercase",
                         letterSpacing: "0.06em",
                         mb: 0.5,
@@ -972,7 +972,7 @@ export default function ProductDetailPage() {
                         <Typography
                             sx={{
                                 fontSize: "0.7rem",
-                                color: "rgba(245,245,244,0.45)",
+                                color: "var(--app-fg-faint)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.06em",
                                 mb: 1,
@@ -1027,7 +1027,7 @@ export default function ProductDetailPage() {
                                                         sx={{
                                                             height: 18,
                                                             fontSize: "0.6rem",
-                                                            color: "rgba(245,245,244,0.6)",
+                                                            color: "var(--app-fg-muted)",
                                                             bgcolor:
                                                                 "rgba(255,255,255,0.06)",
                                                         }}
@@ -1036,7 +1036,7 @@ export default function ProductDetailPage() {
                                             </Stack>
                                             <Typography
                                                 sx={{
-                                                    color: "rgba(245,245,244,0.5)",
+                                                    color: "var(--app-fg-muted)",
                                                     fontSize: "0.8rem",
                                                 }}
                                             >
@@ -1066,7 +1066,7 @@ export default function ProductDetailPage() {
                         <Typography
                             sx={{
                                 fontSize: "0.7rem",
-                                color: "rgba(245,245,244,0.45)",
+                                color: "var(--app-fg-faint)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.06em",
                                 mb: 0.5,
@@ -1081,7 +1081,7 @@ export default function ProductDetailPage() {
                                     display: "flex",
                                     alignItems: "center",
                                     gap: 1,
-                                    color: "rgba(245,245,244,0.5)",
+                                    color: "var(--app-fg-muted)",
                                 }}
                             >
                                 <CheckCircleIcon
@@ -1134,7 +1134,7 @@ export default function ProductDetailPage() {
                                 </Stack>
                                 <Typography
                                     sx={{
-                                        color: "rgba(245,245,244,0.5)",
+                                        color: "var(--app-fg-muted)",
                                         fontSize: "0.78rem",
                                         mt: 0.8,
                                     }}
@@ -1173,7 +1173,7 @@ export default function ProductDetailPage() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.5)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.82rem",
                             }}
                         >
@@ -1209,7 +1209,7 @@ export default function ProductDetailPage() {
                     >
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.6)",
+                                color: "var(--app-fg-muted)",
                                 fontSize: "0.9rem",
                                 mb: 0.5,
                             }}
@@ -1218,7 +1218,7 @@ export default function ProductDetailPage() {
                         </Typography>
                         <Typography
                             sx={{
-                                color: "rgba(245,245,244,0.45)",
+                                color: "var(--app-fg-faint)",
                                 fontSize: "0.82rem",
                             }}
                         >
@@ -1255,7 +1255,7 @@ export default function ProductDetailPage() {
                                             sx={{
                                                 fontWeight: 700,
                                                 fontSize: "1rem",
-                                                color: "#f5f5f4",
+                                                color: "var(--app-fg)",
                                             }}
                                         >
                                             {t.name}
@@ -1298,7 +1298,7 @@ export default function ProductDetailPage() {
                                 {t.prices.length === 0 ? (
                                     <Typography
                                         sx={{
-                                            color: "rgba(245,245,244,0.45)",
+                                            color: "var(--app-fg-faint)",
                                             fontSize: "0.82rem",
                                         }}
                                     >
@@ -1380,7 +1380,7 @@ export default function ProductDetailPage() {
                                                                     fontSize:
                                                                         "0.66rem",
                                                                     fontWeight: 700,
-                                                                    color: "rgba(245,245,244,0.6)",
+                                                                    color: "var(--app-fg-muted)",
                                                                     px: 0.7,
                                                                     py: 0.15,
                                                                     borderRadius:
@@ -1395,7 +1395,7 @@ export default function ProductDetailPage() {
                                                 </Stack>
                                                 <Typography
                                                     sx={{
-                                                        color: "rgba(245,245,244,0.5)",
+                                                        color: "var(--app-fg-muted)",
                                                         fontSize: "0.76rem",
                                                         mt: 0.2,
                                                     }}
@@ -1451,12 +1451,12 @@ export default function ProductDetailPage() {
             {/* App links — homepage & pricing page (editable) */}
             <GlassCard sx={{ mt: 2 }}>
                 <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>Links</Typography>
-                <Typography sx={{ color: "rgba(245,245,244,0.5)", fontSize: "0.82rem", mb: 2 }}>
+                <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.82rem", mb: 2 }}>
                     Your homepage and pricing page — shown to buyers and surfaced on this product.
                 </Typography>
                 <Stack spacing={1.6}>
                     <Box>
-                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        <Typography sx={{ fontSize: "0.7rem", color: "var(--app-fg-faint)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
                             Homepage URL
                         </Typography>
                         <TextField
@@ -1469,7 +1469,7 @@ export default function ProductDetailPage() {
                         />
                     </Box>
                     <Box>
-                        <Typography sx={{ fontSize: "0.7rem", color: "rgba(245,245,244,0.45)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                        <Typography sx={{ fontSize: "0.7rem", color: "var(--app-fg-faint)", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
                             Pricing page URL
                         </Typography>
                         <TextField
@@ -1501,7 +1501,7 @@ export default function ProductDetailPage() {
                         <Typography sx={{ color: "#f87171", fontSize: "0.82rem" }}>{linksErr}</Typography>
                     )}
                 </Stack>
-                <Typography sx={{ color: "rgba(245,245,244,0.4)", fontSize: "0.72rem", mt: 1 }}>
+                <Typography sx={{ color: "var(--app-fg-faint)", fontSize: "0.72rem", mt: 1 }}>
                     Must be a <code>https://</code> URL. Leave blank to clear.
                 </Typography>
             </GlassCard>
@@ -1512,7 +1512,7 @@ export default function ProductDetailPage() {
                     Danger zone
                 </Typography>
                 <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ mt: 1 }}>
-                    <Typography sx={{ color: "rgba(245,245,244,0.6)", fontSize: "0.85rem", maxWidth: 540 }}>
+                    <Typography sx={{ color: "var(--app-fg-muted)", fontSize: "0.85rem", maxWidth: 540 }}>
                         Permanently delete this product and everything in it — all tiers, prices,
                         webhook config, and API credentials. This <strong>cannot be undone</strong>.
                         Prefer <strong>Archive</strong> if you might bring it back.
