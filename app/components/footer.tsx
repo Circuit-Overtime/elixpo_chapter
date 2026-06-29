@@ -2,53 +2,27 @@
 
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
-import FacebookIcon from "@mui/icons-material/Facebook";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import MapPinIcon from "@mui/icons-material/Room";
-import TwitterIcon from "@mui/icons-material/Twitter";
-import YouTubeIcon from "@mui/icons-material/YouTube";
-import {
-    Box,
-    Container,
-    Grid,
-    IconButton,
-    Menu,
-    MenuItem,
-    Stack,
-    Typography,
-} from "@mui/material";
+import { Box, Container, Grid, Stack, Typography } from "@mui/material";
 import Link from "next/link";
-import { useState } from "react";
+import { useThemeMode } from "@/components/theme-mode";
 
 const EMAIL = "hello@elixpo.com";
 
 const Footer = () => {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const [language, setLanguage] = useState("India (English)");
-
-    const handleLangClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleLangClose = (lang?: string) => {
-        setAnchorEl(null);
-        if (lang && typeof lang === "string") {
-            setLanguage(lang);
-        }
-    };
+    const { mode } = useThemeMode();
 
     return (
         <Box
             component="footer"
             sx={{
-                background: "var(--app-ink)", // Ink Black
-                color: "var(--app-on-ink)",
+                background: "var(--app-bg-2)",
+                color: "var(--app-fg)",
                 pt: { xs: 8, md: 10 },
                 pb: { xs: 12, md: 18 }, // very tall bottom padding (148px+)
                 px: { xs: 2.5, md: 6 },
-                borderTop: "1px solid var(--app-on-ink-muted)",
+                borderTop: "1px solid var(--app-border)",
                 position: "relative",
                 zIndex: 1,
             }}
@@ -74,7 +48,7 @@ const Footer = () => {
                         fontSize: { xs: "28px", md: "40px" },
                         fontWeight: 500,
                         letterSpacing: "-2%",
-                        color: "var(--app-on-ink)", // Canvas Cream
+                        color: "var(--app-fg)", // Canvas Cream
                         mb: { xs: 6, md: 8 },
                         maxWidth: "600px",
                         lineHeight: 1.2,
@@ -93,7 +67,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "var(--app-on-ink-muted)", // Muted cream
+                                color: "var(--app-fg-muted)", // Muted cream
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -118,7 +92,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "var(--app-on-ink-muted)",
+                                color: "var(--app-fg-muted)",
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -145,7 +119,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "var(--app-on-ink-muted)",
+                                color: "var(--app-fg-muted)",
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -168,7 +142,7 @@ const Footer = () => {
                                 fontSize: "13px",
                                 fontWeight: 700,
                                 letterSpacing: "0.06em",
-                                color: "var(--app-on-ink-muted)",
+                                color: "var(--app-fg-muted)",
                                 textTransform: "uppercase",
                                 mb: 3,
                                 fontFamily: "var(--font-sofia-sans)",
@@ -202,7 +176,7 @@ const Footer = () => {
                     sx={{
                         width: "100%",
                         height: "1px",
-                        background: "var(--app-on-ink-muted)",
+                        background: "var(--app-border)",
                         mb: 4,
                     }}
                 />
@@ -219,7 +193,7 @@ const Footer = () => {
                         <Typography
                             sx={{
                                 fontSize: "14px",
-                                color: "var(--app-on-ink-muted)",
+                                color: "var(--app-fg-muted)",
                                 fontFamily: "var(--font-sofia-sans)",
                                 fontWeight: 450,
                             }}
@@ -229,101 +203,12 @@ const Footer = () => {
                         <Typography
                             sx={{
                                 fontSize: "12px",
-                                color: "var(--app-on-ink-muted)",
+                                color: "var(--app-fg-muted)",
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
                         >
                             Elixpo Pay is payments infrastructure built edge-native on Cloudflare and integrated with global payment processors.
                         </Typography>
-                    </Stack>
-
-                    {/* Country Selector Pill and Socials */}
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={3} alignItems="center" sx={{ width: { xs: "100%", md: "auto" } }}>
-                        {/* Pill Country/Language Selector */}
-                        <Box
-                            component="button"
-                            onClick={handleLangClick}
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                background: "var(--app-ink)",
-                                color: "var(--app-on-ink)",
-                                border: "1px solid var(--app-on-ink-muted)",
-                                borderRadius: "999px",
-                                px: 2.5,
-                                py: 1,
-                                fontSize: "14px",
-                                cursor: "pointer",
-                                fontFamily: "var(--font-sofia-sans)",
-                                transition: "all 0.2s ease",
-                                "&:hover": {
-                                    borderColor: "var(--app-on-ink)",
-                                    background: "rgba(255, 255, 255, 0.05)",
-                                },
-                            }}
-                        >
-                            <span>{language}</span>
-                            <KeyboardArrowDownIcon sx={{ fontSize: 16 }} />
-                        </Box>
-
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl)}
-                            onClose={() => handleLangClose()}
-                            PaperProps={{
-                                sx: {
-                                    background: "var(--app-ink)",
-                                    border: "1px solid var(--app-on-ink-muted)",
-                                    color: "var(--app-on-ink)",
-                                },
-                            }}
-                        >
-                            <MenuItem onClick={() => handleLangClose("India (English)")}>India (English)</MenuItem>
-                            <MenuItem onClick={() => handleLangClose("United States (English)")}>United States (English)</MenuItem>
-                            <MenuItem onClick={() => handleLangClose("Europe (English)")}>Europe (English)</MenuItem>
-                            <MenuItem onClick={() => handleLangClose("Global (English)")}>Global (English)</MenuItem>
-                        </Menu>
-
-                        {/* Social Icons */}
-                        <Stack direction="row" spacing={1.5}>
-                            <IconButton
-                                component="a"
-                                href="https://linkedin.com"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                sx={socialIconStyle}
-                            >
-                                <LinkedInIcon sx={{ fontSize: 20 }} />
-                            </IconButton>
-                            <IconButton
-                                component="a"
-                                href="https://facebook.com"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                sx={socialIconStyle}
-                            >
-                                <FacebookIcon sx={{ fontSize: 20 }} />
-                            </IconButton>
-                            <IconButton
-                                component="a"
-                                href="https://twitter.com"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                sx={socialIconStyle}
-                            >
-                                <TwitterIcon sx={{ fontSize: 20 }} />
-                            </IconButton>
-                            <IconButton
-                                component="a"
-                                href="https://youtube.com"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                sx={socialIconStyle}
-                            >
-                                <YouTubeIcon sx={{ fontSize: 20 }} />
-                            </IconButton>
-                        </Stack>
                     </Stack>
                 </Stack>
             </Container>
@@ -333,7 +218,7 @@ const Footer = () => {
 
 // Styling definitions
 const linkStyle: React.CSSProperties = {
-    color: "var(--app-on-ink)",
+    color: "var(--app-fg)",
     textDecoration: "none",
     fontSize: "14px",
     fontWeight: 450,
@@ -342,7 +227,7 @@ const linkStyle: React.CSSProperties = {
 };
 
 const textOnlyStyle: React.CSSProperties = {
-    color: "var(--app-on-ink-muted)",
+    color: "var(--app-fg-muted)",
     fontSize: "14px",
     fontWeight: 450,
     fontFamily: "var(--font-sofia-sans)",
@@ -356,19 +241,7 @@ const iconLinkStyle = {
 
 const iconStyle = {
     fontSize: 18,
-    color: "var(--app-on-ink-muted)",
-};
-
-const socialIconStyle = {
-    color: "var(--app-on-ink-muted)",
-    border: "1px solid var(--app-on-ink-muted)",
-    width: 38,
-    height: 38,
-    "&:hover": {
-        color: "var(--app-on-ink)",
-        borderColor: "var(--app-on-ink)",
-        background: "rgba(255,255,255,0.08)",
-    },
+    color: "var(--app-fg-muted)",
 };
 
 export default Footer;
