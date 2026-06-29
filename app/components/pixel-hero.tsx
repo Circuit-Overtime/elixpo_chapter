@@ -114,7 +114,7 @@ export default function PixelHero() {
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
                         >
-                            Centralized Money Infrastructure
+                            Payments for your SaaS
                         </Typography>
                     </Stack>
 
@@ -291,7 +291,7 @@ export default function PixelHero() {
                                 lineHeight: 1.15,
                             }}
                         >
-                            A PCI-compliant payment flow your users will trust.
+                            A secure, trusted checkout — with PCI compliance handled for you.
                         </Typography>
 
                         <Typography
@@ -304,17 +304,17 @@ export default function PixelHero() {
                                 fontWeight: 450,
                             }}
                         >
-                            Elixpo Pay secures checkout on Cloudflare's global edge network. Your code handles business logic, while card details bypass your servers entirely. Verify transactions using cryptographically signed entitlement grants.
+                            Your customers pay on our secure hosted checkout — their card details never touch your servers. The moment a payment succeeds, your app gets an instant, verified notification, so you can grant access right away.
                         </Typography>
 
                         <Stack direction="row" spacing={5}>
                             <Box>
                                 <Typography sx={{ fontSize: "30px", fontWeight: 700, color: "#F37338", fontFamily: "var(--font-sofia-sans)" }}>&lt; 50ms</Typography>
-                                <Typography sx={{ fontSize: "12px", color: "var(--app-on-ink-muted)", fontFamily: "var(--font-sofia-sans)" }}>Edge response time</Typography>
+                                <Typography sx={{ fontSize: "12px", color: "var(--app-on-ink-muted)", fontFamily: "var(--font-sofia-sans)" }}>Checkout response time</Typography>
                             </Box>
                             <Box>
                                 <Typography sx={{ fontSize: "30px", fontWeight: 700, color: "#F37338", fontFamily: "var(--font-sofia-sans)" }}>100%</Typography>
-                                <Typography sx={{ fontSize: "12px", color: "var(--app-on-ink-muted)", fontFamily: "var(--font-sofia-sans)" }}>Replay-safe ledger</Typography>
+                                <Typography sx={{ fontSize: "12px", color: "var(--app-on-ink-muted)", fontFamily: "var(--font-sofia-sans)" }}>Payments accounted for</Typography>
                             </Box>
                         </Stack>
                     </Box>

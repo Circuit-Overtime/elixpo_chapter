@@ -13,7 +13,7 @@ const BLOCKS: { title: string; body: string; category: string }[] = [
     {
         title: "Every payment tracked",
         body: "Every charge, split, and payout is recorded in one place — accurate, and safe to retry. So your numbers always reconcile.",
-        category: "LEDGER",
+        category: "TRACKING",
     },
     {
         title: "Instant access on payment",

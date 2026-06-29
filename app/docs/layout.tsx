@@ -124,7 +124,7 @@ export default function DocsLayout({
             "",
             "## Elixpo Pay — API at a glance",
             "",
-            "Elixpo Pay is a multi-tenant payments & payouts SaaS. Apps integrate a hosted checkout and receive entitlement grants. Built on Cloudflare (edge), Razorpay (INR) for payments, Elixpo Accounts for SSO.",
+            "Elixpo Pay is a multi-tenant payments & payouts SaaS. Apps integrate a hosted checkout and receive entitlement grants. Uses Razorpay (INR) for payments today (Stripe for international coming soon) and Elixpo Accounts for SSO.",
             "",
             "- Base URL: `https://payouts.elixpo.com`",
             "- Auth (server→server, `/v1/*`): `Authorization: Bearer <secret key>` — the secret key.",

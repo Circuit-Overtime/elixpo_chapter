@@ -212,7 +212,7 @@ const Footer = () => {
                                 fontFamily: "var(--font-sofia-sans)",
                             }}
                         >
-                            Elixpo Pay is payments infrastructure built edge-native on Cloudflare and integrated with global payment processors.
+                            Elixpo Pay lets your SaaS take payments and pay out creators through one simple integration.
                         </Typography>
                     </Stack>
                 </Stack>

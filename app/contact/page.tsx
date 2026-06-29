@@ -60,7 +60,7 @@ export default function ContactPage() {
                             fontWeight: 450,
                         }}
                     >
-                        Elixpo Pay is managed by Elixpo. Have questions about a charge, pricing tiers, or developer API integrations? We're here to assist.
+                        Elixpo Pay is managed by Elixpo. Questions about a charge, pricing, or adding payments to your app? We're here to help.
                     </Typography>
                 </Stack>
 

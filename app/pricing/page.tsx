@@ -26,10 +26,10 @@ const TIERS: Tier[] = [
         blurb: "Launch your first paid product.",
         features: [
             "Hosted checkout page",
-            "Entitlements + signed webhooks",
-            "1 application connection",
+            "Instant access via signed webhooks",
+            "1 app connection",
             "Razorpay (INR) payments",
-            "Unified ledger & dashboard",
+            "Dashboard & reporting",
             "Community Slack support",
         ],
         cta: "Start Free",
@@ -134,7 +134,7 @@ export default function PricingPage() {
                             fontWeight: 450,
                         }}
                     >
-                        A transparent platform fee on successful charges, separate from gateway network processing fees. No hidden setup costs.
+                        A simple platform fee on each successful charge, on top of your payment provider's own fee. No setup costs, no monthly minimums.
                     </Typography>
                 </Stack>
 

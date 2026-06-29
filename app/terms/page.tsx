@@ -14,10 +14,10 @@ export default function TermsPage() {
 
             <h2>The service</h2>
             <p>
-                Elixpo Pay is a payments and payouts platform: hosted checkout,
-                a unified ledger, entitlement grants, and creator payouts. We
-                act as a technical facilitator between you, your customers, and
-                the underlying payment providers.
+                Elixpo Pay is a payments and payouts platform: a hosted
+                checkout, instant access notifications (webhooks), and creator
+                payouts. We act as a technical facilitator between you, your
+                customers, and the underlying payment providers.
             </p>
 
             <h2>Merchant responsibilities</h2>
