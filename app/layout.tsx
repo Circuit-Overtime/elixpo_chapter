@@ -33,7 +33,7 @@ export const metadata: Metadata = {
         template: "%s | Elixpo Pay",
     },
     description:
-        "Elixpo Pay is the centralized payments + payouts layer for Elixpo. Hosted checkout, a unified ledger, entitlements, and creator payouts on Cloudflare's edge.",
+        "Add payments and payouts to your platform with one integration. Elixpo Pay charges your customers and pays your creators straight to their banks — Razorpay today, Stripe coming soon for international.",
     keywords: [
         "Elixpo",
         "Elixpo Pay",
@@ -61,14 +61,14 @@ export const metadata: Metadata = {
         siteName: "Elixpo Pay",
         title: "Elixpo Pay — Payments & Payouts",
         description:
-            "Hosted checkout, unified ledger, entitlements, and creator payouts for the Elixpo ecosystem.",
+            "Add payments and payouts to your platform with one integration — we charge your customers and pay your creators. Razorpay today, Stripe coming soon.",
         images: [OG_IMAGE],
     },
     twitter: {
         card: "summary_large_image",
         title: "Elixpo Pay — Payments & Payouts",
         description:
-            "The complete money stack for modern software — checkout, subscriptions, entitlements, and payouts.",
+            "Payments and payouts for your platform, in one integration. We charge your customers and pay your creators — Razorpay today, Stripe coming soon.",
         images: [OG_IMAGE.url],
     },
     icons: {
@@ -115,7 +115,7 @@ const JSON_LD = {
             operatingSystem: "Web",
             url: SITE_URL,
             description:
-                "Payments and payouts for the Elixpo ecosystem — hosted checkout, a unified ledger, entitlements, and creator payouts on Cloudflare's edge.",
+                "Add payments and payouts to your platform with one integration. We charge your customers and pay your creators — Razorpay today, Stripe coming soon for international.",
             offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             publisher: { "@id": `${SITE_URL}/#organization` },
         },

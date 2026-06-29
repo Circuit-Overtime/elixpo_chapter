@@ -238,7 +238,7 @@ export default function Home() {
                                 fontWeight: 450,
                             }}
                         >
-                            Consolidate payment collection and payout workflows behind a unified ledger and developer API, eliminating payment integration overhead.
+                            Collect payments and pay out your creators through one integration — so your platform never has to build or maintain payments itself.
                         </Typography>
                     </Stack>
 
@@ -417,7 +417,7 @@ export default function Home() {
                                     fontWeight: 450,
                                 }}
                             >
-                                Branded, responsive, and hosted securely on Cloudflare. Buyers view transparent pricing options and authorize charges in two clicks, while your systems receive instant cryptographically verified ledger entries.
+                                A clean, branded checkout that works on any device. Customers see clear pricing and pay in two clicks — and the moment they do, your app gets an instant, verified notification.
                             </Typography>
                         </Box>
                         <MockCheckout />
