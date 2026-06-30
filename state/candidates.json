@@ -2,25 +2,20 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "WordPress/wordpress-playground",
+    "full_name": "NVIDIA-NeMo/RL",
     "good_first_issues": 1,
     "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 568,
-    "pushed_at": "2026-06-29T10:57:42Z",
+    "language": "Python",
+    "open_issues": 745,
+    "pushed_at": "2026-06-30T09:37:10Z",
     "reasons": [
-      "1959\u2605 javascript active",
+      "1765\u2605 python active",
       "has good-first issues"
     ],
     "score": 32,
-    "stars": 1959,
-    "topics": [
-      "emscripten",
-      "wasm",
-      "webassembly",
-      "wordpress"
-    ],
-    "url": "https://github.com/WordPress/wordpress-playground"
+    "stars": 1765,
+    "topics": [],
+    "url": "https://github.com/NVIDIA-NeMo/RL"
   },
   {
     "archived": false,
@@ -29,14 +24,14 @@
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 176,
-    "pushed_at": "2026-06-29T11:01:55Z",
+    "open_issues": 174,
+    "pushed_at": "2026-06-30T09:32:50Z",
     "reasons": [
-      "14063\u2605 python active",
+      "14068\u2605 python active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 14063,
+    "stars": 14068,
     "topics": [
       "aws",
       "azure",
@@ -64,64 +59,92 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "modelcontextprotocol/python-sdk",
+    "full_name": "airbytehq/airbyte",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 517,
-    "pushed_at": "2026-06-29T11:01:55Z",
+    "open_issues": 2433,
+    "pushed_at": "2026-06-30T09:38:02Z",
     "reasons": [
-      "23478\u2605 python active",
+      "21552\u2605 python active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 23478,
-    "topics": [],
-    "url": "https://github.com/modelcontextprotocol/python-sdk"
+    "stars": 21552,
+    "topics": [
+      "bigquery",
+      "change-data-capture",
+      "data",
+      "data-analysis",
+      "data-collection",
+      "data-engineering",
+      "data-integration",
+      "data-pipeline",
+      "elt",
+      "etl",
+      "java",
+      "mssql",
+      "mysql",
+      "pipeline",
+      "postgresql",
+      "python",
+      "redshift",
+      "s3",
+      "self-hosted",
+      "snowflake"
+    ],
+    "url": "https://github.com/airbytehq/airbyte"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "open-telemetry/opentelemetry-operator",
+    "full_name": "camunda/camunda-modeler",
     "good_first_issues": 1,
     "has_contributing": false,
-    "language": "Go",
-    "open_issues": 339,
-    "pushed_at": "2026-06-29T10:53:30Z",
+    "language": "JavaScript",
+    "open_issues": 654,
+    "pushed_at": "2026-06-30T07:51:32Z",
     "reasons": [
-      "1721\u2605 go active",
+      "1687\u2605 javascript active",
       "has good-first issues"
     ],
     "score": 32,
-    "stars": 1721,
+    "stars": 1687,
     "topics": [
+      "bpmn",
+      "camunda",
+      "desktop-application",
+      "diagram-editor",
+      "dmn",
       "hacktoberfest",
-      "kubernetes-operator",
-      "opentelemetry",
-      "opentelemetry-collector"
+      "modeling-tool",
+      "workflow"
     ],
-    "url": "https://github.com/open-telemetry/opentelemetry-operator"
+    "url": "https://github.com/camunda/camunda-modeler"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "element-hq/element-web",
+    "full_name": "scipy/scipy",
     "good_first_issues": 1,
     "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 3735,
-    "pushed_at": "2026-06-29T11:01:36Z",
+    "language": "Python",
+    "open_issues": 1826,
+    "pushed_at": "2026-06-30T09:30:24Z",
     "reasons": [
-      "13245\u2605 typescript active",
+      "14790\u2605 python active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 13245,
+    "stars": 14790,
     "topics": [
-      "hacktoberfest",
-      "matrix"
+      "algorithms",
+      "closember",
+      "python",
+      "scientific-computing",
+      "scipy"
     ],
-    "url": "https://github.com/element-hq/element-web"
+    "url": "https://github.com/scipy/scipy"
   },
   {
     "archived": false,
@@ -130,14 +153,14 @@
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 3933,
-    "pushed_at": "2026-06-29T11:01:26Z",
+    "open_issues": 3939,
+    "pushed_at": "2026-06-30T09:36:37Z",
     "reasons": [
-      "35223\u2605 python active",
+      "35236\u2605 python active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 35223,
+    "stars": 35236,
     "topics": [
       "ab-testing",
       "ai-analytics",
@@ -160,361 +183,207 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "ROCm/TheRock",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 984,
-    "pushed_at": "2026-06-29T10:56:32Z",
-    "reasons": [
-      "1114\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 31,
-    "stars": 1114,
-    "topics": [],
-    "url": "https://github.com/ROCm/TheRock"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "Automattic/wp-calypso",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 3342,
-    "pushed_at": "2026-06-29T11:01:17Z",
-    "reasons": [
-      "12635\u2605 typescript active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 12635,
-    "topics": [
-      "es2015",
-      "es6",
-      "es6-javascript",
-      "javascript",
-      "nodejs",
-      "react",
-      "redux",
-      "wordpress"
-    ],
-    "url": "https://github.com/Automattic/wp-calypso"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "goauthentik/authentik",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 1225,
-    "pushed_at": "2026-06-29T10:59:54Z",
-    "reasons": [
-      "22162\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 22162,
-    "topics": [
-      "authentication",
-      "authentik",
-      "authorization",
-      "kubernetes",
-      "oauth2",
-      "oauth2-client",
-      "oauth2-server",
-      "oidc",
-      "oidc-client",
-      "oidc-provider",
-      "proxy",
-      "reverse-proxy",
-      "saml",
-      "saml-idp",
-      "saml-sp",
-      "security",
-      "sso"
-    ],
-    "url": "https://github.com/goauthentik/authentik"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "saleor/saleor-dashboard",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 138,
-    "pushed_at": "2026-06-29T11:00:59Z",
-    "reasons": [
-      "1010\u2605 typescript active",
-      "has good-first issues"
-    ],
-    "score": 31,
-    "stars": 1010,
-    "topics": [
-      "dashboard",
-      "ecommerce",
-      "ecommerce-platform",
-      "graphql",
-      "react",
-      "saleor",
-      "single-page-app",
-      "typescript"
-    ],
-    "url": "https://github.com/saleor/saleor-dashboard"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "aws/aws-cdk",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 2770,
-    "pushed_at": "2026-06-29T10:49:27Z",
-    "reasons": [
-      "12826\u2605 typescript active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 12826,
-    "topics": [
-      "aws",
-      "cloud-infrastructure",
-      "hacktoberfest",
-      "infrastructure-as-code",
-      "typescript"
-    ],
-    "url": "https://github.com/aws/aws-cdk"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "sgl-project/sglang",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 3789,
-    "pushed_at": "2026-06-29T10:56:14Z",
-    "reasons": [
-      "29784\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 29784,
-    "topics": [
-      "attention",
-      "blackwell",
-      "cuda",
-      "deepseek",
-      "diffusion",
-      "glm",
-      "gpt-oss",
-      "inference",
-      "llama",
-      "llm",
-      "minimax",
-      "moe",
-      "qwen",
-      "qwen-image",
-      "reinforcement-learning",
-      "transformer",
-      "vlm",
-      "wan"
-    ],
-    "url": "https://github.com/sgl-project/sglang"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "PostHog/posthog.com",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 1249,
-    "pushed_at": "2026-06-29T10:54:16Z",
-    "reasons": [
-      "1057\u2605 typescript active",
-      "has good-first issues"
-    ],
-    "score": 31,
-    "stars": 1057,
-    "topics": [
-      "design",
-      "docs",
-      "gatsby",
-      "handbook",
-      "posthog",
-      "tailwindcss"
-    ],
-    "url": "https://github.com/PostHog/posthog.com"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "cloudflare/cloudflared",
+    "full_name": "matrixorigin/matrixone",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Go",
-    "open_issues": 515,
-    "pushed_at": "2026-06-29T10:57:33Z",
+    "open_issues": 713,
+    "pushed_at": "2026-06-30T09:35:41Z",
     "reasons": [
-      "14651\u2605 go active",
+      "1852\u2605 go active",
       "has good-first issues"
     ],
-    "score": 45,
-    "stars": 14651,
+    "score": 32,
+    "stars": 1852,
     "topics": [
-      "cloudflare",
-      "cloudflare-tunnel",
-      "reverse-proxy",
-      "zero-trust-network-access"
-    ],
-    "url": "https://github.com/cloudflare/cloudflared"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "mlflow/mlflow",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 2013,
-    "pushed_at": "2026-06-29T10:49:47Z",
-    "reasons": [
-      "26769\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 26769,
-    "topics": [
-      "agentops",
       "agents",
-      "ai",
-      "ai-governance",
-      "apache-spark",
-      "evaluation",
-      "langchain",
-      "llm-evaluation",
-      "llmops",
-      "machine-learning",
-      "ml",
-      "mlflow",
-      "mlops",
-      "model-management",
-      "observability",
-      "open-source",
-      "openai",
-      "prompt-engineering"
+      "ai-native",
+      "cloud-native",
+      "database",
+      "distributed-database",
+      "distributed-systems",
+      "fulltext-support",
+      "git-for-data",
+      "go",
+      "htap",
+      "hyperconverged",
+      "memory",
+      "mysql-compatible",
+      "olap",
+      "one-size-fits-all",
+      "sql",
+      "vector-database"
     ],
-    "url": "https://github.com/mlflow/mlflow"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "LavaMoat/LavaMoat",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 219,
-    "pushed_at": "2026-06-29T09:38:55Z",
-    "reasons": [
-      "1204\u2605 javascript active",
-      "has good-first issues"
-    ],
-    "score": 31,
-    "stars": 1204,
-    "topics": [],
-    "url": "https://github.com/LavaMoat/LavaMoat"
+    "url": "https://github.com/matrixorigin/matrixone"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "bytebase/bytebase",
+    "full_name": "MetaMask/metamask-extension",
     "good_first_issues": 1,
     "has_contributing": false,
-    "language": "Go",
-    "open_issues": 150,
-    "pushed_at": "2026-06-29T10:43:21Z",
+    "language": "TypeScript",
+    "open_issues": 2785,
+    "pushed_at": "2026-06-30T09:37:37Z",
     "reasons": [
-      "14208\u2605 go active",
+      "13157\u2605 typescript active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 14208,
+    "stars": 13157,
     "topics": [
-      "cicd",
-      "data-masking",
-      "data-security",
-      "database-access",
-      "dbeaver",
-      "devsecops",
-      "flyway",
-      "gitops",
-      "liquibase",
-      "mongodb",
-      "mysql",
-      "oracle",
-      "pam",
-      "postgresql",
-      "schema-migrations",
-      "security",
-      "snowflake",
-      "sql-client",
-      "sqlserver",
-      "tidb"
+      "brave",
+      "chrome",
+      "dapp",
+      "dapp-developers",
+      "edge",
+      "ethereum",
+      "extension",
+      "firefox",
+      "opera"
     ],
-    "url": "https://github.com/bytebase/bytebase"
+    "url": "https://github.com/MetaMask/metamask-extension"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "aio-libs/aiohttp",
+    "full_name": "HKUDS/nanobot",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 225,
-    "pushed_at": "2026-06-29T10:53:33Z",
+    "open_issues": 864,
+    "pushed_at": "2026-06-30T09:33:37Z",
     "reasons": [
-      "16460\u2605 python active",
+      "44883\u2605 python active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 16460,
+    "stars": 44883,
     "topics": [
-      "aiohttp",
-      "async",
-      "asyncio",
-      "hacktoberfest",
-      "http",
-      "http-client",
-      "http-server",
-      "python"
+      "ai",
+      "ai-agent",
+      "ai-agents",
+      "anthropic",
+      "chatgpt",
+      "claude",
+      "claude-code",
+      "codex",
+      "codex-cli",
+      "llm",
+      "nanobot",
+      "openai",
+      "openclaw"
     ],
-    "url": "https://github.com/aio-libs/aiohttp"
+    "url": "https://github.com/HKUDS/nanobot"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "google/site-kit-wp",
+    "full_name": "pytorch/tensordict",
     "good_first_issues": 1,
     "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 600,
-    "pushed_at": "2026-06-29T08:47:32Z",
+    "language": "Python",
+    "open_issues": 112,
+    "pushed_at": "2026-06-30T09:32:41Z",
     "reasons": [
-      "1381\u2605 javascript active",
+      "1033\u2605 python active",
       "has good-first issues"
     ],
     "score": 31,
-    "stars": 1381,
-    "topics": [
-      "site-kit",
-      "wordpress"
+    "stars": 1033,
+    "topics": [],
+    "url": "https://github.com/pytorch/tensordict"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "shelljs/shelljs",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 103,
+    "pushed_at": "2026-06-30T07:13:02Z",
+    "reasons": [
+      "14401\u2605 javascript active",
+      "has good-first issues"
     ],
-    "url": "https://github.com/google/site-kit-wp"
+    "score": 45,
+    "stars": 14401,
+    "topics": [
+      "bash",
+      "javascript",
+      "node",
+      "nodejs",
+      "shell",
+      "shelljs",
+      "unix"
+    ],
+    "url": "https://github.com/shelljs/shelljs"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "Skyvern-AI/skyvern",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 183,
+    "pushed_at": "2026-06-30T09:28:39Z",
+    "reasons": [
+      "22045\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 22045,
+    "topics": [
+      "ai",
+      "api",
+      "automation",
+      "browser",
+      "browser-automation",
+      "computer",
+      "gpt",
+      "llm",
+      "playwright",
+      "powerautomate",
+      "puppeteer",
+      "python",
+      "rpa",
+      "selenium",
+      "vision",
+      "workflow"
+    ],
+    "url": "https://github.com/Skyvern-AI/skyvern"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "conan-io/conan-center-index",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 2092,
+    "pushed_at": "2026-06-30T09:20:08Z",
+    "reasons": [
+      "1187\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1187,
+    "topics": [
+      "conan",
+      "conan-center",
+      "conan-index",
+      "conan-packages",
+      "conan-recipe",
+      "cpp",
+      "cpp-library",
+      "dependencies",
+      "hacktoberfest",
+      "package-management",
+      "package-manager"
+    ],
+    "url": "https://github.com/conan-io/conan-center-index"
   },
   {
     "archived": false,
@@ -523,14 +392,14 @@
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Rust",
-    "open_issues": 184,
-    "pushed_at": "2026-06-29T10:48:30Z",
+    "open_issues": 179,
+    "pushed_at": "2026-06-30T09:34:48Z",
     "reasons": [
-      "12781\u2605 rust active",
+      "12789\u2605 rust active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 12781,
+    "stars": 12789,
     "topics": [
       "build-tool",
       "bundler",
@@ -549,5 +418,192 @@
       "webpack"
     ],
     "url": "https://github.com/web-infra-dev/rspack"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "frappe/erpnext",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 1931,
+    "pushed_at": "2026-06-30T09:24:42Z",
+    "reasons": [
+      "36333\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 36333,
+    "topics": [
+      "accounting",
+      "asset-management",
+      "crm",
+      "distribution",
+      "erp",
+      "erpnext",
+      "frappe",
+      "healthcare",
+      "hrms",
+      "manufacturing",
+      "point-of-sale",
+      "procurement",
+      "project-management",
+      "python",
+      "retail",
+      "support"
+    ],
+    "url": "https://github.com/frappe/erpnext"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "astronomer/astronomer-cosmos",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 174,
+    "pushed_at": "2026-06-30T09:37:42Z",
+    "reasons": [
+      "1223\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1223,
+    "topics": [
+      "airflow",
+      "airflow-operators",
+      "apache-airflow",
+      "dbt",
+      "python",
+      "workflow"
+    ],
+    "url": "https://github.com/astronomer/astronomer-cosmos"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "elie222/inbox-zero",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 157,
+    "pushed_at": "2026-06-30T09:37:13Z",
+    "reasons": [
+      "11471\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 44,
+    "stars": 11471,
+    "topics": [
+      "ai",
+      "email",
+      "gmail",
+      "loops",
+      "nextjs",
+      "openai",
+      "postgresql",
+      "posthog",
+      "prisma",
+      "productivity",
+      "resend",
+      "shadcn-ui",
+      "tailwind",
+      "tinybird",
+      "turborepo",
+      "typescript",
+      "upstash"
+    ],
+    "url": "https://github.com/elie222/inbox-zero"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "huggingface/diffusers",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 1238,
+    "pushed_at": "2026-06-30T09:23:37Z",
+    "reasons": [
+      "33959\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 33959,
+    "topics": [
+      "deep-learning",
+      "diffusion",
+      "flux",
+      "image-generation",
+      "image2image",
+      "image2video",
+      "latent-diffusion-models",
+      "pytorch",
+      "qwen-image",
+      "score-based-generative-modeling",
+      "stable-diffusion",
+      "stable-diffusion-diffusers",
+      "text2image",
+      "text2video",
+      "video2video"
+    ],
+    "url": "https://github.com/huggingface/diffusers"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "playcanvas/editor",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 506,
+    "pushed_at": "2026-06-30T09:30:25Z",
+    "reasons": [
+      "1205\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1205,
+    "topics": [
+      "3d-editor",
+      "editor",
+      "frontend",
+      "game-development",
+      "game-engine",
+      "gamedev",
+      "hacktoberfest",
+      "nodejs",
+      "pcui",
+      "playcanvas",
+      "typescript",
+      "ui",
+      "webgl",
+      "webgl2",
+      "webgpu",
+      "webxr"
+    ],
+    "url": "https://github.com/playcanvas/editor"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "WordPress/gutenberg",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 8065,
+    "pushed_at": "2026-06-30T09:37:53Z",
+    "reasons": [
+      "11714\u2605 javascript active",
+      "has good-first issues"
+    ],
+    "score": 44,
+    "stars": 11714,
+    "topics": [
+      "gutenberg",
+      "wordpress",
+      "wordpress-plugin"
+    ],
+    "url": "https://github.com/WordPress/gutenberg"
   }
 ]
