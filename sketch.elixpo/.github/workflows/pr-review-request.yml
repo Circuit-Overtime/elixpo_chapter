@@ -52,13 +52,13 @@ jobs:
     env:
       POLLINATIONS_TOKEN: ${{ secrets.CI_POLLINATIONS_KEY }}
       POLLINATIONS_TOKEN_CODER: ${{ secrets.CI_POLLINATIONS_KEY_CODER }}
-      AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+      AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - name: Check Whitelist
         id: whitelist
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.CI_AGENT_TOKEN }}
+          github-token: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
             // review_requested is a structured action (no free-text mention) —
             // the job-level `if` already checked the requested reviewer is
@@ -206,7 +206,7 @@ jobs:
             fi
           done
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
 
       - uses: actions/checkout@v4
         if: steps.whitelist.outputs.authorized == 'true'
@@ -214,7 +214,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
           repository: ${{ github.repository }}
-          token: ${{ secrets.CI_AGENT_TOKEN }}
+          token: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
 
       # Polly-style minimal shape — no pre-built context artifact, no custom
       # `prompt:` field, no post-guards. claude-code-action builds its own
@@ -233,7 +233,7 @@ jobs:
         with:
           anthropic_api_key: "ccr-pollinations"
           show_full_output: true
-          github_token: ${{ secrets.CI_AGENT_TOKEN }}
+          github_token: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
           # --permission-mode bypassPermissions is required for headless CI
@@ -255,7 +255,7 @@ jobs:
       - name: Strip Claude branding from tracking comment
         if: always() && steps.whitelist.outputs.authorized == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
           set +e
@@ -289,7 +289,7 @@ jobs:
       - name: Ensure PR exists for any new elixpo/* branch
         if: steps.whitelist.outputs.authorized == 'true' && github.event_name == 'issue_comment' && !github.event.issue.pull_request
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
@@ -353,7 +353,7 @@ jobs:
       - name: Post failure notice
         if: failure() && steps.whitelist.outputs.authorized == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

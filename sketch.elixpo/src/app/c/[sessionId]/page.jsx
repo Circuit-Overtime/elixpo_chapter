@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Header from '@/components/header/Header'
+import useUIStore, { applyTheme } from '@/store/useUIStore'
 import Toolbar from '@/components/toolbar/Toolbar'
 import Footer from '@/components/footer/Footer'
 import AppMenu from '@/components/menu/AppMenu'
@@ -47,6 +48,7 @@ const DocsPanel = dynamic(() => import('@/components/docs/DocsPanel'), {
 export default function CanvasPage() {
   useEffect(() => {
     document.body.classList.add('canvas-mode')
+    applyTheme(useUIStore.getState().theme)
     // Restore the user's last-used layout mode (canvas / split / docs)
     // before the editor or split layout decides to render.
     useSketchStore.getState().hydrateLayoutMode?.()

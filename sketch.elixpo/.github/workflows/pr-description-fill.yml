@@ -39,15 +39,15 @@ jobs:
 
       - name: React on the PR
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions" \
             -f content=rocket || true
 
       - name: Generate + patch PR body
         env:
-          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -56,7 +56,7 @@ jobs:
       - name: Post failure notice
         if: failure()
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

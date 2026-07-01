@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import { useEffect } from 'react'
 import Script from 'next/script'
 import Header from '@/components/header/Header'
+import useUIStore, { applyTheme } from '@/store/useUIStore'
 import Toolbar from '@/components/toolbar/Toolbar'
 import Footer from '@/components/footer/Footer'
 import AppMenu from '@/components/menu/AppMenu'
@@ -40,6 +41,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     document.body.classList.add('canvas-mode')
+    applyTheme(useUIStore.getState().theme)
     return () => document.body.classList.remove('canvas-mode')
   }, [])
 

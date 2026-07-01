@@ -48,7 +48,7 @@ function invertShapeColors(prevResolved, nextResolved) {
   }
 }
 
-function applyTheme(theme) {
+export function applyTheme(theme) {
   // Issue #38 bug #1: theme is scoped to the CANVAS page only — landing /
   // blog / pricing stay on the dark @theme palette. We use body classes
   // rather than html inline styles so the override:
