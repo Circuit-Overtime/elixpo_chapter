@@ -31,7 +31,7 @@ jobs:
       - name: Gist digest + close issues
         id: gist
         env:
-          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
           GIST_ID: ${{ vars.CI_GIST_ID }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -47,7 +47,7 @@ jobs:
       - name: Persist new GIST_ID as repo variable
         if: steps.gist.outputs.new_gist_id != ''
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           NEW_ID: ${{ steps.gist.outputs.new_gist_id }}
           REPO: ${{ github.repository }}
         run: |
@@ -63,7 +63,7 @@ jobs:
       - name: Check for README update
         continue-on-error: true
         env:
-          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
           POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}

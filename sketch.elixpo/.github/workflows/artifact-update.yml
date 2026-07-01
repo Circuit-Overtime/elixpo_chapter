@@ -33,7 +33,7 @@ jobs:
 
       - name: Build context
         env:
-          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: python .github/scripts/build_artifact.py
 

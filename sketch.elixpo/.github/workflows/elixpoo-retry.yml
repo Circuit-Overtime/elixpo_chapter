@@ -30,7 +30,7 @@ jobs:
     steps:
       - name: Authorize + rerun
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           COMMENTER: ${{ github.event.comment.user.login }}
