@@ -2,425 +2,18 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "processing/p5.js-web-editor",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 408,
-    "pushed_at": "2026-07-04T05:29:46Z",
-    "reasons": [
-      "1687\u2605 javascript active",
-      "has good-first issues"
-    ],
-    "score": 32,
-    "stars": 1687,
-    "topics": [],
-    "url": "https://github.com/processing/p5.js-web-editor"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "element-hq/element-web",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 3761,
-    "pushed_at": "2026-07-04T07:15:50Z",
-    "reasons": [
-      "13259\u2605 typescript active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 13259,
-    "topics": [
-      "hacktoberfest",
-      "matrix"
-    ],
-    "url": "https://github.com/element-hq/element-web"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "frappe/erpnext",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 1908,
-    "pushed_at": "2026-07-04T08:37:54Z",
-    "reasons": [
-      "36511\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 36511,
-    "topics": [
-      "accounting",
-      "asset-management",
-      "crm",
-      "distribution",
-      "erp",
-      "erpnext",
-      "frappe",
-      "healthcare",
-      "hrms",
-      "manufacturing",
-      "point-of-sale",
-      "procurement",
-      "project-management",
-      "python",
-      "retail",
-      "support"
-    ],
-    "url": "https://github.com/frappe/erpnext"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "matrixorigin/matrixone",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 780,
-    "pushed_at": "2026-07-04T08:04:31Z",
-    "reasons": [
-      "1855\u2605 go active",
-      "has good-first issues"
-    ],
-    "score": 32,
-    "stars": 1855,
-    "topics": [
-      "agents",
-      "ai-native",
-      "cloud-native",
-      "database",
-      "distributed-database",
-      "distributed-systems",
-      "fulltext-support",
-      "git-for-data",
-      "go",
-      "htap",
-      "hyperconverged",
-      "memory",
-      "mysql-compatible",
-      "olap",
-      "one-size-fits-all",
-      "sql",
-      "vector-database"
-    ],
-    "url": "https://github.com/matrixorigin/matrixone"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "git-lfs/git-lfs",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 472,
-    "pushed_at": "2026-07-04T06:36:55Z",
-    "reasons": [
-      "14360\u2605 go active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 14360,
-    "topics": [
-      "git",
-      "git-lfs",
-      "go"
-    ],
-    "url": "https://github.com/git-lfs/git-lfs"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "Skyvern-AI/skyvern",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 206,
-    "pushed_at": "2026-07-04T08:35:12Z",
-    "reasons": [
-      "22100\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 22100,
-    "topics": [
-      "ai",
-      "api",
-      "automation",
-      "browser",
-      "browser-automation",
-      "computer",
-      "gpt",
-      "llm",
-      "playwright",
-      "powerautomate",
-      "puppeteer",
-      "python",
-      "rpa",
-      "selenium",
-      "vision",
-      "workflow"
-    ],
-    "url": "https://github.com/Skyvern-AI/skyvern"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "apache/auron",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Rust",
-    "open_issues": 137,
-    "pushed_at": "2026-07-04T08:25:54Z",
-    "reasons": [
-      "1772\u2605 rust active",
-      "has good-first issues"
-    ],
-    "score": 32,
-    "stars": 1772,
-    "topics": [
-      "arrow",
-      "big-data",
-      "datafusion",
-      "rust-lang",
-      "spark"
-    ],
-    "url": "https://github.com/apache/auron"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "kubernetes-sigs/kustomize",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 177,
-    "pushed_at": "2026-07-04T05:21:38Z",
-    "reasons": [
-      "12096\u2605 go active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 12096,
-    "topics": [
-      "hacktoberfest",
-      "k8s-sig-cli"
-    ],
-    "url": "https://github.com/kubernetes-sigs/kustomize"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "PostHog/posthog",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 4269,
-    "pushed_at": "2026-07-04T08:25:57Z",
-    "reasons": [
-      "35305\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 35305,
-    "topics": [
-      "ab-testing",
-      "ai-analytics",
-      "analytics",
-      "cdp",
-      "data-warehouse",
-      "experiments",
-      "feature-flags",
-      "javascript",
-      "product-analytics",
-      "python",
-      "react",
-      "session-replay",
-      "surveys",
-      "typescript",
-      "web-analytics"
-    ],
-    "url": "https://github.com/PostHog/posthog"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "robustmq/robustmq",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Rust",
-    "open_issues": 113,
-    "pushed_at": "2026-07-04T08:11:27Z",
-    "reasons": [
-      "1630\u2605 rust active",
-      "has good-first issues"
-    ],
-    "score": 32,
-    "stars": 1630,
-    "topics": [
-      "agent-communication",
-      "ai",
-      "ai-agnet",
-      "amqp",
-      "data",
-      "infra",
-      "kafka",
-      "message",
-      "message-queue",
-      "middleware",
-      "mq",
-      "mq9",
-      "mqtt",
-      "mqtt-broker",
-      "queue",
-      "rust",
-      "serverless",
-      "storage",
-      "streaming"
-    ],
-    "url": "https://github.com/robustmq/robustmq"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "stablyai/orca",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 977,
-    "pushed_at": "2026-07-04T08:34:40Z",
-    "reasons": [
-      "11812\u2605 typescript active",
-      "has good-first issues"
-    ],
-    "score": 44,
-    "stars": 11812,
-    "topics": [
-      "ade",
-      "agent-ide",
-      "ai-agents",
-      "claude-code",
-      "cli",
-      "codex",
-      "cursor-agent",
-      "devtools",
-      "ghostty",
-      "ide",
-      "mobile-app",
-      "opencode",
-      "orchestration",
-      "parallel-agents",
-      "pi",
-      "terminal",
-      "worktrees",
-      "yc-backed"
-    ],
-    "url": "https://github.com/stablyai/orca"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "huggingface/lerobot",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 842,
-    "pushed_at": "2026-07-04T08:18:03Z",
-    "reasons": [
-      "25487\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 25487,
-    "topics": [],
-    "url": "https://github.com/huggingface/lerobot"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "Start9Labs/start-technologies",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Rust",
-    "open_issues": 112,
-    "pushed_at": "2026-07-04T06:28:30Z",
-    "reasons": [
-      "1945\u2605 rust active",
-      "has good-first issues"
-    ],
-    "score": 32,
-    "stars": 1945,
-    "topics": [
-      "bitcoin",
-      "bitcoin-node",
-      "lightning-node",
-      "p2p",
-      "personal-server",
-      "privacy-enhancing-technologies",
-      "self-hosting"
-    ],
-    "url": "https://github.com/Start9Labs/start-technologies"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "WordPress/gutenberg",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 8103,
-    "pushed_at": "2026-07-04T08:12:14Z",
-    "reasons": [
-      "11718\u2605 javascript active",
-      "has good-first issues"
-    ],
-    "score": 44,
-    "stars": 11718,
-    "topics": [
-      "gutenberg",
-      "wordpress",
-      "wordpress-plugin"
-    ],
-    "url": "https://github.com/WordPress/gutenberg"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "jax-ml/jax",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 2492,
-    "pushed_at": "2026-07-04T08:07:03Z",
-    "reasons": [
-      "35951\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 35951,
-    "topics": [
-      "jax"
-    ],
-    "url": "https://github.com/jax-ml/jax"
-  },
-  {
-    "archived": false,
-    "band": "small",
     "full_name": "Priivacy-ai/spec-kitty",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 324,
-    "pushed_at": "2026-07-04T08:17:06Z",
+    "open_issues": 321,
+    "pushed_at": "2026-07-05T07:41:50Z",
     "reasons": [
-      "1383\u2605 python active",
+      "1385\u2605 python active",
       "has good-first issues"
     ],
     "score": 31,
-    "stars": 1383,
+    "stars": 1385,
     "topics": [
       "agentic-coding",
       "ai-agents",
@@ -448,40 +41,39 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "PipedreamHQ/pipedream",
+    "full_name": "stablyai/orca",
     "good_first_issues": 1,
     "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 4408,
-    "pushed_at": "2026-07-03T18:40:46Z",
+    "language": "TypeScript",
+    "open_issues": 1003,
+    "pushed_at": "2026-07-05T08:36:24Z",
     "reasons": [
-      "11526\u2605 javascript active",
+      "12140\u2605 typescript active",
       "has good-first issues"
     ],
-    "score": 44,
-    "stars": 11526,
+    "score": 45,
+    "stars": 12140,
     "topics": [
-      "apis",
-      "automation",
-      "bash",
+      "ade",
+      "agent-ide",
+      "ai-agents",
+      "claude-code",
       "cli",
-      "data-flow",
-      "event-sourcing",
-      "eventsourcing",
-      "golang",
-      "integration-flow",
-      "integrations",
-      "ipaas",
-      "low-code",
-      "low-code-development-platform",
-      "nodejs",
-      "python",
-      "serverless",
-      "typescript",
-      "workflow",
-      "workflows"
+      "codex",
+      "cursor-agent",
+      "devtools",
+      "ghostty",
+      "ide",
+      "mobile-app",
+      "opencode",
+      "orchestration",
+      "parallel-agents",
+      "pi",
+      "terminal",
+      "worktrees",
+      "yc-backed"
     ],
-    "url": "https://github.com/PipedreamHQ/pipedream"
+    "url": "https://github.com/stablyai/orca"
   },
   {
     "archived": false,
@@ -490,14 +82,14 @@
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 3924,
-    "pushed_at": "2026-07-04T07:25:26Z",
+    "open_issues": 3911,
+    "pushed_at": "2026-07-05T08:43:50Z",
     "reasons": [
-      "29887\u2605 python active",
+      "29916\u2605 python active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 29887,
+    "stars": 29916,
     "topics": [
       "attention",
       "blackwell",
@@ -523,37 +115,469 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "secureblue/secureblue",
+    "full_name": "ROCm/TheRock",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 142,
-    "pushed_at": "2026-07-04T07:56:49Z",
+    "open_issues": 1008,
+    "pushed_at": "2026-07-05T07:34:43Z",
     "reasons": [
-      "990\u2605 python active",
+      "1118\u2605 python active",
       "has good-first issues"
     ],
     "score": 31,
-    "stars": 990,
+    "stars": 1118,
     "topics": [],
-    "url": "https://github.com/secureblue/secureblue"
+    "url": "https://github.com/ROCm/TheRock"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "facebookresearch/hydra",
+    "full_name": "element-hq/element-web",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 3760,
+    "pushed_at": "2026-07-05T08:30:58Z",
+    "reasons": [
+      "13260\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 13260,
+    "topics": [
+      "hacktoberfest",
+      "matrix"
+    ],
+    "url": "https://github.com/element-hq/element-web"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "jax-ml/jax",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 236,
-    "pushed_at": "2026-07-04T08:16:44Z",
+    "open_issues": 2492,
+    "pushed_at": "2026-07-05T08:18:30Z",
     "reasons": [
-      "10489\u2605 python active",
+      "35958\u2605 python active",
       "has good-first issues"
     ],
-    "score": 43,
-    "stars": 10489,
+    "score": 45,
+    "stars": 35958,
+    "topics": [
+      "jax"
+    ],
+    "url": "https://github.com/jax-ml/jax"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "vellum-ai/vellum-assistant",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 121,
+    "pushed_at": "2026-07-05T08:27:08Z",
+    "reasons": [
+      "834\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 834,
+    "topics": [
+      "agent",
+      "agentic-ai",
+      "ai-assistant",
+      "anthropic",
+      "autonomous-agents",
+      "claude",
+      "claude-code",
+      "ios",
+      "macos",
+      "memory",
+      "open-source",
+      "openai",
+      "openclaw",
+      "proactive-ai",
+      "slack",
+      "telegram-bot",
+      "vellum-ai"
+    ],
+    "url": "https://github.com/vellum-ai/vellum-assistant"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "thanos-io/thanos",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 876,
+    "pushed_at": "2026-07-05T05:56:24Z",
+    "reasons": [
+      "14138\u2605 go active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 14138,
+    "topics": [
+      "cncf",
+      "go",
+      "google-cloud-storage",
+      "hacktoberfest",
+      "high-availability",
+      "metrics",
+      "monitoring",
+      "observability",
+      "prometheus",
+      "prometheus-ha-pairs",
+      "prometheus-setup",
+      "s3",
+      "storage",
+      "thanos"
+    ],
+    "url": "https://github.com/thanos-io/thanos"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "PostHog/posthog",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 4323,
+    "pushed_at": "2026-07-05T07:47:34Z",
+    "reasons": [
+      "35326\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 35326,
+    "topics": [
+      "ab-testing",
+      "ai-analytics",
+      "analytics",
+      "cdp",
+      "data-warehouse",
+      "experiments",
+      "feature-flags",
+      "javascript",
+      "product-analytics",
+      "python",
+      "react",
+      "session-replay",
+      "surveys",
+      "typescript",
+      "web-analytics"
+    ],
+    "url": "https://github.com/PostHog/posthog"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "asbplayer/asbplayer",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 226,
+    "pushed_at": "2026-07-05T07:54:54Z",
+    "reasons": [
+      "1318\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1318,
+    "topics": [
+      "anki-flashcards",
+      "language-learning"
+    ],
+    "url": "https://github.com/asbplayer/asbplayer"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "rust-lang/rust-clippy",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Rust",
+    "open_issues": 2849,
+    "pushed_at": "2026-07-05T07:52:26Z",
+    "reasons": [
+      "13339\u2605 rust active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 13339,
+    "topics": [
+      "lint",
+      "rust"
+    ],
+    "url": "https://github.com/rust-lang/rust-clippy"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "frappe/erpnext",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 1899,
+    "pushed_at": "2026-07-05T07:46:16Z",
+    "reasons": [
+      "36522\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 36522,
+    "topics": [
+      "accounting",
+      "asset-management",
+      "crm",
+      "distribution",
+      "erp",
+      "erpnext",
+      "frappe",
+      "healthcare",
+      "hrms",
+      "manufacturing",
+      "point-of-sale",
+      "procurement",
+      "project-management",
+      "python",
+      "retail",
+      "support"
+    ],
+    "url": "https://github.com/frappe/erpnext"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "HtmlUnit/htmlunit",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 163,
+    "pushed_at": "2026-07-05T08:33:35Z",
+    "reasons": [
+      "950\u2605 javascript active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 950,
     "topics": [],
-    "url": "https://github.com/facebookresearch/hydra"
+    "url": "https://github.com/HtmlUnit/htmlunit"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "robotframework/robotframework",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 294,
+    "pushed_at": "2026-07-05T07:47:24Z",
+    "reasons": [
+      "11725\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 44,
+    "stars": 11725,
+    "topics": [
+      "attd",
+      "automation",
+      "bdd",
+      "python",
+      "robotframework",
+      "rpa",
+      "testautomation",
+      "testing"
+    ],
+    "url": "https://github.com/robotframework/robotframework"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "onyx-dot-app/onyx",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 450,
+    "pushed_at": "2026-07-05T07:27:50Z",
+    "reasons": [
+      "30724\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 30724,
+    "topics": [
+      "ai",
+      "ai-chat",
+      "chatgpt",
+      "chatui",
+      "enterprise-search",
+      "gen-ai",
+      "information-retrieval",
+      "llm",
+      "llm-ui",
+      "nextjs",
+      "python",
+      "rag",
+      "self-hosted",
+      "vector-search"
+    ],
+    "url": "https://github.com/onyx-dot-app/onyx"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "kai-scheduler/KAI-Scheduler",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 149,
+    "pushed_at": "2026-07-05T08:36:45Z",
+    "reasons": [
+      "1360\u2605 go active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1360,
+    "topics": [],
+    "url": "https://github.com/kai-scheduler/KAI-Scheduler"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "diegosouzapw/OmniRoute",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 106,
+    "pushed_at": "2026-07-05T08:48:35Z",
+    "reasons": [
+      "11439\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 44,
+    "stars": 11439,
+    "topics": [
+      "a2a",
+      "ai-agents",
+      "ai-gateway",
+      "anthropic",
+      "claude",
+      "claude-code",
+      "cline",
+      "codex",
+      "copilot",
+      "cursor",
+      "deepseek",
+      "free-ai",
+      "gemini",
+      "gemini-cli",
+      "llm-gateway",
+      "mcp",
+      "openai",
+      "openai-proxy",
+      "qwen",
+      "token-saver"
+    ],
+    "url": "https://github.com/diegosouzapw/OmniRoute"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "saltstack/salt",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 1833,
+    "pushed_at": "2026-07-05T07:35:10Z",
+    "reasons": [
+      "15537\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 15537,
+    "topics": [
+      "cloud",
+      "cloud-management",
+      "cloud-providers",
+      "cloud-provisioning",
+      "configuration-management",
+      "edge",
+      "event-management",
+      "event-stream",
+      "infrastructure",
+      "infrastructure-as-a-code",
+      "infrastructure-as-code",
+      "infrastructure-automation",
+      "infrastructure-management",
+      "iot",
+      "python",
+      "remote-execution",
+      "zeromq"
+    ],
+    "url": "https://github.com/saltstack/salt"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "floatpane/matcha",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 116,
+    "pushed_at": "2026-07-05T08:24:04Z",
+    "reasons": [
+      "1000\u2605 go active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1000,
+    "topics": [
+      "aerc",
+      "awesome",
+      "bubbletea",
+      "cli",
+      "client",
+      "email",
+      "email-cli",
+      "email-client",
+      "email-sender",
+      "go",
+      "inbox",
+      "mail",
+      "matcha",
+      "mutt",
+      "opensource",
+      "pine",
+      "tui"
+    ],
+    "url": "https://github.com/floatpane/matcha"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "WordPress/gutenberg",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 8103,
+    "pushed_at": "2026-07-05T00:28:11Z",
+    "reasons": [
+      "11717\u2605 javascript active",
+      "has good-first issues"
+    ],
+    "score": 44,
+    "stars": 11717,
+    "topics": [
+      "gutenberg",
+      "wordpress",
+      "wordpress-plugin"
+    ],
+    "url": "https://github.com/WordPress/gutenberg"
   }
 ]
