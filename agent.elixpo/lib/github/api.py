@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 import httpx
@@ -12,6 +13,9 @@ from lib.github.app import GitHubApp
 log = structlog.get_logger()
 
 GITHUB_API = "https://api.github.com"
+
+_RETRY_STATUS = {502, 503, 504}
+_MAX_RETRIES = 3
 
 
 class GitHubAPI:
@@ -63,11 +67,25 @@ class GitHubAPI:
 
     async def _request(self, method: str, path: str, **kwargs) -> Any:
         client = await self._get_client()
-        resp = await client.request(method, path, **kwargs)
-        resp.raise_for_status()
-        if resp.status_code == 204:
-            return None
-        return resp.json()
+        last_exc: Exception | None = None
+        for attempt in range(_MAX_RETRIES):
+            try:
+                resp = await client.request(method, path, **kwargs)
+                if resp.status_code in _RETRY_STATUS and attempt < _MAX_RETRIES - 1:
+                    await asyncio.sleep(2**attempt)  # 1s, 2s backoff on transient 5xx
+                    continue
+                resp.raise_for_status()
+                if resp.status_code == 204:
+                    return None
+                return resp.json()
+            except (httpx.TransportError, httpx.TimeoutException) as e:
+                last_exc = e
+                if attempt < _MAX_RETRIES - 1:
+                    await asyncio.sleep(2**attempt)
+                    continue
+                raise
+        if last_exc:
+            raise last_exc
 
     async def close(self):
         if self._client:

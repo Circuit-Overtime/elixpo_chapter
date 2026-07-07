@@ -11,6 +11,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 
 import structlog
+from lib.aio import gather_safe
 
 from agents.scout.discover import has_contributing, search_repos
 from agents.scout.filters import (
@@ -64,7 +65,7 @@ async def discover_candidates(
         for lang in languages:
             tasks.append(search_repos(api, lang, lo, hi, pushed_after, PER_BAND_PAGE))
             task_bands.append(band)
-    results = await asyncio.gather(*tasks)
+    results = await gather_safe(tasks, default=[])
 
     # 2. filter + dedupe + base score, keeping each candidate's band
     by_band: dict[str, list[RepoCandidate]] = {b: [] for b, _, _ in BANDS}
@@ -101,7 +102,7 @@ async def discover_candidates(
     # 3. (optional) enrich the per-band leaders with the CONTRIBUTING check
     if check_contributing:
         head = [c for cands in by_band.values() for c in cands[: max_candidates]]
-        flags = await asyncio.gather(*(has_contributing(api, c.full_name) for c in head))
+        flags = await gather_safe([has_contributing(api, c.full_name) for c in head], default=False)
         for cand, has_c in zip(head, flags, strict=True):
             cand.has_contributing = has_c
             if has_c:

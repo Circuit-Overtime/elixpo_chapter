@@ -26,7 +26,10 @@ class StateStore:
         p = self._path(name)
         if not p.exists():
             return default
-        return json.loads(p.read_text() or "null")
+        try:
+            return json.loads(p.read_text() or "null")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"{name} is not valid JSON (edited by hand?): {e}") from e
 
     def write_json(self, name: str, data: Any) -> None:
         p = self._path(name)
