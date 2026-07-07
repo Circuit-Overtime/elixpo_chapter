@@ -1,0 +1,190 @@
+[
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 26621,
+    "rationale": "",
+    "repo": "PostHog/posthog",
+    "score": 10,
+    "title": "Show only insights not included in any dashboard",
+    "tractable": false,
+    "url": "https://github.com/PostHog/posthog/issues/26621"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 14579,
+    "rationale": "",
+    "repo": "PostHog/posthog",
+    "score": 10,
+    "title": "Allow sorting Lifecycle graph bars",
+    "tractable": false,
+    "url": "https://github.com/PostHog/posthog/issues/14579"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 25941,
+    "rationale": "",
+    "repo": "PostHog/posthog",
+    "score": 10,
+    "title": "Bug: Type filtering insights is not displaying the correct insights",
+    "tractable": false,
+    "url": "https://github.com/PostHog/posthog/issues/25941"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 19367,
+    "rationale": "",
+    "repo": "PostHog/posthog",
+    "score": 10,
+    "title": "Feature flags: Do not know how to serialize a BigInt type error",
+    "tractable": false,
+    "url": "https://github.com/PostHog/posthog/issues/19367"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 67075,
+    "rationale": "",
+    "repo": "Automattic/wp-calypso",
+    "score": 10,
+    "title": "Marketplace: Logged out view should use pagination",
+    "tractable": false,
+    "url": "https://github.com/Automattic/wp-calypso/issues/67075"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 9889,
+    "rationale": "",
+    "repo": "sgl-project/sglang",
+    "score": 10,
+    "title": "[Performance] Remove instances of `torch.nonzero()` where appropriate",
+    "tractable": false,
+    "url": "https://github.com/sgl-project/sglang/issues/9889"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 10585,
+    "rationale": "",
+    "repo": "sgl-project/sglang",
+    "score": 10,
+    "title": "[Feature] Integrate KVPress in order to try more KV cache optimization heuristics easily",
+    "tractable": false,
+    "url": "https://github.com/sgl-project/sglang/issues/10585"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 1991,
+    "rationale": "",
+    "repo": "kairos-io/kairos",
+    "score": 10,
+    "title": "Artifact search form",
+    "tractable": false,
+    "url": "https://github.com/kairos-io/kairos/issues/1991"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "internal_paths": -10,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 31267,
+    "rationale": "The issue involves a paid feature and may not be reproducible, making it unsuitable for an external contributor.",
+    "repo": "PostHog/posthog",
+    "score": 0,
+    "title": "Embedded tab feedback button survey does not respect the position",
+    "tractable": false,
+    "url": "https://github.com/PostHog/posthog/issues/31267"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "internal_paths": -10,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 53845,
+    "rationale": "Adding a new preview option is a well-defined UI change that can be implemented in a single pull request.",
+    "repo": "Automattic/wp-calypso",
+    "score": 0,
+    "title": "Social Previews should show WP oEmbed design as a 5th preview option",
+    "tractable": true,
+    "url": "https://github.com/Automattic/wp-calypso/issues/53845"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "internal_paths": -10,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "reproducible_bug": 3
+    },
+    "number": 29916,
+    "rationale": "Multiple previous attempts to fix this null filtering behavior have been closed or bounced, indicating underlying complexity beyond a simple SQL change.",
+    "repo": "PostHog/posthog",
+    "score": -5,
+    "title": "Bug: In Cohorts, the 'set' operator filters in null values for person properties",
+    "tractable": false,
+    "url": "https://github.com/PostHog/posthog/issues/29916"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "internal_paths": -10,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 28808,
+    "rationale": "The issue is a well-scoped refactor with clear before/after behavior, localized to a single file, and marked as a good first issue, making it plausible for a lone contributor to finish in one PR.",
+    "repo": "sgl-project/sglang",
+    "score": -10,
+    "title": "Refactor: TRTLLMHAAttnBackend should not inherit from FlashInferAttnBackend when reuse is small",
+    "tractable": true,
+    "url": "https://github.com/sgl-project/sglang/issues/28808"
+  }
+]

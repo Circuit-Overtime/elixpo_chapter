@@ -1,29 +1,46 @@
 """Model-extracted issue signals — the fuzzy half of §4 scoring + a rationale.
 
-One cheap `triage`-role call per shortlisted issue. Asks for strict JSON so the
-result is machine-usable; a tolerant parser shrugs off stray prose. The rationale
-becomes part of Pick's justification (why this issue is a good, tractable target).
+Uses STRUCTURED OUTPUT: the model is forced to call `record_issue_signals` with
+a fixed schema, so we read typed arguments instead of parsing free text (robust
+under concurrency, where reasoning models otherwise wrap JSON in prose). Falls
+back to tolerant text parsing if a model returns content instead of a tool call.
 """
 
 from __future__ import annotations
 
 import json
 
-from rtk.models import Message
+from rtk.models import FunctionDef, Message, ToolDef
 from rtk.truncate import truncate_text
 
 _SYSTEM = (
     "You triage open-source issues for an autonomous contributor. Judge only from "
-    "the text. Reply with ONE JSON object, no prose, with exactly these keys:\n"
-    '{"has_repro_steps": bool, "has_acceptance_criterion": bool, '
-    '"someone_claimed_recently": bool, "maintainer_claimed": bool, '
-    '"touches_internal_paths": bool, "tractable": bool, "rationale": string}\n'
-    "tractable = a lone external contributor could plausibly finish it in one PR. "
-    "rationale = one sentence on why (or why not)."
+    "the text, then call record_issue_signals with your verdict."
 )
 
+_SIGNALS_TOOL = ToolDef(
+    function=FunctionDef(
+        name="record_issue_signals",
+        description="Record triage signals for one issue.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "has_repro_steps": {"type": "boolean"},
+                "has_acceptance_criterion": {"type": "boolean"},
+                "someone_claimed_recently": {"type": "boolean", "description": "a comment says 'I'll take this' within 14 days"},
+                "maintainer_claimed": {"type": "boolean", "description": "a maintainer claimed/assigned it"},
+                "touches_internal_paths": {"type": "boolean", "description": "internal/ or private/ code"},
+                "tractable": {"type": "boolean", "description": "a lone external contributor could finish it in one PR"},
+                "rationale": {"type": "string", "description": "one sentence on why (or why not)"},
+            },
+            "required": ["tractable", "rationale"],
+        },
+    )
+)
+_FORCE = {"type": "function", "function": {"name": "record_issue_signals"}}
 
-def _parse(text: str) -> dict:
+
+def _parse_text(text: str) -> dict:
     start, end = text.find("{"), text.rfind("}")
     if start == -1 or end <= start:
         return {}
@@ -47,11 +64,16 @@ def _prompt(issue: dict, comments: list[dict] | None) -> str:
 
 
 async def extract_issue_signals(router, issue: dict, comments: list[dict] | None = None) -> dict:
-    """Return the fuzzy signal dict (+ tractable/rationale). Empty-ish on parse failure."""
+    """Return the fuzzy signal dict (+ tractable/rationale). Empty-ish on failure."""
     messages = [
         Message(role="system", content=_SYSTEM),
         Message(role="user", content=_prompt(issue, comments)),
     ]
-    resp = await router.call("triage", messages)
-    content = resp.choices[0].message.content or ""
-    return _parse(content)
+    resp = await router.call("triage", messages, tools=[_SIGNALS_TOOL], tool_choice=_FORCE)
+    msg = resp.choices[0].message
+    if msg.tool_calls:
+        try:
+            return json.loads(msg.tool_calls[0].function.arguments)
+        except (json.JSONDecodeError, IndexError):
+            pass
+    return _parse_text(msg.content or "")

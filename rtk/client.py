@@ -6,6 +6,7 @@ class never reaches for configuration on its own (keeps it unit-testable).
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 
@@ -22,6 +23,9 @@ from rtk.models import (
 )
 
 log = structlog.get_logger()
+
+_RETRY_STATUS = {429, 500, 502, 503, 504}
+_MAX_RETRIES = 3
 
 
 class LLMClient:
@@ -55,19 +59,32 @@ class LLMClient:
         tools: list[ToolDef] | None = None,
         temperature: float = 0.0,
         max_tokens: int | None = None,
+        tool_choice: str | dict | None = None,
     ) -> ChatCompletionResponse:
         request = ChatCompletionRequest(
             model=self.model,
             messages=messages,
             tools=tools or None,
-            tool_choice="auto" if tools else None,
+            tool_choice=tool_choice or ("auto" if tools else None),
             temperature=temperature,
             max_tokens=max_tokens,
             stream=False,
         )
-        resp = await self._client.post("/chat/completions", json=request.model_dump(exclude_none=True))
-        resp.raise_for_status()
-        return ChatCompletionResponse(**resp.json())
+        payload = request.model_dump(exclude_none=True)
+        for attempt in range(_MAX_RETRIES):
+            try:
+                resp = await self._client.post("/chat/completions", json=payload)
+                if resp.status_code in _RETRY_STATUS and attempt < _MAX_RETRIES - 1:
+                    await asyncio.sleep(2**attempt)
+                    continue
+                resp.raise_for_status()
+                return ChatCompletionResponse(**resp.json())
+            except (httpx.TransportError, httpx.TimeoutException):
+                if attempt < _MAX_RETRIES - 1:
+                    await asyncio.sleep(2**attempt)
+                    continue
+                raise
+        raise RuntimeError("unreachable")
 
     async def chat_stream(
         self,

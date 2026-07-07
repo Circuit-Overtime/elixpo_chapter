@@ -5,3 +5,8 @@
 {"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 448, "cached_tokens": 0, "completion_tokens": 351, "total_tokens": 799}
 {"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 321, "cached_tokens": 0, "completion_tokens": 579, "total_tokens": 900}
 {"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 791, "cached_tokens": 0, "completion_tokens": 634, "total_tokens": 1425}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 981, "cached_tokens": 0, "completion_tokens": 295, "total_tokens": 1276}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 738, "cached_tokens": 0, "completion_tokens": 429, "total_tokens": 1167}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 660, "cached_tokens": 0, "completion_tokens": 371, "total_tokens": 1031}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 642, "cached_tokens": 0, "completion_tokens": 631, "total_tokens": 1273}
+{"task_id": "dbg", "role": "triage", "model": "deepseek", "prompt_tokens": 163, "cached_tokens": 0, "completion_tokens": 428, "total_tokens": 591}

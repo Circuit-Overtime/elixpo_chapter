@@ -70,9 +70,14 @@ async def triage_candidates(
     comment_lists = await gather_safe(
         [fetch_comments(api, x["repo"], x["issue"]["number"]) for x in short], default=[]
     )
+    sem = asyncio.Semaphore(4)  # cap concurrent LLM calls → fewer rate limits
+
+    async def _extract(x, comments):
+        async with sem:
+            return await extract_issue_signals(router, x["issue"], comments)
+
     llm_results = await gather_safe(
-        [extract_issue_signals(router, x["issue"], comments)
-         for x, comments in zip(short, comment_lists, strict=True)],
+        [_extract(x, comments) for x, comments in zip(short, comment_lists, strict=True)],
         default={},
     )
 
