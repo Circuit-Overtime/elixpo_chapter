@@ -119,11 +119,13 @@ class Router:
         tools: list[ToolDef] | None = None,
         effort: Effort | str | None = None,
         max_tokens: int | None = None,
+        tool_choice: str | dict | None = None,
     ) -> ChatCompletionResponse:
         spec = self.resolve(role)
         model = spec["model"]
         if spec.get("tools") is False:
             tools = None
+            tool_choice = None
 
         if effort:
             eff = Effort(effort)
@@ -136,7 +138,8 @@ class Router:
         self.budget.check(est)
 
         resp = await self._client(model).chat(
-            messages=messages, tools=tools, temperature=temperature, max_tokens=max_tokens
+            messages=messages, tools=tools, temperature=temperature,
+            max_tokens=max_tokens, tool_choice=tool_choice,
         )
 
         # charge real usage (fall back to estimate if the provider omits usage)

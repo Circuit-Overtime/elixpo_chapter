@@ -28,8 +28,9 @@ class FakeClient:
         self.calls: list[dict] = []
         self._usage_total = usage_total
 
-    async def chat(self, messages, tools=None, temperature=0.0, max_tokens=None):
-        self.calls.append({"messages": messages, "tools": tools, "temperature": temperature})
+    async def chat(self, messages, tools=None, temperature=0.0, max_tokens=None, tool_choice=None):
+        self.calls.append({"messages": messages, "tools": tools, "temperature": temperature,
+                           "tool_choice": tool_choice})
         return ChatCompletionResponse(
             id="x",
             choices=[Choice(index=0, message=Message(role="assistant", content="ok"))],
