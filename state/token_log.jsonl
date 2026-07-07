@@ -1,1 +1,7 @@
 {"task_id": "smoke-test", "role": "crawl", "model": "nova-fast", "prompt_tokens": 8, "cached_tokens": 0, "completion_tokens": 5, "total_tokens": 13}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 354, "cached_tokens": 0, "completion_tokens": 336, "total_tokens": 690}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 503, "cached_tokens": 0, "completion_tokens": 364, "total_tokens": 867}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 981, "cached_tokens": 0, "completion_tokens": 295, "total_tokens": 1276}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 448, "cached_tokens": 0, "completion_tokens": 351, "total_tokens": 799}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 321, "cached_tokens": 0, "completion_tokens": 579, "total_tokens": 900}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 791, "cached_tokens": 0, "completion_tokens": 634, "total_tokens": 1425}
