@@ -10,12 +10,12 @@ from __future__ import annotations
 import asyncio
 
 import structlog
+from lib.scorer import score
 from pydantic import BaseModel, Field
 
 from agents.triage.extract import extract_issue_signals
 from agents.triage.fetch import fetch_comments, fetch_good_first_issues
 from agents.triage.signals import deterministic_signals, merge_signals
-from lib.scorer import score
 
 log = structlog.get_logger()
 
