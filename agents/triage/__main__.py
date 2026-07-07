@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 
 import structlog
+from lib.aio import gather_safe
 from lib.scorer import score
 from pydantic import BaseModel, Field
 
@@ -48,9 +49,9 @@ async def triage_candidates(
     """Score candidate issues. Injectable api + router → testable in isolation."""
     repos = candidates[:max_repos]
 
-    # 1. fetch each repo's good-first issues concurrently
-    issue_lists = await asyncio.gather(
-        *(fetch_good_first_issues(api, r["full_name"], per_repo) for r in repos)
+    # 1. fetch each repo's good-first issues concurrently (a flaky repo → skipped)
+    issue_lists = await gather_safe(
+        [fetch_good_first_issues(api, r["full_name"], per_repo) for r in repos], default=[]
     )
 
     # 2. deterministic pre-score (no model, no comments) → cheap ranking
@@ -64,13 +65,15 @@ async def triage_candidates(
     prelim.sort(key=lambda x: x["pre"], reverse=True)
     short = prelim[:shortlist]
 
-    # 3. deep pass on the shortlist only: fetch comments + LLM signal extraction
-    comment_lists = await asyncio.gather(
-        *(fetch_comments(api, x["repo"], x["issue"]["number"]) for x in short)
+    # 3. deep pass on the shortlist only: fetch comments + LLM signal extraction.
+    #    gather_safe → a single 504 or LLM hiccup skips that item, never fails the run.
+    comment_lists = await gather_safe(
+        [fetch_comments(api, x["repo"], x["issue"]["number"]) for x in short], default=[]
     )
-    llm_results = await asyncio.gather(
-        *(extract_issue_signals(router, x["issue"], comments)
-          for x, comments in zip(short, comment_lists, strict=True))
+    llm_results = await gather_safe(
+        [extract_issue_signals(router, x["issue"], comments)
+         for x, comments in zip(short, comment_lists, strict=True)],
+        default={},
     )
 
     # 4. full §4 score + build ranked records
