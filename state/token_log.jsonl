@@ -10,3 +10,15 @@
 {"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 660, "cached_tokens": 0, "completion_tokens": 371, "total_tokens": 1031}
 {"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 642, "cached_tokens": 0, "completion_tokens": 631, "total_tokens": 1273}
 {"task_id": "dbg", "role": "triage", "model": "deepseek", "prompt_tokens": 163, "cached_tokens": 0, "completion_tokens": 428, "total_tokens": 591}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 890, "cached_tokens": 0, "completion_tokens": 473, "total_tokens": 1363}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 1016, "cached_tokens": 0, "completion_tokens": 493, "total_tokens": 1509}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 968, "cached_tokens": 0, "completion_tokens": 852, "total_tokens": 1820}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 975, "cached_tokens": 0, "completion_tokens": 766, "total_tokens": 1741}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 805, "cached_tokens": 0, "completion_tokens": 490, "total_tokens": 1295}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 774, "cached_tokens": 0, "completion_tokens": 600, "total_tokens": 1374}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 986, "cached_tokens": 0, "completion_tokens": 506, "total_tokens": 1492}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 1064, "cached_tokens": 0, "completion_tokens": 855, "total_tokens": 1919}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 1428, "cached_tokens": 0, "completion_tokens": 737, "total_tokens": 2165}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 994, "cached_tokens": 0, "completion_tokens": 470, "total_tokens": 1464}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 1307, "cached_tokens": 0, "completion_tokens": 550, "total_tokens": 1857}
+{"task_id": "triage", "role": "triage", "model": "deepseek", "prompt_tokens": 1798, "cached_tokens": 0, "completion_tokens": 1145, "total_tokens": 2943}

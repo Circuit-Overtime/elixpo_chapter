@@ -27,10 +27,10 @@ _SIGNALS_TOOL = ToolDef(
             "properties": {
                 "has_repro_steps": {"type": "boolean"},
                 "has_acceptance_criterion": {"type": "boolean"},
-                "someone_claimed_recently": {"type": "boolean", "description": "a comment says 'I'll take this' within 14 days"},
+                "someone_claimed_recently": {"type": "boolean", "description": "comment claims it <14d ago"},
                 "maintainer_claimed": {"type": "boolean", "description": "a maintainer claimed/assigned it"},
                 "touches_internal_paths": {"type": "boolean", "description": "internal/ or private/ code"},
-                "tractable": {"type": "boolean", "description": "a lone external contributor could finish it in one PR"},
+                "tractable": {"type": "boolean", "description": "one external contributor, one PR"},
                 "rationale": {"type": "string", "description": "one sentence on why (or why not)"},
             },
             "required": ["tractable", "rationale"],
