@@ -13,9 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 const siteUrl = 'https://lixrl.com';
-const title = 'ElixpoURL: Fast URL Shortener on the Edge';
+const title =
+  "ElixpoURL — Fast, Secure URL Shortener with Analytics";
 const description =
-  "Shorten URLs at the speed of light. Lightning-fast redirects, powerful analytics, and a developer-first API, all running on Cloudflare's edge network.";
+  "ElixpoURL is a fast, secure, and developer-first URL shortener powered by Cloudflare's global edge network. Create branded short links, track detailed analytics, manage redirects, and integrate seamlessly with modern applications through a reliable API.";
 
 // Google Search Console — "HTML tag" verification method. Set
 // NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION (the `content` value Google gives you)
@@ -42,13 +43,23 @@ export const metadata: Metadata = {
     'elixpo',
     'elixpourl',
     'edge network',
+    'edge computing',
+    'cloudflare',
     'cloudflare workers',
     'cloudflare d1',
-    'link analytics',
     'short url api',
     'developer tools',
+    'developer api',
     'open source',
+    'custom links',
+    'branded links',
+    'url analytics',
+    'link analytics',
+    'link management',
+    'fast redirects',
+    'qr codes',
   ],
+  
   authors: [{ name: 'Elixpo', url: 'https://elixpo.com' }],
   creator: 'Elixpo',
   publisher: 'Elixpo',
@@ -73,13 +84,13 @@ export const metadata: Metadata = {
     url: siteUrl,
     siteName: 'ElixpoURL',
     title,
-    description,
+    description: "Create, manage, and analyze short links with ElixpoURL—a fast, secure, and developer-first URL shortener powered by Cloudflare's global edge network.",
     images: [
       {
         url: '/og-image.png',
         width: 1822,
         height: 825,
-        alt: 'ElixpoURL: Fast URL Shortener on the Edge',
+        alt: "ElixpoURL — Fast and secure URL shortener",
         type: 'image/png',
       },
     ],
@@ -87,7 +98,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title,
-    description,
+    description: "Build faster with ElixpoURL. Shorten links, monitor analytics, manage redirects, and integrate a reliable URL shortening API powered by Cloudflare's edge.",
     images: ['/og-image.png'],
     creator: '@elixpo',
     site: '@elixpo',
