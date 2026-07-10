@@ -1501,10 +1501,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           const cursor = editor.getTextCursorPosition();
           if (!cursor?.block) return;
 
-          // Insert image block + empty paragraph below so user can keep typing
+          // Insert image block with loading placeholder + empty paragraph below
           editor.insertBlocks(
             [
-              { type: 'image', props: { url: '', caption: '', previewWidth: 740 } },
+              { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading' } },
               { type: 'paragraph', content: [] },
             ],
             cursor.block,
@@ -1515,6 +1515,14 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           const cursorIdx = doc.findIndex((b) => b.id === cursor.block.id);
           const newBlock = doc[cursorIdx + 1];
           if (!newBlock) return;
+
+          // Move cursor to the paragraph below so user can keep typing
+          const paragraphBlock = doc[cursorIdx + 2];
+          if (paragraphBlock) {
+            requestAnimationFrame(() => {
+              try { editor.setTextCursorPosition(paragraphBlock.id, 'start'); } catch {}
+            });
+          }
 
           // Compress and upload, then update with real URL
           (async () => {
@@ -1537,11 +1545,16 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
               editor.updateBlock(newBlock.id, {
                 type: 'image',
-                props: { url: data.url, caption: '', previewWidth: 740 },
+                props: { url: data.url, caption: '', previewWidth: 740, _uploading: '' },
               });
             } catch (err) {
               console.error('Clipboard image upload failed:', err);
-              try { editor.removeBlocks([newBlock.id]); } catch {}
+              try {
+                editor.updateBlock(newBlock.id, {
+                  type: 'image',
+                  props: { _uploading: 'error' },
+                });
+              } catch {}
             }
           })();
 
@@ -1550,8 +1563,84 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       }
     }
 
+    function handleEditorDrop(e) {
+      if (e.target.closest('[data-content-type="image"]')) return;
+      const file = e.dataTransfer?.files?.[0];
+      if (!file?.type.startsWith('image/')) return;
+      if (!isAllowedImage(file)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const cursor = editor.getTextCursorPosition();
+      if (!cursor?.block) return;
+
+      editor.insertBlocks(
+        [
+          { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading' } },
+          { type: 'paragraph', content: [] },
+        ],
+        cursor.block,
+        'after'
+      );
+
+      const dropDoc = editor.document;
+      const dropIdx = dropDoc.findIndex((b) => b.id === cursor.block.id);
+      const dropBlock = dropDoc[dropIdx + 1];
+      if (!dropBlock) return;
+
+      const dropParagraph = dropDoc[dropIdx + 2];
+      if (dropParagraph) {
+        requestAnimationFrame(() => {
+          try { editor.setTextCursorPosition(dropParagraph.id, 'start'); } catch {}
+        });
+      }
+
+      (async () => {
+        try {
+          const { compressBlogImage } = await import('../../utils/compressImage');
+          const { blob } = await compressBlogImage(file);
+
+          const formData = new FormData();
+          formData.append('file', blob, `image_${Date.now()}.webp`);
+          if (blogId) formData.append('blogId', blogId);
+          formData.append('type', 'image');
+
+          const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
+          if (!res.ok) throw new Error('Upload failed');
+          const data = await res.json();
+
+          editor.updateBlock(dropBlock.id, {
+            type: 'image',
+            props: { url: data.url, caption: '', previewWidth: 740, _uploading: '' },
+          });
+        } catch (err) {
+          console.error('Dropped image upload failed:', err);
+          try {
+            editor.updateBlock(dropBlock.id, {
+              type: 'image',
+              props: { _uploading: 'error' },
+            });
+          } catch {}
+        }
+      })();
+    }
+
+    function handleEditorDragOver(e) {
+      if (e.target.closest('[data-content-type="image"]')) return;
+      if (e.dataTransfer?.types?.includes('Files')) {
+        e.preventDefault();
+      }
+    }
+
     editorEl.addEventListener('paste', handlePaste);
-    return () => editorEl.removeEventListener('paste', handlePaste);
+    editorEl.addEventListener('drop', handleEditorDrop);
+    editorEl.addEventListener('dragover', handleEditorDragOver);
+    return () => {
+      editorEl.removeEventListener('paste', handlePaste);
+      editorEl.removeEventListener('drop', handleEditorDrop);
+      editorEl.removeEventListener('dragover', handleEditorDragOver);
+    };
   }, [editor, blogId]);
 
   // Disable spellcheck on code blocks + inline code + inject copy buttons + language labels

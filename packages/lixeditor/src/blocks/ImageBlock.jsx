@@ -26,6 +26,10 @@ export const BlogImageBlock = createReactBlockSpec(
       width: { default: '' },
       align: { default: '' },
       link: { default: '' },
+      // upload state: '' = idle, 'uploading' = in-flight, 'error' = failed
+      _uploading: { default: '' },
+      _mediaId: { default: '' },
+      _imageId: { default: '' },
     },
     content: 'none',
   },
@@ -35,16 +39,29 @@ export const BlogImageBlock = createReactBlockSpec(
 );
 
 function ImageRenderer({ block, editor }) {
-  const { url, caption } = block.props;
+  const { url, caption, _uploading } = block.props;
   const { uploadFile: hostUpload, acceptImageTypes, maxFileSizeBytes, onUploadError, imageInsert } = useUploadConfig();
-  const [mode, setMode] = useState('idle'); // idle | embed | uploading
+  const [mode, setMode] = useState('idle'); // idle | embed
   const [embedUrl, setEmbedUrl] = useState('');
   const [embedError, setEmbedError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState('');
+  const [isImgLoaded, setIsImgLoaded] = useState(false);
+
+  useEffect(() => {
+    if (url) {
+      const img = new Image();
+      img.src = url;
+      if (img.complete) {
+        setIsImgLoaded(true);
+      } else {
+        setIsImgLoaded(false);
+      }
+    } else {
+      setIsImgLoaded(false);
+    }
+  }, [url]);
   const [editingCaption, setEditingCaption] = useState(false);
   const [captionText, setCaptionText] = useState(caption || '');
-  const fileInputRef = useRef(null);
   const blockRef = useRef(null);
   const embedInputRef = useRef(null);
 
@@ -67,9 +84,9 @@ function ImageRenderer({ block, editor }) {
     return () => el.removeEventListener('keydown', handleKey);
   }, [editor, block.id, mode, url]);
 
-  // Add an image. If the host provided `uploadFile`, store the returned hosted
-  // URL (required for email — base64 is stripped by Gmail/Outlook). Otherwise
-  // fall back to a base64 data URL so the package still works with zero config.
+  // Upload helper — sets _uploading prop so placeholder persists across re-renders.
+  // When hostUpload is provided, the host resolves the URL. Otherwise falls back
+  // to base64 data URL so the package works with zero config.
   const uploadFile = useCallback(async (file) => {
     if (!file || !file.type.startsWith('image/')) return;
     if (acceptImageTypes?.length && !acceptImageTypes.includes(file.type)) {
@@ -80,20 +97,39 @@ function ImageRenderer({ block, editor }) {
       showFailToast(`Image exceeds ${Math.round(maxFileSizeBytes / 1024 / 1024)}MB limit`);
       return;
     }
-    setMode('uploading');
-    setUploadStatus(hostUpload ? 'Uploading…' : 'Processing...');
+    editor.updateBlock(block.id, { props: { _uploading: 'uploading' } });
+
+    // Move caret to next line / paragraph below so the user can continue typing
+    try {
+      const doc = editor.document;
+      const idx = doc.findIndex((b) => b.id === block.id);
+      if (idx !== -1) {
+        let nextBlock = doc[idx + 1];
+        if (!nextBlock || nextBlock.type !== 'paragraph') {
+          editor.insertBlocks([{ type: 'paragraph', content: [] }], block.id, 'after');
+          const updatedDoc = editor.document;
+          nextBlock = updatedDoc[idx + 1];
+        }
+        if (nextBlock) {
+          requestAnimationFrame(() => {
+            try {
+              editor.setTextCursorPosition(nextBlock.id, 'start');
+              editor._tiptapEditor?.commands?.focus();
+            } catch {}
+          });
+        }
+      }
+    } catch {}
 
     if (hostUpload) {
       try {
         const resultUrl = await hostUpload(file);
         if (!resultUrl || typeof resultUrl !== 'string') throw new Error('uploadFile did not return a URL');
-        editor.updateBlock(block.id, { props: { url: resultUrl, name: file.name } });
-        setMode('idle');
+        editor.updateBlock(block.id, { props: { url: resultUrl, name: file.name, _uploading: '' } });
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err));
         onUploadError?.(e, file);
-        showFailToast('Upload failed');
-        setMode('idle'); // keep the block editable/empty — never insert base64 here
+        editor.updateBlock(block.id, { props: { _uploading: 'error' } });
       }
       return;
     }
@@ -102,16 +138,14 @@ function ImageRenderer({ block, editor }) {
     try {
       const reader = new FileReader();
       reader.onload = () => {
-        editor.updateBlock(block.id, { props: { url: reader.result, name: file.name } });
-        setMode('idle');
+        editor.updateBlock(block.id, { props: { url: reader.result, name: file.name, _uploading: '' } });
       };
       reader.onerror = () => {
-        showFailToast('Failed to read image');
-        setMode('idle');
+        editor.updateBlock(block.id, { props: { _uploading: 'error' } });
       };
       reader.readAsDataURL(file);
     } catch {
-      setMode('idle');
+      editor.updateBlock(block.id, { props: { _uploading: 'error' } });
     }
   }, [editor, block.id, hostUpload, acceptImageTypes, maxFileSizeBytes, onUploadError]);
 
@@ -174,8 +208,85 @@ function ImageRenderer({ block, editor }) {
     setEditingCaption(false);
   }, [editor, block.id, captionText]);
 
-  // ─── No image yet ───
-  if (!url) {
+  // Open file picker to upload image dynamically (in-memory input avoids focus loss issues)
+  const handleUploadClick = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = (acceptImageTypes || ['image/png', 'image/jpeg', 'image/gif', 'image/webp']).join(',');
+    input.onchange = () => {
+      if (input.files?.[0]) {
+        uploadFile(input.files[0]);
+      }
+    };
+    input.click();
+  }, [uploadFile, acceptImageTypes]);
+
+  // Retry after error — open file picker to re-select
+  const handleRetry = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+      if (input.files?.[0]) {
+        // Reset to uploading first so the skeleton re-appears
+        editor.updateBlock(block.id, { props: { _uploading: 'uploading' } });
+        uploadFile(input.files[0]);
+      }
+    };
+    input.click();
+  }, [editor, block.id, uploadFile]);
+
+  const showSkeleton = _uploading === 'uploading' || (url && !isImgLoaded);
+
+  // ─── No image yet / Image loading in background ───
+  if (!url || showSkeleton) {
+    if (showSkeleton) {
+      return (
+        <div ref={blockRef} className="blog-img-upload-skeleton" tabIndex={-1}>
+          <div className="blog-img-skel-image">
+            <div className="blog-img-skel-shimmer" />
+            <div className="blog-img-skel-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5L5 21" />
+              </svg>
+            </div>
+          </div>
+          <div className="blog-img-skel-caption">
+            <div className="blog-img-skel-caption-line" />
+            <div className="blog-img-skel-caption-line blog-img-skel-caption-short" />
+          </div>
+          {url && (
+            <img
+              src={url}
+              onLoad={() => setIsImgLoaded(true)}
+              onError={() => setIsImgLoaded(true)}
+              style={{ display: 'none' }}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // Upload failed — error card with retry/remove
+    if (_uploading === 'error') {
+      return (
+        <div ref={blockRef} className="blog-img-upload-error" tabIndex={0}>
+          <div className="blog-img-upload-error-inner">
+            <svg className="blog-img-upload-error-x" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            <span className="blog-img-upload-error-text">Failed to upload</span>
+            <div className="blog-img-upload-error-actions">
+              <button className="blog-img-upload-error-retry" onClick={handleRetry}>Retry</button>
+              <button className="blog-img-upload-error-remove" onClick={handleDelete}>Remove</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // Host-driven insert: never show the default Upload/Embed-URL card. The host
     // inserts ready image blocks (with a URL) via its own toolbar / insertImage().
     if (imageInsert === 'host') return null;
@@ -190,27 +301,11 @@ function ImageRenderer({ block, editor }) {
         onDragLeave={() => setIsDragOver(false)}
         data-drag-over={isDragOver}
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={(e) => { if (e.target.files?.[0]) uploadFile(e.target.files[0]); e.target.value = ''; }}
-          style={{ display: 'none' }}
-        />
-
-        {/* Uploading state */}
-        {mode === 'uploading' && (
-          <div className="blog-img-status">
-            <div className="blog-img-spinner" />
-            <span>{uploadStatus}</span>
-          </div>
-        )}
-
         {/* Idle — 2 action buttons (no AI) */}
         {mode === 'idle' && (
           <>
             <div className="blog-img-actions-row">
-              <button className="blog-img-action" onClick={() => fileInputRef.current?.click()}>
+              <button className="blog-img-action" onClick={handleUploadClick}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
@@ -264,7 +359,7 @@ function ImageRenderer({ block, editor }) {
 
   // ─── Image loaded ───
   return (
-    <div ref={blockRef} className="blog-img-loaded" tabIndex={0} onPaste={handlePaste}>
+    <div ref={blockRef} className="blog-img-loaded blog-img-fadein" tabIndex={0} onPaste={handlePaste}>
       <div className="blog-img-wrapper">
         <img src={url} alt={caption || 'Image'} className="blog-img-main" draggable={false} />
         <div className="blog-img-hover-overlay">
