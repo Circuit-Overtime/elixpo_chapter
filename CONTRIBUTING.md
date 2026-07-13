@@ -1,52 +1,51 @@
-# Contributing to Elixpo Chat
+# Contributing to Elixpo
 
-Thank you for your interest in contributing to Elixpo Chat! We welcome contributions from everyone.
+Thank you for your interest in contributing! Elixpo is built in the open by a
+community of 45+ contributors, and we welcome developers, designers, writers,
+and first-time contributors alike. This guide is the **standard** used across
+every Elixpo repository.
 
-## Getting Started
+## Ways to contribute
 
-1.  **Fork the repository** on GitHub.
-2.  **Clone your fork** locally:
-    ```bash
-    git clone https://github.com/YOUR-USERNAME/chat.elixpo.git
-    cd chat.elixpo
-    ```
-3.  **Add the upstream repository** to keep your fork synced:
-    ```bash
-    git remote add upstream https://github.com/elixpo/chat.elixpo.git
-    ```
+- **Code** - fix a bug, build a feature, improve performance or accessibility.
+- **Docs** - improve guides, READMEs, or inline comments.
+- **Design & brand** - icons, illustrations, and assets (see `brand/MASCOT.md`).
+- **Triage** - reproduce issues, suggest labels, help others in Discussions.
+- **Ideas** - propose features in [GitHub Discussions](https://github.com/orgs/elixpo/discussions).
 
-## Branch Naming Convention
+## Before you start
 
-Please create a new branch for each feature or fix you are working on. We follow conventional naming:
--   `feat/` - for new features (e.g., `feat/add-dark-mode`)
--   `fix/` - for bug fixes (e.g., `fix/header-alignment`)
--   `docs/` - for documentation updates (e.g., `docs/update-readme`)
--   `chore/` - for maintenance tasks, dependency updates, etc.
--   `ci/` - for CI/CD pipeline changes
+1. Read the [Code of Conduct](CODE_OF_CONDUCT.md) - it applies everywhere.
+2. Look for issues labelled **good first issue** or **help wanted**.
+3. For anything non-trivial, open or comment on an issue first so we can align
+   before you invest time.
 
-Never commit directly to the `main` branch.
+## Workflow
 
-## Pull Request Workflow
+1. **Fork** the repository and create a branch from `main`:
+   `git checkout -b feat/short-description`
+2. **Make your change.** Match the existing code style and keep commits focused.
+3. **Test it.** Make sure the project builds and existing checks pass.
+4. **Open a pull request** with a clear title and description of what changed
+   and why. Link any related issue.
+5. A maintainer will review. Address feedback, and once approved we merge.
 
-1.  Create a branch from `main` using the conventions above.
-2.  Make your changes and test them thoroughly.
-3.  Ensure your code follows the established code style.
-4.  Commit your changes using Conventional Commits guidelines (e.g., `feat: add user profile page`, `fix: resolve crash on login`).
-5.  Push your branch to your fork on GitHub.
-6.  Open a Pull Request against the `main` branch of the `elixpo/chat.elixpo` repository.
-7.  Provide a clear and descriptive title and description for your PR.
+## Commit & PR conventions
 
-## Code Style Expectations
+- Write clear, present-tense commit messages (e.g. `fix: handle empty roster`).
+- Keep pull requests small and single-purpose where possible.
+- Update docs and tests alongside code changes.
 
--   We use **TypeScript** for new features and components. Please ensure strict typing where possible.
--   We use **Tailwind CSS** for styling.
--   Ensure there are no build errors or linter warnings before submitting your PR.
--   Follow the existing directory structure and component patterns.
+## Licensing of contributions
 
-## Issue Assignment
+By submitting a contribution you agree it is licensed inbound under the Elixpo
+standard (**MIT** for code, **CC-BY-4.0** for assets) and that you have the
+right to submit it. The
+[Developer Certificate of Origin](https://developercertificate.org) applies to
+every commit. We do not require a CLA. See [LICENSE](LICENSE) and
+[NOTICE](LICENSES/NOTICE) for details, including the reserved Elixpo/Oreo brand.
 
--   Before working on an issue, please comment on it asking to be assigned.
--   Do not open a PR for an issue that is already assigned to someone else unless they have been inactive for a significant period.
--   If you find a bug but aren't ready to fix it, please open a detailed issue with reproduction steps.
+## Questions?
 
-We appreciate your contributions!
+Open a thread in [Discussions](https://github.com/orgs/elixpo/discussions) or
+email **hello@elixpo.com**. We're glad you're here.
