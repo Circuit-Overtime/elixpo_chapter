@@ -185,3 +185,57 @@ body {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+@keyframes moving-border-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes blob-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(6%, 8%) scale(1.1); }
+}
+@keyframes blob-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-8%, -6%) scale(1.05); }
+}
+@keyframes blob-drift-3 {
+  0%, 100% { transform: translate(-50%, 0) scale(1); }
+  50% { transform: translate(-50%, 10%) scale(0.95); }
+}
+.animate-blob-drift-1 { animation: blob-drift-1 14s ease-in-out infinite; }
+.animate-blob-drift-2 { animation: blob-drift-2 16s ease-in-out infinite; }
+.animate-blob-drift-3 { animation: blob-drift-3 12s ease-in-out infinite; }
+
+
+@keyframes spotlight {
+  0% {
+    opacity: 0;
+    transform: translate(-72%, -62%) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -40%) scale(1);
+  }
+}
+
+.animate-spotlight {
+  animation: spotlight 2s ease 0.75s 1 forwards;
+}
+@import "tailwindcss";
+
+@theme inline {
+  --animate-aurora: aurora 60s linear infinite;
+  @keyframes aurora {
+    from {
+      background-position:
+        50% 50%,
+        50% 50%;
+    }
+    to {
+      background-position:
+        350% 50%,
+        350% 50%;
+    }
+  }
+}
+@theme inline {
+  --animate-spotlight: spotlight 2s ease 0.75s 1 forwards;
+}
