@@ -53,6 +53,7 @@ export default function SearchPage() {
 
   const [input, setInput] = useState(q);
   const [results, setResults] = useState({ blogs: [], users: [], orgs: [] });
+  const [unknown, setUnknown] = useState([]); // qualifiers the parser didn't recognise
   const [loading, setLoading] = useState(!!q);
 
   // Keep the box in sync when the URL changes underneath us (back/forward, or a
@@ -74,8 +75,10 @@ export default function SearchPage() {
         fetch(`/api/search/orgs?q=${enc}&limit=20&fields=id,slug,name,logo_url,description,members,blogs`).then(r => r.json()).catch(() => ({ orgs: [] })),
       ]);
       setResults({ blogs: blogs.blogs || [], users: users.users || [], orgs: orgs.orgs || [] });
+      setUnknown(blogs.unknown || []);
     } catch {
       setResults({ blogs: [], users: [], orgs: [] });
+      setUnknown([]);
     }
     setLoading(false);
   }, []);
@@ -125,15 +128,45 @@ export default function SearchPage() {
         </form>
 
         {!q ? (
-          <p className="text-center py-16 text-[14px]" style={{ color: 'var(--text-faint)' }}>
-            Type something and press Enter to search.
-          </p>
+          <div className="py-14 text-center">
+            <p className="text-[14px] mb-6" style={{ color: 'var(--text-faint)' }}>
+              Type something and press Enter to search.
+            </p>
+            {/* Qualifiers are invisible unless we show them — a syntax nobody
+                discovers may as well not exist. */}
+            <p className="text-[12px] mb-3" style={{ color: 'var(--text-muted)' }}>Or narrow it down:</p>
+            <div className="flex flex-wrap items-center justify-center gap-2 max-w-lg mx-auto">
+              {['tag:hacktoberfest', 'author:nonsense3', 'org:gdgoc', 'sort:likes', '"exact phrase"', '-tag:meetup'].map(ex => (
+                <button
+                  key={ex}
+                  onClick={() => router.push(`/search?q=${encodeURIComponent(ex)}`)}
+                  className="px-2.5 py-1 rounded-md text-[12px] font-mono transition-colors"
+                  style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' }}
+                >
+                  {ex}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
           <>
-            <p className="text-[13px] mb-5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[13px] mb-3" style={{ color: 'var(--text-muted)' }}>
               {loading ? 'Searching' : `${totalCount} result${totalCount === 1 ? '' : 's'}`} for{' '}
               <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>“{q}”</span>
             </p>
+
+            {/* A typo like `athor:bob` silently searching for literal text is
+                confusing — say so instead of letting the user wonder. */}
+            {!loading && unknown.length > 0 && (
+              <div
+                className="mb-5 rounded-lg px-3 py-2 text-[12px]"
+                style={{ backgroundColor: 'rgba(232,168,64,0.08)', border: '1px solid rgba(232,168,64,0.3)', color: 'var(--text-muted)' }}
+              >
+                Not a known qualifier:{' '}
+                {unknown.map(u => <code key={u} className="font-mono" style={{ color: '#e8a840' }}>{u}</code>).reduce((a, b) => [a, ', ', b])}
+                {' '}— searched as plain text instead.
+              </div>
+            )}
 
             {/* Tabs */}
             <div className="flex items-center gap-1 mb-7 border-b" style={{ borderColor: 'var(--border-default)' }}>
