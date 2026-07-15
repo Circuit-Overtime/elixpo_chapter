@@ -55,15 +55,29 @@ function SearchBar() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  // Record the query so it feeds /api/search/suggestions later.
+  const recordSearch = (q) => {
+    fetch('/api/search/suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q }) }).catch(() => {});
+  };
+
   const handleSelect = (type, item) => {
     setOpen(false);
     setQuery('');
-    // Record search
-    fetch('/api/search/suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) }).catch(() => {});
+    recordSearch(query);
     if (type === 'user') router.push(`/${item.username}`);
     else if (type === 'org') router.push(`/${item.slug}`);
     else if (type === 'blog') router.push(`/${item.author_username || 'blog'}/${item.slug}`);
     else if (type === 'suggestion') { setQuery(item.query); setOpen(true); }
+  };
+
+  // Enter = "show me everything", not just the dropdown's top few. Puts the query
+  // in the URL so the result page is linkable, shareable and survives a refresh.
+  const submitSearch = () => {
+    const q = query.trim();
+    if (!q) return;
+    setOpen(false);
+    recordSearch(q);
+    router.push(`/search?q=${encodeURIComponent(q)}`);
   };
 
   const hasResults = results.users.length > 0 || results.orgs.length > 0 || results.blogs.length > 0;
@@ -76,6 +90,10 @@ function SearchBar() {
           value={query}
           onChange={e => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.preventDefault(); submitSearch(); }
+            else if (e.key === 'Escape') setOpen(false);
+          }}
           placeholder="Search blogs, people, topics..."
           className="flex-1 bg-transparent outline-none text-[14px]"
           style={{ color: 'var(--text-primary)' }}
@@ -90,7 +108,10 @@ function SearchBar() {
         </kbd>
       </div>
 
-      {open && (hasResults || suggestions.length > 0 || loading) && (
+      {/* Also open on a typed query with no matches, so the "No results" line and the
+          "See all results" escape hatch can actually render — previously both were
+          unreachable, since the panel only opened when there was something to show. */}
+      {open && (hasResults || suggestions.length > 0 || loading || query.trim().length >= 2) && (
         <div className="absolute left-0 right-0 top-full mt-2 rounded-xl shadow-xl z-50 overflow-hidden max-h-[400px] overflow-y-auto" style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
 
           {/* Suggestions */}
@@ -174,6 +195,25 @@ function SearchBar() {
 
           {!loading && query.length >= 2 && !hasResults && suggestions.length === 0 && (
             <div className="px-4 py-6 text-center text-[13px]" style={{ color: 'var(--text-faint)' }}>No results for "{query}"</div>
+          )}
+
+          {/* Escape hatch to the full results page. The dropdown caps each group at
+              five, and nobody discovers "press Enter" on their own. */}
+          {query.trim().length >= 2 && (
+            <button
+              onClick={submitSearch}
+              className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-left transition-colors"
+              style={{ borderTop: '1px solid var(--dropdown-border)' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <span className="text-[13px] font-medium truncate" style={{ color: 'var(--accent)' }}>
+                See all results for “{query.trim()}”
+              </span>
+              <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)', border: '1px solid var(--border-default)' }}>
+                Enter
+              </kbd>
+            </button>
           )}
         </div>
       )}
