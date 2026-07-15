@@ -74,23 +74,34 @@ export async function GET(request, { params }) {
 
     const total = await db.prepare('SELECT COUNT(*) as c FROM comments WHERE blog_id = ? AND parent_id IS NULL').bind(slugid).first();
 
-    // ── Secret posts: anonymous, author-only comments ──────────────────────
+    // ── Secret posts: anonymous comments, readable only by the post's team ──
     // Two separate rules, both enforced HERE rather than in the UI:
-    //   1. Identity is stripped for everyone (including the blog author) — a secret
-    //      post's discussion must not out the people taking part in it.
-    //   2. The body is only sent to the blog's author, plus each commenter's own
-    //      comments. Everyone else never receives the text at all — the client's
-    //      blurred div is a placeholder for content that was never transmitted.
-    //      Blurring text in CSS would be theatre: it sits in the network response.
+    //   1. Identity is stripped for everyone — including the author and collaborators.
+    //      A secret post's discussion must not out the people taking part in it, and
+    //      being on the post's team doesn't entitle you to know who commented.
+    //   2. The body is only sent to the post's team (author + accepted collaborators),
+    //      plus each commenter's own comments back to them. Everyone else never
+    //      receives the text at all — the client's blurred div is a placeholder for
+    //      content that was never transmitted. Blurring in CSS would be theatre: the
+    //      text would still be sitting in the network response.
     const blog = await db.prepare('SELECT author_id, secret FROM blogs WHERE id = ?').bind(slugid).first();
     if (blog?.secret) {
       const session = await getSession().catch(() => null);
       const viewerId = session?.userId || null;
-      const isBlogAuthor = !!viewerId && viewerId === blog.author_id;
+
+      // The post's team = author + accepted collaborators. Pending/declined invites
+      // grant nothing.
+      let isTeam = !!viewerId && viewerId === blog.author_id;
+      if (viewerId && !isTeam) {
+        const co = await db.prepare(
+          "SELECT 1 FROM blog_co_authors WHERE blog_id = ? AND user_id = ? AND status = 'accepted'"
+        ).bind(slugid, viewerId).first();
+        isTeam = !!co;
+      }
 
       const redact = (c) => {
         const mine = !!viewerId && c.user_id === viewerId;
-        const canRead = isBlogAuthor || mine;
+        const canRead = isTeam || mine;
         return {
           ...c,
           user_id: undefined,

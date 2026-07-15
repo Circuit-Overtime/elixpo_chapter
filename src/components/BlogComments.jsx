@@ -49,7 +49,7 @@ function BlurredBody() {
       </div>
       <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: 'var(--text-faint)' }}>
         <ion-icon name="lock-closed-outline" style={{ fontSize: '11px' }} />
-        Only this post’s author can read its comments
+        Only this post’s author and collaborators can read its comments
       </p>
     </div>
   );

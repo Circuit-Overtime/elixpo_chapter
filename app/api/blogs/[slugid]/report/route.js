@@ -22,7 +22,7 @@ export async function POST(request, { params }) {
     const db = getDB();
 
     const blog = await db.prepare(
-      `SELECT b.id, b.title, b.slug, b.status, b.author_id, u.username AS author_username
+      `SELECT b.id, b.title, b.slug, b.status, b.secret, b.author_id, u.username AS author_username
        FROM blogs b JOIN users u ON u.id = b.author_id WHERE b.id = ?`
     ).bind(slugid).first();
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
@@ -44,7 +44,10 @@ export async function POST(request, { params }) {
 
     const origin = new URL(request.url).origin;
     const reporter = session.profile?.username || session.userId;
-    const blogUrl = `${origin}/${blog.author_username}/${blog.slug}`;
+    // Canonical path is secret-aware: a secret post resolves to /{id}, never to
+    // /{author_username}/{slug} — that form both 404s and names the author.
+    const { getBlogCanonicalPath } = await import('../../../../../lib/blogUrl');
+    const blogUrl = `${origin}${await getBlogCanonicalPath(db, slugid)}`;
 
     // Best-effort GitHub sync — never fail the report if GitHub is down.
     try {
@@ -59,7 +62,14 @@ export async function POST(request, { params }) {
           body: [
             `**Reported blog:** [${blog.title || blog.slug}](${blogUrl})`,
             `**Blog ID:** \`${blog.id}\``,
-            `**Author:** @${blog.author_username}`,
+            // This issue is PUBLIC. Naming the author of a secret post here would
+            // undo the anonymity everywhere else in one line of markdown — and a
+            // GitHub issue is effectively permanent. The Blog ID is enough: a
+            // maintainer who genuinely needs the author can reverse-look up
+            // `author_id` from the blogs table in D1.
+            blog.secret
+              ? '**Author:** _withheld — secret (anonymous) post. Look up `author_id` by the Blog ID above in D1 if a takedown requires it._'
+              : `**Author:** @${blog.author_username}`,
             `**Reported by:** @${reporter}`,
             `**Reason:** ${reason}`,
             `**Detail:** ${detail || '—'}`,
@@ -67,7 +77,7 @@ export async function POST(request, { params }) {
             '---',
             'Maintainers: add the **`takedown`** label to permanently remove this blog (author emailed), or **`dismiss`** to clear.',
           ].join('\n'),
-          labels: ['MODERATION', 'REPORT'],
+          labels: blog.secret ? ['MODERATION', 'REPORT', 'SECRET'] : ['MODERATION', 'REPORT'],
         });
         await db.prepare('UPDATE reports SET gh_issue_number = ? WHERE id = ?').bind(issue.number, reportId).run();
       }
