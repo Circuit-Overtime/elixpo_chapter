@@ -15,6 +15,46 @@ function timeAgo(ts) {
   return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// Under a secret post the API returns username/avatar_url as null. Render the
+// avatar unlinked in that case — an <a href="/null"> would be both broken and a
+// hint that there's a profile behind it.
+function CommentAvatar({ c, small = false }) {
+  const box = small ? 'w-6 h-6 text-[10px]' : 'w-8 h-8 text-[12px]';
+  const inner = c.avatar_url ? (
+    <img src={c.avatar_url} alt="" className={`${box} rounded-full object-cover`} />
+  ) : (
+    <div className={`${box} rounded-full flex items-center justify-center font-bold`} style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
+      {(c.display_name || c.username || '?')[0].toUpperCase()}
+    </div>
+  );
+  if (!c.username) return <div className="flex-shrink-0">{inner}</div>;
+  return <Link href={`/${c.username}`} className="flex-shrink-0">{inner}</Link>;
+}
+
+function CommentName({ c, small = false }) {
+  const size = small ? 'text-[12px]' : 'text-[13px]';
+  const label = c.display_name || c.username || 'Anonymous';
+  if (!c.username) return <span className={`${size} font-semibold`} style={{ color: 'var(--text-primary)' }}>{label}</span>;
+  return <Link href={`/${c.username}`} className={`${size} font-semibold`} style={{ color: 'var(--text-primary)' }}>{label}</Link>;
+}
+
+// Placeholder for a comment whose text the server withheld. There is nothing to
+// un-blur here: the content never arrived in the response, so this is purely visual.
+function BlurredBody() {
+  return (
+    <div className="select-none">
+      <div aria-hidden="true" style={{ filter: 'blur(4px)', opacity: 0.7 }}>
+        <div className="h-3 rounded mb-1.5" style={{ backgroundColor: 'var(--bg-elevated)', width: '92%' }} />
+        <div className="h-3 rounded" style={{ backgroundColor: 'var(--bg-elevated)', width: '58%' }} />
+      </div>
+      <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: 'var(--text-faint)' }}>
+        <ion-icon name="lock-closed-outline" style={{ fontSize: '11px' }} />
+        Only this post’s author can read its comments
+      </p>
+    </div>
+  );
+}
+
 export default function BlogComments({ blogId, blogAuthorId }) {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
@@ -151,18 +191,10 @@ export default function BlogComments({ blogId, blogAuthorId }) {
             <div key={c.id}>
               {/* Top-level comment */}
               <div className="flex gap-3 py-4" style={{ borderBottom: '1px solid var(--divider)' }}>
-                <Link href={`/${c.username}`} className="flex-shrink-0">
-                  {c.avatar_url ? (
-                    <img src={c.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
-                      {(c.display_name || c.username || '?')[0].toUpperCase()}
-                    </div>
-                  )}
-                </Link>
+                <CommentAvatar c={c} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <Link href={`/${c.username}`} className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{c.display_name || c.username}</Link>
+                    <CommentName c={c} />
                     <span className="text-[11px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(c.created_at)}</span>
                     {c.updated_at > c.created_at && <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>(edited)</span>}
                   </div>
@@ -184,6 +216,8 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                         <button onClick={() => setEditing(null)} className="text-[12px] font-medium" style={{ color: 'var(--text-faint)' }}>Cancel</button>
                       </div>
                     </div>
+                  ) : c.blurred ? (
+                    <BlurredBody />
                   ) : (
                     <p className="text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{renderMentions(c.content, c.mentions, Link)}</p>
                   )}
@@ -198,10 +232,12 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                       >
                         {replyTo?.id === c.id ? 'Cancel' : `Reply${c.reply_count > 0 ? ` (${c.reply_count})` : ''}`}
                       </button>
-                      {user.id === c.user_id && (
+                      {/* Under a secret post the API withholds user_id, so ownership
+                          comes from the server's is_mine flag instead. */}
+                      {(c.is_mine ?? user.id === c.user_id) && !c.blurred && (
                         <button onClick={() => setEditing({ id: c.id, content: c.content })} className="text-[12px] font-medium transition-colors" style={{ color: 'var(--text-faint)' }}>Edit</button>
                       )}
-                      {(user.id === c.user_id || user.id === blogAuthorId) && (
+                      {((c.is_mine ?? user.id === c.user_id) || user.id === blogAuthorId) && (
                         <button onClick={() => deleteComment(c.id)} className="text-[12px] font-medium transition-colors" style={{ color: '#f87171' }}>Delete</button>
                       )}
                     </div>
@@ -234,21 +270,17 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                     <div className="mt-3 ml-2 pl-4" style={{ borderLeft: '2px solid var(--border-default)' }}>
                       {c.replies.map(r => (
                         <div key={r.id} className="flex gap-2.5 py-3">
-                          <Link href={`/${r.username}`} className="flex-shrink-0">
-                            {r.avatar_url ? (
-                              <img src={r.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
-                                {(r.display_name || r.username || '?')[0].toUpperCase()}
-                              </div>
-                            )}
-                          </Link>
+                          <CommentAvatar c={r} small />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <Link href={`/${r.username}`} className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>{r.display_name || r.username}</Link>
+                              <CommentName c={r} small />
                               <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(r.created_at)}</span>
                             </div>
-                            <p className="text-[13px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{renderMentions(r.content, r.mentions, Link)}</p>
+                            {r.blurred ? (
+                              <BlurredBody />
+                            ) : (
+                              <p className="text-[13px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{renderMentions(r.content, r.mentions, Link)}</p>
+                            )}
                           </div>
                         </div>
                       ))}

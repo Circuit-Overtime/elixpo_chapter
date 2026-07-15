@@ -74,6 +74,42 @@ export async function GET(request, { params }) {
 
     const total = await db.prepare('SELECT COUNT(*) as c FROM comments WHERE blog_id = ? AND parent_id IS NULL').bind(slugid).first();
 
+    // ── Secret posts: anonymous, author-only comments ──────────────────────
+    // Two separate rules, both enforced HERE rather than in the UI:
+    //   1. Identity is stripped for everyone (including the blog author) — a secret
+    //      post's discussion must not out the people taking part in it.
+    //   2. The body is only sent to the blog's author, plus each commenter's own
+    //      comments. Everyone else never receives the text at all — the client's
+    //      blurred div is a placeholder for content that was never transmitted.
+    //      Blurring text in CSS would be theatre: it sits in the network response.
+    const blog = await db.prepare('SELECT author_id, secret FROM blogs WHERE id = ?').bind(slugid).first();
+    if (blog?.secret) {
+      const session = await getSession().catch(() => null);
+      const viewerId = session?.userId || null;
+      const isBlogAuthor = !!viewerId && viewerId === blog.author_id;
+
+      const redact = (c) => {
+        const mine = !!viewerId && c.user_id === viewerId;
+        const canRead = isBlogAuthor || mine;
+        return {
+          ...c,
+          user_id: undefined,
+          username: null,
+          display_name: 'Anonymous',
+          avatar_url: null,
+          mentions: [],
+          content: canRead ? c.content : null,
+          blurred: !canRead,
+          is_mine: mine,
+        };
+      };
+      const redacted = comments.map((c) => ({
+        ...redact(c),
+        replies: (c.replies || []).map(redact),
+      }));
+      return NextResponse.json({ comments: redacted, total: total?.c || 0, page, hasMore: comments.length === limit, secret: true });
+    }
+
     return NextResponse.json({ comments, total: total?.c || 0, page, hasMore: comments.length === limit });
   } catch (e) {
     console.error('Comments fetch error:', e);
@@ -97,7 +133,7 @@ export async function POST(request, { params }) {
     const db = getDB();
 
     // Check blog allows comments
-    const blog = await db.prepare('SELECT id, author_id, title, allow_comments FROM blogs WHERE id = ?').bind(slugid).first();
+    const blog = await db.prepare('SELECT id, author_id, title, allow_comments, secret FROM blogs WHERE id = ?').bind(slugid).first();
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
     if (!blog.allow_comments) return NextResponse.json({ error: 'Comments are disabled' }, { status: 403 });
 
@@ -132,11 +168,17 @@ export async function POST(request, { params }) {
       const { getBlogCanonicalPath } = await import('../../../../../lib/blogUrl');
       const blogUrl = await getBlogCanonicalPath(db, slugid);
 
+      // Under a secret post the discussion is anonymous even to the post's author,
+      // so the notification can't carry the commenter either — "alice commented on
+      // your post" would undo every strip we do on the read path.
+      const actor = blog.secret
+        ? { actorId: null, actorName: 'Anonymous', actorAvatar: null }
+        : { actorId: session.userId, actorName: user?.display_name || user?.username, actorAvatar: user?.avatar_url };
+
       if (blog.author_id !== session.userId) {
         await notify(db, {
           userId: blog.author_id, type: 'comment',
-          actorId: session.userId, actorName: user?.display_name || user?.username,
-          actorAvatar: user?.avatar_url, targetId: slugid,
+          ...actor, targetId: slugid,
           targetTitle: blog.title, targetUrl: blogUrl,
         });
       }
@@ -151,8 +193,7 @@ export async function POST(request, { params }) {
           alreadyNotified.add(parent.user_id);
           await notify(db, {
             userId: parent.user_id, type: 'mention',
-            actorId: session.userId, actorName: user?.display_name || user?.username,
-            actorAvatar: user?.avatar_url, targetId: slugid,
+            ...actor, targetId: slugid,
             targetTitle: blog.title, targetUrl: blogUrl,
           });
         }
@@ -170,8 +211,7 @@ export async function POST(request, { params }) {
             alreadyNotified.add(u.id);
             await notify(db, {
               userId: u.id, type: 'mention',
-              actorId: session.userId, actorName: user?.display_name || user?.username,
-              actorAvatar: user?.avatar_url, targetId: slugid,
+              ...actor, targetId: slugid,
               targetTitle: blog.title, targetUrl: blogUrl,
             });
           }
