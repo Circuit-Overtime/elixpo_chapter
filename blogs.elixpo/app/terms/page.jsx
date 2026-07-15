@@ -4,7 +4,7 @@ import { marked } from 'marked';
 import MarkdownPage from '../../src/components/MarkdownPage';
 
 export const metadata = {
-  title: 'Terms of Service — LixBlogs',
+  title: 'Terms of Service',
   description: 'The terms governing your use of LixBlogs.',
 };
 

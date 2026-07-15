@@ -4,7 +4,7 @@ import { marked } from 'marked';
 import DocsView from '../../src/components/DocsView';
 
 export const metadata = {
-  title: 'Docs — LixBlogs',
+  title: 'Docs',
   description: 'Developer API for the LixEditor package, npm, and the VS Code extension.',
 };
 
