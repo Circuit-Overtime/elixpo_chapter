@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '../components/AppShell';
+import SearchBar from '../components/SearchBar';
 import { generateBlogBanner } from '../utils/pixelAvatar';
 
 const TABS = [
@@ -51,14 +52,9 @@ export default function SearchPage() {
   const q = (searchParams.get('q') || '').trim();
   const tab = searchParams.get('tab') || 'all';
 
-  const [input, setInput] = useState(q);
   const [results, setResults] = useState({ blogs: [], users: [], orgs: [] });
   const [unknown, setUnknown] = useState([]); // qualifiers the parser didn't recognise
   const [loading, setLoading] = useState(!!q);
-
-  // Keep the box in sync when the URL changes underneath us (back/forward, or a
-  // link into /search?q=…).
-  useEffect(() => { setInput(q); }, [q]);
 
   const runSearch = useCallback(async (query) => {
     if (!query || query.length < 2) {
@@ -85,15 +81,7 @@ export default function SearchPage() {
 
   useEffect(() => { runSearch(q); }, [q, runSearch]);
 
-  // The URL is the source of truth: submitting pushes a new query so results stay
-  // linkable and the back button walks the search history.
-  const submit = (e) => {
-    e?.preventDefault();
-    const next = input.trim();
-    if (!next) return;
-    router.push(`/search?q=${encodeURIComponent(next)}${tab !== 'all' ? `&tab=${tab}` : ''}`);
-  };
-
+  // SearchBar owns submission: it pushes /search?q=…, and this page re-reads the URL.
   const setTab = (id) => {
     router.push(`/search?q=${encodeURIComponent(q)}${id !== 'all' ? `&tab=${id}` : ''}`);
   };
@@ -107,25 +95,11 @@ export default function SearchPage() {
   return (
     <AppShell>
       <div className="max-w-3xl mx-auto px-6 py-10">
-        {/* Search box */}
-        <form onSubmit={submit} className="mb-6">
-          <div className="flex items-center gap-2 rounded-xl px-4 py-3" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
-            <ion-icon name="search-outline" style={{ fontSize: '18px', color: 'var(--text-faint)' }} />
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Search blogs, people, topics..."
-              autoFocus={!q}
-              className="flex-1 bg-transparent outline-none text-[15px]"
-              style={{ color: 'var(--text-primary)' }}
-            />
-            {input && (
-              <button type="button" onClick={() => setInput('')} className="flex items-center justify-center w-6 h-6 rounded-full" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-elevated)' }}>
-                <ion-icon name="close" style={{ fontSize: '14px' }} />
-              </button>
-            )}
-          </div>
-        </form>
+        {/* Same bar as the feed: suggestions, recent history and the syntax link
+            belong here too — this is where people refine a query. */}
+        <div className="mb-6">
+          <SearchBar defaultQuery={q} autoFocus={!q} />
+        </div>
 
         {!q ? (
           <div className="py-14 text-center">
@@ -150,10 +124,16 @@ export default function SearchPage() {
           </div>
         ) : (
           <>
-            <p className="text-[13px] mb-3" style={{ color: 'var(--text-muted)' }}>
-              {loading ? 'Searching' : `${totalCount} result${totalCount === 1 ? '' : 's'}`} for{' '}
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>“{q}”</span>
-            </p>
+            <div className="flex items-baseline justify-between gap-4 mb-3">
+              <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                {loading ? 'Searching' : `${totalCount} result${totalCount === 1 ? '' : 's'}`} for{' '}
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>“{q}”</span>
+              </p>
+              <Link href="/docs/search" className="text-[12px] flex items-center gap-1 flex-shrink-0 hover:underline" style={{ color: 'var(--text-faint)' }}>
+                <ion-icon name="help-circle-outline" style={{ fontSize: '13px' }} />
+                Search syntax
+              </Link>
+            </div>
 
             {/* A typo like `athor:bob` silently searching for literal text is
                 confusing — say so instead of letting the user wonder. */}
