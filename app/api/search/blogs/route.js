@@ -1,35 +1,47 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
+import { parseSearchQuery, buildBlogSearch, isEmptyQuery } from '../../../../lib/searchQuery';
 
-// Granular blog search with selectable fields
+// Granular blog search with selectable fields.
+//
 // ?q=query&fields=slugid,slug,title,author,tags,views,likes,comments
+//
+// `q` supports the LixBlogs search protocol (tag:, author:, org:, in:, is:, sort:,
+// created:, quoted phrases, - negation) — see docs/search-syntax.md and lib/searchQuery.js.
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const q = (searchParams.get('q') || '').trim().toLowerCase();
+  const q = (searchParams.get('q') || '').trim();
   const fields = (searchParams.get('fields') || 'slugid,slug,title').split(',').map(f => f.trim());
   const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 20);
   const status = searchParams.get('status') || 'published,unlisted';
 
-  if (!q || q.length < 2) {
-    return NextResponse.json({ blogs: [] });
+  const parsed = parseSearchQuery(q);
+  // A bare word still needs 2+ chars, but `tag:ai` alone is a perfectly good query
+  // with no free text at all — so the length floor only applies to free text.
+  const freeText = [...parsed.text, ...parsed.phrases].join('');
+  if (isEmptyQuery(parsed) || (freeText.length > 0 && freeText.length < 2)) {
+    return NextResponse.json({ blogs: [], unknown: parsed.unknown });
   }
 
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
-    const pattern = `%${q}%`;
-    const statuses = status.split(',').map(s => s.trim());
-    const placeholders = statuses.map(() => '?').join(',');
+
+    const defaultStatus = status.split(',').map(s => s.trim()).filter(Boolean);
+    const { where, binds, orderBy } = buildBlogSearch(parsed, { defaultStatus });
 
     const base = await db.prepare(`
       SELECT b.id as slugid, b.slug, b.title, b.subtitle, b.page_emoji, b.cover_image_r2_key, b.secret,
         b.read_time_minutes, b.published_at, b.author_id, b.status,
-        u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
+        au.username as author_username, au.display_name as author_name, au.avatar_url as author_avatar,
+        o.slug as org_slug, o.name as org_name
       FROM blogs b
-      JOIN users u ON u.id = b.author_id
-      WHERE (LOWER(b.title) LIKE ? OR LOWER(b.slug) LIKE ?) AND b.status IN (${placeholders})
+      JOIN users au ON au.id = b.author_id
+      LEFT JOIN orgs o ON ('org:' || o.id) = b.published_as
+      WHERE ${where}
+      ORDER BY ${orderBy}
       LIMIT ?
-    `).bind(pattern, pattern, ...statuses, limit).all();
+    `).bind(...binds, limit).all();
 
     const blogs = (base?.results || []).map((b) => {
       if (!b.secret) return b;
@@ -59,7 +71,9 @@ export async function GET(request) {
       }
     }
 
-    return NextResponse.json({ blogs });
+    // `unknown` lets the UI say "athor:x isn't a qualifier, it was searched as text"
+    // instead of quietly returning odd results.
+    return NextResponse.json({ blogs, unknown: parsed.unknown });
   } catch (e) {
     // Log it. A bare `catch {}` here previously turned a SQL syntax error into a
     // silent, permanently-empty result set — the endpoint looked like it simply
