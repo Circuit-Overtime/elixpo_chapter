@@ -102,6 +102,12 @@ export async function GET(request, { params }) {
       const redact = (c) => {
         const mine = !!viewerId && c.user_id === viewerId;
         const canRead = isTeam || mine;
+        // The post's author is badged "Author" in their own thread. This admits they
+        // are present — which readers can infer anyway once someone answers as the
+        // writer — but it never says WHO they are: the byline stays "Anonymous" and
+        // no identifying field is sent. Being honest about the role beats an
+        // unlabelled author that readers can't distinguish from a stranger.
+        const byAuthor = c.user_id === blog.author_id;
         return {
           ...c,
           user_id: undefined,
@@ -112,6 +118,7 @@ export async function GET(request, { params }) {
           content: canRead ? c.content : null,
           blurred: !canRead,
           is_mine: mine,
+          is_post_author: byAuthor,
         };
       };
       const redacted = comments.map((c) => ({

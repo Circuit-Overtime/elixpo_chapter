@@ -31,6 +31,21 @@ function CommentAvatar({ c, small = false }) {
   return <Link href={`/${c.username}`} className="flex-shrink-0">{inner}</Link>;
 }
 
+// "Author" badge on the post author's own comments. On a secret post user_id is
+// withheld, so the server sends `is_post_author`; on a normal post the client can
+// derive it from blogAuthorId. Either way the badge marks the role, never the person.
+function AuthorBadge() {
+  return (
+    <span
+      className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex-shrink-0"
+      style={{ backgroundColor: '#9b7bf71f', color: '#9b7bf7' }}
+      title="Written by the author of this post"
+    >
+      Author
+    </span>
+  );
+}
+
 function CommentName({ c, small = false }) {
   const size = small ? 'text-[12px]' : 'text-[13px]';
   const label = c.display_name || c.username || 'Anonymous';
@@ -230,6 +245,7 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <CommentName c={c} />
+                    {(c.is_post_author ?? (blogAuthorId && c.user_id === blogAuthorId)) && <AuthorBadge />}
                     <span className="text-[11px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(c.created_at)}</span>
                     {c.updated_at > c.created_at && <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>(edited)</span>}
                   </div>
@@ -323,6 +339,7 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
                               <CommentName c={r} small />
+                              {(r.is_post_author ?? (blogAuthorId && r.user_id === blogAuthorId)) && <AuthorBadge />}
                               <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(r.created_at)}</span>
                             </div>
                             {r.blurred ? (

@@ -408,6 +408,10 @@ export default function WritePage({ slugid }) {
   // Secret mode: publish with no author shown. Free to toggle while this is a draft,
   // frozen by the server once the post has been public even once.
   const [secret, setSecret] = useState(false);
+  // Sub-pages/canvases already on a post that's being switched to secret. They can't
+  // come along, so the author (or a co-author) is told before they publish rather
+  // than hitting a server rejection later.
+  const [secretBlockers, setSecretBlockers] = useState([]);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [showPublishPanel, setShowPublishPanel] = useState(() => {
@@ -1204,6 +1208,25 @@ export default function WritePage({ slugid }) {
   const publishedUrl = `/${ownerSlug}/${slug || blogId}`;
   // Nothing edited (content or settings) since load / last publish.
   const hasNoChanges = () => !hasUnsavedEdits && settingsSnapshotRef.current === settingsKey();
+
+  const toggleSecret = () => {
+    if (isPublished) return;
+    setSecret(s => !s);
+  };
+
+  // Secret posts can't carry sub-pages/canvases. Warn whenever the post is secret
+  // and some already exist — covers both toggling it on and reopening a draft that
+  // was already secret. Best-effort: the server refuses them regardless.
+  useEffect(() => {
+    if (!secret) { setSecretBlockers([]); return; }
+    if (draftLoading || !blogId) return;
+    let cancelled = false;
+    fetch(`/api/subpages?blogId=${encodeURIComponent(blogId)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && !cancelled) setSecretBlockers(d.subpages || []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [secret, draftLoading, blogId]);
 
   const doPublish = async (targetStatus) => {
     if (!title.trim() || publishing) return;
@@ -2422,7 +2445,7 @@ export default function WritePage({ slugid }) {
               {isPublished && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-faint)' }}>(locked)</span>}
             </label>
             <button
-              onClick={() => { if (!isPublished) setSecret(s => !s); }}
+              onClick={toggleSecret}
               disabled={isPublished}
               className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-[13px] transition-colors disabled:cursor-default"
               style={{
@@ -2449,9 +2472,27 @@ export default function WritePage({ slugid }) {
               {isPublished
                 ? 'Secret mode can’t be changed after a post goes live.'
                 : secret
-                  ? 'No name, avatar or co-authors shown. Readable only via its short link, kept off your profile and out of search. You can’t undo this after publishing — and we still store your identity for abuse reports.'
+                  ? 'No name, avatar or co-authors shown. Readable only via its short link, kept off your profile and out of search. Sub-pages and canvases are unavailable. You can’t undo this after publishing — and we still store your identity for abuse reports.'
                   : 'Hide your name from readers. Choose before publishing — it locks once live.'}
             </p>
+
+            {secret && secretBlockers.length > 0 && (
+              <div
+                className="mt-2 rounded-lg px-3 py-2.5 text-[11px] leading-relaxed"
+                style={{ backgroundColor: 'rgba(232,168,64,0.08)', border: '1px solid rgba(232,168,64,0.35)', color: 'var(--text-body)' }}
+              >
+                <p className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: '#e8a840' }}>
+                  <ion-icon name="warning-outline" style={{ fontSize: '13px' }} />
+                  {secretBlockers.length} sub-page{secretBlockers.length === 1 ? '' : 's'}/canvas won’t be published
+                </p>
+                <p style={{ color: 'var(--text-muted)' }}>
+                  Secret posts can’t have sub-pages or canvases — they’re a separate surface with their own
+                  sharing rules that wouldn’t stay anonymous. Turn secret mode off, or remove{' '}
+                  {secretBlockers.map(s => s.title || 'Untitled').slice(0, 3).join(', ')}
+                  {secretBlockers.length > 3 ? ` +${secretBlockers.length - 3} more` : ''} before publishing.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
