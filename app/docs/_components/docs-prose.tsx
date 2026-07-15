@@ -6,9 +6,9 @@ import type React from "react";
 
 const CORAL = "#ff7759";
 const ACTION_BLUE = "#1863dc";
-const INK = "#212121";
-const SLATE = "#75758a";
-const HAIRLINE = "#d9d9dd";
+const INK = "var(--fg)";
+const SLATE = "var(--fg-muted)";
+const HAIRLINE = "var(--border)";
 
 export function DocTitle({ children }: { children: React.ReactNode }) {
     return (
@@ -19,7 +19,7 @@ export function DocTitle({ children }: { children: React.ReactNode }) {
                 fontSize: "2.2rem",
                 letterSpacing: "-0.03em",
                 mb: 2,
-                color: "#000000",
+                color: "var(--fg)",
                 fontFamily: "var(--font-display)",
                 lineHeight: 1.1,
             }}
@@ -54,7 +54,7 @@ export function DocH2({ children }: { children: React.ReactNode }) {
                 fontSize: "1.45rem",
                 mt: 4.5,
                 mb: 1.8,
-                color: "#000000",
+                color: "var(--fg)",
                 letterSpacing: "-0.02em",
                 fontFamily: "var(--font-display)",
             }}
@@ -73,7 +73,7 @@ export function DocH3({ children }: { children: React.ReactNode }) {
                 fontSize: "1.15rem",
                 mt: 3.5,
                 mb: 1.2,
-                color: "#000000",
+                color: "var(--fg)",
                 fontFamily: "var(--font-display)",
             }}
         >
@@ -125,8 +125,8 @@ export function Code({ children }: { children: React.ReactNode }) {
             sx={{
                 fontFamily: "var(--font-mono)",
                 fontSize: "0.85rem",
-                background: "#eeece7", // Soft Stone
-                color: "#003c33", // Deep Green text for technical elements
+                background: "var(--surface-3)",
+                color: "var(--code-fg)",
                 px: 0.6,
                 py: 0.2,
                 borderRadius: "4px",
@@ -143,7 +143,7 @@ export function BaseUrlChip() {
         <Chip
             label="Base URL: https://mails.elixpo.com"
             sx={{
-                bgcolor: "#eeece7", // Soft Stone
+                bgcolor: "var(--surface-3)",
                 color: INK,
                 border: `1px solid ${HAIRLINE}`,
                 fontFamily: "var(--font-mono)",
@@ -167,7 +167,7 @@ export function Callout({
 }) {
     const isWarn = tone === "warn";
     const borderColor = isWarn ? CORAL : ACTION_BLUE;
-    const bgColor = isWarn ? "rgba(255, 119, 89, 0.05)" : "#f1f5ff"; // Soft Coral / Pale Blue Wash
+    const bgColor = isWarn ? "var(--callout-warn-bg)" : "var(--callout-info-bg)";
 
     return (
         <Box
@@ -232,8 +232,8 @@ export function NextLink({ href, label }: { href: string; label: string }) {
                     fontFamily: "var(--font-sans)",
                     transition: "all 0.2s ease",
                     "&:hover": {
-                        borderColor: INK,
-                        background: "rgba(0, 0, 0, 0.02)",
+                        borderColor: "var(--fg)",
+                        background: "var(--overlay)",
                     },
                 }}
             >

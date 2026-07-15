@@ -67,6 +67,11 @@
     --topbar-bg: rgba(255, 255, 255, 0.82);
     --drawer-bg: #ffffff;
     color-scheme: light;
+
+    /* Inline code & Callout specific variables */
+    --code-fg: var(--deep-green);
+    --callout-info-bg: #f1f5ff;
+    --callout-warn-bg: rgba(255, 119, 89, 0.05);
 }
 
 /* ── Dark theme ──────────────────────────────────────────────────────────── */
@@ -94,6 +99,11 @@
     --topbar-bg: rgba(11, 13, 18, 0.72);
     --drawer-bg: #0d1016;
     color-scheme: dark;
+
+    /* Inline code & Callout specific variables */
+    --code-fg: var(--pale-green);
+    --callout-info-bg: rgba(24, 99, 220, 0.08);
+    --callout-warn-bg: rgba(255, 119, 89, 0.1);
 }
 
 @theme inline {

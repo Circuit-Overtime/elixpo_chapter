@@ -26,9 +26,9 @@ import { useState } from "react";
 import CopyForLlm from "./_components/copy-for-llm";
 
 const CORAL = "#ff7759";
-const INK = "#212121";
-const SLATE = "#75758a";
-const HAIRLINE = "#d9d9dd";
+const INK = "var(--fg)";
+const SLATE = "var(--fg-muted)";
+const HAIRLINE = "var(--border)";
 
 const DOCS_NAV = [
     { label: "Overview", href: "/docs" },
@@ -42,8 +42,8 @@ const DOCS_NAV = [
 ];
 
 const navBtn = {
-    color: INK,
-    borderColor: HAIRLINE,
+    color: "var(--fg)",
+    borderColor: "var(--border)",
     textTransform: "none" as const,
     fontWeight: 500,
     px: 2.8,
@@ -52,7 +52,7 @@ const navBtn = {
     borderRadius: "32px", // Pill
     fontFamily: "var(--font-sans)",
     transition: "all 0.2s ease",
-    "&:hover": { borderColor: "#000000", bgcolor: "rgba(0, 0, 0, 0.02)" },
+    "&:hover": { borderColor: "var(--fg)", bgcolor: "var(--overlay)" },
 };
 
 export default function DocsClientLayout({ children }: { children: React.ReactNode }) {
@@ -79,13 +79,13 @@ export default function DocsClientLayout({ children }: { children: React.ReactNo
                                     py: 0.8,
                                     px: 2,
                                     bgcolor: active ? "rgba(255, 119, 89, 0.06)" : "transparent",
-                                    color: active ? CORAL : "rgba(33, 33, 33, 0.65)",
+                                    color: active ? CORAL : "var(--fg-muted)",
                                     transition: "all 0.15s ease",
                                     "&:hover": {
                                         bgcolor: active
                                             ? "rgba(255, 119, 89, 0.1)"
-                                            : "rgba(0, 0, 0, 0.04)",
-                                        color: active ? CORAL : INK,
+                                            : "var(--overlay)",
+                                        color: active ? CORAL : "var(--fg)",
                                     },
                                 }}
                             >
@@ -106,7 +106,14 @@ export default function DocsClientLayout({ children }: { children: React.ReactNo
     );
 
     return (
-        <Box sx={{ position: "relative", minHeight: "100vh", color: INK, background: "#ffffff" }}>
+        <Box
+            sx={{
+                position: "relative",
+                minHeight: "100vh",
+                color: "var(--foreground)",
+                background: "var(--background)",
+            }}
+        >
             <Box
                 sx={{
                     position: "relative",
@@ -120,10 +127,10 @@ export default function DocsClientLayout({ children }: { children: React.ReactNo
                     position="sticky"
                     elevation={0}
                     sx={{
-                        bgcolor: "rgba(255, 255, 255, 0.85)",
+                        bgcolor: "var(--topbar-bg)",
                         backdropFilter: "blur(16px)",
                         borderBottom: `1px solid ${HAIRLINE}`,
-                        color: INK,
+                        color: "var(--fg)",
                     }}
                 >
                     <Toolbar
@@ -161,7 +168,7 @@ export default function DocsClientLayout({ children }: { children: React.ReactNo
                             <Typography
                                 sx={{
                                     fontWeight: 500,
-                                    color: "#000000",
+                                    color: "var(--fg)",
                                     display: { xs: "none", sm: "block" },
                                     fontFamily: "var(--font-display)",
                                 }}
@@ -213,7 +220,7 @@ export default function DocsClientLayout({ children }: { children: React.ReactNo
                             display: { xs: "block", md: "none" },
                             "& .MuiDrawer-paper": {
                                 width: 260,
-                                bgcolor: "#ffffff",
+                                bgcolor: "var(--drawer-bg)",
                                 borderRight: `1px solid ${HAIRLINE}`,
                             },
                         }}

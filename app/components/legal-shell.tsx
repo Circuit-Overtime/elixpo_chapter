@@ -5,9 +5,9 @@ import type React from "react";
 import PageShell from "./page-shell";
 
 const CORAL = "#ff7759";
-const INK = "#212121";
-const SLATE = "#75758a";
-const HAIRLINE = "#d9d9dd";
+const INK = "var(--fg)";
+const SLATE = "var(--fg-muted)";
+const HAIRLINE = "var(--border)";
 
 /** Chrome for a legal/policy document: aurora shell + centered prose column. */
 export function LegalShell({
@@ -45,7 +45,7 @@ export function LegalShell({
                             fontSize: { xs: "2.2rem", md: "3.2rem" },
                             letterSpacing: "-0.03em",
                             lineHeight: 1.05,
-                            color: "#000000",
+                            color: "var(--fg)",
                             mb: 2,
                             fontFamily: "var(--font-display)",
                         }}
@@ -94,7 +94,7 @@ export function LegalShell({
                             sx={{
                                 color: "#1863dc",
                                 textDecoration: "underline",
-                                "&:hover": { color: "#003c33" },
+                                "&:hover": { color: "var(--accent)" },
                             }}
                         >
                             hello@elixpo.com
@@ -120,7 +120,7 @@ export function LegalSection({
                     fontWeight: 500,
                     fontSize: { xs: "1.3rem", md: "1.5rem" },
                     letterSpacing: "-0.018em",
-                    color: "#000000",
+                    color: "var(--fg)",
                     mb: 2,
                     fontFamily: "var(--font-display)",
                 }}
@@ -153,6 +153,7 @@ export function LegalList({ items }: { items: React.ReactNode[] }) {
     return (
         <Stack component="ul" spacing={1.2} sx={{ m: 0, pl: 0, listStyle: "none" }}>
             {items.map((item, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: static list items
                 <Stack key={i} component="li" direction="row" spacing={1.5} alignItems="flex-start">
                     <Box
                         aria-hidden

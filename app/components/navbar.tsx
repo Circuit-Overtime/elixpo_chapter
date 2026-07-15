@@ -55,7 +55,7 @@ const Navbar = () => {
             .then((r) => (r.ok ? r.json() : null))
             .then((d: any) => {
                 if (cancelled) return;
-                if (d && d.authenticated && d.user) {
+                if (d?.authenticated && d.user) {
                     setMe({ name: d.user.name, email: d.user.email, avatar: d.user.avatar });
                 } else {
                     setMe(null);
