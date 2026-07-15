@@ -2146,6 +2146,7 @@ export default function WritePage({ slugid }) {
                         setAiTitleKey(k => k + 1);
                       }}
                       blogId={blogId}
+                      secret={secret}
                       collaboration={collabConfig}
                       editable={!roomFull}
                       onCollabSeeded={needsSeed ? clearSeed : undefined}

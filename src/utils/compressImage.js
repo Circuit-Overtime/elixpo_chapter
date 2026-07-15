@@ -2,6 +2,14 @@
  * Compress an image file to WebP, targeting maxSizeKB.
  * Uses canvas with iterative quality reduction.
  *
+ * PRIVACY — this function is also our only EXIF strip, and secret (anonymous) blogs
+ * depend on it. The canvas round-trip (createImageBitmap → drawImage → convertToBlob)
+ * re-encodes from raw pixels, so EXIF — including GPS coordinates — cannot survive it.
+ * Nothing here is allowed to short-circuit that: do NOT add a "skip compression if the
+ * file is already small" fast path that returns the original File, or a protest photo
+ * will upload with the author's location attached. The server does not strip metadata
+ * (Cloudinary keeps the original intact), so this is the last line of defence.
+ *
  * @param {File|Blob} file - The image file to compress
  * @param {Object} opts
  * @param {number} [opts.maxSizeKB=200] - Target max size in KB (hard cap: 200KB)
