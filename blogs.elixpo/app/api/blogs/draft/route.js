@@ -24,7 +24,7 @@ export async function GET(request) {
     const { decompressBlogContent } = await import('../../../../lib/compress');
     const db = getDB();
 
-    const COLS = 'id, slug, title, subtitle, content, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, author_id, published_as, status, page_emoji, collection_id';
+    const COLS = 'id, slug, title, subtitle, content, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, author_id, published_as, status, page_emoji, collection_id, secret';
 
     // The param may be the canonical id (new blogs) or the human slug (edit links).
     // Resolve by id first; otherwise by slug scoped to a blog THIS user can edit
@@ -132,7 +132,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview, coverPos, coverZoom } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview, coverPos, coverZoom, secret } = body;
   const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
   const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
   const zoom = Number.isFinite(coverZoom) ? coverZoom : 1;
@@ -156,7 +156,14 @@ export async function POST(request) {
     const excerpt = editorContent ? excerptFromBlocks(editorContent) : '';
 
     // Check if blog exists
-    const existing = await db.prepare('SELECT id, author_id FROM blogs WHERE id = ?').bind(slugid).first();
+    const existing = await db.prepare('SELECT id, author_id, status, secret FROM blogs WHERE id = ?').bind(slugid).first();
+
+    // Same lock as /publish: secret is free to toggle while the post is a draft and
+    // frozen once it has been public. Autosave must never be able to flip it either.
+    const requestedSecret = (secret === true || secret === 1) ? 1 : 0;
+    const finalSecret = existing
+      ? (existing.status === 'draft' ? requestedSecret : (existing.secret ? 1 : 0))
+      : requestedSecret;
 
     if (existing) {
       // Edit permission: author, org write+, or accepted co-author.
@@ -165,11 +172,11 @@ export async function POST(request) {
       if (!perm.ok) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
       await db.prepare(`
         UPDATE blogs SET title = ?, subtitle = ?, content = ?, excerpt = ?, published_as = ?,
-          page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?, updated_at = ?
+          page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?, secret = ?, updated_at = ?
         WHERE id = ?
       `).bind(
         title || '', subtitle || '', compressedContent, excerpt, publishAs || 'personal',
-        pageEmoji || '', coverPreview || '', posX, posY, zoom, now, slugid
+        pageEmoji || '', coverPreview || '', posX, posY, zoom, finalSecret, now, slugid
       ).run();
       // Throttled version snapshot (≤ 1 / 5 min) so history accrues as people edit (#11 E).
       if (compressedContent) {
@@ -183,11 +190,11 @@ export async function POST(request) {
         publishAs: publishAs || 'personal',
       });
       await db.prepare(`
-        INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, status, page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, status, page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, secret, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         slugid, slug, title || '', subtitle || '', compressedContent, excerpt,
-        session.userId, publishAs || 'personal', pageEmoji || '', coverPreview || '', posX, posY, zoom, now, now
+        session.userId, publishAs || 'personal', pageEmoji || '', coverPreview || '', posX, posY, zoom, finalSecret, now, now
       ).run();
     }
 
