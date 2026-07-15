@@ -4,7 +4,7 @@ import { marked } from 'marked';
 import MarkdownPage from '../../src/components/MarkdownPage';
 
 export const metadata = {
-  title: 'Privacy Policy — LixBlogs',
+  title: 'Privacy Policy',
   description: 'How LixBlogs collects, uses, and protects your data.',
 };
 

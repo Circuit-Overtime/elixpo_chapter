@@ -4,15 +4,34 @@ import { ThemeProvider } from '../src/context/ThemeContext';
 
 const SITE_URL = 'https://blogs.elixpo.com';
 const SITE_NAME = 'LixBlogs';
-const SITE_DESC = 'A modern blogging platform with a rich block editor, AI writing tools, real-time collaboration, and organizations.';
+
+// Search snippets are cut around 155-160 characters, so the first sentence has to
+// carry the pitch on its own and the rest is bonus. Every claim here has to be true:
+// the old copy advertised "AI writing tools", which are not currently enabled.
+const SITE_DESC =
+  'LixBlogs is a modern publishing platform for writers, developers and teams. Write with a powerful block editor, work together in real time, publish under your own organization, and reach readers with beautiful, fast pages.';
+const SITE_TAGLINE = 'Write, collaborate and publish beautifully';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: SITE_NAME,
-    template: `%s - ${SITE_NAME}`,
+    default: `${SITE_NAME}: ${SITE_TAGLINE}`,
+    // Pipe reads better than a hyphen and survives truncation in search results.
+    template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESC,
+  applicationName: SITE_NAME,
+  category: 'technology',
+  keywords: [
+    'blogging platform', 'publishing platform', 'block editor', 'technical blog',
+    'developer blog', 'team blog', 'real-time collaboration', 'organizations',
+    'write online', 'LixBlogs',
+  ],
+  authors: [{ name: 'Elixpo', url: 'https://github.com/elixpo' }],
+  creator: 'Elixpo',
+  publisher: 'Elixpo',
+  referrer: 'origin-when-cross-origin',
+  formatDetection: { telephone: false, address: false, email: false },
   icons: {
     icon: [
       // SVG favicon embedding the LixBlogs logo (logo.png).
@@ -28,7 +47,7 @@ export const metadata = {
   openGraph: {
     type: 'website',
     siteName: SITE_NAME,
-    title: SITE_NAME,
+    title: `${SITE_NAME}: ${SITE_TAGLINE}`,
     description: SITE_DESC,
     url: SITE_URL,
     images: [
@@ -36,14 +55,14 @@ export const metadata = {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'LixBlogs — Write, collaborate, and publish beautifully',
+        alt: `${SITE_NAME}: ${SITE_TAGLINE}`,
       },
     ],
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: SITE_NAME,
+    title: `${SITE_NAME}: ${SITE_TAGLINE}`,
     description: SITE_DESC,
     images: ['/og-image.jpg'],
   },
@@ -72,6 +91,38 @@ export const viewport = {
   initialScale: 1,
 };
 
+// Site-wide structured data. `WebSite` + `SearchAction` is what makes Google offer a
+// sitelinks search box for the domain, and it points at the real /search?q= route.
+// `Organization` gives the brand panel something to attach a logo and profiles to.
+const SITE_JSONLD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      description: SITE_DESC,
+      publisher: { '@id': `${SITE_URL}/#organization` },
+      inLanguage: 'en',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/search?q={search_term_string}` },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: SITE_DESC,
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/icon-512.png`, width: 512, height: 512 },
+      sameAs: ['https://github.com/elixpo'],
+    },
+  ],
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
@@ -79,6 +130,10 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kanit:wght@500;600;700&family=Source+Serif+4:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSONLD) }}
+        />
         {/* Prevent flash of wrong theme */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {

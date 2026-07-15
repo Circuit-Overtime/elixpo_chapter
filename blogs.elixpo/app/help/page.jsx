@@ -1,7 +1,7 @@
 import AppShell from '../../src/components/AppShell';
 
 export const metadata = {
-  title: 'Help — LixBlogs',
+  title: 'Help',
   description: 'Get help with LixBlogs — contact support or report an issue.',
 };
 
