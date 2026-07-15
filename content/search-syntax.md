@@ -177,5 +177,5 @@ Response:
 }
 ```
 
-The grammar lives in [`lib/searchQuery.js`](../lib/searchQuery.js); its tests are in
-[`tests/searchQuery.test.mjs`](../tests/searchQuery.test.mjs).
+The grammar lives in [`lib/searchQuery.js`](https://github.com/elixpo/blogs.elixpo/blob/main/lib/searchQuery.js); its tests are in
+[`tests/searchQuery.test.mjs`](https://github.com/elixpo/blogs.elixpo/blob/main/tests/searchQuery.test.mjs).
