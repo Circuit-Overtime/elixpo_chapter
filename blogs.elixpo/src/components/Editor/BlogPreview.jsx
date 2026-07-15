@@ -330,7 +330,7 @@ function renderBlocksToHTML(blocks) {
   return html;
 }
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null, memberOnly = false, featured = false, publishedAt = null, headerActions = null, hideHighlights = false, readTimeMinutes = 0 }) {
+export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null, memberOnly = false, featured = false, publishedAt = null, headerActions = null, hideHighlights = false, readTimeMinutes = 0, anonymous = false }) {
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -740,16 +740,21 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       {/* Author bar — under title. Primary author + accepted co-authors, with
           stacked avatars and top-3 names (+ "N more"). */}
       {user && (() => {
-        const authors = [
-          { name: user.display_name || user.username || 'Author', avatar_url: user.avatar_url, username: user.username },
-          // Co-authors come from /api/resolve with display_name/username — normalize
-          // to `name` so their names actually render (not just the primary author).
-          ...coAuthors.map((c) => ({
-            name: c.name || c.display_name || c.username || 'Author',
-            avatar_url: c.avatar_url,
-            username: c.username,
-          })),
-        ];
+        // Secret blog: force a single anonymous byline no matter what the caller
+        // passed. The server already strips these fields; refusing to render them
+        // here too means a future caller can't reintroduce the leak by accident.
+        const authors = anonymous
+          ? [{ name: 'Anonymous', avatar_url: null, username: null }]
+          : [
+            { name: user.display_name || user.username || 'Author', avatar_url: user.avatar_url, username: user.username },
+            // Co-authors come from /api/resolve with display_name/username — normalize
+            // to `name` so their names actually render (not just the primary author).
+            ...coAuthors.map((c) => ({
+              name: c.name || c.display_name || c.username || 'Author',
+              avatar_url: c.avatar_url,
+              username: c.username,
+            })),
+          ];
         const shownAvatars = authors.slice(0, 3);
         const moreAuthors = authors.length - shownAvatars.length;
         const shownNames = authors.slice(0, 3);

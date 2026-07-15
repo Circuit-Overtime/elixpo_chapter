@@ -22,6 +22,15 @@ export async function GET(request) {
     (SELECT COUNT(*) FROM likes WHERE blog_id = b.id) as likes,
     (SELECT COUNT(*) FROM comments WHERE blog_id = b.id) as comments`;
 
+  // These lists cover blogs written by OTHER people (reposted / co-authored), so a
+  // secret blog here would hand the viewer its author. The owner's own list below is
+  // exempt: it only ever returns the caller's own posts.
+  const stripSecretAuthors = (rows) => (rows || []).map((b) => {
+    if (!b.secret) return b;
+    const { author_username, author_name, author_avatar, ...safe } = b;
+    return safe;
+  });
+
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
@@ -29,7 +38,7 @@ export async function GET(request) {
     // Reshared = blogs THIS user reposted (authored by others).
     if (filter === 'reshared') {
       const rows = await db.prepare(`
-        SELECT b.id, b.id as slugid, b.slug, b.title, b.subtitle, b.status,
+        SELECT b.id, b.id as slugid, b.slug, b.secret, b.title, b.subtitle, b.status,
           b.page_emoji, b.cover_image_r2_key, b.read_time_minutes,
           b.published_as, b.created_at, b.updated_at, b.published_at,
           u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar,
@@ -40,14 +49,14 @@ export async function GET(request) {
         WHERE r.user_id = ?
         ORDER BY r.created_at DESC LIMIT 50
       `).bind(session.userId).all();
-      return NextResponse.json({ blogs: rows?.results || [] });
+      return NextResponse.json({ blogs: stripSecretAuthors(rows?.results) });
     }
 
     // Co-authored = published blogs where THIS user is an accepted co-author
     // (authored by someone else). Shown on the user's own profile/stories tabs.
     if (filter === 'coauthored') {
       const rows = await db.prepare(`
-        SELECT b.id, b.id as slugid, b.slug, b.title, b.subtitle, b.status,
+        SELECT b.id, b.id as slugid, b.slug, b.secret, b.title, b.subtitle, b.status,
           b.page_emoji, b.cover_image_r2_key, b.read_time_minutes,
           b.published_as, b.created_at, b.updated_at, b.published_at,
           u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar,
@@ -58,11 +67,11 @@ export async function GET(request) {
         WHERE bc.user_id = ? AND bc.status = 'accepted' AND b.author_id != ?
         ORDER BY b.published_at DESC LIMIT 50
       `).bind(session.userId, session.userId).all();
-      return NextResponse.json({ blogs: rows?.results || [] });
+      return NextResponse.json({ blogs: stripSecretAuthors(rows?.results) });
     }
 
     let query = `
-      SELECT b.id, b.id as slugid, b.slug, b.title, b.subtitle, b.status,
+      SELECT b.id, b.id as slugid, b.slug, b.secret, b.title, b.subtitle, b.status,
         b.page_emoji, b.cover_image_r2_key, b.read_time_minutes,
         b.published_as, b.created_at, b.updated_at, b.published_at,
         EXISTS(SELECT 1 FROM reposts WHERE blog_id = b.id) as is_reshared,

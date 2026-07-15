@@ -21,12 +21,23 @@ export async function POST(request) {
     // Resolve the parent by canonical id OR human slug — in production the edit
     // URL carries the slug, so callers may pass either (#24). Sub-pages are
     // always stored under the canonical blog id.
-    let blog = await db.prepare('SELECT id, author_id FROM blogs WHERE id = ?').bind(blogId).first();
+    let blog = await db.prepare('SELECT id, author_id, secret FROM blogs WHERE id = ?').bind(blogId).first();
     if (!blog) {
-      blog = await db.prepare('SELECT id, author_id FROM blogs WHERE LOWER(slug) = LOWER(?) ORDER BY updated_at DESC LIMIT 1').bind(blogId).first();
+      blog = await db.prepare('SELECT id, author_id, secret FROM blogs WHERE LOWER(slug) = LOWER(?) ORDER BY updated_at DESC LIMIT 1').bind(blogId).first();
     }
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
     if (blog.author_id !== session.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    // Secret posts get no sub-pages or canvases. They are a second surface with
+    // their own storage, their own sharing rules and their own uploads — none of
+    // which are covered by the anonymity work done on the post itself, so allowing
+    // them would quietly reopen every hole we just closed.
+    if (blog.secret) {
+      return NextResponse.json(
+        { error: 'Sub-pages and canvases are not available on secret posts.', secret: true },
+        { status: 403 },
+      );
+    }
     const canonicalBlogId = blog.id;
 
     // Sub-pages are a Member feature — gate creation by tier.

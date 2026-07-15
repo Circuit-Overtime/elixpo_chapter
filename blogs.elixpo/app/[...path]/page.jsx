@@ -35,6 +35,47 @@ export async function generateMetadata({ params, searchParams }) {
     // Member+ authors/owners get unbranded share cards.
     const noBrand = (tier) => (tier && tier !== 'free' ? { brand: '0' } : {});
 
+    // Blog card. /api/resolve already strips every author field from a secret blog,
+    // so the byline, avatar and tier hint would fall away on their own — but assert
+    // it explicitly here too. A share card is the one artifact that outlives the page,
+    // and it must never carry the author of an anonymous post.
+    const blogMeta = (b, url) => {
+      const secret = !!b.secret;
+      const title = b.title || 'Untitled';
+      const primary = secret ? '' : (b.author_name || b.author_username || '');
+      const coAuthors = secret
+        ? []
+        : (b.co_authors || []).map((c) => c.display_name || c.username).filter(Boolean);
+      const authorList = [primary, ...coAuthors].filter(Boolean);
+      const sub = authorList.length
+        ? `by ${authorList.slice(0, 4).join(', ')}${authorList.length > 4 ? ` +${authorList.length - 4}` : ''}`
+        : '';
+      const description = (b.subtitle || '').slice(0, 200) || (primary ? `By ${primary} on LixBlogs` : 'On LixBlogs');
+      const readTime = b.read_time_minutes ? `${b.read_time_minutes} min read` : '';
+      const og = ogUrl({
+        type: 'blog', title, subtitle: b.subtitle || '', sub, readTime,
+        cover: httpImg(b.cover_image_r2_key),
+        avatar: secret ? '' : httpImg(b.author_avatar),
+        // author_tier is itself a weak author signal — never send it for a secret blog.
+        ...(secret ? {} : noBrand(b.author_tier)),
+      });
+      return {
+        title,
+        description,
+        alternates: { canonical: url },
+        // Keep secret blogs out of search engines: an indexed anonymous post is a
+        // permanent, crawlable artifact its author can never fully retract.
+        ...(secret ? { robots: { index: false, follow: false } } : {}),
+        openGraph: {
+          type: 'article', title, description, url, siteName: 'LixBlogs',
+          publishedTime: b.published_at ? new Date(b.published_at * 1000).toISOString() : undefined,
+          authors: authorList.length ? authorList : undefined,
+          images: [{ url: og, secureUrl: og, type: 'image/png', width: 1200, height: 630, alt: title }],
+        },
+        twitter: { card: 'summary_large_image', title, description, images: [og] },
+      };
+    };
+
     // ── 1-segment: user or org profile ──
     if (!slug) {
       const res = await fetch(`${origin}/api/resolve?name=${encodeURIComponent(name)}`, { headers: { 'user-agent': 'lixblogs-ssr' } });
@@ -55,6 +96,11 @@ export async function generateMetadata({ params, searchParams }) {
         const description = (data.org.description || data.org.bio || `${dn} on LixBlogs`).slice(0, 200);
         const og = ogUrl({ type: 'profile', kind: 'Organisation', title: dn, sub: ownerName ? `by ${ownerName}` : `@${data.org.slug || name}`, subtitle: data.org.description || data.org.bio || '', avatar: httpImg(data.org.logo_url || data.org.logo_r2_key), ...noBrand(data.owner?.tier) });
         return cardMeta({ title: `${dn} — LixBlogs Organisation`, description, url, og, ogType: 'profile' });
+      }
+      // Short link /[slugid] — resolve falls back to a blog when the name matches no
+      // namespace. This is the only path that serves a secret blog.
+      if (data.type === 'blog' && data.blog) {
+        return blogMeta(data.blog, url);
       }
       return {};
     }
@@ -90,28 +136,10 @@ export async function generateMetadata({ params, searchParams }) {
       return cardMeta({ title: `Invitation · ${title}`, description, url, og, ogType: 'website' });
     }
 
-    // Normal blog → mark + title + author list (small).
-    const title = b.title || 'Untitled';
-    const primary = b.author_name || b.author_username || '';
-    const coAuthors = (b.co_authors || []).map((c) => c.display_name || c.username).filter(Boolean);
-    const authorList = [primary, ...coAuthors].filter(Boolean);
-    const sub = authorList.length ? `by ${authorList.slice(0, 4).join(', ')}${authorList.length > 4 ? ` +${authorList.length - 4}` : ''}` : '';
-    const description = (b.subtitle || '').slice(0, 200) || (primary ? `By ${primary} on LixBlogs` : 'On LixBlogs');
-    const readTime = b.read_time_minutes ? `${b.read_time_minutes} min read` : '';
-    const og = ogUrl({ type: 'blog', title, subtitle: b.subtitle || '', sub, readTime, cover: httpImg(b.cover_image_r2_key), avatar: httpImg(b.author_avatar), ...noBrand(b.author_tier) });
-
-    return {
-      title,
-      description,
-      alternates: { canonical: url },
-      openGraph: {
-        type: 'article', title, description, url, siteName: 'LixBlogs',
-        publishedTime: b.published_at ? new Date(b.published_at * 1000).toISOString() : undefined,
-        authors: authorList.length ? authorList : undefined,
-        images: [{ url: og, secureUrl: og, type: 'image/png', width: 1200, height: 630, alt: title }],
-      },
-      twitter: { card: 'summary_large_image', title, description, images: [og] },
-    };
+    // Normal blog → mark + title + author list (small). Secret blogs never reach
+    // here — resolve 404s them on author-namespaced paths — but blogMeta is
+    // secret-safe regardless.
+    return blogMeta(b, url);
   } catch {
     return {};
   }
