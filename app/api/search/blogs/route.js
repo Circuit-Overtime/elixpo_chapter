@@ -22,7 +22,7 @@ export async function GET(request) {
     const placeholders = statuses.map(() => '?').join(',');
 
     const base = await db.prepare(`
-      SELECT b.id as slugid, b.slug, b.title, b.subtitle, b.page_emoji, b.cover_image_r2_key, b.secret
+      SELECT b.id as slugid, b.slug, b.title, b.subtitle, b.page_emoji, b.cover_image_r2_key, b.secret,
         b.read_time_minutes, b.published_at, b.author_id, b.status,
         u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
       FROM blogs b
@@ -60,7 +60,11 @@ export async function GET(request) {
     }
 
     return NextResponse.json({ blogs });
-  } catch {
+  } catch (e) {
+    // Log it. A bare `catch {}` here previously turned a SQL syntax error into a
+    // silent, permanently-empty result set — the endpoint looked like it simply
+    // found nothing, for every query, and nothing surfaced the real cause.
+    console.error('Blog search failed:', e?.message || e);
     return NextResponse.json({ blogs: [] });
   }
 }
