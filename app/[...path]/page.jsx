@@ -7,15 +7,30 @@ import CatchAllClient from './client';
 // otherwise a dynamic GitHub-style card from /api/og.
 const httpImg = (u) => (typeof u === 'string' && /^https?:\/\//.test(u) ? u : '');
 
+// `title.absolute` opts out of the root layout's "%s | LixBlogs" template. These
+// titles already carry the brand, and without this they render double-branded:
+// "Ankit Dey | LixBlogs Author Profile | LixBlogs".
 function cardMeta({ title, description, url, og, ogType = 'website' }) {
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical: url },
     openGraph: { type: ogType, title, description, url, siteName: 'LixBlogs', images: [{ url: og, secureUrl: og, type: 'image/png', width: 1200, height: 630, alt: title }] },
     twitter: { card: 'summary_large_image', title, description, images: [og] },
   };
 }
+
+// Search engines cut descriptions around 155-160 chars. Build from the most specific
+// signal available and fall back to something that still describes the page, rather
+// than "@handle on LixBlogs", which tells a reader nothing and wastes the snippet.
+function describe(parts, max = 160) {
+  const s = parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  if (s.length <= max) return s;
+  // Cut on a word boundary so the snippet doesn't end mid-word.
+  return `${s.slice(0, max - 1).replace(/\s+\S*$/, '')}…`;
+}
+
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 export async function generateMetadata({ params, searchParams }) {
   const { path } = await params;
@@ -86,16 +101,40 @@ export async function generateMetadata({ params, searchParams }) {
       if (data.type === 'user' && data.user) {
         const dn = data.user.display_name || data.user.username || name;
         const handle = `@${data.user.username || name}`;
-        const description = (data.user.bio || `${handle} on LixBlogs`).slice(0, 200);
+        const posts = (data.blogs || []).length;
+        const followers = data.user.followers || 0;
+        // Lead with the bio when there is one, then add the facts a reader scanning
+        // results actually wants: who this is, what they publish, how much of it.
+        const stats = [
+          posts ? plural(posts, 'published post', 'published posts') : '',
+          followers ? plural(followers, 'follower', 'followers') : '',
+        ].filter(Boolean).join(', ');
+        const description = describe([
+          data.user.bio,
+          data.user.bio ? `Read ${dn} (${handle}) on LixBlogs.` : `${dn} (${handle}) writes and publishes on LixBlogs.`,
+          stats ? `${stats}.` : '',
+        ]);
         const og = ogUrl({ type: 'profile', kind: 'Author Profile', title: dn, sub: handle, subtitle: data.user.bio || '', avatar: httpImg(data.user.avatar_url), ...noBrand(data.user.tier) });
-        return cardMeta({ title: `${dn} — LixBlogs Author Profile`, description, url, og, ogType: 'profile' });
+        return cardMeta({ title: `${dn} (${handle}), Author on LixBlogs`, description, url, og, ogType: 'profile' });
       }
       if (data.type === 'org' && data.org) {
         const dn = data.org.name || name;
+        const handle = `@${data.org.slug || name}`;
         const ownerName = data.owner?.display_name || data.owner?.username || '';
-        const description = (data.org.description || data.org.bio || `${dn} on LixBlogs`).slice(0, 200);
-        const og = ogUrl({ type: 'profile', kind: 'Organisation', title: dn, sub: ownerName ? `by ${ownerName}` : `@${data.org.slug || name}`, subtitle: data.org.description || data.org.bio || '', avatar: httpImg(data.org.logo_url || data.org.logo_r2_key), ...noBrand(data.owner?.tier) });
-        return cardMeta({ title: `${dn} — LixBlogs Organisation`, description, url, og, ogType: 'profile' });
+        const members = (data.members || []).length;
+        const posts = (data.blogs || []).length;
+        const stats = [
+          posts ? plural(posts, 'published post', 'published posts') : '',
+          members ? plural(members, 'member', 'members') : '',
+        ].filter(Boolean).join(', ');
+        const description = describe([
+          data.org.description || data.org.bio,
+          `${dn} (${handle}) publishes on LixBlogs.`,
+          ownerName ? `Run by ${ownerName}.` : '',
+          stats ? `${stats}.` : '',
+        ]);
+        const og = ogUrl({ type: 'profile', kind: 'Organisation', title: dn, sub: ownerName ? `by ${ownerName}` : handle, subtitle: data.org.description || data.org.bio || '', avatar: httpImg(data.org.logo_url || data.org.logo_r2_key), ...noBrand(data.owner?.tier) });
+        return cardMeta({ title: `${dn} (${handle}), Organisation on LixBlogs`, description, url, og, ogType: 'profile' });
       }
       // Short link /[slugid] — resolve falls back to a blog when the name matches no
       // namespace. This is the only path that serves a secret blog.
