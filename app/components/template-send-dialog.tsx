@@ -239,10 +239,33 @@ export default function TemplateSendDialog({
         setSendersError(null);
         setAliasId("");
 
-        // Seed variable values for any new variable names; keep existing.
+        let loadedChips: string[] | null = null;
+        let loadedVars: Record<string, string> | null = null;
+        try {
+            const saved = localStorage.getItem(`elixpo_send_buffer_${templateId}`);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === "object") {
+                    if (Array.isArray(parsed.chips)) loadedChips = parsed.chips;
+                    if (parsed.vars && typeof parsed.vars === "object") loadedVars = parsed.vars;
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load send buffer from localStorage", e);
+        }
+
+        if (loadedChips !== null) {
+            setChips(loadedChips);
+        } else {
+            setChips([]);
+        }
+
         setVars((prev) => {
             const next: Record<string, string> = {};
-            for (const name of variables) next[name] = prev[name] ?? "";
+            const sourceVars = loadedVars || {};
+            for (const name of variables) {
+                next[name] = sourceVars[name] ?? prev[name] ?? "";
+            }
             return next;
         });
 
@@ -291,6 +314,16 @@ export default function TemplateSendDialog({
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
+
+    useEffect(() => {
+        if (!open) return;
+        try {
+            const data = { chips, vars };
+            localStorage.setItem(`elixpo_send_buffer_${templateId}`, JSON.stringify(data));
+        } catch (e) {
+            console.error("Failed to save send buffer to localStorage", e);
+        }
+    }, [chips, vars, templateId, open]);
 
     // ── Lazy-load aliases when a sender is chosen ──
     useEffect(() => {
@@ -399,6 +432,12 @@ export default function TemplateSendDialog({
                 ? `Sent ${s.sent} · ${s.suppressed} suppressed · ${s.failed} failed`
                 : `Sent to ${results.length} recipient${results.length === 1 ? "" : "s"}`;
             setToast({ text: summaryText, ok: (s?.failed ?? 0) === 0 });
+
+            try {
+                localStorage.removeItem(`elixpo_send_buffer_${templateId}`);
+            } catch (e) {
+                console.error("Failed to clear send buffer from localStorage", e);
+            }
         } catch (e) {
             const msg = e instanceof Error ? e.message : "Send failed.";
             setSend({ phase: "err", text: msg });
@@ -451,9 +490,9 @@ export default function TemplateSendDialog({
                             <FieldLabel>Recipients (required)</FieldLabel>
                             <Box
                                 onClick={(e) => {
-                                    const input = (
-                                        e.currentTarget as HTMLElement
-                                    ).querySelector("input");
+                                    const input = (e.currentTarget as HTMLElement).querySelector(
+                                        "input",
+                                    );
                                     (input as HTMLInputElement | null)?.focus();
                                 }}
                                 sx={{
@@ -534,8 +573,7 @@ export default function TemplateSendDialog({
                             <Typography
                                 sx={{ mt: 0.5, fontSize: "0.72rem", color: TEXT_40, mx: 0.2 }}
                             >
-                                Type an email then comma or Enter to add it. Up to{" "}
-                                {MAX_RECIPIENTS}.
+                                Type an email then comma or Enter to add it. Up to {MAX_RECIPIENTS}.
                             </Typography>
                             <Typography
                                 sx={{
