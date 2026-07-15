@@ -199,6 +199,7 @@ function HandlePageInner({ path }) {
             coverPos={{ x: blog.cover_pos_x ?? 50, y: blog.cover_pos_y ?? 50 }}
             coverZoom={blog.cover_zoom ?? 1}
             user={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
+            anonymous={!!blog.secret}
             org={data.owner?.type === 'org' ? { name: data.owner.name, slug: data.owner.slug, logo_url: data.owner.logo_url || data.owner.logo_r2_key } : null}
             coAuthorCount={blog.co_author_count || 0}
             coAuthors={blog.co_authors || []}

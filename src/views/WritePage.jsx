@@ -405,6 +405,9 @@ export default function WritePage({ slugid }) {
   const [subtitle, setSubtitle] = useState('');
   const [coverPreview, setCoverPreview] = useState(null);
   const [publishAs, setPublishAs] = useState('personal');
+  // Secret mode: publish with no author shown. Free to toggle while this is a draft,
+  // frozen by the server once the post has been public even once.
+  const [secret, setSecret] = useState(false);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [showPublishPanel, setShowPublishPanel] = useState(() => {
@@ -562,9 +565,9 @@ export default function WritePage({ slugid }) {
   }, []);
 
   // Refs to always hold latest draft data (avoids stale closures in intervals/beforeunload)
-  const draftDataRef = useRef({ title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
+  const draftDataRef = useRef({ title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret });
   useEffect(() => {
-    draftDataRef.current = { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom };
+    draftDataRef.current = { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret };
   }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom]);
 
   // Sync any buffered subpage drafts from localStorage to cloud
@@ -783,6 +786,7 @@ export default function WritePage({ slugid }) {
         if (cloud.subtitle) setSubtitle(cloud.subtitle);
         if (cloud.tags?.length) setTags(cloud.tags);
         if (cloud.published_as) setPublishAs(cloud.published_as);
+        setSecret(!!cloud.secret);
         setCollectionId(cloud.collection_id || null);
         if (cloud.cover_image_r2_key) setCoverPreview(cloud.cover_image_r2_key);
         if (Number.isFinite(cloud.cover_pos_x) && Number.isFinite(cloud.cover_pos_y)) setCoverPos({ x: cloud.cover_pos_x, y: cloud.cover_pos_y });
@@ -840,7 +844,7 @@ export default function WritePage({ slugid }) {
     dirtyRef.current = true;
     autoSaveTimer.current = setTimeout(() => {
       if (title || editorContent) {
-        saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
+        saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret });
         setLastSaved(Date.now());
       }
     }, 2000);
@@ -1046,7 +1050,7 @@ export default function WritePage({ slugid }) {
   }, [uploadCover]);
 
   const handleSaveDraft = async () => {
-    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
+    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret });
     setLastSaved(Date.now());
     setShowPublishMenu(false);
     syncToCloud({ showToast: true });
@@ -1181,7 +1185,7 @@ export default function WritePage({ slugid }) {
   }, [title, draftLoading, editorReady]);
 
   // Serialized publish-settings, used to detect "nothing changed" on Update.
-  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, collectionId, pageEmoji, coverPreview, coverPos, coverZoom, slug });
+  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, collectionId, pageEmoji, coverPreview, coverPos, coverZoom, slug, secret });
   // Capture a baseline once the blog has finished loading.
   useEffect(() => {
     if (!draftLoading && settingsSnapshotRef.current === '') settingsSnapshotRef.current = settingsKey();
@@ -1211,7 +1215,7 @@ export default function WritePage({ slugid }) {
       const res = await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt }),
+        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt, secret }),
       });
 
       if (res.status === 409) {
@@ -2407,6 +2411,45 @@ export default function WritePage({ slugid }) {
             </button>
             <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>
               Co-authors can view, edit, or admin — the post cross-posts to their profile.
+            </p>
+          </div>
+
+          {/* Secret mode — publish with no author shown. Locked once public. */}
+          <div>
+            <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+              Secret mode
+              {isPublished && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-faint)' }}>(locked)</span>}
+            </label>
+            <button
+              onClick={() => { if (!isPublished) setSecret(s => !s); }}
+              disabled={isPublished}
+              className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-[13px] transition-colors disabled:cursor-default"
+              style={{
+                backgroundColor: 'var(--bg-app)',
+                border: `1px solid ${secret ? '#9b7bf7' : 'var(--border-default)'}`,
+                opacity: isPublished ? 0.6 : 1,
+              }}
+            >
+              <span className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <ion-icon name={secret ? 'eye-off-outline' : 'eye-outline'} style={{ fontSize: '16px', color: secret ? '#9b7bf7' : 'var(--text-muted)' }} />
+                {secret ? 'Publish anonymously' : 'Show my name'}
+              </span>
+              <span
+                className="relative inline-flex items-center rounded-full transition-colors"
+                style={{ width: '34px', height: '18px', backgroundColor: secret ? '#9b7bf7' : 'var(--border-default)' }}
+              >
+                <span
+                  className="absolute rounded-full bg-white transition-transform"
+                  style={{ width: '14px', height: '14px', left: '2px', transform: secret ? 'translateX(16px)' : 'translateX(0)' }}
+                />
+              </span>
+            </button>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>
+              {isPublished
+                ? 'Secret mode can’t be changed after a post goes live.'
+                : secret
+                  ? 'No name, avatar or co-authors shown. Readable only via its short link, kept off your profile and out of search. You can’t undo this after publishing — and we still store your identity for abuse reports.'
+                  : 'Hide your name from readers. Choose before publishing — it locks once live.'}
             </p>
           </div>
         </div>
