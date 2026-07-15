@@ -4,6 +4,7 @@ import { getSession } from '../../../../lib/auth';
 import { getLimits } from '../../../../lib/tiers';
 import { MAX_MEDIA_PER_BLOG, MAX_BLOG_IMAGE_BYTES } from '../../../../lib/limits';
 import { uploadToCloudinary } from '../../../../lib/cloudinary';
+import { stripImageMetadata } from '../../../../lib/stripImageMetadata';
 import { isAllowedMime, ALLOWED_IMAGE_MIME_TYPES } from '../../../../src/utils/allowedImageTypes';
 
 // Profile image types — these get overwritten (no history), no storage tracking
@@ -159,8 +160,17 @@ export async function POST(request) {
 
     console.log(`[media/upload] Uploading to Cloudinary: folder=${folder} publicId=${publicId}`);
 
-    // Upload to Cloudinary
-    const arrayBuffer = await file.arrayBuffer();
+    // Scrub EXIF/GPS/XMP/IPTC before the bytes ever leave this Worker. Cloudinary
+    // stores the original untouched, so this is the last point at which we control
+    // them. Every upload is scrubbed, not just those on secret posts: at upload time
+    // the post is typically still a draft whose secret flag can flip later, so
+    // scrubbing selectively would miss exactly the photos that need it.
+    const rawBuffer = await file.arrayBuffer();
+    const arrayBuffer = stripImageMetadata(rawBuffer);
+    if (arrayBuffer.byteLength !== rawBuffer.byteLength) {
+      console.log(`[media/upload] stripped ${rawBuffer.byteLength - arrayBuffer.byteLength} bytes of image metadata`);
+    }
+
     let result;
     try {
       result = await uploadToCloudinary(arrayBuffer, {

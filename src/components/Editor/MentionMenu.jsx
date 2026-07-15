@@ -5,8 +5,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 /**
  * Custom @ mention suggestion menu.
  * Searches users, orgs, and blogs and renders grouped results.
+ *
+ * `allowUsers={false}` (secret blogs) drops people from the results entirely:
+ * naming a collaborator inside an anonymous post narrows down who wrote it.
+ * Blog mentions stay available — they point at posts, not people.
  */
-export default function MentionMenu({ editor, query, onClose, onDismiss }) {
+export default function MentionMenu({ editor, query, onClose, onDismiss, allowUsers = true }) {
   const [results, setResults] = useState({ users: [], orgs: [], blogs: [] });
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -37,7 +41,10 @@ export default function MentionMenu({ editor, query, onClose, onDismiss }) {
         .then((r) => r.ok ? r.json() : { users: [], orgs: [], blogs: [] })
         .then((data) => {
           setResults({
-            users: (data.users || []).slice(0, 5),
+            // Drop people at the source when they're disallowed: allItems, keyboard
+            // nav and the People group all derive from this, so there's no path left
+            // to insert a user mention.
+            users: allowUsers ? (data.users || []).slice(0, 5) : [],
             orgs: (data.orgs || []).slice(0, 5),
             blogs: (data.blogs || []).slice(0, 5),
           });
@@ -48,7 +55,7 @@ export default function MentionMenu({ editor, query, onClose, onDismiss }) {
     }, 600);
 
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [query]);
+  }, [query, allowUsers]);
 
   const insertMention = useCallback((item) => {
     if (!editor) return;

@@ -40,12 +40,15 @@ export async function GET(request) {
 
     if (scope === 'all' || scope === 'blogs') {
       const blogs = await db.prepare(`
-        SELECT b.id as slugid, b.slug, b.title, u.username AS author_username
+        SELECT b.id as slugid, b.slug, b.secret, b.title, u.username AS author_username
         FROM blogs b JOIN users u ON u.id = b.author_id
         WHERE (LOWER(b.title) LIKE ? OR LOWER(b.slug) LIKE ?) AND b.status IN ('published', 'unlisted')
         LIMIT 5
       `).bind(pattern, pattern).all();
-      results.blogs = blogs?.results || [];
+      // A secret blog stays findable by title, but its author must never ride along:
+      // this endpoint is public and unauthenticated, so returning author_username here
+      // would let anyone deanonymize a post just by searching for its title.
+      results.blogs = (blogs?.results || []).map((b) => (b.secret ? { ...b, author_username: null } : b));
     }
 
     return NextResponse.json(results);

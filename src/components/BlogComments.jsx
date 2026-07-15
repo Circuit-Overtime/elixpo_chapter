@@ -15,6 +15,61 @@ function timeAgo(ts) {
   return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// Under a secret post the API returns username/avatar_url as null. Render the
+// avatar unlinked in that case — an <a href="/null"> would be both broken and a
+// hint that there's a profile behind it.
+function CommentAvatar({ c, small = false }) {
+  const box = small ? 'w-6 h-6 text-[10px]' : 'w-8 h-8 text-[12px]';
+  const inner = c.avatar_url ? (
+    <img src={c.avatar_url} alt="" className={`${box} rounded-full object-cover`} />
+  ) : (
+    <div className={`${box} rounded-full flex items-center justify-center font-bold`} style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
+      {(c.display_name || c.username || '?')[0].toUpperCase()}
+    </div>
+  );
+  if (!c.username) return <div className="flex-shrink-0">{inner}</div>;
+  return <Link href={`/${c.username}`} className="flex-shrink-0">{inner}</Link>;
+}
+
+// "Author" badge on the post author's own comments. On a secret post user_id is
+// withheld, so the server sends `is_post_author`; on a normal post the client can
+// derive it from blogAuthorId. Either way the badge marks the role, never the person.
+function AuthorBadge() {
+  return (
+    <span
+      className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex-shrink-0"
+      style={{ backgroundColor: '#9b7bf71f', color: '#9b7bf7' }}
+      title="Written by the author of this post"
+    >
+      Author
+    </span>
+  );
+}
+
+function CommentName({ c, small = false }) {
+  const size = small ? 'text-[12px]' : 'text-[13px]';
+  const label = c.display_name || c.username || 'Anonymous';
+  if (!c.username) return <span className={`${size} font-semibold`} style={{ color: 'var(--text-primary)' }}>{label}</span>;
+  return <Link href={`/${c.username}`} className={`${size} font-semibold`} style={{ color: 'var(--text-primary)' }}>{label}</Link>;
+}
+
+// Placeholder for a comment whose text the server withheld. There is nothing to
+// un-blur here: the content never arrived in the response, so this is purely visual.
+function BlurredBody() {
+  return (
+    <div className="select-none">
+      <div aria-hidden="true" style={{ filter: 'blur(4px)', opacity: 0.7 }}>
+        <div className="h-3 rounded mb-1.5" style={{ backgroundColor: 'var(--bg-elevated)', width: '92%' }} />
+        <div className="h-3 rounded" style={{ backgroundColor: 'var(--bg-elevated)', width: '58%' }} />
+      </div>
+      <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: 'var(--text-faint)' }}>
+        <ion-icon name="lock-closed-outline" style={{ fontSize: '11px' }} />
+        Only this post’s author and collaborators can read its comments
+      </p>
+    </div>
+  );
+}
+
 export default function BlogComments({ blogId, blogAuthorId }) {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
@@ -26,6 +81,7 @@ export default function BlogComments({ blogId, blogAuthorId }) {
   const [replyText, setReplyText] = useState('');
   const [editing, setEditing] = useState(null); // { id, content }
   const [toast, setToast] = useState('');
+  const [highlighted, setHighlighted] = useState(null); // comment id from the URL hash
   const flashToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
 
   const fetchComments = useCallback(async () => {
@@ -39,6 +95,33 @@ export default function BlogComments({ blogId, blogAuthorId }) {
     } catch {}
     setLoading(false);
   }, [blogId]);
+
+  // Copy a permalink to a single comment. Under a secret post this shares only the
+  // location, not access — the blur rules still apply to whoever opens it.
+  const copyCommentLink = async (commentId) => {
+    const url = `${window.location.origin}${window.location.pathname}#comment-${commentId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      flashToast('Link copied');
+    } catch {
+      flashToast(url);
+    }
+  };
+
+  // Deep link: once comments are on screen, jump to the one named in the hash and
+  // flash it, so a shared link lands somewhere obvious instead of the page top.
+  useEffect(() => {
+    if (loading || !comments.length) return;
+    const m = window.location.hash.match(/^#comment-(.+)$/);
+    if (!m) return;
+    const id = m[1];
+    const el = document.getElementById(`comment-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlighted(id);
+    const t = setTimeout(() => setHighlighted(null), 2600);
+    return () => clearTimeout(t);
+  }, [loading, comments]);
 
   useEffect(() => { fetchComments(); }, [fetchComments]);
 
@@ -149,20 +232,20 @@ export default function BlogComments({ blogId, blogAuthorId }) {
         <div className="space-y-1">
           {comments.map(c => (
             <div key={c.id}>
-              {/* Top-level comment */}
-              <div className="flex gap-3 py-4" style={{ borderBottom: '1px solid var(--divider)' }}>
-                <Link href={`/${c.username}`} className="flex-shrink-0">
-                  {c.avatar_url ? (
-                    <img src={c.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
-                      {(c.display_name || c.username || '?')[0].toUpperCase()}
-                    </div>
-                  )}
-                </Link>
+              {/* Top-level comment — id is the permalink target for #comment-<id> */}
+              <div
+                id={`comment-${c.id}`}
+                className="flex gap-3 py-4 px-3 -mx-3 rounded-lg transition-colors"
+                style={{
+                  borderBottom: '1px solid var(--divider)',
+                  backgroundColor: highlighted === c.id ? 'var(--accent-subtle)' : 'transparent',
+                }}
+              >
+                <CommentAvatar c={c} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <Link href={`/${c.username}`} className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{c.display_name || c.username}</Link>
+                    <CommentName c={c} />
+                    {(c.is_post_author ?? (blogAuthorId && c.user_id === blogAuthorId)) && <AuthorBadge />}
                     <span className="text-[11px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(c.created_at)}</span>
                     {c.updated_at > c.created_at && <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>(edited)</span>}
                   </div>
@@ -184,6 +267,8 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                         <button onClick={() => setEditing(null)} className="text-[12px] font-medium" style={{ color: 'var(--text-faint)' }}>Cancel</button>
                       </div>
                     </div>
+                  ) : c.blurred ? (
+                    <BlurredBody />
                   ) : (
                     <p className="text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{renderMentions(c.content, c.mentions, Link)}</p>
                   )}
@@ -198,12 +283,23 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                       >
                         {replyTo?.id === c.id ? 'Cancel' : `Reply${c.reply_count > 0 ? ` (${c.reply_count})` : ''}`}
                       </button>
-                      {user.id === c.user_id && (
+                      {/* Under a secret post the API withholds user_id, so ownership
+                          comes from the server's is_mine flag instead. */}
+                      {(c.is_mine ?? user.id === c.user_id) && !c.blurred && (
                         <button onClick={() => setEditing({ id: c.id, content: c.content })} className="text-[12px] font-medium transition-colors" style={{ color: 'var(--text-faint)' }}>Edit</button>
                       )}
-                      {(user.id === c.user_id || user.id === blogAuthorId) && (
+                      {((c.is_mine ?? user.id === c.user_id) || user.id === blogAuthorId) && (
                         <button onClick={() => deleteComment(c.id)} className="text-[12px] font-medium transition-colors" style={{ color: '#f87171' }}>Delete</button>
                       )}
+                      <button
+                        onClick={() => copyCommentLink(c.id)}
+                        className="text-[12px] font-medium transition-colors ml-auto flex items-center gap-1"
+                        style={{ color: 'var(--text-faint)' }}
+                        title="Copy a link to this comment"
+                      >
+                        <ion-icon name="link-outline" style={{ fontSize: '13px' }} />
+                        Share
+                      </button>
                     </div>
                   )}
 
@@ -233,22 +329,24 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                   {(c.replies || []).length > 0 && (
                     <div className="mt-3 ml-2 pl-4" style={{ borderLeft: '2px solid var(--border-default)' }}>
                       {c.replies.map(r => (
-                        <div key={r.id} className="flex gap-2.5 py-3">
-                          <Link href={`/${r.username}`} className="flex-shrink-0">
-                            {r.avatar_url ? (
-                              <img src={r.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
-                                {(r.display_name || r.username || '?')[0].toUpperCase()}
-                              </div>
-                            )}
-                          </Link>
+                        <div
+                          key={r.id}
+                          id={`comment-${r.id}`}
+                          className="flex gap-2.5 py-3 px-2 -mx-2 rounded-lg transition-colors"
+                          style={{ backgroundColor: highlighted === r.id ? 'var(--accent-subtle)' : 'transparent' }}
+                        >
+                          <CommentAvatar c={r} small />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <Link href={`/${r.username}`} className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>{r.display_name || r.username}</Link>
+                              <CommentName c={r} small />
+                              {(r.is_post_author ?? (blogAuthorId && r.user_id === blogAuthorId)) && <AuthorBadge />}
                               <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>{timeAgo(r.created_at)}</span>
                             </div>
-                            <p className="text-[13px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{renderMentions(r.content, r.mentions, Link)}</p>
+                            {r.blurred ? (
+                              <BlurredBody />
+                            ) : (
+                              <p className="text-[13px] leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-body)' }}>{renderMentions(r.content, r.mentions, Link)}</p>
+                            )}
                           </div>
                         </div>
                       ))}
