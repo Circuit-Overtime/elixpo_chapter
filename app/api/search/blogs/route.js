@@ -22,7 +22,7 @@ export async function GET(request) {
     const placeholders = statuses.map(() => '?').join(',');
 
     const base = await db.prepare(`
-      SELECT b.id as slugid, b.slug, b.title, b.subtitle, b.page_emoji, b.cover_image_r2_key,
+      SELECT b.id as slugid, b.slug, b.title, b.subtitle, b.page_emoji, b.cover_image_r2_key, b.secret
         b.read_time_minutes, b.published_at, b.author_id, b.status,
         u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar
       FROM blogs b
@@ -31,7 +31,11 @@ export async function GET(request) {
       LIMIT ?
     `).bind(pattern, pattern, ...statuses, limit).all();
 
-    const blogs = base?.results || [];
+    const blogs = (base?.results || []).map((b) => {
+      if (!b.secret) return b;
+      const { author_id, author_username, author_name, author_avatar, ...safe } = b;
+      return safe;
+    });
 
     // Enrich with optional counts
     if (blogs.length > 0) {
