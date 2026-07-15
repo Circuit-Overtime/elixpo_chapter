@@ -66,6 +66,7 @@ export default function BlogComments({ blogId, blogAuthorId }) {
   const [replyText, setReplyText] = useState('');
   const [editing, setEditing] = useState(null); // { id, content }
   const [toast, setToast] = useState('');
+  const [highlighted, setHighlighted] = useState(null); // comment id from the URL hash
   const flashToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
 
   const fetchComments = useCallback(async () => {
@@ -79,6 +80,33 @@ export default function BlogComments({ blogId, blogAuthorId }) {
     } catch {}
     setLoading(false);
   }, [blogId]);
+
+  // Copy a permalink to a single comment. Under a secret post this shares only the
+  // location, not access — the blur rules still apply to whoever opens it.
+  const copyCommentLink = async (commentId) => {
+    const url = `${window.location.origin}${window.location.pathname}#comment-${commentId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      flashToast('Link copied');
+    } catch {
+      flashToast(url);
+    }
+  };
+
+  // Deep link: once comments are on screen, jump to the one named in the hash and
+  // flash it, so a shared link lands somewhere obvious instead of the page top.
+  useEffect(() => {
+    if (loading || !comments.length) return;
+    const m = window.location.hash.match(/^#comment-(.+)$/);
+    if (!m) return;
+    const id = m[1];
+    const el = document.getElementById(`comment-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlighted(id);
+    const t = setTimeout(() => setHighlighted(null), 2600);
+    return () => clearTimeout(t);
+  }, [loading, comments]);
 
   useEffect(() => { fetchComments(); }, [fetchComments]);
 
@@ -189,8 +217,15 @@ export default function BlogComments({ blogId, blogAuthorId }) {
         <div className="space-y-1">
           {comments.map(c => (
             <div key={c.id}>
-              {/* Top-level comment */}
-              <div className="flex gap-3 py-4" style={{ borderBottom: '1px solid var(--divider)' }}>
+              {/* Top-level comment — id is the permalink target for #comment-<id> */}
+              <div
+                id={`comment-${c.id}`}
+                className="flex gap-3 py-4 px-3 -mx-3 rounded-lg transition-colors"
+                style={{
+                  borderBottom: '1px solid var(--divider)',
+                  backgroundColor: highlighted === c.id ? 'var(--accent-subtle)' : 'transparent',
+                }}
+              >
                 <CommentAvatar c={c} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -240,6 +275,15 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                       {((c.is_mine ?? user.id === c.user_id) || user.id === blogAuthorId) && (
                         <button onClick={() => deleteComment(c.id)} className="text-[12px] font-medium transition-colors" style={{ color: '#f87171' }}>Delete</button>
                       )}
+                      <button
+                        onClick={() => copyCommentLink(c.id)}
+                        className="text-[12px] font-medium transition-colors ml-auto flex items-center gap-1"
+                        style={{ color: 'var(--text-faint)' }}
+                        title="Copy a link to this comment"
+                      >
+                        <ion-icon name="link-outline" style={{ fontSize: '13px' }} />
+                        Share
+                      </button>
                     </div>
                   )}
 
@@ -269,7 +313,12 @@ export default function BlogComments({ blogId, blogAuthorId }) {
                   {(c.replies || []).length > 0 && (
                     <div className="mt-3 ml-2 pl-4" style={{ borderLeft: '2px solid var(--border-default)' }}>
                       {c.replies.map(r => (
-                        <div key={r.id} className="flex gap-2.5 py-3">
+                        <div
+                          key={r.id}
+                          id={`comment-${r.id}`}
+                          className="flex gap-2.5 py-3 px-2 -mx-2 rounded-lg transition-colors"
+                          style={{ backgroundColor: highlighted === r.id ? 'var(--accent-subtle)' : 'transparent' }}
+                        >
                           <CommentAvatar c={r} small />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">

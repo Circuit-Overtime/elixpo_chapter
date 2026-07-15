@@ -62,11 +62,6 @@ export async function POST(request, { params }) {
           body: [
             `**Reported blog:** [${blog.title || blog.slug}](${blogUrl})`,
             `**Blog ID:** \`${blog.id}\``,
-            // This issue is PUBLIC. Naming the author of a secret post here would
-            // undo the anonymity everywhere else in one line of markdown — and a
-            // GitHub issue is effectively permanent. The Blog ID is enough: a
-            // maintainer who genuinely needs the author can reverse-look up
-            // `author_id` from the blogs table in D1.
             blog.secret
               ? '**Author:** _withheld — secret (anonymous) post. Look up `author_id` by the Blog ID above in D1 if a takedown requires it._'
               : `**Author:** @${blog.author_username}`,
