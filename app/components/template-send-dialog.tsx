@@ -221,6 +221,7 @@ export default function TemplateSendDialog({
 
     // Preview
     const [previewHtml, setPreviewHtml] = useState<string>("");
+    const [previewSubject, setPreviewSubject] = useState<string>("");
     const [previewState, setPreviewState] = useState<PreviewState>({ phase: "idle" });
 
     // Send
@@ -238,6 +239,7 @@ export default function TemplateSendDialog({
         setSend({ phase: "idle" });
         setSendersError(null);
         setAliasId("");
+        setPreviewSubject("");
 
         let loadedChips: string[] | null = null;
         let loadedVars: Record<string, string> | null = null;
@@ -367,9 +369,11 @@ export default function TemplateSendDialog({
                 ok?: boolean;
                 error?: string;
                 html?: string;
+                subject?: string;
             };
             if (!res.ok || !d?.ok) throw new Error(d?.error || "Could not render the preview.");
             setPreviewHtml(typeof d.html === "string" ? d.html : "");
+            setPreviewSubject(typeof d.subject === "string" ? d.subject : "");
             setPreviewState({ phase: "idle" });
         } catch (e) {
             setPreviewState({
@@ -766,33 +770,72 @@ export default function TemplateSendDialog({
                                     borderRadius: "10px",
                                     overflow: "hidden",
                                     border: `1px solid ${BORDER}`,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    background: "var(--surface)",
                                 }}
                             >
-                                <iframe
-                                    title="Email preview"
-                                    sandbox=""
-                                    srcDoc={previewHtml}
-                                    style={{
-                                        display: "block",
-                                        width: "100%",
-                                        height: "70vh",
-                                        border: "none",
-                                        background: "#fff",
+                                <Box
+                                    sx={{
+                                        px: 2,
+                                        py: 1.5,
+                                        borderBottom: `1px solid ${BORDER}`,
+                                        background: "var(--overlay)",
+                                        display: "flex",
+                                        gap: 1,
+                                        alignItems: "baseline",
                                     }}
-                                />
-                                {previewState.phase === "loading" && (
-                                    <Box
+                                >
+                                    <Typography
                                         sx={{
-                                            position: "absolute",
-                                            inset: 0,
-                                            display: "grid",
-                                            placeItems: "center",
-                                            background: "rgba(19,22,29,0.4)",
+                                            fontSize: "0.8rem",
+                                            fontWeight: 700,
+                                            color: TEXT_40,
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.05em",
+                                            flexShrink: 0,
                                         }}
                                     >
-                                        <CircularProgress size={22} sx={{ color: ACCENT }} />
-                                    </Box>
-                                )}
+                                        Subject:
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "0.92rem",
+                                            fontWeight: 600,
+                                            color: TEXT,
+                                            wordBreak: "break-word",
+                                        }}
+                                    >
+                                        {previewSubject || "(no subject)"}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ position: "relative" }}>
+                                    <iframe
+                                        title="Email preview"
+                                        sandbox=""
+                                        srcDoc={previewHtml}
+                                        style={{
+                                            display: "block",
+                                            width: "100%",
+                                            height: "70vh",
+                                            border: "none",
+                                            background: "#fff",
+                                        }}
+                                    />
+                                    {previewState.phase === "loading" && (
+                                        <Box
+                                            sx={{
+                                                position: "absolute",
+                                                inset: 0,
+                                                display: "grid",
+                                                placeItems: "center",
+                                                background: "rgba(19,22,29,0.4)",
+                                            }}
+                                        >
+                                            <CircularProgress size={22} sx={{ color: ACCENT }} />
+                                        </Box>
+                                    )}
+                                </Box>
                             </Box>
                         )}
                     </Stack>
