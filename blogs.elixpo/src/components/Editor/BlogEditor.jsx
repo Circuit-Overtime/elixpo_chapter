@@ -23,7 +23,7 @@ import { Breadcrumbs } from './blocks/Breadcrumbs';
 import { TabsBlock } from './blocks/TabsBlock';
 import { CanvasBlock } from './blocks/CanvasBlock';
 import { AIBlock } from './blocks/AIBlock';
-import { BlogImageBlock } from './blocks/BlogImageBlock';
+import { BlogImageBlock, BlogImageUploadContext } from './blocks/BlogImageBlock';
 import { MermaidBlock } from './blocks/MermaidBlock';
 import { PDFEmbedBlock } from './blocks/PDFEmbedBlock';
 // Custom inline content
@@ -2646,22 +2646,24 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         setPageMenu({ x: Math.min(e.clientX, window.innerWidth - 230), y: Math.min(e.clientY, window.innerHeight - 320) });
       }}
     >
-      <BlockNoteView
-        editor={editor}
-        onChange={handleChange}
-        editable={editable}
-        theme={isDark ? "dark" : "light"}
-        slashMenu={false}
-        filePanel={false}
-        formattingToolbar={false}
-      >
-        <SuggestionMenuController
-          triggerCharacter="/"
-          getItems={getItems}
-        />
-        <FormattingToolbarController formattingToolbar={LinkAwareFormattingToolbar} />
-        <TableHandlesController />
-      </BlockNoteView>
+      <BlogImageUploadContext.Provider value={{ blogId }}>
+        <BlockNoteView
+          editor={editor}
+          onChange={handleChange}
+          editable={editable}
+          theme={isDark ? "dark" : "light"}
+          slashMenu={false}
+          filePanel={false}
+          formattingToolbar={false}
+        >
+          <SuggestionMenuController
+            triggerCharacter="/"
+            getItems={getItems}
+          />
+          <FormattingToolbarController formattingToolbar={LinkAwareFormattingToolbar} />
+          <TableHandlesController />
+        </BlockNoteView>
+      </BlogImageUploadContext.Provider>
 
       {/* Page context menu (#21) — quick block inserts on right-click */}
       {pageMenu && (

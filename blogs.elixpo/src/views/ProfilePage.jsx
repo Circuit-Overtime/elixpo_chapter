@@ -105,7 +105,11 @@ export default function ProfilePage() {
     );
   }
 
-  const bannerSrc = localBanner || (user.banner_r2_key ? `/api/media/${user.banner_r2_key}` : null);
+  // Banners overwrite a stable Cloudinary public id. Version the proxy URL so a
+  // replacement cannot be served from the browser/CDN cache after a reload.
+  const bannerSrc = localBanner || (user.banner_r2_key
+    ? `/api/media/${user.banner_r2_key}?v=${encodeURIComponent(user.updated_at || '')}`
+    : null);
 
   async function handleBannerSave(blob) {
     if (!blob) {
