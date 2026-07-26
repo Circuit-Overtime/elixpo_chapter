@@ -1,8 +1,12 @@
 'use client';
 
 import { createReactBlockSpec } from '@blocknote/react';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { IMAGE_ACCEPT_ATTR } from '../../../utils/allowedImageTypes';
+
+// The block spec is shared by all editor instances, so use context rather than
+// module state to associate an upload with the blog currently being edited.
+export const BlogImageUploadContext = createContext({ blogId: null });
 
 /**
  * Custom image block replacing BlockNote's default.
@@ -30,6 +34,7 @@ export const BlogImageBlock = createReactBlockSpec(
 );
 
 function BlogImageRenderer({ block, editor }) {
+  const { blogId } = useContext(BlogImageUploadContext);
   const { url, caption, _imageId } = block.props;
   const [mode, setMode] = useState('idle'); // idle | embed | generate | uploading | generating
   const [embedUrl, setEmbedUrl] = useState('');
@@ -81,6 +86,7 @@ function BlogImageRenderer({ block, editor }) {
       const formData = new FormData();
       formData.append('file', blob, `img_${Date.now()}.webp`);
       formData.append('type', 'image');
+      if (blogId) formData.append('blogId', blogId);
       const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
@@ -92,7 +98,7 @@ function BlogImageRenderer({ block, editor }) {
       if (file.size > 0) showFailToast('Image upload failed');
       setMode('idle');
     }
-  }, [editor, block.id]);
+  }, [editor, block.id, blogId]);
 
   // Paste handler
   const handlePaste = useCallback((e) => {
