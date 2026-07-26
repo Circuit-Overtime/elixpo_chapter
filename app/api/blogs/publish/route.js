@@ -177,6 +177,13 @@ export async function POST(request) {
       ).run();
     }
 
+    // A user may upload media before the first draft/publish request creates
+    // the blog row. Attach those staged records once the FK target exists.
+    await db.prepare(`
+      UPDATE media_uploads SET blog_id = ?
+      WHERE blog_id IS NULL AND user_id = ? AND cloudinary_public_id LIKE ?
+    `).bind(slugid, session.userId, `lixblogs/${slugid}/%`).run();
+
     // Record a version snapshot for every publish/update (#11 E).
     if (compressedContent && targetStatus !== 'draft') {
       try { const { snapshotVersion } = await import('../../../../lib/blogVersions'); await snapshotVersion(db, slugid, compressedContent, { label: 'published', userId: session.userId }); } catch {}

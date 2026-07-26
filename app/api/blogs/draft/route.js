@@ -199,6 +199,13 @@ export async function POST(request) {
       ).run();
     }
 
+    // Media can be uploaded before a brand-new draft row exists. Associate
+    // those staged assets now that the blog satisfies the foreign key.
+    await db.prepare(`
+      UPDATE media_uploads SET blog_id = ?
+      WHERE blog_id IS NULL AND user_id = ? AND cloudinary_public_id LIKE ?
+    `).bind(slugid, session.userId, `lixblogs/${slugid}/%`).run();
+
     // Sync tags
     if (Array.isArray(tags)) {
       const normalizedTags = normalizeTags(tags);
