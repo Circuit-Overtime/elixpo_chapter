@@ -53,6 +53,7 @@ class CoreEmbeddingService:
 
         self.executor = ThreadPoolExecutor(max_workers=2)
         
+        self._shutdown_event = threading.Event()
         self._persist_thread = threading.Thread(
             target=self._persist_worker,
             daemon=True
@@ -198,9 +199,20 @@ class CoreEmbeddingService:
         }
 
     def _persist_worker(self) -> None:
-        while True:
+        while not self._shutdown_event.wait(PERSIST_VECTOR_STORE_INTERVAL):
             try:
-                time.sleep(PERSIST_VECTOR_STORE_INTERVAL)
                 self.vector_store.persist_to_disk()
             except Exception as e:
                 logger.error(f"[CORE] Persist worker error: {e}")
+
+    def close(self) -> None:
+        """Stop background work and flush vector state once."""
+        if self._shutdown_event.is_set():
+            return
+        self._shutdown_event.set()
+        try:
+            self.vector_store.persist_to_disk()
+        except Exception as e:
+            logger.warning(f"[CORE] Final persist failed: {e}")
+        self.executor.shutdown(wait=False, cancel_futures=True)
+        self._persist_thread.join(timeout=2)
