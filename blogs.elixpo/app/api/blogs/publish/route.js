@@ -16,6 +16,7 @@ export async function POST(request) {
 
   const body = await request.json();
   const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt, slug: requestedSlug, collectionId, secret } = body;
+  const storedCover = validCoverUrl(coverUrl);
   const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
   const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
   const zoom = Number.isFinite(coverZoom) ? coverZoom : 1;
@@ -152,7 +153,7 @@ export async function POST(request) {
           read_time_minutes = ?, secret = ?, updated_at = ?
       `;
       const params = [title, subtitle || '', slug, compressedContent, excerpt, publishAs || 'personal',
-        finalCollectionId, targetStatus, pageEmoji || '', coverUrl || '', posX, posY, zoom, readTime, finalSecret, now];
+        finalCollectionId, targetStatus, pageEmoji || '', storedCover, posX, posY, zoom, readTime, finalSecret, now];
 
       if (publishedAt) {
         query += ', published_at = ?';
@@ -171,10 +172,17 @@ export async function POST(request) {
       `).bind(
         slugid, slug, title, subtitle || '', compressedContent, excerpt,
         session.userId, publishAs || 'personal', finalCollectionId, targetStatus,
-        pageEmoji || '', coverUrl || '', posX, posY, zoom, readTime, finalSecret, now, now,
+        pageEmoji || '', storedCover, posX, posY, zoom, readTime, finalSecret, now, now,
         (targetStatus === 'published' || targetStatus === 'unlisted') ? now : null
       ).run();
     }
+
+    // A user may upload media before the first draft/publish request creates
+    // the blog row. Attach those staged records once the FK target exists.
+    await db.prepare(`
+      UPDATE media_uploads SET blog_id = ?
+      WHERE blog_id IS NULL AND user_id = ? AND cloudinary_public_id LIKE ?
+    `).bind(slugid, session.userId, `lixblogs/${slugid}/%`).run();
 
     // Record a version snapshot for every publish/update (#11 E).
     if (compressedContent && targetStatus !== 'draft') {
@@ -182,9 +190,10 @@ export async function POST(request) {
     }
 
     // Sync tags
-    if (tags && Array.isArray(tags)) {
+    if (Array.isArray(tags)) {
+      const normalizedTags = normalizeTags(tags);
       await db.prepare('DELETE FROM blog_tags WHERE blog_id = ?').bind(slugid).run();
-      for (const tag of tags.slice(0, 5)) {
+      for (const tag of normalizedTags) {
         await db.prepare('INSERT OR IGNORE INTO blog_tags (blog_id, tag) VALUES (?, ?)')
           .bind(slugid, tag).run();
       }
@@ -224,6 +233,17 @@ export async function POST(request) {
     console.error('Publish error:', e);
     return NextResponse.json({ error: 'Failed to publish' }, { status: 500 });
   }
+}
+
+function normalizeTags(tags) {
+  return [...new Set(tags
+    .filter((tag) => typeof tag === 'string')
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean))].slice(0, 5);
+}
+
+function validCoverUrl(url) {
+  return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : '';
 }
 
 function generateSlug(title) {
