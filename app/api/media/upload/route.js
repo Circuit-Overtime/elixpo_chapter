@@ -193,8 +193,10 @@ export async function POST(request) {
             await db.prepare('UPDATE users SET avatar_r2_key = ?, avatar_url = ? WHERE id = ?')
               .bind(result.public_id, result.secure_url, session.userId).run();
           } else if (mediaType === 'banner') {
-            await db.prepare('UPDATE users SET banner_r2_key = ? WHERE id = ?')
-              .bind(result.public_id, session.userId).run();
+            // The public id is intentionally stable. Touch updated_at as well so
+            // clients can use it as a cache-busting version after a replacement.
+            await db.prepare('UPDATE users SET banner_r2_key = ?, updated_at = ? WHERE id = ?')
+              .bind(result.public_id, Math.floor(Date.now() / 1000), session.userId).run();
           } else if (mediaType === 'org_avatar') {
             // Org UI reads logo_url for display — set both so the new logo shows.
             await db.prepare('UPDATE orgs SET logo_r2_key = ?, logo_url = ? WHERE id = ?')

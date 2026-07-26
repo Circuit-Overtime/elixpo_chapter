@@ -182,9 +182,10 @@ export async function POST(request) {
     }
 
     // Sync tags
-    if (tags && Array.isArray(tags)) {
+    if (Array.isArray(tags)) {
+      const normalizedTags = normalizeTags(tags);
       await db.prepare('DELETE FROM blog_tags WHERE blog_id = ?').bind(slugid).run();
-      for (const tag of tags.slice(0, 5)) {
+      for (const tag of normalizedTags) {
         await db.prepare('INSERT OR IGNORE INTO blog_tags (blog_id, tag) VALUES (?, ?)')
           .bind(slugid, tag).run();
       }
@@ -224,6 +225,13 @@ export async function POST(request) {
     console.error('Publish error:', e);
     return NextResponse.json({ error: 'Failed to publish' }, { status: 500 });
   }
+}
+
+function normalizeTags(tags) {
+  return [...new Set(tags
+    .filter((tag) => typeof tag === 'string')
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean))].slice(0, 5);
 }
 
 function generateSlug(title) {

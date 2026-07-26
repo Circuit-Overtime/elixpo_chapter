@@ -628,6 +628,7 @@ export default function WritePage({ slugid }) {
           if (d?.updatedAt) {
             setLastKnownUpdatedAt(d.updatedAt);
             setBlogVersion(v => v ? { ...v, updatedAt: d.updatedAt } : v);
+            return d.updatedAt;
           }
         } catch {}
         if (!silent) {
@@ -1234,11 +1235,14 @@ export default function WritePage({ slugid }) {
     setShowPublishMenu(false);
     // Flush any buffered subpage drafts so they ship with the post.
     try { await syncSubpageDrafts(); } catch {}
+    // Publish the exact revision we are about to send. This prevents a tag-only
+    // edit from being rejected when a background draft save changed updated_at.
+    const syncedUpdatedAt = await syncToCloud({ silent: true });
     try {
       const res = await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt, secret }),
+        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt: syncedUpdatedAt || lastKnownUpdatedAt, secret }),
       });
 
       if (res.status === 409) {
