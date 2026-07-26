@@ -133,6 +133,7 @@ export async function POST(request) {
 
   const body = await request.json();
   const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview, coverPos, coverZoom, secret } = body;
+  const storedCover = validCoverUrl(coverPreview);
   const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
   const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
   const zoom = Number.isFinite(coverZoom) ? coverZoom : 1;
@@ -176,7 +177,7 @@ export async function POST(request) {
         WHERE id = ?
       `).bind(
         title || '', subtitle || '', compressedContent, excerpt, publishAs || 'personal',
-        pageEmoji || '', coverPreview || '', posX, posY, zoom, finalSecret, now, slugid
+        pageEmoji || '', storedCover, posX, posY, zoom, finalSecret, now, slugid
       ).run();
       // Throttled version snapshot (≤ 1 / 5 min) so history accrues as people edit (#11 E).
       if (compressedContent) {
@@ -194,7 +195,7 @@ export async function POST(request) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         slugid, slug, title || '', subtitle || '', compressedContent, excerpt,
-        session.userId, publishAs || 'personal', pageEmoji || '', coverPreview || '', posX, posY, zoom, finalSecret, now, now
+        session.userId, publishAs || 'personal', pageEmoji || '', storedCover, posX, posY, zoom, finalSecret, now, now
       ).run();
     }
 
@@ -222,6 +223,10 @@ function normalizeTags(tags) {
     .filter((tag) => typeof tag === 'string')
     .map((tag) => tag.trim().toLowerCase())
     .filter(Boolean))].slice(0, 5);
+}
+
+function validCoverUrl(url) {
+  return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : '';
 }
 
 function generateSlug(title) {

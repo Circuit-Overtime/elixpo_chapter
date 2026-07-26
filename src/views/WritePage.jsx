@@ -73,7 +73,9 @@ function getDraftKey(slugid) {
 function loadDraft(slugid) {
   try {
     const raw = localStorage.getItem(getDraftKey(slugid));
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    return { ...draft, coverPreview: persistableCover(draft.coverPreview) };
   } catch {
     return null;
   }
@@ -91,9 +93,16 @@ function saveDraft(slugid, data) {
     }
     localStorage.setItem(currentKey, JSON.stringify({
       ...data,
+      // Object URLs only exist in the current tab. Persisting one makes the
+      // cover render as its alt text ("Cover") after the browser reloads.
+      coverPreview: persistableCover(data.coverPreview),
       savedAt: Date.now(),
     }));
   } catch { /* storage full */ }
+}
+
+function persistableCover(url) {
+  return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : null;
 }
 
 function generateBlogId() {
@@ -451,6 +460,7 @@ export default function WritePage({ slugid }) {
   const hadUserGestureRef = useRef(false);
   const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
   const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
+  const coverUploadRef = useRef(null); // pending upload whose permanent URL must win over blob: preview
   const isPublished = blogVersion?.isPublished;
   const [coverZoom, setCoverZoom] = useState(1);
   const [coverPos, setCoverPos] = useState({ x: 50, y: 50 });
@@ -600,7 +610,11 @@ export default function WritePage({ slugid }) {
 
   // Cloud sync function — saves localStorage then pushes to cloud
   const syncToCloud = useCallback(async ({ showToast = false, silent = false } = {}) => {
-    const data = draftDataRef.current;
+    // A cropped cover is first displayed with a temporary blob: URL. Wait for
+    // its Cloudinary upload before taking the payload snapshot.
+    try { await coverUploadRef.current; } catch {}
+    const latest = draftDataRef.current;
+    const data = { ...latest, coverPreview: persistableCover(latest.coverPreview) };
     if (!data.title && !data.editorContent) return;
 
     // Always save to localStorage first
@@ -621,14 +635,15 @@ export default function WritePage({ slugid }) {
 
       if (res.ok) {
         dirtyRef.current = false;
+        let updatedAt = null;
         // Keep our known version current so our own saves aren't seen as a
         // conflict when we later publish.
         try {
           const d = await res.json();
           if (d?.updatedAt) {
+            updatedAt = d.updatedAt;
             setLastKnownUpdatedAt(d.updatedAt);
             setBlogVersion(v => v ? { ...v, updatedAt: d.updatedAt } : v);
-            return d.updatedAt;
           }
         } catch {}
         if (!silent) {
@@ -639,6 +654,7 @@ export default function WritePage({ slugid }) {
           }
           setTimeout(() => setSyncStatus('idle'), 5000);
         }
+        return updatedAt;
       } else {
         if (!silent) {
           setSyncStatus('local');
@@ -713,7 +729,11 @@ export default function WritePage({ slugid }) {
       if (data.title || data.editorContent) {
         saveDraft(blogId, data);
         try {
-          const blob = new Blob([JSON.stringify({ slugid: blogId, ...data })], { type: 'application/json' });
+          const blob = new Blob([JSON.stringify({
+            slugid: blogId,
+            ...data,
+            coverPreview: persistableCover(data.coverPreview),
+          })], { type: 'application/json' });
           navigator.sendBeacon('/api/blogs/draft', blob);
         } catch {}
       }
@@ -793,7 +813,7 @@ export default function WritePage({ slugid }) {
         if (cloud.published_as) setPublishAs(cloud.published_as);
         setSecret(!!cloud.secret);
         setCollectionId(cloud.collection_id || null);
-        if (cloud.cover_image_r2_key) setCoverPreview(cloud.cover_image_r2_key);
+        setCoverPreview(persistableCover(cloud.cover_image_r2_key));
         if (Number.isFinite(cloud.cover_pos_x) && Number.isFinite(cloud.cover_pos_y)) setCoverPos({ x: cloud.cover_pos_x, y: cloud.cover_pos_y });
         if (Number.isFinite(cloud.cover_zoom)) setCoverZoom(cloud.cover_zoom);
         if (cloud.page_emoji) setPageEmoji(cloud.page_emoji);
@@ -1016,23 +1036,29 @@ export default function WritePage({ slugid }) {
 
   // Upload cover image blob to Cloudinary → set coverPreview to permanent URL
   const uploadCover = useCallback(async (blob) => {
-    try {
+    const task = (async () => {
       const formData = new FormData();
       formData.append('file', blob, `cover_${blogId}.webp`);
       formData.append('type', 'cover');
       if (blogId) formData.append('blogId', blogId);
       const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) {
-          setCoverPreview(data.url);
-          return data.url;
-        }
-      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) throw new Error(data.error || 'Cover upload failed');
+      // Keep imperative saves/publishes in sync even before React has committed
+      // the state update and run the draftDataRef effect.
+      draftDataRef.current = { ...draftDataRef.current, coverPreview: data.url };
+      setCoverPreview(data.url);
+      return data.url;
+    })();
+    coverUploadRef.current = task;
+    try {
+      return await task;
     } catch (err) {
       console.error('Cover upload failed:', err);
+      return null;
+    } finally {
+      if (coverUploadRef.current === task) coverUploadRef.current = null;
     }
-    return null;
   }, [blogId]);
 
   // Read a chosen device file into a data URL and open the crop+stylise modal.
@@ -1048,17 +1074,27 @@ export default function WritePage({ slugid }) {
     setCoverCropSrc(null);
     setShowCoverModal(false);
     if (!blob) return;
-    setCoverPreview(URL.createObjectURL(blob));
+    const previousCover = persistableCover(draftDataRef.current.coverPreview);
+    const previewUrl = URL.createObjectURL(blob);
+    setCoverPreview(previewUrl);
     setCoverZoom(1);
     setCoverPos({ x: 50, y: 50 });
-    uploadCover(blob);
+    uploadCover(blob).then((url) => {
+      URL.revokeObjectURL(previewUrl);
+      if (!url) {
+        draftDataRef.current = { ...draftDataRef.current, coverPreview: previousCover };
+        setCoverPreview(previousCover);
+      }
+    });
   }, [uploadCover]);
 
   const handleSaveDraft = async () => {
-    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret });
+    try { await coverUploadRef.current; } catch {}
+    const latestCover = persistableCover(draftDataRef.current.coverPreview);
+    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview: latestCover, editorContent, pageEmoji, coverPos, coverZoom, secret });
     setLastSaved(Date.now());
     setShowPublishMenu(false);
-    syncToCloud({ showToast: true });
+    await syncToCloud({ showToast: true });
   };
 
   // Handle .md file upload — check for existing content first
@@ -1238,11 +1274,12 @@ export default function WritePage({ slugid }) {
     // Publish the exact revision we are about to send. This prevents a tag-only
     // edit from being rejected when a background draft save changed updated_at.
     const syncedUpdatedAt = await syncToCloud({ silent: true });
+    const persistedCover = persistableCover(draftDataRef.current.coverPreview);
     try {
       const res = await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt: syncedUpdatedAt || lastKnownUpdatedAt, secret }),
+        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: persistedCover, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt: syncedUpdatedAt || lastKnownUpdatedAt, secret }),
       });
 
       if (res.status === 409) {
