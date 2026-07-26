@@ -1042,8 +1042,12 @@ export default function WritePage({ slugid }) {
       formData.append('type', 'cover');
       if (blogId) formData.append('blogId', blogId);
       const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.url) throw new Error(data.error || 'Cover upload failed');
+      const responseText = await res.text();
+      let data = {};
+      try { data = responseText ? JSON.parse(responseText) : {}; } catch {}
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || responseText || `Cover upload failed (${res.status})`);
+      }
       // Keep imperative saves/publishes in sync even before React has committed
       // the state update and run the draftDataRef effect.
       draftDataRef.current = { ...draftDataRef.current, coverPreview: data.url };

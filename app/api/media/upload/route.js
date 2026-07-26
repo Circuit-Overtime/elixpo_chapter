@@ -176,7 +176,10 @@ export async function POST(request) {
       result = await uploadToCloudinary(arrayBuffer, {
         folder,
         publicId,
-        overwrite: isProfileImage,
+        // Covers also use a deterministic public id (`.../<blogId>/cover`).
+        // Without overwrite, every replacement is rejected by Cloudinary
+        // because the asset already exists.
+        overwrite: isProfileImage || mediaType === 'cover',
       });
       console.log(`[media/upload] Cloudinary success: ${result.secure_url} (${result.bytes} bytes)`);
     } catch (e) {
