@@ -87,6 +87,7 @@ class lixSearch:
     def __init__(self):
         self.app = Quart(__name__)
         self.pipeline_initialized = False
+        self.skill_registry = None
         self.initialization_lock = asyncio.Lock()
         
         self._setup_cors()
@@ -229,19 +230,24 @@ class lixSearch:
                 if self.pipeline_initialized:
                     return
 
-                logger.info("[APP] Initializing lixSearch (IPC service must be started manually)...")
+                logger.info("[APP] Initializing lixSearch core services...")
                 try:
+                    from skillRegistry import get_skill_registry
+                    self.skill_registry = get_skill_registry()
+                    logger.info(f"[APP] Loaded {len(self.skill_registry)} validated skills")
+
                     session_manager = get_session_manager()
                     retrieval_system = get_retrieval_system()
                     initialize_chat_engine(session_manager, retrieval_system)
 
-                    # Pre-connect to IPC so first request doesn't pay the cost
-                    try:
-                        from ipcService.coreServiceManager import CoreServiceManager
-                        CoreServiceManager.get_instance()
-                        logger.info("[APP] IPC CoreServiceManager pre-connected")
-                    except Exception as e:
-                        logger.warning(f"[APP] IPC pre-connect failed (will retry on first request): {e}")
+                    # Reject model duplication before initializing the local backend.
+                    from pipeline.config import CORE_SERVICE_BACKEND
+                    if CORE_SERVICE_BACKEND == "local" and int(os.getenv("WORKERS", "1")) > 1:
+                        raise RuntimeError("The local core backend requires WORKERS=1 to avoid duplicating the embedding model and browser pool")
+
+                    from ipcService.coreServiceManager import CoreServiceManager
+                    core_manager = CoreServiceManager.get_instance()
+                    logger.info(f"[APP] Core backend ready: {core_manager.get_backend_name()}")
 
                     self.pipeline_initialized = True
                     logger.info("[APP] lixSearch initialized and ready")
@@ -279,6 +285,11 @@ class lixSearch:
                 await asyncio.to_thread(_run_archive_cleanup)
             except Exception as e:
                 logger.warning(f"[APP] Shutdown cleanup error: {e}")
+            try:
+                from ipcService.coreServiceManager import CoreServiceManager
+                await asyncio.to_thread(CoreServiceManager.shutdown_instance)
+            except Exception as e:
+                logger.warning(f"[APP] Core backend shutdown error: {e}")
             logger.info("[APP] Shutdown complete")
     
     def run(self, host: str = "0.0.0.0", port: int = 8000, workers: int = 1):

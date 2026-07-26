@@ -160,6 +160,7 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - APP_MODE=worker
+      - CORE_SERVICE_BACKEND=ipc
       - LOG_LEVEL=INFO
       - REDIS_HOST=redis
       - REDIS_PORT=9530

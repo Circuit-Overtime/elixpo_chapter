@@ -247,6 +247,8 @@ SESSION_LRU_EVICT_AFTER_MINUTES = int(os.getenv("SESSION_LRU_EVICT_AFTER_MINUTES
 HYBRID_HOT_WINDOW_SIZE = 20                 
 HYBRID_STARTUP_CLEANUP = True               
 
+CORE_SERVICE_BACKEND = os.getenv("CORE_SERVICE_BACKEND", "ipc").strip().lower()
+
 IPC_HOST = os.getenv("IPC_HOST")
 IPC_PORT = int(os.getenv("IPC_PORT"))
 _IPC_AUTHKEY = os.getenv("IPC_AUTHKEY")

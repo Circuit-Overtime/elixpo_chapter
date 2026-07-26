@@ -6,23 +6,28 @@ logger = logging.getLogger("lixsearch-api")
 
 
 async def health_check(pipeline_initialized: bool):
-
-    ipc_status = "unknown"
+    core_status = "unknown"
+    backend = "unknown"
     try:
-        from ipcService.coreServiceManager import is_ipc_ready
-        ipc_status = "connected" if is_ipc_ready() else "disconnected"
+        from ipcService.coreServiceManager import CoreServiceManager
+
+        manager = CoreServiceManager.get_instance()
+        backend = manager.get_backend_name()
+        core_status = "connected" if manager.is_ready() else "disconnected"
     except Exception:
-        ipc_status = "error"
+        core_status = "error"
 
     status = "healthy"
     if not pipeline_initialized:
         status = "unhealthy"
-    elif ipc_status != "connected":
+    elif core_status != "connected":
         status = "degraded"
 
     return jsonify({
         "initialized": pipeline_initialized,
         "status": status,
-        "ipc_connection": ipc_status,
+        "core_backend": backend,
+        "core_service": core_status,
+        "ipc_connection": core_status if backend == "ipc" else "not_used",
         "timestamp": datetime.utcnow().isoformat(),
     })
