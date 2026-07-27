@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { LIX_LOGO } from './lixLogo';
+import { generateBlogBanner } from '../../../src/utils/pixelAvatar';
 
 export const runtime = 'edge';
 
@@ -7,7 +8,7 @@ export const runtime = 'edge';
 //   type=profile → real logo + avatar + name + @handle + bio (users & orgs)
 //   type=blog    → real logo + blog banner + title + tagline + read time · authors
 //
-// Params: type, title, subtitle, sub, kind, avatar, cover, readTime
+// Params: type, title, subtitle, sub, kind, avatar, cover, seed, readTime
 //   subtitle — bio (profile) or tagline (blog)
 //   sub      — @handle (profile) or author list (blog)
 //   kind     — small badge ("Author Profile", "Organisation", "Collection", …)
@@ -35,6 +36,7 @@ export async function GET(request) {
   };
   const avatar = ogSafeImage(searchParams.get('avatar') || '');
   const cover = ogSafeImage(searchParams.get('cover') || '');
+  const defaultCover = generateBlogBanner((searchParams.get('seed') || title).slice(0, 160));
   const hasAvatar = !!avatar;
   const hasCover = !!cover;
 
@@ -100,7 +102,7 @@ export async function GET(request) {
           <div style={{ display: 'flex', width: '100%', height: '230px' }}>
             {hasCover
               ? <img src={cover} width={1072} height={230} style={{ width: '100%', height: '230px', objectFit: 'cover' }} />
-              : <div style={{ display: 'flex', width: '100%', height: '230px', background: `linear-gradient(135deg, ${ACCENT} 0%, #6d4fd1 100%)` }} />}
+              : <img src={defaultCover} width={1072} height={230} style={{ width: '100%', height: '230px', objectFit: 'cover' }} />}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '40px 56px', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
