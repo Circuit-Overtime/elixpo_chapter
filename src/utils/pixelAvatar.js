@@ -133,3 +133,63 @@ export function generateBlogBanner(seed) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice"><rect width="${W}" height="${H}" fill="${bg}"/>${bgPixels}${rects}</svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
+
+/**
+ * Generate the square companion for a default blog banner.
+ *
+ * The wide banner deliberately puts its strongest detail in the corners. A
+ * square `object-cover` crop only sees its quiet centre, so feed cards used to
+ * look almost black. This keeps the same seed, palette and pixel language while
+ * composing the pattern for a square canvas.
+ */
+export function generateBlogThumbnail(seed) {
+  const h = hashSeed(seed);
+  const palette = PALETTES[h % PALETTES.length];
+  const [bg, fg, fgLight] = palette;
+
+  const SIZE = 240;
+  const PX = 12;
+  const CORNER = 8;
+
+  const bits = [];
+  for (let y = 0; y < CORNER; y++) {
+    for (let x = 0; x < CORNER; x++) {
+      const dist = Math.sqrt(x * x + y * y) / Math.sqrt(2 * CORNER * CORNER);
+      const threshold = dist * 205;
+      bits.push(((h * (y * 7 + x * 13 + 3)) & 0xFF) > threshold);
+    }
+  }
+
+  let rects = '';
+  const drawCorner = (ox, oy, flipX, flipY) => {
+    for (let y = 0; y < CORNER; y++) {
+      for (let x = 0; x < CORNER; x++) {
+        if (!bits[y * CORNER + x]) continue;
+        const fill = ((x + y) % 3 === 0) ? fgLight : fg;
+        const px = flipX ? ox - (x + 1) * PX : ox + x * PX;
+        const py = flipY ? oy - (y + 1) * PX : oy + y * PX;
+        rects += `<rect x="${px}" y="${py}" width="${PX}" height="${PX}" fill="${fill}" rx="1"/>`;
+      }
+    }
+  };
+
+  drawCorner(0, 0, false, false);
+  drawCorner(SIZE, 0, true, false);
+  drawCorner(0, SIZE, false, true);
+  drawCorner(SIZE, SIZE, true, true);
+
+  let texture = '';
+  for (let y = 2; y < SIZE / PX - 2; y += 2) {
+    for (let x = 2; x < SIZE / PX - 2; x += 2) {
+      const v = (h * (y * 53 + x * 37 + 19)) & 0xFF;
+      if (v > 212) {
+        texture += `<rect x="${x * PX}" y="${y * PX}" width="${PX}" height="${PX}" fill="${v > 238 ? fgLight : fg}" opacity="${v > 238 ? '0.16' : '0.1'}" rx="1"/>`;
+      }
+    }
+  }
+
+  // A subtle inset frame gives the small tile definition without changing the
+  // intentionally dark character of the default artwork.
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}"><rect width="${SIZE}" height="${SIZE}" fill="${bg}"/><rect x="6" y="6" width="${SIZE - 12}" height="${SIZE - 12}" rx="14" fill="none" stroke="${fg}" stroke-opacity="0.16" stroke-width="2"/>${texture}${rects}</svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}

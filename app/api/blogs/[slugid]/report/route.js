@@ -18,7 +18,7 @@ export async function POST(request, { params }) {
   if (!REASONS.has(reason)) return NextResponse.json({ error: 'Invalid reason' }, { status: 400 });
 
   try {
-    const { getDB } = await import('../../../../../lib/cloudflare');
+    const { getDB } = await import('../../../../../lib/cloudflare');  
     const db = getDB();
 
     const blog = await db.prepare(

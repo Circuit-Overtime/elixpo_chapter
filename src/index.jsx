@@ -5,7 +5,7 @@ import { useAuth } from './context/AuthContext';
 import AppShell from './components/AppShell';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { generateBlogBanner } from './utils/pixelAvatar';
+import { generateBlogThumbnail } from './utils/pixelAvatar';
 import SearchBar from './components/SearchBar';
 
 function timeAgo(ts) {
@@ -181,7 +181,7 @@ function FeedCardActions({ post, onHide }) {
 
 function FeedCard({ post, onHide }) {
   const author = post.author || {};
-  const cover = post.cover_image_r2_key || generateBlogBanner(post.id || post.slug);
+  const cover = post.cover_image_r2_key || generateBlogThumbnail(post.id || post.slug);
   const href = `/${(post.org?.slug) || author.username || 'unknown'}/${post.slug}`;
   const allAuthors = [{ display_name: author.display_name, username: author.username, avatar_url: author.avatar_url }, ...(post.co_authors || [])];
   return (

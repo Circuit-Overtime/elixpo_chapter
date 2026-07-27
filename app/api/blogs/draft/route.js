@@ -133,6 +133,7 @@ export async function POST(request) {
 
   const body = await request.json();
   const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview, coverPos, coverZoom, secret } = body;
+  const storedCover = validCoverUrl(coverPreview);
   const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
   const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
   const zoom = Number.isFinite(coverZoom) ? coverZoom : 1;
@@ -176,7 +177,7 @@ export async function POST(request) {
         WHERE id = ?
       `).bind(
         title || '', subtitle || '', compressedContent, excerpt, publishAs || 'personal',
-        pageEmoji || '', coverPreview || '', posX, posY, zoom, finalSecret, now, slugid
+        pageEmoji || '', storedCover, posX, posY, zoom, finalSecret, now, slugid
       ).run();
       // Throttled version snapshot (≤ 1 / 5 min) so history accrues as people edit (#11 E).
       if (compressedContent) {
@@ -194,14 +195,22 @@ export async function POST(request) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         slugid, slug, title || '', subtitle || '', compressedContent, excerpt,
-        session.userId, publishAs || 'personal', pageEmoji || '', coverPreview || '', posX, posY, zoom, finalSecret, now, now
+        session.userId, publishAs || 'personal', pageEmoji || '', storedCover, posX, posY, zoom, finalSecret, now, now
       ).run();
     }
 
+    // Media can be uploaded before a brand-new draft row exists. Associate
+    // those staged assets now that the blog satisfies the foreign key.
+    await db.prepare(`
+      UPDATE media_uploads SET blog_id = ?
+      WHERE blog_id IS NULL AND user_id = ? AND cloudinary_public_id LIKE ?
+    `).bind(slugid, session.userId, `lixblogs/${slugid}/%`).run();
+
     // Sync tags
-    if (tags && Array.isArray(tags)) {
+    if (Array.isArray(tags)) {
+      const normalizedTags = normalizeTags(tags);
       await db.prepare('DELETE FROM blog_tags WHERE blog_id = ?').bind(slugid).run();
-      for (const tag of tags.slice(0, 5)) {
+      for (const tag of normalizedTags) {
         await db.prepare('INSERT OR IGNORE INTO blog_tags (blog_id, tag) VALUES (?, ?)')
           .bind(slugid, tag).run();
       }
@@ -214,6 +223,17 @@ export async function POST(request) {
     console.error('Draft save error:', e);
     return NextResponse.json({ error: 'Failed to save draft' }, { status: 500 });
   }
+}
+
+function normalizeTags(tags) {
+  return [...new Set(tags
+    .filter((tag) => typeof tag === 'string')
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean))].slice(0, 5);
+}
+
+function validCoverUrl(url) {
+  return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : '';
 }
 
 function generateSlug(title) {
