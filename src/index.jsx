@@ -371,6 +371,25 @@ function FeedSkeleton() {
 
 const FIXED_TAGS = ['Tech', 'Finance', 'Sports', 'Entertainment'];
 
+function recommendedTopics(interests, popular) {
+  const seen = new Set();
+  const topics = [];
+  const interestSet = new Set(interests.map(tag => String(tag).trim().toLowerCase()));
+
+  const add = (tag, count = 0) => {
+    const value = String(tag || '').trim();
+    const key = value.toLowerCase();
+    if (!key || seen.has(key) || topics.length >= 10) return;
+    seen.add(key);
+    topics.push({ tag: value, count: Number(count) || 0, personal: interestSet.has(key) });
+  };
+
+  interests.forEach(tag => add(tag));
+  popular.forEach(topic => add(topic.tag, topic.count));
+  FIXED_TAGS.forEach(tag => add(tag));
+  return topics;
+}
+
 export default function App() {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
@@ -419,11 +438,13 @@ export default function App() {
   // Fetch sidebar data once
   useEffect(() => {
     fetch('/api/feed/trending?limit=3').then(r => r.json()).then(d => setTopPicks(d.posts || [])).catch(() => {});
-    fetch('/api/tags/popular?limit=12').then(r => r.json()).then(d => setPopularTags((d.tags || []).map(t => t.tag))).catch(() => {});
+    fetch('/api/tags/popular?limit=12').then(r => r.json()).then(d => setPopularTags(d.tags || [])).catch(() => {});
     if (user) {
       fetch('/api/users/me/interests').then(r => r.json()).then(d => setUserInterests(d.interests || [])).catch(() => {});
     }
   }, [user]);
+
+  const topicSuggestions = recommendedTopics(userInterests, popularTags);
 
   return (
     <AppShell>
@@ -508,22 +529,59 @@ export default function App() {
           </div>
 
           {/* Recommended Topics */}
-          <div className="mb-8">
-            <h3 className="text-[14px] font-bold mb-3 tracking-wide" style={{ color: 'var(--text-primary)' }}>Recommended Topics</h3>
+          <div
+            className="mb-8 rounded-2xl p-4"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div
+                className="h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)' }}
+              >
+                <ion-icon name="pricetags-outline" style={{ fontSize: '18px' }} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>Recommended Topics</h3>
+                <p className="text-[11px] leading-4 mt-0.5" style={{ color: 'var(--text-faint)' }}>
+                  {userInterests.length > 0 ? 'Your interests, mixed with what readers follow.' : 'Popular subjects from across LixBlogs.'}
+                </p>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2">
-              {(popularTags.length > 0 ? popularTags.slice(0, 8) : FIXED_TAGS).map(topic => (
+              {topicSuggestions.map(({ tag, count, personal }) => (
                 <button
-                  key={topic}
-                  onClick={() => setTagFilter(topic)}
-                  className="px-3.5 py-1.5 rounded-full text-[13px] transition-colors"
-                  style={tagFilter === topic
-                    ? { color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent)' }
-                    : { color: 'var(--text-body)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+                  key={tag}
+                  onClick={() => setTagFilter(current => current?.toLowerCase() === tag.toLowerCase() ? null : tag)}
+                  className="group/topic inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all"
+                  style={tagFilter?.toLowerCase() === tag.toLowerCase()
+                    ? { color: 'white', backgroundColor: 'var(--accent)', border: '1px solid var(--accent)', boxShadow: '0 4px 14px color-mix(in srgb, var(--accent) 25%, transparent)' }
+                    : { color: 'var(--text-body)', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)' }}
+                  aria-pressed={tagFilter?.toLowerCase() === tag.toLowerCase()}
+                  title={count > 0 ? `${count} ${count === 1 ? 'story' : 'stories'}` : `Browse ${tag}`}
                 >
-                  {topic}
+                  <span style={{ opacity: 0.55 }}>#</span>
+                  <span className="capitalize">{tag}</span>
+                  {personal && (
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: tagFilter?.toLowerCase() === tag.toLowerCase() ? 'white' : 'var(--accent)' }}
+                      title="One of your interests"
+                    />
+                  )}
                 </button>
               ))}
             </div>
+
+            {tagFilter && (
+              <button
+                onClick={() => setTagFilter(null)}
+                className="mt-3 text-[11px] font-medium hover:opacity-70 transition-opacity"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Clear topic filter
+              </button>
+            )}
           </div>
 
           {/* Who to follow */}
