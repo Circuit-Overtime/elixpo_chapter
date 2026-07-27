@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import AppShell from '../components/AppShell';
 import Link from 'next/link';
-import { generatePixelAvatar, generateBlogBanner } from '../utils/pixelAvatar';
+import { generatePixelAvatar, generateBlogBanner, generateBlogThumbnail } from '../utils/pixelAvatar';
 import { useAuth } from '../context/AuthContext';
 import BlogInteractionBar from '../components/BlogInteractionBar';
 import BlogComments from '../components/BlogComments';
@@ -288,7 +288,7 @@ function HandlePageInner({ path }) {
                       {(b.subtitle || b.excerpt) && <p className="text-[14px] leading-[1.5] line-clamp-2" style={{ color: 'var(--text-faint)' }}>{b.subtitle || b.excerpt}</p>}
                       {b.read_time_minutes > 0 && <p className="text-[12px] mt-2" style={{ color: 'var(--text-faint)' }}>{b.read_time_minutes} min read</p>}
                     </div>
-                    <img src={b.cover_image_r2_key || generateBlogBanner(b.id || b.slug)} alt="" className="w-[100px] h-[100px] rounded-md object-cover flex-shrink-0 self-center hidden sm:block" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+                    <img src={b.cover_image_r2_key || generateBlogThumbnail(b.id || b.slug)} alt="" className="w-[100px] h-[100px] rounded-md object-cover flex-shrink-0 self-center hidden sm:block" style={{ backgroundColor: 'var(--bg-elevated)' }} />
                   </article>
                 </Link>
               ))}
@@ -366,7 +366,7 @@ function HandlePageInner({ path }) {
                           {b.comment_count > 0 && <span>{b.comment_count} comments</span>}
                         </div>
                       </div>
-                      <img src={b.cover_image_r2_key || generateBlogBanner(b.id || b.slug)} alt="" className="w-[100px] h-[100px] rounded-xl object-cover flex-shrink-0 hidden sm:block" />
+                      <img src={b.cover_image_r2_key || generateBlogThumbnail(b.id || b.slug)} alt="" className="w-[100px] h-[100px] rounded-xl object-cover flex-shrink-0 hidden sm:block" />
                     </div>
                   </article>
                 </Link>
