@@ -80,6 +80,7 @@ export async function generateMetadata({ params, searchParams }) {
       const og = ogUrl({
         type: 'blog', title, subtitle: b.subtitle || '', sub, readTime,
         cover: httpImg(b.cover_image_r2_key),
+        seed: b.id || b.slugid || b.slug || title,
         avatar: secret ? '' : httpImg(b.author_avatar),
         // author_tier is itself a weak author signal — never send it for a secret blog.
         ...(secret ? {} : noBrand(b.author_tier)),

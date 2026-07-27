@@ -15,19 +15,10 @@ export default function New() {
 
   // /new-blog is a launcher only — it never hosts the editor itself, because a
   // slugid generated here wouldn't be in the URL and a reload would mint a new
-  // one (losing the draft). Resolve to a stable /edit/[slugid] URL instead.
+  // one (losing the draft). Every explicit "write" action creates a fresh,
+  // stable editor URL; existing drafts remain available from /stories.
   useEffect(() => {
-    fetch('/api/blogs/list?status=draft')
-      .then(r => r.ok ? r.json() : { blogs: [] })
-      .then(d => {
-        const drafts = d.blogs || [];
-        if (drafts.length > 0) {
-          router.replace('/stories');
-        } else {
-          router.replace(`/edit/${generateBlogId()}`);
-        }
-      })
-      .catch(() => router.replace(`/edit/${generateBlogId()}`));
+    router.replace(`/edit/${generateBlogId()}`);
   }, [router]);
 
   return (
