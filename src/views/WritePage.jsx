@@ -513,6 +513,18 @@ export default function WritePage({ slugid }) {
   // Version history (#11 E)
   const [showHistory, setShowHistory] = useState(false);
   const [versions, setVersions] = useState([]);
+  const historyRef = useRef(null);
+  useEffect(() => {
+    if (!showHistory) return;
+    const closeOnOutsideClick = (event) => {
+      if (historyRef.current && !historyRef.current.contains(event.target)) {
+        setShowHistory(false);
+      }
+    };
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick);
+  }, [showHistory]);
+
   const openHistory = async () => {
     setShowHistory(true);
     try {
@@ -1554,7 +1566,7 @@ export default function WritePage({ slugid }) {
           )}
 
           {/* Version history (#11 E) */}
-          <div className="relative">
+          <div ref={historyRef} className="relative">
             <button
               onClick={() => (showHistory ? setShowHistory(false) : openHistory())}
               className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-[12px] font-medium transition-colors"
@@ -1565,9 +1577,7 @@ export default function WritePage({ slugid }) {
               <span className="hidden md:inline">History</span>
             </button>
             {showHistory && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
-                <div className="absolute right-0 top-10 z-50 w-72 max-h-[60vh] overflow-y-auto rounded-xl p-1.5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', boxShadow: '0 16px 48px rgba(0,0,0,0.4)' }}>
+              <div className="absolute right-0 top-10 z-50 w-72 max-h-[60vh] overflow-y-auto rounded-xl p-1.5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', boxShadow: '0 16px 48px rgba(0,0,0,0.4)' }}>
                   <p className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1.5" style={{ color: 'var(--text-faint)' }}>Version history</p>
                   {versions.length === 0 ? (
                     <p className="text-[12px] px-2.5 py-3" style={{ color: 'var(--text-faint)' }}>No versions yet — they accrue as you edit and publish.</p>
@@ -1584,8 +1594,7 @@ export default function WritePage({ slugid }) {
                       <button onClick={() => restoreVersion(v.id)} className="text-[11px] font-medium px-2 py-1 rounded-md flex-shrink-0" style={{ color: '#9b7bf7', backgroundColor: 'rgba(155,123,247,0.1)' }}>Restore</button>
                     </div>
                   ))}
-                </div>
-              </>
+              </div>
             )}
           </div>
 
