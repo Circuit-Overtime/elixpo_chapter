@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { generateBlogBanner } from '../utils/pixelAvatar';
+import { generateBlogThumbnail } from '../utils/pixelAvatar';
 
 // "More to read" under the comments — related blogs (by tag, author, trending).
 export default function BlogRecommendations({ blogId }) {
@@ -27,7 +27,7 @@ export default function BlogRecommendations({ blogId }) {
         {posts.map((p) => {
           const author = p.author || {};
           const href = `/${(p.org?.slug) || author.username || 'unknown'}/${p.slug}`;
-          const cover = p.cover_image_r2_key || generateBlogBanner(p.id || p.slug);
+          const cover = p.cover_image_r2_key || generateBlogThumbnail(p.id || p.slug);
           return (
             <Link key={p.id} href={href} className="group flex gap-3">
               <div className="flex-1 min-w-0">
