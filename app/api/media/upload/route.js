@@ -4,6 +4,7 @@ import { getSession } from '../../../../lib/auth';
 import { getLimits } from '../../../../lib/tiers';
 import { MAX_MEDIA_PER_BLOG, MAX_BLOG_IMAGE_BYTES } from '../../../../lib/limits';
 import { uploadToCloudinary } from '../../../../lib/cloudinary';
+import { stripImageMetadata } from '../../../../lib/stripImageMetadata';
 import { isAllowedMime, ALLOWED_IMAGE_MIME_TYPES } from '../../../../src/utils/allowedImageTypes';
 
 // Profile image types — these get overwritten (no history), no storage tracking
@@ -48,6 +49,23 @@ export async function POST(request) {
     }
 
     const isProfileImage = PROFILE_TYPES.includes(mediaType);
+    let trackedBlogId = null;
+
+    // A new editor URL has a blog id before its draft row exists. In that case,
+    // stage the media with a NULL blog_id and attach it when the draft is saved.
+    // Existing blogs still require edit permission before their media path can
+    // be overwritten.
+    if (db && !isProfileImage && blogId) {
+      const blog = await db.prepare('SELECT id FROM blogs WHERE id = ?').bind(blogId).first();
+      if (blog) {
+        const { canEditBlog } = await import('../../../../lib/permissions');
+        const perm = await canEditBlog(db, blogId, session.userId);
+        if (!perm.ok) {
+          return NextResponse.json({ error: 'Not authorized to upload media for this blog' }, { status: 403 });
+        }
+        trackedBlogId = blogId;
+      }
+    }
 
     // For org uploads, verify membership
     if (db && (mediaType === 'org_avatar' || mediaType === 'org_banner')) {
@@ -159,14 +177,26 @@ export async function POST(request) {
 
     console.log(`[media/upload] Uploading to Cloudinary: folder=${folder} publicId=${publicId}`);
 
-    // Upload to Cloudinary
-    const arrayBuffer = await file.arrayBuffer();
+    // Scrub EXIF/GPS/XMP/IPTC before the bytes ever leave this Worker. Cloudinary
+    // stores the original untouched, so this is the last point at which we control
+    // them. Every upload is scrubbed, not just those on secret posts: at upload time
+    // the post is typically still a draft whose secret flag can flip later, so
+    // scrubbing selectively would miss exactly the photos that need it.
+    const rawBuffer = await file.arrayBuffer();
+    const arrayBuffer = stripImageMetadata(rawBuffer);
+    if (arrayBuffer.byteLength !== rawBuffer.byteLength) {
+      console.log(`[media/upload] stripped ${rawBuffer.byteLength - arrayBuffer.byteLength} bytes of image metadata`);
+    }
+
     let result;
     try {
       result = await uploadToCloudinary(arrayBuffer, {
         folder,
         publicId,
-        overwrite: isProfileImage,
+        // Covers also use a deterministic public id (`.../<blogId>/cover`).
+        // Without overwrite, every replacement is rejected by Cloudinary
+        // because the asset already exists.
+        overwrite: isProfileImage || mediaType === 'cover',
       });
       console.log(`[media/upload] Cloudinary success: ${result.secure_url} (${result.bytes} bytes)`);
     } catch (e) {
@@ -183,8 +213,10 @@ export async function POST(request) {
             await db.prepare('UPDATE users SET avatar_r2_key = ?, avatar_url = ? WHERE id = ?')
               .bind(result.public_id, result.secure_url, session.userId).run();
           } else if (mediaType === 'banner') {
-            await db.prepare('UPDATE users SET banner_r2_key = ? WHERE id = ?')
-              .bind(result.public_id, session.userId).run();
+            // The public id is intentionally stable. Touch updated_at as well so
+            // clients can use it as a cache-busting version after a replacement.
+            await db.prepare('UPDATE users SET banner_r2_key = ?, updated_at = ? WHERE id = ?')
+              .bind(result.public_id, Math.floor(Date.now() / 1000), session.userId).run();
           } else if (mediaType === 'org_avatar') {
             // Org UI reads logo_url for display — set both so the new logo shows.
             await db.prepare('UPDATE orgs SET logo_r2_key = ?, logo_url = ? WHERE id = ?')
@@ -219,13 +251,24 @@ export async function POST(request) {
         const mediaId = crypto.randomUUID();
         const now = Math.floor(Date.now() / 1000);
 
+        const previous = await db.prepare(
+          'SELECT user_id, size_bytes FROM media_uploads WHERE cloudinary_public_id = ?'
+        ).bind(result.public_id).first();
+
         await db.prepare(`
           INSERT INTO media_uploads (id, user_id, blog_id, cloudinary_public_id, size_bytes, media_type, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).bind(mediaId, session.userId, blogId || null, result.public_id, fileBytes, mediaType, now).run();
+          ON CONFLICT(cloudinary_public_id) DO UPDATE SET
+            blog_id = COALESCE(excluded.blog_id, media_uploads.blog_id),
+            size_bytes = excluded.size_bytes,
+            media_type = excluded.media_type,
+            created_at = excluded.created_at
+        `).bind(mediaId, session.userId, trackedBlogId, result.public_id, fileBytes, mediaType, now).run();
 
-        await db.prepare('UPDATE users SET storage_used_bytes = storage_used_bytes + ? WHERE id = ?')
-          .bind(fileBytes, session.userId).run();
+        const storageOwner = previous?.user_id || session.userId;
+        const storageDelta = fileBytes - (previous?.size_bytes || 0);
+        await db.prepare('UPDATE users SET storage_used_bytes = MAX(0, storage_used_bytes + ?) WHERE id = ?')
+          .bind(storageDelta, storageOwner).run();
 
         return NextResponse.json({
           id: mediaId,

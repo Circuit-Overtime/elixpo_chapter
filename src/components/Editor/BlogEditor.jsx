@@ -23,7 +23,7 @@ import { Breadcrumbs } from './blocks/Breadcrumbs';
 import { TabsBlock } from './blocks/TabsBlock';
 import { CanvasBlock } from './blocks/CanvasBlock';
 import { AIBlock } from './blocks/AIBlock';
-import { BlogImageBlock } from './blocks/BlogImageBlock';
+import { BlogImageBlock, BlogImageUploadContext } from './blocks/BlogImageBlock';
 import { MermaidBlock } from './blocks/MermaidBlock';
 import { PDFEmbedBlock } from './blocks/PDFEmbedBlock';
 // Custom inline content
@@ -417,7 +417,11 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
         editor.insertInlineContent([{ type: 'dateInline', props: { date: new Date().toISOString().split('T')[0] } }]);
       },
     },
-    {
+    // Secret blogs can't mention people: naming a collaborator inside an anonymous
+    // post narrows down who wrote it. This slash command bypasses MentionMenu and
+    // inserts the node directly, so it has to be removed here too — gating the menu
+    // alone would leave this path wide open.
+    ...(callbacks.secret ? [] : [{
       title: 'Mention User',
       subtext: 'Mention a LixBlogs user',
       group: 'Inline',
@@ -427,7 +431,7 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
         const username = prompt('Enter username:');
         if (username) editor.insertInlineContent([{ type: 'mention', props: { username: username.replace('@', '') } }]);
       },
-    },
+    }]),
     {
       title: 'Mention Blog',
       subtext: 'Link to another published blog',
@@ -675,7 +679,7 @@ function doSanitize(blocks) {
   return result;
 }
 
-const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded, editable = true }, ref) {
+const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded, editable = true, secret = false }, ref) {
   const { isDark } = useTheme();
   const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
   const [showMentionMenu, setShowMentionMenu] = useState(false);
@@ -1859,8 +1863,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     () => async (query) => filterItems(getCustomSlashMenuItems(editor, {
       onInlineLatex: () => { setInlineLatexValue(''); setShowInlineLatex(true); },
       blogId,
+      secret,
     }), query),
-    [editor, blogId]
+    [editor, blogId, secret]
   );
 
   // Space trigger for AI menu on empty blocks
@@ -2730,22 +2735,24 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         setPageMenu({ x: Math.min(e.clientX, window.innerWidth - 230), y: Math.min(e.clientY, window.innerHeight - 320) });
       }}
     >
-      <BlockNoteView
-        editor={editor}
-        onChange={handleChange}
-        editable={editable}
-        theme={isDark ? "dark" : "light"}
-        slashMenu={false}
-        filePanel={false}
-        formattingToolbar={false}
-      >
-        <SuggestionMenuController
-          triggerCharacter="/"
-          getItems={getItems}
-        />
-        <FormattingToolbarController formattingToolbar={LinkAwareFormattingToolbar} />
-        <TableHandlesController />
-      </BlockNoteView>
+      <BlogImageUploadContext.Provider value={{ blogId }}>
+        <BlockNoteView
+          editor={editor}
+          onChange={handleChange}
+          editable={editable}
+          theme={isDark ? "dark" : "light"}
+          slashMenu={false}
+          filePanel={false}
+          formattingToolbar={false}
+        >
+          <SuggestionMenuController
+            triggerCharacter="/"
+            getItems={getItems}
+          />
+          <FormattingToolbarController formattingToolbar={LinkAwareFormattingToolbar} />
+          <TableHandlesController />
+        </BlockNoteView>
+      </BlogImageUploadContext.Provider>
 
       {/* Page context menu (#21) — quick block inserts on right-click */}
       {pageMenu && (
@@ -2793,6 +2800,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             query={mentionQuery}
             onClose={handleMentionClose}
             onDismiss={handleMentionDismiss}
+            allowUsers={!secret}
           />
         </div>
       )}

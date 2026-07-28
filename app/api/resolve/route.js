@@ -19,6 +19,19 @@ async function fetchCoAuthors(db, blogId) {
   }));
 }
 
+// A secret blog's author is never exposed to readers. Strip every identifying
+// field server-side rather than trusting the client to hide them — the row still
+// carries author_id in D1 so a reported blog can be traced internally by slugid.
+// Listings must link secret blogs by slugid: /@name/slug would name the author.
+function stripSecretAuthor(blog) {
+  if (!blog || !blog.secret) return blog;
+  const {
+    author_id, author_username, author_name, author_avatar, author_tier,
+    co_authors, co_author_count, ...safe
+  } = blog;
+  return { ...safe, secret: 1, co_authors: [], co_author_count: 0 };
+}
+
 function decompressBlog(blog) {
   if (!blog) return blog;
   try {
@@ -30,10 +43,54 @@ function decompressBlog(blog) {
   return blog;
 }
 
+// Short link (/[slugid]) — the only route that can serve a secret blog, since it
+// names no author in the path. Works for normal blogs too.
+async function fetchBlogBySlugid(db, slugid) {
+  const blog = await db.prepare(`
+    SELECT b.*, u.username as author_username, u.display_name as author_name,
+      u.avatar_url as author_avatar, u.tier as author_tier
+    FROM blogs b JOIN users u ON u.id = b.author_id
+    WHERE b.id = ? AND b.status IN ('published', 'unlisted')
+  `).bind(slugid).first();
+  if (!blog) return null;
+
+  const [tags, coAuthors] = await Promise.all([
+    db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ?').bind(blog.id).all(),
+    fetchCoAuthors(db, blog.id),
+  ]);
+  const full = {
+    ...decompressBlog(blog),
+    tags: (tags?.results || []).map((t) => t.tag),
+    co_authors: coAuthors,
+    co_author_count: coAuthors.length,
+  };
+
+  // Owner resolution. A secret blog must never name the person who wrote it, and
+  // for a personal post the owner *is* the author — so we return no owner at all.
+  // An org-published secret blog still shows the org: an org is not an individual,
+  // and publishing under a banner is the point of the feature.
+  let owner = null;
+  if (typeof full.published_as === 'string' && full.published_as.startsWith('org:')) {
+    const org = await db.prepare(
+      'SELECT id, slug, name, description, bio, logo_url, logo_r2_key, owner_id FROM orgs WHERE id = ?'
+    ).bind(full.published_as.slice(4)).first();
+    if (org) owner = { type: 'org', ...org };
+  } else if (!full.secret) {
+    const u = await db.prepare(
+      'SELECT id, username, display_name, avatar_url, bio, tier FROM users WHERE id = ?'
+    ).bind(full.author_id).first();
+    if (u) owner = { type: 'user', ...u };
+  }
+
+  return { type: 'blog', owner, blog: stripSecretAuthor(full) };
+}
+
 // Resolve @name to user or org, optionally fetch a blog by slug
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const name = (searchParams.get('name') || '').trim().toLowerCase();
+  // Blog ids are case-sensitive, usernames/slugs are not — keep both forms.
+  const rawName = (searchParams.get('name') || '').trim();
+  const name = rawName.toLowerCase();
   const slug = (searchParams.get('slug') || '').trim().toLowerCase();
   const collection = (searchParams.get('collection') || '').trim().toLowerCase();
 
@@ -66,7 +123,13 @@ export async function GET(request) {
         if (o) { ownerType = 'org'; ownerId = o.id; }
       }
 
+      // No namespace match → try the short link /[slugid]. Namespaces are resolved
+      // first, so an existing username or org slug can never be shadowed by a blog id.
       if (!ownerType) {
+        if (!slug) {
+          const short = await fetchBlogBySlugid(db, rawName);
+          if (short) return NextResponse.json(short);
+        }
         return NextResponse.json({ error: 'Not found', type: null }, { status: 404 });
       }
 
@@ -98,6 +161,7 @@ export async function GET(request) {
           FROM blogs b
           JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.author_id = ? AND b.status IN ('published', 'unlisted')
+            AND b.secret = 0
         `).bind(slug, ownerId).first();
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
@@ -129,6 +193,9 @@ export async function GET(request) {
                  SELECT blog_id FROM blog_co_authors WHERE user_id = ? AND status = 'accepted' AND show_on_profile = 1
                ))
           AND b.status IN ('published', 'unlisted')
+          -- Secret blogs never appear on a profile: listing them here would tie
+          -- the anonymous post straight back to its author (or a co-author).
+          AND b.secret = 0
         ORDER BY b.published_at DESC LIMIT 20
       `).bind(ownerId, ownerId, ownerId).all();
 
@@ -176,6 +243,7 @@ export async function GET(request) {
           SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier
           FROM blogs b JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.collection_id = ? AND b.status IN ('published', 'unlisted')
+            AND b.secret = 0
         `).bind(slug, col.id).first();
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
@@ -202,7 +270,7 @@ export async function GET(request) {
         if (col) {
           // Return collection listing with its blogs
           const colBlogs = await db.prepare(`
-            SELECT b.id, b.slug, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
+            SELECT b.id, b.slug, b.slugid, b.secret, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
               b.read_time_minutes, b.published_at, b.author_id,
               u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier,
               (SELECT COUNT(*) FROM likes WHERE blog_id = b.id) as like_count,
@@ -230,7 +298,7 @@ export async function GET(request) {
             type: 'collection',
             owner: { type: 'org', ...org },
             collection: col,
-            blogs: (colBlogs?.results || []).map(b => ({ ...b, tags: tagMap[b.id] || [] })),
+            blogs: (colBlogs?.results || []).map(b => stripSecretAuthor({ ...b, tags: tagMap[b.id] || [] })),
           });
         }
 
@@ -239,6 +307,7 @@ export async function GET(request) {
           SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier
           FROM blogs b JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.published_as = ? AND b.status IN ('published', 'unlisted')
+            AND b.secret = 0
         `).bind(slug, `org:${ownerId}`).first();
 
         if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
@@ -268,7 +337,7 @@ export async function GET(request) {
         db.prepare('SELECT id, slug, name, description FROM collections WHERE org_id = ? ORDER BY created_at')
           .bind(ownerId).all(),
         db.prepare(`
-          SELECT id, slug, title, subtitle, cover_image_r2_key, page_emoji, read_time_minutes, published_at
+          SELECT id, slug, slugid, secret, title, subtitle, cover_image_r2_key, page_emoji, read_time_minutes, published_at
           FROM blogs WHERE published_as = ? AND status IN ('published', 'unlisted')
           ORDER BY published_at DESC LIMIT 20
         `).bind(`org:${ownerId}`).all(),

@@ -1,0 +1,286 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import AppShell from '../components/AppShell';
+import SearchBar from '../components/SearchBar';
+import { generateBlogBanner } from '../utils/pixelAvatar';
+
+const TABS = [
+  { id: 'all', label: 'All' },
+  { id: 'blogs', label: 'Blogs' },
+  { id: 'people', label: 'People' },
+  { id: 'orgs', label: 'Organizations' },
+];
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const diff = Math.floor(Date.now() / 1000) - ts;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function Avatar({ src, name, size = 40, rounded = 'rounded-full' }) {
+  if (src) {
+    return <img src={src} alt="" className={`${rounded} object-cover flex-shrink-0`} style={{ width: size, height: size }} />;
+  }
+  return (
+    <div
+      className={`${rounded} flex items-center justify-center font-bold flex-shrink-0`}
+      style={{ width: size, height: size, backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)', fontSize: size * 0.4 }}
+    >
+      {(name || '?')[0].toUpperCase()}
+    </div>
+  );
+}
+
+function SectionHeading({ children, count }) {
+  return (
+    <h2 className="text-[13px] font-bold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: 'var(--text-faint)' }}>
+      {children}
+      {count > 0 && <span className="font-normal normal-case tracking-normal">({count})</span>}
+    </h2>
+  );
+}
+
+export default function SearchPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const q = (searchParams.get('q') || '').trim();
+  const tab = searchParams.get('tab') || 'all';
+
+  const [results, setResults] = useState({ blogs: [], users: [], orgs: [] });
+  const [unknown, setUnknown] = useState([]); // qualifiers the parser didn't recognise
+  const [loading, setLoading] = useState(!!q);
+
+  const runSearch = useCallback(async (query) => {
+    if (!query || query.length < 2) {
+      setResults({ blogs: [], users: [], orgs: [] });
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const enc = encodeURIComponent(query);
+    try {
+      const [blogs, users, orgs] = await Promise.all([
+        fetch(`/api/search/blogs?q=${enc}&limit=20&fields=slugid,slug,title,author,tags,likes,comments`).then(r => r.json()).catch(() => ({ blogs: [] })),
+        fetch(`/api/search/users?q=${enc}&limit=20&fields=id,username,display_name,avatar_url,bio,followers,blogs`).then(r => r.json()).catch(() => ({ users: [] })),
+        fetch(`/api/search/orgs?q=${enc}&limit=20&fields=id,slug,name,logo_url,description,members,blogs`).then(r => r.json()).catch(() => ({ orgs: [] })),
+      ]);
+      setResults({ blogs: blogs.blogs || [], users: users.users || [], orgs: orgs.orgs || [] });
+      setUnknown(blogs.unknown || []);
+    } catch {
+      setResults({ blogs: [], users: [], orgs: [] });
+      setUnknown([]);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { runSearch(q); }, [q, runSearch]);
+
+  // SearchBar owns submission: it pushes /search?q=…, and this page re-reads the URL.
+  const setTab = (id) => {
+    router.push(`/search?q=${encodeURIComponent(q)}${id !== 'all' ? `&tab=${id}` : ''}`);
+  };
+
+  const showBlogs = tab === 'all' || tab === 'blogs';
+  const showPeople = tab === 'all' || tab === 'people';
+  const showOrgs = tab === 'all' || tab === 'orgs';
+  const totalCount = results.blogs.length + results.users.length + results.orgs.length;
+  const nothing = !loading && q.length >= 2 && totalCount === 0;
+
+  return (
+    <AppShell>
+      <div className="max-w-3xl mx-auto px-6 py-10">
+        {/* Same bar as the feed: suggestions, recent history and the syntax link
+            belong here too — this is where people refine a query. */}
+        <div className="mb-6">
+          <SearchBar defaultQuery={q} autoFocus={!q} />
+        </div>
+
+        {!q ? (
+          <div className="py-14 text-center">
+            <p className="text-[14px] mb-6" style={{ color: 'var(--text-faint)' }}>
+              Type something and press Enter to search.
+            </p>
+            {/* Qualifiers are invisible unless we show them — a syntax nobody
+                discovers may as well not exist. */}
+            <p className="text-[12px] mb-3" style={{ color: 'var(--text-muted)' }}>Or narrow it down:</p>
+            <div className="flex flex-wrap items-center justify-center gap-2 max-w-lg mx-auto">
+              {['tag:hacktoberfest', 'author:nonsense3', 'org:gdgoc', 'sort:likes', '"exact phrase"', '-tag:meetup'].map(ex => (
+                <button
+                  key={ex}
+                  onClick={() => router.push(`/search?q=${encodeURIComponent(ex)}`)}
+                  className="px-2.5 py-1 rounded-md text-[12px] font-mono transition-colors"
+                  style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' }}
+                >
+                  {ex}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-baseline justify-between gap-4 mb-3">
+              <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                {loading ? 'Searching' : `${totalCount} result${totalCount === 1 ? '' : 's'}`} for{' '}
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>“{q}”</span>
+              </p>
+              <Link href="/docs/search" className="text-[12px] flex items-center gap-1 flex-shrink-0 hover:underline" style={{ color: 'var(--text-faint)' }}>
+                <ion-icon name="help-circle-outline" style={{ fontSize: '13px' }} />
+                Search syntax
+              </Link>
+            </div>
+
+            {/* A typo like `athor:bob` silently searching for literal text is
+                confusing — say so instead of letting the user wonder. */}
+            {!loading && unknown.length > 0 && (
+              <div
+                className="mb-5 rounded-lg px-3 py-2 text-[12px]"
+                style={{ backgroundColor: 'rgba(232,168,64,0.08)', border: '1px solid rgba(232,168,64,0.3)', color: 'var(--text-muted)' }}
+              >
+                Not a known qualifier:{' '}
+                {unknown.map(u => <code key={u} className="font-mono" style={{ color: '#e8a840' }}>{u}</code>).reduce((a, b) => [a, ', ', b])}
+                {' '}— searched as plain text instead.
+              </div>
+            )}
+
+            {/* Tabs */}
+            <div className="flex items-center gap-1 mb-7 border-b" style={{ borderColor: 'var(--border-default)' }}>
+              {TABS.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className="px-3 py-2 text-[13px] font-medium transition-colors"
+                  style={{
+                    color: tab === t.id ? 'var(--text-primary)' : 'var(--text-faint)',
+                    borderBottom: `2px solid ${tab === t.id ? '#9b7bf7' : 'transparent'}`,
+                    marginBottom: '-1px',
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4].map(i => <div key={i} className="h-20 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--bg-elevated)' }} />)}
+              </div>
+            ) : nothing ? (
+              <div className="text-center py-16">
+                <p className="text-[15px] font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No results for “{q}”</p>
+                <p className="text-[13px]" style={{ color: 'var(--text-faint)' }}>Try a different spelling or a broader term.</p>
+              </div>
+            ) : (
+              <div className="space-y-10">
+                {/* Blogs */}
+                {showBlogs && results.blogs.length > 0 && (
+                  <section>
+                    <SectionHeading count={results.blogs.length}>Blogs</SectionHeading>
+                    <div className="space-y-1">
+                      {results.blogs.map(b => (
+                        <Link
+                          key={b.slugid}
+                          href={`/${b.author_username || 'blog'}/${b.slug}`}
+                          className="flex gap-4 p-3 -mx-3 rounded-xl transition-colors hover:bg-[var(--bg-surface)]"
+                        >
+                          <img
+                            src={b.cover_image_r2_key || generateBlogBanner(b.slugid || b.slug)}
+                            alt=""
+                            className="w-24 h-16 rounded-lg object-cover flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[15px] font-bold leading-snug truncate" style={{ color: 'var(--text-primary)' }}>
+                              {b.page_emoji ? `${b.page_emoji} ` : ''}{b.title}
+                            </p>
+                            {b.subtitle && (
+                              <p className="text-[13px] mt-0.5 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{b.subtitle}</p>
+                            )}
+                            <p className="text-[11px] mt-1.5 flex items-center gap-2 flex-wrap" style={{ color: 'var(--text-faint)' }}>
+                              {b.author_name || b.author_username ? <span>{b.author_name || b.author_username}</span> : null}
+                              {b.published_at ? <><span>·</span><span>{timeAgo(b.published_at)}</span></> : null}
+                              {b.read_time_minutes ? <><span>·</span><span>{b.read_time_minutes} min read</span></> : null}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* People */}
+                {showPeople && results.users.length > 0 && (
+                  <section>
+                    <SectionHeading count={results.users.length}>People</SectionHeading>
+                    <div className="space-y-1">
+                      {results.users.map(u => (
+                        <Link
+                          key={u.id}
+                          href={`/${u.username}`}
+                          className="flex items-center gap-3 p-3 -mx-3 rounded-xl transition-colors hover:bg-[var(--bg-surface)]"
+                        >
+                          <Avatar src={u.avatar_url} name={u.display_name || u.username} />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{u.display_name || u.username}</p>
+                            <p className="text-[12px] truncate" style={{ color: 'var(--text-faint)' }}>
+                              @{u.username}
+                              {typeof u.followers === 'number' ? ` · ${u.followers} follower${u.followers === 1 ? '' : 's'}` : ''}
+                            </p>
+                            {u.bio && <p className="text-[12px] mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>{u.bio}</p>}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Organizations */}
+                {showOrgs && results.orgs.length > 0 && (
+                  <section>
+                    <SectionHeading count={results.orgs.length}>Organizations</SectionHeading>
+                    <div className="space-y-1">
+                      {results.orgs.map(o => (
+                        <Link
+                          key={o.id}
+                          href={`/${o.slug}`}
+                          className="flex items-center gap-3 p-3 -mx-3 rounded-xl transition-colors hover:bg-[var(--bg-surface)]"
+                        >
+                          <Avatar src={o.logo_url} name={o.name || o.slug} rounded="rounded-lg" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{o.name || o.slug}</p>
+                            <p className="text-[12px] truncate" style={{ color: 'var(--text-faint)' }}>
+                              @{o.slug}
+                              {typeof o.member_count === 'number' ? ` · ${o.member_count} member${o.member_count === 1 ? '' : 's'}` : ''}
+                            </p>
+                            {(o.description || o.bio) && (
+                              <p className="text-[12px] mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>{o.description || o.bio}</p>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Tab-scoped empty states */}
+                {showBlogs && tab === 'blogs' && results.blogs.length === 0 && (
+                  <p className="text-center py-12 text-[13px]" style={{ color: 'var(--text-faint)' }}>No blogs match “{q}”.</p>
+                )}
+                {showPeople && tab === 'people' && results.users.length === 0 && (
+                  <p className="text-center py-12 text-[13px]" style={{ color: 'var(--text-faint)' }}>No people match “{q}”.</p>
+                )}
+                {showOrgs && tab === 'orgs' && results.orgs.length === 0 && (
+                  <p className="text-center py-12 text-[13px]" style={{ color: 'var(--text-faint)' }}>No organizations match “{q}”.</p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </AppShell>
+  );
+}

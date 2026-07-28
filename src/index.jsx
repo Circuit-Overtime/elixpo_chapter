@@ -5,7 +5,8 @@ import { useAuth } from './context/AuthContext';
 import AppShell from './components/AppShell';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { generateBlogBanner } from './utils/pixelAvatar';
+import { generateBlogThumbnail } from './utils/pixelAvatar';
+import SearchBar from './components/SearchBar';
 
 function timeAgo(ts) {
   if (!ts) return '';
@@ -16,172 +17,6 @@ function timeAgo(ts) {
   return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function SearchBar() {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState({ users: [], orgs: [], blogs: [] });
-  const [suggestions, setSuggestions] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const ref = useRef(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
-  // Fetch suggestions on empty/short query, search results on longer query
-  useEffect(() => {
-    if (!query || query.length < 2) {
-      setResults({ users: [], orgs: [], blogs: [] });
-      if (query.length === 0) {
-        fetch('/api/search/suggestions').then(r => r.json()).then(d => setSuggestions(d.suggestions || [])).catch(() => {});
-      }
-      return;
-    }
-
-    setLoading(true);
-    const timer = setTimeout(() => {
-      Promise.all([
-        fetch(`/api/search?q=${encodeURIComponent(query)}&scope=all`).then(r => r.json()).catch(() => ({})),
-        fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`).then(r => r.json()).catch(() => ({ suggestions: [] })),
-      ]).then(([searchData, sugData]) => {
-        setResults({ users: searchData.users || [], orgs: searchData.orgs || [], blogs: searchData.blogs || [] });
-        setSuggestions(sugData.suggestions || []);
-        setLoading(false);
-      });
-    }, 120);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const handleSelect = (type, item) => {
-    setOpen(false);
-    setQuery('');
-    // Record search
-    fetch('/api/search/suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) }).catch(() => {});
-    if (type === 'user') router.push(`/${item.username}`);
-    else if (type === 'org') router.push(`/${item.slug}`);
-    else if (type === 'blog') router.push(`/${item.author_username || 'blog'}/${item.slug}`);
-    else if (type === 'suggestion') { setQuery(item.query); setOpen(true); }
-  };
-
-  const hasResults = results.users.length > 0 || results.orgs.length > 0 || results.blogs.length > 0;
-
-  return (
-    <div className="relative" ref={ref}>
-      <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 transition-colors" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
-        <ion-icon name="search-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
-        <input
-          value={query}
-          onChange={e => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          placeholder="Search blogs, people, topics..."
-          className="flex-1 bg-transparent outline-none text-[14px]"
-          style={{ color: 'var(--text-primary)' }}
-        />
-        {query && (
-          <button onClick={() => { setQuery(''); setOpen(false); }} className="flex items-center justify-center w-6 h-6 rounded-full transition-colors" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-elevated)' }}>
-            <ion-icon name="close" style={{ fontSize: '14px' }} />
-          </button>
-        )}
-        <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)', border: '1px solid var(--border-default)' }}>
-          /
-        </kbd>
-      </div>
-
-      {open && (hasResults || suggestions.length > 0 || loading) && (
-        <div className="absolute left-0 right-0 top-full mt-2 rounded-xl shadow-xl z-50 overflow-hidden max-h-[400px] overflow-y-auto" style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
-
-          {/* Suggestions */}
-          {!hasResults && suggestions.length > 0 && (
-            <div className="p-2">
-              {suggestions.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSelect('suggestion', s)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg transition-colors text-[13px]"
-                  style={{ color: 'var(--text-secondary)' }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <ion-icon name={s.type === 'recent' ? 'time-outline' : 'pricetag-outline'} style={{ fontSize: '14px', color: 'var(--text-faint)' }} />
-                  {s.query}
-                  <span className="ml-auto text-[10px]" style={{ color: 'var(--text-faint)' }}>{s.type === 'recent' ? 'Recent' : 'Topic'}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Blog results */}
-          {results.blogs.length > 0 && (
-            <div>
-              <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>Blogs</p>
-              {results.blogs.map(b => (
-                <button key={b.slugid || b.id} onClick={() => handleSelect('blog', b)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  <ion-icon name="document-text-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{b.title || 'Untitled'}</p>
-                    {b.author_name && <p className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>by {b.author_name}</p>}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* User results */}
-          {results.users.length > 0 && (
-            <div>
-              <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>People</p>
-              {results.users.map(u => (
-                <button key={u.id} onClick={() => handleSelect('user', u)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" /> :
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-faint)' }}>{(u.display_name || u.username || '?')[0].toUpperCase()}</div>}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.display_name || u.username}</p>
-                    <p className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>@{u.username}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Org results */}
-          {results.orgs.length > 0 && (
-            <div>
-              <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>Organizations</p>
-              {results.orgs.map(o => (
-                <button key={o.id} onClick={() => handleSelect('org', o)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  <ion-icon name="people-outline" style={{ fontSize: '16px', color: 'var(--text-faint)' }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{o.name}</p>
-                    <p className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>@{o.slug}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {loading && !hasResults && suggestions.length === 0 && (
-            <div className="px-4 py-6 text-center text-[13px]" style={{ color: 'var(--text-faint)' }}>Searching...</div>
-          )}
-
-          {!loading && query.length >= 2 && !hasResults && suggestions.length === 0 && (
-            <div className="px-4 py-6 text-center text-[13px]" style={{ color: 'var(--text-faint)' }}>No results for "{query}"</div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Stacked author avatars (primary + co-authors).
 function AuthorStack({ authors }) {
   const shown = authors.slice(0, 3);
   return (
@@ -346,7 +181,7 @@ function FeedCardActions({ post, onHide }) {
 
 function FeedCard({ post, onHide }) {
   const author = post.author || {};
-  const cover = post.cover_image_r2_key || generateBlogBanner(post.id || post.slug);
+  const cover = post.cover_image_r2_key || generateBlogThumbnail(post.id || post.slug);
   const href = `/${(post.org?.slug) || author.username || 'unknown'}/${post.slug}`;
   const allAuthors = [{ display_name: author.display_name, username: author.username, avatar_url: author.avatar_url }, ...(post.co_authors || [])];
   return (
@@ -536,6 +371,25 @@ function FeedSkeleton() {
 
 const FIXED_TAGS = ['Tech', 'Finance', 'Sports', 'Entertainment'];
 
+function recommendedTopics(interests, popular) {
+  const seen = new Set();
+  const topics = [];
+  const interestSet = new Set(interests.map(tag => String(tag).trim().toLowerCase()));
+
+  const add = (tag, count = 0) => {
+    const value = String(tag || '').trim();
+    const key = value.toLowerCase();
+    if (!key || seen.has(key) || topics.length >= 10) return;
+    seen.add(key);
+    topics.push({ tag: value, count: Number(count) || 0, personal: interestSet.has(key) });
+  };
+
+  interests.forEach(tag => add(tag));
+  popular.forEach(topic => add(topic.tag, topic.count));
+  FIXED_TAGS.forEach(tag => add(tag));
+  return topics;
+}
+
 export default function App() {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
@@ -584,11 +438,13 @@ export default function App() {
   // Fetch sidebar data once
   useEffect(() => {
     fetch('/api/feed/trending?limit=3').then(r => r.json()).then(d => setTopPicks(d.posts || [])).catch(() => {});
-    fetch('/api/tags/popular?limit=12').then(r => r.json()).then(d => setPopularTags((d.tags || []).map(t => t.tag))).catch(() => {});
+    fetch('/api/tags/popular?limit=12').then(r => r.json()).then(d => setPopularTags(d.tags || [])).catch(() => {});
     if (user) {
       fetch('/api/users/me/interests').then(r => r.json()).then(d => setUserInterests(d.interests || [])).catch(() => {});
     }
   }, [user]);
+
+  const topicSuggestions = recommendedTopics(userInterests, popularTags);
 
   return (
     <AppShell>
@@ -673,22 +529,59 @@ export default function App() {
           </div>
 
           {/* Recommended Topics */}
-          <div className="mb-8">
-            <h3 className="text-[14px] font-bold mb-3 tracking-wide" style={{ color: 'var(--text-primary)' }}>Recommended Topics</h3>
+          <div
+            className="mb-8 rounded-2xl p-4"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div
+                className="h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)' }}
+              >
+                <ion-icon name="pricetags-outline" style={{ fontSize: '18px' }} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>Recommended Topics</h3>
+                <p className="text-[11px] leading-4 mt-0.5" style={{ color: 'var(--text-faint)' }}>
+                  {userInterests.length > 0 ? 'Your interests, mixed with what readers follow.' : 'Popular subjects from across LixBlogs.'}
+                </p>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2">
-              {(popularTags.length > 0 ? popularTags.slice(0, 8) : FIXED_TAGS).map(topic => (
+              {topicSuggestions.map(({ tag, count, personal }) => (
                 <button
-                  key={topic}
-                  onClick={() => setTagFilter(topic)}
-                  className="px-3.5 py-1.5 rounded-full text-[13px] transition-colors"
-                  style={tagFilter === topic
-                    ? { color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent)' }
-                    : { color: 'var(--text-body)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+                  key={tag}
+                  onClick={() => setTagFilter(current => current?.toLowerCase() === tag.toLowerCase() ? null : tag)}
+                  className="group/topic inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all"
+                  style={tagFilter?.toLowerCase() === tag.toLowerCase()
+                    ? { color: 'white', backgroundColor: 'var(--accent)', border: '1px solid var(--accent)', boxShadow: '0 4px 14px color-mix(in srgb, var(--accent) 25%, transparent)' }
+                    : { color: 'var(--text-body)', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)' }}
+                  aria-pressed={tagFilter?.toLowerCase() === tag.toLowerCase()}
+                  title={count > 0 ? `${count} ${count === 1 ? 'story' : 'stories'}` : `Browse ${tag}`}
                 >
-                  {topic}
+                  <span style={{ opacity: 0.55 }}>#</span>
+                  <span className="capitalize">{tag}</span>
+                  {personal && (
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: tagFilter?.toLowerCase() === tag.toLowerCase() ? 'white' : 'var(--accent)' }}
+                      title="One of your interests"
+                    />
+                  )}
                 </button>
               ))}
             </div>
+
+            {tagFilter && (
+              <button
+                onClick={() => setTagFilter(null)}
+                className="mt-3 text-[11px] font-medium hover:opacity-70 transition-opacity"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Clear topic filter
+              </button>
+            )}
           </div>
 
           {/* Who to follow */}

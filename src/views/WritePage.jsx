@@ -73,7 +73,9 @@ function getDraftKey(slugid) {
 function loadDraft(slugid) {
   try {
     const raw = localStorage.getItem(getDraftKey(slugid));
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    return { ...draft, coverPreview: persistableCover(draft.coverPreview) };
   } catch {
     return null;
   }
@@ -91,9 +93,16 @@ function saveDraft(slugid, data) {
     }
     localStorage.setItem(currentKey, JSON.stringify({
       ...data,
+      // Object URLs only exist in the current tab. Persisting one makes the
+      // cover render as its alt text ("Cover") after the browser reloads.
+      coverPreview: persistableCover(data.coverPreview),
       savedAt: Date.now(),
     }));
   } catch { /* storage full */ }
+}
+
+function persistableCover(url) {
+  return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : null;
 }
 
 function generateBlogId() {
@@ -405,6 +414,13 @@ export default function WritePage({ slugid }) {
   const [subtitle, setSubtitle] = useState('');
   const [coverPreview, setCoverPreview] = useState(null);
   const [publishAs, setPublishAs] = useState('personal');
+  // Secret mode: publish with no author shown. Free to toggle while this is a draft,
+  // frozen by the server once the post has been public even once.
+  const [secret, setSecret] = useState(false);
+  // Sub-pages/canvases already on a post that's being switched to secret. They can't
+  // come along, so the author (or a co-author) is told before they publish rather
+  // than hitting a server rejection later.
+  const [secretBlockers, setSecretBlockers] = useState([]);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [showPublishPanel, setShowPublishPanel] = useState(() => {
@@ -444,6 +460,7 @@ export default function WritePage({ slugid }) {
   const hadUserGestureRef = useRef(false);
   const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
   const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
+  const coverUploadRef = useRef(null); // pending upload whose permanent URL must win over blob: preview
   const isPublished = blogVersion?.isPublished;
   const [coverZoom, setCoverZoom] = useState(1);
   const [coverPos, setCoverPos] = useState({ x: 50, y: 50 });
@@ -496,6 +513,18 @@ export default function WritePage({ slugid }) {
   // Version history (#11 E)
   const [showHistory, setShowHistory] = useState(false);
   const [versions, setVersions] = useState([]);
+  const historyRef = useRef(null);
+  useEffect(() => {
+    if (!showHistory) return;
+    const closeOnOutsideClick = (event) => {
+      if (historyRef.current && !historyRef.current.contains(event.target)) {
+        setShowHistory(false);
+      }
+    };
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick);
+  }, [showHistory]);
+
   const openHistory = async () => {
     setShowHistory(true);
     try {
@@ -562,9 +591,9 @@ export default function WritePage({ slugid }) {
   }, []);
 
   // Refs to always hold latest draft data (avoids stale closures in intervals/beforeunload)
-  const draftDataRef = useRef({ title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
+  const draftDataRef = useRef({ title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret });
   useEffect(() => {
-    draftDataRef.current = { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom };
+    draftDataRef.current = { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret };
   }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom]);
 
   // Sync any buffered subpage drafts from localStorage to cloud
@@ -593,7 +622,11 @@ export default function WritePage({ slugid }) {
 
   // Cloud sync function — saves localStorage then pushes to cloud
   const syncToCloud = useCallback(async ({ showToast = false, silent = false } = {}) => {
-    const data = draftDataRef.current;
+    // A cropped cover is first displayed with a temporary blob: URL. Wait for
+    // its Cloudinary upload before taking the payload snapshot.
+    try { await coverUploadRef.current; } catch {}
+    const latest = draftDataRef.current;
+    const data = { ...latest, coverPreview: persistableCover(latest.coverPreview) };
     if (!data.title && !data.editorContent) return;
 
     // Always save to localStorage first
@@ -614,11 +647,13 @@ export default function WritePage({ slugid }) {
 
       if (res.ok) {
         dirtyRef.current = false;
+        let updatedAt = null;
         // Keep our known version current so our own saves aren't seen as a
         // conflict when we later publish.
         try {
           const d = await res.json();
           if (d?.updatedAt) {
+            updatedAt = d.updatedAt;
             setLastKnownUpdatedAt(d.updatedAt);
             setBlogVersion(v => v ? { ...v, updatedAt: d.updatedAt } : v);
           }
@@ -631,6 +666,7 @@ export default function WritePage({ slugid }) {
           }
           setTimeout(() => setSyncStatus('idle'), 5000);
         }
+        return updatedAt;
       } else {
         if (!silent) {
           setSyncStatus('local');
@@ -705,7 +741,11 @@ export default function WritePage({ slugid }) {
       if (data.title || data.editorContent) {
         saveDraft(blogId, data);
         try {
-          const blob = new Blob([JSON.stringify({ slugid: blogId, ...data })], { type: 'application/json' });
+          const blob = new Blob([JSON.stringify({
+            slugid: blogId,
+            ...data,
+            coverPreview: persistableCover(data.coverPreview),
+          })], { type: 'application/json' });
           navigator.sendBeacon('/api/blogs/draft', blob);
         } catch {}
       }
@@ -783,8 +823,9 @@ export default function WritePage({ slugid }) {
         if (cloud.subtitle) setSubtitle(cloud.subtitle);
         if (cloud.tags?.length) setTags(cloud.tags);
         if (cloud.published_as) setPublishAs(cloud.published_as);
+        setSecret(!!cloud.secret);
         setCollectionId(cloud.collection_id || null);
-        if (cloud.cover_image_r2_key) setCoverPreview(cloud.cover_image_r2_key);
+        setCoverPreview(persistableCover(cloud.cover_image_r2_key));
         if (Number.isFinite(cloud.cover_pos_x) && Number.isFinite(cloud.cover_pos_y)) setCoverPos({ x: cloud.cover_pos_x, y: cloud.cover_pos_y });
         if (Number.isFinite(cloud.cover_zoom)) setCoverZoom(cloud.cover_zoom);
         if (cloud.page_emoji) setPageEmoji(cloud.page_emoji);
@@ -840,7 +881,7 @@ export default function WritePage({ slugid }) {
     dirtyRef.current = true;
     autoSaveTimer.current = setTimeout(() => {
       if (title || editorContent) {
-        saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
+        saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret });
         setLastSaved(Date.now());
       }
     }, 2000);
@@ -1007,23 +1048,33 @@ export default function WritePage({ slugid }) {
 
   // Upload cover image blob to Cloudinary → set coverPreview to permanent URL
   const uploadCover = useCallback(async (blob) => {
-    try {
+    const task = (async () => {
       const formData = new FormData();
       formData.append('file', blob, `cover_${blogId}.webp`);
       formData.append('type', 'cover');
       if (blogId) formData.append('blogId', blogId);
       const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) {
-          setCoverPreview(data.url);
-          return data.url;
-        }
+      const responseText = await res.text();
+      let data = {};
+      try { data = responseText ? JSON.parse(responseText) : {}; } catch {}
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || responseText || `Cover upload failed (${res.status})`);
       }
+      // Keep imperative saves/publishes in sync even before React has committed
+      // the state update and run the draftDataRef effect.
+      draftDataRef.current = { ...draftDataRef.current, coverPreview: data.url };
+      setCoverPreview(data.url);
+      return data.url;
+    })();
+    coverUploadRef.current = task;
+    try {
+      return await task;
     } catch (err) {
       console.error('Cover upload failed:', err);
+      return null;
+    } finally {
+      if (coverUploadRef.current === task) coverUploadRef.current = null;
     }
-    return null;
   }, [blogId]);
 
   // Read a chosen device file into a data URL and open the crop+stylise modal.
@@ -1039,17 +1090,27 @@ export default function WritePage({ slugid }) {
     setCoverCropSrc(null);
     setShowCoverModal(false);
     if (!blob) return;
-    setCoverPreview(URL.createObjectURL(blob));
+    const previousCover = persistableCover(draftDataRef.current.coverPreview);
+    const previewUrl = URL.createObjectURL(blob);
+    setCoverPreview(previewUrl);
     setCoverZoom(1);
     setCoverPos({ x: 50, y: 50 });
-    uploadCover(blob);
+    uploadCover(blob).then((url) => {
+      URL.revokeObjectURL(previewUrl);
+      if (!url) {
+        draftDataRef.current = { ...draftDataRef.current, coverPreview: previousCover };
+        setCoverPreview(previousCover);
+      }
+    });
   }, [uploadCover]);
 
   const handleSaveDraft = async () => {
-    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom });
+    try { await coverUploadRef.current; } catch {}
+    const latestCover = persistableCover(draftDataRef.current.coverPreview);
+    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview: latestCover, editorContent, pageEmoji, coverPos, coverZoom, secret });
     setLastSaved(Date.now());
     setShowPublishMenu(false);
-    syncToCloud({ showToast: true });
+    await syncToCloud({ showToast: true });
   };
 
   // Handle .md file upload — check for existing content first
@@ -1181,7 +1242,7 @@ export default function WritePage({ slugid }) {
   }, [title, draftLoading, editorReady]);
 
   // Serialized publish-settings, used to detect "nothing changed" on Update.
-  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, collectionId, pageEmoji, coverPreview, coverPos, coverZoom, slug });
+  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, collectionId, pageEmoji, coverPreview, coverPos, coverZoom, slug, secret });
   // Capture a baseline once the blog has finished loading.
   useEffect(() => {
     if (!draftLoading && settingsSnapshotRef.current === '') settingsSnapshotRef.current = settingsKey();
@@ -1201,17 +1262,40 @@ export default function WritePage({ slugid }) {
   // Nothing edited (content or settings) since load / last publish.
   const hasNoChanges = () => !hasUnsavedEdits && settingsSnapshotRef.current === settingsKey();
 
+  const toggleSecret = () => {
+    if (isPublished) return;
+    setSecret(s => !s);
+  };
+
+  // Secret posts can't carry sub-pages/canvases. Warn whenever the post is secret
+  // and some already exist — covers both toggling it on and reopening a draft that
+  // was already secret. Best-effort: the server refuses them regardless.
+  useEffect(() => {
+    if (!secret) { setSecretBlockers([]); return; }
+    if (draftLoading || !blogId) return;
+    let cancelled = false;
+    fetch(`/api/subpages?blogId=${encodeURIComponent(blogId)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && !cancelled) setSecretBlockers(d.subpages || []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [secret, draftLoading, blogId]);
+
   const doPublish = async (targetStatus) => {
     if (!title.trim() || publishing) return;
     setPublishing(true);
     setShowPublishMenu(false);
     // Flush any buffered subpage drafts so they ship with the post.
     try { await syncSubpageDrafts(); } catch {}
+    // Publish the exact revision we are about to send. This prevents a tag-only
+    // edit from being rejected when a background draft save changed updated_at.
+    const syncedUpdatedAt = await syncToCloud({ silent: true });
+    const persistedCover = persistableCover(draftDataRef.current.coverPreview);
     try {
       const res = await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: coverPreview, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt }),
+        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: persistedCover, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt: syncedUpdatedAt || lastKnownUpdatedAt, secret }),
       });
 
       if (res.status === 409) {
@@ -1482,7 +1566,7 @@ export default function WritePage({ slugid }) {
           )}
 
           {/* Version history (#11 E) */}
-          <div className="relative">
+          <div ref={historyRef} className="relative">
             <button
               onClick={() => (showHistory ? setShowHistory(false) : openHistory())}
               className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-[12px] font-medium transition-colors"
@@ -1493,9 +1577,7 @@ export default function WritePage({ slugid }) {
               <span className="hidden md:inline">History</span>
             </button>
             {showHistory && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
-                <div className="absolute right-0 top-10 z-50 w-72 max-h-[60vh] overflow-y-auto rounded-xl p-1.5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', boxShadow: '0 16px 48px rgba(0,0,0,0.4)' }}>
+              <div className="absolute right-0 top-10 z-50 w-72 max-h-[60vh] overflow-y-auto rounded-xl p-1.5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', boxShadow: '0 16px 48px rgba(0,0,0,0.4)' }}>
                   <p className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1.5" style={{ color: 'var(--text-faint)' }}>Version history</p>
                   {versions.length === 0 ? (
                     <p className="text-[12px] px-2.5 py-3" style={{ color: 'var(--text-faint)' }}>No versions yet — they accrue as you edit and publish.</p>
@@ -1512,8 +1594,7 @@ export default function WritePage({ slugid }) {
                       <button onClick={() => restoreVersion(v.id)} className="text-[11px] font-medium px-2 py-1 rounded-md flex-shrink-0" style={{ color: '#9b7bf7', backgroundColor: 'rgba(155,123,247,0.1)' }}>Restore</button>
                     </div>
                   ))}
-                </div>
-              </>
+              </div>
             )}
           </div>
 
@@ -2142,6 +2223,7 @@ export default function WritePage({ slugid }) {
                         setAiTitleKey(k => k + 1);
                       }}
                       blogId={blogId}
+                      secret={secret}
                       collaboration={collabConfig}
                       editable={!roomFull}
                       onCollabSeeded={needsSeed ? clearSeed : undefined}
@@ -2408,6 +2490,63 @@ export default function WritePage({ slugid }) {
             <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>
               Co-authors can view, edit, or admin — the post cross-posts to their profile.
             </p>
+          </div>
+
+          {/* Secret mode — publish with no author shown. Locked once public. */}
+          <div>
+            <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+              Secret mode
+              {isPublished && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-faint)' }}>(locked)</span>}
+            </label>
+            <button
+              onClick={toggleSecret}
+              disabled={isPublished}
+              className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-[13px] transition-colors disabled:cursor-default"
+              style={{
+                backgroundColor: 'var(--bg-app)',
+                border: `1px solid ${secret ? '#9b7bf7' : 'var(--border-default)'}`,
+                opacity: isPublished ? 0.6 : 1,
+              }}
+            >
+              <span className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <ion-icon name={secret ? 'eye-off-outline' : 'eye-outline'} style={{ fontSize: '16px', color: secret ? '#9b7bf7' : 'var(--text-muted)' }} />
+                {secret ? 'Publish anonymously' : 'Show my name'}
+              </span>
+              <span
+                className="relative inline-flex items-center rounded-full transition-colors"
+                style={{ width: '34px', height: '18px', backgroundColor: secret ? '#9b7bf7' : 'var(--border-default)' }}
+              >
+                <span
+                  className="absolute rounded-full bg-white transition-transform"
+                  style={{ width: '14px', height: '14px', left: '2px', transform: secret ? 'translateX(16px)' : 'translateX(0)' }}
+                />
+              </span>
+            </button>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>
+              {isPublished
+                ? 'Secret mode can’t be changed after a post goes live.'
+                : secret
+                  ? 'No name, avatar or co-authors shown. Readable only via its short link, kept off your profile and out of search. Sub-pages and canvases are unavailable. You can’t undo this after publishing — and we still store your identity for abuse reports.'
+                  : 'Hide your name from readers. Choose before publishing — it locks once live.'}
+            </p>
+
+            {secret && secretBlockers.length > 0 && (
+              <div
+                className="mt-2 rounded-lg px-3 py-2.5 text-[11px] leading-relaxed"
+                style={{ backgroundColor: 'rgba(232,168,64,0.08)', border: '1px solid rgba(232,168,64,0.35)', color: 'var(--text-body)' }}
+              >
+                <p className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: '#e8a840' }}>
+                  <ion-icon name="warning-outline" style={{ fontSize: '13px' }} />
+                  {secretBlockers.length} sub-page{secretBlockers.length === 1 ? '' : 's'}/canvas won’t be published
+                </p>
+                <p style={{ color: 'var(--text-muted)' }}>
+                  Secret posts can’t have sub-pages or canvases — they’re a separate surface with their own
+                  sharing rules that wouldn’t stay anonymous. Turn secret mode off, or remove{' '}
+                  {secretBlockers.map(s => s.title || 'Untitled').slice(0, 3).join(', ')}
+                  {secretBlockers.length > 3 ? ` +${secretBlockers.length - 3} more` : ''} before publishing.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

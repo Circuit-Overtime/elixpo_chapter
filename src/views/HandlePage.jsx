@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import AppShell from '../components/AppShell';
 import Link from 'next/link';
-import { generatePixelAvatar, generateBlogBanner } from '../utils/pixelAvatar';
+import { generatePixelAvatar, generateBlogBanner, generateBlogThumbnail } from '../utils/pixelAvatar';
 import { useAuth } from '../context/AuthContext';
 import BlogInteractionBar from '../components/BlogInteractionBar';
 import BlogComments from '../components/BlogComments';
@@ -88,7 +88,10 @@ function HandlePageInner({ path }) {
   const [hideHighlights, setHideHighlights] = useState(false); // strip text colors/highlights
 
   // Parse: path[0] = name, path[1] = slug or collection, path[2] = slug (if collection)
-  const name = (path?.[0] || '').toLowerCase();
+  // rawName keeps the original case: a 1-segment path may be a /[slugid] short link,
+  // and blog ids are case-sensitive where usernames and org slugs are not.
+  const rawName = path?.[0] || '';
+  const name = rawName.toLowerCase();
   const second = (path?.[1] || '').toLowerCase();
   const third = (path?.[2] || '').toLowerCase();
 
@@ -111,7 +114,7 @@ function HandlePageInner({ path }) {
       return;
     }
 
-    const params = new URLSearchParams({ name });
+    const params = new URLSearchParams({ name: rawName });
     if (slug) params.set('slug', slug);
     if (collection) params.set('collection', collection);
 
@@ -120,7 +123,7 @@ function HandlePageInner({ path }) {
       .then(d => setData(d))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [name, slug, collection, isReadingList, third]);
+  }, [rawName, name, slug, collection, isReadingList, third]);
 
   if (loading) {
     return (
@@ -196,6 +199,7 @@ function HandlePageInner({ path }) {
             coverPos={{ x: blog.cover_pos_x ?? 50, y: blog.cover_pos_y ?? 50 }}
             coverZoom={blog.cover_zoom ?? 1}
             user={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
+            anonymous={!!blog.secret}
             org={data.owner?.type === 'org' ? { name: data.owner.name, slug: data.owner.slug, logo_url: data.owner.logo_url || data.owner.logo_r2_key } : null}
             coAuthorCount={blog.co_author_count || 0}
             coAuthors={blog.co_authors || []}
@@ -284,7 +288,7 @@ function HandlePageInner({ path }) {
                       {(b.subtitle || b.excerpt) && <p className="text-[14px] leading-[1.5] line-clamp-2" style={{ color: 'var(--text-faint)' }}>{b.subtitle || b.excerpt}</p>}
                       {b.read_time_minutes > 0 && <p className="text-[12px] mt-2" style={{ color: 'var(--text-faint)' }}>{b.read_time_minutes} min read</p>}
                     </div>
-                    <img src={b.cover_image_r2_key || generateBlogBanner(b.id || b.slug)} alt="" className="w-[100px] h-[100px] rounded-md object-cover flex-shrink-0 self-center hidden sm:block" style={{ backgroundColor: 'var(--bg-elevated)' }} />
+                    <img src={b.cover_image_r2_key || generateBlogThumbnail(b.id || b.slug)} alt="" className="w-[100px] h-[100px] rounded-md object-cover flex-shrink-0 self-center hidden sm:block" style={{ backgroundColor: 'var(--bg-elevated)' }} />
                   </article>
                 </Link>
               ))}
@@ -362,7 +366,7 @@ function HandlePageInner({ path }) {
                           {b.comment_count > 0 && <span>{b.comment_count} comments</span>}
                         </div>
                       </div>
-                      <img src={b.cover_image_r2_key || generateBlogBanner(b.id || b.slug)} alt="" className="w-[100px] h-[100px] rounded-xl object-cover flex-shrink-0 hidden sm:block" />
+                      <img src={b.cover_image_r2_key || generateBlogThumbnail(b.id || b.slug)} alt="" className="w-[100px] h-[100px] rounded-xl object-cover flex-shrink-0 hidden sm:block" />
                     </div>
                   </article>
                 </Link>

@@ -1,8 +1,12 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
+import { getSession } from '../../../../lib/auth';
 
 // Granular org search with selectable fields
 // ?q=query&fields=id,slug,name,logo_url,description,members,blogs,collections
+//
+// Private orgs are excluded from search for everyone except their own members
+// (and owner) — you should still be able to find the org you belong to.
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') || '').trim().toLowerCase();
@@ -18,11 +22,22 @@ export async function GET(request) {
     const db = getDB();
     const pattern = `%${q}%`;
 
+    const session = await getSession().catch(() => null);
+    const viewerId = session?.userId || null;
+
+    // A signed-out viewer binds NULL here: both `owner_id = NULL` and the IN
+    // subquery yield no match, so they see public orgs only.
     const base = await db.prepare(`
       SELECT id, slug, name, description, logo_url, bio, website, visibility, owner_id, created_at
-      FROM orgs WHERE LOWER(slug) LIKE ? OR LOWER(name) LIKE ?
+      FROM orgs
+      WHERE (LOWER(slug) LIKE ? OR LOWER(name) LIKE ?)
+        AND (
+          visibility != 'private'
+          OR owner_id = ?
+          OR id IN (SELECT org_id FROM org_members WHERE user_id = ?)
+        )
       LIMIT ?
-    `).bind(pattern, pattern, limit).all();
+    `).bind(pattern, pattern, viewerId, viewerId, limit).all();
 
     const orgs = base?.results || [];
 
