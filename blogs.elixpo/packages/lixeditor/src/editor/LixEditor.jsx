@@ -214,6 +214,45 @@ const LixEditor = forwardRef(function LixEditor({
     },
   }), [editor]);
 
+  // triggerUploadForBlock — shared by paste/drop/pickHostImage. Sets _uploading
+  // prop on the block so the ImageRenderer shows the skeleton/error states.
+  const triggerUploadForBlock = useCallback(async (blockId, file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    if (acceptImageTypes?.length && !acceptImageTypes.includes(file.type)) return;
+    if (maxFileSizeBytes && file.size > maxFileSizeBytes) {
+      onUploadError?.(new Error(`Image exceeds ${Math.round(maxFileSizeBytes / 1024 / 1024)}MB limit`), file);
+      try { editor.updateBlock(blockId, { props: { _uploading: 'error' } }); } catch {}
+      return;
+    }
+
+    if (uploadFile) {
+      try {
+        const resultUrl = await uploadFile(file);
+        if (!resultUrl || typeof resultUrl !== 'string') throw new Error('uploadFile did not return a URL');
+        editor.updateBlock(blockId, { props: { url: resultUrl, name: file.name, _uploading: '' } });
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error(String(err));
+        onUploadError?.(e, file);
+        try { editor.updateBlock(blockId, { props: { _uploading: 'error' } }); } catch {}
+      }
+      return;
+    }
+
+    // Base64 fallback (standalone / zero-config)
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        editor.updateBlock(blockId, { props: { url: reader.result, name: file.name, _uploading: '' } });
+      };
+      reader.onerror = () => {
+        try { editor.updateBlock(blockId, { props: { _uploading: 'error' } }); } catch {}
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      try { editor.updateBlock(blockId, { props: { _uploading: 'error' } }); } catch {}
+    }
+  }, [editor, uploadFile, acceptImageTypes, maxFileSizeBytes, onUploadError]);
+
   // Host image picker — file → uploadFile → insertImage (used by the slash item
   // when imageInsert='host', so users never hit the embed-URL card).
   const pickHostImage = useCallback(() => {
@@ -224,17 +263,29 @@ const LixEditor = forwardRef(function LixEditor({
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      try {
-        const url = await uploadFile(file);
-        if (!url) throw new Error('no url');
-        const ref = editor.getTextCursorPosition?.()?.block || editor.document[editor.document.length - 1];
-        if (ref) editor.insertBlocks([{ type: 'image', props: { url, name: file.name } }], ref, 'after');
-      } catch (err) {
-        onUploadError?.(err instanceof Error ? err : new Error(String(err)), file);
+      // Insert placeholder skeleton immediately
+      const ref = editor.getTextCursorPosition?.()?.block || editor.document[editor.document.length - 1];
+      if (!ref) return;
+      editor.insertBlocks([
+        { type: 'image', props: { url: '', previewWidth: 740, _uploading: 'uploading' } },
+        { type: 'paragraph', content: [] },
+      ], ref, 'after');
+      // Move cursor to the paragraph below so user can keep typing
+      const doc = editor.document;
+      const refIdx = doc.findIndex((b) => b.id === ref.id);
+      const newBlock = doc[refIdx + 1];
+      const paragraphBlock = doc[refIdx + 2];
+      if (paragraphBlock) {
+        requestAnimationFrame(() => {
+          try { editor.setTextCursorPosition(paragraphBlock.id, 'start'); } catch {}
+        });
       }
+      if (!newBlock) return;
+      // Upload in background
+      triggerUploadForBlock(newBlock.id, file);
     };
     input.click();
-  }, [editor, uploadFile, acceptImageTypes, onUploadError]);
+  }, [editor, uploadFile, acceptImageTypes, onUploadError, triggerUploadForBlock]);
 
   // Notify parent when ready
   useEffect(() => { if (onReady) onReady(); }, []);
@@ -406,6 +457,106 @@ const LixEditor = forwardRef(function LixEditor({
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, [editor, f.dates]);
+
+  // Editor-level paste/drop handlers — intercept image paste/drop while typing
+  // so we can insert a skeleton placeholder immediately instead of waiting for
+  // the upload to complete. Drops on existing image blocks are left to the
+  // ImageBlock's own handleDrop.
+  useEffect(() => {
+    if (!f.images || !editor) return;
+    const tiptap = editor._tiptapEditor;
+    if (!tiptap) return;
+    const editorDom = tiptap.view.dom;
+    if (!editorDom) return;
+
+    const acceptedTypes = acceptImageTypes || ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+
+    const handlePaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (!item.type.startsWith('image/')) continue;
+        const file = item.getAsFile();
+        if (!file) continue;
+        if (acceptImageTypes?.length && !acceptImageTypes.includes(file.type)) continue;
+        if (maxFileSizeBytes && file.size > maxFileSizeBytes) continue;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const cursor = editor.getTextCursorPosition();
+        if (!cursor?.block) return;
+
+        // Insert skeleton + empty paragraph below
+        editor.insertBlocks([
+          { type: 'image', props: { url: '', previewWidth: 740, _uploading: 'uploading' } },
+          { type: 'paragraph', content: [] },
+        ], cursor.block, 'after');
+
+        const doc = editor.document;
+        const cursorIdx = doc.findIndex((b) => b.id === cursor.block.id);
+        const newBlock = doc[cursorIdx + 1];
+        const paragraphBlock = doc[cursorIdx + 2];
+        if (paragraphBlock) {
+          requestAnimationFrame(() => {
+            try { editor.setTextCursorPosition(paragraphBlock.id, 'start'); } catch {}
+          });
+        }
+        if (!newBlock) return;
+
+        triggerUploadForBlock(newBlock.id, file);
+        return;
+      }
+    };
+
+    const handleDrop = (e) => {
+      // Let existing image blocks handle their own drops
+      if (e.target.closest('[data-content-type="image"]')) return;
+      const file = e.dataTransfer?.files?.[0];
+      if (!file?.type.startsWith('image/')) return;
+      if (acceptImageTypes?.length && !acceptImageTypes.includes(file.type)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const cursor = editor.getTextCursorPosition();
+      if (!cursor?.block) return;
+
+      editor.insertBlocks([
+        { type: 'image', props: { url: '', previewWidth: 740, _uploading: 'uploading' } },
+        { type: 'paragraph', content: [] },
+      ], cursor.block, 'after');
+
+      const doc = editor.document;
+      const cursorIdx = doc.findIndex((b) => b.id === cursor.block.id);
+      const newBlock = doc[cursorIdx + 1];
+      const paragraphBlock = doc[cursorIdx + 2];
+      if (paragraphBlock) {
+        requestAnimationFrame(() => {
+          try { editor.setTextCursorPosition(paragraphBlock.id, 'start'); } catch {}
+        });
+      }
+      if (!newBlock) return;
+
+      triggerUploadForBlock(newBlock.id, file);
+    };
+
+    const handleDragOver = (e) => {
+      if (e.target.closest('[data-content-type="image"]')) return;
+      if (e.dataTransfer?.types?.includes('Files')) {
+        e.preventDefault();
+      }
+    };
+
+    editorDom.addEventListener('paste', handlePaste);
+    editorDom.addEventListener('drop', handleDrop);
+    editorDom.addEventListener('dragover', handleDragOver);
+    return () => {
+      editorDom.removeEventListener('paste', handlePaste);
+      editorDom.removeEventListener('drop', handleDrop);
+      editorDom.removeEventListener('dragover', handleDragOver);
+    };
+  }, [editor, f.images, triggerUploadForBlock, acceptImageTypes, maxFileSizeBytes]);
 
   // Slash menu items
   // Use BlockNote's `filterSuggestionItems` helper so the search also

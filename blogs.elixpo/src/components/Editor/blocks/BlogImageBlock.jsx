@@ -25,6 +25,7 @@ export const BlogImageBlock = createReactBlockSpec(
       showPreview: { default: true },
       _imageId: { default: '' },
       _mediaId: { default: '' },
+      _uploading: { default: '' },
     },
     content: 'none',
   },
@@ -35,16 +36,29 @@ export const BlogImageBlock = createReactBlockSpec(
 
 function BlogImageRenderer({ block, editor }) {
   const { blogId } = useContext(BlogImageUploadContext);
-  const { url, caption, _imageId } = block.props;
-  const [mode, setMode] = useState('idle'); // idle | embed | generate | uploading | generating
+  const { url, caption, _imageId, _uploading } = block.props;
+  const [mode, setMode] = useState('idle'); // idle | embed | generate | generating
   const [embedUrl, setEmbedUrl] = useState('');
   const [embedError, setEmbedError] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState('');
+  const [isImgLoaded, setIsImgLoaded] = useState(false);
+
+  useEffect(() => {
+    if (url) {
+      const img = new Image();
+      img.src = url;
+      if (img.complete) {
+        setIsImgLoaded(true);
+      } else {
+        setIsImgLoaded(false);
+      }
+    } else {
+      setIsImgLoaded(false);
+    }
+  }, [url]);
   const [editingCaption, setEditingCaption] = useState(false);
   const [captionText, setCaptionText] = useState(caption || '');
-  const fileInputRef = useRef(null);
   const blockRef = useRef(null);
   const embedInputRef = useRef(null);
   const aiInputRef = useRef(null);
@@ -69,7 +83,7 @@ function BlogImageRenderer({ block, editor }) {
     return () => el.removeEventListener('keydown', handleKey);
   }, [editor, block.id, mode, url]);
 
-  // Upload helper
+  // Upload helper — sets _uploading prop so the placeholder persists across re-renders
   const uploadFile = useCallback(async (file) => {
     if (!file) return;
     const { isAllowedImage } = await import('../../../utils/allowedImageTypes');
@@ -77,12 +91,32 @@ function BlogImageRenderer({ block, editor }) {
       showFailToast('Unsupported file type. Allowed: AVIF, JPEG, PNG, BMP, SVG, WebP.');
       return;
     }
-    setMode('uploading');
-    setUploadStatus('Compressing...');
+    editor.updateBlock(block.id, { props: { _uploading: 'uploading' } });
+
+    // Move caret to next line / paragraph below so the user can continue typing
+    try {
+      const doc = editor.document;
+      const idx = doc.findIndex((b) => b.id === block.id);
+      if (idx !== -1) {
+        let nextBlock = doc[idx + 1];
+        if (!nextBlock || nextBlock.type !== 'paragraph') {
+          editor.insertBlocks([{ type: 'paragraph', content: [] }], block.id, 'after');
+          const updatedDoc = editor.document;
+          nextBlock = updatedDoc[idx + 1];
+        }
+        if (nextBlock) {
+          requestAnimationFrame(() => {
+            try {
+              editor.setTextCursorPosition(nextBlock.id, 'start');
+              editor._tiptapEditor?.commands?.focus();
+            } catch {}
+          });
+        }
+      }
+    } catch {}
     try {
       const { compressBlogImage } = await import('../../../utils/compressImage');
       const { blob } = await compressBlogImage(file);
-      setUploadStatus('Uploading...');
       const formData = new FormData();
       formData.append('file', blob, `img_${Date.now()}.webp`);
       formData.append('type', 'image');
@@ -90,13 +124,11 @@ function BlogImageRenderer({ block, editor }) {
       const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
-      editor.updateBlock(block.id, { props: { url: data.url, _mediaId: data.id || '' } });
-      setMode('idle');
+      editor.updateBlock(block.id, { props: { url: data.url, _mediaId: data.id || '', _uploading: '' } });
     } catch (err) {
       console.error('Upload failed:', err);
-      // Only show toast if user explicitly triggered an upload (not background/auto)
+      editor.updateBlock(block.id, { props: { _uploading: 'error' } });
       if (file.size > 0) showFailToast('Image upload failed');
-      setMode('idle');
     }
   }, [editor, block.id, blogId]);
 
@@ -201,6 +233,34 @@ function BlogImageRenderer({ block, editor }) {
     try { editor.removeBlocks([block.id]); } catch {}
   }, [editor, block.id, block.props._mediaId]);
 
+  // Retry after upload error — open file picker to re-select
+  const handleRetry = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+      if (input.files?.[0]) {
+        editor.updateBlock(block.id, { props: { _uploading: 'uploading' } });
+        uploadFile(input.files[0]);
+      }
+    };
+    input.click();
+  }, [editor, block.id, uploadFile]);
+
+  // Open file picker to upload image dynamically (in-memory input avoids focus loss issues)
+  const handleUploadClick = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = IMAGE_ACCEPT_ATTR;
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (file) {
+        uploadFile(file);
+      }
+    };
+    input.click();
+  }, [uploadFile]);
+
   const handleReplace = useCallback(() => {
     // Delete old image from Cloudinary
     const mediaId = block.props._mediaId;
@@ -223,8 +283,56 @@ function BlogImageRenderer({ block, editor }) {
   // AI is generating this image (inserted by AI agent with _imageId but no url yet)
   const isAiPlaceholder = !!_imageId && !url;
 
-  // ─── No image yet ───
-  if (!url) {
+  const showSkeleton = _uploading === 'uploading' || (url && !isImgLoaded);
+
+  // ─── No image yet / Image loading in background ───
+  if (!url || showSkeleton) {
+    if (showSkeleton) {
+      return (
+        <div ref={blockRef} className="blog-img-upload-skeleton" tabIndex={-1}>
+          <div className="blog-img-skel-image">
+            <div className="blog-img-skel-shimmer" />
+            <div className="blog-img-skel-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5L5 21" />
+              </svg>
+            </div>
+          </div>
+          <div className="blog-img-skel-caption">
+            <div className="blog-img-skel-caption-line" />
+            <div className="blog-img-skel-caption-line blog-img-skel-caption-short" />
+          </div>
+          {url && (
+            <img
+              src={url}
+              onLoad={() => setIsImgLoaded(true)}
+              onError={() => setIsImgLoaded(true)}
+              style={{ display: 'none' }}
+            />
+          )}
+        </div>
+      );
+    }
+
+    if (_uploading === 'error') {
+      return (
+        <div ref={blockRef} className="blog-img-upload-error" tabIndex={0}>
+          <div className="blog-img-upload-error-inner">
+            <svg className="blog-img-upload-error-x" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            <span className="blog-img-upload-error-text">Failed to upload</span>
+            <div className="blog-img-upload-error-actions">
+              <button className="blog-img-upload-error-retry" onClick={handleRetry}>Retry</button>
+              <button className="blog-img-upload-error-remove" onClick={handleDelete}>Remove</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // If this is an AI-generated placeholder, show only the skeleton loading
     if (isAiPlaceholder || mode === 'generating') {
       return (
@@ -253,22 +361,6 @@ function BlogImageRenderer({ block, editor }) {
         onDragLeave={() => setIsDragOver(false)}
         data-drag-over={isDragOver}
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={IMAGE_ACCEPT_ATTR}
-          onChange={(e) => { if (e.target.files?.[0]) uploadFile(e.target.files[0]); e.target.value = ''; }}
-          style={{ display: 'none' }}
-        />
-
-        {/* Uploading state */}
-        {mode === 'uploading' && (
-          <div className="blog-img-status">
-            <div className="blog-img-spinner" />
-            <span>{uploadStatus}</span>
-          </div>
-        )}
-
         {/* Delete / dismiss button */}
         {mode === 'idle' && (
           <button className="blog-img-dismiss" onClick={handleDelete} title="Remove image block">
@@ -282,7 +374,7 @@ function BlogImageRenderer({ block, editor }) {
         {mode === 'idle' && (
           <>
             <div className="blog-img-actions-row">
-              <button className="blog-img-action" onClick={() => fileInputRef.current?.click()}>
+              <button className="blog-img-action" onClick={handleUploadClick}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
@@ -370,7 +462,7 @@ function BlogImageRenderer({ block, editor }) {
 
   // ─── Image loaded ───
   return (
-    <div ref={blockRef} className="blog-img-loaded" tabIndex={0} onPaste={handlePaste}>
+    <div ref={blockRef} className="blog-img-loaded blog-img-fadein" tabIndex={0} onPaste={handlePaste}>
       <div className="blog-img-wrapper">
         <img src={url} alt={caption || 'Blog image'} className="blog-img-main" draggable={false} />
         <div className="blog-img-hover-overlay">
