@@ -8,7 +8,7 @@ import { getCloudinaryUrl } from '../../../../lib/cloudinary';
 //
 // The public_id contains slashes (e.g. lixblogs/users/<id>/banner), captured by
 // the catch-all [...path] segment.
-export async function GET(_request, { params }) {
+export async function GET(request, { params }) {
   const { path } = await params;
   const publicId = Array.isArray(path) ? path.join('/') : path;
   if (!publicId) {
@@ -20,6 +20,7 @@ export async function GET(_request, { params }) {
     return NextResponse.redirect(publicId, 302);
   }
 
-  const url = getCloudinaryUrl(publicId);
+  const version = new URL(request.url).searchParams.get('v');
+  const url = getCloudinaryUrl(publicId) + (version ? `?v=${encodeURIComponent(version)}` : '');
   return NextResponse.redirect(url, 302);
 }

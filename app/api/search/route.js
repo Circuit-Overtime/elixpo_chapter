@@ -30,22 +30,36 @@ export async function GET(request) {
     }
 
     if (scope === 'all' || scope === 'orgs') {
+      // Private orgs stay out of search for everyone but their own members/owner —
+      // same rule as /api/search/orgs. A signed-out viewer binds NULL and matches
+      // neither branch, so they see public orgs only.
+      const session = await getSession().catch(() => null);
+      const viewerId = session?.userId || null;
       const orgs = await db.prepare(`
         SELECT id, slug, name, logo_url
-        FROM orgs WHERE LOWER(slug) LIKE ? OR LOWER(name) LIKE ?
+        FROM orgs
+        WHERE (LOWER(slug) LIKE ? OR LOWER(name) LIKE ?)
+          AND (
+            visibility != 'private'
+            OR owner_id = ?
+            OR id IN (SELECT org_id FROM org_members WHERE user_id = ?)
+          )
         LIMIT 5
-      `).bind(pattern, pattern).all();
+      `).bind(pattern, pattern, viewerId, viewerId).all();
       results.orgs = orgs?.results || [];
     }
 
     if (scope === 'all' || scope === 'blogs') {
       const blogs = await db.prepare(`
-        SELECT b.id as slugid, b.slug, b.title, u.username AS author_username
+        SELECT b.id as slugid, b.slug, b.secret, b.title, u.username AS author_username
         FROM blogs b JOIN users u ON u.id = b.author_id
         WHERE (LOWER(b.title) LIKE ? OR LOWER(b.slug) LIKE ?) AND b.status IN ('published', 'unlisted')
         LIMIT 5
       `).bind(pattern, pattern).all();
-      results.blogs = blogs?.results || [];
+      // A secret blog stays findable by title, but its author must never ride along:
+      // this endpoint is public and unauthenticated, so returning author_username here
+      // would let anyone deanonymize a post just by searching for its title.
+      results.blogs = (blogs?.results || []).map((b) => (b.secret ? { ...b, author_username: null } : b));
     }
 
     return NextResponse.json(results);

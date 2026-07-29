@@ -3,9 +3,15 @@ import { NextResponse } from 'next/server';
 import { getSession } from '../../../lib/auth';
 import { STAFF_ORG_ID } from '../../../lib/staff';
 
-const BLOG_FIELDS = `b.id, b.slug, b.title, b.subtitle, b.excerpt, b.cover_image_r2_key, b.page_emoji,
+const BLOG_FIELDS = `b.id, b.slug, b.secret, b.title, b.subtitle, b.excerpt, b.cover_image_r2_key, b.page_emoji,
   b.author_id, b.published_as, b.published_at, b.read_time_minutes,
   b.like_count, b.clap_total, b.comment_count, b.view_count`;
+
+// Secret blogs must never appear in an author-derived feed bucket. "Posts by people
+// you follow" would tell a reader the author is someone they follow — with a small
+// following list that is a full deanonymization. They still reach readers through the
+// author-neutral buckets (trending / recent / interests / tag) with the byline stripped.
+const EXCLUDE_SECRET = ' AND b.secret = 0';
 
 // Keep the test author ("selenium-cutlet") out of every feed surface.
 const EXCLUDE_TEST = " AND b.author_id NOT IN (SELECT id FROM users WHERE LOWER(username) = 'selenium-cutlet')";
@@ -100,7 +106,7 @@ async function queryFollowing(db, userId, now, limit, offset) {
   const result = await db.prepare(`
     SELECT ${BLOG_FIELDS}
     FROM blogs b
-    WHERE b.status = 'published'${EXCLUDE_TEST} AND b.published_at > ?
+    WHERE b.status = 'published'${EXCLUDE_TEST}${EXCLUDE_SECRET} AND b.published_at > ?
       AND (
         b.author_id IN (SELECT following_id FROM follows WHERE follower_id = ? AND following_type = 'user')
         OR b.published_as IN (
@@ -126,7 +132,7 @@ async function queryFollowedReposts(db, userId, now, limit) {
     FROM reposts r
     JOIN blogs b ON b.id = r.blog_id
     WHERE r.user_id IN (SELECT following_id FROM follows WHERE follower_id = ? AND following_type = 'user')
-      AND b.status = 'published'${EXCLUDE_TEST}
+      AND b.status = 'published'${EXCLUDE_TEST}${EXCLUDE_SECRET}
       AND b.author_id != ?
       AND r.created_at > ?
     ORDER BY r.created_at DESC
@@ -371,17 +377,24 @@ async function enrichPosts(db, posts, userId) {
   }
 
   return posts.map(p => {
+    const secret = !!p.secret;
     const isAuthor = userId && p.author_id === userId;
     const orgId = p.published_as?.startsWith('org:') ? p.published_as.replace('org:', '') : null;
     const isOrgMember = orgId && orgMemberSet.has(`${orgId}:${userId}`);
     const org = orgId ? orgMap[orgId] || null : null;
     const coAuthors = coAuthorsMap[p.id] || [];
+    // A secret blog's author never travels to a reader: drop author_id from the
+    // payload and hand back an anonymous byline instead of the real one.
+    const base = { ...p };
+    if (secret) delete base.author_id;
     return {
-      ...p,
-      author: authorMap[p.author_id] || { username: 'unknown', display_name: 'Unknown' },
+      ...base,
+      author: secret
+        ? { username: null, display_name: 'Anonymous', avatar_url: null }
+        : (authorMap[p.author_id] || { username: 'unknown', display_name: 'Unknown' }),
       org: org ? { id: org.id, slug: org.slug, name: org.name, logo_url: org.logo_r2_key } : null,
-      co_authors: coAuthors,
-      co_author_count: coAuthors.length,
+      co_authors: secret ? [] : coAuthors,
+      co_author_count: secret ? 0 : coAuthors.length,
       tags: tagMap[p.id] || [],
       is_staff: p.published_as === `org:${STAFF_ORG_ID}`,
       can_edit: !!(isAuthor || isOrgMember),
@@ -409,7 +422,9 @@ async function filterMuted(db, userId, posts) {
   const mutedOrgs = new Set(rows.filter(r => r.target_type === 'org').map(r => r.target_id));
   const mutedTags = new Set(rows.filter(r => r.target_type === 'tag').map(r => r.target_id.toLowerCase()));
   return posts.filter(p => {
-    if (mutedAuthors.has(p.author_id)) return false;
+    // Never apply an author mute to a secret blog: "mute X and watch the post
+    // disappear" is an oracle that reveals the author to anyone willing to test it.
+    if (!p.secret && mutedAuthors.has(p.author_id)) return false;
     const orgId = p.published_as?.startsWith('org:') ? p.published_as.slice(4) : null;
     if (orgId && mutedOrgs.has(orgId)) return false;
     if ((p.tags || []).some(t => mutedTags.has((t || '').toLowerCase()))) return false;

@@ -1,67 +1,85 @@
-LixBlogs is provided under:
+ELIXPO LICENSE
+==============
 
-	SPDX-License-Identifier: MIT WITH Elixpo-trademarks
+This repository is part of the Elixpo ecosystem and is licensed under the
+Elixpo licensing standard. The same standard applies to every repository in
+the ecosystem. Any product-specific terms for this repository are declared in
+the NOTICE file at the repository root (the "notice board"), which must be read
+together with this LICENSE.
 
-Being under the terms of the MIT License, with an explicit trademark
-and naming exception, as stated below.
+The structure of the LICENSES/ directory mirrors the Linux kernel's LICENSES/
+tree: canonical license texts live under LICENSES/, this file is the pointer.
 
-All contributions to LixBlogs are subject to this LICENSE file.
+CODE
+====
 
-================================================================================
-MIT License
-================================================================================
+All source code in this repository (application code, scripts, tooling,
+configuration, and CI) is provided under:
 
-Copyright (c) 2026 Elixpo (Ayushman Bhattacharya) and the LixBlogs authors.
+	SPDX-License-Identifier: MIT WITH Oreo-trademarks
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Being under the terms of the MIT License, as set out in:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+	LICENSES/preferred/MIT
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+ASSETS
+======
 
-================================================================================
-Elixpo-trademarks exception
-================================================================================
+All visual and brand assets and their prompts (everything under brand/ and
+public/brand/, plus any banner, splash, sticker, icon or mascot art) is
+provided under:
 
-Valid-License-Identifier: Elixpo-trademarks
-SPDX-Exception-Identifier: Elixpo-trademarks
-SPDX-Licenses: MIT
+	SPDX-License-Identifier: CC-BY-4.0 WITH Oreo-trademarks
 
-The MIT License granted above covers the source code, configuration, and
-assets contained in this repository. It does NOT grant rights to the following
-names, marks, and brand assets:
+Being under the terms of the Creative Commons Attribution 4.0 International
+License, as set out in:
 
-  - "Elixpo"
-  - "LixBlogs"
-  - "LixEditor" and "LixSketch"
-  - The Elixpo logo and any associated mascot character.
+	LICENSES/preferred/CC-BY-4.0
 
-These trademarks are reserved by Elixpo (Ayushman Bhattacharya) and the
-project's authors.
+EXCEPTION (names, mascot, and royalties)
+========================================
 
-You may:
-  - Use these names to identify the original project and to give credit to its
-    authors (e.g. "Powered by LixBlogs", "built with LixEditor").
-  - Reference them in articles, talks, tutorials, classroom material, and
-    documentation about the project.
-  - Show the logo in screenshots and demos of unmodified builds.
+Both grants above carry an explicit trademark, naming, and royalty exception:
 
-You may not, without prior written permission:
-  - Use these names to brand a fork, derivative work, or hosted service.
-  - Imply endorsement of a derivative work by the original authors.
-  - Use the logo or mascot as the primary branding of a derivative product.
+	LICENSES/exceptions/Oreo-trademarks
 
-For permission requests or trademark questions, contact:
-  hello@elixpo.com
+The Oreo mascot character, the chest "E-badge", the "Elixpo" and "Oreo" names,
+the elixpo.com and *.elixpo.com identifiers, and the brand palette in
+brand/MASCOT.md are reserved trademarks of the Elixpo project. The licenses
+above grant rights to the code and asset files as files. They do NOT grant
+rights to the Elixpo or Oreo brand, nor the right to offer a competing
+product or service under the Elixpo or Oreo name. This is what protects the
+ecosystem's royalties while keeping the code and assets free and open. See the
+exception for the full terms (including permitted referential use).
+
+NOTICE BOARD (per-product reservations)
+=======================================
+
+Some Elixpo products ship exclusive artifacts on top of their source - a
+published npm package, a VS Code Marketplace extension, a hosted SaaS service,
+a paid tier, and so on. Any such product-specific reservation is declared in:
+
+	LICENSES/NOTICE   (the notice board, at the repository root)
+
+Where the NOTICE file adds a reservation for an exclusive artifact, that
+reservation governs that artifact, in addition to this LICENSE.
+
+THIRD-PARTY NOTICES
+===================
+
+Other licenses may apply to third-party components used by this project:
+
+	LICENSES/notices/notice-board
+	LICENSES/README.md
+
+CONTRIBUTIONS
+=============
+
+By submitting a contribution to this repository you agree that it is licensed
+inbound under this standard (MIT for code, CC-BY-4.0 for assets) and that you
+have the right to submit it. The Developer Certificate of Origin
+(https://developercertificate.org) applies to every commit. We do not require
+a CLA.
+
+Copyright (c) 2023 Elixpo and the Elixpo contributors.
+SPDX-License-Identifier: MIT WITH Oreo-trademarks

@@ -14,7 +14,7 @@ export async function GET(request) {
       const cutoff = now - 14 * 86400;
 
       const result = await db.prepare(`
-        SELECT b.id, b.slug, b.title, b.subtitle, b.page_emoji,
+        SELECT b.id, b.slug, b.secret, b.title, b.subtitle, b.page_emoji,
           b.author_id, b.published_as, b.published_at, b.read_time_minutes, b.like_count
         FROM blogs b
         WHERE b.status = 'published' AND b.published_at > ?
@@ -30,7 +30,15 @@ export async function GET(request) {
           `SELECT id, username, display_name, avatar_url FROM users WHERE id IN (${placeholders})`
         ).bind(...authorIds).all();
         const authorMap = Object.fromEntries((authors?.results || []).map(a => [a.id, a]));
-        posts = posts.map(p => ({ ...p, author: authorMap[p.author_id] || { username: 'unknown' } }));
+        // Strip secret authors BEFORE this lands in the shared KV cache — this
+        // payload is handed to every reader, so a leak here would be cached publicly.
+        posts = posts.map(p => {
+          if (p.secret) {
+            const { author_id, ...rest } = p;
+            return { ...rest, author: { username: null, display_name: 'Anonymous', avatar_url: null } };
+          }
+          return { ...p, author: authorMap[p.author_id] || { username: 'unknown' } };
+        });
 
         // Fetch org names
         const orgIds = [...new Set(posts.filter(p => p.published_as?.startsWith('org:')).map(p => p.published_as.replace('org:', '')))];
