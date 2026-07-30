@@ -28,8 +28,8 @@ export const runtime = 'edge';
 
 const CARD_STYLE = {
   background:
-    'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
-  border: '1px solid rgba(255,255,255,0.08)',
+    'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(250,250,250,0.92) 100%)',
+  border: '1px solid rgba(0,0,0,0.10)',
   backdropFilter: 'blur(20px)',
 } as const;
 
@@ -58,7 +58,7 @@ function quotaTone(usagePct: number): {
       tone: 'warn',
     };
   return {
-    fill: 'linear-gradient(90deg, #9b7bf7 0%, #7c5cff 100%)',
+    fill: 'linear-gradient(90deg, #e53935 0%, #c62828 100%)',
     label: '',
     tone: 'normal',
   };
@@ -142,8 +142,8 @@ export default async function DashboardPage({
           href="/dashboard/new"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-semibold text-white no-underline transition-all"
           style={{
-            background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-            boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+            background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+            boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
           }}
         >
           <svg
@@ -169,8 +169,8 @@ export default async function DashboardPage({
           className="mb-6 p-4 md:p-5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
           style={{
             background:
-              'linear-gradient(135deg, rgba(155,123,247,0.14) 0%, rgba(95,182,255,0.06) 100%)',
-            border: '1px solid rgba(155,123,247,0.3)',
+              'linear-gradient(135deg, rgba(229,57,53,0.14) 0%, rgba(95,182,255,0.06) 100%)',
+            border: '1px solid rgba(229,57,53,0.3)',
           }}
         >
           <div>
@@ -191,8 +191,8 @@ export default async function DashboardPage({
             href="/pricing"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-semibold text-white no-underline whitespace-nowrap"
             style={{
-              background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-              boxShadow: '0 4px 14px rgba(155,123,247,0.4)',
+              background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+              boxShadow: '0 4px 14px rgba(229,57,53,0.4)',
             }}
           >
             View pricing
@@ -230,7 +230,7 @@ export default async function DashboardPage({
             <div className="mt-3">
               <div
                 className="w-full h-1.5 rounded-full overflow-hidden"
-                style={{ background: 'rgba(255,255,255,0.06)' }}
+                style={{ background: 'rgba(0,0,0,0.08)' }}
               >
                 <div
                   className="h-full rounded-full transition-all"
@@ -287,9 +287,9 @@ export default async function DashboardPage({
             <span
               className="inline-flex items-center px-2 py-0.5 rounded-md text-[0.75rem] font-bold uppercase tracking-wider"
               style={{
-                background: 'rgba(155,123,247,0.18)',
-                color: '#c8b6ff',
-                border: '1px solid rgba(155,123,247,0.4)',
+                background: 'rgba(229,57,53,0.18)',
+                color: '#c62828',
+                border: '1px solid rgba(229,57,53,0.4)',
               }}
             >
               {user.tier}
@@ -298,7 +298,7 @@ export default async function DashboardPage({
           {user.tier === 'free' && (
             <Link
               href="/pricing"
-              className="text-[0.7rem] text-[#9b7bf7] hover:underline mt-1.5 inline-block no-underline"
+              className="text-[0.7rem] text-[#e53935] hover:underline mt-1.5 inline-block no-underline"
             >
               Upgrade →
             </Link>
@@ -320,8 +320,8 @@ export default async function DashboardPage({
                 className="text-xs px-2.5 py-1 rounded-lg no-underline transition-all font-medium"
                 style={{
                   background:
-                    days === d ? 'rgba(155,123,247,0.12)' : 'transparent',
-                  color: days === d ? '#c8b6ff' : 'rgba(255,255,255,0.55)',
+                    days === d ? 'rgba(229,57,53,0.12)' : 'transparent',
+                  color: days === d ? '#c62828' : 'rgba(0,0,0,0.55)',
                 }}
               >
                 {d}d
@@ -353,12 +353,12 @@ export default async function DashboardPage({
                 <li
                   key={u.short_code}
                   className="flex items-center gap-3 p-3 rounded-lg"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}
+                  style={{ background: 'rgba(0,0,0,0.03)' }}
                 >
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/dashboard/urls/${u.short_code}`}
-                      className="text-[#c8b6ff] text-sm font-mono font-semibold no-underline hover:underline"
+                      className="text-[#c62828] text-sm font-mono font-semibold no-underline hover:underline"
                     >
                       /{u.short_code}
                     </Link>
@@ -401,12 +401,12 @@ export default async function DashboardPage({
                 <li
                   key={u.short_code}
                   className="flex items-center gap-3 p-3 rounded-lg"
-                  style={{ background: 'rgba(255,255,255,0.02)' }}
+                  style={{ background: 'rgba(0,0,0,0.03)' }}
                 >
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/dashboard/urls/${u.short_code}`}
-                      className="text-[#c8b6ff] text-sm font-mono font-semibold no-underline hover:underline"
+                      className="text-[#c62828] text-sm font-mono font-semibold no-underline hover:underline"
                     >
                       /{u.short_code}
                     </Link>
@@ -442,8 +442,8 @@ function EmptyUrls() {
         href="/dashboard/new"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white no-underline"
         style={{
-          background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-          boxShadow: '0 4px 12px rgba(155,123,247,0.3)',
+          background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+          boxShadow: '0 4px 12px rgba(229,57,53,0.3)',
         }}
       >
         Shorten your first URL

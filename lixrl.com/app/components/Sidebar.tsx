@@ -153,7 +153,7 @@ export default function Sidebar({ user }: { user: User }) {
       title={label}
       className={`group flex items-center gap-2 h-9 px-2 lg:px-3 rounded-lg transition-all duration-200 no-underline ${
         isActive(href)
-          ? 'text-accent-main bg-[rgba(155,123,247,0.12)]'
+          ? 'text-accent-main bg-[rgba(229,57,53,0.08)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
       }`}
     >
@@ -167,7 +167,7 @@ export default function Sidebar({ user }: { user: User }) {
   return (
     <header
       className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border-light"
-      style={{ background: 'rgba(16, 18, 28, 0.92)', backdropFilter: 'blur(20px)' }}
+      style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)' }}
     >
       {/* Left: Logo */}
       <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
@@ -219,12 +219,12 @@ export default function Sidebar({ user }: { user: User }) {
         {accountOpen && (
           <div
             className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border-light overflow-hidden shadow-xl z-50"
-            style={{ background: 'rgba(16, 18, 28, 0.97)', backdropFilter: 'blur(20px)' }}
+            style={{ background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(20px)' }}
           >
             {/* Profile card — avatar, identity, current plan */}
             <div
               className="px-4 py-3.5 border-b border-border-light"
-              style={{ background: 'linear-gradient(135deg, rgba(155,123,247,0.1) 0%, rgba(255,255,255,0.01) 100%)' }}
+              style={{ background: 'linear-gradient(135deg, rgba(229,57,53,0.08) 0%, #ffffff 100%)' }}
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-accent-main/30">
@@ -245,9 +245,9 @@ export default function Sidebar({ user }: { user: User }) {
                 <span
                   className="inline-flex items-center px-2 py-0.5 rounded-md text-[0.62rem] font-bold uppercase tracking-wider"
                   style={{
-                    background: 'rgba(155,123,247,0.18)',
-                    color: '#c8b6ff',
-                    border: '1px solid rgba(155,123,247,0.4)',
+                    background: 'rgba(229,57,53,0.1)',
+                    color: '#c62828',
+                    border: '1px solid rgba(229,57,53,0.25)',
                   }}
                 >
                   {user.tier}
@@ -262,8 +262,8 @@ export default function Sidebar({ user }: { user: User }) {
                 onClick={() => setAccountOpen(false)}
                 className="flex items-center gap-3 mx-2 my-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-white no-underline"
                 style={{
-                  background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                  boxShadow: '0 4px 12px rgba(155,123,247,0.3)',
+                  background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                  boxShadow: '0 4px 12px rgba(229,57,53,0.2)',
                 }}
               >
                 <span className="opacity-90">{Icons.sparkle}</span>
@@ -280,7 +280,7 @@ export default function Sidebar({ user }: { user: User }) {
                   onClick={() => setAccountOpen(false)}
                   className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 no-underline ${
                     isActive(item.href)
-                      ? 'text-accent-main bg-[rgba(155,123,247,0.06)]'
+                      ? 'text-accent-main bg-[rgba(229,57,53,0.06)]'
                       : 'text-text-secondary hover:text-text-primary hover:bg-bg-glass'
                   }`}
                 >

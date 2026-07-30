@@ -8,8 +8,8 @@ const H2 = 'text-[1.4rem] font-bold text-white tracking-tight mt-12 mb-3';
 const P = 'text-white/70 text-[0.96rem] leading-relaxed mb-4';
 const CARD = 'p-5 rounded-xl transition-colors no-underline block';
 const CARD_STYLE = {
-  background: 'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(250,250,250,0.92) 100%)',
+  border: '1px solid rgba(0,0,0,0.10)',
 };
 
 export default function OverviewPage() {
@@ -32,7 +32,7 @@ export default function OverviewPage() {
           'Sign in via Elixpo Accounts SSO — no separate password.',
         ].map((line) => (
           <li key={line} className="text-white/70 text-[0.96rem] flex gap-2.5">
-            <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+            <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#e53935]" />
             {line}
           </li>
         ))}
@@ -104,19 +104,19 @@ export default function OverviewPage() {
       <h2 id="conventions" className={H2}>Conventions</h2>
       <ul className="space-y-2 list-none p-0">
         <li className="text-white/70 text-[0.96rem] flex gap-2.5">
-          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#e53935]" />
           Base URL: <code className="font-mono text-white">https://lixrl.com</code>
         </li>
         <li className="text-white/70 text-[0.96rem] flex gap-2.5">
-          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#e53935]" />
           API path prefix: <code className="font-mono text-white">/api</code>
         </li>
         <li className="text-white/70 text-[0.96rem] flex gap-2.5">
-          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#e53935]" />
           All requests/responses are JSON unless stated otherwise.
         </li>
         <li className="text-white/70 text-[0.96rem] flex gap-2.5">
-          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+          <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#e53935]" />
           Errors follow the format <code className="font-mono text-white">{'{ "error": "code", "message": "..." }'}</code> — see <Link href="/docs/errors" className="underline decoration-white/30 hover:text-white">Error Reference</Link>.
         </li>
       </ul>

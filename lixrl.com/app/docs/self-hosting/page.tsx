@@ -7,7 +7,7 @@ const P = 'text-white/70 text-[0.96rem] leading-relaxed mb-4';
 const PRE = 'p-4 rounded-xl text-[0.85rem] leading-relaxed overflow-x-auto mb-6 font-mono';
 const PRE_STYLE = {
   background: 'rgba(0,0,0,0.45)',
-  border: '1px solid rgba(255,255,255,0.06)',
+  border: '1px solid rgba(0,0,0,0.08)',
   color: '#e8e8ed',
 };
 
@@ -29,7 +29,7 @@ export default function SelfHostingPage() {
           'An Elixpo Accounts OAuth app (or your own OAuth provider).',
         ].map((line) => (
           <li key={line} className="text-white/70 text-[0.96rem] flex gap-2.5">
-            <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#9b7bf7]" />
+            <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#e53935]" />
             {line}
           </li>
         ))}
