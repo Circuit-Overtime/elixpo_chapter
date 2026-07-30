@@ -145,7 +145,7 @@ export default function ShortenPage() {
           <div className="mb-4">
             <label
               htmlFor="dest-url"
-              className="block text-[0.7rem] text-white/65 mb-1.5 uppercase tracking-wider font-medium"
+              className="block text-[0.7rem] text-[#555] mb-1.5 uppercase tracking-wider font-medium"
             >
               Destination URL
             </label>
@@ -157,15 +157,15 @@ export default function ShortenPage() {
               placeholder="https://example.com/your-long-url"
               required
               autoFocus
-              className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-white placeholder-white/40 transition-colors"
+              className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-[#111] placeholder:text-[#999] transition-colors"
               style={{
-                background: 'rgba(0,0,0,0.04)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: '#ffffff',
+                border: '1px solid #d8d8d8',
               }}
               onFocus={(e) => (e.currentTarget.style.borderColor = '#e53935')}
               onBlur={(e) =>
                 (e.currentTarget.style.borderColor =
-                  'rgba(255,255,255,0.1)')
+                  '#d8d8d8')
               }
             />
           </div>
@@ -175,10 +175,10 @@ export default function ShortenPage() {
             <div className="mb-4">
               <label
                 htmlFor="slug"
-                className="block text-[0.7rem] text-white/65 mb-1.5 uppercase tracking-wider font-medium"
+                className="block text-[0.7rem] text-[#555] mb-1.5 uppercase tracking-wider font-medium"
               >
                 Custom slug{' '}
-                <span className="text-white/40 normal-case font-normal">
+                <span className="text-[#888] normal-case font-normal">
                   (optional)
                 </span>
               </label>
@@ -189,15 +189,15 @@ export default function ShortenPage() {
                   value={customCode}
                   onChange={(e) => setCustomCode(e.target.value)}
                   placeholder="e.g. launch, blog-q1"
-                  className="w-full px-3 py-2.5 pr-9 rounded-lg text-sm outline-none text-white placeholder-white/40 transition-colors font-mono"
+                  className="w-full px-3 py-2.5 pr-9 rounded-lg text-sm outline-none text-[#111] placeholder:text-[#999] transition-colors font-mono"
                   style={{
-                    background: 'rgba(0,0,0,0.04)',
+                    background: '#ffffff',
                     border: `1px solid ${
                       slugStatus.state === 'taken'
                         ? 'rgba(239,68,68,0.45)'
                         : slugStatus.state === 'available'
                         ? 'rgba(134,239,172,0.45)'
-                        : 'rgba(255,255,255,0.1)'
+                        : '#d8d8d8'
                     }`,
                   }}
                   onFocus={(e) => {
@@ -208,7 +208,7 @@ export default function ShortenPage() {
                   onBlur={(e) => {
                     if (slugStatus.state === 'idle' || slugStatus.state === 'checking') {
                       e.currentTarget.style.borderColor =
-                        'rgba(255,255,255,0.1)';
+                        '#d8d8d8';
                     }
                   }}
                 />
@@ -237,10 +237,10 @@ export default function ShortenPage() {
             <div className="mb-5">
               <label
                 htmlFor="expires"
-                className="block text-[0.7rem] text-white/65 mb-1.5 uppercase tracking-wider font-medium"
+                className="block text-[0.7rem] text-[#555] mb-1.5 uppercase tracking-wider font-medium"
               >
                 Expires{' '}
-                <span className="text-white/40 normal-case font-normal">
+                <span className="text-[#888] normal-case font-normal">
                   (optional)
                 </span>
               </label>
@@ -249,18 +249,18 @@ export default function ShortenPage() {
                 type="datetime-local"
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-white transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-[#111] transition-colors"
                 style={{
-                  background: 'rgba(0,0,0,0.04)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  colorScheme: 'dark',
+                  background: '#ffffff',
+                  border: '1px solid #d8d8d8',
+                  colorScheme: 'light',
                 }}
                 onFocus={(e) =>
                   (e.currentTarget.style.borderColor = '#e53935')
                 }
                 onBlur={(e) =>
                   (e.currentTarget.style.borderColor =
-                    'rgba(255,255,255,0.1)')
+                    '#d8d8d8')
                 }
               />
             </div>
@@ -300,7 +300,7 @@ export default function ShortenPage() {
               type="button"
               onClick={closeAndGoBack}
               disabled={loading}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-[#444] transition-colors"
               style={{
                 background: 'rgba(0,0,0,0.05)',
                 border: '1px solid rgba(0,0,0,0.12)',
@@ -343,9 +343,9 @@ export default function ShortenPage() {
         <div
           className="p-4 rounded-xl mb-4 font-mono text-sm break-all"
           style={{
-            background: 'rgba(0,0,0,0.45)',
-            border: '1px solid rgba(229,57,53,0.25)',
-            color: '#e8e8ed',
+            background: '#f6f6f6',
+            border: '1px solid #d8d8d8',
+            color: '#333333',
           }}
         >
           {result?.short_url}
@@ -354,7 +354,7 @@ export default function ShortenPage() {
           <button
             type="button"
             onClick={handleCopy}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2 rounded-lg text-sm font-medium text-[#444] transition-colors inline-flex items-center gap-2"
             style={{
               background: 'rgba(0,0,0,0.05)',
               border: '1px solid rgba(0,0,0,0.12)',
@@ -371,7 +371,7 @@ export default function ShortenPage() {
             onClick={() => {
               setResult(null);
             }}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-medium text-[#444] transition-colors"
             style={{
               background: 'rgba(0,0,0,0.05)',
               border: '1px solid rgba(0,0,0,0.12)',
