@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import BackgroundAurora from '../components/BackgroundAurora';
 
 export const runtime = 'edge';
 
-const ACCENT = '#9b7bf7';
+const ACCENT = '#e53935';
 const REPO_URL = 'https://github.com/elixpo/elixpourl';
 
 const DOCS_NAV = [
@@ -218,15 +217,15 @@ export default function DocsLayout({
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none text-white placeholder-white/40 transition-colors"
           style={{
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(0,0,0,0.03)',
+            border: '1px solid rgba(0,0,0,0.10)',
           }}
           onFocus={(e) =>
             (e.currentTarget.style.borderColor = ACCENT)
           }
           onBlur={(e) =>
             (e.currentTarget.style.borderColor =
-              'rgba(255,255,255,0.08)')
+              'rgba(0,0,0,0.10)')
           }
         />
       </div>
@@ -253,16 +252,16 @@ export default function DocsLayout({
                   onMouseEnter={(e) => {
                     if (!active) {
                       e.currentTarget.style.background =
-                        'rgba(255,255,255,0.04)';
+                        'rgba(0,0,0,0.05)';
                       e.currentTarget.style.color =
-                        'rgba(255,255,255,0.9)';
+                        'rgba(0,0,0,0.9)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!active) {
                       e.currentTarget.style.background = 'transparent';
                       e.currentTarget.style.color =
-                        'rgba(255,255,255,0.65)';
+                        'rgba(0,0,0,0.65)';
                     }
                   }}
                 >
@@ -282,16 +281,15 @@ export default function DocsLayout({
   );
 
   return (
-    <div className="relative min-h-screen text-[#f5f5f4]">
-      <BackgroundAurora variant="docs" />
+    <div className="theme-light relative min-h-screen bg-white text-[#111]">
 
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Top app bar */}
         <header
           className="sticky top-0 z-30 backdrop-blur-xl"
           style={{
-            background: 'rgba(11, 13, 18, 0.5)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'rgba(255, 255, 255, 0.92)',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.10)',
           }}
         >
           <div className="max-w-[1400px] w-full mx-auto px-4 md:px-6 h-[60px] flex items-center gap-3">
@@ -300,7 +298,7 @@ export default function DocsLayout({
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Open sidebar"
               className="md:hidden w-10 h-10 inline-flex items-center justify-center rounded-lg text-white/85 hover:text-white"
-              style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ border: '1px solid rgba(0,0,0,0.10)' }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="3" y1="12" x2="21" y2="12" />
@@ -331,24 +329,24 @@ export default function DocsLayout({
               title={copied ? 'Copied!' : 'Copy this page as plain text to paste into an LLM'}
               className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all"
               style={{
-                color: copied ? '#86efac' : 'rgba(255,255,255,0.75)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                color: copied ? '#86efac' : 'rgba(0,0,0,0.75)',
+                border: '1px solid rgba(0,0,0,0.12)',
               }}
               onMouseEnter={(e) => {
                 if (!copied) {
                   e.currentTarget.style.color = '#fff';
                   e.currentTarget.style.background =
-                    'rgba(155,123,247,0.08)';
+                    'rgba(229,57,53,0.08)';
                   e.currentTarget.style.borderColor =
-                    'rgba(155,123,247,0.4)';
+                    'rgba(229,57,53,0.4)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!copied) {
-                  e.currentTarget.style.color = 'rgba(255,255,255,0.75)';
+                  e.currentTarget.style.color = 'rgba(0,0,0,0.75)';
                   e.currentTarget.style.background = 'transparent';
                   e.currentTarget.style.borderColor =
-                    'rgba(255,255,255,0.12)';
+                    'rgba(0,0,0,0.12)';
                 }
               }}
             >
@@ -368,13 +366,13 @@ export default function DocsLayout({
             <Link
               href="/dashboard"
               className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline transition-colors"
-              style={{ color: 'rgba(255,255,255,0.65)' }}
+              style={{ color: 'rgba(0,0,0,0.65)' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = '#fff';
-                e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                e.currentTarget.style.background = 'rgba(0,0,0,0.08)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'rgba(255,255,255,0.65)';
+                e.currentTarget.style.color = 'rgba(0,0,0,0.65)';
                 e.currentTarget.style.background = 'transparent';
               }}
             >
@@ -407,7 +405,7 @@ export default function DocsLayout({
             className="hidden md:block w-[260px] flex-shrink-0 sticky top-[60px] self-start"
             style={{
               height: 'calc(100vh - 60px)',
-              borderRight: '1px solid rgba(255,255,255,0.06)',
+              borderRight: '1px solid rgba(0,0,0,0.08)',
             }}
           >
             {sidebarContent}
@@ -427,9 +425,9 @@ export default function DocsLayout({
               mobileOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
             style={{
-              background: 'rgba(11, 13, 18, 0.96)',
+              background: 'rgba(255,255,255,0.98)',
               backdropFilter: 'blur(16px)',
-              borderRight: '1px solid rgba(255,255,255,0.08)',
+              borderRight: '1px solid rgba(0,0,0,0.10)',
             }}
           >
             {sidebarContent}
@@ -447,23 +445,23 @@ export default function DocsLayout({
               {(prevPage || nextPage) && (
                 <div
                   className="mt-16 pt-8 grid grid-cols-1 sm:grid-cols-2 gap-3"
-                  style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+                  style={{ borderTop: '1px solid rgba(0,0,0,0.10)' }}
                 >
                   {prevPage ? (
                     <Link
                       href={prevPage.href}
                       className="p-4 rounded-xl no-underline transition-colors"
                       style={{
-                        background: 'rgba(255,255,255,0.025)',
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'rgba(255,255,255,0.98)',
+                        border: '1px solid rgba(0,0,0,0.10)',
                       }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.borderColor =
-                          'rgba(155,123,247,0.35)')
+                          'rgba(229,57,53,0.35)')
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.borderColor =
-                          'rgba(255,255,255,0.08)')
+                          'rgba(0,0,0,0.10)')
                       }
                     >
                       <div className="text-[0.7rem] uppercase tracking-wider text-white/45 mb-1">
@@ -481,16 +479,16 @@ export default function DocsLayout({
                       href={nextPage.href}
                       className="p-4 rounded-xl no-underline transition-colors text-right"
                       style={{
-                        background: 'rgba(255,255,255,0.025)',
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'rgba(255,255,255,0.98)',
+                        border: '1px solid rgba(0,0,0,0.10)',
                       }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.borderColor =
-                          'rgba(155,123,247,0.35)')
+                          'rgba(229,57,53,0.35)')
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.borderColor =
-                          'rgba(255,255,255,0.08)')
+                          'rgba(0,0,0,0.10)')
                       }
                     >
                       <div className="text-[0.7rem] uppercase tracking-wider text-white/45 mb-1">
@@ -541,7 +539,7 @@ export default function DocsLayout({
                             color:
                               activeHeadingId === h.id
                                 ? ACCENT
-                                : 'rgba(255,255,255,0.55)',
+                                : 'rgba(0,0,0,0.55)',
                             paddingLeft: h.level === 3 ? '0.75rem' : '0',
                             fontWeight:
                               activeHeadingId === h.id ? 600 : 400,
@@ -549,12 +547,12 @@ export default function DocsLayout({
                           onMouseEnter={(e) => {
                             if (activeHeadingId !== h.id)
                               e.currentTarget.style.color =
-                                'rgba(255,255,255,0.85)';
+                                'rgba(0,0,0,0.85)';
                           }}
                           onMouseLeave={(e) => {
                             if (activeHeadingId !== h.id)
                               e.currentTarget.style.color =
-                                'rgba(255,255,255,0.55)';
+                                'rgba(0,0,0,0.55)';
                           }}
                         >
                           {h.text}

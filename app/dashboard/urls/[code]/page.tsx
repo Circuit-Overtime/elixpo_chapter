@@ -24,8 +24,8 @@ const ABS_MAX_DAYS = 90;
 
 const CARD_STYLE = {
   background:
-    'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
-  border: '1px solid rgba(255,255,255,0.08)',
+    'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(250,250,250,0.92) 100%)',
+  border: '1px solid rgba(0,0,0,0.10)',
   backdropFilter: 'blur(20px)',
 } as const;
 
@@ -222,7 +222,7 @@ export default async function UrlDetailPage({
               Last <span className="text-white font-semibold">{days}</span> day
               {days === 1 ? '' : 's'}
               {isFree && (
-                <span className="ml-2 text-[#c8b6ff]">
+                <span className="ml-2 text-[#c62828]">
                   · Free preview
                 </span>
               )}
@@ -239,21 +239,21 @@ export default async function UrlDetailPage({
                 'inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium no-underline transition-colors';
               const style = active
                 ? {
-                    background: 'rgba(155,123,247,0.12)',
-                    color: '#c8b6ff',
-                    border: '1px solid rgba(155,123,247,0.4)',
+                    background: 'rgba(229,57,53,0.12)',
+                    color: '#c62828',
+                    border: '1px solid rgba(229,57,53,0.4)',
                   }
                 : locked
                   ? {
-                      background: 'rgba(255,255,255,0.02)',
-                      color: 'rgba(255,255,255,0.35)',
-                      border: '1px solid rgba(255,255,255,0.06)',
+                      background: 'rgba(0,0,0,0.03)',
+                      color: 'rgba(0,0,0,0.35)',
+                      border: '1px solid rgba(0,0,0,0.08)',
                       cursor: 'not-allowed',
                     }
                   : {
                       background: 'transparent',
-                      color: 'rgba(255,255,255,0.55)',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: 'rgba(0,0,0,0.55)',
+                      border: '1px solid rgba(0,0,0,0.10)',
                     };
               if (locked) {
                 return (
@@ -301,8 +301,8 @@ export default async function UrlDetailPage({
             className="mt-5 p-3 rounded-lg flex items-center justify-between gap-3 text-sm"
             style={{
               background:
-                'linear-gradient(135deg, rgba(155,123,247,0.1) 0%, rgba(95,182,255,0.04) 100%)',
-              border: '1px solid rgba(155,123,247,0.25)',
+                'linear-gradient(135deg, rgba(229,57,53,0.1) 0%, rgba(95,182,255,0.04) 100%)',
+              border: '1px solid rgba(229,57,53,0.25)',
             }}
           >
             <span className="text-white/75">
@@ -313,8 +313,8 @@ export default async function UrlDetailPage({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white no-underline whitespace-nowrap"
               style={{
                 background:
-                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                boxShadow: '0 4px 12px rgba(155,123,247,0.35)',
+                  'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                boxShadow: '0 4px 12px rgba(229,57,53,0.35)',
               }}
             >
               Upgrade
@@ -351,14 +351,14 @@ export default async function UrlDetailPage({
               style={
                 limits.analytics
                   ? {
-                      background: 'rgba(155,123,247,0.12)',
-                      color: '#c8b6ff',
-                      border: '1px solid rgba(155,123,247,0.3)',
+                      background: 'rgba(229,57,53,0.12)',
+                      color: '#c62828',
+                      border: '1px solid rgba(229,57,53,0.3)',
                     }
                   : {
-                      background: 'rgba(255,255,255,0.06)',
-                      color: 'rgba(255,255,255,0.7)',
-                      border: '1px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(0,0,0,0.08)',
+                      color: 'rgba(0,0,0,0.7)',
+                      border: '1px solid rgba(0,0,0,0.15)',
                     }
               }
             >
@@ -371,7 +371,7 @@ export default async function UrlDetailPage({
             className="rounded-xl p-3 mb-4"
             style={{
               background: 'rgba(0,0,0,0.25)',
-              border: '1px solid rgba(255,255,255,0.05)',
+              border: '1px solid rgba(0,0,0,0.06)',
             }}
           >
             <ClicksChart data={timeline} height={110} compact />
@@ -382,8 +382,8 @@ export default async function UrlDetailPage({
             <div
               className="px-3 py-2.5 rounded-lg"
               style={{
-                background: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.98)',
+                border: '1px solid rgba(0,0,0,0.10)',
               }}
             >
               <div className="text-[0.62rem] uppercase tracking-wider text-white/40 mb-0.5">
@@ -396,8 +396,8 @@ export default async function UrlDetailPage({
             <div
               className="px-3 py-2.5 rounded-lg"
               style={{
-                background: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.98)',
+                border: '1px solid rgba(0,0,0,0.10)',
               }}
             >
               <div className="text-[0.62rem] uppercase tracking-wider text-white/40 mb-0.5">
@@ -410,8 +410,8 @@ export default async function UrlDetailPage({
             <div
               className="px-3 py-2.5 rounded-lg"
               style={{
-                background: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.98)',
+                border: '1px solid rgba(0,0,0,0.10)',
               }}
             >
               <div className="text-[0.62rem] uppercase tracking-wider text-white/40 mb-0.5">
@@ -439,13 +439,13 @@ export default async function UrlDetailPage({
                 rows > 0
                   ? {
                       background:
-                        'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                      boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+                        'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                      boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
                     }
                   : {
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      color: 'rgba(255,255,255,0.4)',
+                      background: 'rgba(0,0,0,0.05)',
+                      border: '1px solid rgba(0,0,0,0.10)',
+                      color: 'rgba(0,0,0,0.4)',
                     }
               }
               aria-disabled={rows === 0}
@@ -480,8 +480,8 @@ export default async function UrlDetailPage({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white no-underline whitespace-nowrap"
                 style={{
                   background:
-                    'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                  boxShadow: '0 4px 12px rgba(155,123,247,0.35)',
+                    'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                  boxShadow: '0 4px 12px rgba(229,57,53,0.35)',
                 }}
               >
                 Unlock
@@ -551,8 +551,8 @@ export default async function UrlDetailPage({
           className="p-6 rounded-2xl text-center"
           style={{
             background:
-              'linear-gradient(135deg, rgba(155,123,247,0.1) 0%, rgba(95,182,255,0.04) 100%)',
-            border: '1px solid rgba(155,123,247,0.25)',
+              'linear-gradient(135deg, rgba(229,57,53,0.1) 0%, rgba(95,182,255,0.04) 100%)',
+            border: '1px solid rgba(229,57,53,0.25)',
           }}
         >
           <p className="text-white/65 mb-3">
@@ -563,8 +563,8 @@ export default async function UrlDetailPage({
             href="/pricing"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white no-underline"
             style={{
-              background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-              boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+              background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+              boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
             }}
           >
             See plans

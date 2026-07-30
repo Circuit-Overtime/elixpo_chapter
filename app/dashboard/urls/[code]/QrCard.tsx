@@ -50,8 +50,8 @@ export default function QrCard({ shortUrl, presetLimit, allowLogo }: Props) {
         boxSizing: 'border-box',
         marginInline: 'auto',
         background:
-          'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
+          'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(250,250,250,0.92) 100%)',
+        border: '1px solid rgba(0,0,0,0.10)',
         backdropFilter: 'blur(20px)',
       }}
     >
@@ -62,9 +62,9 @@ export default function QrCard({ shortUrl, presetLimit, allowLogo }: Props) {
         <span
           className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full"
           style={{
-            background: 'rgba(155,123,247,0.12)',
-            color: '#c8b6ff',
-            border: '1px solid rgba(155,123,247,0.3)',
+            background: 'rgba(229,57,53,0.12)',
+            color: '#c62828',
+            border: '1px solid rgba(229,57,53,0.3)',
           }}
         >
           Styled
@@ -81,7 +81,7 @@ export default function QrCard({ shortUrl, presetLimit, allowLogo }: Props) {
             padding: 8,
             boxSizing: 'border-box',
             background: '#ffffff',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(155,123,247,0.18)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(229,57,53,0.18)',
           }}
         >
           <StyledQr
@@ -108,8 +108,8 @@ export default function QrCard({ shortUrl, presetLimit, allowLogo }: Props) {
             onClick={() => qrRef.current?.download()}
             className="inline-flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all cursor-pointer border-none"
             style={{
-              background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-              boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+              background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+              boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -125,9 +125,9 @@ export default function QrCard({ shortUrl, presetLimit, allowLogo }: Props) {
             onClick={() => setStudioOpen(true)}
             className="inline-flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
             style={{
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,255,255,0.85)',
+              background: 'rgba(255,255,255,0.98)',
+              border: '1px solid rgba(0,0,0,0.12)',
+              color: 'rgba(0,0,0,0.85)',
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

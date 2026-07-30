@@ -8,8 +8,8 @@ export const runtime = 'edge';
 
 const CARD_STYLE = {
   background:
-    'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
-  border: '1px solid rgba(255,255,255,0.08)',
+    'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(250,250,250,0.92) 100%)',
+  border: '1px solid rgba(0,0,0,0.10)',
   backdropFilter: 'blur(20px)',
 } as const;
 
@@ -102,8 +102,8 @@ export default async function UrlsPage({
             href="/api/urls/export.csv"
             className="inline-flex items-center gap-2 px-3 py-2 rounded-[10px] text-sm font-medium text-white/85 no-underline transition-colors"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(0,0,0,0.05)',
+              border: '1px solid rgba(0,0,0,0.12)',
             }}
             title="Download every link as CSV"
           >
@@ -127,8 +127,8 @@ export default async function UrlsPage({
             href="/dashboard/new"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-semibold text-white no-underline transition-all"
             style={{
-              background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-              boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+              background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+              boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -167,7 +167,7 @@ export default async function UrlsPage({
                 defaultValue={search}
                 className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none text-white placeholder-white/40"
                 style={{
-                  background: 'rgba(255,255,255,0.03)',
+                  background: 'rgba(0,0,0,0.04)',
                   border: '1px solid rgba(255,255,255,0.1)',
                 }}
               />
@@ -190,13 +190,13 @@ export default async function UrlsPage({
                   className="text-xs px-3 py-1.5 rounded-lg no-underline transition-colors font-medium"
                   style={{
                     background: active
-                      ? 'rgba(155,123,247,0.12)'
+                      ? 'rgba(229,57,53,0.12)'
                       : 'transparent',
-                    color: active ? '#c8b6ff' : 'rgba(255,255,255,0.55)',
+                    color: active ? '#c62828' : 'rgba(0,0,0,0.55)',
                     border: '1px solid',
                     borderColor: active
-                      ? 'rgba(155,123,247,0.4)'
-                      : 'rgba(255,255,255,0.08)',
+                      ? 'rgba(229,57,53,0.4)'
+                      : 'rgba(0,0,0,0.10)',
                   }}
                 >
                   {f.label}

@@ -7,7 +7,7 @@ const P = 'text-white/70 text-[0.96rem] leading-relaxed mb-4';
 const PRE = 'p-4 rounded-xl text-[0.85rem] leading-relaxed overflow-x-auto mb-6 font-mono';
 const PRE_STYLE = {
   background: 'rgba(0,0,0,0.45)',
-  border: '1px solid rgba(255,255,255,0.06)',
+  border: '1px solid rgba(0,0,0,0.08)',
   color: '#e8e8ed',
 };
 
@@ -41,10 +41,10 @@ export default function ErrorsPage() {
       <h2 id="codes" className={H2}>Codes</h2>
       <div
         className="rounded-xl overflow-hidden"
-        style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+        style={{ border: '1px solid rgba(0,0,0,0.10)' }}
       >
         <table className="w-full text-sm">
-          <thead style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <thead style={{ background: 'rgba(0,0,0,0.05)' }}>
             <tr className="text-white/70">
               <th className="text-left px-4 py-2 font-semibold">code</th>
               <th className="text-left px-4 py-2 font-semibold">HTTP</th>
@@ -56,7 +56,7 @@ export default function ErrorsPage() {
               <tr
                 key={code}
                 className="text-white/80"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+                style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}
               >
                 <td className="px-4 py-2 font-mono text-white">{code}</td>
                 <td className="px-4 py-2 font-mono">{status}</td>

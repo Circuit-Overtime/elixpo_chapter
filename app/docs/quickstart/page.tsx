@@ -9,7 +9,7 @@ const P = 'text-white/70 text-[0.96rem] leading-relaxed mb-4';
 const PRE = 'p-4 rounded-xl text-[0.85rem] leading-relaxed overflow-x-auto mb-6 font-mono';
 const PRE_STYLE = {
   background: 'rgba(0,0,0,0.45)',
-  border: '1px solid rgba(255,255,255,0.06)',
+  border: '1px solid rgba(0,0,0,0.08)',
   color: '#e8e8ed',
 };
 
@@ -111,8 +111,8 @@ export default function QuickstartPage() {
               className="block p-4 rounded-xl no-underline transition-colors"
               style={{
                 background:
-                  'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                  'linear-gradient(135deg, rgba(0,0,0,0.05) 0%, rgba(250,250,250,0.92) 100%)',
+                border: '1px solid rgba(0,0,0,0.10)',
               }}
             >
               <div className="font-semibold text-white mb-1">{label}</div>

@@ -114,7 +114,7 @@ export default function ApiKeysPage() {
             Manage keys for programmatic access ·{' '}
             <Link
               href="/docs/keys"
-              className="text-[#9b7bf7] no-underline hover:underline"
+              className="text-[#e53935] no-underline hover:underline"
             >
               Read the docs
             </Link>
@@ -128,17 +128,17 @@ export default function ApiKeysPage() {
           }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-semibold text-white transition-all"
           style={{
-            background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-            boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+            background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+            boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background =
-              'linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)';
+              'linear-gradient(135deg, #e85a57 0%, #8a6dff 100%)';
             e.currentTarget.style.transform = 'translateY(-1px)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.background =
-              'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)';
+              'linear-gradient(135deg, #e53935 0%, #c62828 100%)';
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
@@ -155,8 +155,8 @@ export default function ApiKeysPage() {
         className="rounded-2xl p-6"
         style={{
           background:
-            'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
-          border: '1px solid rgba(255,255,255,0.08)',
+            'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(250,250,250,0.92) 100%)',
+          border: '1px solid rgba(0,0,0,0.10)',
           backdropFilter: 'blur(20px)',
         }}
       >
@@ -187,8 +187,8 @@ export default function ApiKeysPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-semibold text-white transition-all"
               style={{
                 background:
-                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+                  'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
               }}
             >
               Create your first key
@@ -202,9 +202,9 @@ export default function ApiKeysPage() {
                 className="flex items-center gap-4 p-4 rounded-xl transition-all"
                 style={{
                   background: k.is_active
-                    ? 'rgba(255,255,255,0.025)'
-                    : 'rgba(255,255,255,0.01)',
-                  border: `1px solid ${k.is_active ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)'}`,
+                    ? 'rgba(255,255,255,0.98)'
+                    : 'rgba(250,250,250,0.9)',
+                  border: `1px solid ${k.is_active ? 'rgba(0,0,0,0.10)' : 'rgba(0,0,0,0.05)'}`,
                   opacity: k.is_active ? 1 : 0.5,
                 }}
               >
@@ -212,15 +212,15 @@ export default function ApiKeysPage() {
                   className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                   style={{
                     background: k.is_active
-                      ? 'rgba(155,123,247,0.1)'
-                      : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${k.is_active ? 'rgba(155,123,247,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                      ? 'rgba(229,57,53,0.1)'
+                      : 'rgba(0,0,0,0.05)',
+                    border: `1px solid ${k.is_active ? 'rgba(229,57,53,0.25)' : 'rgba(0,0,0,0.08)'}`,
                   }}
                 >
                   <svg
                     viewBox="0 0 20 20"
                     fill="none"
-                    stroke={k.is_active ? '#9b7bf7' : '#71717a'}
+                    stroke={k.is_active ? '#e53935' : '#71717a'}
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -239,9 +239,9 @@ export default function ApiKeysPage() {
                     <span
                       className="text-[0.6rem] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded"
                       style={{
-                        background: 'rgba(155,123,247,0.12)',
-                        color: '#b094ff',
-                        border: '1px solid rgba(155,123,247,0.25)',
+                        background: 'rgba(229,57,53,0.12)',
+                        color: '#e85a57',
+                        border: '1px solid rgba(229,57,53,0.25)',
                       }}
                     >
                       {k.scopes.includes('write') ? 'R/W' : 'Read'}
@@ -316,16 +316,16 @@ export default function ApiKeysPage() {
               autoFocus
               className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-white placeholder-white/40 transition-colors"
               style={{
-                background: 'rgba(255,255,255,0.03)',
+                background: 'rgba(0,0,0,0.04)',
                 border: '1px solid rgba(255,255,255,0.1)',
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#9b7bf7';
-                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                e.currentTarget.style.borderColor = '#e53935';
+                e.currentTarget.style.background = 'rgba(0,0,0,0.06)';
               }}
               onBlur={(e) => {
                 e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                e.currentTarget.style.background = 'rgba(0,0,0,0.04)';
               }}
             />
           </div>
@@ -345,22 +345,22 @@ export default function ApiKeysPage() {
                     className="text-left p-3 rounded-xl transition-all cursor-pointer"
                     style={{
                       background: selected
-                        ? 'rgba(155,123,247,0.08)'
-                        : 'rgba(255,255,255,0.025)',
-                      border: `1.5px solid ${selected ? 'rgba(155,123,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                        ? 'rgba(229,57,53,0.08)'
+                        : 'rgba(255,255,255,0.98)',
+                      border: `1.5px solid ${selected ? 'rgba(229,57,53,0.5)' : 'rgba(0,0,0,0.10)'}`,
                     }}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
                         style={{
-                          border: `2px solid ${selected ? '#9b7bf7' : 'rgba(255,255,255,0.25)'}`,
+                          border: `2px solid ${selected ? '#e53935' : 'rgba(0,0,0,0.25)'}`,
                         }}
                       >
                         {selected && (
                           <span
                             className="w-2 h-2 rounded-full"
-                            style={{ background: '#9b7bf7' }}
+                            style={{ background: '#e53935' }}
                           />
                         )}
                       </span>
@@ -400,8 +400,8 @@ export default function ApiKeysPage() {
               disabled={creating}
               className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors"
               style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(0,0,0,0.05)',
+                border: '1px solid rgba(0,0,0,0.12)',
               }}
             >
               Cancel
@@ -412,8 +412,8 @@ export default function ApiKeysPage() {
               className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all"
               style={{
                 background:
-                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                boxShadow: '0 4px 14px rgba(155,123,247,0.4)',
+                  'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                boxShadow: '0 4px 14px rgba(229,57,53,0.4)',
                 opacity: creating || !name.trim() ? 0.6 : 1,
               }}
             >
@@ -435,7 +435,7 @@ export default function ApiKeysPage() {
           className="p-4 rounded-xl mb-4 font-mono text-sm break-all"
           style={{
             background: 'rgba(0,0,0,0.45)',
-            border: '1px solid rgba(155,123,247,0.25)',
+            border: '1px solid rgba(229,57,53,0.25)',
             color: '#e8e8ed',
           }}
         >
@@ -447,8 +447,8 @@ export default function ApiKeysPage() {
             onClick={() => newKey && handleCopy(newKey)}
             className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors inline-flex items-center gap-2"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(0,0,0,0.05)',
+              border: '1px solid rgba(0,0,0,0.12)',
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -463,8 +463,8 @@ export default function ApiKeysPage() {
             className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
             style={{
               background:
-                'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-              boxShadow: '0 4px 14px rgba(155,123,247,0.4)',
+                'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+              boxShadow: '0 4px 14px rgba(229,57,53,0.4)',
             }}
           >
             I&apos;ve saved it
