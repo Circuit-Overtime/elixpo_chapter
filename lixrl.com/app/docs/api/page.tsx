@@ -7,11 +7,11 @@ const P = 'text-white/70 text-[0.96rem] leading-relaxed mb-4';
 const PRE = 'p-4 rounded-xl text-[0.85rem] leading-relaxed overflow-x-auto mb-4 font-mono';
 const PRE_STYLE = {
   background: 'rgba(0,0,0,0.45)',
-  border: '1px solid rgba(255,255,255,0.06)',
+  border: '1px solid rgba(0,0,0,0.08)',
   color: '#e8e8ed',
 };
 const METHOD_STYLE: Record<string, React.CSSProperties> = {
-  POST: { background: 'rgba(155,123,247,0.18)', color: '#c8b6ff', border: '1px solid rgba(155,123,247,0.4)' },
+  POST: { background: 'rgba(229,57,53,0.18)', color: '#c62828', border: '1px solid rgba(229,57,53,0.4)' },
   GET: { background: 'rgba(95,182,255,0.18)', color: '#bcdcff', border: '1px solid rgba(95,182,255,0.4)' },
   PATCH: { background: 'rgba(251,191,36,0.18)', color: '#fde7a4', border: '1px solid rgba(251,191,36,0.4)' },
   DELETE: { background: 'rgba(239,68,68,0.18)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.4)' },

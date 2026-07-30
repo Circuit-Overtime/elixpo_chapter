@@ -2,21 +2,19 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import BackgroundAurora from './components/BackgroundAurora';
+import { useEffect, useRef, useState } from 'react';
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
-import PixelHero from './components/PixelHero';
 
-const CARD_BG =
-  'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)';
+const ACCENT = '#e53935';
 
 /* ── Icons (inline SVG, stroke = currentColor) ──────────────────────────── */
 
-function Icon({ children }: { children: ReactNode }) {
+function Icon({ children, size = 22 }: { children: ReactNode; size?: number }) {
   return (
     <svg
-      width="22"
-      height="22"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -29,6 +27,26 @@ function Icon({ children }: { children: ReactNode }) {
     </svg>
   );
 }
+
+const SignInIcon = () => (
+  <Icon size={18}>
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </Icon>
+);
+const ShortenIcon = () => (
+  <Icon size={18}>
+    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+  </Icon>
+);
+const TrackIcon = () => (
+  <Icon size={18}>
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </Icon>
+);
 
 const BoltIcon = () => (
   <Icon>
@@ -53,7 +71,6 @@ const QrIcon = () => (
     <rect x="3" y="3" width="7" height="7" rx="1" />
     <rect x="14" y="3" width="7" height="7" rx="1" />
     <rect x="3" y="14" width="7" height="7" rx="1" />
-    <line x1="14" y1="14" x2="14" y2="14" />
     <path d="M14 14h3v3M21 14v7h-7v-3" />
   </Icon>
 );
@@ -70,396 +87,532 @@ const ApiIcon = () => (
   </Icon>
 );
 const ArrowIcon = () => (
-  <Icon>
+  <Icon size={16}>
     <line x1="5" y1="12" x2="19" y2="12" />
     <polyline points="12 5 19 12 12 19" />
   </Icon>
 );
+const ClickIcon = () => (
+  <Icon size={14}>
+    <path d="M9 9l8 3-3.5 1.5L12 17z" />
+  </Icon>
+);
+const GlobeIcon = () => (
+  <Icon size={14}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" />
+  </Icon>
+);
 
-/* ── Content ────────────────────────────────────────────────────────────── */
+/* ── Content (unchanged copy) ──────────────────────────────────────────── */
 
-const STEPS: { n: string; title: string; body: string; accent: string }[] = [
+const REGIONS = [
+  'North America',
+  'Europe',
+  'Asia Pacific',
+  'South America',
+  'Africa',
+  'Middle East',
+  '< 50ms',
+];
+
+const STEPS: { n: string; icon: ReactNode; title: string; body: string }[] = [
   {
     n: '01',
+    icon: <SignInIcon />,
     title: 'Sign in',
     body: 'Authenticate with your Elixpo account — no separate signup, no password to remember.',
-    accent: '#9b7bf7',
   },
   {
     n: '02',
+    icon: <ShortenIcon />,
     title: 'Shorten',
     body: 'Paste a long URL, pick a slug or let us mint one, and your link goes live on the edge.',
-    accent: '#5fb6ff',
   },
   {
     n: '03',
+    icon: <TrackIcon />,
     title: 'Track',
     body: 'Watch clicks, countries, and referrers in real time — or call the API and pipe them anywhere.',
-    accent: '#86efac',
   },
 ];
 
-const FEATURES: {
-  icon: ReactNode;
-  title: string;
-  body: string;
-  accent: string;
-}[] = [
+const FEATURES: { icon: ReactNode; title: string; body: string }[] = [
   {
     icon: <BoltIcon />,
     title: 'Edge-native redirects',
     body: "Links resolve on Cloudflare's edge in under 50ms worldwide. No cold starts, no proxy hops between the click and the destination.",
-    accent: '#9b7bf7',
   },
   {
     icon: <ChartIcon />,
     title: 'Click analytics',
     body: 'Real-time counts with country, referrer, and device breakdowns. No third-party script — the data lives on your account.',
-    accent: '#5fb6ff',
   },
   {
     icon: <SlugIcon />,
     title: 'Custom slugs',
     body: 'Choose the slug yourself or generate a short one. Collision checks run at write time so a link is never ambiguous.',
-    accent: '#86efac',
   },
   {
     icon: <QrIcon />,
     title: 'Styled QR codes',
     body: 'Generate a QR for any link, tinted to your accent and exportable as SVG or PNG — ready for print or a slide.',
-    accent: '#fbbf24',
   },
   {
     icon: <DomainIcon />,
     title: 'Branded domains',
     body: 'Point your own domain at ElixpoURL on Pro and Business so every short link carries your name, not ours.',
-    accent: '#ff7cc9',
   },
   {
     icon: <ApiIcon />,
     title: 'REST API',
     body: 'Create, list, and revoke links with scoped API keys and predictable JSON. Drop it into any app you ship.',
-    accent: '#c4b5fd',
   },
 ];
+
+const USE_CASES = [
+  'Campaign links',
+  'Social bios',
+  'QR codes for print',
+  'API integrations',
+  'Team link management',
+  'Branded short domains',
+];
+
+/* ── Hero visual: a small looping demo, not a static screenshot ──────────
+   Types a long URL, "shortens" it, then plays a redirect ping while a
+   click counter ticks up. Pure client-side timers, no network calls —
+   safe to loop indefinitely in a hero section. */
+
+const DEMO_LONG_URL = 'elixpo.com/blog/2026/edge-network-launch';
+const DEMO_SHORT = 'lixrl.com/launch';
+
+function LinkResolverDemo() {
+  const [typed, setTyped] = useState('');
+  const [phase, setPhase] = useState<'typing' | 'shortening' | 'resolving' | 'done'>('typing');
+  const [clicks, setClicks] = useState(12_402);
+  const [ms, setMs] = useState<number | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    let charIndex = 0;
+    let typingTimer: ReturnType<typeof setInterval>;
+    let cycleTimeouts: ReturnType<typeof setTimeout>[] = [];
+
+    function startCycle() {
+      charIndex = 0;
+      setTyped('');
+      setPhase('typing');
+      setMs(null);
+
+      typingTimer = setInterval(() => {
+        charIndex += 1;
+        setTyped(DEMO_LONG_URL.slice(0, charIndex));
+        if (charIndex >= DEMO_LONG_URL.length) {
+          clearInterval(typingTimer);
+          cycleTimeouts.push(
+            setTimeout(() => mountedRef.current && setPhase('shortening'), 450),
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              setPhase('resolving');
+              setMs(Math.floor(28 + Math.random() * 24));
+            }, 1150),
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              setPhase('done');
+              setClicks((c) => c + 1);
+            }, 1750),
+            setTimeout(() => mountedRef.current && startCycle(), 3600),
+          );
+        }
+      }, 45);
+    }
+
+    startCycle();
+
+    return () => {
+      mountedRef.current = false;
+      clearInterval(typingTimer);
+      cycleTimeouts.forEach(clearTimeout);
+    };
+  }, []);
+
+  const showShort = phase === 'shortening' || phase === 'resolving' || phase === 'done';
+
+  return (
+    <div
+      className="relative rounded-2xl p-6 max-w-[420px]"
+      style={{ background: '#fff', border: '1px solid var(--line)', boxShadow: '0 16px 40px rgba(0,0,0,0.08)' }}
+    >
+      {/* URL bar */}
+      <div
+        className="rounded-xl px-4 py-3 mb-4 flex items-center gap-2"
+        style={{ background: 'var(--bg-cream)', border: '1px solid #ede9e3' }}
+      >
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: showShort ? '#16a34a' : '#ddd' }} />
+        <span className="font-mono text-[13px] text-[#555] truncate">
+          {showShort ? (
+            <span style={{ color: ACCENT }} className="font-semibold">
+              {DEMO_SHORT}
+            </span>
+          ) : (
+            <>
+              {typed}
+              <span className="inline-block w-[2px] h-[14px] align-middle ml-0.5 animate-pulse" style={{ background: ACCENT }} />
+            </>
+          )}
+        </span>
+      </div>
+
+      {/* Status row */}
+      <div className="flex items-center justify-between mb-4 h-6">
+        <span className="text-[12px] font-medium text-[#888]">
+          {phase === 'typing' && 'Pasting destination…'}
+          {phase === 'shortening' && 'Minting short link…'}
+          {phase === 'resolving' && 'Resolving on the edge…'}
+          {phase === 'done' && ms !== null && (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#16a34a' }} />
+              Resolved in <span className="font-bold text-[#111]">{ms}ms</span>
+            </span>
+          )}
+        </span>
+        {phase === 'done' && (
+          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f0fdf4] text-[#16a34a] font-semibold">live</span>
+        )}
+      </div>
+
+      {/* Progress / ping bar */}
+      <div className="h-1.5 rounded-full overflow-hidden mb-5" style={{ background: '#f1ede6' }}>
+        <div
+          className="h-full rounded-full transition-all ease-linear"
+          style={{
+            background: ACCENT,
+            width: phase === 'typing' ? `${(typed.length / DEMO_LONG_URL.length) * 100}%` : '100%',
+            transitionDuration: phase === 'typing' ? '45ms' : '500ms',
+            opacity: phase === 'typing' ? 0.5 : 1,
+          }}
+        />
+      </div>
+
+      {/* Live stats */}
+      <div className="flex items-center gap-5 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+        <span className="inline-flex items-center gap-1.5 text-[12px] text-[#888]">
+          <ClickIcon />
+          <span className="font-mono tabular-nums">{clicks.toLocaleString()}</span> clicks
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-[12px] text-[#888]">
+          <GlobeIcon /> 41 countries
+        </span>
+      </div>
+    </div>
+  );
+}
 
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col text-[#f5f5f4] relative bg-black">
-      <BackgroundAurora variant="default" />
+    <div className="min-h-screen flex flex-col text-[#111] bg-white">
+      <Navbar />
 
-      <div className="relative z-10">
-        <Navbar />
-      </div>
+      {/* ── Hero — asymmetric split with link-preview mock ──────────────── */}
+      <section className="px-6 pt-16 md:pt-20 pb-16">
+        <div className="max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-8 items-center">
+          {/* Copy */}
+          <div className="text-center lg:text-left">
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-[0.08em] uppercase mb-7"
+              style={{ background: 'var(--accent-dim)', color: ACCENT, border: '1px solid var(--accent-border)' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: ACCENT }} />
+              Edge-native URL shortener
+            </div>
+            <h1 className="font-black leading-[1.05] tracking-[-0.03em] text-[#111] text-[clamp(2.4rem,5.5vw,4.4rem)] mb-6">
+              Short links.
+              <br />
+              <span className="italic font-bold text-[#888]">Real tracking.</span>
+              <br />
+              No plumbing.
+            </h1>
+            <p className="text-[1.05rem] leading-relaxed text-[#555] max-w-[480px] mx-auto lg:mx-0 mb-9">
+              Paste a URL, get a link that resolves in under 50ms worldwide —
+              with click analytics, custom slugs, and a REST API, all from one
+              dashboard.
+            </p>
+            <div className="flex items-center justify-center lg:justify-start gap-3 flex-wrap">
+              <Link href="/api/auth/login" className="btn-accent">
+                Get started with Elixpo
+              </Link>
+              <Link href="/docs" className="btn-glass">
+                Explore the docs
+                <ArrowIcon />
+              </Link>
+            </div>
+          </div>
 
-      {/* ── Hero (pixel field) ──────────────────────────────────────────── */}
-      <div className="relative z-10">
-        <PixelHero />
-      </div>
+          {/* Visual — live shortening demo */}
+          <div className="hidden lg:block">
+            <LinkResolverDemo />
+          </div>
+        </div>
+      </section>
 
-      {/* ── How it works (3 steps) ──────────────────────────────────────── */}
-      <section className="relative z-10 w-full max-w-4xl mx-auto px-4 py-12 md:py-16">
-        <p className="text-center text-[0.8rem] font-bold tracking-[0.12em] uppercase text-[#b69aff] mb-2">
-          Get started
+      {/* ── Edge network strip ──────────────────────────────────────────── */}
+      <div className="py-7 px-6 text-center" style={{ background: 'var(--bg-cream)' }}>
+        <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#888] mb-[18px]">
+          Resolves on Cloudflare&apos;s global network
         </p>
-        <h2 className="text-center font-extrabold tracking-[-0.02em] text-[1.7rem] md:text-[2.3rem] text-white">
-          Live in three steps
-        </h2>
+        <div className="flex items-center justify-center gap-10 flex-wrap">
+          {REGIONS.map((r) => (
+            <span key={r} className="text-[15px] font-semibold text-[#aaa] tracking-[-0.01em]">
+              {r}
+            </span>
+          ))}
+        </div>
+      </div>
 
-        <div className="relative mt-10 md:mt-14">
-          {/* dashed roadmap line (desktop) */}
-          <svg
-            viewBox="0 0 1000 54"
-            preserveAspectRatio="none"
-            className="hidden md:block absolute top-0 left-[8%] w-[84%] h-14 overflow-visible z-0"
-            aria-hidden="true"
-          >
-            <defs>
-              <linearGradient id="url-rm" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#9b7bf7" />
-                <stop offset="50%" stopColor="#5fb6ff" />
-                <stop offset="100%" stopColor="#86efac" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M0 27 C 110 4, 230 4, 333 27 S 560 50, 666 27 S 880 4, 1000 27"
-              fill="none"
-              stroke="url(#url-rm)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeDasharray="1 13"
-              opacity="0.65"
-            />
-          </svg>
+      {/* ── How it works — horizontal numbered rail ──────────────────────── */}
+      <section className="py-20 px-6">
+        <div className="max-w-[1000px] mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-14">
+            <div>
+              <p className="text-[11px] font-bold tracking-[0.14em] uppercase mb-3" style={{ color: ACCENT }}>
+                How it works
+              </p>
+              <h2 className="font-extrabold tracking-[-0.03em] text-[clamp(2rem,4.5vw,2.8rem)] text-[#111]">
+                Live in three steps
+              </h2>
+            </div>
+            <p className="text-[#555] leading-relaxed max-w-[340px] text-[0.95rem]">
+              Sign in, shorten a URL, then watch the clicks — no redirect
+              middleware, no separate account.
+            </p>
+          </div>
 
-          <div className="relative z-[1] flex flex-col md:flex-row md:justify-between gap-10 md:gap-4">
-            {STEPS.map((s) => (
+          <div className="grid grid-cols-1 md:grid-cols-3">
+            {STEPS.map((s, i) => (
               <div
                 key={s.n}
-                className="flex-1 flex flex-col items-center text-center md:max-w-[240px] mx-auto"
+                className="relative px-0 md:px-8 py-8 md:py-0"
               >
-                <div
-                  className="w-[54px] h-[54px] rounded-full grid place-items-center font-extrabold text-lg"
-                  style={{
-                    color: s.accent,
-                    background: '#0e1117',
-                    border: `1px solid ${s.accent}55`,
-                    boxShadow: `0 0 0 6px #0b0d12, 0 8px 24px ${s.accent}33`,
-                  }}
-                >
-                  {s.n}
+                <div className="md:absolute md:-top-3 md:left-8 flex items-center gap-3 mb-4">
+                  <span className="text-[2.2rem] font-black leading-none" style={{ color: 'var(--accent-border)' }}>
+                    {s.n}
+                  </span>
+                  <span
+                    className="w-9 h-9 rounded-lg grid place-items-center"
+                    style={{ background: 'var(--accent-dim)', color: ACCENT }}
+                  >
+                    {s.icon}
+                  </span>
                 </div>
-                <h3 className="mt-4 text-[1.05rem] font-bold text-white">
-                  {s.title}
-                </h3>
-                <p className="mt-1.5 text-[0.88rem] leading-relaxed text-white/60">
-                  {s.body}
-                </p>
+                <h3 className="text-[1.05rem] font-bold text-[#111] mb-2 md:mt-10">{s.title}</h3>
+                <p className="text-[0.9rem] leading-relaxed text-[#555] max-w-[280px]">{s.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Feature grid ────────────────────────────────────────────────── */}
-      <section
-        id="features"
-        className="relative z-10 w-full max-w-6xl mx-auto px-4 py-14 md:py-20 scroll-mt-20"
-      >
-        <div className="text-center max-w-[620px] mx-auto mb-10 md:mb-14">
-          <h2 className="font-extrabold tracking-[-0.02em] leading-[1.05] text-[2.1rem] md:text-[3rem] text-white">
-            Everything a link should do
-          </h2>
-          <p className="mt-4 text-[1.05rem] leading-relaxed text-white/65">
-            Redirects, analytics, branding, and an API behind one dashboard —
-            so you ship the link and skip the plumbing.
-          </p>
-        </div>
+      {/* ── Feature bento ─────────────────────────────────────────────────── */}
+      <section className="py-20 px-6" style={{ background: 'var(--bg-cream)' }}>
+        <div className="max-w-[1120px] mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-14">
+            <h2 className="font-extrabold tracking-[-0.03em] text-[clamp(2rem,4.5vw,2.8rem)] text-[#111] max-w-[480px]">
+              Everything a link should do
+            </h2>
+            <p className="text-[#555] leading-relaxed max-w-[360px] text-[0.95rem]">
+              Redirects, analytics, branding, and an API behind one dashboard —
+              so you ship the link and skip the plumbing.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="p-6 rounded-[16px] transition-colors"
-              style={{
-                background: CARD_BG,
-                border: '1px solid rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(20px)',
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.borderColor = 'rgba(155,123,247,0.3)')
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')
-              }
-            >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {FEATURES.map((f) => (
               <div
-                className="inline-flex items-center justify-center w-[54px] h-[54px] rounded-[16px] mb-4"
-                style={{
-                  color: f.accent,
-                  background: `${f.accent}14`,
-                  border: `1px solid ${f.accent}40`,
-                  boxShadow: `0 8px 26px ${f.accent}26`,
+                key={f.title}
+                className="rounded-2xl p-7 flex flex-col gap-3 bg-white transition-all duration-200"
+                style={{ border: '1px solid #ede9e3' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--accent-border)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#ede9e3';
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                {f.icon}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg grid place-items-center shrink-0" style={{ color: ACCENT }}>
+                    {f.icon}
+                  </div>
+                  <h3 className="text-[1rem] font-bold text-[#111]">{f.title}</h3>
+                </div>
+                <p className="text-[0.875rem] leading-relaxed text-[#555] flex-1">{f.body}</p>
+                <Link
+                  href="/docs"
+                  className="text-[13px] font-semibold no-underline inline-flex items-center gap-1 self-start"
+                  style={{ color: ACCENT }}
+                >
+                  Learn more →
+                </Link>
               </div>
-              <h3 className="text-[1.05rem] font-bold mb-2 text-white">
-                {f.title}
-              </h3>
-              <p
-                className="text-[0.9rem] leading-relaxed text-white/62"
-                style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
-              >
-                {f.body}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ── API teaser ──────────────────────────────────────────────────── */}
-      <section className="relative z-10 w-full max-w-6xl mx-auto px-4 py-10 md:py-16">
-        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-          <div className="max-w-[400px] text-center md:text-left">
-            <p className="text-[0.8rem] font-bold tracking-[0.12em] uppercase text-[#b69aff] mb-2">
-              For developers
+      {/* ── Use cases ──────────────────────────────────────────────────────── */}
+      <section className="py-16 px-6">
+        <div className="max-w-[1000px] mx-auto flex flex-col md:flex-row md:items-center gap-8 md:gap-14">
+          <div className="md:max-w-[280px]">
+            <p className="text-[11px] font-bold tracking-[0.14em] uppercase mb-3" style={{ color: ACCENT }}>
+              Built for every link moment
             </p>
-            <h3 className="text-[1.6rem] md:text-[2rem] font-bold text-white tracking-tight mb-3">
-              One POST and you have a link
-            </h3>
-            <p className="text-[0.95rem] leading-relaxed text-white/62 mb-6">
-              Authenticate with a scoped API key, send the destination, and get
-              back the short URL plus its analytics handle. The same endpoints
-              that power the dashboard are open to you.
-            </p>
-            <Link
-              href="/docs/api"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] font-semibold text-[0.92rem] text-white no-underline transition-colors"
-              style={{ border: '1px solid rgba(255,255,255,0.16)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(155,123,247,0.5)';
-                e.currentTarget.style.background = 'rgba(155,123,247,0.06)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              Explore the API
-              <ArrowIcon />
-            </Link>
+            <h2 className="font-extrabold tracking-[-0.03em] text-[1.7rem] text-[#111]">
+              Every use case, one tool
+            </h2>
           </div>
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {USE_CASES.map((u) => (
+              <div
+                key={u}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13.5px] font-medium text-[#111]"
+                style={{ background: 'var(--bg-cream)' }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ACCENT }} />
+                {u}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-          {/* code artifact — non-interactive, framed as a terminal */}
-          <div
-            aria-hidden
-            className="w-full max-w-[440px] rounded-[16px] overflow-hidden select-none"
-            style={{
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: '#0b0d12',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.55)',
-            }}
-          >
+      {/* ── API teaser — flipped: code on the left, copy on the right ────────── */}
+      <section className="py-20 px-6" style={{ borderTop: '1px solid var(--line)' }}>
+        <div className="max-w-[1120px] mx-auto">
+          <div className="flex flex-col-reverse md:flex-row items-center gap-12">
+            {/* code artifact — light terminal, no dark chrome */}
             <div
-              className="flex items-center gap-2 px-3.5 py-2.5"
-              style={{
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                background: 'rgba(255,255,255,0.025)',
-              }}
+              aria-hidden
+              className="flex-1 w-full max-w-[520px] rounded-2xl overflow-hidden select-none"
+              style={{ border: '1px solid var(--line)', boxShadow: '0 12px 32px rgba(0,0,0,0.06)' }}
             >
-              <div className="flex gap-1.5">
-                {['#ff5f57', '#febc2e', '#28c840'].map((c) => (
-                  <span
-                    key={c}
-                    className="w-[9px] h-[9px] rounded-full"
-                    style={{ background: c, opacity: 0.55 }}
-                  />
-                ))}
-              </div>
-              <span
-                className="ml-1 text-[0.66rem] text-white/40"
-                style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+              <div
+                className="flex items-center gap-2 px-4 py-3"
+                style={{ background: 'var(--bg-cream)', borderBottom: '1px solid var(--line)' }}
               >
-                POST api.lixrl.com/v1/links
-              </span>
+                <span className="text-[11px] font-bold tracking-[0.06em] uppercase" style={{ color: ACCENT }}>
+                  POST
+                </span>
+                <span className="text-[12px] font-mono text-[#888]">api.lixrl.com/v1/links</span>
+              </div>
+              <pre className="p-5 text-[12.5px] leading-[1.8] overflow-x-auto m-0 font-mono bg-white">
+                <code>
+                  <span className="text-[#aaa]">{'$ '}</span>
+                  <span style={{ color: ACCENT }}>curl</span>
+                  <span className="text-[#333]">{' -X POST api.lixrl.com/v1/links \\'}</span>
+                  {'\n'}
+                  <span className="text-[#333]">{'    -H '}</span>
+                  <span className="text-[#b8860b]">{'"Authorization: Bearer $KEY"'}</span>
+                  <span className="text-[#333]">{' \\'}</span>
+                  {'\n'}
+                  <span className="text-[#333]">{'    -d '}</span>
+                  <span className="text-[#b8860b]">{'\'{"url":"https://elixpo.com","slug":"home"}\''}</span>
+                  {'\n\n'}
+                  <span className="text-[#aaa]">{'{'}</span>
+                  {'\n'}
+                  <span className="text-[#aaa]">{'  '}</span>
+                  <span className="text-[#7c3aed]">{'"short"'}</span>
+                  <span className="text-[#333]">{': '}</span>
+                  <span style={{ color: '#16a34a' }}>{'"https://lixrl.com/home"'}</span>
+                  <span className="text-[#333]">{','}</span>
+                  {'\n'}
+                  <span className="text-[#aaa]">{'  '}</span>
+                  <span className="text-[#7c3aed]">{'"clicks"'}</span>
+                  <span className="text-[#333]">{': '}</span>
+                  <span className="text-[#2563eb]">{'0'}</span>
+                  {'\n'}
+                  <span className="text-[#aaa]">{'}'}</span>
+                </code>
+              </pre>
             </div>
-            <pre
-              className="p-4 text-[0.78rem] leading-[1.7] overflow-x-auto m-0"
-              style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
-            >
-              <code>
-                <span className="text-white/40">{'$ '}</span>
-                <span className="text-[#86efac]">curl</span>
-                <span className="text-white/85">{' -X POST api.lixrl.com/v1/links \\'}</span>
-                {'\n'}
-                <span className="text-white/85">{'    -H '}</span>
-                <span className="text-[#fbbf24]">{'"Authorization: Bearer $KEY"'}</span>
-                <span className="text-white/85">{' \\'}</span>
-                {'\n'}
-                <span className="text-white/85">{'    -d '}</span>
-                <span className="text-[#fbbf24]">{'\'{"url":"https://elixpo.com","slug":"home"}\''}</span>
-                {'\n\n'}
-                <span className="text-white/40">{'{'}</span>
-                {'\n'}
-                <span className="text-white/40">{'  '}</span>
-                <span className="text-[#9b7bf7]">{'"short"'}</span>
-                <span className="text-white/85">{': '}</span>
-                <span className="text-[#86efac]">{'"https://lixrl.com/home"'}</span>
-                <span className="text-white/85">{','}</span>
-                {'\n'}
-                <span className="text-white/40">{'  '}</span>
-                <span className="text-[#9b7bf7]">{'"clicks"'}</span>
-                <span className="text-white/85">{': '}</span>
-                <span className="text-[#5fb6ff]">{'0'}</span>
-                {'\n'}
-                <span className="text-white/40">{'}'}</span>
-              </code>
-            </pre>
+
+            <div className="flex-1 md:max-w-[400px] text-center md:text-left">
+              <p className="text-[11px] font-bold tracking-[0.14em] uppercase mb-3" style={{ color: ACCENT }}>
+                For developers
+              </p>
+              <h3 className="text-[clamp(1.5rem,3vw,2rem)] font-extrabold tracking-[-0.025em] text-[#111] mb-3">
+                One POST and you have a link
+              </h3>
+              <p className="text-[0.95rem] leading-relaxed text-[#555] mb-6">
+                Authenticate with a scoped API key, send the destination, and
+                get back the short URL plus its analytics handle. The same
+                endpoints that power the dashboard are open to you.
+              </p>
+              <Link href="/docs/api" className="btn-glass" style={{ borderRadius: 8, padding: '9px 18px', fontSize: 14 }}>
+                Explore the API →
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Pricing teaser ──────────────────────────────────────────────── */}
-      <section className="relative z-10 w-full max-w-5xl mx-auto px-4 py-12 md:py-16">
-        <div className="text-center max-w-[560px] mx-auto">
-          <h2 className="font-extrabold tracking-[-0.02em] text-[1.9rem] md:text-[2.5rem] text-white">
-            Pricing that scales with you
-          </h2>
-          <p className="mt-3 text-[1rem] leading-relaxed text-white/65">
-            Start free, upgrade when you need branded domains and higher limits.
-          </p>
-          <div className="mt-7">
-            <Link
-              href="/pricing"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-[12px] font-semibold text-[0.95rem] text-white no-underline transition-colors"
-              style={{ border: '1px solid rgba(255,255,255,0.16)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(155,123,247,0.5)';
-                e.currentTarget.style.background = 'rgba(155,123,247,0.06)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              See pricing
-              <ArrowIcon />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Final CTA band ──────────────────────────────────────────────── */}
-      <section className="relative z-10 w-full max-w-5xl mx-auto px-4 py-12 md:py-16">
+      {/* ── Pricing teaser — inline banner, not centered block ────────────── */}
+      <section className="py-12 px-6" style={{ borderTop: '1px solid var(--line)' }}>
         <div
-          className="p-8 md:p-12 rounded-[20px] text-center"
-          style={{
-            background:
-              'linear-gradient(135deg, rgba(155,123,247,0.14) 0%, rgba(95,182,255,0.06) 100%)',
-            border: '1px solid rgba(155,123,247,0.25)',
-          }}
+          className="max-w-[1000px] mx-auto rounded-2xl px-8 py-7 flex flex-col sm:flex-row items-center justify-between gap-5"
+          style={{ background: 'var(--bg-cream)' }}
         >
-          <h2 className="text-[1.6rem] md:text-[2.1rem] font-bold text-white tracking-tight mb-3">
-            Mint your first short link
-          </h2>
-          <p className="text-white/65 max-w-[520px] mx-auto mb-7">
-            Sign in with your Elixpo account, shorten a URL, and grab an API key
-            — free tier, no credit card.
-          </p>
-          <Link
-            href="/api/auth/login"
-            className="inline-flex items-center gap-2 px-7 py-3 rounded-[12px] font-semibold text-base text-white no-underline transition-all"
-            style={{
-              background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-              boxShadow: '0 8px 24px rgba(155,123,247,0.35)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background =
-                'linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)';
-              e.currentTarget.style.boxShadow =
-                '0 12px 32px rgba(155,123,247,0.5)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background =
-                'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)';
-              e.currentTarget.style.boxShadow =
-                '0 8px 24px rgba(155,123,247,0.35)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            Start free
+          <div className="text-center sm:text-left">
+            <h2 className="font-extrabold tracking-[-0.02em] text-[1.4rem] text-[#111] mb-1">
+              Pricing that scales with you
+            </h2>
+            <p className="text-[0.9rem] text-[#555]">
+              Start free, upgrade when you need branded domains and higher limits.
+            </p>
+          </div>
+          <Link href="/pricing" className="btn-accent shrink-0">
+            See pricing
             <ArrowIcon />
           </Link>
         </div>
       </section>
 
-      <div className="relative z-10">
-        <Footer />
+      {/* ── Final CTA — light split panel instead of dark gradient band ──── */}
+      <div className="px-6 pb-20 pt-4">
+        <div
+          className="max-w-[1000px] mx-auto rounded-[20px] overflow-hidden grid grid-cols-1 md:grid-cols-[1.2fr_1fr]"
+          style={{ border: '1px solid var(--line)' }}
+        >
+          <div className="p-10 md:p-12">
+            <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-extrabold text-[#111] tracking-[-0.02em] mb-3">
+              Mint your first short link
+            </h2>
+            <p className="text-[0.95rem] text-[#555] max-w-[420px] mb-7 leading-relaxed">
+              Sign in with your Elixpo account, shorten a URL, and grab an API
+              key — free tier, no credit card.
+            </p>
+            <Link href="/api/auth/login" className="btn-accent">
+              Sign in with Elixpo
+              <ArrowIcon />
+            </Link>
+          </div>
+          <div className="hidden md:flex items-center justify-center p-10" style={{ background: '#16192a' }}>
+            <div className="text-center">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-white/40 mb-2">Free tier</p>
+              <p className="text-white text-[2.6rem] font-black leading-none">
+                $0<span className="text-base font-bold text-white/40">/mo</span>
+              </p>
+              <p className="text-white/50 text-[13px] mt-2">No credit card</p>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

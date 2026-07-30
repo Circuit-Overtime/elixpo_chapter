@@ -33,8 +33,8 @@ export default function CopyButton({ value }: { value: string }) {
       onClick={handleCopy}
       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-white/85 transition-colors"
       style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.12)',
+        background: 'rgba(0,0,0,0.05)',
+        border: '1px solid rgba(0,0,0,0.12)',
       }}
     >
       {copied ? (
