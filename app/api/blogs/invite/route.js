@@ -80,13 +80,21 @@ export async function POST(request) {
     if (!invitee) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (invitee.id === blog.author_id) return NextResponse.json({ error: 'Cannot invite the blog author' }, { status: 400 });
 
-    // Cap collaborators at 10 (excluding the author). Re-inviting an existing
+    // Cap collaborators based on tier (excluding the author). Re-inviting an existing
     // collaborator just updates their role, so only block genuinely new ones.
+    const owner = await db.prepare('SELECT tier FROM users WHERE id = ?').bind(blog.author_id).first();
+    const ownerTier = owner?.tier || 'free';
+    const { getLimits } = await import('../../../../lib/tiers');
+    const limits = getLimits(ownerTier);
+
     const existing = await db.prepare('SELECT 1 FROM blog_co_authors WHERE blog_id = ? AND user_id = ?').bind(slugid, invitee.id).first();
     if (!existing) {
       const countRow = await db.prepare('SELECT COUNT(*) AS c FROM blog_co_authors WHERE blog_id = ?').bind(slugid).first();
-      if ((countRow?.c || 0) >= 10) {
-        return NextResponse.json({ error: 'A blog can have at most 10 collaborators.' }, { status: 400 });
+      if ((countRow?.c || 0) >= limits.coAuthorsPerBlog) {
+        return NextResponse.json({ 
+          error: `You can add up to ${limits.coAuthorsPerBlog} co-authors on the ${ownerTier} plan.`, 
+          upgrade: true 
+        }, { status: 400 });
       }
     }
 
@@ -105,7 +113,7 @@ export async function POST(request) {
       const { notify } = await import('../../../../lib/notify');
       const { getBlogCanonicalPath } = await import('../../../../lib/blogUrl');
       const path = await getBlogCanonicalPath(db, slugid);
-      const targetUrl = `${path}${path.includes('?') ? '&' : '?'}invite=${encodeURIComponent(slugid)}`;
+      const targetUrl = `\${path}\${path.includes('?') ? '&' : '?'}invite=\${encodeURIComponent(slugid)}`;
       await notify(db, {
         userId: invitee.id, type: 'blog_invite',
         actorId: session.userId, actorName: inviter?.display_name || inviter?.username,
