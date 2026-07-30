@@ -133,7 +133,7 @@ function renderBlocksToHTML(blocks) {
         const linkText = c.content ? inlineToHTML(c.content) : (c.text || c.href).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         return `<a href="${c.href}">${linkText || c.href}</a>`;
       }
-      let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>');
       if (!text) return '';
       const s = c.styles || {};
       if (s.bold) text = `<strong>${text}</strong>`;

@@ -1386,6 +1386,22 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         return;
       }
 
+      // If pasting exactly a single markdown link, convert it to an inline link directly
+      const mdLinkMatch = textData ? textData.trim().match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/) : null;
+      if (mdLinkMatch && !e.clipboardData.getData('text/html')) {
+        const [_, linkText, url] = mdLinkMatch;
+        e.preventDefault();
+        const tiptap = editor._tiptapEditor;
+        if (tiptap) {
+          const { state, view } = tiptap;
+          const { from } = state.selection;
+          const linkMark = state.schema.marks.link.create({ href: url });
+          const tr = state.tr.insertText(linkText, from).addMark(from, from + linkText.length, linkMark);
+          view.dispatch(tr);
+        }
+        return;
+      }
+
       // Check for plain text with markdown
       if (textData && looksLikeMarkdown(textData)) {
         // Only intercept if there's no HTML (which means it's raw markdown, not rich copy)
@@ -2790,7 +2806,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       )}
 
       {/* @ Mention menu */}
-      {showMentionMenu && mentionQuery && (
+      {showMentionMenu && (
         <div
           className="absolute z-[60]"
           style={{ top: mentionPos.top, left: mentionPos.left }}
