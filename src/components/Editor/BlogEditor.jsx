@@ -315,6 +315,60 @@ function analyzeLinkSelection(editor) {
   }
 }
 
+function getLinkRange(tiptap, pos, href) {
+  try {
+    const { state } = tiptap;
+    const $pos = state.doc.resolve(pos);
+    const blockStart = $pos.start();
+    const blockEnd = $pos.end();
+    
+    const linkNodes = [];
+    state.doc.nodesBetween(blockStart, blockEnd, (node, nodePos) => {
+      if (node.isText) {
+        const lm = node.marks.find(m => m.type.name === 'link' && m.attrs.href === href);
+        if (lm) {
+          linkNodes.push({
+            start: nodePos,
+            end: nodePos + node.nodeSize,
+            text: node.text
+          });
+        }
+      }
+    });
+
+    const initialNodeIndex = linkNodes.findIndex(n => pos >= n.start && pos <= n.end);
+    if (initialNodeIndex === -1) return null;
+
+    let lf = linkNodes[initialNodeIndex].start;
+    for (let i = initialNodeIndex - 1; i >= 0; i--) {
+      if (linkNodes[i].end === lf) {
+        lf = linkNodes[i].start;
+      } else {
+        break;
+      }
+    }
+
+    let lt = linkNodes[initialNodeIndex].end;
+    for (let i = initialNodeIndex + 1; i < linkNodes.length; i++) {
+      if (linkNodes[i].start === lt) {
+        lt = linkNodes[i].end;
+      } else {
+        break;
+      }
+    }
+
+    return {
+      from: lf,
+      to: lt,
+      text: state.doc.textBetween(lf, lt),
+      href
+    };
+  } catch {
+    return null;
+  }
+}
+
+
 // ── Slash menu items ──
 
 function getCustomSlashMenuItems(editor, callbacks = {}) {
@@ -2997,6 +3051,31 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           anchorEl={editorLinkPreview.preview.anchorEl}
           url={editorLinkPreview.preview.url}
           onClose={editorLinkPreview.hide}
+          onEdit={() => {
+            const anchorEl = editorLinkPreview.preview.anchorEl;
+            const url = editorLinkPreview.preview.url;
+            const tiptap = editor?._tiptapEditor;
+            if (tiptap && anchorEl) {
+              try {
+                const pos = tiptap.view.posAtDOM(anchorEl, 0);
+                const range = getLinkRange(tiptap, pos, url);
+                if (range) {
+                  const rect = anchorEl.getBoundingClientRect();
+                  setLinkEditor({
+                    anchorText: range.text,
+                    url: range.href,
+                    from: range.from,
+                    to: range.to,
+                    top: rect.bottom + 6,
+                    left: Math.max(8, Math.min(rect.left, window.innerWidth - 340)),
+                  });
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            }
+            editorLinkPreview.hide();
+          }}
         />
       )}
 
@@ -3026,16 +3105,21 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                     e.stopPropagation();
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      // Save the link
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
-                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
-                        const tr = state.tr
-                          .delete(linkEditor.from, linkEditor.to)
-                          .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
-                          .addMark(linkEditor.from, linkEditor.from + (linkEditor.anchorText || linkEditor.url).length, linkMark);
+                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url.trim() });
+                        const text = linkEditor.anchorText.trim() || linkEditor.url.trim();
+                        const tr = state.tr;
+                        const textNode = state.schema.text(text, [linkMark]);
+                        tr.replaceWith(linkEditor.from, linkEditor.to, textNode);
+                        try {
+                          const newPos = linkEditor.from + text.length;
+                          const selection = state.selection.constructor.create(tr.doc, newPos);
+                          tr.setSelection(selection);
+                        } catch {}
                         view.dispatch(tr);
+                        view.focus();
                       }
                       setLinkEditor(null);
                     }
@@ -3059,12 +3143,18 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
-                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
-                        const tr = state.tr
-                          .delete(linkEditor.from, linkEditor.to)
-                          .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
-                          .addMark(linkEditor.from, linkEditor.from + (linkEditor.anchorText || linkEditor.url).length, linkMark);
+                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url.trim() });
+                        const text = linkEditor.anchorText.trim() || linkEditor.url.trim();
+                        const tr = state.tr;
+                        const textNode = state.schema.text(text, [linkMark]);
+                        tr.replaceWith(linkEditor.from, linkEditor.to, textNode);
+                        try {
+                          const newPos = linkEditor.from + text.length;
+                          const selection = state.selection.constructor.create(tr.doc, newPos);
+                          tr.setSelection(selection);
+                        } catch {}
                         view.dispatch(tr);
+                        view.focus();
                       }
                       setLinkEditor(null);
                     }
@@ -3084,17 +3174,22 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                   const tiptap = editor._tiptapEditor;
                   if (tiptap) {
                     const { state, view } = tiptap;
-                    const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
-                    const text = linkEditor.anchorText || linkEditor.url;
-                    const tr = state.tr
-                      .delete(linkEditor.from, linkEditor.to)
-                      .insertText(text, linkEditor.from)
-                      .addMark(linkEditor.from, linkEditor.from + text.length, linkMark);
+                    const linkMark = state.schema.marks.link.create({ href: linkEditor.url.trim() });
+                    const text = linkEditor.anchorText.trim() || linkEditor.url.trim();
+                    const tr = state.tr;
+                    const textNode = state.schema.text(text, [linkMark]);
+                    tr.replaceWith(linkEditor.from, linkEditor.to, textNode);
+                    try {
+                      const newPos = linkEditor.from + text.length;
+                      const selection = state.selection.constructor.create(tr.doc, newPos);
+                      tr.setSelection(selection);
+                    } catch {}
                     view.dispatch(tr);
+                    view.focus();
                   }
                   setLinkEditor(null);
                 }}
-              >Save</button>
+              >Done</button>
             </div>
           </div>
         </>
