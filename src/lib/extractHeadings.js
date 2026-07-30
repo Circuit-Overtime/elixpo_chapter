@@ -1,5 +1,4 @@
 export function slugifyHeading(text) {
-  console.log(text, typeof text);
   return text
     .toLowerCase()
     .replace(/[^\w]+/g, '-')

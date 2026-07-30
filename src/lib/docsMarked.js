@@ -2,9 +2,10 @@ import { marked } from 'marked';
 import { slugifyHeading } from './extractHeadings';
 
 const renderer = new marked.Renderer();
-renderer.heading = (token ,text, level) => {
-  const id = slugifyHeading(token.text);
-  return `<h${level} id="${id}">${text}</h${level}>`;
+renderer.heading = function ({ tokens, depth }) {
+  const text = this.parser.parseInline(tokens);
+  const id = slugifyHeading(text.replace(/<[^>]*>/g, ''));
+  return `<h${depth} id="${id}">${text}</h${depth}>`;
 };
 marked.use({ renderer });
 
