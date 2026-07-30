@@ -1,0 +1,1 @@
+**LixEditor** is the block-based WYSIWYG editor that powers LixBlogs. It is built on BlockNote + React, ships a custom block schema (image, equation, mentions, tabs, table of contents), and is real-time-collaboration ready via Yjs. This page documents the developer API.
