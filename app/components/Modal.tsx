@@ -151,7 +151,7 @@ export default function Modal({
         aria-labelledby={title ? 'modal-title' : undefined}
         aria-describedby={description ? 'modal-description' : undefined}
         tabIndex={-1}
-        className="relative w-full rounded-2xl outline-none"
+        className="theme-light relative w-full rounded-2xl outline-none"
         style={{
           maxWidth: SIZE_MAX_WIDTH[size],
           background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
@@ -275,10 +275,10 @@ export function ConfirmDialog({
           type="button"
           onClick={onClose}
           disabled={loading}
-          className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium text-[#555] transition-colors"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(0,0,0,0.04)',
+            border: '1px solid rgba(0,0,0,0.12)',
           }}
         >
           {cancelLabel}

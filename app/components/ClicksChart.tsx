@@ -80,14 +80,14 @@ export default function ClicksChart({ data, height = 200, compact = false }: Pro
                   x2={w - PAD_R}
                   y1={y}
                   y2={y}
-                  stroke="rgba(255,255,255,0.06)"
+                  stroke="rgba(0,0,0,0.08)"
                   strokeWidth={1}
                   strokeDasharray={i === 0 ? '0' : '3 3'}
                 />
                 <text
                   x={PAD_L - 6}
                   y={y + 3}
-                  fill="rgba(255,255,255,0.4)"
+                  fill="rgba(0,0,0,0.45)"
                   fontSize="10"
                   textAnchor="end"
                   fontFamily="var(--font-geist-mono), monospace"
@@ -125,7 +125,7 @@ export default function ClicksChart({ data, height = 200, compact = false }: Pro
                 width={barW}
                 height={p.count === 0 ? 2 : h}
                 rx={2}
-                fill={p.count === 0 ? 'rgba(255,255,255,0.08)' : 'url(#cc-bar)'}
+                fill={p.count === 0 ? 'rgba(0,0,0,0.08)' : 'url(#cc-bar)'}
                 style={{
                   transition: 'filter 0.15s ease',
                   filter: isHovered ? 'brightness(1.25)' : 'none',
@@ -143,7 +143,7 @@ export default function ClicksChart({ data, height = 200, compact = false }: Pro
                 key={`xl-${p.date}`}
                 x={PAD_L + i * slotW + slotW / 2}
                 y={height - 10}
-                fill="rgba(255,255,255,0.45)"
+                fill="rgba(0,0,0,0.45)"
                 fontSize="10"
                 textAnchor="middle"
                 fontFamily="var(--font-geist-mono), monospace"
