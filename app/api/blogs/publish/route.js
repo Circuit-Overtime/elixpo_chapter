@@ -15,7 +15,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt, slug: requestedSlug, collectionId, secret } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverUrl, coverPos, coverZoom, status, lastKnownUpdatedAt, slug: requestedSlug, collectionId, secret, member_only } = body;
   const storedCover = validCoverUrl(coverUrl);
   const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
   const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
@@ -62,7 +62,7 @@ export async function POST(request) {
     const { excerptFromBlocks } = await import('../../../../lib/excerpt');
     const excerpt = editorContent ? excerptFromBlocks(editorContent) : '';
 
-    const existing = await db.prepare('SELECT id, author_id, status, published_as, slug, secret FROM blogs WHERE id = ?').bind(slugid).first();
+    const existing = await db.prepare('SELECT id, author_id, status, published_as, slug, secret, member_only FROM blogs WHERE id = ?').bind(slugid).first();
 
     // Secret mode locks on first publish. While the post is still a draft the author
     // may toggle it freely; once it has been public even once the flag is frozen.
@@ -73,6 +73,16 @@ export async function POST(request) {
     const finalSecret = existing
       ? (existing.status === 'draft' ? requestedSecret : (existing.secret ? 1 : 0))
       : requestedSecret;
+
+    const me = await db.prepare('SELECT tier FROM users WHERE id = ?').bind(session.userId).first();
+    const { getLimits } = await import('../../../../lib/tiers');
+    const limits = getLimits(me?.tier);
+
+    const requestedMemberOnly = (member_only === true || member_only === 1) ? 1 : 0;
+    if (requestedMemberOnly && !limits.canMarkMemberOnly) {
+      return NextResponse.json({ error: 'Free tier authors cannot mark posts as member-only' }, { status: 403 });
+    }
+    const finalMemberOnly = limits.canMarkMemberOnly ? requestedMemberOnly : (existing?.member_only || 0);
 
     // Is the requester the OWNER? (personal author, or org admin/owner.) Only the
     // owner may change a slug — collaborators (editors) cannot.
@@ -150,10 +160,10 @@ export async function POST(request) {
       let query = `
         UPDATE blogs SET title = ?, subtitle = ?, slug = ?, content = ?, excerpt = ?, published_as = ?,
           collection_id = ?, status = ?, page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?,
-          read_time_minutes = ?, secret = ?, updated_at = ?
+          read_time_minutes = ?, secret = ?, member_only = ?, updated_at = ?
       `;
       const params = [title, subtitle || '', slug, compressedContent, excerpt, publishAs || 'personal',
-        finalCollectionId, targetStatus, pageEmoji || '', storedCover, posX, posY, zoom, readTime, finalSecret, now];
+        finalCollectionId, targetStatus, pageEmoji || '', storedCover, posX, posY, zoom, readTime, finalSecret, finalMemberOnly, now];
 
       if (publishedAt) {
         query += ', published_at = ?';
@@ -167,12 +177,12 @@ export async function POST(request) {
       // Create and publish in one step
       await db.prepare(`
         INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, collection_id, status,
-          page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, read_time_minutes, secret, created_at, updated_at, published_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, read_time_minutes, secret, member_only, created_at, updated_at, published_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         slugid, slug, title, subtitle || '', compressedContent, excerpt,
         session.userId, publishAs || 'personal', finalCollectionId, targetStatus,
-        pageEmoji || '', storedCover, posX, posY, zoom, readTime, finalSecret, now, now,
+        pageEmoji || '', storedCover, posX, posY, zoom, readTime, finalSecret, finalMemberOnly, now, now,
         (targetStatus === 'published' || targetStatus === 'unlisted') ? now : null
       ).run();
     }
