@@ -33,6 +33,7 @@ import { MentionInline } from './blocks/MentionInline';
 import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
 import { InlineButton } from './blocks/InlineButton';
+import { normalizeUrl } from '../../utils/linkHelper';
 
 // AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
 // are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
@@ -738,10 +739,12 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
       const href = link.getAttribute('href');
-      if (href && href.startsWith('http')) {
+      if (href) {
+        const normalized = normalizeUrl(href);
+        if (normalized.startsWith('/') || normalized.startsWith('#')) return;
         e.preventDefault();
         e.stopPropagation();
-        window.open(href, '_blank', 'noopener,noreferrer');
+        window.open(normalized, '_blank', 'noopener,noreferrer');
       }
     };
 
@@ -875,11 +878,12 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
 
       // Check for link syntax: [text](url)
-      const match = textBefore.match(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+      const match = textBefore.match(/\[([^\]]+)\]\(([^)\s]+)\)$/);
       if (match) {
         const [fullMatch, linkText, url] = match;
         const from = $from.pos - fullMatch.length;
-        const linkMark = state.schema.marks.link.create({ href: url });
+        const normalizedUrl = normalizeUrl(url);
+        const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
         const tr = state.tr
           .delete(from, $from.pos)
           .insertText(linkText, from)
@@ -3030,7 +3034,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
-                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
+                        const normalizedUrl = normalizeUrl(linkEditor.url);
+                        const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
                         const tr = state.tr
                           .delete(linkEditor.from, linkEditor.to)
                           .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
@@ -3059,7 +3064,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
-                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
+                        const normalizedUrl = normalizeUrl(linkEditor.url);
+                        const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
                         const tr = state.tr
                           .delete(linkEditor.from, linkEditor.to)
                           .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
@@ -3084,7 +3090,8 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                   const tiptap = editor._tiptapEditor;
                   if (tiptap) {
                     const { state, view } = tiptap;
-                    const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
+                    const normalizedUrl = normalizeUrl(linkEditor.url);
+                    const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
                     const text = linkEditor.anchorText || linkEditor.url;
                     const tr = state.tr
                       .delete(linkEditor.from, linkEditor.to)
