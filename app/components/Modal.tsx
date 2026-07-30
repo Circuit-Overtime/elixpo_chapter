@@ -137,7 +137,7 @@ export default function Modal({
         className="absolute inset-0 cursor-default"
         onClick={handleBackdropClick}
         style={{
-          background: 'rgba(8, 9, 14, 0.7)',
+          background: 'rgba(17, 17, 17, 0.28)',
           backdropFilter: 'blur(8px)',
           border: 'none',
         }}
@@ -154,11 +154,9 @@ export default function Modal({
         className="relative w-full rounded-2xl outline-none"
         style={{
           maxWidth: SIZE_MAX_WIDTH[size],
-          background:
-            'linear-gradient(135deg, rgba(28,30,40,0.95) 0%, rgba(18,20,28,0.95) 100%)',
-          border: '1px solid rgba(155,123,247,0.22)',
-          boxShadow:
-            '0 40px 120px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset',
+          background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
+          border: '1px solid rgba(229,57,53,0.22)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.18)',
           animation: 'modalDialogIn 220ms cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
@@ -166,13 +164,13 @@ export default function Modal({
         {(title || !hideClose) && (
           <div
             className="flex items-start justify-between gap-4 px-6 py-5"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}
           >
             <div className="flex-1 min-w-0">
               {title && (
                 <h2
                   id="modal-title"
-                  className="text-[1.05rem] font-bold text-white tracking-tight"
+                  className="text-[1.05rem] font-bold text-[#111] tracking-tight"
                 >
                   {title}
                 </h2>
@@ -180,7 +178,7 @@ export default function Modal({
               {description && (
                 <p
                   id="modal-description"
-                  className="text-sm text-white/55 mt-1 leading-relaxed"
+                  className="text-sm text-[#555] mt-1 leading-relaxed"
                 >
                   {description}
                 </p>
@@ -191,11 +189,11 @@ export default function Modal({
                 type="button"
                 onClick={onClose}
                 aria-label="Close dialog"
-                className="flex-shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-lg text-white/55 hover:text-white transition-colors"
+                className="flex-shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-lg text-[#555] hover:text-[#111] transition-colors"
                 style={{ background: 'transparent', border: 'none' }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.background =
-                    'rgba(255,255,255,0.06)')
+                    'rgba(0,0,0,0.05)')
                 }
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.background = 'transparent')
@@ -293,10 +291,10 @@ export function ConfirmDialog({
           style={{
             background: danger
               ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
-              : 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+              : 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
             boxShadow: danger
               ? '0 4px 14px rgba(239,68,68,0.4)'
-              : '0 4px 14px rgba(155,123,247,0.4)',
+              : '0 4px 14px rgba(229,57,53,0.25)',
             opacity: loading ? 0.6 : 1,
           }}
         >

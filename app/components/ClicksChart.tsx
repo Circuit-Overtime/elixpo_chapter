@@ -18,8 +18,8 @@ const PAD_L = 40;   // left padding for y-axis labels
 const PAD_R = 12;
 const PAD_T = 10;
 const PAD_B = 28;   // bottom padding for x-axis labels
-const ACCENT = '#9b7bf7';
-const ACCENT_DEEP = '#7c5cff';
+const ACCENT = '#e53935';
+const ACCENT_DEEP = '#c62828';
 
 /**
  * Time-series click chart. SVG, no library deps, hover tooltip via
@@ -168,17 +168,17 @@ export default function ClicksChart({ data, height = 200, compact = false }: Pro
           <div
             className="rounded-md px-2 py-1 text-center"
             style={{
-              background: 'rgba(11,13,18,0.92)',
-              border: '1px solid rgba(155,123,247,0.4)',
-              boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
+              background: 'rgba(255,255,255,0.98)',
+              border: '1px solid rgba(229,57,53,0.3)',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
             }}
           >
-            <div className="text-[0.6rem] uppercase tracking-wider text-white/45">
+            <div className="text-[0.6rem] uppercase tracking-wider text-[#777]">
               {formatLong(data[hover].date)}
             </div>
-            <div className="text-[0.95rem] font-bold text-white tabular-nums">
+            <div className="text-[0.95rem] font-bold text-[#111] tabular-nums">
               {data[hover].count}{' '}
-              <span className="text-[0.65rem] font-medium text-white/55">
+              <span className="text-[0.65rem] font-medium text-[#666]">
                 click{data[hover].count === 1 ? '' : 's'}
               </span>
             </div>
