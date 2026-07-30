@@ -26,6 +26,9 @@ export async function POST(request) {
     if (!file || !(file instanceof File)) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
+    if (mediaType === 'cover' && !blogId) {
+      return NextResponse.json({ error: 'Missing blogId for cover upload' }, { status: 400 });
+    }
 
     // Static-image allowlist enforcement. Anything outside the canonical
     // mime list is rejected here regardless of caller — animated GIFs,

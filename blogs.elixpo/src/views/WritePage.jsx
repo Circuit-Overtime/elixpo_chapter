@@ -432,6 +432,7 @@ export default function WritePage({ slugid }) {
   const [showPublishMenu, setShowPublishMenu] = useState(false);
   const [showCoverModal, setShowCoverModal] = useState(false);
   const [coverCropSrc, setCoverCropSrc] = useState(null); // device image awaiting crop+stylise
+  const [coverUploadError, setCoverUploadError] = useState('');
   const [coverUrlMode, setCoverUrlMode] = useState(false);
   const [coverUrlInput, setCoverUrlInput] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -1049,28 +1050,47 @@ export default function WritePage({ slugid }) {
   // Upload cover image blob to Cloudinary → set coverPreview to permanent URL
   const uploadCover = useCallback(async (blob) => {
     const task = (async () => {
-      const formData = new FormData();
-      formData.append('file', blob, `cover_${blogId}.webp`);
-      formData.append('type', 'cover');
-      if (blogId) formData.append('blogId', blogId);
-      const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
-      const responseText = await res.text();
-      let data = {};
-      try { data = responseText ? JSON.parse(responseText) : {}; } catch {}
-      if (!res.ok || !data.url) {
-        throw new Error(data.error || responseText || `Cover upload failed (${res.status})`);
+      setCoverUploadError('');
+
+      // Cloudflare can occasionally return an HTML 502/503/504 before the
+      // route's JSON error handling runs. Covers use a deterministic public id
+      // with overwrite enabled, so retrying the same payload is idempotent.
+      let lastError;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          // Build a fresh multipart body for every attempt; some runtimes mark
+          // request bodies as consumed after the first fetch.
+          const formData = new FormData();
+          formData.append('file', blob, `cover_${blogId}.webp`);
+          formData.append('type', 'cover');
+          if (blogId) formData.append('blogId', blogId);
+          const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
+          const responseText = await res.text();
+          let data = {};
+          try { data = responseText ? JSON.parse(responseText) : {}; } catch {}
+          if (res.ok && data.url) {
+            draftDataRef.current = { ...draftDataRef.current, coverPreview: data.url };
+            setCoverPreview(data.url);
+            return data.url;
+          }
+          const isHtmlError = /^\s*<!doctype html|^\s*<html/i.test(responseText);
+          const message = data.error || (isHtmlError ? `Upload gateway unavailable (${res.status})` : responseText.slice(0, 500)) || `Cover upload failed (${res.status})`;
+          lastError = new Error(message);
+          if (![502, 503, 504].includes(res.status)) break;
+        } catch (err) {
+          lastError = err;
+          if (attempt === 2) break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500 * (2 ** attempt)));
       }
-      // Keep imperative saves/publishes in sync even before React has committed
-      // the state update and run the draftDataRef effect.
-      draftDataRef.current = { ...draftDataRef.current, coverPreview: data.url };
-      setCoverPreview(data.url);
-      return data.url;
+      throw lastError || new Error('Cover upload failed');
     })();
     coverUploadRef.current = task;
     try {
       return await task;
     } catch (err) {
       console.error('Cover upload failed:', err);
+      setCoverUploadError(err?.message || 'Cover upload failed. Please try again.');
       return null;
     } finally {
       if (coverUploadRef.current === task) coverUploadRef.current = null;
@@ -1321,16 +1341,15 @@ export default function WritePage({ slugid }) {
         // Redirect to published blog. Suppress the beforeunload leave-prompt —
         // state updates above haven't flushed yet, so the handler would still
         // see hasUnsavedEdits=true and prompt. Keep the overlay up through nav.
-        if (data.url) {
-          // In a collab session: signal the other editors that the blog just
-          // published so they're synced and taken to the published view too.
-          try {
-            collabConfig?.provider?.awareness?.setLocalStateField('lixPublished', { url: data.url, at: Date.now() });
-          } catch {}
-          bypassUnloadRef.current = true;
-          window.location.href = data.url;
-          return;
-        }
+        const destination = data.url || publishedUrl;
+        // In a collab session: signal the other editors that the blog just
+        // published so they're synced and taken to the published view too.
+        try {
+          collabConfig?.provider?.awareness?.setLocalStateField('lixPublished', { url: destination, at: Date.now() });
+        } catch {}
+        bypassUnloadRef.current = true;
+        window.location.assign(destination);
+        return;
       }
     } catch { /* silent */ }
     setPublishing(false);
@@ -2646,6 +2665,31 @@ export default function WritePage({ slugid }) {
               <polyline points="20 6 9 17 4 12" />
             </svg>
             <span className="text-[13px] text-green-300 font-medium">Saved to cloud</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Cover upload failure — keep the previous cover and make retry guidance visible. */}
+      <AnimatePresence>
+        {coverUploadError && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl max-w-[min(92vw,520px)]"
+            style={{ backgroundColor: 'var(--card-bg)', border: '1px solid rgba(248,113,113,0.35)', color: 'var(--text-primary)' }}
+          >
+            <ion-icon name="cloud-offline-outline" style={{ fontSize: '19px', color: '#f87171', flexShrink: 0 }} />
+            <span className="text-[12px] leading-relaxed flex-1">{coverUploadError}</span>
+            <button
+              type="button"
+              onClick={() => setCoverUploadError('')}
+              className="w-7 h-7 rounded-md flex items-center justify-center"
+              style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-elevated)' }}
+              aria-label="Dismiss cover upload error"
+            >
+              <ion-icon name="close-outline" style={{ fontSize: '16px' }} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
