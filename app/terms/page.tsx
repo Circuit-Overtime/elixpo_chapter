@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import BackgroundAurora from '../components/BackgroundAurora';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 
@@ -16,8 +15,7 @@ const REPO_URL = 'https://github.com/elixpo/elixpourl';
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen flex flex-col text-[#f5f5f4] relative">
-      <BackgroundAurora variant="default" />
+    <div className="theme-light min-h-screen flex flex-col text-[#111] bg-white">
 
       <div className="relative z-10">
         <Navbar />
@@ -25,13 +23,13 @@ export default function TermsPage() {
 
       <main className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-16">
         <header className="mb-10">
-          <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#c8b6ff] mb-2">
+          <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#c62828] mb-2">
             Last updated · {LAST_UPDATED}
           </div>
           <h1
             className="text-[2.2rem] md:text-[3rem] font-extrabold leading-[1.08] tracking-tight"
             style={{
-              background: 'linear-gradient(180deg, #ffffff 0%, #c8c4d8 100%)',
+              background: 'linear-gradient(180deg, #111111 0%, #555555 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
@@ -63,7 +61,7 @@ export default function TermsPage() {
                 href={`${REPO_URL}/blob/main/LICENSE`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#c8b6ff] underline decoration-white/30 hover:decoration-white/70"
+                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
               >
                 LICENSE
               </a>
@@ -136,7 +134,7 @@ export default function TermsPage() {
               feature access. Current tier definitions are described on
               the <a
                 href="/pricing"
-                className="text-[#c8b6ff] underline decoration-white/30 hover:decoration-white/70"
+                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
               >
                 Pricing page
               </a>{' '}
@@ -152,7 +150,7 @@ export default function TermsPage() {
               or fitness for any particular purpose. See our{' '}
               <a
                 href="/api/health"
-                className="text-[#c8b6ff] underline decoration-white/30 hover:decoration-white/70"
+                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
               >
                 health endpoint
               </a>{' '}
@@ -190,7 +188,7 @@ export default function TermsPage() {
               Questions about these Terms? Email{' '}
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
-                className="text-[#c8b6ff] underline decoration-white/30 hover:decoration-white/70"
+                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
               >
                 {SUPPORT_EMAIL}
               </a>

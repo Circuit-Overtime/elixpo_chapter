@@ -112,7 +112,7 @@ export default function ShortenPage() {
   const slugHelper = (() => {
     switch (slugStatus.state) {
       case 'checking':
-        return { text: 'Checking availability…', color: 'rgba(255,255,255,0.45)' };
+        return { text: 'Checking availability…', color: 'rgba(0,0,0,0.45)' };
       case 'available':
         return { text: '✓ Available', color: '#86efac' };
       case 'taken':
@@ -120,7 +120,7 @@ export default function ShortenPage() {
       default:
         return {
           text: '3–32 chars. Letters, numbers, dash, underscore.',
-          color: 'rgba(255,255,255,0.4)',
+          color: 'rgba(0,0,0,0.4)',
         };
     }
   })();
@@ -159,10 +159,10 @@ export default function ShortenPage() {
               autoFocus
               className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-white placeholder-white/40 transition-colors"
               style={{
-                background: 'rgba(255,255,255,0.03)',
+                background: 'rgba(0,0,0,0.04)',
                 border: '1px solid rgba(255,255,255,0.1)',
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#9b7bf7')}
+              onFocus={(e) => (e.currentTarget.style.borderColor = '#e53935')}
               onBlur={(e) =>
                 (e.currentTarget.style.borderColor =
                   'rgba(255,255,255,0.1)')
@@ -191,7 +191,7 @@ export default function ShortenPage() {
                   placeholder="e.g. launch, blog-q1"
                   className="w-full px-3 py-2.5 pr-9 rounded-lg text-sm outline-none text-white placeholder-white/40 transition-colors font-mono"
                   style={{
-                    background: 'rgba(255,255,255,0.03)',
+                    background: 'rgba(0,0,0,0.04)',
                     border: `1px solid ${
                       slugStatus.state === 'taken'
                         ? 'rgba(239,68,68,0.45)'
@@ -202,7 +202,7 @@ export default function ShortenPage() {
                   }}
                   onFocus={(e) => {
                     if (slugStatus.state === 'idle' || slugStatus.state === 'checking') {
-                      e.currentTarget.style.borderColor = '#9b7bf7';
+                      e.currentTarget.style.borderColor = '#e53935';
                     }
                   }}
                   onBlur={(e) => {
@@ -216,7 +216,7 @@ export default function ShortenPage() {
                   <span
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2"
                     style={{
-                      borderColor: 'rgba(155,123,247,0.6)',
+                      borderColor: 'rgba(229,57,53,0.6)',
                       borderTopColor: 'transparent',
                       animation: 'spin 0.6s linear infinite',
                     }}
@@ -251,12 +251,12 @@ export default function ShortenPage() {
                 onChange={(e) => setExpiresAt(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-white transition-colors"
                 style={{
-                  background: 'rgba(255,255,255,0.03)',
+                  background: 'rgba(0,0,0,0.04)',
                   border: '1px solid rgba(255,255,255,0.1)',
                   colorScheme: 'dark',
                 }}
                 onFocus={(e) =>
-                  (e.currentTarget.style.borderColor = '#9b7bf7')
+                  (e.currentTarget.style.borderColor = '#e53935')
                 }
                 onBlur={(e) =>
                   (e.currentTarget.style.borderColor =
@@ -271,12 +271,12 @@ export default function ShortenPage() {
             <div
               className="mb-5 p-3 rounded-lg text-[0.78rem] leading-relaxed"
               style={{
-                background: 'rgba(155,123,247,0.06)',
-                border: '1px solid rgba(155,123,247,0.18)',
-                color: 'rgba(255,255,255,0.65)',
+                background: 'rgba(229,57,53,0.06)',
+                border: '1px solid rgba(229,57,53,0.18)',
+                color: 'rgba(0,0,0,0.65)',
               }}
             >
-              <span className="font-semibold text-[#b094ff]">Free plan</span> —
+              <span className="font-semibold text-[#e85a57]">Free plan</span> —
               auto-generated codes, no expiration. Upgrade for custom slugs and
               expirations.
             </div>
@@ -302,8 +302,8 @@ export default function ShortenPage() {
               disabled={loading}
               className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors"
               style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(0,0,0,0.05)',
+                border: '1px solid rgba(0,0,0,0.12)',
               }}
             >
               Cancel
@@ -318,8 +318,8 @@ export default function ShortenPage() {
               className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all"
               style={{
                 background:
-                  'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                boxShadow: '0 4px 14px rgba(155,123,247,0.4)',
+                  'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                boxShadow: '0 4px 14px rgba(229,57,53,0.4)',
                 opacity:
                   loading || !url || (isPro && slugStatus.state === 'taken')
                     ? 0.6
@@ -344,7 +344,7 @@ export default function ShortenPage() {
           className="p-4 rounded-xl mb-4 font-mono text-sm break-all"
           style={{
             background: 'rgba(0,0,0,0.45)',
-            border: '1px solid rgba(155,123,247,0.25)',
+            border: '1px solid rgba(229,57,53,0.25)',
             color: '#e8e8ed',
           }}
         >
@@ -356,8 +356,8 @@ export default function ShortenPage() {
             onClick={handleCopy}
             className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors inline-flex items-center gap-2"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(0,0,0,0.05)',
+              border: '1px solid rgba(0,0,0,0.12)',
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -373,8 +373,8 @@ export default function ShortenPage() {
             }}
             className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 transition-colors"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(0,0,0,0.05)',
+              border: '1px solid rgba(0,0,0,0.12)',
             }}
           >
             Shorten another
@@ -385,8 +385,8 @@ export default function ShortenPage() {
             className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
             style={{
               background:
-                'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-              boxShadow: '0 4px 14px rgba(155,123,247,0.4)',
+                'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+              boxShadow: '0 4px 14px rgba(229,57,53,0.4)',
             }}
           >
             Done

@@ -3,12 +3,10 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import BackgroundAurora from './components/BackgroundAurora';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-8 relative overflow-hidden">
-      <BackgroundAurora variant="default" />
+    <div className="theme-light min-h-screen flex flex-col items-center justify-center px-8 relative overflow-hidden bg-white">
 
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
