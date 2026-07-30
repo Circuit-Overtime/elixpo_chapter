@@ -118,16 +118,16 @@ function truncateSlug(s, max = 18) {
 }
 
 // ── Confirm Modal ──
-function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', onConfirm, onCancel, destructive = false }) {
+function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', thirdActionLabel, onThirdAction, onConfirm, onCancel, destructive = false, isConfirmLoading = false }) {
   // Close on Escape key
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    const handleKey = (e) => { if (e.key === 'Escape' && !isConfirmLoading) onCancel(); };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [onCancel]);
+  }, [onCancel, isConfirmLoading]);
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 editor-confirm-overlay" onClick={onCancel}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 editor-confirm-overlay" onClick={() => !isConfirmLoading && onCancel()}>
       <div
         className="w-full max-w-sm rounded-2xl p-6 editor-confirm-dialog"
         onClick={(e) => e.stopPropagation()}
@@ -149,19 +149,32 @@ function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', canc
           <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
         </div>
         <p className="text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-muted)', paddingLeft: '44px' }}>{description}</p>
-        <div className="flex items-center gap-3 justify-end">
+        <div className="flex flex-wrap items-center gap-3 justify-end">
+          {thirdActionLabel && (
+            <button
+              onClick={onThirdAction}
+              disabled={isConfirmLoading}
+              className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel mr-auto hover:text-red-500"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              {thirdActionLabel}
+            </button>
+          )}
           <button
             onClick={onCancel}
+            disabled={isConfirmLoading}
             className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel"
+            style={{ opacity: isConfirmLoading ? 0.5 : 1 }}
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 rounded-lg text-[13px] font-medium text-white transition-colors"
-            style={{ backgroundColor: destructive ? '#ef4444' : '#9b7bf7' }}
+            disabled={isConfirmLoading}
+            className="px-4 py-2 rounded-lg text-[13px] font-medium text-white transition-colors flex items-center gap-2"
+            style={{ backgroundColor: destructive ? '#ef4444' : '#9b7bf7', opacity: isConfirmLoading ? 0.7 : 1 }}
           >
-            {confirmLabel}
+            {isConfirmLoading ? 'Saving...' : confirmLabel}
           </button>
         </div>
       </div>
@@ -491,6 +504,7 @@ export default function WritePage({ slugid }) {
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [conflict, setConflict] = useState(null); // { message, currentVersion, status }
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [isSavingLeave, setIsSavingLeave] = useState(false);
   const [pendingLeaveUrl, setPendingLeaveUrl] = useState(null);
   const [showMdReplaceConfirm, setShowMdReplaceConfirm] = useState(false);
   const [pendingMdFile, setPendingMdFile] = useState(null);
@@ -2726,12 +2740,22 @@ export default function WritePage({ slugid }) {
       {/* Leave confirmation modal */}
       {showLeaveConfirm && (
         <EditorConfirmModal
-          title="Leave editor?"
-          description="You have unsaved changes. Your draft is saved locally, but cloud sync may be incomplete."
-          confirmLabel="Leave"
+          title="Unsaved Changes"
+          description="You have unsaved changes. Do you want to save them before leaving?"
+          confirmLabel="Save & leave"
           cancelLabel="Stay"
-          destructive
-          onConfirm={() => {
+          thirdActionLabel="Leave without saving"
+          isConfirmLoading={isSavingLeave}
+          onThirdAction={() => {
+            setHasUnsavedEdits(false);
+            setShowLeaveConfirm(false);
+            if (pendingLeaveUrl) window.location.href = pendingLeaveUrl;
+          }}
+          onConfirm={async () => {
+            setIsSavingLeave(true);
+            await syncToCloud();
+            setIsSavingLeave(false);
+            setHasUnsavedEdits(false);
             setShowLeaveConfirm(false);
             if (pendingLeaveUrl) window.location.href = pendingLeaveUrl;
           }}
