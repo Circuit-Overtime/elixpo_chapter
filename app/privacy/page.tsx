@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import BackgroundAurora from '../components/BackgroundAurora';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 
@@ -16,8 +15,7 @@ const SUPPORT_EMAIL = 'hello@elixpo.com';
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen flex flex-col text-[#f5f5f4] relative">
-      <BackgroundAurora variant="default" />
+    <div className="theme-light min-h-screen flex flex-col text-[#111] bg-white">
 
       <div className="relative z-10">
         <Navbar />
@@ -25,13 +23,13 @@ export default function PrivacyPage() {
 
       <main className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-16">
         <header className="mb-10">
-          <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#c8b6ff] mb-2">
+          <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#c62828] mb-2">
             Last updated · {LAST_UPDATED}
           </div>
           <h1
             className="text-[2.2rem] md:text-[3rem] font-extrabold leading-[1.08] tracking-tight"
             style={{
-              background: 'linear-gradient(180deg, #ffffff 0%, #c8c4d8 100%)',
+              background: 'linear-gradient(180deg, #111111 0%, #555555 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
@@ -96,7 +94,7 @@ export default function PrivacyPage() {
               ElixpoURL uses{' '}
               <a
                 href="https://accounts.elixpo.com"
-                className="text-[#c8b6ff] underline decoration-white/30 hover:decoration-white/70"
+                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
               >
                 Elixpo Accounts
               </a>{' '}
@@ -141,7 +139,7 @@ export default function PrivacyPage() {
               database provider; their{' '}
               <a
                 href="https://www.cloudflare.com/privacypolicy/"
-                className="text-[#c8b6ff] underline decoration-white/30 hover:decoration-white/70"
+                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
               >
                 privacy policy
               </a>{' '}
@@ -160,14 +158,14 @@ export default function PrivacyPage() {
               emailing{' '}
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
-                className="text-[#c8b6ff] underline decoration-white/30 hover:decoration-white/70"
+                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
               >
                 {SUPPORT_EMAIL}
               </a>
               , or revoke any API key from{' '}
               <Link
                 href="/profile/keys"
-                className="text-[#c8b6ff] underline decoration-white/30 hover:decoration-white/70"
+                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
               >
                 Profile → API Keys
               </Link>{' '}
@@ -189,7 +187,7 @@ export default function PrivacyPage() {
               Privacy questions? Email{' '}
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
-                className="text-[#c8b6ff] underline decoration-white/30 hover:decoration-white/70"
+                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
               >
                 {SUPPORT_EMAIL}
               </a>

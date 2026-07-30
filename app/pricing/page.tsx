@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import BackgroundAurora from '../components/BackgroundAurora';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import {
@@ -16,7 +15,7 @@ import {
   TIER_PRICING,
 } from '@/lib/types';
 
-const ACCENT = '#9b7bf7';
+const ACCENT = '#e53935';
 
 // Per-tier feature bullets, derived from the single source of truth so the
 // marketing copy can never drift from what the API actually enforces.
@@ -121,8 +120,7 @@ export default function PricingPage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col text-[#f5f5f4] relative">
-      <BackgroundAurora variant="default" />
+    <div className="theme-light min-h-screen flex flex-col text-[#111] bg-white">
 
       <div className="relative z-10">
         <Navbar />
@@ -133,7 +131,7 @@ export default function PricingPage() {
           <h1
             className="text-[2.2rem] md:text-[3.2rem] font-extrabold leading-[1.08] tracking-tight"
             style={{
-              background: 'linear-gradient(180deg, #ffffff 0%, #c8c4d8 100%)',
+              background: 'linear-gradient(180deg, #111111 0%, #555555 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
@@ -209,15 +207,15 @@ export default function PricingPage() {
                 style={{
                   // Current plan is greyed/dimmed — it's not an upgrade target.
                   background: isCurrent
-                    ? 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
+                    ? 'linear-gradient(135deg, rgba(0,0,0,0.04) 0%, rgba(250,250,250,0.9) 100%)'
                     : isPopular
-                      ? 'linear-gradient(135deg, rgba(155,123,247,0.16) 0%, rgba(95,182,255,0.05) 100%)'
-                      : 'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
+                      ? 'linear-gradient(135deg, rgba(229,57,53,0.16) 0%, rgba(95,182,255,0.05) 100%)'
+                      : 'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(250,250,250,0.92) 100%)',
                   border: isCurrent
-                    ? '1px solid rgba(255,255,255,0.06)'
+                    ? '1px solid rgba(0,0,0,0.08)'
                     : isPopular
-                      ? '1px solid rgba(155,123,247,0.45)'
-                      : '1px solid rgba(255,255,255,0.08)',
+                      ? '1px solid rgba(229,57,53,0.45)'
+                      : '1px solid rgba(0,0,0,0.10)',
                   backdropFilter: 'blur(20px)',
                   opacity: isCurrent ? 0.6 : 1,
                 }}
@@ -225,14 +223,14 @@ export default function PricingPage() {
                 {isCurrent ? (
                   <span
                     className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded-full"
-                    style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.2)' }}
+                    style={{ background: 'rgba(0,0,0,0.12)', color: 'rgba(0,0,0,0.8)', border: '1px solid rgba(0,0,0,0.2)' }}
                   >
                     Current plan
                   </span>
                 ) : isPopular ? (
                   <span
                     className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded-full text-white"
-                    style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)' }}
                   >
                     Most popular
                   </span>
@@ -298,26 +296,26 @@ export default function PricingPage() {
             style={{
               aspectRatio: '16 / 9',
               background:
-                'radial-gradient(120% 120% at 50% 0%, rgba(155,123,247,0.18) 0%, rgba(95,182,255,0.06) 40%, rgba(255,255,255,0.02) 100%)',
-              border: '1px solid rgba(155,123,247,0.28)',
+                'radial-gradient(120% 120% at 50% 0%, rgba(229,57,53,0.18) 0%, rgba(95,182,255,0.06) 40%, rgba(0,0,0,0.03) 100%)',
+              border: '1px solid rgba(229,57,53,0.28)',
             }}
           >
             {/* soft glow accent */}
             <div
               className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full"
-              style={{ background: 'radial-gradient(circle, rgba(155,123,247,0.22) 0%, transparent 65%)' }}
+              style={{ background: 'radial-gradient(circle, rgba(229,57,53,0.22) 0%, transparent 65%)' }}
             />
             <div className="relative z-10 flex flex-col items-center gap-4 max-w-[560px]">
               <span
                 className="text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1 rounded-full"
-                style={{ background: 'rgba(155,123,247,0.16)', color: '#c8b6ff', border: '1px solid rgba(155,123,247,0.35)' }}
+                style={{ background: 'rgba(229,57,53,0.16)', color: '#c62828', border: '1px solid rgba(229,57,53,0.35)' }}
               >
                 Enterprise
               </span>
               <h3
                 className="text-[1.5rem] md:text-[1.9rem] font-extrabold leading-tight"
                 style={{
-                  background: 'linear-gradient(180deg, #ffffff 0%, #c8c4d8 100%)',
+                  background: 'linear-gradient(180deg, #111111 0%, #555555 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
@@ -345,8 +343,8 @@ export default function PricingPage() {
                 href="mailto:hello@elixpo.com?subject=ElixpoURL%20Enterprise"
                 className="mt-1 inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-[12px] font-semibold text-sm text-white no-underline transition-all"
                 style={{
-                  background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                  boxShadow: '0 8px 24px rgba(155,123,247,0.35)',
+                  background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                  boxShadow: '0 8px 24px rgba(229,57,53,0.35)',
                 }}
               >
                 Contact team
@@ -377,7 +375,7 @@ function Toggle({
   return (
     <div
       className="inline-flex p-1 rounded-[12px] gap-1"
-      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+      style={{ background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.10)' }}
     >
       {options.map((o) => (
         <button
@@ -387,8 +385,8 @@ function Toggle({
           className="px-3.5 py-1.5 rounded-[9px] text-[0.82rem] font-semibold transition-all cursor-pointer border-none"
           style={
             value === o.value
-              ? { background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)', color: '#fff' }
-              : { background: 'transparent', color: 'rgba(255,255,255,0.6)' }
+              ? { background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)', color: '#fff' }
+              : { background: 'transparent', color: 'rgba(0,0,0,0.6)' }
           }
         >
           {o.label}
@@ -443,13 +441,13 @@ function CtaButton({
       style={{
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: !loaded ? 0.5 : 1,
-        color: isCurrentPlanCta ? 'rgba(255,255,255,0.4)' : filled ? '#fff' : 'rgba(255,255,255,0.9)',
+        color: isCurrentPlanCta ? 'rgba(0,0,0,0.4)' : filled ? '#fff' : 'rgba(0,0,0,0.9)',
         background: isCurrentPlanCta
-          ? 'rgba(255,255,255,0.05)'
+          ? 'rgba(0,0,0,0.06)'
           : filled
-            ? 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)'
+            ? 'linear-gradient(135deg, #e53935 0%, #c62828 100%)'
             : 'transparent',
-        boxShadow: filled && !disabled ? '0 6px 18px rgba(155,123,247,0.32)' : 'none',
+        boxShadow: filled && !disabled ? '0 6px 18px rgba(229,57,53,0.32)' : 'none',
         border: isCurrentPlanCta
           ? '1px solid rgba(255,255,255,0.1)'
           : filled

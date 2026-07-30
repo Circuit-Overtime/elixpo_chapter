@@ -17,11 +17,11 @@ export default function WebhooksPage() {
         className="p-5 rounded-xl"
         style={{
           background:
-            'linear-gradient(135deg, rgba(155,123,247,0.12) 0%, rgba(95,182,255,0.05) 100%)',
-          border: '1px solid rgba(155,123,247,0.25)',
+            'linear-gradient(135deg, rgba(229,57,53,0.12) 0%, rgba(95,182,255,0.05) 100%)',
+          border: '1px solid rgba(229,57,53,0.25)',
         }}
       >
-        <div className="text-[11px] font-bold tracking-wider uppercase text-[#c8b6ff] mb-1">
+        <div className="text-[11px] font-bold tracking-wider uppercase text-[#c62828] mb-1">
           Coming soon
         </div>
         <p className={`${P} mb-0`}>

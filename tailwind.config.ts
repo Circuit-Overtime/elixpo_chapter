@@ -9,36 +9,35 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          deep: '#0b0d12',
-          card: 'rgba(20, 22, 30, 0.8)',
-          glass: 'rgba(255,255,255,0.05)',
-          'glass-hover': 'rgba(255,255,255,0.08)',
-          overlay: 'rgba(11, 13, 18, 0.95)',
+          deep: '#ffffff',
+          card: '#ffffff',
+          glass: '#f8f8f8',
+          'glass-hover': '#f2f2f2',
+          overlay: 'rgba(255,255,255,0.96)',
         },
 
-        // Single accent palette — purple, matches the rest of the Elixpo
-        // ecosystem (accounts.elixpo, elixpo.com).
+        // Landing-page accent palette.
         accent: {
-          main: '#9b7bf7',
-          deep: '#7c5cff',
-          light: '#b094ff',
-          dim: 'rgba(155, 123, 247, 0.15)',
-          border: 'rgba(155, 123, 247, 0.3)',
-          glow: 'rgba(155, 123, 247, 0.45)',
+          main: '#e53935',
+          deep: '#c62828',
+          light: '#e85a57',
+          dim: 'rgba(229, 57, 53, 0.1)',
+          border: 'rgba(229, 57, 53, 0.25)',
+          glow: 'rgba(229, 57, 53, 0.25)',
         },
 
         text: {
-          primary: '#f5f5f4',
-          secondary: 'rgba(245, 245, 244, 0.8)',
-          muted: 'rgba(245, 245, 244, 0.7)',
-          subtle: 'rgba(255, 255, 255, 0.5)',
-          disabled: 'rgba(255, 255, 255, 0.4)',
+          primary: '#111111',
+          secondary: '#555555',
+          muted: '#666666',
+          subtle: '#888888',
+          disabled: '#999999',
         },
         border: {
-          light: 'rgba(255, 255, 255, 0.1)',
-          medium: 'rgba(255, 255, 255, 0.15)',
-          strong: 'rgba(255, 255, 255, 0.2)',
-          hover: 'rgba(155, 123, 247, 0.45)',
+          light: '#e8e8e8',
+          medium: '#dddddd',
+          strong: '#cccccc',
+          hover: 'rgba(229, 57, 53, 0.35)',
         },
       },
       fontFamily: {
@@ -56,18 +55,18 @@ const config: Config = {
         ],
       },
       boxShadow: {
-        card: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-        'card-hover': '0 20px 40px -10px rgba(0,0,0,0.4)',
-        'glow-accent': '0 0 20px rgba(155, 123, 247, 0.45)',
-        button: '0 8px 24px rgba(155, 123, 247, 0.35)',
+        card: '0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.05)',
+        'card-hover': '0 12px 28px rgba(0,0,0,0.08)',
+        'glow-accent': '0 0 20px rgba(229, 57, 53, 0.18)',
+        button: '0 8px 24px rgba(229, 57, 53, 0.2)',
       },
       backgroundImage: {
         'gradient-card':
-          'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+          'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
         'gradient-accent':
-          'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
+          'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
         'gradient-accent-hover':
-          'linear-gradient(135deg, #b094ff 0%, #8a6dff 100%)',
+          'linear-gradient(135deg, #e85a57 0%, #d32f2f 100%)',
       },
     },
   },

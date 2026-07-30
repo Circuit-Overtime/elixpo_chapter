@@ -12,8 +12,8 @@ import {
 
 const CARD_STYLE = {
   background:
-    'linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)',
-  border: '1px solid rgba(255,255,255,0.08)',
+    'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(250,250,250,0.92) 100%)',
+  border: '1px solid rgba(0,0,0,0.10)',
   backdropFilter: 'blur(20px)',
 } as const;
 
@@ -102,9 +102,9 @@ export default async function SubscriptionPage({
             <span
               className="inline-flex items-center px-2.5 py-1 rounded-md text-[0.78rem] font-bold uppercase tracking-wider"
               style={{
-                background: 'rgba(155,123,247,0.18)',
-                color: '#c8b6ff',
-                border: '1px solid rgba(155,123,247,0.4)',
+                background: 'rgba(229,57,53,0.18)',
+                color: '#c62828',
+                border: '1px solid rgba(229,57,53,0.4)',
               }}
             >
               {user.tier}
@@ -161,8 +161,8 @@ export default async function SubscriptionPage({
               href="/pricing"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-semibold text-white no-underline"
               style={{
-                background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+                background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
               }}
             >
               Upgrade plan
@@ -176,8 +176,8 @@ export default async function SubscriptionPage({
                 href="/pricing"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-semibold text-white no-underline"
                 style={{
-                  background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                  boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+                  background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                  boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
                 }}
               >
                 Change plan
@@ -185,7 +185,7 @@ export default async function SubscriptionPage({
               <a
                 href="mailto:hello@elixpo.com?subject=ElixpoURL%20cancel%20subscription"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-medium text-white/80 no-underline"
-                style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+                style={{ border: '1px solid rgba(0,0,0,0.14)' }}
               >
                 Cancel subscription
               </a>
@@ -196,8 +196,8 @@ export default async function SubscriptionPage({
               href="/pricing"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-semibold text-white no-underline"
               style={{
-                background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)',
-                boxShadow: '0 4px 14px rgba(155,123,247,0.35)',
+                background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                boxShadow: '0 4px 14px rgba(229,57,53,0.35)',
               }}
             >
               Resubscribe
@@ -207,7 +207,7 @@ export default async function SubscriptionPage({
             <a
               href="mailto:hello@elixpo.com?subject=ElixpoURL%20Enterprise"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-sm font-medium text-white/80 no-underline"
-              style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+              style={{ border: '1px solid rgba(0,0,0,0.14)' }}
             >
               Contact your account manager
             </a>
@@ -229,7 +229,7 @@ export default async function SubscriptionPage({
             </span>
           </div>
           {limits.maxUrls !== -1 && (
-            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.08)' }}>
               <div
                 className="h-full rounded-full"
                 style={{
@@ -239,7 +239,7 @@ export default async function SubscriptionPage({
                       ? 'linear-gradient(90deg,#ef4444,#dc2626)'
                       : urlPct >= 80
                         ? 'linear-gradient(90deg,#fbbf24,#f59e0b)'
-                        : 'linear-gradient(90deg,#9b7bf7,#7c5cff)',
+                        : 'linear-gradient(90deg,#e53935,#c62828)',
                 }}
               />
             </div>
@@ -265,7 +265,7 @@ export default async function SubscriptionPage({
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 list-none p-0">
             {planFeatures(user.tier as SellableTier).map((f) => (
               <li key={f} className="text-[0.88rem] text-white/75 flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#9b7bf7' }} />
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#e53935' }} />
                 {f}
               </li>
             ))}

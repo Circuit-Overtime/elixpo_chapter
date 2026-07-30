@@ -28,6 +28,18 @@ body {
   overflow-x: hidden;
 }
 
+/* The authenticated app and documentation share the landing page's light
+   surface. Old route markup retains a few dark-theme utility classes, so
+   these scoped compatibility rules keep legacy content readable while the
+   routes use the new white cards and red accent. */
+.theme-light .text-white { color: #111111; }
+.theme-light [class*="text-white/"] { color: #555555; }
+.theme-light input.text-white,
+.theme-light select.text-white { color: #111111; }
+.theme-light a.text-white,
+.theme-light button.text-white { color: #ffffff; }
+.theme-light .placeholder-white\/40::placeholder { color: #999999; }
+
 body {
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
     sans-serif;
