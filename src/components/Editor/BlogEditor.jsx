@@ -135,6 +135,15 @@ function InlineLatexPreview({ latex }) {
 
 // ── Helpers ──
 
+function normalizeUrl(url) {
+  if (!url || typeof url !== 'string') return url;
+  const trimmed = url.trim();
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
+
 function filterItems(items, query) {
   if (!query) return items;
   const q = query.toLowerCase();
@@ -720,9 +729,12 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
       if (document.querySelector('.bn-link-toolbar')) return;
-      const href = link.getAttribute('href');
-      if (href && href.startsWith('http')) {
-        editorLinkPreview.show(link, href);
+      let href = link.getAttribute('href');
+      if (href) {
+        href = normalizeUrl(href);
+        if (href.startsWith('http')) {
+          editorLinkPreview.show(link, href);
+        }
       }
     };
 
@@ -737,8 +749,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       if (!(e.ctrlKey || e.metaKey)) return;
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
-      const href = link.getAttribute('href');
-      if (href && href.startsWith('http')) {
+      let href = link.getAttribute('href');
+      if (href) {
+        href = normalizeUrl(href);
         e.preventDefault();
         e.stopPropagation();
         window.open(href, '_blank', 'noopener,noreferrer');
@@ -3030,11 +3043,13 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
-                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
+                        const normalizedUrl = normalizeUrl(linkEditor.url);
+                        const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
+                        const text = linkEditor.anchorText || normalizedUrl;
                         const tr = state.tr
                           .delete(linkEditor.from, linkEditor.to)
-                          .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
-                          .addMark(linkEditor.from, linkEditor.from + (linkEditor.anchorText || linkEditor.url).length, linkMark);
+                          .insertText(text, linkEditor.from)
+                          .addMark(linkEditor.from, linkEditor.from + text.length, linkMark);
                         view.dispatch(tr);
                       }
                       setLinkEditor(null);
@@ -3059,11 +3074,13 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
-                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
+                        const normalizedUrl = normalizeUrl(linkEditor.url);
+                        const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
+                        const text = linkEditor.anchorText || normalizedUrl;
                         const tr = state.tr
                           .delete(linkEditor.from, linkEditor.to)
-                          .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
-                          .addMark(linkEditor.from, linkEditor.from + (linkEditor.anchorText || linkEditor.url).length, linkMark);
+                          .insertText(text, linkEditor.from)
+                          .addMark(linkEditor.from, linkEditor.from + text.length, linkMark);
                         view.dispatch(tr);
                       }
                       setLinkEditor(null);
@@ -3084,8 +3101,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                   const tiptap = editor._tiptapEditor;
                   if (tiptap) {
                     const { state, view } = tiptap;
-                    const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
-                    const text = linkEditor.anchorText || linkEditor.url;
+                    const normalizedUrl = normalizeUrl(linkEditor.url);
+                    const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
+                    const text = linkEditor.anchorText || normalizedUrl;
                     const tr = state.tr
                       .delete(linkEditor.from, linkEditor.to)
                       .insertText(text, linkEditor.from)
