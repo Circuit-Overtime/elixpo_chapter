@@ -177,8 +177,15 @@ export default function ImageCropModal({
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape' && !saving) onClose();
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [onClose, saving]);
 
   // Wheel-to-zoom: attach a NON-passive listener so preventDefault actually stops
   // the page (and the modal) from scrolling. React's onWheel is passive, so it can't.
@@ -213,16 +220,22 @@ export default function ImageCropModal({
   const handleRemove = () => { onSave(null); onClose(); };
 
   const SLIDERS = [
-    { key: 'brightness', label: 'Brightness', min: 50, max: 150, suffix: '%' },
-    { key: 'contrast', label: 'Contrast', min: 50, max: 150, suffix: '%' },
-    { key: 'saturation', label: 'Saturation', min: 0, max: 200, suffix: '%' },
-    { key: 'vignette', label: 'Vignette', min: 0, max: 100, suffix: '' },
+    { key: 'brightness', label: 'Brightness', min: 50, max: 150, suffix: '%', defaultValue: 100 },
+    { key: 'contrast', label: 'Contrast', min: 50, max: 150, suffix: '%', defaultValue: 100 },
+    { key: 'saturation', label: 'Saturation', min: 0, max: 200, suffix: '%', defaultValue: 100 },
+    { key: 'vignette', label: 'Vignette', min: 0, max: 100, suffix: '', defaultValue: 0 },
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/55 backdrop-blur-[2px] flex items-center justify-center z-[100] p-4" onClick={onClose}>
       <div
-        className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl w-full max-w-[720px] shadow-2xl max-h-[92vh] overflow-y-auto"
+        className="border rounded-2xl w-full max-w-[760px] max-h-[92vh] overflow-y-auto"
+        style={{
+          backgroundColor: 'var(--card-bg)',
+          borderColor: 'var(--card-border)',
+          color: 'var(--text-primary)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.42), 0 0 0 1px rgba(155,123,247,0.08)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -318,9 +331,22 @@ export default function ImageCropModal({
               </div>
 
               {/* Zoom */}
-              <div>
-                <label className="text-[11px] text-[var(--text-muted)] mb-1.5 flex justify-between">
-                  <span>Zoom</span><span>{Math.round(crop.scale * 100)}%</span>
+              <div className="rounded-xl p-3.5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+                <label className="text-[11px] text-[var(--text-muted)] mb-2 flex items-center justify-between">
+                  <span className="font-medium">Zoom</span>
+                  <span className="flex items-center gap-2">
+                    <span>{Math.round(crop.scale * 100)}%</span>
+                    <button
+                      type="button"
+                      onClick={() => setCrop((prev) => ({ ...prev, x: 0, y: 0, scale: 1 }))}
+                      className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:bg-[var(--bg-hover)]"
+                      style={{ color: 'var(--text-faint)' }}
+                      title="Reset zoom and position"
+                      aria-label="Reset zoom and position"
+                    >
+                      <ion-icon name="refresh-outline" style={{ fontSize: '14px' }} />
+                    </button>
+                  </span>
                 </label>
                 <input
                   type="range" min="0.3" max="4" step="0.05" value={crop.scale}
@@ -330,11 +356,24 @@ export default function ImageCropModal({
               </div>
 
               {/* Stylise */}
-              <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {SLIDERS.map((s) => (
-                  <div key={s.key}>
-                    <label className="text-[11px] text-[var(--text-muted)] mb-1.5 flex justify-between">
-                      <span>{s.label}</span><span>{filters[s.key]}{s.suffix}</span>
+                  <div key={s.key} className="rounded-xl p-3.5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+                    <label className="text-[11px] text-[var(--text-muted)] mb-2 flex items-center justify-between">
+                      <span className="font-medium">{s.label}</span>
+                      <span className="flex items-center gap-2">
+                        <span>{filters[s.key]}{s.suffix}</span>
+                        <button
+                          type="button"
+                          onClick={() => setFilters((prev) => ({ ...prev, [s.key]: s.defaultValue }))}
+                          className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:bg-[var(--bg-hover)]"
+                          style={{ color: 'var(--text-faint)' }}
+                          title={`Reset ${s.label.toLowerCase()}`}
+                          aria-label={`Reset ${s.label.toLowerCase()}`}
+                        >
+                          <ion-icon name="refresh-outline" style={{ fontSize: '14px' }} />
+                        </button>
+                      </span>
                     </label>
                     <input
                       type="range" min={s.min} max={s.max} step="1" value={filters[s.key]}
@@ -346,8 +385,8 @@ export default function ImageCropModal({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-between pt-1">
-                <div className="flex gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <div className="flex flex-wrap gap-2">
                   <button onClick={resetState} className="px-4 py-2 text-[13px] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] rounded-lg transition-colors">
                     Change image
                   </button>
