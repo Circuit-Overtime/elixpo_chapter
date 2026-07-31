@@ -302,6 +302,24 @@ const LixEditor = forwardRef(function LixEditor({
     }
   }, [editor, editable]);
 
+  // Intercept right-clicks on table handles to trigger their left-click menu
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const handleContextMenu = (e) => {
+      const el = e.target instanceof Element
+        ? e.target.closest('[class*="TableHandle" i], [class*="table-handle" i], [class*="tableHandle" i], .bn-table-dir-row-handle, .bn-table-dir-col-handle')
+        : null;
+      if (el) {
+        e.preventDefault();
+        e.stopPropagation();
+        el.click();
+      }
+    };
+    wrapper.addEventListener('contextmenu', handleContextMenu);
+    return () => wrapper.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
   // Host-supplied merge-variable suggestions for the {{variable}} chip.
   useEffect(() => { setVariableSuggestions(variableSuggestions || []); }, [variableSuggestions]);
 
