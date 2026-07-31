@@ -33,6 +33,7 @@ import { MentionInline } from './blocks/MentionInline';
 import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
 import { InlineButton } from './blocks/InlineButton';
+import { normalizeUrl } from '../../utils/linkHelper';
 
 // AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
 // are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
@@ -314,6 +315,60 @@ function analyzeLinkSelection(editor) {
     return { kind: 'none' };
   }
 }
+
+function getLinkRange(tiptap, pos, href) {
+  try {
+    const { state } = tiptap;
+    const $pos = state.doc.resolve(pos);
+    const blockStart = $pos.start();
+    const blockEnd = $pos.end();
+
+    const linkNodes = [];
+    state.doc.nodesBetween(blockStart, blockEnd, (node, nodePos) => {
+      if (node.isText) {
+        const lm = node.marks.find(m => m.type.name === 'link' && m.attrs.href === href);
+        if (lm) {
+          linkNodes.push({
+            start: nodePos,
+            end: nodePos + node.nodeSize,
+            text: node.text
+          });
+        }
+      }
+    });
+
+    const initialNodeIndex = linkNodes.findIndex(n => pos >= n.start && pos <= n.end);
+    if (initialNodeIndex === -1) return null;
+
+    let lf = linkNodes[initialNodeIndex].start;
+    for (let i = initialNodeIndex - 1; i >= 0; i--) {
+      if (linkNodes[i].end === lf) {
+        lf = linkNodes[i].start;
+      } else {
+        break;
+      }
+    }
+
+    let lt = linkNodes[initialNodeIndex].end;
+    for (let i = initialNodeIndex + 1; i < linkNodes.length; i++) {
+      if (linkNodes[i].start === lt) {
+        lt = linkNodes[i].end;
+      } else {
+        break;
+      }
+    }
+
+    return {
+      from: lf,
+      to: lt,
+      text: state.doc.textBetween(lf, lt),
+      href
+    };
+  } catch {
+    return null;
+  }
+}
+
 
 // ── Slash menu items ──
 
@@ -721,8 +776,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
       if (document.querySelector('.bn-link-toolbar')) return;
       const href = link.getAttribute('href');
-      if (href && href.startsWith('http')) {
-        editorLinkPreview.show(link, href);
+      if (href) {
+        const normalized = normalizeUrl(href);
+        if (normalized.startsWith('http')) {
+          editorLinkPreview.show(link, normalized);
+        }
       }
     };
 
@@ -738,10 +796,12 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
       const href = link.getAttribute('href');
-      if (href && href.startsWith('http')) {
+      if (href) {
+        const normalized = normalizeUrl(href);
+        if (!normalized || normalized.startsWith('/') || normalized.startsWith('#')) return;
         e.preventDefault();
         e.stopPropagation();
-        window.open(href, '_blank', 'noopener,noreferrer');
+        window.open(normalized, '_blank', 'noopener,noreferrer');
       }
     };
 
@@ -875,11 +935,13 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
 
       // Check for link syntax: [text](url)
-      const match = textBefore.match(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+      const match = textBefore.match(/\[([^\]]+)\]\(([^)\s]+)\)$/);
       if (match) {
         const [fullMatch, linkText, url] = match;
         const from = $from.pos - fullMatch.length;
-        const linkMark = state.schema.marks.link.create({ href: url });
+        const normalizedUrl = normalizeUrl(url);
+        if (!normalizedUrl) return;
+        const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
         const tr = state.tr
           .delete(from, $from.pos)
           .insertText(linkText, from)
@@ -2997,6 +3059,31 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           anchorEl={editorLinkPreview.preview.anchorEl}
           url={editorLinkPreview.preview.url}
           onClose={editorLinkPreview.hide}
+          onEdit={() => {
+            const anchorEl = editorLinkPreview.preview.anchorEl;
+            const url = editorLinkPreview.preview.url;
+            const tiptap = editor?._tiptapEditor;
+            if (tiptap && anchorEl) {
+              try {
+                const pos = tiptap.view.posAtDOM(anchorEl, 0);
+                const range = getLinkRange(tiptap, pos, url);
+                if (range) {
+                  const rect = anchorEl.getBoundingClientRect();
+                  setLinkEditor({
+                    anchorText: range.text,
+                    url: range.href,
+                    from: range.from,
+                    to: range.to,
+                    top: rect.bottom + 6,
+                    left: Math.max(8, Math.min(rect.left, window.innerWidth - 340)),
+                  });
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            }
+            editorLinkPreview.hide();
+          }}
         />
       )}
 
@@ -3026,16 +3113,24 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                     e.stopPropagation();
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      // Save the link
+                      if (!linkEditor.url.trim()) return;
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
-                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
-                        const tr = state.tr
-                          .delete(linkEditor.from, linkEditor.to)
-                          .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
-                          .addMark(linkEditor.from, linkEditor.from + (linkEditor.anchorText || linkEditor.url).length, linkMark);
+                        const normalizedUrl = normalizeUrl(linkEditor.url);
+                        if (!normalizedUrl) return;
+                        const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
+                        const text = linkEditor.anchorText.trim() || normalizedUrl;
+                        const tr = state.tr;
+                        const textNode = state.schema.text(text, [linkMark]);
+                        tr.replaceWith(linkEditor.from, linkEditor.to, textNode);
+                        try {
+                          const newPos = linkEditor.from + text.length;
+                          const selection = state.selection.constructor.create(tr.doc, newPos);
+                          tr.setSelection(selection);
+                        } catch {}
                         view.dispatch(tr);
+                        view.focus();
                       }
                       setLinkEditor(null);
                     }
@@ -3056,15 +3151,24 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                     e.stopPropagation();
                     if (e.key === 'Enter') {
                       e.preventDefault();
+                      if (!linkEditor.url.trim()) return;
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
-                        const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
-                        const tr = state.tr
-                          .delete(linkEditor.from, linkEditor.to)
-                          .insertText(linkEditor.anchorText || linkEditor.url, linkEditor.from)
-                          .addMark(linkEditor.from, linkEditor.from + (linkEditor.anchorText || linkEditor.url).length, linkMark);
+                        const normalizedUrl = normalizeUrl(linkEditor.url);
+                        if (!normalizedUrl) return;
+                        const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
+                        const text = linkEditor.anchorText.trim() || normalizedUrl;
+                        const tr = state.tr;
+                        const textNode = state.schema.text(text, [linkMark]);
+                        tr.replaceWith(linkEditor.from, linkEditor.to, textNode);
+                        try {
+                          const newPos = linkEditor.from + text.length;
+                          const selection = state.selection.constructor.create(tr.doc, newPos);
+                          tr.setSelection(selection);
+                        } catch {}
                         view.dispatch(tr);
+                        view.focus();
                       }
                       setLinkEditor(null);
                     }
@@ -3079,22 +3183,29 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
               <button className="link-editor-cancel" onClick={() => setLinkEditor(null)}>Cancel</button>
               <button
                 className="link-editor-save"
-                disabled={!linkEditor.url.trim()}
+                disabled={!normalizeUrl(linkEditor.url)}
                 onClick={() => {
                   const tiptap = editor._tiptapEditor;
                   if (tiptap) {
                     const { state, view } = tiptap;
-                    const linkMark = state.schema.marks.link.create({ href: linkEditor.url });
-                    const text = linkEditor.anchorText || linkEditor.url;
-                    const tr = state.tr
-                      .delete(linkEditor.from, linkEditor.to)
-                      .insertText(text, linkEditor.from)
-                      .addMark(linkEditor.from, linkEditor.from + text.length, linkMark);
+                    const normalizedUrl = normalizeUrl(linkEditor.url);
+                    if (!normalizedUrl) return;
+                    const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
+                    const text = linkEditor.anchorText.trim() || normalizedUrl;
+                    const tr = state.tr;
+                    const textNode = state.schema.text(text, [linkMark]);
+                    tr.replaceWith(linkEditor.from, linkEditor.to, textNode);
+                    try {
+                      const newPos = linkEditor.from + text.length;
+                      const selection = state.selection.constructor.create(tr.doc, newPos);
+                      tr.setSelection(selection);
+                    } catch {}
                     view.dispatch(tr);
+                    view.focus();
                   }
                   setLinkEditor(null);
                 }}
-              >Save</button>
+              >Done</button>
             </div>
           </div>
         </>
