@@ -118,16 +118,16 @@ function truncateSlug(s, max = 18) {
 }
 
 // ── Confirm Modal ──
-function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', onConfirm, onCancel, destructive = false }) {
+function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', thirdActionLabel, onThirdAction, onConfirm, onCancel, destructive = false, isConfirmLoading = false }) {
   // Close on Escape key
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    const handleKey = (e) => { if (e.key === 'Escape' && !isConfirmLoading) onCancel(); };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [onCancel]);
+  }, [onCancel, isConfirmLoading]);
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 editor-confirm-overlay" onClick={onCancel}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 editor-confirm-overlay" onClick={() => !isConfirmLoading && onCancel()}>
       <div
         className="w-full max-w-sm rounded-2xl p-6 editor-confirm-dialog"
         onClick={(e) => e.stopPropagation()}
@@ -149,19 +149,32 @@ function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', canc
           <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
         </div>
         <p className="text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-muted)', paddingLeft: '44px' }}>{description}</p>
-        <div className="flex items-center gap-3 justify-end">
+        <div className="flex flex-wrap items-center gap-3 justify-end">
+          {thirdActionLabel && (
+            <button
+              onClick={onThirdAction}
+              disabled={isConfirmLoading}
+              className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel mr-auto hover:text-red-500"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              {thirdActionLabel}
+            </button>
+          )}
           <button
             onClick={onCancel}
+            disabled={isConfirmLoading}
             className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel"
+            style={{ opacity: isConfirmLoading ? 0.5 : 1 }}
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 rounded-lg text-[13px] font-medium text-white transition-colors"
-            style={{ backgroundColor: destructive ? '#ef4444' : '#9b7bf7' }}
+            disabled={isConfirmLoading}
+            className="px-4 py-2 rounded-lg text-[13px] font-medium text-white transition-colors flex items-center gap-2"
+            style={{ backgroundColor: destructive ? '#ef4444' : '#9b7bf7', opacity: isConfirmLoading ? 0.7 : 1 }}
           >
-            {confirmLabel}
+            {isConfirmLoading ? 'Saving...' : confirmLabel}
           </button>
         </div>
       </div>
@@ -417,6 +430,8 @@ export default function WritePage({ slugid }) {
   // Secret mode: publish with no author shown. Free to toggle while this is a draft,
   // frozen by the server once the post has been public even once.
   const [secret, setSecret] = useState(false);
+  const [memberOnly, setMemberOnly] = useState(false);
+  const [ownerCanMarkMemberOnly, setOwnerCanMarkMemberOnly] = useState(null);
   // Sub-pages/canvases already on a post that's being switched to secret. They can't
   // come along, so the author (or a co-author) is told before they publish rather
   // than hitting a server rejection later.
@@ -491,6 +506,8 @@ export default function WritePage({ slugid }) {
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [conflict, setConflict] = useState(null); // { message, currentVersion, status }
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [isSavingLeave, setIsSavingLeave] = useState(false);
+  const [leaveSaveError, setLeaveSaveError] = useState('');
   const [pendingLeaveUrl, setPendingLeaveUrl] = useState(null);
   const [showMdReplaceConfirm, setShowMdReplaceConfirm] = useState(false);
   const [pendingMdFile, setPendingMdFile] = useState(null);
@@ -592,10 +609,10 @@ export default function WritePage({ slugid }) {
   }, []);
 
   // Refs to always hold latest draft data (avoids stale closures in intervals/beforeunload)
-  const draftDataRef = useRef({ title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret });
+  const draftDataRef = useRef({ title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly });
   useEffect(() => {
-    draftDataRef.current = { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret };
-  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom]);
+    draftDataRef.current = { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly };
+  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, memberOnly]);
 
   // Sync any buffered subpage drafts from localStorage to cloud
   const syncSubpageDrafts = useCallback(async () => {
@@ -727,6 +744,7 @@ export default function WritePage({ slugid }) {
   const handleNavigation = useCallback((url) => {
     if (hasUnsavedEdits) {
       setPendingLeaveUrl(url);
+      setLeaveSaveError('');
       setShowLeaveConfirm(true);
       return false; // blocked
     }
@@ -738,6 +756,7 @@ export default function WritePage({ slugid }) {
   // replaced by our own in-app confirm modal (handleNavigation / link intercept).
   useEffect(() => {
     function handleBeforeUnload() {
+      if (bypassUnloadRef.current) return;
       const data = draftDataRef.current;
       if (data.title || data.editorContent) {
         saveDraft(blogId, data);
@@ -769,6 +788,7 @@ export default function WritePage({ slugid }) {
       e.preventDefault();
       e.stopPropagation();
       setPendingLeaveUrl(href);
+      setLeaveSaveError('');
       setShowLeaveConfirm(true);
     }
     document.addEventListener('click', handleClick, true);
@@ -825,6 +845,8 @@ export default function WritePage({ slugid }) {
         if (cloud.tags?.length) setTags(cloud.tags);
         if (cloud.published_as) setPublishAs(cloud.published_as);
         setSecret(!!cloud.secret);
+        setMemberOnly(!!cloud.member_only);
+        setOwnerCanMarkMemberOnly(!!cloud.can_mark_member_only);
         setCollectionId(cloud.collection_id || null);
         setCoverPreview(persistableCover(cloud.cover_image_r2_key));
         if (Number.isFinite(cloud.cover_pos_x) && Number.isFinite(cloud.cover_pos_y)) setCoverPos({ x: cloud.cover_pos_x, y: cloud.cover_pos_y });
@@ -882,12 +904,12 @@ export default function WritePage({ slugid }) {
     dirtyRef.current = true;
     autoSaveTimer.current = setTimeout(() => {
       if (title || editorContent) {
-        saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret });
+        saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly });
         setLastSaved(Date.now());
       }
     }, 2000);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, blogId]);
+  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, memberOnly, blogId]);
 
   // Background cloud flush — localStorage is the instant buffer, but beforeunload/
   // sendBeacon is unreliable, so flush unsynced edits to the cloud every 20s.
@@ -1147,7 +1169,7 @@ export default function WritePage({ slugid }) {
   const handleSaveDraft = async () => {
     try { await coverUploadRef.current; } catch {}
     const latestCover = persistableCover(draftDataRef.current.coverPreview);
-    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview: latestCover, editorContent, pageEmoji, coverPos, coverZoom, secret });
+    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview: latestCover, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly });
     setLastSaved(Date.now());
     setShowPublishMenu(false);
     await syncToCloud({ showToast: true });
@@ -1282,7 +1304,7 @@ export default function WritePage({ slugid }) {
   }, [title, draftLoading, editorReady]);
 
   // Serialized publish-settings, used to detect "nothing changed" on Update.
-  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, collectionId, pageEmoji, coverPreview, coverPos, coverZoom, slug, secret });
+  const settingsKey = () => JSON.stringify({ title, subtitle, tags, publishAs, collectionId, pageEmoji, coverPreview, coverPos, coverZoom, slug, secret, memberOnly });
   // Capture a baseline once the blog has finished loading.
   useEffect(() => {
     if (!draftLoading && settingsSnapshotRef.current === '') settingsSnapshotRef.current = settingsKey();
@@ -1335,7 +1357,7 @@ export default function WritePage({ slugid }) {
       const res = await fetch('/api/blogs/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: persistedCover, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt: syncedUpdatedAt || lastKnownUpdatedAt, secret }),
+        body: JSON.stringify({ slugid: blogId, title, subtitle, tags, publishAs, collectionId, editorContent, pageEmoji, coverUrl: persistedCover, coverPos, coverZoom, slug, status: targetStatus, lastKnownUpdatedAt: syncedUpdatedAt || lastKnownUpdatedAt, secret, member_only: memberOnly }),
       });
 
       if (res.status === 409) {
@@ -2278,7 +2300,7 @@ export default function WritePage({ slugid }) {
 
           {mode === 'preview' && (
             <div className="blog-preview-fullwidth">
-              <BlogPreview title={title} subtitle={subtitle} coverPreview={coverPreview} coverZoom={coverZoom} coverPos={coverPos} pageEmoji={pageEmoji} tags={tags} html={previewHtml} blocks={previewBlocks} user={user} wordCount={wordCount} />
+              <BlogPreview title={title} subtitle={subtitle} coverPreview={coverPreview} coverZoom={coverZoom} coverPos={coverPos} pageEmoji={pageEmoji} tags={tags} html={previewHtml} blocks={previewBlocks} user={user} wordCount={wordCount} memberOnly={memberOnly} />
             </div>
           )}
 
@@ -2531,6 +2553,39 @@ export default function WritePage({ slugid }) {
             </p>
           </div>
 
+          {(memberOnly || (ownerCanMarkMemberOnly ?? (user?.tier === 'member'))) && (
+            <div>
+              <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+                Member-only Content
+              </label>
+              <button
+                onClick={() => setMemberOnly(!memberOnly)}
+                className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-[13px] transition-colors disabled:cursor-default"
+                style={{
+                  backgroundColor: 'var(--bg-app)',
+                  border: `1px solid ${memberOnly ? '#9b7bf7' : 'var(--border-default)'}`
+                }}
+              >
+                <span className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <ion-icon name={memberOnly ? 'lock-closed' : 'lock-open-outline'} style={{ fontSize: '16px', color: memberOnly ? '#9b7bf7' : 'var(--text-muted)' }} />
+                  {memberOnly ? 'Member-only (Premium)' : 'Public (Free for everyone)'}
+                </span>
+                <span
+                  className="relative inline-flex items-center rounded-full transition-colors"
+                  style={{ width: '34px', height: '18px', backgroundColor: memberOnly ? '#9b7bf7' : 'var(--border-default)' }}
+                >
+                  <span
+                    className="absolute rounded-full bg-white transition-transform"
+                    style={{ width: '14px', height: '14px', left: '2px', transform: memberOnly ? 'translateX(16px)' : 'translateX(0)' }}
+                  />
+                </span>
+              </button>
+              <p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>
+                Restrict full access to member tier users.
+              </p>
+            </div>
+          )}
+
           {/* Secret mode — publish with no author shown. Locked once public. */}
           <div>
             <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
@@ -2746,16 +2801,38 @@ export default function WritePage({ slugid }) {
       {/* Leave confirmation modal */}
       {showLeaveConfirm && (
         <EditorConfirmModal
-          title="Leave editor?"
-          description="You have unsaved changes. Your draft is saved locally, but cloud sync may be incomplete."
-          confirmLabel="Leave"
+          title="Unsaved Changes"
+          description={leaveSaveError || 'You have unsaved changes. Do you want to save them before leaving?'}
+          confirmLabel="Save & leave"
           cancelLabel="Stay"
-          destructive
-          onConfirm={() => {
+          thirdActionLabel="Leave without saving"
+          isConfirmLoading={isSavingLeave}
+          onThirdAction={() => {
+            bypassUnloadRef.current = true;
+            setHasUnsavedEdits(false);
             setShowLeaveConfirm(false);
             if (pendingLeaveUrl) window.location.href = pendingLeaveUrl;
           }}
-          onCancel={() => { setShowLeaveConfirm(false); setPendingLeaveUrl(null); }}
+          onConfirm={async () => {
+            setIsSavingLeave(true);
+            setLeaveSaveError('');
+            await syncToCloud();
+            if (dirtyRef.current) {
+              setLeaveSaveError('Cloud save failed. Your draft is still stored locally; try again or leave without saving.');
+              setIsSavingLeave(false);
+              return;
+            }
+            bypassUnloadRef.current = true;
+            setIsSavingLeave(false);
+            setHasUnsavedEdits(false);
+            setShowLeaveConfirm(false);
+            if (pendingLeaveUrl) window.location.href = pendingLeaveUrl;
+          }}
+          onCancel={() => {
+            setShowLeaveConfirm(false);
+            setPendingLeaveUrl(null);
+            setLeaveSaveError('');
+          }}
         />
       )}
 

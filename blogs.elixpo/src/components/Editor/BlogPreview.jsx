@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 import { readTimeFromWords } from '../../../lib/readTime';
+import { escapeHtmlAttribute, normalizeUrl } from '../../utils/linkHelper';
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -123,17 +124,20 @@ function renderBlocksToHTML(blocks) {
       }
       if (c.type === 'inlineButton') {
         const label = (c.props?.label || 'Button').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const href = c.props?.href || '';
+        const href = escapeHtmlAttribute(normalizeUrl(c.props?.href || ''));
         return href
           ? `<a href="${href}" class="inline-button-chip" target="_blank" rel="noopener noreferrer">${label}</a>`
           : `<span class="inline-button-chip">${label}</span>`;
       }
       // Links wrap child content — recurse into c.content for the link text
       if (c.type === 'link' && c.href) {
+        const normalizedHref = normalizeUrl(c.href);
         const linkText = c.content ? inlineToHTML(c.content) : (c.text || c.href).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return `<a href="${c.href}">${linkText || c.href}</a>`;
+        return normalizedHref
+          ? `<a href="${escapeHtmlAttribute(normalizedHref)}">${linkText || c.href}</a>`
+          : linkText;
       }
-      let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>');
       if (!text) return '';
       const s = c.styles || {};
       if (s.bold) text = `<strong>${text}</strong>`;
@@ -330,7 +334,8 @@ function renderBlocksToHTML(blocks) {
   return html;
 }
 
-export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null, memberOnly = false, featured = false, publishedAt = null, headerActions = null, hideHighlights = false, readTimeMinutes = 0, anonymous = false }) {
+export default function BlogPreview({
+  paywalled = false, title, subtitle, coverPreview, coverZoom, coverPos, pageEmoji, tags, html, blocks, user, org, coAuthorCount, coAuthors = [], wordCount, followSlot = null, memberOnly = false, featured = false, publishedAt = null, headerActions = null, hideHighlights = false, readTimeMinutes = 0, anonymous = false }) {
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -636,7 +641,28 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       mentionHandlers.push({ el: chip, onEnter, onLeave });
     });
 
+    const handleModifierClick = (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const link = e.target.closest('a[href]');
+      if (!link) return;
+
+      if (link.closest('.mention-chip') || link.closest('.subpage-item') || link.closest('.preview-toc-link')) {
+        return;
+      }
+
+      const href = link.getAttribute('href');
+      if (href) {
+        const normalized = normalizeUrl(href);
+        if (!normalized || normalized.startsWith('/') || normalized.startsWith('#')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(normalized, '_blank', 'noopener,noreferrer');
+      }
+    };
+    root.addEventListener('click', handleModifierClick);
+
     return () => {
+      root.removeEventListener('click', handleModifierClick);
       linkHandlers.forEach(({ el, onEnter, onLeave }) => {
         el.removeEventListener('mouseenter', onEnter);
         el.removeEventListener('mouseleave', onLeave);
@@ -818,12 +844,26 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
         {renderedHTML ? (
           <div
             ref={contentRef}
-            className="blog-preview-content max-w-none"
+            className={`blog-preview-content max-w-none ${paywalled ? 'relative pb-10 overflow-hidden mask-bottom' : ''}`}
+            style={paywalled ? { WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)', maxHeight: '400px' } : {}}
           />
         ) : (
           <p className="text-[var(--text-faint)] italic">Start writing to see a preview...</p>
         )}
       </div>
+
+      {paywalled && (
+        <div className="mt-8 p-6 rounded-2xl text-center" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--accent)30' }}>
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: 'var(--accent-subtle)' }}>
+             <ion-icon name="lock-closed" style={{ fontSize: '24px', color: 'var(--accent)' }} />
+          </div>
+          <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>This story is for members only.</h3>
+          <p className="text-[14px] mb-6" style={{ color: 'var(--text-muted)' }}>Sign up for a member tier to read the full story and support the author.</p>
+          <a href="/pricing" className="inline-block px-6 py-2.5 rounded-full text-[14px] font-semibold text-white" style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #8b6ae6 100%)' }}>
+            View Plans
+          </a>
+        </div>
+      )}
 
       {/* Link preview tooltip */}
       {linkPreview.preview && (

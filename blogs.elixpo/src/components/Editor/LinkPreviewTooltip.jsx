@@ -20,7 +20,7 @@ async function fetchPreview(url) {
   }
 }
 
-export default function LinkPreviewTooltip({ anchorEl, url, onClose }) {
+export default function LinkPreviewTooltip({ anchorEl, url, onClose, onEdit }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const tooltipRef = useRef(null);
@@ -95,7 +95,7 @@ export default function LinkPreviewTooltip({ anchorEl, url, onClose }) {
   // never fires (e.g. the link is re-rendered out from under the cursor), which
   // is what left the preview stuck on screen.
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } };
     const within = (el, e, pad = 28) => {
       if (!el) return false;
       const r = el.getBoundingClientRect();
@@ -108,10 +108,10 @@ export default function LinkPreviewTooltip({ anchorEl, url, onClose }) {
         scheduleHide();
       }
     };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener('keydown', onKey, true);
     document.addEventListener('pointermove', onMove, { passive: true });
     return () => {
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey, true);
       document.removeEventListener('pointermove', onMove);
     };
   }, [anchorEl, onClose, scheduleHide]);
@@ -155,6 +155,25 @@ export default function LinkPreviewTooltip({ anchorEl, url, onClose }) {
           </div>
         </a>
       ) : null}
+      {onEdit && (
+        <div className="link-preview-footer">
+          <button
+            type="button"
+            className="link-preview-edit-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEdit();
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            Edit link
+          </button>
+        </div>
+      )}
     </div>
   );
 }

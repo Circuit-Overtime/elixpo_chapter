@@ -24,7 +24,7 @@ export async function GET(request) {
     const { decompressBlogContent } = await import('../../../../lib/compress');
     const db = getDB();
 
-    const COLS = 'id, slug, title, subtitle, content, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, author_id, published_as, status, page_emoji, collection_id, secret';
+    const COLS = 'id, slug, title, subtitle, content, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, author_id, published_as, status, page_emoji, collection_id, secret, member_only';
 
     // The param may be the canonical id (new blogs) or the human slug (edit links).
     // Resolve by id first; otherwise by slug scoped to a blog THIS user can edit
@@ -100,8 +100,9 @@ export async function GET(request) {
 
     // The real author — so collaborators see the actual owner in publish settings,
     // not themselves.
-    const author = await db.prepare('SELECT username, display_name, avatar_url FROM users WHERE id = ?')
+    const author = await db.prepare('SELECT username, display_name, avatar_url, tier FROM users WHERE id = ?')
       .bind(blog.author_id).first();
+    const { getLimits } = await import('../../../../lib/tiers');
 
     return NextResponse.json({
       blog: {
@@ -112,6 +113,8 @@ export async function GET(request) {
         owner_username: author?.username || null,
         owner_display_name: author?.display_name || null,
         owner_avatar: author?.avatar_url || null,
+        can_mark_member_only: getLimits(author?.tier).canMarkMemberOnly,
+        member_only: !!blog.member_only,
       },
       version,
     }, { headers: NO_STORE });
@@ -132,7 +135,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview, coverPos, coverZoom, secret } = body;
+  const { slugid, title, subtitle, tags, publishAs, editorContent, pageEmoji, coverPreview, coverPos, coverZoom, secret, member_only } = body;
   const storedCover = validCoverUrl(coverPreview);
   const posX = Number.isFinite(coverPos?.x) ? coverPos.x : 50;
   const posY = Number.isFinite(coverPos?.y) ? coverPos.y : 50;
@@ -157,7 +160,7 @@ export async function POST(request) {
     const excerpt = editorContent ? excerptFromBlocks(editorContent) : '';
 
     // Check if blog exists
-    const existing = await db.prepare('SELECT id, author_id, status, secret FROM blogs WHERE id = ?').bind(slugid).first();
+    const existing = await db.prepare('SELECT id, author_id, status, secret, member_only FROM blogs WHERE id = ?').bind(slugid).first();
 
     // Same lock as /publish: secret is free to toggle while the post is a draft and
     // frozen once it has been public. Autosave must never be able to flip it either.
@@ -166,6 +169,18 @@ export async function POST(request) {
       ? (existing.status === 'draft' ? requestedSecret : (existing.secret ? 1 : 0))
       : requestedSecret;
 
+    const tierOwnerId = existing?.author_id || session.userId;
+    const owner = await db.prepare('SELECT tier FROM users WHERE id = ?').bind(tierOwnerId).first();
+    const { getLimits } = await import('../../../../lib/tiers');
+    const limits = getLimits(owner?.tier);
+
+    const requestedMemberOnly = (member_only === true || member_only === 1) ? 1 : 0;
+    const grandfatheredMemberOnly = !!existing?.member_only;
+    if (requestedMemberOnly && !limits.canMarkMemberOnly && !grandfatheredMemberOnly) {
+      return NextResponse.json({ error: 'Free tier authors cannot mark posts as member-only' }, { status: 403 });
+    }
+    const finalMemberOnly = requestedMemberOnly && (limits.canMarkMemberOnly || grandfatheredMemberOnly) ? 1 : 0;
+
     if (existing) {
       // Edit permission: author, org write+, or accepted co-author.
       const { canEditBlog } = await import('../../../../lib/permissions');
@@ -173,11 +188,11 @@ export async function POST(request) {
       if (!perm.ok) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
       await db.prepare(`
         UPDATE blogs SET title = ?, subtitle = ?, content = ?, excerpt = ?, published_as = ?,
-          page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?, secret = ?, updated_at = ?
+          page_emoji = ?, cover_image_r2_key = ?, cover_pos_x = ?, cover_pos_y = ?, cover_zoom = ?, secret = ?, member_only = ?, updated_at = ?
         WHERE id = ?
       `).bind(
         title || '', subtitle || '', compressedContent, excerpt, publishAs || 'personal',
-        pageEmoji || '', storedCover, posX, posY, zoom, finalSecret, now, slugid
+        pageEmoji || '', storedCover, posX, posY, zoom, finalSecret, finalMemberOnly, now, slugid
       ).run();
       // Throttled version snapshot (≤ 1 / 5 min) so history accrues as people edit (#11 E).
       if (compressedContent) {
@@ -191,11 +206,11 @@ export async function POST(request) {
         publishAs: publishAs || 'personal',
       });
       await db.prepare(`
-        INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, status, page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, secret, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, status, page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, secret, member_only, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         slugid, slug, title || '', subtitle || '', compressedContent, excerpt,
-        session.userId, publishAs || 'personal', pageEmoji || '', storedCover, posX, posY, zoom, finalSecret, now, now
+        session.userId, publishAs || 'personal', pageEmoji || '', storedCover, posX, posY, zoom, finalSecret, finalMemberOnly, now, now
       ).run();
     }
 
