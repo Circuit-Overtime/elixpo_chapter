@@ -7,13 +7,6 @@ import AppShell from '../components/AppShell';
 import SearchBar from '../components/SearchBar';
 import { generateBlogBanner } from '../utils/pixelAvatar';
 
-const TABS = [
-  { id: 'all', label: 'All' },
-  { id: 'blogs', label: 'Blogs' },
-  { id: 'people', label: 'People' },
-  { id: 'orgs', label: 'Organizations' },
-];
-
 function timeAgo(ts) {
   if (!ts) return '';
   const diff = Math.floor(Date.now() / 1000) - ts;
@@ -90,7 +83,14 @@ export default function SearchPage() {
   const showPeople = tab === 'all' || tab === 'people';
   const showOrgs = tab === 'all' || tab === 'orgs';
   const totalCount = results.blogs.length + results.users.length + results.orgs.length;
-  const nothing = !loading && q.length >= 2 && totalCount === 0;
+  const visibleCount = tab === 'blogs'
+    ? results.blogs.length
+    : tab === 'people'
+      ? results.users.length
+      : tab === 'orgs'
+        ? results.orgs.length
+        : totalCount;
+  const nothing = !loading && q.length >= 2 && visibleCount === 0;
 
   return (
     <AppShell>
