@@ -137,7 +137,7 @@ function renderBlocksToHTML(blocks) {
           ? `<a href="${escapeHtmlAttribute(normalizedHref)}">${linkText || c.href}</a>`
           : linkText;
       }
-      let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>');
       if (!text) return '';
       const s = c.styles || {};
       if (s.bold) text = `<strong>${text}</strong>`;

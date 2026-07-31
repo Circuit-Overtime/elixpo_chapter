@@ -1440,9 +1440,29 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         const tiptap = editor._tiptapEditor;
         if (tiptap) {
           const { state, view } = tiptap;
-          const { from } = state.selection;
-          const linkMark = state.schema.marks.link.create({ href: url });
-          const tr = state.tr.insertText(url, from).addMark(from, from + url.length, linkMark);
+          const { from, to } = state.selection;
+          const normalizedUrl = normalizeUrl(url);
+          if (!normalizedUrl) return;
+          const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
+          const tr = state.tr.insertText(url, from, to).addMark(from, from + url.length, linkMark);
+          view.dispatch(tr);
+        }
+        return;
+      }
+
+      // If pasting exactly a single markdown link, convert it to an inline link directly
+      const mdLinkMatch = textData ? textData.trim().match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/) : null;
+      if (mdLinkMatch && !e.clipboardData.getData('text/html')) {
+        const [, linkText, url] = mdLinkMatch;
+        e.preventDefault();
+        const tiptap = editor._tiptapEditor;
+        if (tiptap) {
+          const { state, view } = tiptap;
+          const { from, to } = state.selection;
+          const normalizedUrl = normalizeUrl(url);
+          if (!normalizedUrl) return;
+          const linkMark = state.schema.marks.link.create({ href: normalizedUrl });
+          const tr = state.tr.insertText(linkText, from, to).addMark(from, from + linkText.length, linkMark);
           view.dispatch(tr);
         }
         return;
@@ -2852,7 +2872,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       )}
 
       {/* @ Mention menu */}
-      {showMentionMenu && mentionQuery && (
+      {showMentionMenu && (
         <div
           className="absolute z-[60]"
           style={{ top: mentionPos.top, left: mentionPos.left }}

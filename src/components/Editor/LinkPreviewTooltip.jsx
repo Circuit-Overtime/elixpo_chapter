@@ -95,7 +95,7 @@ export default function LinkPreviewTooltip({ anchorEl, url, onClose, onEdit }) {
   // never fires (e.g. the link is re-rendered out from under the cursor), which
   // is what left the preview stuck on screen.
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } };
     const within = (el, e, pad = 28) => {
       if (!el) return false;
       const r = el.getBoundingClientRect();
@@ -108,10 +108,10 @@ export default function LinkPreviewTooltip({ anchorEl, url, onClose, onEdit }) {
         scheduleHide();
       }
     };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener('keydown', onKey, true);
     document.addEventListener('pointermove', onMove, { passive: true });
     return () => {
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey, true);
       document.removeEventListener('pointermove', onMove);
     };
   }, [anchorEl, onClose, scheduleHide]);
