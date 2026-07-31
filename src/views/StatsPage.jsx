@@ -211,7 +211,7 @@ export default function StatsPage() {
 
           {tab === 'Audience' && <div className="space-y-5"><div className="grid grid-cols-2 lg:grid-cols-4 gap-4"><MetricCard label="New readers" value={data.audience.newReaders} change={0} accent="#4ade80" /><MetricCard label="Returning readers" value={data.audience.returningReaders} change={0} accent="#60a5fa" /><MetricCard label="Signed-in readers" value={data.audience.signedIn} change={0} /><MetricCard label="Anonymous readers" value={data.audience.anonymous} change={0} accent="#94a3b8" /></div><div className="grid md:grid-cols-2 gap-4"><Breakdown title="Devices" rows={data.audience.devices} /><Breakdown title="Countries" rows={data.audience.countries} /></div></div>}
 
-          {tab === 'Acquisition' && <div className="grid md:grid-cols-2 gap-4"><Breakdown title="Traffic sources" rows={data.acquisition.sources} /><Breakdown title="Top referrers" rows={data.acquisition.referrers} /></div>}
+          {tab === 'Acquisition' && <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4"><Breakdown title="Traffic sources" rows={data.acquisition.sources} /><Breakdown title="Top referrers" rows={data.acquisition.referrers} /><Breakdown title="UTM campaigns" rows={data.acquisition.campaigns} /></div>}
         </>}
       </main>
     </AppShell>
