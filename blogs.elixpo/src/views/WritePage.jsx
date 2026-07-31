@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
@@ -117,6 +118,14 @@ function truncateSlug(s, max = 18) {
   return s && s.length > max ? s.slice(0, max) + '...' : s;
 }
 
+// Fixed elements inherit transformed ancestors as their containing block. The
+// editor uses transforms for transitions, so overlays belong directly in body.
+function ViewportPortal({ children }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? createPortal(children, document.body) : null;
+}
+
 // ── Confirm Modal ──
 function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', thirdActionLabel, onThirdAction, onConfirm, onCancel, destructive = false, isConfirmLoading = false }) {
   // Close on Escape key
@@ -127,9 +136,10 @@ function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', canc
   }, [onCancel, isConfirmLoading]);
 
   return (
+    <ViewportPortal>
     <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 editor-confirm-overlay" onClick={() => !isConfirmLoading && onCancel()}>
       <div
-        className="w-full max-w-sm rounded-2xl p-6 editor-confirm-dialog"
+        className={`w-full ${thirdActionLabel ? 'max-w-lg' : 'max-w-sm'} rounded-2xl p-6 editor-confirm-dialog`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-3">
@@ -149,12 +159,12 @@ function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', canc
           <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
         </div>
         <p className="text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-muted)', paddingLeft: '44px' }}>{description}</p>
-        <div className="flex flex-wrap items-center gap-3 justify-end">
+        <div className="flex flex-col sm:flex-row sm:flex-nowrap sm:items-center gap-3 sm:justify-end">
           {thirdActionLabel && (
             <button
               onClick={onThirdAction}
               disabled={isConfirmLoading}
-              className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel mr-auto hover:text-red-500"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel sm:mr-auto hover:text-red-500"
               style={{ color: 'var(--text-muted)' }}
             >
               {thirdActionLabel}
@@ -163,7 +173,7 @@ function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', canc
           <button
             onClick={onCancel}
             disabled={isConfirmLoading}
-            className="px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg text-[13px] font-medium transition-colors editor-confirm-cancel"
             style={{ opacity: isConfirmLoading ? 0.5 : 1 }}
           >
             {cancelLabel}
@@ -171,7 +181,7 @@ function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', canc
           <button
             onClick={onConfirm}
             disabled={isConfirmLoading}
-            className="px-4 py-2 rounded-lg text-[13px] font-medium text-white transition-colors flex items-center gap-2"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg text-[13px] font-medium text-white transition-colors flex items-center justify-center gap-2"
             style={{ backgroundColor: destructive ? '#ef4444' : '#9b7bf7', opacity: isConfirmLoading ? 0.7 : 1 }}
           >
             {isConfirmLoading ? 'Saving...' : confirmLabel}
@@ -179,6 +189,7 @@ function EditorConfirmModal({ title, description, confirmLabel = 'Confirm', canc
         </div>
       </div>
     </div>
+    </ViewportPortal>
   );
 }
 
@@ -2728,8 +2739,9 @@ export default function WritePage({ slugid }) {
       {showCollabPanel && <CollaboratorPanel slugid={blogId} onClose={() => setShowCollabPanel(false)} />}
 
       {/* Saved to cloud toast */}
-      <AnimatePresence>
-        {showSavedToast && (
+      <ViewportPortal>
+        <AnimatePresence>
+          {showSavedToast && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -2741,17 +2753,19 @@ export default function WritePage({ slugid }) {
             </svg>
             <span className="text-[13px] text-green-300 font-medium">Saved to cloud</span>
           </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </ViewportPortal>
 
       {/* Cover upload failure — keep the previous cover and make retry guidance visible. */}
-      <AnimatePresence>
-        {coverUploadError && (
+      <ViewportPortal>
+        <AnimatePresence>
+          {coverUploadError && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl max-w-[min(92vw,520px)]"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex w-max max-w-[min(92vw,520px)] items-center gap-3 px-4 py-3 rounded-xl shadow-2xl"
             style={{ backgroundColor: 'var(--card-bg)', border: '1px solid rgba(248,113,113,0.35)', color: 'var(--text-primary)' }}
           >
             <ion-icon name="cloud-offline-outline" style={{ fontSize: '19px', color: '#f87171', flexShrink: 0 }} />
@@ -2766,8 +2780,9 @@ export default function WritePage({ slugid }) {
               <ion-icon name="close-outline" style={{ fontSize: '16px' }} />
             </button>
           </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </ViewportPortal>
 
       {/* Publish/Update confirmation modal */}
       {showPublishConfirm && (
