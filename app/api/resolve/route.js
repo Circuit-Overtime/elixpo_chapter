@@ -2,6 +2,8 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { decompressBlogContent } from '../../../lib/compress';
 import { STAFF_ORG_ID } from '../../../lib/staff';
+import { getSession } from '../../../lib/auth';
+import { getLimits } from '../../../lib/tiers';
 
 // Accepted co-authors (max 10) with display info for multi-author bylines.
 async function fetchCoAuthors(db, blogId) {
@@ -23,6 +25,36 @@ async function fetchCoAuthors(db, blogId) {
 // field server-side rather than trusting the client to hide them — the row still
 // carries author_id in D1 so a reported blog can be traced internally by slugid.
 // Listings must link secret blogs by slugid: /@name/slug would name the author.
+async function enforceMemberGating(db, blog) {
+  if (!blog || !blog.member_only) return blog;
+  const session = await getSession();
+  let canRead = false;
+  if (session?.userId) {
+    const me = await db.prepare('SELECT tier FROM users WHERE id = ?').bind(session.userId).first();
+    canRead = getLimits(me?.tier).canReadMemberOnly;
+    if (!canRead && blog.id) {
+      const { canEditBlog } = await import('../../../lib/permissions');
+      canRead = (await canEditBlog(db, blog.id, session.userId)).ok;
+      if (!canRead) {
+        const invitedViewer = await db.prepare(
+          "SELECT 1 FROM blog_co_authors WHERE blog_id = ? AND user_id = ? AND status = 'accepted'"
+        ).bind(blog.id, session.userId).first();
+        canRead = !!invitedViewer;
+      }
+    }
+  }
+  if (!canRead) {
+    blog.paywalled = true;
+    // Never return full blocks to a gated reader. "First two blocks" is not a
+    // safe teaser because one paragraph/code block can contain the whole post.
+    const teaser = typeof blog.excerpt === 'string' ? blog.excerpt.trim() : '';
+    blog.content = teaser
+      ? [{ type: 'paragraph', props: {}, content: [{ type: 'text', text: teaser, styles: {} }], children: [] }]
+      : [];
+  }
+  return blog;
+}
+
 function stripSecretAuthor(blog) {
   if (!blog || !blog.secret) return blog;
   const {
@@ -82,7 +114,7 @@ async function fetchBlogBySlugid(db, slugid) {
     if (u) owner = { type: 'user', ...u };
   }
 
-  return { type: 'blog', owner, blog: stripSecretAuthor(full) };
+  return { type: 'blog', owner, blog: await enforceMemberGating(db, stripSecretAuthor(full)) };
 }
 
 // Resolve @name to user or org, optionally fetch a blog by slug
@@ -175,7 +207,7 @@ export async function GET(request) {
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'user', ...user },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length },
+          blog: await enforceMemberGating(db, { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length }),
         });
       }
 
@@ -256,7 +288,7 @@ export async function GET(request) {
           type: 'blog',
           owner: { type: 'org', ...org },
           collection: { id: col.id, slug: collection },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length },
+          blog: await enforceMemberGating(db, { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length }),
         });
       }
 
@@ -272,7 +304,7 @@ export async function GET(request) {
           const colBlogs = await db.prepare(`
             SELECT b.id, b.slug, b.slugid, b.secret, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
               b.read_time_minutes, b.published_at, b.author_id,
-              u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier,
+              u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier, b.member_only,
               (SELECT COUNT(*) FROM likes WHERE blog_id = b.id) as like_count,
               (SELECT COUNT(*) FROM comments WHERE blog_id = b.id) as comment_count
             FROM blogs b JOIN users u ON u.id = b.author_id
@@ -319,7 +351,7 @@ export async function GET(request) {
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'org', ...org },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length },
+          blog: await enforceMemberGating(db, { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length }),
         });
       }
 

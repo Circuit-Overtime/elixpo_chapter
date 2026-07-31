@@ -198,6 +198,7 @@ function HandlePageInner({ path }) {
             coverPreview={blog.cover_image_r2_key || generateBlogBanner(blog.id || blog.slug)}
             coverPos={{ x: blog.cover_pos_x ?? 50, y: blog.cover_pos_y ?? 50 }}
             coverZoom={blog.cover_zoom ?? 1}
+            paywalled={blog.paywalled}
             user={{ username: blog.author_username, display_name: blog.author_name, avatar_url: blog.author_avatar }}
             anonymous={!!blog.secret}
             org={data.owner?.type === 'org' ? { name: data.owner.name, slug: data.owner.slug, logo_url: data.owner.logo_url || data.owner.logo_r2_key } : null}
