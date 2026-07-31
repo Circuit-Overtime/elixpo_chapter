@@ -50,7 +50,17 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
   // Record view on mount
   useEffect(() => {
     if (!blogId) return;
-    fetch(`/api/blogs/${blogId}/view`, { method: 'POST' }).catch(() => {});
+    const params = new URLSearchParams(window.location.search);
+    fetch(`/api/blogs/${blogId}/view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        referrer: document.referrer,
+        utmSource: params.get('utm_source'),
+        utmMedium: params.get('utm_medium'),
+        utmCampaign: params.get('utm_campaign'),
+      }),
+    }).catch(() => {});
   }, [blogId]);
 
   // Track scroll progress + report dwell time on unmount
@@ -69,7 +79,7 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
         fetch(`/api/blogs/${blogId}/progress`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ progress: Math.round(progress * 100) / 100 }),
+        body: JSON.stringify({ progress: Math.round(progress * 100) / 100 }),
         }).catch(() => {});
       }
     };
@@ -84,7 +94,7 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
       const dwellSeconds = Math.floor((Date.now() - startTime.current) / 1000);
       if (dwellSeconds > 10) {
         try {
-          const blob = new Blob([JSON.stringify({ blogId, dwellSeconds })], { type: 'application/json' });
+          const blob = new Blob([JSON.stringify({ progress: progressReported.current, dwellSeconds })], { type: 'application/json' });
           navigator.sendBeacon(`/api/blogs/${blogId}/progress`, blob);
         } catch {}
       }
@@ -189,11 +199,13 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
   };
 
   const copyLink = () => {
+    trackShare('link');
     navigator.clipboard.writeText(window.location.href).catch(() => {});
     setShareOpen(false);
   };
 
   const copyEmbed = () => {
+    trackShare('embed');
     const url = window.location.href;
     const code = `<iframe src="${url}?embed=1" width="100%" height="600" frameborder="0"></iframe>`;
     navigator.clipboard.writeText(code).catch(() => {});
@@ -201,10 +213,20 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
   };
 
   const copyMarkdown = () => {
+    trackShare('markdown');
     const url = window.location.href;
     const md = `[${document.title || 'Blog post'}](${url})`;
     navigator.clipboard.writeText(md).catch(() => {});
     setShareOpen(false);
+  };
+
+  const trackShare = (method) => {
+    fetch('/api/analytics/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blogId, eventType: 'share', method }),
+      keepalive: true,
+    }).catch(() => {});
   };
 
   if (!interactions) return null;
