@@ -320,16 +320,20 @@ function EditorView({ initialContent, isDark, onChange }) {
 
   // Intercept right-clicks on table handles to trigger their left-click menu
   useEffect(() => {
+    const wrapper = editorWrapperRef.current;
+    if (!wrapper) return;
     const handleContextMenu = (e) => {
-      const el = e.target.closest('[class*="TableHandle" i], [class*="table-handle" i], [class*="tableHandle" i], .bn-table-dir-row-handle, .bn-table-dir-col-handle');
+      const el = e.target instanceof Element
+        ? e.target.closest('[class*="TableHandle" i], [class*="table-handle" i], [class*="tableHandle" i], .bn-table-dir-row-handle, .bn-table-dir-col-handle')
+        : null;
       if (el) {
         e.preventDefault();
         e.stopPropagation();
         el.click();
       }
     };
-    document.addEventListener('contextmenu', handleContextMenu);
-    return () => document.removeEventListener('contextmenu', handleContextMenu);
+    wrapper.addEventListener('contextmenu', handleContextMenu);
+    return () => wrapper.removeEventListener('contextmenu', handleContextMenu);
   }, []);
 
   const handleEditorChange = useCallback(() => { onChange(editor); }, [editor, onChange]);
