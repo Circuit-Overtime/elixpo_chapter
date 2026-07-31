@@ -644,11 +644,11 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       if (!(e.ctrlKey || e.metaKey)) return;
       const link = e.target.closest('a[href]');
       if (!link) return;
-      
+
       if (link.closest('.mention-chip') || link.closest('.subpage-item') || link.closest('.preview-toc-link')) {
         return;
       }
-      
+
       const href = link.getAttribute('href');
       if (href) {
         const normalized = normalizeUrl(href);

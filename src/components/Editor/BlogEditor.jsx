@@ -776,8 +776,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
       if (document.querySelector('.bn-link-toolbar')) return;
       const href = link.getAttribute('href');
-      if (href && href.startsWith('http')) {
-        editorLinkPreview.show(link, href);
+      if (href) {
+        const normalized = normalizeUrl(href);
+        if (normalized.startsWith('http')) {
+          editorLinkPreview.show(link, normalized);
+        }
       }
     };
 
