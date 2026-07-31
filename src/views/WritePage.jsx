@@ -507,6 +507,7 @@ export default function WritePage({ slugid }) {
   const [conflict, setConflict] = useState(null); // { message, currentVersion, status }
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [isSavingLeave, setIsSavingLeave] = useState(false);
+  const [leaveSaveError, setLeaveSaveError] = useState('');
   const [pendingLeaveUrl, setPendingLeaveUrl] = useState(null);
   const [showMdReplaceConfirm, setShowMdReplaceConfirm] = useState(false);
   const [pendingMdFile, setPendingMdFile] = useState(null);
@@ -743,6 +744,7 @@ export default function WritePage({ slugid }) {
   const handleNavigation = useCallback((url) => {
     if (hasUnsavedEdits) {
       setPendingLeaveUrl(url);
+      setLeaveSaveError('');
       setShowLeaveConfirm(true);
       return false; // blocked
     }
@@ -754,6 +756,7 @@ export default function WritePage({ slugid }) {
   // replaced by our own in-app confirm modal (handleNavigation / link intercept).
   useEffect(() => {
     function handleBeforeUnload() {
+      if (bypassUnloadRef.current) return;
       const data = draftDataRef.current;
       if (data.title || data.editorContent) {
         saveDraft(blogId, data);
@@ -785,6 +788,7 @@ export default function WritePage({ slugid }) {
       e.preventDefault();
       e.stopPropagation();
       setPendingLeaveUrl(href);
+      setLeaveSaveError('');
       setShowLeaveConfirm(true);
     }
     document.addEventListener('click', handleClick, true);
@@ -2798,25 +2802,37 @@ export default function WritePage({ slugid }) {
       {showLeaveConfirm && (
         <EditorConfirmModal
           title="Unsaved Changes"
-          description="You have unsaved changes. Do you want to save them before leaving?"
+          description={leaveSaveError || 'You have unsaved changes. Do you want to save them before leaving?'}
           confirmLabel="Save & leave"
           cancelLabel="Stay"
           thirdActionLabel="Leave without saving"
           isConfirmLoading={isSavingLeave}
           onThirdAction={() => {
+            bypassUnloadRef.current = true;
             setHasUnsavedEdits(false);
             setShowLeaveConfirm(false);
             if (pendingLeaveUrl) window.location.href = pendingLeaveUrl;
           }}
           onConfirm={async () => {
             setIsSavingLeave(true);
+            setLeaveSaveError('');
             await syncToCloud();
+            if (dirtyRef.current) {
+              setLeaveSaveError('Cloud save failed. Your draft is still stored locally; try again or leave without saving.');
+              setIsSavingLeave(false);
+              return;
+            }
+            bypassUnloadRef.current = true;
             setIsSavingLeave(false);
             setHasUnsavedEdits(false);
             setShowLeaveConfirm(false);
             if (pendingLeaveUrl) window.location.href = pendingLeaveUrl;
           }}
-          onCancel={() => { setShowLeaveConfirm(false); setPendingLeaveUrl(null); }}
+          onCancel={() => {
+            setShowLeaveConfirm(false);
+            setPendingLeaveUrl(null);
+            setLeaveSaveError('');
+          }}
         />
       )}
 
