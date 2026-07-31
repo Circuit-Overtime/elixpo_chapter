@@ -63,9 +63,23 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
     }).catch(() => {});
   }, [blogId]);
 
-  // Track scroll progress + report dwell time on unmount
+  // Track scroll progress for signed-in and anonymous readers. Anonymous
+  // sessions use the privacy-safe analytics endpoint instead of read history.
   useEffect(() => {
-    if (!blogId || !user) return;
+    if (!blogId) return;
+
+    const sendProgress = (progress, dwellSeconds = 0, beacon = false) => {
+      const complete = progress >= 0.9;
+      const url = user ? `/api/blogs/${blogId}/progress` : '/api/analytics/event';
+      const body = user
+        ? { progress, dwellSeconds }
+        : { blogId, eventType: complete ? 'read_complete' : 'read_progress', value: complete ? dwellSeconds : progress };
+      if (beacon) {
+        try { navigator.sendBeacon(url, new Blob([JSON.stringify(body)], { type: 'application/json' })); } catch {}
+        return;
+      }
+      fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
+    };
 
     const reportProgress = () => {
       const scrollTop = window.scrollY;
@@ -76,11 +90,7 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
       // Only report if progress increased by at least 10%
       if (progress - progressReported.current >= 0.1) {
         progressReported.current = progress;
-        fetch(`/api/blogs/${blogId}/progress`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ progress: Math.round(progress * 100) / 100 }),
-        }).catch(() => {});
+        sendProgress(Math.round(progress * 100) / 100);
       }
     };
 
@@ -93,10 +103,7 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
       window.removeEventListener('scroll', reportProgress);
       const dwellSeconds = Math.floor((Date.now() - startTime.current) / 1000);
       if (dwellSeconds > 10) {
-        try {
-          const blob = new Blob([JSON.stringify({ progress: progressReported.current, dwellSeconds })], { type: 'application/json' });
-          navigator.sendBeacon(`/api/blogs/${blogId}/progress`, blob);
-        } catch {}
+        sendProgress(progressReported.current, dwellSeconds, true);
       }
     };
   }, [blogId, user]);

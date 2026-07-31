@@ -193,9 +193,10 @@ export default function StatsPage() {
               <MetricCard label="Reads" value={totals.reads} change={data.changes.reads} definition={definitions.reads} accent="#4ade80" />
               <MetricCard label="Completion" value={totals.completionRate} suffix="%" change={data.changes.completionRate} definition={definitions.completionRate} accent="#f59e0b" />
               <MetricCard label="Avg. reading depth" value={totals.avgReadProgress} suffix="%" change={data.changes.avgReadProgress} definition={definitions.avgReadProgress} accent="#22d3ee" />
+              <MetricCard label="Avg. read time" value={totals.avgReadTime} suffix="s" change={data.changes.avgReadTime} definition={definitions.avgReadTime} accent="#38bdf8" />
               <MetricCard label="Engagement rate" value={totals.engagementRate} suffix="%" change={data.changes.engagementRate} definition={definitions.engagementRate} accent="#f472b6" />
               <MetricCard label="Followers gained" value={totals.followers} change={data.changes.followers} definition={definitions.followers} accent="#a78bfa" />
-              <MetricCard label="Published posts" value={totals.published} change={0} accent="#94a3b8" />
+              <MetricCard label="Followers lost" value={totals.followersLost} change={data.changes.followersLost} accent="#f87171" />
             </div>
             <section className="rounded-2xl border p-4 sm:p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
               <div className="flex items-center justify-between mb-4"><div><h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Performance over time</h2><p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>Daily totals in the selected period</p></div><select value={metric} onChange={event => setMetric(event.target.value)} className="rounded-lg px-3 py-1.5 text-[12px]" style={{ background: 'var(--bg-elevated)', color: 'var(--text-body)' }}><option value="views">Views</option><option value="reads">Reads</option></select></div>

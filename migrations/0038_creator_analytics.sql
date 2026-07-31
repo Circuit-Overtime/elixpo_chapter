@@ -29,3 +29,19 @@ CREATE INDEX IF NOT EXISTS idx_analytics_events_visitor_time
 CREATE INDEX IF NOT EXISTS idx_analytics_events_user_time
   ON analytics_events(user_id, occurred_at);
 
+-- Follow rows disappear on unfollow, so retain a compact change ledger for
+-- gained/lost/net follower reporting without keeping reader profile data.
+CREATE TABLE IF NOT EXISTS creator_follow_events (
+  id TEXT PRIMARY KEY,
+  target_type TEXT NOT NULL CHECK(target_type IN ('user', 'org')),
+  target_id TEXT NOT NULL,
+  follower_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  delta INTEGER NOT NULL CHECK(delta IN (-1, 1)),
+  occurred_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_creator_follow_events_target_time
+  ON creator_follow_events(target_type, target_id, occurred_at);
+
+INSERT INTO creator_follow_events (id, target_type, target_id, follower_id, delta, occurred_at)
+SELECT lower(hex(randomblob(16))), following_type, following_id, follower_id, 1, created_at
+FROM follows;

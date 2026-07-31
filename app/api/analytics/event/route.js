@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { classifyDevice, recordAnalyticsEvent } from '../../../../lib/analytics';
 
-const PUBLIC_EVENTS = new Set(['impression', 'share']);
+const PUBLIC_EVENTS = new Set(['impression', 'read_progress', 'read_complete', 'share']);
 
 export async function POST(request) {
   try {
@@ -23,11 +23,18 @@ export async function POST(request) {
 
     const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
     const now = Math.floor(Date.now() / 1000);
+    const numericValue = Number(body.value);
+    const value = eventType === 'read_progress'
+      ? Math.max(0, Math.min(1, Number.isFinite(numericValue) ? numericValue : 0))
+      : eventType === 'read_complete'
+        ? Math.max(0, Math.min(86400, Number.isFinite(numericValue) ? numericValue : 0))
+        : null;
     await recordAnalyticsEvent(db, {
       blogId,
       userId: session?.userId,
       ip,
       eventType,
+      value,
       referrer: body.referrer,
       utmSource: body.utmSource,
       utmMedium: body.utmMedium,

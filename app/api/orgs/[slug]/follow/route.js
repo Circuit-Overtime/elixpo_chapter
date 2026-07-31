@@ -35,9 +35,13 @@ export async function POST(request, { params }) {
     const db = getDB();
     const org = await getOrg(db, slug);
     if (!org) return NextResponse.json({ error: 'Org not found' }, { status: 404 });
-    await db.prepare(
+    const inserted = await db.prepare(
       "INSERT OR IGNORE INTO follows (follower_id, following_id, following_type) VALUES (?, ?, 'org')"
     ).bind(session.userId, org.id).run();
+    if ((inserted?.meta?.changes ?? 1) > 0) try {
+      await db.prepare("INSERT INTO creator_follow_events (id, target_type, target_id, follower_id, delta) VALUES (?, 'org', ?, ?, 1)")
+        .bind(crypto.randomUUID(), org.id, session.userId).run();
+    } catch {}
     return NextResponse.json({ following: true });
   } catch {
     return NextResponse.json({ error: 'Failed to follow' }, { status: 500 });
@@ -54,9 +58,13 @@ export async function DELETE(request, { params }) {
     const db = getDB();
     const org = await getOrg(db, slug);
     if (!org) return NextResponse.json({ error: 'Org not found' }, { status: 404 });
-    await db.prepare(
+    const removed = await db.prepare(
       "DELETE FROM follows WHERE follower_id = ? AND following_id = ? AND following_type = 'org'"
     ).bind(session.userId, org.id).run();
+    if ((removed?.meta?.changes || 0) > 0) try {
+      await db.prepare("INSERT INTO creator_follow_events (id, target_type, target_id, follower_id, delta) VALUES (?, 'org', ?, ?, -1)")
+        .bind(crypto.randomUUID(), org.id, session.userId).run();
+    } catch {}
     return NextResponse.json({ following: false });
   } catch {
     return NextResponse.json({ error: 'Failed to unfollow' }, { status: 500 });
