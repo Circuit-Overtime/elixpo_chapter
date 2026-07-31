@@ -482,7 +482,7 @@ export default function SearchPage() {
                                 <p className="search-blog-subtitle">{b.subtitle}</p>
                               )}
                             </div>
-                            
+
                             <div className="flex items-center justify-between gap-4 flex-wrap mt-2">
                               <div className="search-blog-meta">
                                 {b.author_username ? (
@@ -520,7 +520,7 @@ export default function SearchPage() {
                                 )}
                               </div>
                             </div>
-                            
+
                             {b.tags && b.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-2">
                                 {b.tags.slice(0, 3).map(t => (
