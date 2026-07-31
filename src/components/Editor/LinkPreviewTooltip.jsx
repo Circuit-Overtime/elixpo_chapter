@@ -20,7 +20,7 @@ async function fetchPreview(url) {
   }
 }
 
-export default function LinkPreviewTooltip({ anchorEl, url, onClose }) {
+export default function LinkPreviewTooltip({ anchorEl, url, onClose, onEdit }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const tooltipRef = useRef(null);
@@ -155,6 +155,25 @@ export default function LinkPreviewTooltip({ anchorEl, url, onClose }) {
           </div>
         </a>
       ) : null}
+      {onEdit && (
+        <div className="link-preview-footer">
+          <button
+            type="button"
+            className="link-preview-edit-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEdit();
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            Edit link
+          </button>
+        </div>
+      )}
     </div>
   );
 }
