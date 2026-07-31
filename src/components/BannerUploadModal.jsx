@@ -3,10 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../utils/allowedImageTypes';
 
-const ASPECT_RATIO = 16 / 5; // ~3.2:1, wide banner
+const ASPECT_RATIO = 16 / 5;
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = Math.round(CANVAS_WIDTH / ASPECT_RATIO);
-const OUTPUT_QUALITY = 0.45; // heavy compression
+const OUTPUT_QUALITY = 0.45;
 
 export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
   const [tab, setTab] = useState('upload');
@@ -75,7 +75,30 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
     loadImage(urlInput.trim());
   };
 
-  // Draw
+  const handleGenerateBanner = async () => {
+    setUrlError('');
+    if (!urlInput.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/ai/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: urlInput.trim(), model: 'flux' })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to generate image');
+      }
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      loadImage(objectUrl);
+    } catch (err) {
+      setUrlError(err.message || 'Image generation failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
@@ -100,7 +123,6 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
     ctx.filter = 'none';
   }, [imageSrc, crop, filters]);
 
-  // Drag handlers
   const handleMouseDown = (e) => {
     setDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY, cropX: crop.x, cropY: crop.y };
@@ -108,7 +130,6 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
 
   const handleMouseMove = useCallback((e) => {
     if (!dragging) return;
-    // Scale mouse movement to canvas coordinates
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
@@ -132,7 +153,6 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
     }
   }, [dragging, handleMouseMove, handleMouseUp]);
 
-  // Touch drag
   const handleTouchStart = (e) => {
     const t = e.touches[0];
     setDragging(true);
@@ -175,13 +195,9 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     setSaving(true);
-
-    // Convert to blob for smaller payload
     canvas.toBlob(
       (blob) => {
-        if (blob) {
-          onSave(blob);
-        }
+        if (blob) onSave(blob);
         setSaving(false);
       },
       'image/webp',
@@ -200,7 +216,6 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
         className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-2xl w-full max-w-[720px] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-default)]">
           <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Edit Banner</h3>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1">
@@ -210,12 +225,12 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
           </button>
         </div>
 
-        {/* Tabs — only show when no image loaded */}
         {!imageSrc && (
           <div className="flex border-b border-[var(--border-default)]">
             {[
               { key: 'upload', label: 'Upload', icon: 'cloud-upload-outline' },
               { key: 'url', label: 'From URL', icon: 'link-outline' },
+              { key: 'generate', label: 'Generate', icon: 'sparkles-outline' },
             ].map((t) => (
               <button
                 key={t.key}
@@ -234,7 +249,6 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
         )}
 
         <div className="p-6">
-          {/* Upload tab */}
           {tab === 'upload' && !imageSrc && (
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -251,7 +265,6 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
             </div>
           )}
 
-          {/* URL tab */}
           {tab === 'url' && !imageSrc && (
             <div className="space-y-3">
               <div className="flex gap-2">
@@ -274,10 +287,31 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
             </div>
           )}
 
-          {/* Editor view */}
+          {tab === 'generate' && !imageSrc && (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={urlInput}
+                  onChange={(e) => { setUrlInput(e.target.value); setUrlError(''); }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateBanner()}
+                  placeholder="Describe the banner image..."
+                  className="flex-1 bg-[var(--bg-app)] text-[var(--text-primary)] rounded-lg px-4 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[var(--border-hover)] transition-colors placeholder-[#6b7a8d]"
+                />
+                <button
+                  onClick={handleGenerateBanner}
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-[#9b7bf7] text-[var(--text-primary)] font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {saving ? 'Generating...' : 'Generate'}
+                </button>
+              </div>
+              {urlError && <p className="text-red-400 text-[11px]">{urlError}</p>}
+            </div>
+          )}
+
           {imageSrc && (
             <div className="space-y-5">
-              {/* Canvas preview */}
               <div
                 ref={containerRef}
                 className="relative rounded-xl overflow-hidden border border-[var(--border-default)] cursor-grab active:cursor-grabbing mx-auto select-none"
@@ -287,15 +321,12 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
                 onWheel={handleWheel}
               >
                 <canvas ref={canvasRef} className="w-full h-full block" />
-                {/* Corner hint */}
                 <div className="absolute bottom-2 right-2 bg-black/50 rounded-md px-2 py-1 text-[10px] text-[#999] pointer-events-none">
                   Drag to reposition
                 </div>
               </div>
 
-              {/* Controls */}
               <div className="grid grid-cols-3 gap-4">
-                {/* Zoom */}
                 <div>
                   <label className="text-[11px] text-[var(--text-muted)] mb-1.5 block">Zoom</label>
                   <div className="flex items-center gap-2">
@@ -313,7 +344,6 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
                   </div>
                 </div>
 
-                {/* Brightness */}
                 <div>
                   <label className="text-[11px] text-[var(--text-muted)] mb-1.5 block">Brightness</label>
                   <div className="flex items-center gap-2">
@@ -331,7 +361,6 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
                   </div>
                 </div>
 
-                {/* Contrast */}
                 <div>
                   <label className="text-[11px] text-[var(--text-muted)] mb-1.5 block">Contrast</label>
                   <div className="flex items-center gap-2">
@@ -350,7 +379,6 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex items-center justify-between pt-2">
                 <div className="flex gap-2">
                   <button
