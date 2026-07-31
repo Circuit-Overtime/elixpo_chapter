@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 import { readTimeFromWords } from '../../../lib/readTime';
+import { escapeHtmlAttribute, normalizeUrl } from '../../utils/linkHelper';
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -92,15 +93,6 @@ function FloatingTOC({ headings }) {
   );
 }
 
-function normalizeUrl(url) {
-  if (!url || typeof url !== 'string') return url;
-  const trimmed = url.trim();
-  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('#')) {
-    return trimmed;
-  }
-  return `https://${trimmed}`;
-}
-
 function renderBlocksToHTML(blocks) {
   if (!blocks || !blocks.length) return '';
 
@@ -132,15 +124,18 @@ function renderBlocksToHTML(blocks) {
       }
       if (c.type === 'inlineButton') {
         const label = (c.props?.label || 'Button').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const href = c.props?.href || '';
+        const href = escapeHtmlAttribute(normalizeUrl(c.props?.href || ''));
         return href
           ? `<a href="${href}" class="inline-button-chip" target="_blank" rel="noopener noreferrer">${label}</a>`
           : `<span class="inline-button-chip">${label}</span>`;
       }
       // Links wrap child content — recurse into c.content for the link text
       if (c.type === 'link' && c.href) {
+        const normalizedHref = normalizeUrl(c.href);
         const linkText = c.content ? inlineToHTML(c.content) : (c.text || c.href).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return `<a href="${normalizeUrl(c.href)}">${linkText || c.href}</a>`;
+        return normalizedHref
+          ? `<a href="${escapeHtmlAttribute(normalizedHref)}">${linkText || c.href}</a>`
+          : linkText;
       }
       let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       if (!text) return '';
@@ -596,21 +591,6 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       }).catch((err) => console.error('Shiki load failed:', err));
     }
 
-    // ── External Links Click Handler ──
-    const handleLinkClick = (e) => {
-      if (!(e.ctrlKey || e.metaKey)) return;
-      const link = e.target.closest('a[href]');
-      if (!link || link.classList.contains('mention-chip') || link.classList.contains('preview-toc-link')) return;
-      let href = link.getAttribute('href');
-      if (href) {
-        href = normalizeUrl(href);
-        e.preventDefault();
-        e.stopPropagation();
-        window.open(href, '_blank', 'noopener,noreferrer');
-      }
-    };
-    root.addEventListener('click', handleLinkClick);
-
     // ── Inline TOC smooth scroll ──
     const tocLinks = root.querySelectorAll('.preview-toc-link');
     tocLinks.forEach((link) => {
@@ -622,7 +602,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
     });
 
     // ── Link preview on hover (use ref to avoid stale closures) ──
-    const externalLinks = root.querySelectorAll('a[href]:not([href^="/"]):not([href^="#"]):not(.mention-chip):not(.preview-toc-link):not(.link-preview-card)');
+    const externalLinks = root.querySelectorAll('a[href^="http"]:not(.mention-chip):not(.preview-toc-link):not(.link-preview-card)');
     const linkHandlers = [];
     externalLinks.forEach((link) => {
       const href = link.getAttribute('href');
@@ -660,8 +640,28 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       mentionHandlers.push({ el: chip, onEnter, onLeave });
     });
 
+    const handleModifierClick = (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const link = e.target.closest('a[href]');
+      if (!link) return;
+
+      if (link.closest('.mention-chip') || link.closest('.subpage-item') || link.closest('.preview-toc-link')) {
+        return;
+      }
+
+      const href = link.getAttribute('href');
+      if (href) {
+        const normalized = normalizeUrl(href);
+        if (!normalized || normalized.startsWith('/') || normalized.startsWith('#')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(normalized, '_blank', 'noopener,noreferrer');
+      }
+    };
+    root.addEventListener('click', handleModifierClick);
+
     return () => {
-      root.removeEventListener('click', handleLinkClick);
+      root.removeEventListener('click', handleModifierClick);
       linkHandlers.forEach(({ el, onEnter, onLeave }) => {
         el.removeEventListener('mouseenter', onEnter);
         el.removeEventListener('mouseleave', onLeave);
