@@ -3105,6 +3105,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                     e.stopPropagation();
                     if (e.key === 'Enter') {
                       e.preventDefault();
+                      if (!linkEditor.url.trim()) return;
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
@@ -3140,6 +3141,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                     e.stopPropagation();
                     if (e.key === 'Enter') {
                       e.preventDefault();
+                      if (!linkEditor.url.trim()) return;
                       const tiptap = editor._tiptapEditor;
                       if (tiptap) {
                         const { state, view } = tiptap;
