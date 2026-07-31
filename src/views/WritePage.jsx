@@ -418,6 +418,7 @@ export default function WritePage({ slugid }) {
   // frozen by the server once the post has been public even once.
   const [secret, setSecret] = useState(false);
   const [memberOnly, setMemberOnly] = useState(false);
+  const [ownerCanMarkMemberOnly, setOwnerCanMarkMemberOnly] = useState(null);
   // Sub-pages/canvases already on a post that's being switched to secret. They can't
   // come along, so the author (or a co-author) is told before they publish rather
   // than hitting a server rejection later.
@@ -596,7 +597,7 @@ export default function WritePage({ slugid }) {
   const draftDataRef = useRef({ title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly });
   useEffect(() => {
     draftDataRef.current = { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly };
-  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom]);
+  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, memberOnly]);
 
   // Sync any buffered subpage drafts from localStorage to cloud
   const syncSubpageDrafts = useCallback(async () => {
@@ -827,6 +828,7 @@ export default function WritePage({ slugid }) {
         if (cloud.published_as) setPublishAs(cloud.published_as);
         setSecret(!!cloud.secret);
         setMemberOnly(!!cloud.member_only);
+        setOwnerCanMarkMemberOnly(!!cloud.can_mark_member_only);
         setCollectionId(cloud.collection_id || null);
         setCoverPreview(persistableCover(cloud.cover_image_r2_key));
         if (Number.isFinite(cloud.cover_pos_x) && Number.isFinite(cloud.cover_pos_y)) setCoverPos({ x: cloud.cover_pos_x, y: cloud.cover_pos_y });
@@ -884,12 +886,12 @@ export default function WritePage({ slugid }) {
     dirtyRef.current = true;
     autoSaveTimer.current = setTimeout(() => {
       if (title || editorContent) {
-        saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret });
+        saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly });
         setLastSaved(Date.now());
       }
     }, 2000);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, blogId]);
+  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, memberOnly, blogId]);
 
   // Background cloud flush — localStorage is the instant buffer, but beforeunload/
   // sendBeacon is unreliable, so flush unsynced edits to the cloud every 20s.
@@ -2280,7 +2282,7 @@ export default function WritePage({ slugid }) {
 
           {mode === 'preview' && (
             <div className="blog-preview-fullwidth">
-              <BlogPreview title={title} subtitle={subtitle} coverPreview={coverPreview} coverZoom={coverZoom} coverPos={coverPos} pageEmoji={pageEmoji} tags={tags} html={previewHtml} blocks={previewBlocks} user={user} wordCount={wordCount} />
+              <BlogPreview title={title} subtitle={subtitle} coverPreview={coverPreview} coverZoom={coverZoom} coverPos={coverPos} pageEmoji={pageEmoji} tags={tags} html={previewHtml} blocks={previewBlocks} user={user} wordCount={wordCount} memberOnly={memberOnly} />
             </div>
           )}
 
@@ -2533,7 +2535,7 @@ export default function WritePage({ slugid }) {
             </p>
           </div>
 
-                    {user?.tier === 'member' && (
+          {(memberOnly || (ownerCanMarkMemberOnly ?? (user?.tier === 'member'))) && (
             <div>
               <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
                 Member-only Content

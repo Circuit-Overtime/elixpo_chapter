@@ -100,8 +100,9 @@ export async function GET(request) {
 
     // The real author — so collaborators see the actual owner in publish settings,
     // not themselves.
-    const author = await db.prepare('SELECT username, display_name, avatar_url FROM users WHERE id = ?')
+    const author = await db.prepare('SELECT username, display_name, avatar_url, tier FROM users WHERE id = ?')
       .bind(blog.author_id).first();
+    const { getLimits } = await import('../../../../lib/tiers');
 
     return NextResponse.json({
       blog: {
@@ -112,6 +113,7 @@ export async function GET(request) {
         owner_username: author?.username || null,
         owner_display_name: author?.display_name || null,
         owner_avatar: author?.avatar_url || null,
+        can_mark_member_only: getLimits(author?.tier).canMarkMemberOnly,
         member_only: !!blog.member_only,
       },
       version,
@@ -167,15 +169,17 @@ export async function POST(request) {
       ? (existing.status === 'draft' ? requestedSecret : (existing.secret ? 1 : 0))
       : requestedSecret;
 
-    const me = await db.prepare('SELECT tier FROM users WHERE id = ?').bind(session.userId).first();
+    const tierOwnerId = existing?.author_id || session.userId;
+    const owner = await db.prepare('SELECT tier FROM users WHERE id = ?').bind(tierOwnerId).first();
     const { getLimits } = await import('../../../../lib/tiers');
-    const limits = getLimits(me?.tier);
+    const limits = getLimits(owner?.tier);
 
     const requestedMemberOnly = (member_only === true || member_only === 1) ? 1 : 0;
-    if (requestedMemberOnly && !limits.canMarkMemberOnly) {
+    const grandfatheredMemberOnly = !!existing?.member_only;
+    if (requestedMemberOnly && !limits.canMarkMemberOnly && !grandfatheredMemberOnly) {
       return NextResponse.json({ error: 'Free tier authors cannot mark posts as member-only' }, { status: 403 });
     }
-    const finalMemberOnly = limits.canMarkMemberOnly ? requestedMemberOnly : (existing?.member_only || 0);
+    const finalMemberOnly = requestedMemberOnly && (limits.canMarkMemberOnly || grandfatheredMemberOnly) ? 1 : 0;
 
     if (existing) {
       // Edit permission: author, org write+, or accepted co-author.

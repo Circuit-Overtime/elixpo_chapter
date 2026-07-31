@@ -25,28 +25,32 @@ async function fetchCoAuthors(db, blogId) {
 // field server-side rather than trusting the client to hide them — the row still
 // carries author_id in D1 so a reported blog can be traced internally by slugid.
 // Listings must link secret blogs by slugid: /@name/slug would name the author.
-async function enforceMemberGating(blog) {
+async function enforceMemberGating(db, blog) {
   if (!blog || !blog.member_only) return blog;
   const session = await getSession();
   let canRead = false;
   if (session?.userId) {
-    const { getDB } = await import('../../../lib/cloudflare');
-    const me = await getDB().prepare('SELECT tier FROM users WHERE id = ?').bind(session.userId).first();
+    const me = await db.prepare('SELECT tier FROM users WHERE id = ?').bind(session.userId).first();
     canRead = getLimits(me?.tier).canReadMemberOnly;
+    if (!canRead && blog.id) {
+      const { canEditBlog } = await import('../../../lib/permissions');
+      canRead = (await canEditBlog(db, blog.id, session.userId)).ok;
+      if (!canRead) {
+        const invitedViewer = await db.prepare(
+          "SELECT 1 FROM blog_co_authors WHERE blog_id = ? AND user_id = ? AND status = 'accepted'"
+        ).bind(blog.id, session.userId).first();
+        canRead = !!invitedViewer;
+      }
+    }
   }
   if (!canRead) {
     blog.paywalled = true;
-    let content = blog.content;
-    if (typeof content === 'string') {
-        try {
-           let blocks = JSON.parse(content);
-           if (Array.isArray(blocks)) {
-               blog.content = JSON.stringify(blocks.slice(0, 2));
-           }
-         } catch {}
-    } else if (Array.isArray(content)) {
-        blog.content = content.slice(0, 2);
-    }
+    // Never return full blocks to a gated reader. "First two blocks" is not a
+    // safe teaser because one paragraph/code block can contain the whole post.
+    const teaser = typeof blog.excerpt === 'string' ? blog.excerpt.trim() : '';
+    blog.content = teaser
+      ? [{ type: 'paragraph', props: {}, content: [{ type: 'text', text: teaser, styles: {} }], children: [] }]
+      : [];
   }
   return blog;
 }
@@ -76,7 +80,7 @@ function decompressBlog(blog) {
 async function fetchBlogBySlugid(db, slugid) {
   const blog = await db.prepare(`
     SELECT b.*, u.username as author_username, u.display_name as author_name,
-      u.avatar_url as author_avatar, u.tier as author_tier, b.member_only
+      u.avatar_url as author_avatar, u.tier as author_tier
     FROM blogs b JOIN users u ON u.id = b.author_id
     WHERE b.id = ? AND b.status IN ('published', 'unlisted')
   `).bind(slugid).first();
@@ -110,7 +114,7 @@ async function fetchBlogBySlugid(db, slugid) {
     if (u) owner = { type: 'user', ...u };
   }
 
-  return { type: 'blog', owner, blog: await enforceMemberGating(stripSecretAuthor(full)) };
+  return { type: 'blog', owner, blog: await enforceMemberGating(db, stripSecretAuthor(full)) };
 }
 
 // Resolve @name to user or org, optionally fetch a blog by slug
@@ -185,7 +189,7 @@ export async function GET(request) {
             b.cover_pos_x, b.cover_pos_y, b.cover_zoom, b.member_only,
             b.status, b.published_as, b.page_emoji, b.read_time_minutes,
             b.published_at, b.created_at, b.updated_at, b.author_id,
-            u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier, b.member_only
+            u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier
           FROM blogs b
           JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.author_id = ? AND b.status IN ('published', 'unlisted')
@@ -203,7 +207,7 @@ export async function GET(request) {
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'user', ...user },
-          blog: await enforceMemberGating({ ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length }),
+          blog: await enforceMemberGating(db, { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length }),
         });
       }
 
@@ -268,7 +272,7 @@ export async function GET(request) {
         if (!col) return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
 
         const blog = await db.prepare(`
-          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier, b.member_only
+          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier
           FROM blogs b JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.collection_id = ? AND b.status IN ('published', 'unlisted')
             AND b.secret = 0
@@ -284,7 +288,7 @@ export async function GET(request) {
           type: 'blog',
           owner: { type: 'org', ...org },
           collection: { id: col.id, slug: collection },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length },
+          blog: await enforceMemberGating(db, { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length }),
         });
       }
 
@@ -332,7 +336,7 @@ export async function GET(request) {
 
         // Otherwise treat as a blog slug
         const blog = await db.prepare(`
-          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier, b.member_only
+          SELECT b.*, u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar, u.tier as author_tier
           FROM blogs b JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.published_as = ? AND b.status IN ('published', 'unlisted')
             AND b.secret = 0
@@ -347,7 +351,7 @@ export async function GET(request) {
         return NextResponse.json({
           type: 'blog',
           owner: { type: 'org', ...org },
-          blog: { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length },
+          blog: await enforceMemberGating(db, { ...decompressBlog(blog), tags: (tags?.results || []).map(t => t.tag), co_authors: coAuthorRow, co_author_count: coAuthorRow.length }),
         });
       }
 
