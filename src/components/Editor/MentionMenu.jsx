@@ -60,73 +60,33 @@ export default function MentionMenu({ editor, query, onClose, onDismiss, allowUs
   const insertMention = useCallback((item) => {
     if (!editor) return;
 
-    // Delete the @query text before inserting mention — preserve existing inline nodes
+    // Delete the @query text before inserting mention
     try {
-      const cursor = editor.getTextCursorPosition();
-      if (cursor?.block) {
-        const block = cursor.block;
-        const contentArr = block.content || [];
-
-        // Find the last text node that contains '@'
-        let atNodeIdx = -1;
-        let atPosInNode = -1;
-        for (let i = contentArr.length - 1; i >= 0; i--) {
-          const c = contentArr[i];
-          if (c.type === 'text' && c.text) {
-            const idx = c.text.lastIndexOf('@');
-            if (idx !== -1) {
-              atNodeIdx = i;
-              atPosInNode = idx;
-              break;
-            }
-          }
-        }
-
-        if (atNodeIdx !== -1) {
-          let mentionNode;
-          if (item._type === 'user') {
-            mentionNode = { type: 'mention', props: { username: item.username, displayName: item.display_name || item.username, avatarUrl: item.avatar_url || '' } };
-          } else if (item._type === 'org') {
-            mentionNode = { type: 'orgMention', props: { name: item.name || item.slug, slug: item.slug } };
-          } else {
-            mentionNode = { type: 'blogMention', props: { title: item.title, slugid: item.slugid, author: item.author_username || '', slug: item.slug || '' } };
-          }
-
-          // Rebuild content: everything before the @ node, the text before @ in that node, mention, space, text after @query, rest
-          const atNodeText = contentArr[atNodeIdx].text;
-          const atNodeStyles = contentArr[atNodeIdx].styles || {};
-          const textBefore = atNodeText.slice(0, atPosInNode);
-          // Remove the whole typed @token (up to the next whitespace), not just the
-          // live `query`. The menu's query can lag the typed text, which left a
-          // broken remainder (e.g. "@Anwesha" → mention chip + stray "nwesha").
-          const afterAt = atNodeText.slice(atPosInNode + 1);
-          const wsIdx = afterAt.search(/\s/);
-          const textAfter = wsIdx === -1 ? '' : afterAt.slice(wsIdx).replace(/^\s+/, '');
-
-          const newContent = [];
-          // Keep all nodes before the @ node
-          for (let i = 0; i < atNodeIdx; i++) newContent.push(contentArr[i]);
-          // Text before @ in the same node
-          if (textBefore) newContent.push({ type: 'text', text: textBefore, styles: atNodeStyles });
-          // Insert mention + space
-          newContent.push(mentionNode);
-          newContent.push({ type: 'text', text: ' ' + textAfter, styles: textAfter ? atNodeStyles : {} });
-          // Preserve any content nodes after the @ node (e.g. subsequent mentions or text)
-          for (let i = atNodeIdx + 1; i < contentArr.length; i++) newContent.push(contentArr[i]);
-
-          editor.updateBlock(block, { content: newContent });
-          // Place the caret right after the chip + trailing space (same line),
-          // otherwise it jumps to the next line / disappears after the rebuild.
-          setTimeout(() => {
-            try {
-              editor.focus();
-              editor.setTextCursorPosition(block.id, 'end');
-            } catch {}
-          }, 0);
+      const tiptap = editor._tiptapEditor;
+      if (tiptap) {
+        const { state, view } = tiptap;
+        const { $from } = state.selection;
+        
+        const textBeforeCursor = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
+        const textAfterCursor = $from.parent.textBetween($from.parentOffset, $from.parent.content.size, undefined, '\ufffc');
+        
+        const atIdx = textBeforeCursor.lastIndexOf('@');
+        if (atIdx !== -1) {
+          const wsIdx = textAfterCursor.search(/\s/);
+          const endOffset = wsIdx === -1 ? textAfterCursor.length : wsIdx;
+          
+          const from = $from.pos - (textBeforeCursor.length - atIdx);
+          const to = $from.pos + endOffset;
+          
+          // Delete the exact @query string from the document
+          view.dispatch(state.tr.delete(from, to));
         }
       }
-    } catch {
-      // Fallback: just insert without deleting (better than nothing)
+    } catch {}
+
+    // Insert the actual mention node + a trailing space
+    try {
+      editor.focus();
       let content;
       if (item._type === 'user') {
         content = [{ type: 'mention', props: { username: item.username, displayName: item.display_name || item.username, avatarUrl: item.avatar_url || '' } }, ' '];
@@ -136,7 +96,7 @@ export default function MentionMenu({ editor, query, onClose, onDismiss, allowUs
         content = [{ type: 'blogMention', props: { title: item.title, slugid: item.slugid, author: item.author_username || '', slug: item.slug || '' } }, ' '];
       }
       editor.insertInlineContent(content);
-    }
+    } catch {}
 
     onClose?.();
   }, [editor, onClose]);
@@ -203,6 +163,7 @@ export default function MentionMenu({ editor, query, onClose, onDismiss, allowUs
               <button
                 key={`user-${user.username}`}
                 className={`mention-item ${i === activeIndex ? 'mention-item-active' : ''}`}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => insertMention({ ...user, _type: 'user' })}
                 onMouseEnter={() => setActiveIndex(i)}
               >
@@ -233,6 +194,7 @@ export default function MentionMenu({ editor, query, onClose, onDismiss, allowUs
               <button
                 key={`org-${org.slug}`}
                 className={`mention-item ${i === activeIndex ? 'mention-item-active' : ''}`}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => insertMention({ ...org, _type: 'org' })}
                 onMouseEnter={() => setActiveIndex(i)}
               >
@@ -267,6 +229,7 @@ export default function MentionMenu({ editor, query, onClose, onDismiss, allowUs
               <button
                 key={`blog-${blog.slugid}`}
                 className={`mention-item ${i === activeIndex ? 'mention-item-active' : ''}`}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => insertMention({ ...blog, _type: 'blog' })}
                 onMouseEnter={() => setActiveIndex(i)}
               >
