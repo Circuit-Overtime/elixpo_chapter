@@ -4,16 +4,8 @@ import { createReactBlockSpec } from '@blocknote/react';
 import { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { IMAGE_ACCEPT_ATTR } from '../../../utils/allowedImageTypes';
 
-// The block spec is shared by all editor instances, so use context rather than
-// module state to associate an upload with the blog currently being edited.
 export const BlogImageUploadContext = createContext({ blogId: null });
 
-/**
- * Custom image block replacing BlockNote's default.
- * Empty state: 3 buttons (Upload, Embed URL, Generate with AI)
- * Has image: full-width display with hover actions
- * Supports: paste, drag-drop, backspace to delete
- */
 export const BlogImageBlock = createReactBlockSpec(
   {
     type: 'image',
@@ -63,13 +55,11 @@ function BlogImageRenderer({ block, editor }) {
   const embedInputRef = useRef(null);
   const aiInputRef = useRef(null);
 
-  // Focus inputs when mode changes
   useEffect(() => {
     if (mode === 'embed') setTimeout(() => embedInputRef.current?.focus(), 50);
     if (mode === 'generate') setTimeout(() => aiInputRef.current?.focus(), 50);
   }, [mode]);
 
-  // Keyboard: backspace to delete when focused
   useEffect(() => {
     const el = blockRef.current;
     if (!el) return;
@@ -83,7 +73,6 @@ function BlogImageRenderer({ block, editor }) {
     return () => el.removeEventListener('keydown', handleKey);
   }, [editor, block.id, mode, url]);
 
-  // Upload helper — sets _uploading prop so the placeholder persists across re-renders
   const uploadFile = useCallback(async (file) => {
     if (!file) return;
     const { isAllowedImage } = await import('../../../utils/allowedImageTypes');
@@ -93,7 +82,6 @@ function BlogImageRenderer({ block, editor }) {
     }
     editor.updateBlock(block.id, { props: { _uploading: 'uploading' } });
 
-    // Move caret to next line / paragraph below so the user can continue typing
     try {
       const doc = editor.document;
       const idx = doc.findIndex((b) => b.id === block.id);
@@ -132,7 +120,6 @@ function BlogImageRenderer({ block, editor }) {
     }
   }, [editor, block.id, blogId]);
 
-  // Paste handler
   const handlePaste = useCallback((e) => {
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -145,7 +132,6 @@ function BlogImageRenderer({ block, editor }) {
     }
   }, [uploadFile]);
 
-  // Drag and drop
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragOver(false);
@@ -153,7 +139,6 @@ function BlogImageRenderer({ block, editor }) {
     if (file?.type.startsWith('image/')) uploadFile(file);
   }, [uploadFile]);
 
-  // Embed URL submit
   const handleEmbed = useCallback(() => {
     const trimmed = embedUrl.trim();
     if (!trimmed) return;
@@ -167,50 +152,33 @@ function BlogImageRenderer({ block, editor }) {
     setEmbedError('');
   }, [embedUrl, editor, block.id]);
 
-  // AI image generate via lixsearch
   const handleGenerate = useCallback(async () => {
     if (!aiPrompt.trim()) return;
     setMode('generating');
     try {
-      const { getOrCreateSession, streamAI, reuploadImage } = await import('../../../ai/agent');
-
-      // Use a lightweight ephemeral session for manual image generation
-      // We pass a dummy slugid — the session route handles missing blogs gracefully
-      const sessionId = await getOrCreateSession('_img_gen');
-
-      // Stream a "generate image" request through lixsearch
-      let imageUrl = null;
-      await streamAI({
-        sessionId,
-        systemPrompt: 'You are an image generation assistant. When asked to generate an image, create it. Output only the image, no extra text.',
-        userPrompt: `Generate an image: ${aiPrompt.trim()}`,
-        onImage: ({ url }) => { imageUrl = url; },
-        onDone: () => {},
+      const res = await fetch('/api/ai/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt.trim(), model: 'flux' })
       });
-
-      if (!imageUrl) throw new Error('No image generated');
-
-      // Show the lixsearch URL as preview immediately
-      editor.updateBlock(block.id, { props: { url: imageUrl } });
-
-      // Re-upload to Cloudinary for persistence
-      const uploaded = await reuploadImage(imageUrl, aiPrompt.trim());
-      if (uploaded) {
-        editor.updateBlock(block.id, { props: { url: uploaded.url, _mediaId: uploaded.id } });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to generate image');
       }
-
+      
+      const blob = await res.blob();
+      const file = new File([blob], `ai_${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' });
+      
       setMode('idle');
       setAiPrompt('');
+      uploadFile(file);
     } catch (err) {
       console.error('AI image generation failed:', err);
       showFailToast(err.message || 'Image generation failed');
-      try {
-        editor.updateBlock(block.id, { type: 'paragraph', props: {}, content: [] });
-      } catch { /* block may already be gone */ }
+      setMode('idle');
     }
-  }, [aiPrompt, editor, block.id]);
+  }, [aiPrompt, uploadFile]);
 
-  // Toast on failure — inject a temporary toast element
   const showFailToast = useCallback((msg) => {
     const toast = document.createElement('div');
     toast.className = 'blog-img-fail-toast';
@@ -221,19 +189,17 @@ function BlogImageRenderer({ block, editor }) {
   }, []);
 
   const handleDelete = useCallback(() => {
-    // Delete from Cloudinary if we have a mediaId
     const mediaId = block.props._mediaId;
     if (mediaId) {
       fetch('/api/media/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mediaId }),
-      }).catch(() => {}); // fire and forget
+      }).catch(() => {});
     }
     try { editor.removeBlocks([block.id]); } catch {}
   }, [editor, block.id, block.props._mediaId]);
 
-  // Retry after upload error — open file picker to re-select
   const handleRetry = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -247,7 +213,6 @@ function BlogImageRenderer({ block, editor }) {
     input.click();
   }, [editor, block.id, uploadFile]);
 
-  // Open file picker to upload image dynamically (in-memory input avoids focus loss issues)
   const handleUploadClick = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -262,7 +227,6 @@ function BlogImageRenderer({ block, editor }) {
   }, [uploadFile]);
 
   const handleReplace = useCallback(() => {
-    // Delete old image from Cloudinary
     const mediaId = block.props._mediaId;
     if (mediaId) {
       fetch('/api/media/delete', {
@@ -280,12 +244,9 @@ function BlogImageRenderer({ block, editor }) {
     setEditingCaption(false);
   }, [editor, block.id, captionText]);
 
-  // AI is generating this image (inserted by AI agent with _imageId but no url yet)
   const isAiPlaceholder = !!_imageId && !url;
-
   const showSkeleton = _uploading === 'uploading' || (url && !isImgLoaded);
 
-  // ─── No image yet / Image loading in background ───
   if (!url || showSkeleton) {
     if (showSkeleton) {
       return (
@@ -333,7 +294,6 @@ function BlogImageRenderer({ block, editor }) {
       );
     }
 
-    // If this is an AI-generated placeholder, show only the skeleton loading
     if (isAiPlaceholder || mode === 'generating') {
       return (
         <div ref={blockRef} className="blog-img-empty blog-img-empty--generating" tabIndex={-1} style={{ pointerEvents: 'none', userSelect: 'none' }}>
@@ -361,7 +321,6 @@ function BlogImageRenderer({ block, editor }) {
         onDragLeave={() => setIsDragOver(false)}
         data-drag-over={isDragOver}
       >
-        {/* Delete / dismiss button */}
         {mode === 'idle' && (
           <button className="blog-img-dismiss" onClick={handleDelete} title="Remove image block">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -370,7 +329,6 @@ function BlogImageRenderer({ block, editor }) {
           </button>
         )}
 
-        {/* Idle — 3 action buttons */}
         {mode === 'idle' && (
           <>
             <div className="blog-img-actions-row">
@@ -389,18 +347,17 @@ function BlogImageRenderer({ block, editor }) {
                 </svg>
                 Embed URL
               </button>
-              <button className="blog-img-action blog-img-action-ai" disabled title="AI image generation is coming soon" style={{ opacity: 0.55, cursor: 'not-allowed' }}>
+              <button className="blog-img-action blog-img-action-ai" onClick={() => setMode('generate')}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
                 </svg>
-                Coming Soon
+                AI Generate
               </button>
             </div>
             <p className="blog-img-hint">or drag & drop / paste an image</p>
           </>
         )}
 
-        {/* Embed URL input — below the placeholder */}
         {mode === 'embed' && (
           <div className="blog-img-input-row">
             <input
@@ -429,7 +386,6 @@ function BlogImageRenderer({ block, editor }) {
           </div>
         )}
 
-        {/* AI prompt input — below the placeholder */}
         {mode === 'generate' && (
           <div className="blog-img-input-row">
             <input
@@ -460,7 +416,6 @@ function BlogImageRenderer({ block, editor }) {
     );
   }
 
-  // ─── Image loaded ───
   return (
     <div ref={blockRef} className="blog-img-loaded blog-img-fadein" tabIndex={0} onPaste={handlePaste}>
       <div className="blog-img-wrapper">
