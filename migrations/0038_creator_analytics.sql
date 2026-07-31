@@ -43,5 +43,6 @@ CREATE INDEX IF NOT EXISTS idx_creator_follow_events_target_time
   ON creator_follow_events(target_type, target_id, occurred_at);
 
 INSERT INTO creator_follow_events (id, target_type, target_id, follower_id, delta, occurred_at)
-SELECT lower(hex(randomblob(16))), following_type, following_id, follower_id, 1, created_at
+SELECT 'backfill:' || following_type || ':' || following_id || ':' || follower_id,
+  following_type, following_id, follower_id, 1, created_at
 FROM follows;

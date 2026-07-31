@@ -19,8 +19,6 @@ async function resolveScope(db, userId, requestedScope) {
       label: 'Personal',
       predicate: "b.author_id = ? AND (b.published_as = 'personal' OR b.published_as IS NULL)",
       values: [userId],
-      followerPredicate: "following_id = ? AND following_type = 'user'",
-      followerValues: [userId],
       followerEventValues: ['user', userId],
     };
   }
@@ -42,8 +40,6 @@ async function resolveScope(db, userId, requestedScope) {
     label: org.name,
     predicate: 'b.published_as = ?',
     values: [requestedScope],
-    followerPredicate: "following_id = ? AND following_type = 'org'",
-    followerValues: [orgId],
     followerEventValues: ['org', orgId],
   };
 }
@@ -201,7 +197,7 @@ export async function GET(request) {
           GROUP BY ae.visitor_hash HAVING MAX(ae.occurred_at) >= ?
         )
       `).bind(range.from, range.from, ...values, range.to, range.from).first(),
-      db.prepare(`SELECT COUNT(*) c FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id WHERE ${scope.predicate} AND ae.occurred_at >= ? AND ae.occurred_at < ?`).bind(...values, range.from, range.to).first(),
+      db.prepare(`SELECT COUNT(*) c FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id WHERE ${scope.predicate} AND ae.event_type = 'view' AND ae.occurred_at >= ? AND ae.occurred_at < ?`).bind(...values, range.from, range.to).first(),
       db.prepare(`SELECT COUNT(*) c FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id WHERE ${scope.predicate} AND ae.event_type = 'impression' AND ae.occurred_at >= ? AND ae.occurred_at < ?`).bind(...values, range.from, range.to).first(),
     ]);
 
