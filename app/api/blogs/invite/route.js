@@ -91,9 +91,9 @@ export async function POST(request) {
     if (!existing) {
       const countRow = await db.prepare('SELECT COUNT(*) AS c FROM blog_co_authors WHERE blog_id = ?').bind(slugid).first();
       if ((countRow?.c || 0) >= limits.coAuthorsPerBlog) {
-        return NextResponse.json({ 
-          error: `You can add up to ${limits.coAuthorsPerBlog} co-authors on the ${ownerTier} plan.`, 
-          upgrade: true 
+        return NextResponse.json({
+          error: `You can add up to ${limits.coAuthorsPerBlog} co-authors on the ${ownerTier} plan.`,
+          upgrade: ownerTier === 'free',
         }, { status: 400 });
       }
     }
@@ -113,7 +113,7 @@ export async function POST(request) {
       const { notify } = await import('../../../../lib/notify');
       const { getBlogCanonicalPath } = await import('../../../../lib/blogUrl');
       const path = await getBlogCanonicalPath(db, slugid);
-      const targetUrl = `\${path}\${path.includes('?') ? '&' : '?'}invite=\${encodeURIComponent(slugid)}`;
+      const targetUrl = `${path}${path.includes('?') ? '&' : '?'}invite=${encodeURIComponent(slugid)}`;
       await notify(db, {
         userId: invitee.id, type: 'blog_invite',
         actorId: session.userId, actorName: inviter?.display_name || inviter?.username,
