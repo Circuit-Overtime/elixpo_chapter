@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 import { readTimeFromWords } from '../../../lib/readTime';
-import { normalizeUrl } from '../../utils/linkHelper';
+import { escapeHtmlAttribute, normalizeUrl } from '../../utils/linkHelper';
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -124,7 +124,7 @@ function renderBlocksToHTML(blocks) {
       }
       if (c.type === 'inlineButton') {
         const label = (c.props?.label || 'Button').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const href = normalizeUrl(c.props?.href || '');
+        const href = escapeHtmlAttribute(normalizeUrl(c.props?.href || ''));
         return href
           ? `<a href="${href}" class="inline-button-chip" target="_blank" rel="noopener noreferrer">${label}</a>`
           : `<span class="inline-button-chip">${label}</span>`;
@@ -133,7 +133,9 @@ function renderBlocksToHTML(blocks) {
       if (c.type === 'link' && c.href) {
         const normalizedHref = normalizeUrl(c.href);
         const linkText = c.content ? inlineToHTML(c.content) : (c.text || c.href).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return `<a href="${normalizedHref}">${linkText || c.href}</a>`;
+        return normalizedHref
+          ? `<a href="${escapeHtmlAttribute(normalizedHref)}">${linkText || c.href}</a>`
+          : linkText;
       }
       let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       if (!text) return '';
@@ -650,7 +652,7 @@ export default function BlogPreview({ title, subtitle, coverPreview, coverZoom, 
       const href = link.getAttribute('href');
       if (href) {
         const normalized = normalizeUrl(href);
-        if (normalized.startsWith('/') || normalized.startsWith('#')) return;
+        if (!normalized || normalized.startsWith('/') || normalized.startsWith('#')) return;
         e.preventDefault();
         e.stopPropagation();
         window.open(normalized, '_blank', 'noopener,noreferrer');
