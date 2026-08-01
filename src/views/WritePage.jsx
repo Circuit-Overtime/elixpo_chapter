@@ -1086,14 +1086,17 @@ export default function WritePage({ slugid }) {
   }, [showOwnerDropdown]);
 
   // Upload cover image blob to Cloudinary → set coverPreview to permanent URL
-  const uploadCover = useCallback(async (blob) => {
+  const uploadCover = useCallback(async (blob, { alreadyOptimized = false } = {}) => {
     const uploadJobId = createMediaUploadId();
     const storageKey = `lixblogs:cover-upload:${blogId}`;
     const task = (async () => {
       setCoverUploadError('');
       setCoverUploading(true);
-      const { compressCoverImage } = await import('../utils/compressImage');
-      const { blob: compressed } = await compressCoverImage(blob);
+      let compressed = blob;
+      if (!alreadyOptimized) {
+        const { compressCoverImage } = await import('../utils/compressImage');
+        ({ blob: compressed } = await compressCoverImage(blob));
+      }
       localStorage.setItem(storageKey, uploadJobId);
       const data = await enqueueMediaUpload(compressed, {
         id: uploadJobId,
@@ -1158,7 +1161,10 @@ export default function WritePage({ slugid }) {
     setCoverPreview(previewUrl);
     setCoverZoom(1);
     setCoverPos({ x: 50, y: 50 });
-    uploadCover(blob).then((url) => {
+    // ImageCropModal already emitted a metadata-free, <=120 KB WebP. Re-decoding
+    // it through OffscreenCanvas is redundant and Firefox can reject that second
+    // conversion with AbortError/"The operation was aborted".
+    uploadCover(blob, { alreadyOptimized: true }).then((url) => {
       URL.revokeObjectURL(previewUrl);
       if (!url) {
         draftDataRef.current = { ...draftDataRef.current, coverPreview: previousCover };
