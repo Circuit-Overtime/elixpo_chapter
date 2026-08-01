@@ -102,7 +102,8 @@ def assess_mood(pulls: list[dict], files: list[dict]) -> MoodDecision:
     if any(re.match(r"^(feat|feature)(\(.+\))?!?:", str(pull.get("title", "")).casefold()) for pull in pulls):
         scores["announcement"] += 4
         signals.append("feature-style merged PR")
-    if any(any(term in path for term in ("src/", "app/", "api/", "cli/", "public/", "agent.elixpo/src/")) for path in paths):
+    user_paths = ("src/", "app/", "api/", "cli/", "public/", "agent.elixpo/src/")
+    if any(any(term in path for term in user_paths) for path in paths):
         scores["announcement"] += 2
         signals.append("user-facing implementation paths changed")
     if total_changes >= 200:

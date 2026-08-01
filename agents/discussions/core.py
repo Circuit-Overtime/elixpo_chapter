@@ -7,8 +7,9 @@ import re
 from pathlib import Path
 from typing import Any
 
-from agents.discussions.mood import Genre, MOOD_EMOJI, MoodDecision
 from rtk.models import FunctionDef, Message, ToolDef
+
+from agents.discussions.mood import MOOD_EMOJI, Genre, MoodDecision
 
 PROMPTS = Path(__file__).resolve().parents[2] / "prompts"
 SKILLS = Path(__file__).resolve().parents[2] / "skills"
@@ -163,7 +164,8 @@ def render_activity(genre: Genre | str, draft: dict[str, Any], sources: list[dic
             f"## Context\n\n{summary}\n\n{bullets}",
             f"## The decision\n\n{impact}",
             f"## Options\n\n{choices}",
-            f"## Vote with context\n\n{prompt or 'Reply with the option number and the constraint driving your choice.'}",
+            "## Vote with context\n\n"
+            + (prompt or "Reply with the option number and the constraint driving your choice."),
         ]
     elif genre is Genre.QNA:
         sections = [
@@ -306,10 +308,3 @@ async def reply_draft(router, discussion: dict, comment: dict, context: list[dic
     )
     return str(result["body"]).strip()
 
-
-def format_poll(body: str, options: list[str]) -> str:
-    clean = [str(option).strip() for option in options if str(option).strip()][:6]
-    if len(clean) < 2:
-        raise RuntimeError("a poll draft needs at least two options")
-    choices = "\n".join(f"{index}. {option}" for index, option in enumerate(clean, 1))
-    return f"{body.strip()}\n\n### Options\n\n{choices}\n\nVote by replying with the option number and your reasoning."
