@@ -514,15 +514,17 @@ function TypeCard({
 }) {
     return (
         <Box
+            component="button"
+            type="button"
             onClick={onClick}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick()}
             sx={{
                 flex: 1,
                 p: 1.6,
                 borderRadius: "12px",
                 cursor: "pointer",
+                appearance: "none",
+                font: "inherit",
+                textAlign: "left",
                 border: `1.5px solid ${active ? ACCENT : "var(--border)"}`,
                 background: active ? "var(--accent-tint)" : "var(--surface-2)",
                 transition: "all 0.15s ease",

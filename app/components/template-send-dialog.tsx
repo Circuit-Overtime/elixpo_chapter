@@ -262,11 +262,11 @@ export default function TemplateSendDialog({
             setChips([]);
         }
 
-        setVars((prev) => {
+        setVars(() => {
             const next: Record<string, string> = {};
             const sourceVars = loadedVars || {};
             for (const name of variables) {
-                next[name] = sourceVars[name] ?? prev[name] ?? "";
+                next[name] = sourceVars[name] ?? "";
             }
             return next;
         });
