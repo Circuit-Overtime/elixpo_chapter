@@ -17,7 +17,7 @@ repository that installs the agent workflows:
 | Secret | Purpose | Required access |
 | --- | --- | --- |
 | `ELIXPO_POLLINATIONS_API_KEY_GITHUB` | Every model request: agent, triage, PR metadata, and changelog summaries | Pollinations text API; this is the only model credential |
-| `ELIXPOO_GITHUB_AGENTIC_TOKEN` | Repository reads/writes, issue and PR metadata, branches, failed-run retries, repository variables, Project V2 fields, and the local merge changelog | See the token profiles below |
+| `ELIXPOO_GITHUB_AGENTIC_TOKEN` | Repository reads/writes, issue and PR metadata, branches, failed-run retries, repository variables, and Project V2 fields | See the token profiles below |
 | `ELIXPOO_GIST_AGENTIC_TOKEN` | Shared reusable `merge-gist.yml` workflow in `agent.elixpo` | Gist read/write |
 
 `GITHUB_TOKEN` is created automatically for each workflow run. It is not an
@@ -38,12 +38,8 @@ Recommended `ELIXPOO_GITHUB_AGENTIC_TOKEN` fine-grained PAT:
   read/write, Pull requests read/write, Variables read/write, Workflows
   read/write, and Metadata read.
 - Organization permissions: Projects read/write.
-- Account permission: Gists read/write. If the token UI does not offer Gists,
-  keep `ELIXPOO_GIST_AGENTIC_TOKEN` as a separate classic PAT and update the local changelog
-  workflow before removing gist access from `ELIXPOO_GITHUB_AGENTIC_TOKEN`.
-
-Classic PAT fallback for `ELIXPOO_GITHUB_AGENTIC_TOKEN`: `repo`, `workflow`, `project`, and
-`gist`. Add `read:org` only if the organization restricts project access in a
+Classic PAT fallback for `ELIXPOO_GITHUB_AGENTIC_TOKEN`: `repo`, `workflow`, and `project`.
+Add `read:org` only if the organization restricts project access in a
 way that requires membership lookup. This is broader than the fine-grained
 profile.
 

@@ -32,6 +32,7 @@ jobs:
         id: gist
         env:
           AGENT_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
+          GIST_TOKEN: ${{ secrets.ELIXPOO_GIST_AGENTIC_TOKEN }}
           POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY_GITHUB }}
           GIST_ID: ${{ vars.CI_GIST_ID }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
