@@ -24,7 +24,10 @@ export async function POST(request) {
     const mediaType = formData.get('type') || 'image';
     const requestedUploadId = String(formData.get('uploadId') || '');
 
-    if (!file || !(file instanceof File)) {
+    // Cloudflare's multipart parser can return a File-compatible object from a
+    // different realm, where `instanceof File` is false. Validate capabilities
+    // instead of constructor identity so valid uploads are not rejected as 400.
+    if (!file || typeof file.arrayBuffer !== 'function' || typeof file.size !== 'number') {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
     if (mediaType === 'cover' && !blogId) {
