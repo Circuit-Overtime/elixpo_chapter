@@ -29,6 +29,8 @@ cat > "$CCR_HOME/config.json" <<EOF
   "LOG": false,
   "NON_INTERACTIVE_MODE": true,
   "API_TIMEOUT_MS": 600000,
+  "HOST": "127.0.0.1",
+  "APIKEY": "ccr-pollinations",
   "transformers": [
     {"path": "$NORMALIZER"},
     {"path": "$TOOL_PATCHER"}
@@ -66,10 +68,10 @@ cat > "$CCR_HOME/config.json" <<EOF
   "Router": {
     "default": "pollinations-agent,$AGENT_MODEL",
     "background": "pollinations-code,$CODE_MODEL",
-    "thinking": "pollinations-thinking,$THINK_MODEL",
+    "think": "pollinations-thinking,$THINK_MODEL",
     "webSearch": "pollinations-search,$SEARCH_MODEL"
   }
 }
 EOF
 
-echo "CCR routes: default=$AGENT_MODEL background=$CODE_MODEL thinking=$THINK_MODEL webSearch=$SEARCH_MODEL"
+echo "CCR routes: default=$AGENT_MODEL background=$CODE_MODEL think=$THINK_MODEL webSearch=$SEARCH_MODEL"

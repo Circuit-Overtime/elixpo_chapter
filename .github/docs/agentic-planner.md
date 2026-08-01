@@ -21,10 +21,10 @@ CCR creates multiple routes with that same key. No route has a separate credenti
 
 | Route | Model | Use |
 | --- | --- | --- |
-| default | `qwen3.7-flash` | intent, metadata, questions, routine tool use |
-| background | `qwen-coder` | repository changes only |
-| thinking | `qwen3.7-flash` | complex reasoning or review only |
-| webSearch | `gemini-fast` | time-sensitive external lookup only |
+| default | `nova-fast` | intent, metadata, questions, routine tool use |
+| background | `deepseek` | repository changes only |
+| think | `deepseek` | complex reasoning or review only |
+| webSearch | `perplexity-fast` | time-sensitive external lookup only |
 
 Token ceilings are centralized in `.github/ci_config.py`. The prompt directs the agent to read the prepared context once, use targeted repository reads, and avoid search unless local context is insufficient. RTK compresses supported shell output before it reaches the model.
 
