@@ -140,7 +140,10 @@ jobs:
 
       - name: Install RTK
         if: steps.gate.outputs.authorized == 'true'
+        env:
+          RTK_VERSION: v0.42.0
         run: |
+          mkdir -p "$HOME/.claude"
           if [ "${{ steps.rtk-cache.outputs.cache-hit }}" != "true" ]; then
             curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/v0.42.0/install.sh | sh
           fi
