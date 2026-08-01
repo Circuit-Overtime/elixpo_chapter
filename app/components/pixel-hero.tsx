@@ -24,8 +24,8 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
             sx={{
                 position: "relative",
                 width: "100%",
-                background: "#ffffff", // White editorial canvas
-                color: "#212121", // Ink text
+                background: "var(--background)",
+                color: "var(--fg)",
                 pt: { xs: 8, md: 12 },
                 pb: { xs: 6, md: 10 },
                 overflow: "hidden",
@@ -65,13 +65,13 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                         fontSize: { xs: "3.2rem", sm: "4.8rem", md: "5.5rem" },
                         lineHeight: 0.95,
                         letterSpacing: "-0.04em",
-                        color: "#000000",
+                        color: "var(--fg)",
                         mb: 3,
                         "& span": {
                             fontFamily: "Georgia, serif",
                             fontStyle: "italic",
                             fontWeight: 400,
-                            color: "#75758a",
+                            color: "var(--fg-muted)",
                         },
                     }}
                 >
@@ -83,7 +83,7 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                 <Typography
                     sx={{
                         fontFamily: "var(--font-sans)",
-                        color: "#4a4a52",
+                        color: "var(--fg-muted)",
                         fontSize: { xs: "1.05rem", md: "1.18rem" },
                         lineHeight: 1.6,
                         maxWidth: 620,
@@ -108,9 +108,9 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                         component="a"
                         href={primaryHref}
                         sx={{
-                            background: "#17171c", // Near-black Primary
-                            color: "#ffffff",
-                            borderRadius: "32px", // Pill
+                            background: "var(--fg)",
+                            color: "var(--bg)",
+                            borderRadius: "32px",
                             px: 3.5,
                             py: 1.4,
                             fontSize: "0.95rem",
@@ -118,7 +118,7 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                             textTransform: "none",
                             boxShadow: "none",
                             "&:hover": {
-                                background: "#000000",
+                                background: "var(--fg-muted)",
                             },
                         }}
                     >
@@ -128,25 +128,21 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                         component={Link}
                         href="/docs"
                         sx={{
-                            color: "#17171c", // Near-black Primary text
+                            color: "var(--fg)",
                             fontSize: "0.95rem",
                             fontWeight: 500,
                             textTransform: "none",
-                            borderRadius: "32px", // Pill
+                            borderRadius: "32px",
                             px: 3.5,
                             py: 1.4,
-                            background: "rgba(238, 236, 231, 0.45)", // Semi-transparent Soft Stone
+                            background: "var(--surface-2)",
                             backdropFilter: "blur(12px)",
-                            border: "1px solid rgba(0, 0, 0, 0.08)",
-                            boxShadow:
-                                "inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 10px rgba(0, 0, 0, 0.02)",
+                            border: "1px solid var(--border)",
                             fontFamily: "var(--font-sans)",
                             transition: "all 0.22s ease-in-out",
                             "&:hover": {
-                                background: "rgba(238, 236, 231, 0.75)",
-                                borderColor: "rgba(0, 0, 0, 0.16)",
-                                boxShadow:
-                                    "inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 4px 15px rgba(0, 0, 0, 0.05)",
+                                background: "var(--overlay)",
+                                borderColor: "var(--fg)",
                             },
                         }}
                     >
@@ -156,7 +152,7 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
             </Box>
 
             {/* Centered monochrome quiet Trust Logo Strip */}
-            <Box sx={{ borderTop: "1px solid #f2f2f2", pt: 6, mt: 4 }}>
+            <Box sx={{ borderTop: "1px solid var(--border)", pt: 6, mt: 4 }}>
                 <Container maxWidth="lg">
                     <Typography
                         sx={{
@@ -164,7 +160,7 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                             fontSize: "12px",
                             fontWeight: 500,
                             letterSpacing: "0.08em",
-                            color: "#93939f", // Muted Slate
+                            color: "var(--fg-faint)",
                             textTransform: "uppercase",
                             mb: 4,
                             fontFamily: "var(--font-mono)",
@@ -184,12 +180,12 @@ export default function PixelHero({ authed }: { authed?: boolean | null }) {
                             "& span": {
                                 fontSize: "1.1rem",
                                 fontWeight: 700,
-                                color: "#93939f",
+                                color: "var(--fg-faint)",
                                 letterSpacing: "-0.01em",
                                 transition: "color 0.2s ease",
                                 cursor: "default",
                                 "&:hover": {
-                                    color: "#17171c",
+                                    color: "var(--fg)",
                                 },
                             },
                         }}

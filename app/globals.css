@@ -66,7 +66,13 @@
     --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     --topbar-bg: rgba(255, 255, 255, 0.82);
     --drawer-bg: #ffffff;
+    --action-fg: #1863dc;
     color-scheme: light;
+
+    /* Inline code & Callout specific variables */
+    --code-fg: var(--deep-green);
+    --callout-info-bg: #f1f5ff;
+    --callout-warn-bg: rgba(255, 119, 89, 0.05);
 }
 
 /* ── Dark theme ──────────────────────────────────────────────────────────── */
@@ -93,7 +99,13 @@
     --card-shadow: none;
     --topbar-bg: rgba(11, 13, 18, 0.72);
     --drawer-bg: #0d1016;
+    --action-fg: #5fb6ff;
     color-scheme: dark;
+
+    /* Inline code & Callout specific variables */
+    --code-fg: var(--pale-green);
+    --callout-info-bg: rgba(24, 99, 220, 0.08);
+    --callout-warn-bg: rgba(255, 119, 89, 0.1);
 }
 
 @theme inline {
