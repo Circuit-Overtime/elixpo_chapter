@@ -22,6 +22,11 @@ import '../styles/katex-fonts.css';
 // the Edge bundle pushes the Cloudflare Worker beyond the free-plan limit.
 const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { ssr: false });
 
+function formatUtcDate(value, options = {}) {
+  const date = value instanceof Date ? value : new Date(value * 1000);
+  return new Intl.DateTimeFormat('en-US', { ...options, timeZone: 'UTC' }).format(date);
+}
+
 function StaticInline({ content = [] }) {
   if (!Array.isArray(content)) return null;
   return content.map((item, index) => {
@@ -73,7 +78,7 @@ function CrawlableArticle({ blog, blocks, owner }) {
         {blog.page_emoji && <p className="text-5xl mb-5" aria-hidden="true">{blog.page_emoji}</p>}
         <h1 className="text-4xl sm:text-5xl font-bold leading-tight" itemProp="headline">{blog.title || 'Untitled'}</h1>
         {blog.subtitle && <p className="text-xl mt-4" style={{ color: 'var(--text-muted)' }} itemProp="description">{blog.subtitle}</p>}
-        <p className="mt-5 text-sm" style={{ color: 'var(--text-faint)' }}>By <span itemProp="author">{author}</span>{blog.published_at ? ` · ${new Date(blog.published_at * 1000).toLocaleDateString()}` : ''}</p>
+        <p className="mt-5 text-sm" style={{ color: 'var(--text-faint)' }}>By <span itemProp="author">{author}</span>{blog.published_at ? ` · ${formatUtcDate(blog.published_at, { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}</p>
         {!!blog.tags?.length && <p className="mt-3 text-sm" style={{ color: 'var(--text-faint)' }}>Topics: {blog.tags.join(', ')}</p>}
       </header>
       <div className="blog-preview-content max-w-none" itemProp="articleBody"><StaticBlocks blocks={blocks} /></div>
@@ -208,7 +213,7 @@ function HandlePageInner({ path, initialData = null }) {
           <div className="h-8 bg-[var(--bg-elevated)] animate-pulse rounded w-2/3 mb-4" />
           <div className="h-4 bg-[var(--bg-elevated)] animate-pulse rounded w-1/3 mb-6" />
           <div className="space-y-3">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-4 bg-[var(--bg-elevated)] animate-pulse rounded" style={{ width: `${60 + Math.random() * 40}%` }} />)}
+            {[76, 92, 68, 84].map((width, i) => <div key={i} className="h-4 bg-[var(--bg-elevated)] animate-pulse rounded" style={{ width: `${width}%` }} />)}
           </div>
         </div>
       </AppShell>
@@ -437,7 +442,7 @@ function HandlePageInner({ path, initialData = null }) {
                           {(b.tags || []).length > 0 && (
                             <span className="text-[#9b7bf7] text-[11px] bg-[#9b7bf714] px-2.5 py-0.5 rounded-full font-medium">{b.tags[0]}</span>
                           )}
-                          {b.published_at && <span>{new Date(b.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+                          {b.published_at && <span>{formatUtcDate(b.published_at, { month: 'short', day: 'numeric' })}</span>}
                           {b.read_time_minutes > 0 && <span>{b.read_time_minutes} min read</span>}
                           {b.like_count > 0 && <span>{b.like_count} likes</span>}
                           {b.comment_count > 0 && <span>{b.comment_count} comments</span>}
@@ -536,7 +541,7 @@ function HandlePageInner({ path, initialData = null }) {
             {joined && (
               <span className="flex items-center gap-1.5">
                 <ion-icon name="calendar-outline" style={{ fontSize: '14px' }} />
-                Joined {joined.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                Joined {formatUtcDate(joined, { month: 'long', year: 'numeric' })}
               </span>
             )}
           </div>
@@ -599,7 +604,7 @@ function HandlePageInner({ path, initialData = null }) {
                           </span>
                         )}
                         {b.published_at && (
-                          <span>{new Date(b.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          <span>{formatUtcDate(b.published_at, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         )}
                       </div>
                     </div>
@@ -727,7 +732,7 @@ function HandlePageInner({ path, initialData = null }) {
             {founded && (
               <span className="flex items-center gap-1.5">
                 <ion-icon name="calendar-outline" style={{ fontSize: '14px' }} />
-                Founded {founded.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                Founded {formatUtcDate(founded, { month: 'long', year: 'numeric' })}
               </span>
             )}
             <span className="flex items-center gap-1.5">
@@ -895,7 +900,7 @@ function HandlePageInner({ path, initialData = null }) {
                             </span>
                           )}
                           {b.published_at && (
-                            <span>{new Date(b.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            <span>{formatUtcDate(b.published_at, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                           )}
                         </div>
                       </div>

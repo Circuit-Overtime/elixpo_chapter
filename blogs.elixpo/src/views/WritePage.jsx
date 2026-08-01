@@ -13,7 +13,7 @@ import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 import { readTimeFromWords } from '../../lib/readTime';
 import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../utils/allowedImageTypes';
-import { generatePixelAvatar } from '../utils/pixelAvatar';
+import { generateBlogBanner, generatePixelAvatar } from '../utils/pixelAvatar';
 import { useCollaboration } from '../hooks/useCollaboration';
 import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload } from '../utils/mediaUploadQueue';
 
@@ -592,7 +592,8 @@ export default function WritePage({ slugid }) {
         const pub = state?.lixPublished;
         if (pub?.url && pub.at >= mountedAt) {
           bypassUnloadRef.current = true;
-          window.location.href = pub.url;
+          try { provider.disconnect(); } catch {}
+          window.location.replace(pub.url);
         }
       });
     };
@@ -941,6 +942,8 @@ export default function WritePage({ slugid }) {
   };
 
   const removeCover = () => {
+    localStorage.removeItem(`lixblogs:cover-upload:${blogId}`);
+    draftDataRef.current = { ...draftDataRef.current, coverPreview: null };
     setCoverPreview(null);
   };
 
@@ -1083,14 +1086,17 @@ export default function WritePage({ slugid }) {
   }, [showOwnerDropdown]);
 
   // Upload cover image blob to Cloudinary → set coverPreview to permanent URL
-  const uploadCover = useCallback(async (blob) => {
+  const uploadCover = useCallback(async (blob, { alreadyOptimized = false } = {}) => {
     const uploadJobId = createMediaUploadId();
     const storageKey = `lixblogs:cover-upload:${blogId}`;
     const task = (async () => {
       setCoverUploadError('');
       setCoverUploading(true);
-      const { compressCoverImage } = await import('../utils/compressImage');
-      const { blob: compressed } = await compressCoverImage(blob);
+      let compressed = blob;
+      if (!alreadyOptimized) {
+        const { compressCoverImage } = await import('../utils/compressImage');
+        ({ blob: compressed } = await compressCoverImage(blob));
+      }
       localStorage.setItem(storageKey, uploadJobId);
       const data = await enqueueMediaUpload(compressed, {
         id: uploadJobId,
@@ -1155,7 +1161,10 @@ export default function WritePage({ slugid }) {
     setCoverPreview(previewUrl);
     setCoverZoom(1);
     setCoverPos({ x: 50, y: 50 });
-    uploadCover(blob).then((url) => {
+    // ImageCropModal already emitted a metadata-free, <=120 KB WebP. Re-decoding
+    // it through OffscreenCanvas is redundant and Firefox can reject that second
+    // conversion with AbortError/"The operation was aborted".
+    uploadCover(blob, { alreadyOptimized: true }).then((url) => {
       URL.revokeObjectURL(previewUrl);
       if (!url) {
         draftDataRef.current = { ...draftDataRef.current, coverPreview: previousCover };
@@ -1389,7 +1398,23 @@ export default function WritePage({ slugid }) {
           collabConfig?.provider?.awareness?.setLocalStateField('lixPublished', { url: destination, at: Date.now() });
         } catch {}
         bypassUnloadRef.current = true;
-        window.location.assign(destination);
+        // Close the cross-origin socket deliberately before leaving the editor.
+        // Otherwise the browser reports an interrupted WebSocket while the new
+        // published page is loading. Lock release is best-effort and survives
+        // the navigation where supported.
+        if (collabConfig?.provider) {
+          // Give the awareness update one event-loop turn to reach peers before
+          // intentionally closing this editor's socket.
+          await new Promise((resolve) => setTimeout(resolve, 40));
+          try { collabConfig.provider.disconnect(); } catch {}
+        }
+        fetch('/api/collab/lock', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blogId }),
+          keepalive: true,
+        }).catch(() => {});
+        window.location.replace(destination);
         return;
       }
     } catch { /* silent */ }
@@ -1990,38 +2015,15 @@ export default function WritePage({ slugid }) {
                           </button>
                           <button
                             onClick={() => {
-                              // Generate a blocky default banner using canvas
-                              const canvas = document.createElement('canvas');
-                              canvas.width = 1200;
-                              canvas.height = 400;
-                              const ctx = canvas.getContext('2d');
-                              // Soft gradient background
-                              const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-                              const hue1 = Math.floor(Math.random() * 360);
-                              const hue2 = (hue1 + 40 + Math.floor(Math.random() * 80)) % 360;
-                              grad.addColorStop(0, `hsl(${hue1}, 60%, 75%)`);
-                              grad.addColorStop(1, `hsl(${hue2}, 50%, 80%)`);
-                              ctx.fillStyle = grad;
-                              ctx.fillRect(0, 0, canvas.width, canvas.height);
-                              // Draw random blocky shapes
-                              const blockCount = 12 + Math.floor(Math.random() * 10);
-                              for (let b = 0; b < blockCount; b++) {
-                                const bx = Math.random() * canvas.width;
-                                const by = Math.random() * canvas.height;
-                                const bw = 30 + Math.random() * 120;
-                                const bh = 30 + Math.random() * 120;
-                                const bHue = (hue1 + Math.floor(Math.random() * 120)) % 360;
-                                ctx.fillStyle = `hsla(${bHue}, 50%, ${60 + Math.random() * 20}%, ${0.15 + Math.random() * 0.25})`;
-                                ctx.fillRect(bx, by, bw, bh);
-                              }
-                              canvas.toBlob((blob) => {
-                                if (blob) {
-                                  const url = URL.createObjectURL(blob);
-                                  setCoverPreview(url);
-                                  setShowCoverModal(false);
-                                  uploadCover(blob);
-                                }
-                              }, 'image/webp', 0.85);
+                              // The default is a deterministic cosmetic fallback,
+                              // not user media. Keep it as a data URL for preview;
+                              // persistableCover deliberately stores NULL so the
+                              // reader/feed regenerate it without using storage.
+                              localStorage.removeItem(`lixblogs:cover-upload:${blogId}`);
+                              const defaultCover = generateBlogBanner(blogId);
+                              draftDataRef.current = { ...draftDataRef.current, coverPreview: defaultCover };
+                              setCoverPreview(defaultCover);
+                              setShowCoverModal(false);
                             }}
                             className="flex flex-col items-center gap-2 group/gen"
                           >
@@ -2030,7 +2032,7 @@ export default function WritePage({ slugid }) {
                                 <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
                               </svg>
                             </div>
-                            <span className="text-xs text-black/70 font-medium">Generate default</span>
+                            <span className="text-xs text-black/70 font-medium">Use default</span>
                           </button>
                         </div>
                         {/* Inline URL input — slides up from bottom */}

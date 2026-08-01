@@ -5,6 +5,7 @@ const STORE_NAME = 'uploads';
 const DB_VERSION = 1;
 const EVENT_NAME = 'lixblogs:media-upload';
 const activeUploads = new Map();
+const memoryJobs = new Map();
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -16,29 +17,62 @@ function openDB() {
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error('Media queue database is blocked'));
   });
 }
 
 async function writeJob(job) {
   const db = await openDB();
-  await new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).put(job);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-  db.close();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).put(job);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error('Media queue transaction was aborted'));
+    });
+  } finally {
+    db.close();
+  }
 }
 
 async function readJob(id) {
   const db = await openDB();
-  const job = await new Promise((resolve, reject) => {
-    const request = db.transaction(STORE_NAME).objectStore(STORE_NAME).get(id);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  db.close();
-  return job;
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME);
+      const request = tx.objectStore(STORE_NAME).get(id);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+      tx.onabort = () => reject(tx.error || new Error('Media queue transaction was aborted'));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function loadJob(id) {
+  try {
+    const persisted = await readJob(id);
+    if (persisted) memoryJobs.set(id, persisted);
+    return persisted || memoryJobs.get(id) || null;
+  } catch {
+    return memoryJobs.get(id) || null;
+  }
+}
+
+async function persistJob(job) {
+  memoryJobs.set(job.id, job);
+  try {
+    await writeJob(job);
+    return true;
+  } catch (error) {
+    // Firefox can abort IndexedDB transactions during storage pressure/private
+    // sessions. Durability is an enhancement; it must never cancel the active
+    // upload that is still safe to complete from memory.
+    console.warn('[media queue] Durable persistence unavailable:', error?.message || error);
+    return false;
+  }
 }
 
 function announce(job) {
@@ -47,31 +81,50 @@ function announce(job) {
   }));
 }
 
+async function blobToBase64(blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return btoa(binary);
+}
+
 async function runUpload(id) {
   if (activeUploads.has(id)) return activeUploads.get(id);
   const task = (async () => {
-    const job = await readJob(id);
+    const job = await loadJob(id);
     if (!job) throw new Error('Upload is no longer available');
     if (job.status === 'complete' && job.result) return job.result;
     job.status = 'uploading';
     job.attempts = (job.attempts || 0) + 1;
-    await writeJob(job);
+    await persistJob(job);
     announce(job);
 
     let data;
     let lastError;
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
-        const formData = new FormData();
         const uploadBlob = job.blob?.type
           ? job.blob
-          : new Blob([job.blob], { type: 'image/webp' });
-        formData.append('file', uploadBlob, job.filename);
-        formData.append('type', job.type);
-        formData.append('uploadId', job.id);
-        if (job.blogId) formData.append('blogId', job.blogId);
-        if (job.orgId) formData.append('orgId', job.orgId);
-        const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
+          : new Blob([job.blob], { type: job.mimeType || 'image/webp' });
+        // Use the same JSON transport as the rest of the Pages API. Production
+        // Cloudflare rejected both multipart and raw image requests before the
+        // Function ran (generic HTML 400), while JSON requests reach the route.
+        const body = JSON.stringify({
+          data: await blobToBase64(uploadBlob),
+          mimeType: uploadBlob.type || 'image/webp',
+          type: job.type,
+          uploadId: job.id,
+          blogId: job.blogId || '',
+          orgId: job.orgId || '',
+        });
+        const response = await fetch('/api/media/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        });
         const responseText = await response.text();
         try { data = responseText ? JSON.parse(responseText) : {}; } catch { data = {}; }
         if (response.ok) break;
@@ -92,15 +145,15 @@ async function runUpload(id) {
     job.status = 'complete';
     job.result = data;
     job.completedAt = Date.now();
-    await writeJob(job);
+    await persistJob(job);
     announce(job);
     return data;
   })().catch(async (error) => {
-    const job = await readJob(id).catch(() => null);
+    const job = await loadJob(id);
     if (job) {
       job.status = 'error';
       job.error = error.message;
-      await writeJob(job).catch(() => {});
+      await persistJob(job);
       announce(job);
     }
     throw error;
@@ -115,11 +168,15 @@ export function createMediaUploadId() {
 
 export async function enqueueMediaUpload(blob, options = {}) {
   const id = options.id || createMediaUploadId();
-  const existing = await readJob(id).catch(() => null);
+  const existing = await loadJob(id);
   if (!existing) {
-    await writeJob({
+    // ArrayBuffers are consistently structured-cloneable in Firefox IndexedDB;
+    // persisting a canvas-backed Blob can abort the transaction in some modes.
+    const bytes = await blob.arrayBuffer();
+    await persistJob({
       id,
-      blob,
+      blob: bytes,
+      mimeType: blob.type || 'image/webp',
       filename: options.filename || `image_${id}.webp`,
       blogId: options.blogId || '',
       orgId: options.orgId || '',
