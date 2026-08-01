@@ -159,7 +159,11 @@ class GitHubAPI:
             return resp.text
 
     async def get_pull_files(self, owner: str, repo: str, pr_number: int) -> list:
-        return await self._request("GET", f"/repos/{owner}/{repo}/pulls/{pr_number}/files")
+        return await self._request(
+            "GET",
+            f"/repos/{owner}/{repo}/pulls/{pr_number}/files",
+            params={"per_page": 100},
+        )
 
     async def list_pulls(
         self,

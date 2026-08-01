@@ -90,7 +90,7 @@ def assess_mood(pulls: list[dict], files: list[dict]) -> MoodDecision:
         "license",
     )
     maintenance_only = bool(paths) and all(any(term in path for term in maintenance_paths) for path in paths)
-    dependency_only = _contains(pr_text, ("dependabot", "dependencies", "dependency bump", "chore(deps)"))
+    dependency_only = _contains(pr_text, ("dependabot", "dependencies", "dependency bump")) or "chore(deps)" in pr_text
     critical = _contains(text, ("breaking", "security", "vulnerability", "deprecated", "deprecation", "migration"))
 
     if any(any(term in path for term in ("changelog", "release", "migration")) for path in paths):

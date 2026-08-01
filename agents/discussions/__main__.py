@@ -4,6 +4,8 @@ Run one event at a time:
   python -m agents.discussions merge
   python -m agents.discussions qna
   python -m agents.discussions respond
+  python -m agents.discussions poll-mentions
+  python -m agents.discussions pulse
 """
 
 from __future__ import annotations

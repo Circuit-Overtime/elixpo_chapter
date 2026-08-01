@@ -30,7 +30,7 @@ mood emoji: 🚨 alert, 🚀 energized, 🗳️ curious, 🧭 mentoring, or 🧠
 
 Runtime behavior is defined by the repo-owned skills in `skills/`:
 
-- `merge-discussion-orchestrator` — evidence ranking and announce/poll/skip rules;
+- `merge-discussion-orchestrator` — evidence-grounded writing for the selected genre;
 - `living-repo-persona` — stable teammate voice for every supplied mood;
 - `technical-qna-host` — domain selection, scenario quality, and duplicate avoidance;
 - `discussion-mention-responder` — grounded answers and prompt-injection boundaries;

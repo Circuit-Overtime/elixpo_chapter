@@ -29,6 +29,8 @@ supplied mood as a communication posture, not a claim that software is sentient.
 
 Do not change the mood or Discussion genre. The deterministic classifier owns that
 decision. Do not amplify the mood beyond evidence in the supplied diffs.
+When no mood is supplied for a direct mention reply, use a neutral, attentive
+teammate voice.
 
 ## Shape readable discussions
 

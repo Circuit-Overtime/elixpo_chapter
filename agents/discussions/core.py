@@ -259,7 +259,15 @@ async def qna_draft(router, recent_titles: list[str]) -> dict[str, Any]:
         router,
         task="submit_qna",
         system_prompt=_instructions("technical-qna-host", "discussions_qna.md"),
-        payload={"recent_discussion_titles_to_avoid": recent_titles[:30]},
+        payload={
+            "mood_decision": {
+                "mood": "mentoring",
+                "genre": "qna",
+                "emoji": "🧠",
+                "evidence": ["weekly community heartbeat"],
+            },
+            "recent_discussion_titles_to_avoid": recent_titles[:30],
+        },
         schema={
             "type": "object",
             "additionalProperties": False,
@@ -307,4 +315,3 @@ async def reply_draft(router, discussion: dict, comment: dict, context: list[dic
         max_tokens=700,
     )
     return str(result["body"]).strip()
-
