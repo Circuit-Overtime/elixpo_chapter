@@ -763,7 +763,7 @@ function LixScriptBlock({ code }) {
       )}
 
       {tab === 'code' && (
-        <pre className="p-4 overflow-x-auto bg-[#0d0d14] max-h-96 overflow-y-auto docs-scroll select-text">
+        <pre className="p-4 overflow-x-auto bg-[#171120] max-h-96 overflow-y-auto docs-scroll select-text">
           <code className="text-[#c9d1d9] text-sm font-[lixCode] leading-relaxed">{code}</code>
         </pre>
       )}

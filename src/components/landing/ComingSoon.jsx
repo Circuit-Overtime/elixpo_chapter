@@ -44,7 +44,7 @@ export default function ComingSoon({ title, description, icon }) {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#13171C] text-white font-[lixFont] overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-[#120e1a] text-white font-[lixFont] overflow-x-hidden flex flex-col">
       <LandingNav />
 
       <main className="flex-1 flex items-center justify-center relative pt-16">

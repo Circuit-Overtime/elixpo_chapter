@@ -202,7 +202,7 @@ export default function BlogPostPage() {
 
   if (!post || !content) {
     return (
-      <div className="min-h-screen bg-[#121212] text-text-primary font-[lixFont] flex items-center justify-center">
+      <div className="min-h-screen bg-[#120e1a] text-text-primary font-[lixFont] flex items-center justify-center">
         <div className="text-center">
           <i className="bx bx-error-circle text-4xl text-text-dim mb-3" />
           <h1 className="text-xl font-medium mb-2">Post Not Found</h1>
@@ -218,7 +218,7 @@ export default function BlogPostPage() {
   const nextPost = currentIndex < blogPosts.length - 1 ? blogPosts[currentIndex + 1] : null
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white font-[lixFont] relative">
+    <div className="min-h-screen bg-[#120e1a] text-white font-[lixFont] relative">
       {/* Canvas dot grid background */}
       <DotGrid className="fixed inset-0 pointer-events-none opacity-60" />
 
@@ -226,11 +226,11 @@ export default function BlogPostPage() {
       <MarginDoodles />
 
       {/* Top bar — canvas toolbar style */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#121212]/90 backdrop-blur-xl border-b border-[#30363d]">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#120e1a]/90 backdrop-blur-xl border-b border-[#49385e]">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img src="/Images/logo.png" alt="LixSketch" className="w-7 h-7" />
+              <img src="/icon.png" alt="LixSketch" className="w-7 h-7 rounded-md" />
               <span className="text-white font-medium font-[lixFont]">LixSketch</span>
             </Link>
             <span className="text-[#444480]">/</span>

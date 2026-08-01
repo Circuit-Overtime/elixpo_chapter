@@ -7,6 +7,8 @@ import useSketchStore from '@/store/useSketchStore'
 import useAuthStore from '@/store/useAuthStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
 import { persistLayoutMode } from '@/hooks/useDocAutoSave'
+import { generateKey, encrypt, decrypt } from '@/utils/encryption'
+import { showToast } from '@/utils/toast'
 
 function LayoutModeToggle() {
   const layoutMode = useSketchStore((s) => s.layoutMode)
@@ -63,6 +65,7 @@ function ProfileDropdown() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const authUser = useAuthStore((s) => s.user)
   const [open, setOpen] = useState(false)
+  const [testingE2E, setTestingE2E] = useState(false)
   const ref = useRef(null)
 
   useEffect(() => {
@@ -81,12 +84,30 @@ function ProfileDropdown() {
 
   if (!profile && !isAuthenticated) return null
 
+  const testE2E = async () => {
+    if (testingE2E) return
+    setTestingE2E(true)
+    try {
+      const probe = `lixsketch-e2e-${Date.now()}`
+      const key = await generateKey()
+      const ciphertext = await encrypt(probe, key)
+      const plaintext = await decrypt(ciphertext, key)
+      if (plaintext !== probe || ciphertext === probe) throw new Error('Encryption round trip failed')
+      showToast('E2E encryption test passed', { tone: 'success', duration: 2200 })
+    } catch (error) {
+      console.error('[E2E Test] failed:', error)
+      showToast('E2E encryption test failed', { tone: 'warn', duration: 2600 })
+    } finally {
+      setTestingE2E(false)
+    }
+  }
+
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative flex items-center rounded-lg border border-border-light bg-surface/70">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-surface-hover transition-all duration-200"
-        title={displayName}
+        className="flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-l-lg hover:bg-surface-hover transition-all duration-200"
+        title={`${displayName} · canvas and encryption status`}
       >
         {avatar ? (
           <img src={avatar} alt="" className="w-6 h-6 rounded-md" referrerPolicy="no-referrer" />
@@ -98,7 +119,23 @@ function ProfileDropdown() {
         <span className="text-text-muted text-xs max-w-[80px] truncate hidden sm:block">
           {displayName}
         </span>
+        <SaveStatusDot />
+        <span className="e2e-badge flex items-center gap-0.5 px-1.5 py-0.5 rounded border select-none" title="End-to-end encryption enabled">
+          <i className="bx bxs-shield text-[11px]" />
+          <span className="text-[9px] font-medium">E2E</span>
+        </span>
         <i className={`bx bx-chevron-down text-text-dim text-xs transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      <button
+        onClick={testE2E}
+        disabled={testingE2E}
+        className="h-8 px-2 flex items-center justify-center gap-1 border-l border-border-light rounded-r-lg text-text-muted hover:text-accent hover:bg-surface-hover transition-all disabled:opacity-50"
+        title="Test E2E encryption"
+        aria-label="Test E2E encryption"
+      >
+        <i className={`bx ${testingE2E ? 'bx-loader-alt animate-spin' : 'bx-lock-alt'} text-sm`} />
+        <span className="text-[10px] hidden lg:inline">Test</span>
       </button>
 
       {open && (
@@ -133,6 +170,17 @@ function ProfileDropdown() {
           </div>
 
           <div className="border-t border-white/[0.06] mt-2 pt-2 flex flex-col gap-0.5">
+            <a
+              href="/docs/blog/e2e-encryption"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+            >
+              <i className="bx bxs-shield text-sm text-accent" />
+              How E2E encryption works
+            </a>
+
             <Link
               href="/profile"
               onClick={() => setOpen(false)}
@@ -194,14 +242,14 @@ function SaveStatusDot() {
     }
   }, [])
 
-  if (saveStatus === 'idle') return null
-
   const colorMap = {
+    idle: 'bg-yellow-400',
     cloud: 'bg-green-400',
     local: 'bg-yellow-400',
     failed: 'bg-red-400',
   }
   const titleMap = {
+    idle: 'Not saved yet',
     cloud: 'Synced to cloud — Ctrl+S to force sync',
     local: 'Saved locally — auto-syncs every 5min or press Ctrl+S',
     failed: 'Sync failed — will retry automatically',
@@ -253,11 +301,11 @@ export default function Header() {
               window.location.href = '/'
             }
           }}
-          className="w-[26px] h-[26px] bg-contain bg-no-repeat bg-center cursor-pointer"
-          style={{ backgroundImage: "url('/Images/logo.png')" }}
+          className="w-[26px] h-[26px] rounded-md bg-contain bg-no-repeat bg-center cursor-pointer"
+          style={{ backgroundImage: "url('/icon.png')" }}
         />
         {/* Divider */}
-        <div className="w-px h-5 bg-[#2c2c35]" />
+        <div className="w-px h-5 bg-border-light" />
 
         {/* Workspace name */}
         <input
@@ -272,37 +320,20 @@ export default function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
-        {/* Save status dot */}
-        <SaveStatusDot />
-        {/* E2E Shield badge — links out to the blog post (issue #24, bug #13). */}
-        <a
-          href="/docs/blog/e2e-encryption"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 px-2 py-1 rounded-md bg-green-500/10 text-green-400/80 hover:bg-green-500/15 hover:text-green-400 transition-colors select-none"
-          title="End-to-end encrypted — click to read how it works"
-        >
-          <i className="bx bxs-shield text-sm" />
-          <span className="text-[10px] font-medium">E2E</span>
-        </a>
+        {/* Profile pill owns identity, save state, and E2E status. */}
+        <ProfileDropdown />
 
-        {/* Help icon */}
+        {/* Help */}
         <button
           onClick={toggleHelpModal}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          title="Help"
+          aria-label="Help"
         >
           <i className="bx bx-help-circle text-lg" />
         </button>
 
-        {/* Share button */}
-        <button
-          onClick={toggleSaveModal}
-          className="px-3.5 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 font-[lixFont]"
-        >
-          Share
-        </button>
-
-        {/* Shortcuts button */}
+        {/* Command palette */}
         <button
           onClick={toggleCommandPalette}
           className="px-2.5 py-1.5 bg-surface hover:bg-surface-hover text-text-muted text-sm rounded-lg border border-border transition-all duration-200 font-[lixFont]"
@@ -310,10 +341,15 @@ export default function Header() {
           Ctrl+/
         </button>
 
-        {/* Profile */}
-        <ProfileDropdown />
+        {/* Share */}
+        <button
+          onClick={toggleSaveModal}
+          className="px-3.5 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 font-[lixFont]"
+        >
+          Share
+        </button>
 
-        {/* Hamburger menu */}
+        {/* Hamburger is the far-right control. */}
         <button
           onClick={toggleMenu}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"

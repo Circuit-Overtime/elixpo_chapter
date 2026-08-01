@@ -35,7 +35,7 @@ function CodeBlock({ code, language = 'lixscript' }) {
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
         <CopyButton text={code} label="Copy" />
       </div>
-      <pre className="bg-[#0d0d14] border border-white/[0.06] rounded-xl p-4 overflow-x-auto text-sm leading-relaxed">
+      <pre className="bg-[#171120] border border-white/[0.08] rounded-xl p-4 overflow-x-auto text-sm leading-relaxed">
         <code className="text-text-secondary font-[lixCode]">{code}</code>
       </pre>
     </div>
@@ -124,7 +124,7 @@ export default function DocsPage() {
         <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img src="/Images/logo.png" alt="LixSketch" className="w-7 h-7" />
+              <img src="/icon.png" alt="LixSketch" className="w-7 h-7 rounded-md" />
               <span className="text-text-primary font-medium">LixSketch</span>
             </a>
             <span className="text-text-dim">/</span>
@@ -554,7 +554,7 @@ const result = window.__lixscriptRender(parsed)`} />
               </div>
 
               <div className="relative group">
-                <pre className="bg-[#0d0d14] border border-white/[0.06] rounded-xl p-4 overflow-x-auto text-xs leading-relaxed max-h-[500px] overflow-y-auto">
+                <pre className="bg-[#171120] border border-white/[0.08] rounded-xl p-4 overflow-x-auto text-xs leading-relaxed max-h-[500px] overflow-y-auto">
                   <code className="text-text-dim font-[lixCode] whitespace-pre-wrap">{LIXSCRIPT_LLM_SPEC}</code>
                 </pre>
               </div>

@@ -385,7 +385,7 @@
 {
     height: 26px;
     width: 26px;
-    background: url('./images/logo.png') no-repeat center center;
+    background: url('/icon.png') no-repeat center center;
     background-size: contain;
 }
 

@@ -45,12 +45,12 @@ export function parseMermaid(src) {
     const classAssigns = [];        // { nodeIds: [...], className }
     const nodeStyles = new Map();   // Mermaid `style A fill:...,stroke:...`
     const palette = [
-        { fill: '#e8f3ec', stroke: '#5f836c' },
-        { fill: '#f6eadf', stroke: '#a97852' },
-        { fill: '#eee9f4', stroke: '#7e6b91' },
-        { fill: '#f5efcf', stroke: '#9a8745' },
-        { fill: '#e5f0f1', stroke: '#5d7f82' },
-        { fill: '#f4e5e3', stroke: '#9a6863' },
+        { fill: '#eee9f7', stroke: '#7667a8' },
+        { fill: '#e6def2', stroke: '#8875b5' },
+        { fill: '#ddd2eb', stroke: '#6f5f9c' },
+        { fill: '#f2edf8', stroke: '#9a88bf' },
+        { fill: '#e2daf0', stroke: '#806cab' },
+        { fill: '#ebe4f5', stroke: '#705d9c' },
     ];
 
     function parseStyleProps(value) {
@@ -1350,6 +1350,103 @@ export function generateFramePreviewSVG(frame, width = 500, height = 350) {
 }
 
 // ============================================================
+// CANVAS BACKGROUND CONTRAST
+// ============================================================
+
+function colorRgb(value) {
+    if (!value || typeof value !== 'string') return null;
+    const rgbMatch = value.trim().match(/^rgba?\(\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)/i);
+    if (rgbMatch) {
+        return {
+            r: Math.min(255, Number(rgbMatch[1])),
+            g: Math.min(255, Number(rgbMatch[2])),
+            b: Math.min(255, Number(rgbMatch[3])),
+        };
+    }
+    let hex = value.trim().replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(char => char + char).join('');
+    if (!/^[0-9a-f]{6}$/i.test(hex)) return null;
+    return {
+        r: parseInt(hex.slice(0, 2), 16),
+        g: parseInt(hex.slice(2, 4), 16),
+        b: parseInt(hex.slice(4, 6), 16),
+    };
+}
+
+function relativeLuminance(value) {
+    const rgb = colorRgb(value);
+    if (!rgb) return null;
+    const channel = component => {
+        const normalized = component / 255;
+        return normalized <= .03928 ? normalized / 12.92 : Math.pow((normalized + .055) / 1.055, 2.4);
+    };
+    return .2126 * channel(rgb.r) + .7152 * channel(rgb.g) + .0722 * channel(rgb.b);
+}
+
+function contrastRatio(a, b) {
+    const first = relativeLuminance(a);
+    const second = relativeLuminance(b);
+    if (first == null || second == null) return 1;
+    return (Math.max(first, second) + .05) / (Math.min(first, second) + .05);
+}
+
+function readableForeground(background) {
+    return contrastRatio('#34304a', background) >= contrastRatio('#f6f2fb', background)
+        ? '#34304a'
+        : '#f6f2fb';
+}
+
+function readableColor(color, background, minimum = 3) {
+    if (!colorRgb(color) || contrastRatio(color, background) >= minimum) return color;
+    return readableForeground(background);
+}
+
+export function adaptCanvasContrast(background) {
+    if (typeof window === 'undefined' || !Array.isArray(window.shapes)) return;
+    const foreground = readableForeground(background);
+    const muted = foreground === '#34304a' ? '#716a7d' : '#c8bddb';
+
+    window.__canvasContrastColor = foreground;
+    window.__ensureCanvasContrast = readableColor;
+
+    for (const shape of window.shapes) {
+        if (!shape) continue;
+        if (typeof shape.adaptToBackground === 'function') {
+            shape.adaptToBackground(background, foreground, muted);
+            continue;
+        }
+
+        const owner = shape.parentFrame;
+        const generated = !!(shape._diagramType || shape._frameType === 'graph' || owner?._diagramType || owner?._frameType === 'graph');
+        const fill = shape.options?.fill;
+        const solidFill = fill && fill !== 'transparent' && fill !== 'none';
+
+        if (shape.options?.closedFill) {
+            shape.options.outlineStroke = background;
+            if (typeof shape.draw === 'function') shape.draw();
+            continue;
+        }
+
+        if (shape.options?.stroke && (generated || ['#fff', '#ffffff', '#000', '#000000', '#1a1a2e'].includes(shape.options.stroke.toLowerCase()))) {
+            shape.options.stroke = readableColor(shape.options.stroke, background, 3);
+        }
+        if (shape.shapeName === 'frame' && generated && shape.options) {
+            shape.options.stroke = muted;
+        }
+        if ('labelColor' in shape && generated) {
+            shape.labelColor = solidFill ? readableColor(shape.labelColor || foreground, fill, 4.5) : foreground;
+        }
+        if (shape.group && generated) {
+            shape.group.querySelectorAll('text').forEach(text => {
+                const current = text.getAttribute('fill') || foreground;
+                text.setAttribute('fill', solidFill ? readableColor(current, fill, 4.5) : readableColor(current, background, 4.5));
+            });
+        }
+        if (typeof shape.draw === 'function') shape.draw();
+    }
+}
+
+// ============================================================
 // INIT
 // ============================================================
 
@@ -1358,6 +1455,7 @@ export function initAIRenderer() {
     // Graph, LixScript) can wire arrow endpoints into shapes without
     // import-cycling through this large module.
     window.__autoAttach = autoAttach;
+    window.__adaptCanvasContrast = adaptCanvasContrast;
 
     // Lazy-load sequence renderer
     let _seqParser = null;

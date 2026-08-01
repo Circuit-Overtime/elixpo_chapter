@@ -186,6 +186,11 @@ class FreehandStroke {
     getPathData() {
         if (this.points.length < 2) return '';
 
+        if (this.options.closedFill) {
+            const [first, ...rest] = this.points;
+            return [`M ${first[0]} ${first[1]}`, ...rest.map(point => `L ${point[0]} ${point[1]}`), 'Z'].join(' ');
+        }
+
         const isRough = this.options.roughness === "rough";
         const isMedium = this.options.roughness === "medium";
 
@@ -292,14 +297,20 @@ class FreehandStroke {
             this.selectionOutline = null;
         }
 
-        // Create the path element
-        // perfect-freehand returns a filled outline — use fill, not stroke
+        // Normal freehand paths use the filled outline from perfect-freehand.
+        // Closed-fill paths (pie sectors, polygons) use their actual polygon
+        // geometry with a separate outline, preserving sharp radial edges.
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const pathData = this.getPathData();
         path.setAttribute('d', pathData);
         path.setAttribute('fill', this.options.stroke);
         path.setAttribute('fill-opacity', this.options.strokeOpacity);
-        path.setAttribute('stroke', 'none');
+        path.setAttribute('stroke', this.options.closedFill ? (this.options.outlineStroke || 'none') : 'none');
+        if (this.options.closedFill) {
+            path.setAttribute('stroke-width', this.options.outlineWidth || this.options.strokeWidth || 1);
+            path.setAttribute('stroke-linejoin', 'round');
+            path.setAttribute('vector-effect', 'non-scaling-stroke');
+        }
 
         // Overlay a dashed/dotted centerline if needed
         if (this.options.strokeStyle === "dashed" || this.options.strokeStyle === "dotted") {
@@ -424,6 +435,20 @@ class FreehandStroke {
         const angleRad = -this.rotation * Math.PI / 180;
         const rotatedX = dx * Math.cos(angleRad) - dy * Math.sin(angleRad) + centerX;
         const rotatedY = dx * Math.sin(angleRad) + dy * Math.cos(angleRad) + centerY;
+
+        if (this.options.closedFill && this.points.length >= 3) {
+            const localX = rotatedX - ox;
+            const localY = rotatedY - oy;
+            let inside = false;
+            for (let i = 0, j = this.points.length - 1; i < this.points.length; j = i++) {
+                const xi = this.points[i][0], yi = this.points[i][1];
+                const xj = this.points[j][0], yj = this.points[j][1];
+                const crosses = ((yi > localY) !== (yj > localY))
+                    && (localX < (xj - xi) * (localY - yi) / ((yj - yi) || Number.EPSILON) + xi);
+                if (crosses) inside = !inside;
+            }
+            return inside;
+        }
 
         return rotatedX >= bbX &&
                rotatedX <= bbX + this.boundingBox.width &&

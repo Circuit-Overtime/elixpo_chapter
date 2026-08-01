@@ -16,7 +16,7 @@ const FILL_STYLES = [
 
 const FILL_COLORS = [
   '#1e1e28',
-  '#13171C',
+  '#15111f',
   '#1a1a2e',
   '#0d1117',
   '#2d2d3a',

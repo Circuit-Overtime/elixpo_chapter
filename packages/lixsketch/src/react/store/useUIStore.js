@@ -59,10 +59,10 @@ function applyTheme(theme) {
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     : theme
   body.classList.remove('theme-dark', 'theme-light')
-  if (resolved === 'dark') body.classList.add('theme-dark')
+  body.classList.add(`theme-${resolved}`)
 
   const svgEl = window.svg
-  if (svgEl) svgEl.style.background = resolved === 'light' ? '#f4f3ee' : ''
+  if (svgEl) svgEl.style.background = resolved === 'light' ? '#fbf9fd' : '#15111f'
 }
 
 const useUIStore = create((set, get) => ({
@@ -157,8 +157,7 @@ const useUIStore = create((set, get) => ({
   setCanvasLoading: (loading, message) => set({ canvasLoading: loading, canvasLoadingMessage: message || 'Loading canvas...' }),
 
   // --- Theme ---
-  // Issue #38 bug #1: light by default. Dark stays available via toggle.
-  theme: 'light',
+  theme: 'dark',
   setTheme: (newTheme) => {
     const prev = get().theme
     const resolve = (t) => t === 'system'

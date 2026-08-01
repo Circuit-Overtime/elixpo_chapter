@@ -6,12 +6,12 @@ export const metadata = {
     title: 'LixSketch Use Cases',
     description:
       'Architecture diagrams, wireframes, brainstorming, documentation — discover what you can build.',
-    images: [{ url: '/Images/og-image.png', width: 1322, height: 612, alt: 'LixSketch Use Cases' }],
+    images: [{ url: '/og-image.png', width: 1280, height: 720, alt: 'LixSketch Use Cases' }],
   },
   twitter: {
     title: 'LixSketch Use Cases',
     description: 'Architecture diagrams, wireframes, brainstorming, and more.',
-    images: ['/Images/og-image.png'],
+    images: ['/og-image.png'],
   },
   alternates: { canonical: '/resources/use-cases' },
 }
