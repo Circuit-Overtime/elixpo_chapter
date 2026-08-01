@@ -34,7 +34,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const bgColor = typeof body?.bgColor === "string" ? body.bgColor : tmpl.bg_color;
     const vars = body?.vars && typeof body.vars === "object" ? body.vars : {};
 
-    const product = tmpl.product_id ? await getProduct(db, session.tenantId, tmpl.product_id) : null;
+    const product = tmpl.product_id
+        ? await getProduct(db, session.tenantId, tmpl.product_id)
+        : null;
     // Product footer when attached, else the template's own footer (one-time).
     let footer = product ? productToFooter(product) : null;
     if (!footer && tmpl.footer_json) {
