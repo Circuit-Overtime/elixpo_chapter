@@ -273,7 +273,7 @@ jobs:
           anthropic_api_key: ccr-pollinations
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: elixpo/
-          show_full_output: false
+          show_full_output: ${{ github.event_name == 'workflow_dispatch' }}
           trigger_phrase: "@elixpoo"
           prompt: ${{ steps.prompt.outputs.body }}
           claude_args: --permission-mode bypassPermissions
