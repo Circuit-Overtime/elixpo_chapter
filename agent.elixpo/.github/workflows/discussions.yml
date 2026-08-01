@@ -1,0 +1,82 @@
+name: Elixpoo Discussions
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  schedule:
+    - cron: "17 9 * * 3"
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Discussion task to run
+        required: true
+        default: qna
+        type: choice
+        options: [qna, poll-mentions]
+
+concurrency:
+  group: elixpoo-discussions-elixpo-elixpo
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  discussions: write
+  issues: write
+  pull-requests: read
+
+jobs:
+  merge:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Decide and publish merge discussion
+        env:
+          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
+        run: python -m agents.discussions merge
+
+  qna:
+    if: (github.event_name == 'workflow_dispatch' && inputs.mode == 'qna') || (github.event_name == 'schedule' && github.event.schedule == '17 9 * * 3')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Publish weekly technical Q&A
+        env:
+          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
+        run: python -m agents.discussions qna
+
+  poll-mentions:
+    if: (github.event_name == 'workflow_dispatch' && inputs.mode == 'poll-mentions') || (github.event_name == 'schedule' && github.event.schedule == '*/10 * * * *')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Reply to recent unhandled @elixpoo mentions
+        env:
+          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
+        run: python -m agents.discussions poll-mentions

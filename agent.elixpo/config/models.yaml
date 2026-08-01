@@ -40,6 +40,9 @@ roles:
   # steward replies — conversational follow-ups + tool use
   steward:       { model: kimi }                       # free
 
+  # GitHub Discussions — lowest-priced general text model in the registry
+  discussions:   { model: nova-fast }
+
   # web search — built-in grounding (no tool calling)
   search:        { model: perplexity-fast, tools: false }  # free sonar; paid: gemini-search
 
