@@ -30,13 +30,19 @@ function ComparisonBars({ current, previous, accent }) {
 }
 
 function MiniTrend({ values = [], accent }) {
-  const width = 180;
-  const height = 48;
+  const width = 420;
+  const height = 132;
+  const pad = 8;
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
   const spread = Math.max(max - min, 1);
-  const points = values.map((value, index) => `${(index * width) / Math.max(values.length - 1, 1)},${height - 4 - ((Number(value) - min) / spread) * (height - 8)}`).join(' ');
-  return <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-12 mt-5" aria-hidden="true"><polyline points={points} fill="none" stroke={accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity=".9" /></svg>;
+  const points = values.map((value, index) => `${pad + (index * (width - pad * 2)) / Math.max(values.length - 1, 1)},${height - pad - ((Number(value) - min) / spread) * (height - pad * 2)}`).join(' ');
+  const area = points ? `${pad},${height - pad} ${points} ${width - pad},${height - pad}` : '';
+  return <div className="mt-5 rounded-xl border px-2 pt-2" style={{ borderColor: `${accent}22`, background: `${accent}08` }}><svg viewBox={`0 0 ${width} ${height}`} className="w-full h-28 sm:h-32" aria-label="Views trend">
+    {[.25, .5, .75].map(fraction => <line key={fraction} x1={pad} x2={width - pad} y1={height * fraction} y2={height * fraction} stroke="var(--border-default)" strokeWidth="1" />)}
+    {area && <polygon points={area} fill={accent} opacity=".12" />}
+    <polyline points={points} fill="none" stroke={accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity=".95" />
+  </svg></div>;
 }
 
 function MetricCard({ label, value, previous, change, suffix = '', definition, accent = '#9b7bf7', featured = false, trend = [] }) {
@@ -109,6 +115,29 @@ function Breakdown({ title, rows = [], empty = 'No data yet' }) {
       ))}</div> : <p className="text-[13px] py-10 text-center" style={{ color: 'var(--text-faint)' }}>{empty}</p>}
     </section>
   );
+}
+
+function DonutBreakdown({ title, rows = [] }) {
+  const colors = ['#9b7bf7', '#60a5fa', '#f472b6', '#4ade80', '#f59e0b'];
+  const total = rows.reduce((sum, row) => sum + Number(row.value || 0), 0);
+  let cursor = 0;
+  const stops = rows.map((row, index) => {
+    const start = cursor;
+    cursor += total ? (Number(row.value || 0) / total) * 100 : 0;
+    return `${colors[index % colors.length]} ${start}% ${cursor}%`;
+  }).join(', ');
+  return <section className="rounded-[22px] border p-5 sm:p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}><div className="flex items-start justify-between mb-5"><div><h2 className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2><p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>Share of audience actions</p></div><span className="text-[11px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{fmt(total)} total</span></div><div className="flex flex-col sm:flex-row items-center gap-7"><div className="w-36 h-36 rounded-full grid place-items-center shrink-0" style={{ background: total ? `conic-gradient(${stops})` : 'var(--bg-elevated)' }}><div className="w-24 h-24 rounded-full grid place-items-center text-center" style={{ background: 'var(--bg-surface)' }}><div><p className="text-2xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(total)}</p><p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-faint)' }}>actions</p></div></div></div><div className="w-full space-y-2.5">{rows.map((row, index) => <div key={row.label} className="grid grid-cols-[10px_1fr_auto] items-center gap-2 text-[11px]"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: colors[index % colors.length] }} /><span style={{ color: 'var(--text-body)' }}>{row.label}</span><span className="font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(row.value)}</span></div>)}</div></div></section>;
+}
+
+function FunnelGraph({ rows = [] }) {
+  const max = Math.max(...rows.map(row => Number(row.value || 0)), 1);
+  return <section className="rounded-[22px] border p-5 sm:p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}><div className="mb-5"><h2 className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>Conversion funnel</h2><p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>From discovery to retained audience</p></div><div className="space-y-2">{rows.map((row, index) => { const width = Math.max(24, (Number(row.value || 0) / max) * 100); const conversion = index && Number(rows[index - 1].value) ? Math.round((Number(row.value) / Number(rows[index - 1].value)) * 100) : 100; return <div key={row.label} className="text-center"><div className="mx-auto rounded-md px-3 py-2 flex items-center justify-between gap-3 transition-all" style={{ width: `${width}%`, minWidth: 150, background: `rgba(155,123,247,${Math.max(.12, .34 - index * .045)})`, color: 'var(--text-primary)' }}><span className="text-[10px] font-medium truncate">{row.label}</span><span className="text-[11px] font-bold tabular-nums">{fmt(row.value)}</span></div>{index > 0 && <p className="text-[8px] my-0.5 tabular-nums" style={{ color: 'var(--text-faint)' }}>↓ {conversion}%</p>}</div>; })}</div></section>;
+}
+
+function ContentInventory({ published, drafts }) {
+  const total = Number(published || 0) + Number(drafts || 0);
+  const publishedShare = total ? (Number(published) / total) * 100 : 0;
+  return <article className="col-span-2 rounded-[22px] border p-5 sm:p-6 flex flex-col justify-between" style={{ background: 'linear-gradient(130deg, rgba(148,163,184,.1), var(--bg-surface))', borderColor: 'var(--border-default)' }}><div><p className="text-[11px] uppercase tracking-[.12em] font-semibold" style={{ color: 'var(--text-muted)' }}>Content inventory</p><p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>Publishing balance across your workspace</p></div><div className="grid grid-cols-2 gap-5 my-5"><div><p className="text-3xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(published)}</p><p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>Published</p></div><div><p className="text-3xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(drafts)}</p><p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>Drafts</p></div></div><div className="h-2.5 rounded-full overflow-hidden flex" style={{ background: 'var(--bg-elevated)' }}><span style={{ width: `${publishedShare}%`, background: '#9b7bf7' }} /><span className="flex-1 bg-[#94a3b8]/30" /></div></article>;
 }
 
 function CollectingNotice() {
@@ -265,12 +294,13 @@ export default function StatsPage() {
               <RatioCard label="Engagement rate" value={totals.engagementRate} previous={data.previous.engagementRate} change={data.changes.engagementRate} definition={definitions.engagementRate} accent="#f472b6" />
               <MetricCard label="Followers gained" value={totals.followers} previous={data.previous.followers} change={data.changes.followers} definition={definitions.followers} accent="#a78bfa" />
               <MetricCard label="Followers lost" value={totals.followersLost} previous={data.previous.followersLost} change={data.changes.followersLost} accent="#f87171" />
+              <ContentInventory published={totals.published} drafts={totals.drafts} />
             </div>
             <section className="rounded-2xl border p-4 sm:p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
               <div className="flex items-center justify-between mb-4"><div><h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Performance over time</h2><p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>Daily totals in the selected period</p></div><select value={metric} onChange={event => setMetric(event.target.value)} className="rounded-lg px-3 py-1.5 text-[12px]" style={{ background: 'var(--bg-elevated)', color: 'var(--text-body)' }}><option value="views">Views</option><option value="reads">Reads</option></select></div>
               <TrendChart labels={data.trend.labels} values={data.trend[metric]} color={metric === 'views' ? '#9b7bf7' : '#4ade80'} />
             </section>
-            <div className="grid md:grid-cols-2 gap-4"><Breakdown title="Engagement" rows={[['Likes', totals.likes], ['Comments', totals.comments], ['Bookmarks', totals.bookmarks], ['Shares', totals.shares], ['Claps', totals.claps]].map(([label, value]) => ({ label, value }))} /><Breakdown title="Conversion funnel" rows={data.funnel} /></div>
+            <div className="grid md:grid-cols-2 gap-4 items-stretch"><DonutBreakdown title="Engagement mix" rows={[['Likes', totals.likes], ['Comments', totals.comments], ['Bookmarks', totals.bookmarks], ['Shares', totals.shares], ['Claps', totals.claps]].map(([label, value]) => ({ label, value }))} /><FunnelGraph rows={data.funnel} /></div>
           </div>}
 
           {tab === 'Posts' && <section className="rounded-2xl border overflow-hidden" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
