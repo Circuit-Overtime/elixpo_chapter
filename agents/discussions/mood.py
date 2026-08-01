@@ -1,7 +1,8 @@
-"""Deterministic repository-mood classifier.
+"""Evidence-bounded repository-mood classifier with stable variance.
 
 No model participates in this decision. Merged PR metadata and bounded patches
-produce a mood, a Discussion genre, an emoji, and an evidence trail.
+produce plausible moods; recent history discourages repetition and a stable
+weighted choice gives similarly relevant changes different communication modes.
 """
 
 from __future__ import annotations
@@ -9,6 +10,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
+from hashlib import sha256
+from typing import Sequence
 
 
 class Genre(str, Enum):
@@ -61,8 +64,48 @@ def _contains(text: str, words: tuple[str, ...]) -> bool:
     return any(re.search(rf"\b{re.escape(word)}\b", text) for word in words)
 
 
-def assess_mood(pulls: list[dict], files: list[dict]) -> MoodDecision:
-    """Classify activity from explicit, inspectable diff signals."""
+def _stable_fraction(material: str) -> float:
+    """Map evidence to a retry-stable value in the half-open interval [0, 1)."""
+    value = int.from_bytes(sha256(material.encode("utf-8")).digest()[:8], "big")
+    return value / 2**64
+
+
+def _choose_genre(
+    candidates: dict[Genre, float],
+    pulls: list[dict],
+    scores: dict[str, int],
+    recent_moods: Sequence[str],
+    seed: str | None,
+) -> Genre:
+    identities = sorted(
+        str(pull.get("node_id") or pull.get("number") or pull.get("title") or "unknown")
+        for pull in pulls
+    )
+    material = "|".join(
+        (
+            ",".join(identities),
+            ",".join(f"{name}:{scores[name]}" for name in sorted(scores)),
+            ",".join(recent_moods[:5]),
+            seed or "",
+        )
+    )
+    point = _stable_fraction(material) * sum(candidates.values())
+    cumulative = 0.0
+    for genre, weight in candidates.items():
+        cumulative += weight
+        if point < cumulative:
+            return genre
+    return next(reversed(candidates))
+
+
+def assess_mood(
+    pulls: list[dict],
+    files: list[dict],
+    *,
+    recent_moods: Sequence[str] = (),
+    seed: str | None = None,
+) -> MoodDecision:
+    """Classify activity with inspectable signals and bounded, stable variance."""
     scores = {"announcement": 0, "poll": 0, "qna": 0}
     signals: list[str] = []
     paths = [str(file.get("filename", "")).casefold() for file in files]
@@ -136,20 +179,45 @@ def assess_mood(pulls: list[dict], files: list[dict]) -> MoodDecision:
         if not critical:
             return MoodDecision(Mood.RESTING, Genre.SKIP, MOOD_EMOJI[Mood.RESTING], scores, tuple(signals))
 
-    candidates = [
-        (scores["announcement"], 3, Genre.ANNOUNCEMENT),
-        (scores["poll"], 2, Genre.POLL),
-        (scores["qna"], 1, Genre.QNA),
-    ]
-    score, _, genre = max(candidates)
+    if critical:
+        return MoodDecision(
+            Mood.ALERT,
+            Genre.ANNOUNCEMENT,
+            MOOD_EMOJI[Mood.ALERT],
+            scores,
+            tuple(signals),
+        )
+
     thresholds = {Genre.ANNOUNCEMENT: 5, Genre.POLL: 5, Genre.QNA: 4}
-    if score < thresholds[genre]:
+    genre_moods = {
+        Genre.ANNOUNCEMENT: Mood.ENERGIZED,
+        Genre.POLL: Mood.CURIOUS,
+        Genre.QNA: Mood.MENTORING,
+    }
+    normalized_history = tuple(
+        mood.value if isinstance(mood, Mood) else str(mood).casefold().removeprefix("mood-")
+        for mood in recent_moods
+    )
+    candidates: dict[Genre, float] = {}
+    for genre, threshold in thresholds.items():
+        score = scores[genre.value]
+        if score < threshold:
+            continue
+        mood_name = genre_moods[genre].value
+        weight = float(score**2)
+        occurrences = normalized_history[:5].count(mood_name)
+        if normalized_history[:1] == (mood_name,):
+            weight *= 0.2
+        weight *= 0.6**occurrences
+        if mood_name not in normalized_history[:3]:
+            weight *= 1.2
+        candidates[genre] = max(weight, 0.01)
+
+    if not candidates:
         return MoodDecision(Mood.RESTING, Genre.SKIP, MOOD_EMOJI[Mood.RESTING], scores, tuple(signals))
 
-    if genre is Genre.ANNOUNCEMENT:
-        mood = Mood.ALERT if critical else Mood.ENERGIZED
-    elif genre is Genre.POLL:
-        mood = Mood.CURIOUS
-    else:
-        mood = Mood.MENTORING
+    genre = _choose_genre(candidates, pulls, scores, normalized_history, seed)
+    mood = genre_moods[genre]
+    if len(candidates) > 1:
+        signals.append("selected from evidence-qualified genres with recent-mood novelty bias")
     return MoodDecision(mood, genre, MOOD_EMOJI[mood], scores, tuple(signals))

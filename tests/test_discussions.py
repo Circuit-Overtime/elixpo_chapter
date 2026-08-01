@@ -10,6 +10,7 @@ from agents.discussions.__main__ import (
     _handle_pulse,
     _labels_for,
     _poll_mentions,
+    _recent_moods,
     _repo_name,
     _source_repo_name,
 )
@@ -102,6 +103,77 @@ def test_mood_heuristics_select_genres_without_model_calls():
     )
     assert quiet.genre is Genre.SKIP
     assert quiet.mood is Mood.RESTING
+
+
+def _ambiguous_activity(identity: int, recent_moods=()):
+    return assess_mood(
+        [
+            {
+                "node_id": f"PR_{identity}",
+                "title": "feat: kubernetes deployment options",
+                "body": "RFC feedback on alternatives and tradeoffs",
+                "labels": [],
+            }
+        ],
+        [
+            {
+                "filename": "docs/kubernetes/config/options.md",
+                "changes": 250,
+                "patch": "+ Compare deployment options and follow-up work",
+            }
+        ],
+        recent_moods=recent_moods,
+    )
+
+
+def test_mood_variance_is_relevant_and_retry_stable():
+    decisions = [_ambiguous_activity(identity) for identity in range(30)]
+    assert {decision.genre for decision in decisions} == {
+        Genre.ANNOUNCEMENT,
+        Genre.POLL,
+        Genre.QNA,
+    }
+    assert _ambiguous_activity(12) == _ambiguous_activity(12)
+    assert all(decision.genre is not Genre.SKIP for decision in decisions)
+
+
+def test_recent_moods_reduce_repetition_without_overriding_evidence():
+    baseline = [_ambiguous_activity(identity) for identity in range(100)]
+    after_polls = [
+        _ambiguous_activity(identity, recent_moods=("curious", "curious", "curious"))
+        for identity in range(100)
+    ]
+    baseline_polls = sum(decision.mood is Mood.CURIOUS for decision in baseline)
+    repeated_polls = sum(decision.mood is Mood.CURIOUS for decision in after_polls)
+    assert repeated_polls < baseline_polls / 2
+    assert all(decision.genre is not Genre.SKIP for decision in after_polls)
+
+
+def test_recent_mood_labels_are_read_newest_first():
+    recent = [
+        {"labels": {"nodes": [{"name": "poll"}, {"name": "mood-curious"}]}},
+        {"labels": {"nodes": [{"name": "mood-energized"}]}},
+        {"labels": {"nodes": [{"name": "unrelated"}]}},
+        {"labels": [{"name": "mood-mentoring"}]},
+    ]
+    assert _recent_moods(recent) == ("curious", "energized", "mentoring")
+
+
+def test_critical_activity_always_uses_alert_announcement():
+    decision = assess_mood(
+        [
+            {
+                "node_id": "critical-change",
+                "title": "feat: kubernetes configuration RFC",
+                "body": "Breaking migration with options and tradeoffs",
+                "labels": [],
+            }
+        ],
+        [{"filename": "docs/kubernetes/config/migration.md", "changes": 300, "patch": "+ breaking"}],
+        recent_moods=("alert", "alert", "alert"),
+    )
+    assert decision.genre is Genre.ANNOUNCEMENT
+    assert decision.mood is Mood.ALERT
 
 
 def test_markdown_and_emoji_are_rendered_deterministically():

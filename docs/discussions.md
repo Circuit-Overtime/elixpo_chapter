@@ -1,6 +1,7 @@
 # Discussions squad
 
-`agents.discussions` gives the repository a deterministic activity loop:
+`agents.discussions` gives the repository an evidence-driven activity loop with
+controlled variance:
 
 - merged diffs → an energized/alert announcement, curious poll, mentoring Q&A,
   or a resting no-post decision;
@@ -18,12 +19,16 @@ general text model in the checked-in Pollinations registry). Every title/body or
 reply is then sent through the `safety` role before it can be posted. Posts carry
 an autonomous-contributor disclosure and an idempotency marker.
 
-The model never chooses the mood or genre. `agents.discussions.mood` scores
+The writer never chooses the mood or genre. `agents.discussions.mood` scores
 changelogs, breaking/security language, feature paths, design signals,
 configuration surfaces, domain files, documentation, diff size, and
-maintenance-only changes. It returns one of `alert`, `energized`, `curious`,
-`mentoring`, or `resting`. Only then does the routed writer compose structured
-fields for the selected genre.
+maintenance-only changes. Genres that clear their evidence threshold enter a
+weighted choice. Recent mood labels reduce the weight of repeated moods, while a
+stable digest of the merge set makes workflow retries choose the same result.
+Different qualifying changes can therefore produce different moods without
+ignoring relevance. Critical changes always become alert announcements, and
+maintenance-only changes remain quiet. Only after this decision does the routed
+writer compose structured fields for the selected genre.
 
 Python renders those fields into fixed Markdown sections and prefixes exactly one
 mood emoji: 🚨 alert, 🚀 energized, 🗳️ curious, 🧭 mentoring, or 🧠 scheduled Q&A.

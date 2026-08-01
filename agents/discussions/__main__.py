@@ -130,6 +130,22 @@ def _cooldown_active(recent: list[dict], hours: int = 6) -> bool:
     )
 
 
+def _recent_moods(recent: list[dict], limit: int = 5) -> tuple[str, ...]:
+    """Read newest mood labels while tolerating unlabeled legacy Discussions."""
+    moods: list[str] = []
+    for item in recent:
+        raw_labels = item.get("labels") or {}
+        labels = raw_labels.get("nodes", []) if isinstance(raw_labels, dict) else raw_labels
+        for label in labels:
+            name = str(label.get("name", "")).casefold()
+            if name.startswith("mood-"):
+                moods.append(name.removeprefix("mood-"))
+                break
+        if len(moods) >= limit:
+            break
+    return tuple(moods)
+
+
 async def _publish_mood_activity(
     discussions,
     router,
@@ -188,7 +204,7 @@ async def _handle_merge(api, discussions, router, event: dict) -> dict | None:
     # patches separately because webhook payloads do not include them.
     source_owner, source_repo = _source_repo_name(event).split("/", 1)
     changed_files = await api.get_pull_files(source_owner, source_repo, int(pull["number"]))
-    decision = assess_mood([pull], changed_files)
+    decision = assess_mood([pull], changed_files, recent_moods=_recent_moods(recent))
     log.info(
         "discussions.mood_updated",
         genre=decision.genre.value,
@@ -253,7 +269,7 @@ async def _handle_pulse(api, discussions, router, event: dict) -> dict | None:
     files: list[dict] = []
     for pull in pulls:
         files.extend(await api.get_pull_files(source_owner, source_repo, int(pull["number"])))
-    decision = assess_mood(pulls, files)
+    decision = assess_mood(pulls, files, recent_moods=_recent_moods(recent))
     log.info(
         "discussions.mood_updated",
         genre=decision.genre.value,
