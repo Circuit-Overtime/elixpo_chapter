@@ -164,6 +164,22 @@ jobs:
           echo "::error::CCR did not become ready within 60 seconds"
           exit 1
 
+      - name: Verify CCR route
+        if: steps.gate.outputs.authorized == 'true' && github.event_name == 'workflow_dispatch'
+        run: |
+          STATUS=$(curl -sS -o /tmp/ccr-smoke.json -w '%{http_code}' \
+            http://127.0.0.1:3456/v1/messages \
+            -H 'x-api-key: ccr-pollinations' \
+            -H 'anthropic-version: 2023-06-01' \
+            -H 'content-type: application/json' \
+            --data '{"model":"claude-sonnet-4-5","max_tokens":32,"messages":[{"role":"user","content":"Reply OK"}],"tools":[{"name":"read_file","description":"Read one file","input_schema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}}]}')
+          if [ "$STATUS" != "200" ]; then
+            echo "CCR smoke request failed with HTTP $STATUS"
+            python3 -c 'import json; data=json.load(open("/tmp/ccr-smoke.json")); print(str(data.get("error", data))[:1000])'
+            exit 1
+          fi
+          echo "CCR smoke request passed"
+
       - name: Download repository context
         if: steps.gate.outputs.authorized == 'true'
         continue-on-error: true
