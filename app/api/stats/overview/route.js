@@ -3,6 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { metricDefinition, parseAnalyticsRange, percentChange } from '../../../../lib/analytics';
+import { buildAnalyticsTrend, resolveAnalyticsScope } from '../../../../lib/statsAnalytics';
 
 function results(value) {
   return value?.results || [];
@@ -10,38 +11,6 @@ function results(value) {
 
 function count(value) {
   return Number(value?.c || 0);
-}
-
-async function resolveScope(db, userId, requestedScope) {
-  if (!requestedScope || requestedScope === 'personal') {
-    return {
-      key: 'personal',
-      label: 'Personal',
-      predicate: "b.author_id = ? AND (b.published_as = 'personal' OR b.published_as IS NULL)",
-      values: [userId],
-      followerEventValues: ['user', userId],
-    };
-  }
-
-  if (!requestedScope.startsWith('org:')) throw new Error('Invalid analytics scope');
-  const orgId = requestedScope.slice(4);
-  const org = await db.prepare(`
-    SELECT o.id, o.name FROM orgs o
-    LEFT JOIN org_members om ON om.org_id = o.id AND om.user_id = ?
-    WHERE o.id = ? AND (o.owner_id = ? OR om.role IN ('admin', 'maintain'))
-  `).bind(userId, orgId, userId).first();
-  if (!org) {
-    const error = new Error('Not authorized to view organization analytics');
-    error.status = 403;
-    throw error;
-  }
-  return {
-    key: requestedScope,
-    label: org.name,
-    predicate: 'b.published_as = ?',
-    values: [requestedScope],
-    followerEventValues: ['org', orgId],
-  };
 }
 
 async function getPeriodMetrics(db, scope, from, to) {
@@ -97,22 +66,6 @@ async function getPeriodMetrics(db, scope, from, to) {
   };
 }
 
-function buildTrend(from, to, viewRows, readRows) {
-  const day = 86400;
-  const byView = Object.fromEntries(viewRows.map(row => [row.day, Number(row.value)]));
-  const byRead = Object.fromEntries(readRows.map(row => [row.day, Number(row.value)]));
-  const labels = [];
-  const views = [];
-  const reads = [];
-  for (let cursor = Math.floor(from / day) * day; cursor < to; cursor += day) {
-    const label = new Date(cursor * 1000).toISOString().slice(0, 10);
-    labels.push(label);
-    views.push(byView[label] || 0);
-    reads.push(byRead[label] || 0);
-  }
-  return { labels, views, reads };
-}
-
 export async function GET(request) {
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -122,7 +75,7 @@ export async function GET(request) {
     const db = getDB();
     const params = new URL(request.url).searchParams;
     const range = parseAnalyticsRange(params);
-    const scope = await resolveScope(db, session.userId, params.get('scope'));
+    const scope = await resolveAnalyticsScope(db, session.userId, params.get('scope'));
     const values = scope.values;
 
     const [current, previous, published, drafts, dailyViews, dailyReads, topPosts, sources, referrers, campaigns, devices, countries, audience, eventCount, impressions] = await Promise.all([
@@ -137,16 +90,21 @@ export async function GET(request) {
         SELECT date(ae.occurred_at, 'unixepoch') day, CASE WHEN ae.user_id IS NOT NULL THEN 'u:' || ae.user_id ELSE 'v:' || ae.visitor_hash END reader FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id WHERE ${scope.predicate} AND (ae.event_type = 'read_complete' OR (ae.event_type = 'read_progress' AND ae.event_value > .5)) AND ae.occurred_at >= ? AND ae.occurred_at < ?
       ) GROUP BY day ORDER BY day`).bind(...values, range.from, range.to, ...values, range.from, range.to).all(),
       db.prepare(`
-        WITH view_totals AS (
-          SELECT blog_id, COUNT(*) views, COUNT(DISTINCT ip_hash) unique_visitors
-          FROM blog_views WHERE created_at >= ? AND created_at < ? GROUP BY blog_id
+        WITH scoped_blogs AS (
+          SELECT b.id FROM blogs b WHERE ${scope.predicate}
+        ), view_totals AS (
+          SELECT blog_views.blog_id, COUNT(*) views, COUNT(DISTINCT ip_hash) unique_visitors
+          FROM blog_views JOIN scoped_blogs ON scoped_blogs.id = blog_views.blog_id
+          WHERE created_at >= ? AND created_at < ? GROUP BY blog_views.blog_id
         ), read_sessions AS (
-          SELECT blog_id, 'u:' || user_id reader, read_progress progress
-          FROM read_history WHERE read_at >= ? AND read_at < ?
+          SELECT read_history.blog_id, 'u:' || user_id reader, read_progress progress
+          FROM read_history JOIN scoped_blogs ON scoped_blogs.id = read_history.blog_id
+          WHERE read_at >= ? AND read_at < ?
           UNION ALL
-          SELECT blog_id, CASE WHEN user_id IS NOT NULL THEN 'u:' || user_id ELSE 'v:' || visitor_hash END reader,
+          SELECT analytics_events.blog_id, CASE WHEN user_id IS NOT NULL THEN 'u:' || user_id ELSE 'v:' || visitor_hash END reader,
             CASE WHEN event_type = 'read_complete' THEN 1 ELSE event_value END progress
-          FROM analytics_events WHERE event_type IN ('read_progress', 'read_complete') AND occurred_at >= ? AND occurred_at < ?
+          FROM analytics_events JOIN scoped_blogs ON scoped_blogs.id = analytics_events.blog_id
+          WHERE event_type IN ('read_progress', 'read_complete') AND occurred_at >= ? AND occurred_at < ?
         ), read_max AS (
           SELECT blog_id, reader, MAX(progress) progress FROM read_sessions GROUP BY blog_id, reader
         ), read_totals AS (
@@ -154,14 +112,15 @@ export async function GET(request) {
             COUNT(CASE WHEN progress >= .9 THEN 1 END) completions, AVG(progress) avg_progress
           FROM read_max GROUP BY blog_id
         ), like_totals AS (
-          SELECT blog_id, COUNT(*) likes FROM likes WHERE created_at >= ? AND created_at < ? GROUP BY blog_id
+          SELECT likes.blog_id, COUNT(*) likes FROM likes JOIN scoped_blogs ON scoped_blogs.id = likes.blog_id WHERE created_at >= ? AND created_at < ? GROUP BY likes.blog_id
         ), comment_totals AS (
-          SELECT blog_id, COUNT(*) comments FROM comments WHERE created_at >= ? AND created_at < ? GROUP BY blog_id
+          SELECT comments.blog_id, COUNT(*) comments FROM comments JOIN scoped_blogs ON scoped_blogs.id = comments.blog_id WHERE created_at >= ? AND created_at < ? GROUP BY comments.blog_id
         ), bookmark_totals AS (
-          SELECT blog_id, COUNT(*) bookmarks FROM bookmarks WHERE created_at >= ? AND created_at < ? GROUP BY blog_id
+          SELECT bookmarks.blog_id, COUNT(*) bookmarks FROM bookmarks JOIN scoped_blogs ON scoped_blogs.id = bookmarks.blog_id WHERE created_at >= ? AND created_at < ? GROUP BY bookmarks.blog_id
         ), event_totals AS (
-          SELECT blog_id, AVG(CASE WHEN event_type = 'read_complete' AND event_value > 0 THEN event_value END) avg_read_time
-          FROM analytics_events WHERE occurred_at >= ? AND occurred_at < ? GROUP BY blog_id
+          SELECT analytics_events.blog_id, AVG(CASE WHEN event_type = 'read_complete' AND event_value > 0 THEN event_value END) avg_read_time
+          FROM analytics_events JOIN scoped_blogs ON scoped_blogs.id = analytics_events.blog_id
+          WHERE occurred_at >= ? AND occurred_at < ? GROUP BY analytics_events.blog_id
         )
         SELECT b.id, b.title, b.slug, b.published_at,
           COALESCE(v.views, 0) views, COALESCE(v.unique_visitors, 0) unique_visitors,
@@ -169,16 +128,16 @@ export async function GET(request) {
           COALESCE(r.avg_progress, 0) avg_progress, COALESCE(l.likes, 0) likes,
           COALESCE(c.comments, 0) comments, COALESCE(bm.bookmarks, 0) bookmarks,
           COALESCE(e.avg_read_time, 0) avg_read_time
-        FROM blogs b
+        FROM blogs b JOIN scoped_blogs sb ON sb.id = b.id
         LEFT JOIN view_totals v ON v.blog_id = b.id
         LEFT JOIN read_totals r ON r.blog_id = b.id
         LEFT JOIN like_totals l ON l.blog_id = b.id
         LEFT JOIN comment_totals c ON c.blog_id = b.id
         LEFT JOIN bookmark_totals bm ON bm.blog_id = b.id
         LEFT JOIN event_totals e ON e.blog_id = b.id
-        WHERE ${scope.predicate} AND b.status = 'published'
+        WHERE b.status = 'published'
         ORDER BY views DESC LIMIT 100
-      `).bind(range.from, range.to, range.from, range.to, range.from, range.to, range.from, range.to, range.from, range.to, range.from, range.to, range.from, range.to, ...values).all(),
+      `).bind(...values, range.from, range.to, range.from, range.to, range.from, range.to, range.from, range.to, range.from, range.to, range.from, range.to, range.from, range.to).all(),
       db.prepare(`SELECT COALESCE(ae.referrer_source, 'Direct') label, COUNT(*) value FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id WHERE ${scope.predicate} AND ae.event_type = 'view' AND ae.occurred_at >= ? AND ae.occurred_at < ? GROUP BY label ORDER BY value DESC`).bind(...values, range.from, range.to).all(),
       db.prepare(`SELECT ae.referrer_domain label, COUNT(*) value FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id WHERE ${scope.predicate} AND ae.event_type = 'view' AND ae.referrer_domain IS NOT NULL AND ae.occurred_at >= ? AND ae.occurred_at < ? GROUP BY label ORDER BY value DESC LIMIT 10`).bind(...values, range.from, range.to).all(),
       db.prepare(`SELECT COALESCE(ae.utm_campaign, ae.utm_source) label, COUNT(*) value FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id WHERE ${scope.predicate} AND ae.event_type = 'view' AND COALESCE(ae.utm_campaign, ae.utm_source) IS NOT NULL AND ae.occurred_at >= ? AND ae.occurred_at < ? GROUP BY label ORDER BY value DESC LIMIT 10`).bind(...values, range.from, range.to).all(),
@@ -193,10 +152,11 @@ export async function GET(request) {
         FROM (
           SELECT ae.visitor_hash, MIN(ae.occurred_at) first_seen, MAX(ae.user_id) user_id
           FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id
-          WHERE ${scope.predicate} AND ae.event_type = 'view' AND ae.occurred_at < ?
+          WHERE ${scope.predicate} AND ae.event_type = 'view'
+            AND ae.occurred_at >= ? AND ae.occurred_at < ?
           GROUP BY ae.visitor_hash HAVING MAX(ae.occurred_at) >= ?
         )
-      `).bind(range.from, range.from, ...values, range.to, range.from).first(),
+      `).bind(range.from, range.from, ...values, range.from - (30 * 86400), range.to, range.from).first(),
       db.prepare(`SELECT COUNT(*) c FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id WHERE ${scope.predicate} AND ae.event_type = 'view' AND ae.occurred_at >= ? AND ae.occurred_at < ?`).bind(...values, range.from, range.to).first(),
       db.prepare(`SELECT COUNT(*) c FROM analytics_events ae JOIN blogs b ON b.id = ae.blog_id WHERE ${scope.predicate} AND ae.event_type = 'impression' AND ae.occurred_at >= ? AND ae.occurred_at < ?`).bind(...values, range.from, range.to).first(),
     ]);
@@ -226,7 +186,7 @@ export async function GET(request) {
       totals: { ...current, published: count(published), drafts: count(drafts) },
       previous,
       changes,
-      trend: buildTrend(range.from, range.to, results(dailyViews), results(dailyReads)),
+      trend: buildAnalyticsTrend(range.from, range.to, results(dailyViews), results(dailyReads)),
       posts,
       audience: {
         newReaders: Number(audience?.new_readers || 0),

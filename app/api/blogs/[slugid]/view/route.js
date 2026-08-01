@@ -51,7 +51,9 @@ export async function POST(request, { params }) {
           countryCode: request.headers.get('cf-ipcountry'),
           occurredAt: now,
         });
-      } catch {}
+      } catch (error) {
+        console.warn('[analytics/view] event write failed:', error?.message || error);
+      }
     }
 
     const blog = await db.prepare('SELECT view_count FROM blogs WHERE id = ?').bind(slugid).first();

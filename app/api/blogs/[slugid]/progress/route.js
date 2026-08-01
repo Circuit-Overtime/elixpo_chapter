@@ -42,7 +42,9 @@ export async function POST(request, { params }) {
           occurredAt: now,
         });
       }
-    } catch {}
+    } catch (error) {
+      console.warn('[analytics/progress] event write failed:', error?.message || error);
+    }
 
     return NextResponse.json({ ok: true, progress: p });
   } catch {
