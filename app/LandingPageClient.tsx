@@ -1,8 +1,9 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import type { FormEvent, ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
 
@@ -92,18 +93,6 @@ const ArrowIcon = () => (
     <polyline points="12 5 19 12 12 19" />
   </Icon>
 );
-const ClickIcon = () => (
-  <Icon size={14}>
-    <path d="M9 9l8 3-3.5 1.5L12 17z" />
-  </Icon>
-);
-const GlobeIcon = () => (
-  <Icon size={14}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" />
-  </Icon>
-);
-
 /* ── Content (unchanged copy) ──────────────────────────────────────────── */
 
 const REGIONS = [
@@ -179,137 +168,6 @@ const USE_CASES = [
   'Branded short domains',
 ];
 
-/* ── Hero visual: a small looping demo, not a static screenshot ──────────
-   Types a long URL, "shortens" it, then plays a redirect ping while a
-   click counter ticks up. Pure client-side timers, no network calls —
-   safe to loop indefinitely in a hero section. */
-
-const DEMO_LONG_URL = 'elixpo.com/blog/2026/edge-network-launch';
-const DEMO_SHORT = 'lixrl.com/launch';
-
-function LinkResolverDemo() {
-  const [typed, setTyped] = useState('');
-  const [phase, setPhase] = useState<'typing' | 'shortening' | 'resolving' | 'done'>('typing');
-  const [clicks, setClicks] = useState(12_402);
-  const [ms, setMs] = useState<number | null>(null);
-  const mountedRef = useRef(true);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    let charIndex = 0;
-    let typingTimer: ReturnType<typeof setInterval>;
-    let cycleTimeouts: ReturnType<typeof setTimeout>[] = [];
-
-    function startCycle() {
-      charIndex = 0;
-      setTyped('');
-      setPhase('typing');
-      setMs(null);
-
-      typingTimer = setInterval(() => {
-        charIndex += 1;
-        setTyped(DEMO_LONG_URL.slice(0, charIndex));
-        if (charIndex >= DEMO_LONG_URL.length) {
-          clearInterval(typingTimer);
-          cycleTimeouts.push(
-            setTimeout(() => mountedRef.current && setPhase('shortening'), 450),
-            setTimeout(() => {
-              if (!mountedRef.current) return;
-              setPhase('resolving');
-              setMs(Math.floor(28 + Math.random() * 24));
-            }, 1150),
-            setTimeout(() => {
-              if (!mountedRef.current) return;
-              setPhase('done');
-              setClicks((c) => c + 1);
-            }, 1750),
-            setTimeout(() => mountedRef.current && startCycle(), 3600),
-          );
-        }
-      }, 45);
-    }
-
-    startCycle();
-
-    return () => {
-      mountedRef.current = false;
-      clearInterval(typingTimer);
-      cycleTimeouts.forEach(clearTimeout);
-    };
-  }, []);
-
-  const showShort = phase === 'shortening' || phase === 'resolving' || phase === 'done';
-
-  return (
-    <div
-      className="relative rounded-2xl p-6 max-w-[420px]"
-      style={{ background: '#fff', border: '1px solid var(--line)', boxShadow: '0 16px 40px rgba(0,0,0,0.08)' }}
-    >
-      {/* URL bar */}
-      <div
-        className="rounded-xl px-4 py-3 mb-4 flex items-center gap-2"
-        style={{ background: 'var(--bg-cream)', border: '1px solid #ede9e3' }}
-      >
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: showShort ? '#16a34a' : '#ddd' }} />
-        <span className="font-mono text-[13px] text-[#555] truncate">
-          {showShort ? (
-            <span style={{ color: ACCENT }} className="font-semibold">
-              {DEMO_SHORT}
-            </span>
-          ) : (
-            <>
-              {typed}
-              <span className="inline-block w-[2px] h-[14px] align-middle ml-0.5 animate-pulse" style={{ background: ACCENT }} />
-            </>
-          )}
-        </span>
-      </div>
-
-      {/* Status row */}
-      <div className="flex items-center justify-between mb-4 h-6">
-        <span className="text-[12px] font-medium text-[#888]">
-          {phase === 'typing' && 'Pasting destination…'}
-          {phase === 'shortening' && 'Minting short link…'}
-          {phase === 'resolving' && 'Resolving on the edge…'}
-          {phase === 'done' && ms !== null && (
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#16a34a' }} />
-              Resolved in <span className="font-bold text-[#111]">{ms}ms</span>
-            </span>
-          )}
-        </span>
-        {phase === 'done' && (
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f0fdf4] text-[#16a34a] font-semibold">live</span>
-        )}
-      </div>
-
-      {/* Progress / ping bar */}
-      <div className="h-1.5 rounded-full overflow-hidden mb-5" style={{ background: '#f1ede6' }}>
-        <div
-          className="h-full rounded-full transition-all ease-linear"
-          style={{
-            background: ACCENT,
-            width: phase === 'typing' ? `${(typed.length / DEMO_LONG_URL.length) * 100}%` : '100%',
-            transitionDuration: phase === 'typing' ? '45ms' : '500ms',
-            opacity: phase === 'typing' ? 0.5 : 1,
-          }}
-        />
-      </div>
-
-      {/* Live stats */}
-      <div className="flex items-center gap-5 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
-        <span className="inline-flex items-center gap-1.5 text-[12px] text-[#888]">
-          <ClickIcon />
-          <span className="font-mono tabular-nums">{clicks.toLocaleString()}</span> clicks
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-[12px] text-[#888]">
-          <GlobeIcon /> 41 countries
-        </span>
-      </div>
-    </div>
-  );
-}
-
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
@@ -367,7 +225,7 @@ export default function LandingPage() {
 
       {/* ── Hero — asymmetric split with link-preview mock ──────────────── */}
       <section className="px-6 pt-16 md:pt-20 pb-16">
-        <div className="max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-8 items-center">
+        <div className="max-w-[1240px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-4 items-center">
           {/* Copy */}
           <div className="text-center lg:text-left">
             <div
@@ -485,9 +343,20 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Visual — live shortening demo */}
-          <div className="hidden lg:block">
-            <LinkResolverDemo />
+          {/* Static brand artwork — blends into the white hero surface. */}
+          <div
+            className="hidden md:flex w-full min-w-0 items-center justify-center lg:justify-end lg:overflow-visible"
+            aria-hidden="true"
+          >
+            <Image
+              src="/hero-link-shortener.webp"
+              alt=""
+              width={1536}
+              height={1024}
+              priority
+              sizes="(min-width: 1024px) 46vw, 72vw"
+              className="w-full max-w-[720px] h-auto select-none mix-blend-multiply lg:w-[112%] lg:max-w-none"
+            />
           </div>
         </div>
       </section>
