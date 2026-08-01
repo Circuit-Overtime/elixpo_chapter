@@ -229,7 +229,7 @@ function HeaderProfileDropdown({ user, logout }) {
               <ion-icon name="book-outline" style={{ fontSize: '16px', color: '#888' }} />
               Your Stories
             </Link>
-            <Link href="/stats" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2 text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
+            <Link href="/settings/stats" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2 text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
               <ion-icon name="stats-chart-outline" style={{ fontSize: '16px', color: '#888' }} />
               Stats
             </Link>

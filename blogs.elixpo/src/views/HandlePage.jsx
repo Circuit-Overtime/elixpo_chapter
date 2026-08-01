@@ -18,7 +18,68 @@ import { STAFF_ORG_ID } from '../../lib/staff';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 
+// Mermaid and Shiki are intentionally browser-only. Pulling BlogPreview into
+// the Edge bundle pushes the Cloudflare Worker beyond the free-plan limit.
 const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { ssr: false });
+
+function StaticInline({ content = [] }) {
+  if (!Array.isArray(content)) return null;
+  return content.map((item, index) => {
+    if (typeof item === 'string') return item;
+    const text = item?.text || '';
+    const styles = item?.styles || {};
+    let node = text;
+    if (styles.bold) node = <strong>{node}</strong>;
+    if (styles.italic) node = <em>{node}</em>;
+    if (styles.underline) node = <u>{node}</u>;
+    if (styles.strike) node = <s>{node}</s>;
+    if (styles.code) node = <code>{node}</code>;
+    if (item?.type === 'link' && item.href) node = <a href={item.href} rel="nofollow ugc">{item.content ? <StaticInline content={item.content} /> : node}</a>;
+    return <span key={index}>{node}</span>;
+  });
+}
+
+function StaticBlocks({ blocks = [] }) {
+  return blocks.map((block, index) => {
+    const key = block.id || index;
+    const children = block.children?.length ? <StaticBlocks blocks={block.children} /> : null;
+    const inline = <StaticInline content={block.content} />;
+    switch (block.type) {
+      case 'heading': {
+        const level = Math.max(2, Math.min(4, Number(block.props?.level) || 2));
+        const Heading = `h${level}`;
+        return <Heading key={key}>{inline}</Heading>;
+      }
+      case 'bulletListItem': return <ul key={key}><li>{inline}{children}</li></ul>;
+      case 'numberedListItem': return <ol key={key}><li>{inline}{children}</li></ol>;
+      case 'checkListItem': return <p key={key}>□ {inline}{children}</p>;
+      case 'quote': return <blockquote key={key}>{inline}{children}</blockquote>;
+      case 'codeBlock': return <pre key={key}><code>{(block.content || []).map(item => item.text || '').join('')}</code></pre>;
+      case 'image': return block.props?.url ? <figure key={key}><img src={block.props.url} alt={block.props.caption || block.props.name || ''} loading="lazy" />{block.props.caption && <figcaption>{block.props.caption}</figcaption>}</figure> : null;
+      case 'mermaidBlock': return <pre key={key}><code>{block.props?.diagram || ''}</code></pre>;
+      case 'blockEquation': return <p key={key}>{block.props?.latex || ''}</p>;
+      default: return <p key={key}>{inline}{children}</p>;
+    }
+  });
+}
+
+function CrawlableArticle({ blog, blocks, owner }) {
+  const cover = blog.cover_image_r2_key || generateBlogBanner(blog.id || blog.slug);
+  const author = blog.secret ? 'Anonymous' : (blog.author_name || blog.author_username || owner?.name || 'LixBlogs');
+  return (
+    <article className="blog-preview" itemScope itemType="https://schema.org/BlogPosting">
+      {cover && <img src={cover} alt={blog.title ? `${blog.title} cover` : 'Blog cover'} className="w-full max-h-[420px] object-cover rounded-xl mb-10" itemProp="image" />}
+      <header className="mb-10">
+        {blog.page_emoji && <p className="text-5xl mb-5" aria-hidden="true">{blog.page_emoji}</p>}
+        <h1 className="text-4xl sm:text-5xl font-bold leading-tight" itemProp="headline">{blog.title || 'Untitled'}</h1>
+        {blog.subtitle && <p className="text-xl mt-4" style={{ color: 'var(--text-muted)' }} itemProp="description">{blog.subtitle}</p>}
+        <p className="mt-5 text-sm" style={{ color: 'var(--text-faint)' }}>By <span itemProp="author">{author}</span>{blog.published_at ? ` · ${new Date(blog.published_at * 1000).toLocaleDateString()}` : ''}</p>
+        {!!blog.tags?.length && <p className="mt-3 text-sm" style={{ color: 'var(--text-faint)' }}>Topics: {blog.tags.join(', ')}</p>}
+      </header>
+      <div className="blog-preview-content max-w-none" itemProp="articleBody"><StaticBlocks blocks={blocks} /></div>
+    </article>
+  );
+}
 
 function FollowButton({ username }) {
   const { user: currentUser } = useAuth();
@@ -79,13 +140,16 @@ export default function HandlePage(props) {
   );
 }
 
-function HandlePageInner({ path }) {
+function HandlePageInner({ path, initialData = null }) {
   const { user: currentUser } = useAuth();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(initialData);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState(null);
   const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
   const [hideHighlights, setHideHighlights] = useState(false); // strip text colors/highlights
+  const [interactiveReady, setInteractiveReady] = useState(false);
+
+  useEffect(() => setInteractiveReady(true), []);
 
   // Parse: path[0] = name, path[1] = slug or collection, path[2] = slug (if collection)
   // rawName keeps the original case: a 1-segment path may be a /[slugid] short link,
@@ -105,6 +169,11 @@ function HandlePageInner({ path }) {
   useEffect(() => {
     if (!name) { setLoading(false); setError('Not found'); return; }
 
+    // Public page data was rendered on the server. A member-only teaser is
+    // refreshed after authentication so an entitled reader still gets the
+    // complete post without sacrificing crawlable initial HTML.
+    if (initialData && !(initialData.blog?.paywalled && currentUser)) return;
+
     if (isReadingList) {
       fetch(`/api/library/public?username=${encodeURIComponent(name)}&slug=${encodeURIComponent(third)}`)
         .then(r => r.ok ? r.json() : r.json().then(d => { throw new Error(d.error || 'Not found'); }))
@@ -123,7 +192,7 @@ function HandlePageInner({ path }) {
       .then(d => setData(d))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [rawName, name, slug, collection, isReadingList, third]);
+  }, [rawName, name, slug, collection, isReadingList, third, initialData, currentUser]);
 
   if (loading) {
     return (
@@ -189,7 +258,7 @@ function HandlePageInner({ path }) {
               </Link>
             </div>
           )}
-          <BlogPreview
+          {interactiveReady ? <BlogPreview
             title={blog.title}
             subtitle={blog.subtitle}
             pageEmoji={blog.page_emoji}
@@ -230,11 +299,12 @@ function HandlePageInner({ path }) {
                     tags={blog.tags || []}
                     hideHighlights={hideHighlights}
                     onToggleHighlights={() => setHideHighlights(v => !v)}
+                    canEdit={canEdit}
                   />
                 }
               />
             }
-          />
+          /> : <CrawlableArticle blog={blog} blocks={blocks} owner={data.owner} />}
 
           {/* End-of-blog follow card — author (+ org) */}
           <BlogFollowCard
