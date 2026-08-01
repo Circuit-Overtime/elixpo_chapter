@@ -62,16 +62,26 @@ async function runUpload(id) {
     let lastError;
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
-        const formData = new FormData();
         const uploadBlob = job.blob?.type
           ? job.blob
           : new Blob([job.blob], { type: 'image/webp' });
-        formData.append('file', uploadBlob, job.filename);
-        formData.append('type', job.type);
-        formData.append('uploadId', job.id);
-        if (job.blogId) formData.append('blogId', job.blogId);
-        if (job.orgId) formData.append('orgId', job.orgId);
-        const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
+        // Send the persisted image as the request body. Cloudflare's multipart
+        // parser has intermittently returned an empty/non-File `file` field in
+        // production, rejecting valid uploads before Cloudinary is contacted.
+        // The route still accepts multipart for older/direct callers, while the
+        // durable queue uses this simpler, unambiguous wire format.
+        const headers = {
+          'Content-Type': uploadBlob.type || 'image/webp',
+          'X-Lix-Media-Type': job.type,
+          'X-Lix-Upload-Id': job.id,
+        };
+        if (job.blogId) headers['X-Lix-Blog-Id'] = job.blogId;
+        if (job.orgId) headers['X-Lix-Org-Id'] = job.orgId;
+        const response = await fetch('/api/media/upload', {
+          method: 'POST',
+          headers,
+          body: uploadBlob,
+        });
         const responseText = await response.text();
         try { data = responseText ? JSON.parse(responseText) : {}; } catch { data = {}; }
         if (response.ok) break;
