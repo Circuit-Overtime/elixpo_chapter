@@ -74,7 +74,8 @@ announced, or no actionable future choice exists. Give a short factual reason.
 ## Output contract
 
 Return the requested structured object with `action`, `reason`, `title`, `body`,
-and `options`. For `skip`, return empty `title`, `body`, and `options`. For an
+`options`, and `topic`. Use `mlops`, `gitops`, `docker`, or `kubernetes` only
+when it is the central subject; otherwise use `general`. For `skip`, return empty `title`, `body`, and `options`. For an
 announcement, return `options: []`. Do not add the bot disclosure, idempotency
 marker, or safety verdict; the publisher adds them.
 

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 import pytest
+from agents.discussions.__main__ import _labels_for, _poll_mentions, _repo_name, _source_repo_name
 from agents.discussions.core import (
     UnsafeDraft,
     contains_mention,
@@ -60,6 +62,14 @@ def test_poll_and_public_metadata_are_deterministic():
         format_poll("Pick one", ["Only choice"])
 
 
+def test_target_repository_and_labels_are_deterministic(monkeypatch):
+    monkeypatch.delenv("ELIXPO_DISCUSSIONS_REPOSITORY", raising=False)
+    assert _repo_name({"repository": {"full_name": "elixpo/agent.elixpo"}}) == "elixpo/elixpo"
+    assert _source_repo_name({"repository": {"full_name": "elixpo/agent.elixpo"}}) == "elixpo/agent.elixpo"
+    assert list(_labels_for("qna", "kubernetes")) == ["qna", "kubernetes", "elixpoo-generated"]
+    assert list(_labels_for("announcement", "general")) == ["announcement", "elixpoo-generated"]
+
+
 @pytest.mark.asyncio
 async def test_merge_generation_uses_discussions_role_and_forced_schema():
     draft = {
@@ -68,6 +78,7 @@ async def test_merge_generation_uses_discussions_role_and_forced_schema():
         "title": "New deployment view",
         "body": "Details",
         "options": [],
+        "topic": "general",
     }
     router = FakeRouter(response(tool="submit_merge_decision", arguments=draft))
     result = await merge_draft(
@@ -131,3 +142,99 @@ async def test_discussion_category_alias_resolution():
 
     category = await discussions.category("Q&A", "QNA")
     assert category.id == "q"
+
+
+class FakeLabelsAPI:
+    def __init__(self):
+        self.calls = []
+
+    async def graphql(self, query, variables):
+        self.calls.append((query, variables))
+        if "discussionCategories" in query:
+            return {"repository": {"id": "repo-id", "discussionCategories": {"nodes": []}}}
+        if "labels(first: 100" in query:
+            return {
+                "repository": {
+                    "labels": {
+                        "nodes": [
+                            {"id": "q-id", "name": "qna"},
+                            {"id": "bot-id", "name": "elixpoo-generated"},
+                        ],
+                        "pageInfo": {"hasNextPage": False, "endCursor": None},
+                    }
+                }
+            }
+        if "createLabel" in query:
+            return {"createLabel": {"label": {"id": "k8s-id", "name": variables["name"]}}}
+        if "addLabelsToLabelable" in query:
+            return {"addLabelsToLabelable": {"labelable": {"labels": {"nodes": []}}}}
+        raise AssertionError("unexpected query")
+
+
+@pytest.mark.asyncio
+async def test_ensure_and_apply_discussion_labels():
+    api = FakeLabelsAPI()
+    discussions = GitHubDiscussions(api, "elixpo", "elixpo")
+    labels = await discussions.ensure_labels(
+        {
+            "qna": {"color": "0e8a16", "description": "Q&A"},
+            "kubernetes": {"color": "326ce5", "description": "Kubernetes"},
+            "elixpoo-generated": {"color": "6f42c1", "description": "Generated"},
+        }
+    )
+    assert [label.name for label in labels] == ["qna", "kubernetes", "elixpoo-generated"]
+    create_call = next(variables for query, variables in api.calls if "createLabel" in query)
+    assert create_call["name"] == "kubernetes"
+    assert create_call["color"] == "326ce5"
+
+    await discussions.add_labels("discussion-id", [label.id for label in labels])
+    add_call = next(variables for query, variables in api.calls if "addLabelsToLabelable" in query)
+    assert add_call == {"discussionId": "discussion-id", "labelIds": ["q-id", "k8s-id", "bot-id"]}
+
+
+class FakeMentionDiscussions:
+    def __init__(self):
+        now = datetime.now(timezone.utc).isoformat()
+        self.comment = {
+            "id": "comment-id",
+            "body": "@elixpoo which rollout signal should we use?",
+            "createdAt": now,
+            "author": {"login": "contributor"},
+            "replies": {"nodes": []},
+        }
+        self.thread = {
+            "id": "discussion-id",
+            "number": 7,
+            "title": "Canary rollout",
+            "body": "Compare rollout signals.",
+            "url": "https://github.test/discussions/7",
+            "createdAt": now,
+            "author": {"login": "author"},
+            "comments": {"nodes": [self.comment]},
+        }
+        self.added = []
+
+    async def recent_threads(self):
+        return [self.thread]
+
+    async def comments(self, number):
+        assert number == 7
+        return [self.comment]
+
+    async def add_comment(self, discussion_id, body, reply_to_id=None):
+        self.added.append((discussion_id, body, reply_to_id))
+        return {"id": "reply-id", "url": "https://github.test/discussions/7#reply"}
+
+
+@pytest.mark.asyncio
+async def test_mention_poll_replies_to_recent_exact_mention():
+    discussions = FakeMentionDiscussions()
+    router = FakeRouter(
+        response(tool="submit_reply", arguments={"body": "Use error-rate and latency guardrails."}),
+        response("SAFE"),
+    )
+    handled = await _poll_mentions(discussions, router, "elixpoo")
+    assert handled == 1
+    assert discussions.added[0][0] == "discussion-id"
+    assert discussions.added[0][2] == "comment-id"
+    assert "elixpoo-discussions:reply:comment-id" in discussions.added[0][1]

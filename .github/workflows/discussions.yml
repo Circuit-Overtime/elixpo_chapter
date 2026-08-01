@@ -4,12 +4,9 @@ on:
   pull_request:
     types: [closed]
     branches: [main]
-  discussion:
-    types: [created]
-  discussion_comment:
-    types: [created]
   schedule:
     - cron: "17 9 * * 3"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -17,15 +14,16 @@ on:
         required: true
         default: qna
         type: choice
-        options: [qna]
+        options: [qna, poll-mentions]
 
 concurrency:
-  group: elixpoo-discussions-${{ github.event.pull_request.node_id || github.event.comment.node_id || github.event.discussion.node_id || github.run_id }}
+  group: elixpoo-discussions-elixpo-elixpo
   cancel-in-progress: false
 
 permissions:
   contents: read
   discussions: write
+  issues: write
   pull-requests: read
 
 jobs:
@@ -44,11 +42,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
-          ELIXPO_DISCUSSIONS_REPOSITORY: ${{ github.repository }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
         run: python -m agents.discussions merge
 
   qna:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'workflow_dispatch' && inputs.mode == 'qna') || (github.event_name == 'schedule' && github.event.schedule == '17 9 * * 3')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -62,11 +60,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
-          ELIXPO_DISCUSSIONS_REPOSITORY: ${{ github.repository }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
         run: python -m agents.discussions qna
 
-  respond:
-    if: github.event_name == 'discussion' || github.event_name == 'discussion_comment'
+  poll-mentions:
+    if: (github.event_name == 'workflow_dispatch' && inputs.mode == 'poll-mentions') || (github.event_name == 'schedule' && github.event.schedule == '*/10 * * * *')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -76,9 +74,9 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -e .
-      - name: Reply to eligible @elixpoo mention
+      - name: Reply to recent unhandled @elixpoo mentions
         env:
           GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
-          ELIXPO_DISCUSSIONS_REPOSITORY: ${{ github.repository }}
-        run: python -m agents.discussions respond
+          ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
+        run: python -m agents.discussions poll-mentions

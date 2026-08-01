@@ -13,3 +13,5 @@ the PR itself.
   Link the supplied PR URL and explain what changed, why it matters, and any
   action readers need to take.
 - Polls need 2–6 short, mutually distinct options. Other actions use `options: []`.
+- Set `topic` to `mlops`, `gitops`, `docker`, or `kubernetes` only when that is
+  the central subject; otherwise use `general`.

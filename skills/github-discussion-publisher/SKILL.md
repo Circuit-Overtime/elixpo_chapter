@@ -57,6 +57,19 @@ events authored by `elixpoo`, `elixpoo[bot]`, or the configured bot username.
 Stop with an actionable error when a required category is absent. Do not silently
 post into a semantically different category.
 
+## Apply labels
+
+Resolve labels from the Discussion source repository before creating a post.
+Create missing deterministic labels, then apply them through
+`addLabelsToLabelable` after creation:
+
+- always apply `announcement`, `qna`, or `poll` for the post type;
+- apply `mlops`, `gitops`, `docker`, or `kubernetes` only for the primary domain;
+- always apply `elixpoo-generated`.
+
+Require Discussions and Issues write permission on the source repository. Never
+reuse a label ID from another repository because labels are repository-scoped.
+
 GitHub’s public GraphQL API does not create native poll options. Publish numbered
 options in the Poll body and ask readers to reply with an option plus reasoning.
 Require 2–6 non-empty options.

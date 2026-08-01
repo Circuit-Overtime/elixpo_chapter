@@ -7,3 +7,5 @@ focused prompts. Avoid trivia, generic opinion prompts, homework, engagement
 bait, vendor promotion, and topics duplicated by the supplied recent titles.
 Use a specific title and a concise Markdown body under 250 words. Do not claim
 there is one correct answer when tradeoffs depend on context.
+Return the single primary domain as `topic`: `mlops`, `gitops`, `docker`, or
+`kubernetes`.
