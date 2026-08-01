@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
@@ -313,6 +313,54 @@ function LinkResolverDemo() {
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
+  const [guestUrl, setGuestUrl] = useState('');
+  const [guestLoading, setGuestLoading] = useState(false);
+  const [guestError, setGuestError] = useState('');
+  const [guestResult, setGuestResult] = useState<{
+    short_url: string;
+    expires_at: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function shortenGuestUrl(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setGuestLoading(true);
+    setGuestError('');
+    setGuestResult(null);
+    setCopied(false);
+
+    try {
+      const response = await fetch('/api/guest/urls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: guestUrl }),
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        short_url?: string;
+        expires_at?: string;
+      };
+      if (!response.ok || !data.short_url || !data.expires_at) {
+        setGuestError(data.error || 'Could not shorten this URL');
+        return;
+      }
+      setGuestResult({
+        short_url: data.short_url,
+        expires_at: data.expires_at,
+      });
+    } catch {
+      setGuestError('Could not reach the shortener. Please try again.');
+    } finally {
+      setGuestLoading(false);
+    }
+  }
+
+  async function copyGuestUrl() {
+    if (!guestResult) return;
+    await navigator.clipboard.writeText(guestResult.short_url);
+    setCopied(true);
+  }
+
   return (
     <div className="min-h-screen flex flex-col text-[#111] bg-white">
       <Navbar />
@@ -341,13 +389,98 @@ export default function LandingPage() {
               with click analytics, custom slugs, and a REST API, all from one
               dashboard.
             </p>
-            <div className="flex items-center justify-center lg:justify-start gap-3 flex-wrap">
-              <Link href="/api/auth/login" className="btn-accent">
-                Get started with Elixpo
+            <form
+              onSubmit={shortenGuestUrl}
+              className="max-w-[570px] mx-auto lg:mx-0"
+            >
+              <div
+                className="flex flex-col sm:flex-row gap-2 rounded-xl p-2 bg-white"
+                style={{
+                  border: '1px solid var(--line)',
+                  boxShadow: '0 12px 30px rgba(0,0,0,0.07)',
+                }}
+              >
+                <label htmlFor="guest-url" className="sr-only">
+                  URL to shorten
+                </label>
+                <input
+                  id="guest-url"
+                  type="url"
+                  required
+                  inputMode="url"
+                  autoComplete="url"
+                  placeholder="https://your-long-url.com"
+                  value={guestUrl}
+                  onChange={(event) => setGuestUrl(event.target.value)}
+                  className="min-w-0 flex-1 px-3 py-2.5 text-[14px] text-[#111] bg-transparent outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={guestLoading}
+                  className="btn-accent justify-center disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {guestLoading
+                    ? 'Shortening…'
+                    : 'Shorten Your URL in 1 Click'}
+                </button>
+              </div>
+              <div className="min-h-6 mt-2 text-left">
+                {guestError && (
+                  <p className="text-[12px] text-red-600" role="alert">
+                    {guestError}{' '}
+                    <Link href="/api/auth/login" className="font-semibold underline">
+                      Create an account
+                    </Link>
+                  </p>
+                )}
+                {guestResult && (
+                  <div
+                    className="rounded-xl p-3 text-[13px]"
+                    style={{
+                      background: 'var(--accent-dim)',
+                      border: '1px solid var(--accent-border)',
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={guestResult.short_url}
+                        className="font-mono font-bold truncate"
+                        style={{ color: ACCENT }}
+                      >
+                        {guestResult.short_url}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={copyGuestUrl}
+                        className="ml-auto font-semibold shrink-0"
+                        style={{ color: ACCENT }}
+                      >
+                        {copied ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+                    <p className="mt-1 text-[#555]">
+                      Expires in 24 hours.{' '}
+                      <Link href="/api/auth/login" className="font-semibold underline">
+                        Create an account
+                      </Link>{' '}
+                      to keep links and manage them.
+                    </p>
+                  </div>
+                )}
+                {!guestError && !guestResult && (
+                  <p className="text-[12px] text-[#777]">
+                    One guest link, valid for 24 hours. Sign in for persistent
+                    links.
+                  </p>
+                )}
+              </div>
+            </form>
+            <div className="flex items-center justify-center lg:justify-start gap-4 mt-3 text-[13px]">
+              <Link href="/api/auth/login" className="font-semibold no-underline" style={{ color: ACCENT }}>
+                Sign in for persistent links
               </Link>
-              <Link href="/docs" className="btn-glass">
-                Explore the docs
-                <ArrowIcon />
+              <Link href="/docs" className="text-[#555] no-underline hover:text-[#111]">
+                Explore the docs →
               </Link>
             </div>
           </div>

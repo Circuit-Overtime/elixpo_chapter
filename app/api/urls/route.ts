@@ -87,7 +87,15 @@ export async function POST(request: NextRequest) {
     const slugErr = validateSlug(custom_code);
     if (slugErr) return badRequest(slugErr);
 
-    const existing = await db.prepare('SELECT id FROM urls WHERE short_code = ?').bind(custom_code).first();
+    const existing = await db
+      .prepare(
+        `SELECT short_code FROM urls WHERE short_code = ?
+         UNION ALL
+         SELECT short_code FROM guest_links WHERE short_code = ?
+         LIMIT 1`,
+      )
+      .bind(custom_code, custom_code)
+      .first();
     if (existing) return NextResponse.json({ error: 'Short code already taken' }, { status: 409 });
   }
 
