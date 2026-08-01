@@ -10,36 +10,36 @@ import PageShell from "../components/page-shell";
 import PricingFaq, { type Faq } from "../components/pricing-faq";
 
 const CORAL = "#ff7759";
-const INK = "#212121";
-const SLATE = "#75758a";
-const HAIRLINE = "#d9d9dd";
+const INK = "var(--fg)";
+const SLATE = "var(--fg-muted)";
+const HAIRLINE = "var(--border)";
 
 const PRIMARY_BTN = {
     textTransform: "none" as const,
     fontWeight: 500,
     fontSize: "0.92rem",
-    color: "#fff",
+    color: "var(--bg)",
     px: 3,
     py: 1.1,
     borderRadius: "32px", // Pill
-    background: "#17171c",
+    background: "var(--fg)",
     boxShadow: "none",
     fontFamily: "var(--font-sans)",
-    "&:hover": { background: "#000000" },
+    "&:hover": { background: "var(--fg-muted)" },
 };
 
 const OUTLINE_BTN = {
     textTransform: "none" as const,
     fontWeight: 500,
     fontSize: "0.92rem",
-    color: INK,
+    color: "var(--fg)",
     px: 3,
     py: 1.1,
     borderRadius: "32px", // Pill outline
-    border: `1px solid ${INK}`,
+    border: "1px solid var(--border)",
     background: "transparent",
     fontFamily: "var(--font-sans)",
-    "&:hover": { background: "rgba(0,0,0,0.03)", borderColor: "#000" },
+    "&:hover": { background: "var(--overlay)", borderColor: "var(--fg)" },
 };
 
 interface Tier {
@@ -134,7 +134,7 @@ function TierCard({ tier }: { tier: Tier }) {
                 flexDirection: "column",
                 borderRadius: "16px", // md radius token
                 p: { xs: 3.5, md: 4 },
-                background: tier.popular ? "#ffffff" : "#ffffff",
+                background: "var(--surface)",
                 border: tier.popular ? `2px solid ${INK}` : `1px solid ${HAIRLINE}`,
                 boxShadow: "none",
                 height: "100%",
@@ -152,7 +152,7 @@ function TierCard({ tier }: { tier: Tier }) {
                         fontSize: "0.68rem",
                         fontWeight: 500,
                         letterSpacing: "0.08em",
-                        color: "#fff",
+                        color: "var(--bg)",
                         background: INK,
                         borderRadius: "4px",
                         fontFamily: "var(--font-mono)",
@@ -295,7 +295,7 @@ export default function PricingClient() {
                     sx={{
                         borderRadius: "22px", // lg radius token
                         border: `1px solid ${HAIRLINE}`,
-                        background: "#eeece7", // Soft Stone
+                        background: "var(--surface-3)",
                         p: { xs: 3.5, md: 5 },
                         display: "flex",
                         flexDirection: { xs: "column", md: "row" },
