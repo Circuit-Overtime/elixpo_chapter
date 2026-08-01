@@ -1,0 +1,4 @@
+interface:
+  display_name: "Merge Discussion Orchestrator"
+  short_description: "Triage merged PRs into community discussions"
+  default_prompt: "Use $merge-discussion-orchestrator to decide whether this merged PR should become an announcement, poll, or no discussion."
