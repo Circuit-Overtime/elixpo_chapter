@@ -9,13 +9,63 @@
 
 The retired issue and PR agent workflows must not be restored: separate listeners cause duplicate runs for issue comments attached to pull requests.
 
-## Credential
+## Organization secrets
 
-All Pollinations calls use one GitHub Actions secret:
+Configure these as organization-level Actions secrets and grant them to every
+repository that installs the agent workflows:
 
-`ELIXPO_POLLINATIONS_API_KEY_GITHUB`
+| Secret | Purpose | Required access |
+| --- | --- | --- |
+| `ELIXPO_POLLINATIONS_API_KEY_GITHUB` | Every model request: agent, triage, PR metadata, and changelog summaries | Pollinations text API; this is the only model credential |
+| `CI_AGENT_TOKEN` | Repository reads/writes, issue and PR metadata, branches, failed-run retries, repository variables, Project V2 fields, and the local merge changelog | See the token profiles below |
+| `CI_GIST_TOKEN` | Shared reusable `merge-gist.yml` workflow in `agent.elixpo` | Gist read/write |
 
-CCR creates multiple routes with that same key. No route has a separate credential.
+`GITHUB_TOKEN` is created automatically for each workflow run. It is not an
+organization secret and must not be copied into organization settings.
+
+CCR creates all model routes with
+`ELIXPO_POLLINATIONS_API_KEY_GITHUB`. Do not create per-model or per-provider
+keys. Repository-specific deployment, package publishing, payment, and
+moderation secrets are unrelated to the agent and remain scoped only to repos
+whose workflows use them.
+
+### Token profiles
+
+Recommended `CI_AGENT_TOKEN` fine-grained PAT:
+
+- Resource owner: `elixpo`; repository access: every repository using the agent.
+- Repository permissions: Actions read/write, Contents read/write, Issues
+  read/write, Pull requests read/write, Variables read/write, Workflows
+  read/write, and Metadata read.
+- Organization permissions: Projects read/write.
+- Account permission: Gists read/write. If the token UI does not offer Gists,
+  keep `CI_GIST_TOKEN` as a separate classic PAT and update the local changelog
+  workflow before removing gist access from `CI_AGENT_TOKEN`.
+
+Classic PAT fallback for `CI_AGENT_TOKEN`: `repo`, `workflow`, `project`, and
+`gist`. Add `read:org` only if the organization restricts project access in a
+way that requires membership lookup. This is broader than the fine-grained
+profile.
+
+`CI_GIST_TOKEN` needs only classic PAT scope `gist`. It does not need `repo`,
+`workflow`, or organization administration scopes.
+
+`ELIXPO_POLLINATIONS_API_KEY_GITHUB` is not a GitHub token and receives no
+GitHub permissions. Give it only Pollinations text-generation access.
+
+Use expirations and rotation reminders on both PATs. Organization secret
+visibility should be limited to selected agent-enabled repositories until the
+workflow is rolled out everywhere.
+
+### Other secrets referenced only by this repository
+
+These are not part of the organization agent bundle:
+
+- `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`: production deployment.
+- `ELIXPO_PAY_API_KEY`: payout catalog and deployment configuration.
+- `MODERATION_SECRET`: moderation workflow authentication.
+- `NPM_LIXEDITOR_PUBLISH_TOKEN`: npm publishing.
+- `VSCODE_LIXSKETCH_EXT_PUBLISH_TOKEN`: VS Code Marketplace publishing.
 
 ## Cost-aware routes
 
