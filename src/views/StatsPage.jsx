@@ -20,17 +20,37 @@ function Delta({ value }) {
   );
 }
 
-function MetricCard({ label, value, change, suffix = '', definition, accent = '#9b7bf7' }) {
+function MiniTrend({ values = [], accent }) {
+  const width = 180;
+  const height = 48;
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const spread = Math.max(max - min, 1);
+  const points = values.map((value, index) => `${(index * width) / Math.max(values.length - 1, 1)},${height - 4 - ((Number(value) - min) / spread) * (height - 8)}`).join(' ');
+  return <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-12 mt-5" aria-hidden="true"><polyline points={points} fill="none" stroke={accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity=".9" /></svg>;
+}
+
+function MetricCard({ label, value, change, suffix = '', definition, accent = '#9b7bf7', featured = false, trend = [] }) {
   return (
-    <div className="rounded-2xl border p-5 min-w-0" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }} title={definition}>
+    <article className={`${featured ? 'col-span-2 row-span-2 p-6 sm:p-7' : 'p-5'} relative overflow-hidden rounded-[22px] border min-w-0`} style={{ background: `linear-gradient(145deg, ${accent}12 0%, var(--bg-surface) 48%)`, borderColor: `${accent}35` }} title={definition}>
+      <span className="absolute -right-10 -top-10 w-28 h-28 rounded-full blur-3xl opacity-20" style={{ background: accent }} />
       <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="text-[12px] font-medium" style={{ color: 'var(--text-muted)' }}>{label}</span>
+        <span className="text-[11px] uppercase tracking-[.12em] font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</span>
         <span className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 12px ${accent}66` }} />
       </div>
-      <p className="text-[26px] leading-none font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{fmt(value)}{suffix}</p>
+      <p className={`${featured ? 'text-4xl sm:text-5xl' : 'text-[26px]'} leading-none font-bold mb-2`} style={{ color: 'var(--text-primary)' }}>{fmt(value)}{suffix}</p>
       <Delta value={change} />
-    </div>
+      {featured && <MiniTrend values={trend} accent={accent} />}
+    </article>
   );
+}
+
+function RatioCard({ label, value, change, accent, definition }) {
+  const safeValue = Math.max(0, Math.min(100, Number(value) || 0));
+  return <article className="col-span-2 rounded-[22px] border p-5 sm:p-6 flex items-center justify-between gap-5 overflow-hidden" style={{ background: `linear-gradient(120deg, ${accent}12, var(--bg-surface))`, borderColor: `${accent}35` }} title={definition}>
+    <div><p className="text-[11px] uppercase tracking-[.12em] font-semibold mb-3" style={{ color: 'var(--text-muted)' }}>{label}</p><p className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{fmt(value)}%</p><Delta value={change} /></div>
+    <div className="relative w-20 h-20 shrink-0 rounded-full grid place-items-center" style={{ background: `conic-gradient(${accent} ${safeValue * 3.6}deg, var(--bg-elevated) 0)` }}><div className="w-14 h-14 rounded-full grid place-items-center text-[11px] font-semibold" style={{ background: 'var(--bg-surface)', color: accent }}>{Math.round(safeValue)}%</div></div>
+  </article>;
 }
 
 function TrendChart({ labels = [], values = [], color = '#9b7bf7', chartRef }) {
@@ -100,6 +120,7 @@ export default function StatsPage() {
   const [metric, setMetric] = useState('views');
   const [postQuery, setPostQuery] = useState('');
   const [postSort, setPostSort] = useState('views');
+  const [exportingPNG, setExportingPNG] = useState(false);
   const chartRef = useRef(null);
 
   useEffect(() => {
@@ -149,13 +170,44 @@ export default function StatsPage() {
   const exportPNG = () => {
     const svg = chartRef.current;
     if (!svg) return;
+    setExportingPNG(true);
     const image = new Image();
     image.onload = () => {
-      const canvas = document.createElement('canvas'); canvas.width = 1800; canvas.height = 520;
-      const context = canvas.getContext('2d'); context.fillStyle = '#0b0b0f'; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      const link = document.createElement('a'); link.href = canvas.toDataURL('image/png'); link.download = `lixblogs-${metric}-${range}.png`; link.click();
+      const canvas = document.createElement('canvas'); canvas.width = 1800; canvas.height = 1120;
+      const context = canvas.getContext('2d');
+      const roundRect = (x, y, width, height, radius, fill, stroke = '#e8e5ef') => { context.beginPath(); context.roundRect(x, y, width, height, radius); context.fillStyle = fill; context.fill(); context.strokeStyle = stroke; context.lineWidth = 2; context.stroke(); };
+      context.fillStyle = '#faf9fc'; context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#8b5cf6'; context.font = '600 22px sans-serif'; context.fillText('LIXBLOGS · CREATOR ANALYTICS', 80, 82);
+      context.fillStyle = '#17131f'; context.font = '700 58px Georgia, serif'; context.fillText('Performance snapshot', 80, 150);
+      context.fillStyle = '#746d80'; context.font = '24px Georgia, serif'; context.fillText(`${data?.scope?.label || 'Personal'} · ${RANGES.find(item => item[0] === range)?.[1] || range}`, 80, 194);
+      const cards = [
+        ['Views', totals.views, data?.changes?.views, '#8b5cf6'],
+        ['Unique visitors', totals.uniqueVisitors, data?.changes?.uniqueVisitors, '#3b82f6'],
+        ['Reads', totals.reads, data?.changes?.reads, '#22c55e'],
+        ['Engagement', `${fmt(totals.engagementRate)}%`, data?.changes?.engagementRate, '#ec4899'],
+      ];
+      cards.forEach(([label, value, change, color], index) => {
+        const x = 80 + index * 415;
+        roundRect(x, 245, 375, 190, 24, '#ffffff');
+        context.fillStyle = color; context.beginPath(); context.arc(x + 330, 285, 7, 0, Math.PI * 2); context.fill();
+        context.fillStyle = '#746d80'; context.font = '600 18px sans-serif'; context.fillText(label.toUpperCase(), x + 28, 292);
+        context.fillStyle = '#17131f'; context.font = '700 48px Georgia, serif'; context.fillText(String(value), x + 28, 360);
+        context.fillStyle = Number(change) > 0 ? '#16a34a' : Number(change) < 0 ? '#ef4444' : '#8b8492'; context.font = '600 17px sans-serif'; context.fillText(`${Number(change) > 0 ? '↑' : Number(change) < 0 ? '↓' : '—'} ${Math.abs(Number(change) || 0)}% vs previous`, x + 28, 402);
+      });
+      roundRect(80, 480, 1640, 540, 28, '#ffffff');
+      context.fillStyle = '#17131f'; context.font = '700 27px Georgia, serif'; context.fillText(`${metric === 'views' ? 'Views' : 'Reads'} over time`, 120, 540);
+      context.fillStyle = '#8b8492'; context.font = '18px sans-serif'; context.fillText('Daily totals in the selected period', 120, 574);
+      context.drawImage(image, 120, 600, 1560, 380);
+      context.fillStyle = '#9a93a2'; context.font = '16px sans-serif'; context.fillText(`Exported ${new Date().toLocaleDateString()} · blogs.elixpo.com`, 80, 1080);
+      const link = document.createElement('a'); link.href = canvas.toDataURL('image/png'); link.download = `lixblogs-analytics-${range}.png`; link.click();
+      URL.revokeObjectURL(image.src);
+      setExportingPNG(false);
     };
-    image.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(new XMLSerializer().serializeToString(svg))))}`;
+    image.onerror = () => setExportingPNG(false);
+    const exportSvg = svg.cloneNode(true);
+    exportSvg.querySelectorAll('[stroke="var(--border-default)"]').forEach(node => node.setAttribute('stroke', '#ece9f1'));
+    exportSvg.querySelectorAll('[fill="var(--text-faint)"]').forEach(node => node.setAttribute('fill', '#8b8492'));
+    image.src = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(exportSvg)], { type: 'image/svg+xml' }));
   };
 
   if (loading || !user) return <AppShell><div className="max-w-6xl mx-auto px-5 py-10"><div className="h-10 w-40 rounded-lg animate-pulse bg-[var(--bg-elevated)]" /></div></AppShell>;
@@ -171,7 +223,7 @@ export default function StatsPage() {
           <div className="flex flex-wrap gap-2">
             <select value={scope} onChange={event => setScope(event.target.value)} className="rounded-lg px-3 py-2 text-[12px]" style={{ background: 'var(--bg-surface)', color: 'var(--text-body)', border: '1px solid var(--border-default)' }} aria-label="Analytics scope"><option value="personal">Personal</option>{orgs.map(org => <option key={org.id} value={`org:${org.id}`}>{org.name}</option>)}</select>
             <button onClick={exportCSV} disabled={!data} className="rounded-lg px-3 py-2 text-[12px] border disabled:opacity-40" style={{ borderColor: 'var(--border-default)', color: 'var(--text-body)', background: 'var(--bg-surface)' }}><ion-icon name="download-outline" /> CSV</button>
-            <button onClick={exportPNG} disabled={!data} className="rounded-lg px-3 py-2 text-[12px] border disabled:opacity-40" style={{ borderColor: 'var(--border-default)', color: 'var(--text-body)', background: 'var(--bg-surface)' }}><ion-icon name="image-outline" /> PNG</button>
+            <button onClick={exportPNG} disabled={!data || exportingPNG} className="rounded-lg px-3 py-2 text-[12px] border disabled:opacity-40 inline-flex items-center gap-1.5" style={{ borderColor: 'var(--border-default)', color: 'var(--text-body)', background: 'var(--bg-surface)' }}><ion-icon name={exportingPNG ? 'hourglass-outline' : 'image-outline'} /> {exportingPNG ? 'Exporting…' : 'PNG report'}</button>
           </div>
         </header>
 
@@ -184,23 +236,24 @@ export default function StatsPage() {
 
         {error && <div className="rounded-xl border border-red-400/30 bg-red-400/10 text-red-300 px-4 py-3 text-[13px] mb-5 flex justify-between"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss">×</button></div>}
         {data?.dimensionsCollecting && <div className="mb-5"><CollectingNotice /></div>}
+        {data && <div className="fixed -left-[10000px] top-0 w-[900px] pointer-events-none" aria-hidden="true"><TrendChart chartRef={chartRef} labels={data.trend.labels} values={data.trend[metric]} color={metric === 'views' ? '#9b7bf7' : '#4ade80'} /></div>}
 
         {fetching ? <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-28 rounded-2xl animate-pulse bg-[var(--bg-elevated)]" />)}</div> : data && <>
           {tab === 'Overview' && <div className="space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <MetricCard label="Views" value={totals.views} change={data.changes.views} definition={definitions.views} />
+            <div className="grid grid-cols-2 lg:grid-cols-4 auto-rows-min gap-3 sm:gap-4">
+              <MetricCard featured trend={data.trend.views} label="Views" value={totals.views} change={data.changes.views} definition={definitions.views} />
               <MetricCard label="Unique visitors" value={totals.uniqueVisitors} change={data.changes.uniqueVisitors} definition={definitions.uniqueVisitors} accent="#60a5fa" />
               <MetricCard label="Reads" value={totals.reads} change={data.changes.reads} definition={definitions.reads} accent="#4ade80" />
-              <MetricCard label="Completion" value={totals.completionRate} suffix="%" change={data.changes.completionRate} definition={definitions.completionRate} accent="#f59e0b" />
+              <RatioCard label="Completion" value={totals.completionRate} change={data.changes.completionRate} definition={definitions.completionRate} accent="#f59e0b" />
               <MetricCard label="Avg. reading depth" value={totals.avgReadProgress} suffix="%" change={data.changes.avgReadProgress} definition={definitions.avgReadProgress} accent="#22d3ee" />
               <MetricCard label="Avg. read time" value={totals.avgReadTime} suffix="s" change={data.changes.avgReadTime} definition={definitions.avgReadTime} accent="#38bdf8" />
-              <MetricCard label="Engagement rate" value={totals.engagementRate} suffix="%" change={data.changes.engagementRate} definition={definitions.engagementRate} accent="#f472b6" />
+              <RatioCard label="Engagement rate" value={totals.engagementRate} change={data.changes.engagementRate} definition={definitions.engagementRate} accent="#f472b6" />
               <MetricCard label="Followers gained" value={totals.followers} change={data.changes.followers} definition={definitions.followers} accent="#a78bfa" />
               <MetricCard label="Followers lost" value={totals.followersLost} change={data.changes.followersLost} accent="#f87171" />
             </div>
             <section className="rounded-2xl border p-4 sm:p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
               <div className="flex items-center justify-between mb-4"><div><h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Performance over time</h2><p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>Daily totals in the selected period</p></div><select value={metric} onChange={event => setMetric(event.target.value)} className="rounded-lg px-3 py-1.5 text-[12px]" style={{ background: 'var(--bg-elevated)', color: 'var(--text-body)' }}><option value="views">Views</option><option value="reads">Reads</option></select></div>
-              <TrendChart chartRef={chartRef} labels={data.trend.labels} values={data.trend[metric]} color={metric === 'views' ? '#9b7bf7' : '#4ade80'} />
+              <TrendChart labels={data.trend.labels} values={data.trend[metric]} color={metric === 'views' ? '#9b7bf7' : '#4ade80'} />
             </section>
             <div className="grid md:grid-cols-2 gap-4"><Breakdown title="Engagement" rows={[['Likes', totals.likes], ['Comments', totals.comments], ['Bookmarks', totals.bookmarks], ['Shares', totals.shares], ['Claps', totals.claps]].map(([label, value]) => ({ label, value }))} /><Breakdown title="Conversion funnel" rows={data.funnel} /></div>
           </div>}
