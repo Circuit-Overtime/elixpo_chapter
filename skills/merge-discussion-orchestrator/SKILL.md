@@ -1,83 +1,42 @@
 ---
 name: merge-discussion-orchestrator
-description: Triage a merged GitHub pull request and its changed-file patches into an Elixpo Announcement, a future-facing Poll, or no Discussion. Use for post-merge changelog review, release communication decisions, announcement drafting, and community poll design driven by concrete merged work.
+description: Compose an Elixpo Announcement, Poll, or technical Q&A after a deterministic mood engine has selected the genre from merged GitHub pull requests and patches. Use for evidence-grounded post-merge writing where the supplied mood, genre, emoji, and heuristic signals are authoritative and the model must not make the publication decision.
 ---
 
 # Merge Discussion Orchestrator
 
-Convert merged work into a community post only when the evidence justifies one.
-Treat silence as a valid outcome: routine merges must not create noise.
+Convert the supplied deterministic decision into concise structured content. Do
+not choose whether to post and do not change the genre or mood.
 
-## Inputs
+## Rank evidence
 
-Require the merged PR number, title, body, URL, labels, and changed-file patches.
-Prioritize evidence in this order:
+Use evidence in this order:
 
-1. Added or changed entries in `CHANGELOG*`, release notes, or migration guides.
-2. User-visible behavior shown by code, CLI, API, configuration, or documentation diffs.
-3. Explicit PR claims that agree with the patches.
-4. Labels and title prefixes as weak supporting signals only.
+1. Changelog, release-note, migration, deprecation, and security patches.
+2. User-visible code, CLI, API, configuration, and documentation diffs.
+3. PR descriptions that agree with changed files.
+4. Titles and labels only as supporting signals.
 
-Never infer a shipped capability from a title alone. Never treat plans in an
-unmerged issue, TODO, or speculative paragraph as completed work.
+Omit any central claim that cannot be verified from those inputs.
 
-## Decide the outcome
+## Compose the selected genre
 
-Choose exactly one outcome.
+For `announcement`, state what is now available, why it matters, compatibility or
+migration action, and how readers can verify or try it.
 
-### Announcement
+For `poll`, state one future decision, the constraints exposed by merged work,
+2–6 comparable options, and the evidence voters should provide. Never poll on an
+already completed decision.
 
-Choose `announcement` when the merge provides concrete community value:
+For `qna`, turn the technical change into a realistic scenario and 2–4 focused
+questions about design, diagnosis, rollback, observability, or scale.
 
-- a released or immediately usable capability;
-- a breaking change, deprecation, security-relevant change, or migration step;
-- a meaningful reliability or performance change supported by evidence;
-- a community milestone that readers can verify.
+## Return structured content
 
-Reject announcement candidates that are dependency-only, test-only, internal
-refactors, formatting, typo fixes, CI maintenance, or vague implementation work.
+Return only the requested fields: title, summary, highlights, impact, prompt,
+options, and topic. Keep the title free of emoji. Use `general` when no supported
+technical domain is central. Do not render headings, source links, bot disclosure,
+labels, or idempotency markers; deterministic code owns presentation and safety.
 
-### Poll
-
-Choose `poll` only when the merged work exposes a real next decision and community
-answers can change what happens next. Require one neutral question and 2–6 options
-that are mutually distinct, feasible, and comparable under the same constraints.
-
-Do not use a poll to ratify an already-made decision, advertise a feature, collect
-generic sentiment, or ask readers to predict facts maintainers can measure.
-Include an “another approach” option only when the option space is genuinely open.
-
-### Skip
-
-Choose `skip` whenever evidence is thin, impact is internal, the change was already
-announced, or no actionable future choice exists. Give a short factual reason.
-
-## Draft an announcement
-
-- Keep the title specific and under 90 characters.
-- Open with what changed, without celebratory filler.
-- Explain why it matters to users or contributors.
-- Include required migration or configuration actions.
-- Link the merged PR supplied in the input.
-- Stay below 300 words.
-- State only versions, dates, metrics, compatibility, and availability present in
-  the evidence.
-
-## Draft a poll
-
-- State the decision, constraints, and affected users before listing options.
-- Make options short noun phrases or actions; do not combine multiple choices.
-- Avoid a preferred option in the wording or order.
-- Ask voters to explain workload, failure modes, or operational tradeoffs.
-- Stay below 250 words before the option list.
-
-## Output contract
-
-Return the requested structured object with `action`, `reason`, `title`, `body`,
-`options`, and `topic`. Use `mlops`, `gitops`, `docker`, or `kubernetes` only
-when it is the central subject; otherwise use `general`. For `skip`, return empty `title`, `body`, and `options`. For an
-announcement, return `options: []`. Do not add the bot disclosure, idempotency
-marker, or safety verdict; the publisher adds them.
-
-Before submitting, verify every factual sentence against the supplied PR or patch,
-remove duplicated claims, and downgrade to `skip` if the central claim is unproven.
+Self-review every factual sentence against the inputs and remove duplicated
+highlights before submitting.

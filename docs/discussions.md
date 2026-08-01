@@ -1,8 +1,12 @@
 # Discussions squad
 
-`agents.discussions` manages three GitHub Discussion flows as `elixpoo`:
+`agents.discussions` gives the repository an evidence-driven activity loop with
+controlled variance:
 
-- merged PR → announcement, future-facing poll, or no post;
+- merged diffs → an energized/alert announcement, curious poll, mentoring Q&A,
+  or a resting no-post decision;
+- 30-minute pulse → recompute mood from unhandled merges, with a six-hour posting
+  cooldown so activity stays visible without becoming noisy;
 - weekly schedule → one MLOps, GitOps, Docker, or Kubernetes Q&A;
 - `@elixpoo` in a discussion or discussion comment → contextual reply.
 
@@ -15,9 +19,24 @@ general text model in the checked-in Pollinations registry). Every title/body or
 reply is then sent through the `safety` role before it can be posted. Posts carry
 an autonomous-contributor disclosure and an idempotency marker.
 
+The writer never chooses the mood or genre. `agents.discussions.mood` scores
+changelogs, breaking/security language, feature paths, design signals,
+configuration surfaces, domain files, documentation, diff size, and
+maintenance-only changes. Genres that clear their evidence threshold enter a
+weighted choice. Recent mood labels reduce the weight of repeated moods, while a
+stable digest of the merge set makes workflow retries choose the same result.
+Different qualifying changes can therefore produce different moods without
+ignoring relevance. Critical changes always become alert announcements, and
+maintenance-only changes remain quiet. Only after this decision does the routed
+writer compose structured fields for the selected genre.
+
+Python renders those fields into fixed Markdown sections and prefixes exactly one
+mood emoji: 🚨 alert, 🚀 energized, 🗳️ curious, 🧭 mentoring, or 🧠 scheduled Q&A.
+
 Runtime behavior is defined by the repo-owned skills in `skills/`:
 
-- `merge-discussion-orchestrator` — evidence ranking and announce/poll/skip rules;
+- `merge-discussion-orchestrator` — evidence-grounded writing for the selected genre;
+- `living-repo-persona` — stable teammate voice for every supplied mood;
 - `technical-qna-host` — domain selection, scenario quality, and duplicate avoidance;
 - `discussion-mention-responder` — grounded answers and prompt-injection boundaries;
 - `github-discussion-publisher` — categories, identity, moderation, and idempotency.
@@ -36,9 +55,12 @@ publisher independently enforces the safety, disclosure, and duplicate checks.
 4. Add the Actions secret `ELIXPO_POLLINATIONS_API_KEY`. This is the only model
    provider key used by the squad.
 
-The workflow runs Q&A each Wednesday at 09:17 UTC and can also be started with
-`workflow_dispatch`. `ELIXPO_DISCUSSIONS_REPOSITORY` defaults to `elixpo/elixpo`
-and can override the destination for local testing.
+The workflow recomputes mood at minute 13 and 43 of each hour, runs Q&A each
+Wednesday at 09:17 UTC, and exposes both through `workflow_dispatch`. The mood
+pulse looks back 48 hours, aggregates up to five unhandled merges, and publishes
+at most once per six hours unless the heuristic detects an alert.
+`ELIXPO_DISCUSSIONS_REPOSITORY` defaults to `elixpo/elixpo` and can override the
+destination for local testing.
 
 Because Discussion events originate in `elixpo/elixpo` while this workflow lives
 in `agent.elixpo`, a ten-minute schedule scans the last 24 hours for exact,
@@ -48,7 +70,7 @@ workflow-dispatch option to test this path immediately.
 
 The publisher creates missing labels and attaches `announcement`, `qna`, or
 `poll`, the primary domain (`mlops`, `gitops`, `docker`, or `kubernetes`) when
-applicable, and `elixpoo-generated`.
+applicable, the current mood label, and `elixpoo-generated`.
 
 GitHub's public GraphQL API does not expose native poll-option creation. Poll
 discussions therefore publish numbered options and collect votes plus reasoning
@@ -62,4 +84,5 @@ Set `GITHUB_EVENT_PATH` to a saved webhook payload, then run one mode:
 python -m agents.discussions merge
 python -m agents.discussions qna
 python -m agents.discussions respond
+python -m agents.discussions pulse
 ```

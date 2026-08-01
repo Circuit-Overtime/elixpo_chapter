@@ -1,4 +1,4 @@
 interface:
-  display_name: "Merge Discussion Orchestrator"
-  short_description: "Triage merged PRs into community discussions"
-  default_prompt: "Use $merge-discussion-orchestrator to decide whether this merged PR should become an announcement, poll, or no discussion."
+  display_name: "Merge Discussion Composer"
+  short_description: "Write heuristic-selected merge discussions"
+  default_prompt: "Use $merge-discussion-orchestrator to compose the Discussion genre selected by the deterministic repository mood."

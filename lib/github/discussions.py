@@ -67,7 +67,10 @@ class GitHubDiscussions:
             query($owner: String!, $repo: String!, $limit: Int!) {
               repository(owner: $owner, name: $repo) {
                 discussions(first: $limit, orderBy: {field: UPDATED_AT, direction: DESC}) {
-                  nodes { id number title body url category { name } }
+                  nodes {
+                    id number title body url createdAt category { name }
+                    labels(first: 10) { nodes { name } }
+                  }
                 }
               }
             }
