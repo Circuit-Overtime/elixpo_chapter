@@ -87,7 +87,7 @@ export default function TextSidebar() {
         <div className="grid grid-cols-4 gap-1.5">
           {TEXT_COLORS.map((c) => (
             <button key={c} onClick={() => updateColor(c)}
-              className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${textColor === c ? 'border-[#5B57D1] scale-110' : 'border-border-light hover:border-text-dim'}`}
+              className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${textColor === c ? 'border-[#6f846f] scale-110' : 'border-border-light hover:border-text-dim'}`}
               style={{ backgroundColor: c }}
             />
           ))}
@@ -104,7 +104,7 @@ export default function TextSidebar() {
             <div className="flex flex-col gap-0.5">
               {FONTS.map((f) => (
                 <button key={f.value} onClick={() => updateFont(f.value)}
-                  className={`flex items-center px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${font === f.value ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-surface-hover'}`}
+                  className={`flex items-center px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${font === f.value ? 'bg-[#6f846f] text-white' : 'text-text-secondary hover:bg-surface-hover'}`}
                   style={{ fontFamily: f.value }}
                 >
                   {f.label}
@@ -123,7 +123,7 @@ export default function TextSidebar() {
         <div className="flex items-center gap-1">
           {['S', 'M', 'L', 'XL'].map((s) => (
             <button key={s} onClick={() => updateSize(s)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all duration-100 ${fontSize === s ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-surface-hover'}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all duration-100 ${fontSize === s ? 'bg-[#6f846f]/20 text-[#6f846f]' : 'text-text-muted hover:bg-surface-hover'}`}
             >{s}</button>
           ))}
         </div>
@@ -136,7 +136,7 @@ export default function TextSidebar() {
         <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{t('sidebar.code')}</p>
         <div className="flex flex-col gap-2">
           <button onClick={toggleCodeMode}
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${codeMode ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-surface-hover'}`}
+            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${codeMode ? 'bg-[#6f846f] text-white' : 'text-text-secondary hover:bg-surface-hover'}`}
           >
             <div className={`w-6 h-3 rounded-full transition-all duration-150 relative ${codeMode ? 'bg-white/30' : 'bg-white/10'}`}>
               <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all duration-150 ${codeMode ? 'left-3.5' : 'left-0.5'}`} />
@@ -147,7 +147,7 @@ export default function TextSidebar() {
             <div className="flex flex-wrap gap-1 max-w-[180px]">
               {LANGUAGES.map((lang) => (
                 <button key={lang} onClick={() => updateLanguage(lang)}
-                  className={`px-1.5 py-0.5 rounded text-[9px] transition-all duration-100 ${language === lang ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-dim hover:bg-surface-hover hover:text-text-secondary'}`}
+                  className={`px-1.5 py-0.5 rounded text-[9px] transition-all duration-100 ${language === lang ? 'bg-[#6f846f]/20 text-[#6f846f]' : 'text-text-dim hover:bg-surface-hover hover:text-text-secondary'}`}
                 >{lang}</button>
               ))}
             </div>
