@@ -27,7 +27,7 @@ import {
     getSelectedCodeBlock
 } from './codeTool.js';
 
-let textSize = "30px";
+let textSize = "20px";
 let textFont = "lixFont";
 let textColor = null;
 let textAlign = "left";
@@ -196,10 +196,8 @@ function makeTextEditable(textElement, groupElement) {
     input.setAttribute("aria-label", "Edit canvas text");
     input.setAttribute("data-editing", "true");
 
-    // Issue #48 phase D follow-up: prefer the persisted `data-wrap-
-    // source` when present so re-opening the editor shows the user's
-    // original line breaks instead of the auto-wrap output. Falls back
-    // to tspan-concatenation for legacy text shapes.
+    // Prefer the persisted source so re-opening the editor preserves only
+    // the line breaks the user explicitly inserted with Shift+Enter.
     let textContent = '';
     const storedSource = textElement.getAttribute('data-wrap-source');
     if (storedSource !== null && storedSource !== '') {
@@ -224,11 +222,9 @@ function makeTextEditable(textElement, groupElement) {
     input.style.boxSizing = "border-box";
     input.style.overflow = "hidden";
     input.style.resize = "none";
-    input.style.whiteSpace = "pre-wrap";
+    input.style.whiteSpace = "pre";
     input.style.minHeight = "1.2em";
     input.style.zIndex = "10000";
-
-    const svgRect = svg.getBoundingClientRect();
 
     // Use the group element's own screenCTM which includes group transform + SVG viewBox transform
     const textBBox = textElement.getBBox();
@@ -243,17 +239,15 @@ function makeTextEditable(textElement, groupElement) {
     input.style.top = `${screenPt.y}px`;
 
     const svgZoomFactor = svg.getScreenCTM() ? svg.getScreenCTM().a : 1;
-    const screenWidth = textBBox.width * svgZoomFactor;
-
     input.style.width = "auto";
     input.style.height = "auto";
 
-    const currentFontSize = textElement.getAttribute("font-size") || "30px";
+    const currentFontSize = textElement.getAttribute("font-size") || "20px";
     const currentFontFamily = textElement.getAttribute("font-family") || "lixFont";
     const currentFill = textElement.getAttribute("fill") || "#fff";
     const currentAnchor = textElement.getAttribute("text-anchor") || "start";
     // Scale font-size by zoom so the textarea matches what the user sees on canvas
-    const rawSize = parseFloat(currentFontSize) || 30;
+    const rawSize = parseFloat(currentFontSize) || 20;
     const scaledFontSize = `${rawSize * svgZoomFactor}px`;
 
     input.style.minWidth = "150px";
@@ -261,53 +255,31 @@ function makeTextEditable(textElement, groupElement) {
     input.style.width = "auto";
     input.style.height = "auto";
     input.style.overflow = "visible";
-    input.style.whiteSpace = "pre-wrap";
-    input.style.wordBreak = "break-word";
+    input.style.whiteSpace = "pre";
+    input.style.wordBreak = "normal";
+    input.style.overflowWrap = "normal";
     input.style.fontSize = scaledFontSize;
     input.style.fontFamily = currentFontFamily;
     input.style.color = currentFill;
     input.style.lineHeight = "1.2em";
     input.style.textAlign = currentAnchor === "middle" ? "center" : currentAnchor === "end" ? "right" : "left";
     input.style.backgroundColor = "transparent";
-    // Keep an obvious editing-only bounding box around the textarea. The
-    // editor is removed by renderText(), so this never becomes part of the
-    // rendered canvas or exported scene.
-    const _isDark = typeof document !== 'undefined'
-        && document.body
-        && document.body.classList.contains('theme-dark');
-    const editingBorder = _isDark ? "rgba(139,136,232,0.95)" : "rgba(91,87,209,0.92)";
-    input.style.border = `2px solid ${editingBorder}`;
-    input.style.backgroundColor = _isDark
-        ? "rgba(91,87,209,0.08)"
-        : "rgba(91,87,209,0.05)";
-    input.style.boxShadow = `0 0 0 2px ${_isDark ? "rgba(139,136,232,0.18)" : "rgba(91,87,209,0.14)"}`;
-    input.style.borderRadius = "4px";
+    input.style.border = "none";
+    input.style.boxShadow = "none";
     input.style.outline = "none";
     document.body.appendChild(input);
 
     const adjustHeight = () => {
         input.style.height = 'auto';
         input.style.height = input.scrollHeight + 'px';
-        const maxHeight = svgRect.height - (screenPt.y);
-        if (input.scrollHeight > maxHeight) {
-            input.style.height = maxHeight + 'px';
-            input.style.overflowY = 'auto';
-        } else {
-            input.style.overflowY = 'hidden';
-        }
+        input.style.overflowY = 'hidden';
     };
 
     const adjustWidth = () => {
         input.style.width = 'auto';
-        const maxWidth = svgRect.width - (screenPt.x);
         const contentWidth = Math.max(input.scrollWidth, 150);
-        if (contentWidth > maxWidth) {
-            input.style.width = maxWidth + 'px';
-            input.style.overflowX = 'auto';
-        } else {
-            input.style.width = contentWidth + 'px';
-            input.style.overflowX = 'hidden';
-        }
+        input.style.width = contentWidth + 'px';
+        input.style.overflowX = 'hidden';
     };
     adjustHeight();
     adjustWidth();
@@ -349,58 +321,12 @@ function makeTextEditable(textElement, groupElement) {
     groupElement.style.display = "none";
 }
 
-/**
- * Issue #48 phase D follow-up: true text wrapping driven by E/W width.
- *
- * `paint(textElement, source, wrapWidth)` renders the user-typed `source`
- * string into tspans, soft-wrapping any line that exceeds `wrapWidth`
- * pixels (in SVG units). `wrapWidth = null | 0` falls back to the old
- * "explicit newlines only" behaviour so existing text shapes that have
- * never been width-resized look identical.
- *
- * The raw `source` is persisted on the element as `data-wrap-source`
- * so subsequent edits (textarea re-open) and serialisation can rebuild
- * the original content even after auto-wrap inserted line breaks.
- */
-function measureSegment(text, refTextElement) {
-    if (!text) return 0;
-    const NS = 'http://www.w3.org/2000/svg';
-    const probe = document.createElementNS(NS, 'tspan');
-    probe.textContent = text;
-    refTextElement.appendChild(probe);
-    let width = 0;
-    try { width = probe.getComputedTextLength(); } catch {}
-    refTextElement.removeChild(probe);
-    return width;
-}
-
-function paintTextContent(textElement, source, wrapWidth) {
+/** Render only explicit editor line breaks; text never soft-wraps. */
+function paintTextContent(textElement, source) {
     while (textElement.firstChild) textElement.removeChild(textElement.firstChild);
     const x = textElement.getAttribute('x') || 0;
     const NS = 'http://www.w3.org/2000/svg';
-    const paragraphs = (source || '').split('\n');
-    const finalLines = [];
-
-    for (const paragraph of paragraphs) {
-        const para = paragraph.replace(/ /g, ' ');
-        if (!wrapWidth || wrapWidth <= 0) {
-            finalLines.push(para || ' ');
-            continue;
-        }
-        // Word-wrap the paragraph against wrapWidth.
-        const words = para.split(/(\s+)/);  // keep separators so spacing survives
-        let cur = '';
-        for (const token of words) {
-            const candidate = cur + token;
-            if (measureSegment(candidate, textElement) > wrapWidth && cur.trim().length > 0) {
-                finalLines.push(cur);
-                cur = token.replace(/^\s+/, '');  // drop the leading break-space
-            } else {
-                cur = candidate;
-            }
-        }
-        finalLines.push(cur.length ? cur : ' ');
-    }
+    const finalLines = (source || '').split('\n').map((line) => line.replace(/ /g, ' '));
 
     finalLines.forEach((line, i) => {
         const tspan = document.createElementNS(NS, 'tspan');
@@ -409,21 +335,6 @@ function paintTextContent(textElement, source, wrapWidth) {
         tspan.textContent = line.length ? line : ' ';
         textElement.appendChild(tspan);
     });
-}
-
-function getWrapSource(textElement) {
-    const stored = textElement.getAttribute('data-wrap-source');
-    if (stored !== null && stored !== '') return stored;
-    // Fallback: rebuild from existing tspans (legacy text shapes without
-    // the attribute). Join each tspan as a paragraph.
-    const tspans = textElement.querySelectorAll('tspan');
-    if (tspans.length === 0) return textElement.textContent || '';
-    return Array.from(tspans).map((t) => (t.textContent || '').replace(/ /g, ' ')).join('\n');
-}
-
-function getWrapWidth(textElement) {
-    const v = parseFloat(textElement.getAttribute('data-wrap-width') || '');
-    return Number.isFinite(v) && v > 0 ? v : 0;
 }
 
 function renderText(input, textElement, deleteIfEmpty = false) {
@@ -483,13 +394,12 @@ function renderText(input, textElement, deleteIfEmpty = false) {
             removeSelectionFeedback();
         }
     } else {
-        // Persist the raw editor content so future E/W resizes can re-wrap
-        // from the user's original line breaks instead of the auto-inserted
-        // ones. Then call the shared paint helper \u2014 it falls back to the
-        // legacy "explicit newlines only" path when no wrap-width is set.
+        // Persist and render only the user's explicit Shift+Enter line
+        // breaks. Long lines remain long on the infinite canvas.
         const cleanSource = text.replace(/\u00A0/g, ' ');
         textElement.setAttribute('data-wrap-source', cleanSource);
-        paintTextContent(textElement, cleanSource, getWrapWidth(textElement));
+        textElement.removeAttribute('data-wrap-width');
+        paintTextContent(textElement, cleanSource);
 
         gElement.style.display = 'block';
 
@@ -551,18 +461,13 @@ function createSelectionFeedback(groupElement) {
     selectionBox.setAttribute("pointer-events", "none");
     groupElement.appendChild(selectionBox);
 
-    // Issue #48 bug #5 + phase D follow-up: E/W midpoint anchors drive
-    // TRUE word-wrap. Dragging E/W sets `data-wrap-width` on the text
-    // element; the paint helper re-flows tspans so the text wraps into
-    // multiple lines. Corner anchors keep their font-size scaling
-    // behaviour.
+    // Corner anchors scale font size. Width handles are intentionally
+    // omitted because text width is content-driven and never soft-wraps.
     const handlesData = [
         { name: 'nw', x: selX, y: selY, cursor: 'nwse-resize' },
         { name: 'ne', x: selX + selWidth, y: selY, cursor: 'nesw-resize' },
         { name: 'sw', x: selX, y: selY + selHeight, cursor: 'nesw-resize' },
         { name: 'se', x: selX + selWidth, y: selY + selHeight, cursor: 'nwse-resize' },
-        { name: 'e',  x: selX + selWidth, y: selY + selHeight / 2, cursor: 'ew-resize' },
-        { name: 'w',  x: selX, y: selY + selHeight / 2, cursor: 'ew-resize' },
     ];
 
     resizeHandles = {};
@@ -668,10 +573,6 @@ function updateSelectionFeedback() {
         { name: 'ne', x: selX + selWidth, y: selY },
         { name: 'sw', x: selX, y: selY + selHeight },
         { name: 'se', x: selX + selWidth, y: selY + selHeight },
-        // Issue #48 bug #5: keep E/W midpoint handles aligned with the
-        // resize so they follow the box as it scales.
-        { name: 'e',  x: selX + selWidth, y: selY + selHeight / 2 },
-        { name: 'w',  x: selX, y: selY + selHeight / 2 },
     ];
 
     handlesData.forEach(handle => {
@@ -963,7 +864,6 @@ const handleMouseMove = (event) => {
         const startHeight = startBBox.height;
 
         let anchorX, anchorY;
-        const isEdgeWidth = currentResizeHandle === 'e' || currentResizeHandle === 'w';
 
         switch (currentResizeHandle) {
             case 'nw':
@@ -982,34 +882,8 @@ const handleMouseMove = (event) => {
                 anchorX = startX;
                 anchorY = startY;
                 break;
-            case 'e':
-                anchorX = startX;
-                anchorY = startY + startHeight / 2;
-                break;
-            case 'w':
-                anchorX = startX + startWidth;
-                anchorY = startY + startHeight / 2;
-                break;
         }
 
-        // Issue #48 phase D follow-up: E/W now drives TRUE word-wrap.
-        // The drag distance becomes the wrap-width target; we re-paint
-        // the text with the new width and short-circuit the font-size
-        // scaling path that the corners use.
-        if (isEdgeWidth) {
-            const newWrap = Math.abs(currentPoint.x - anchorX);
-            const minWrap = startFontSize * 2;  // at least ~one short word wide
-            const clampedWrap = Math.max(minWrap, newWrap);
-            textElement.setAttribute('data-wrap-width', String(clampedWrap));
-            const source = getWrapSource(textElement);
-            paintTextContent(textElement, source, clampedWrap);
-            if (typeof updateSelectionFeedback === 'function') {
-                setTimeout(updateSelectionFeedback, 0);
-            }
-            return;
-        }
-
-        const newWidth = Math.abs(currentPoint.x - anchorX);
         const newHeight = Math.abs(currentPoint.y - anchorY);
         const chosenScale = newHeight / startHeight;
 
@@ -1043,14 +917,6 @@ const handleMouseMove = (event) => {
             case 'se':
                 newAnchorX = currentBBox.x;
                 newAnchorY = currentBBox.y;
-                break;
-            case 'e':
-                newAnchorX = currentBBox.x;
-                newAnchorY = currentBBox.y + currentBBox.height / 2;
-                break;
-            case 'w':
-                newAnchorX = currentBBox.x + currentBBox.width;
-                newAnchorY = currentBBox.y + currentBBox.height / 2;
                 break;
         }
 

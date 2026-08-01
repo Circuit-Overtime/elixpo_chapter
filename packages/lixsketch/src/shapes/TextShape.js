@@ -25,9 +25,28 @@ function updateSelectionFeedback() {}
 function deselectElement() { selectedElement = null; }
 function selectElement(el) { selectedElement = el; }
 
+function removeLegacySoftWrap(groupElement) {
+    const textElement = groupElement.querySelector('text');
+    if (!textElement || !textElement.hasAttribute('data-wrap-width')) return;
+    const source = textElement.getAttribute('data-wrap-source');
+    if (source === null) return;
+
+    while (textElement.firstChild) textElement.removeChild(textElement.firstChild);
+    const x = textElement.getAttribute('x') || 0;
+    source.split('\n').forEach((line, index) => {
+        const tspan = textElement.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+        tspan.setAttribute('x', x);
+        tspan.setAttribute('dy', index === 0 ? '0' : '1.2em');
+        tspan.textContent = line || ' ';
+        textElement.appendChild(tspan);
+    });
+    textElement.removeAttribute('data-wrap-width');
+}
+
 class TextShape {
     constructor(groupElement) {
         this.group = groupElement;
+        removeLegacySoftWrap(groupElement);
         this.shapeName = 'text';
         this.shapeID = groupElement.getAttribute('id') || `text-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`;
         
