@@ -34,6 +34,7 @@ import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
 import { InlineButton } from './blocks/InlineButton';
 import { normalizeUrl } from '../../utils/linkHelper';
+import { createMediaUploadId, enqueueMediaUpload } from '../../utils/mediaUploadQueue';
 
 // AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
 // are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
@@ -1588,9 +1589,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           if (!cursor?.block) return;
 
           // Insert image block with loading placeholder + empty paragraph below
+          const uploadJobId = createMediaUploadId();
           editor.insertBlocks(
             [
-              { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading' } },
+              { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading', _uploadJobId: uploadJobId } },
               { type: 'paragraph', content: [] },
             ],
             cursor.block,
@@ -1616,22 +1618,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
               const { compressBlogImage } = await import('../../utils/compressImage');
               const { blob } = await compressBlogImage(file);
 
-              const formData = new FormData();
-              formData.append('file', blob, `image_${Date.now()}.webp`);
-              if (blogId) formData.append('blogId', blogId);
-              formData.append('type', 'image');
-
-              const res = await fetch('/api/media/upload', {
-                method: 'POST',
-                body: formData,
-              });
-
-              if (!res.ok) throw new Error('Upload failed');
-              const data = await res.json();
+              const data = await enqueueMediaUpload(blob, { id: uploadJobId, filename: `image_${uploadJobId}.webp`, blogId, type: 'image' });
 
               editor.updateBlock(newBlock.id, {
                 type: 'image',
-                props: { url: data.url, caption: '', previewWidth: 740, _uploading: '' },
+                props: { url: data.url, caption: '', previewWidth: 740, _uploading: '', _uploadJobId: '', _mediaId: data.id || '' },
               });
             } catch (err) {
               console.error('Clipboard image upload failed:', err);
@@ -1661,9 +1652,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       const cursor = editor.getTextCursorPosition();
       if (!cursor?.block) return;
 
+      const uploadJobId = createMediaUploadId();
       editor.insertBlocks(
         [
-          { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading' } },
+          { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading', _uploadJobId: uploadJobId } },
           { type: 'paragraph', content: [] },
         ],
         cursor.block,
@@ -1687,18 +1679,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           const { compressBlogImage } = await import('../../utils/compressImage');
           const { blob } = await compressBlogImage(file);
 
-          const formData = new FormData();
-          formData.append('file', blob, `image_${Date.now()}.webp`);
-          if (blogId) formData.append('blogId', blogId);
-          formData.append('type', 'image');
-
-          const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
-          if (!res.ok) throw new Error('Upload failed');
-          const data = await res.json();
+          const data = await enqueueMediaUpload(blob, { id: uploadJobId, filename: `image_${uploadJobId}.webp`, blogId, type: 'image' });
 
           editor.updateBlock(dropBlock.id, {
             type: 'image',
-            props: { url: data.url, caption: '', previewWidth: 740, _uploading: '' },
+            props: { url: data.url, caption: '', previewWidth: 740, _uploading: '', _uploadJobId: '', _mediaId: data.id || '' },
           });
         } catch (err) {
           console.error('Dropped image upload failed:', err);

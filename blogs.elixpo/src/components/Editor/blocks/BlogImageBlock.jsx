@@ -3,6 +3,7 @@
 import { createReactBlockSpec } from '@blocknote/react';
 import { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { IMAGE_ACCEPT_ATTR } from '../../../utils/allowedImageTypes';
+import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload } from '../../../utils/mediaUploadQueue';
 
 export const BlogImageUploadContext = createContext({ blogId: null });
 
@@ -18,6 +19,7 @@ export const BlogImageBlock = createReactBlockSpec(
       _imageId: { default: '' },
       _mediaId: { default: '' },
       _uploading: { default: '' },
+      _uploadJobId: { default: '' },
     },
     content: 'none',
   },
@@ -28,7 +30,7 @@ export const BlogImageBlock = createReactBlockSpec(
 
 function BlogImageRenderer({ block, editor }) {
   const { blogId } = useContext(BlogImageUploadContext);
-  const { url, caption, _imageId, _uploading } = block.props;
+  const { url, caption, _imageId, _uploading, _uploadJobId } = block.props;
   const [mode, setMode] = useState('idle'); // idle | embed | generate | generating
   const [embedUrl, setEmbedUrl] = useState('');
   const [embedError, setEmbedError] = useState('');
@@ -56,6 +58,17 @@ function BlogImageRenderer({ block, editor }) {
   const aiInputRef = useRef(null);
 
   useEffect(() => {
+    if (_uploading !== 'uploading' || !_uploadJobId) return;
+    let cancelled = false;
+    resumeMediaUpload(_uploadJobId).then((data) => {
+      if (!cancelled) editor.updateBlock(block.id, { props: { url: data.url, _mediaId: data.id || '', _uploading: '', _uploadJobId: '' } });
+    }).catch(() => {
+      if (!cancelled) editor.updateBlock(block.id, { props: { _uploading: 'error' } });
+    });
+    return () => { cancelled = true; };
+  }, [_uploading, _uploadJobId, block.id, editor]);
+
+  useEffect(() => {
     if (mode === 'embed') setTimeout(() => embedInputRef.current?.focus(), 50);
     if (mode === 'generate') setTimeout(() => aiInputRef.current?.focus(), 50);
   }, [mode]);
@@ -80,7 +93,8 @@ function BlogImageRenderer({ block, editor }) {
       showFailToast('Unsupported file type. Allowed: AVIF, JPEG, PNG, BMP, SVG, WebP.');
       return;
     }
-    editor.updateBlock(block.id, { props: { _uploading: 'uploading' } });
+    const uploadJobId = createMediaUploadId();
+    editor.updateBlock(block.id, { props: { _uploading: 'uploading', _uploadJobId: uploadJobId } });
 
     try {
       const doc = editor.document;
@@ -105,14 +119,13 @@ function BlogImageRenderer({ block, editor }) {
     try {
       const { compressBlogImage } = await import('../../../utils/compressImage');
       const { blob } = await compressBlogImage(file);
-      const formData = new FormData();
-      formData.append('file', blob, `img_${Date.now()}.webp`);
-      formData.append('type', 'image');
-      if (blogId) formData.append('blogId', blogId);
-      const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
-      editor.updateBlock(block.id, { props: { url: data.url, _mediaId: data.id || '', _uploading: '' } });
+      const data = await enqueueMediaUpload(blob, {
+        id: uploadJobId,
+        filename: `img_${uploadJobId}.webp`,
+        type: 'image',
+        blogId,
+      });
+      editor.updateBlock(block.id, { props: { url: data.url, _mediaId: data.id || '', _uploading: '', _uploadJobId: '' } });
     } catch (err) {
       console.error('Upload failed:', err);
       editor.updateBlock(block.id, { props: { _uploading: 'error' } });
@@ -259,6 +272,7 @@ function BlogImageRenderer({ block, editor }) {
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <path d="M21 15l-5-5L5 21" />
               </svg>
+              {_uploading === 'uploading' && <span className="mt-2 animate-pulse text-xs font-semibold">Uploading image…</span>}
             </div>
           </div>
           <div className="blog-img-skel-caption">
