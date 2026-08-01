@@ -20,8 +20,8 @@ LLM_MAX_TOKENS_SEARCH = 2500
 LLM_MODEL = LLM_MODEL_CHAT
 
 # ── Repository ──────────────────────────────────────
-REPO = "elixpo/url.elixpo"
-PROJECT_NAME = "url.elixpo"
+REPO = "elixpo/lixrl.com"
+PROJECT_NAME = "lixrl.com"
 PROJECT_DESCRIPTION = "Elixpo URL shortener"
 
 # ── GitHub Projects V2 ──────────────────────────────
