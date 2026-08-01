@@ -42,7 +42,7 @@ jobs:
       - run: pip install -e .
       - name: Decide and publish merge discussion
         env:
-          GITHUB_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           ELIXPO_DISCUSSIONS_REPOSITORY: ${{ github.repository }}
         run: python -m agents.discussions merge
@@ -60,7 +60,7 @@ jobs:
       - run: pip install -e .
       - name: Publish weekly technical Q&A
         env:
-          GITHUB_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           ELIXPO_DISCUSSIONS_REPOSITORY: ${{ github.repository }}
         run: python -m agents.discussions qna
@@ -78,7 +78,7 @@ jobs:
       - run: pip install -e .
       - name: Reply to eligible @elixpoo mention
         env:
-          GITHUB_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           ELIXPO_DISCUSSIONS_REPOSITORY: ${{ github.repository }}
         run: python -m agents.discussions respond
