@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
-import { getSession } from '../../../../lib/auth';
+import { getOAuthConfig, getSession } from '../../../../lib/auth';
 
 export async function GET() {
   const session = await getSession();
@@ -16,6 +16,31 @@ export async function GET() {
       const { getDB } = await import('../../../../lib/cloudflare');
       const db = getDB();
       dbReached = true;
+
+      // Best-effort reconciliation covers missed/retried webhooks and existing
+      // sessions created before username propagation was implemented. This runs
+      // only on the five-minute profile-cache miss, not on every client request.
+      if (session.accessToken) {
+        try {
+          const upstream = await fetch(getOAuthConfig().userInfoUrl, {
+            cache: 'no-store',
+            headers: { Authorization: `Bearer ${session.accessToken}` },
+          });
+          if (upstream.ok) {
+            const account = await upstream.json();
+            const { syncAccountProfile } = await import('../../../../lib/accountProfileSync');
+            await syncAccountProfile(db, {
+              userId: session.userId,
+              username: account.username,
+              email: account.email,
+              displayName: account.display_name || account.displayName || '',
+            });
+          }
+        } catch (error) {
+          console.warn('[auth/me] Account reconciliation skipped:', error?.message || error);
+        }
+      }
+
       return db.prepare(`
         SELECT id, email, username, display_name, bio, avatar_url, avatar_r2_key, banner_r2_key, locale,
                tier, storage_used_bytes, ai_usage_today, ai_usage_date,
