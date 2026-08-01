@@ -71,6 +71,22 @@ export default function DocsLayout({
         case 'pre':
           lines.push('', '```', (el.textContent || '').trim(), '```', '');
           return;
+        case 'table': {
+          const rows = Array.from(el.querySelectorAll('tr')).map((row) =>
+            Array.from(row.querySelectorAll('th, td')).map((cell) =>
+              (cell.textContent || '').trim().replace(/\|/g, '\\|'),
+            ),
+          );
+          if (rows.length > 0) {
+            lines.push('', `| ${rows[0].join(' | ')} |`);
+            lines.push(`| ${rows[0].map(() => '---').join(' | ')} |`);
+            rows.slice(1).forEach((row) =>
+              lines.push(`| ${row.join(' | ')} |`),
+            );
+            lines.push('');
+          }
+          return;
+        }
         case 'p':
           if (text) lines.push(text, '');
           return;
