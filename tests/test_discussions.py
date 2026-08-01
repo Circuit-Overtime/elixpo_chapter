@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 
 import pytest
-
 from agents.discussions.core import (
     UnsafeDraft,
     contains_mention,
