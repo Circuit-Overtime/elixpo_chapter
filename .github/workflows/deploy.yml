@@ -2,7 +2,8 @@
 # (Manual / full releases — npm + VS Code + version bump — stay in deploy.sh.)
 #
 # Required repo secrets:
-#   CLOUDFLARE_API_TOKEN   — token with "Cloudflare Pages: Edit" permission
+#   CLOUDFLARE_API_TOKEN   — token with "Cloudflare Pages: Edit" and
+#                            "Workers Scripts: Edit" permissions
 #   CLOUDFLARE_ACCOUNT_ID  — your Cloudflare account id
 #   ELIXPO_PAY_API_KEY     — Elixpo Pay secret key (for the post-deploy catalog sync)
 name: Deploy
@@ -37,6 +38,19 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install collaboration worker dependencies
+        run: npm ci --prefix worker/collab
+
+      # Deploy the authenticated WebSocket endpoint before the Pages client
+      # that consumes it. Keeping these releases together prevents the client
+      # and worker authentication protocols from drifting apart.
+      - name: Deploy collaboration worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config worker/collab/wrangler.toml
 
       - name: Build for Cloudflare Pages
         run: npm run pages:build

@@ -233,6 +233,18 @@ export async function POST(request) {
       url = `/${session.profile?.username || 'user'}/${slug}`;
     }
 
+    // Collaboration invitations become actionable only when their reader URL
+    // exists. The helper is status-gated and deduplicated, so ordinary updates
+    // cannot create repeated notifications.
+    if (targetStatus === 'published' || targetStatus === 'unlisted') {
+      try {
+        const { notifyPendingBlogCollaborators } = await import('../../../../lib/blogInviteNotifications');
+        await notifyPendingBlogCollaborators(db, slugid, existing?.author_id || session.userId);
+      } catch (e) {
+        console.error('Failed to notify pending collaborators:', e?.message || e);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       slugid,

@@ -19,13 +19,31 @@ export async function GET(request) {
 
     const [notifications, unreadCount] = await Promise.all([
       db.prepare(`
-        SELECT id, type, actor_id, actor_name, actor_avatar, target_id, target_title, target_url, read, created_at
-        FROM notifications WHERE user_id = ?
-        ORDER BY created_at DESC LIMIT ? OFFSET ?
+        SELECT n.id, n.type, n.actor_id, n.actor_name, n.actor_avatar,
+          n.target_id, n.target_title, n.target_url, n.read, n.created_at,
+          CASE
+            WHEN n.type = 'blog_invite' THEN COALESCE(bc.status, 'declined')
+            ELSE NULL
+          END AS invite_status
+        FROM notifications n
+        LEFT JOIN blogs b
+          ON n.type = 'blog_invite' AND b.id = n.target_id
+        LEFT JOIN blog_co_authors bc
+          ON n.type = 'blog_invite'
+          AND bc.blog_id = n.target_id
+          AND bc.user_id = n.user_id
+        WHERE n.user_id = ?
+          AND (n.type <> 'blog_invite' OR b.status IN ('published', 'unlisted'))
+        ORDER BY n.created_at DESC LIMIT ? OFFSET ?
       `).bind(session.userId, limit, offset).all(),
-      db.prepare(
-        'SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND read = 0'
-      ).bind(session.userId).first(),
+      db.prepare(`
+        SELECT COUNT(*) AS c
+        FROM notifications n
+        LEFT JOIN blogs b
+          ON n.type = 'blog_invite' AND b.id = n.target_id
+        WHERE n.user_id = ? AND n.read = 0
+          AND (n.type <> 'blog_invite' OR b.status IN ('published', 'unlisted'))
+      `).bind(session.userId).first(),
     ]);
 
     return NextResponse.json({

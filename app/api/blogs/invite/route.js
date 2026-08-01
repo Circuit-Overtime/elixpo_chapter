@@ -104,22 +104,11 @@ export async function POST(request) {
       ON CONFLICT(blog_id, user_id) DO UPDATE SET role = excluded.role
     `).bind(slugid, invitee.id, role).run();
 
-    // Notify the invitee. Link to the canonical reader URL (slug-based) with an
-    // ?invite=<blogId> param so the reader page can show an accept/decline modal
-    // over a blurred backdrop. target_id stays the blog id for the accept API.
+    // Draft invitations stay silent. Once the blog has a public reader URL,
+    // this sends the notification; repeated calls are deduplicated.
     try {
-      const inviter = await db.prepare('SELECT username, display_name, avatar_url FROM users WHERE id = ?').bind(session.userId).first();
-      const blogInfo = await db.prepare('SELECT title FROM blogs WHERE id = ?').bind(slugid).first();
-      const { notify } = await import('../../../../lib/notify');
-      const { getBlogCanonicalPath } = await import('../../../../lib/blogUrl');
-      const path = await getBlogCanonicalPath(db, slugid);
-      const targetUrl = `${path}${path.includes('?') ? '&' : '?'}invite=${encodeURIComponent(slugid)}`;
-      await notify(db, {
-        userId: invitee.id, type: 'blog_invite',
-        actorId: session.userId, actorName: inviter?.display_name || inviter?.username,
-        actorAvatar: inviter?.avatar_url, targetId: slugid,
-        targetTitle: blogInfo?.title, targetUrl,
-      });
+      const { notifyPendingBlogCollaborators } = await import('../../../../lib/blogInviteNotifications');
+      await notifyPendingBlogCollaborators(db, slugid, session.userId);
     } catch {}
 
     return NextResponse.json({ ok: true, userId: invitee.id, username: invitee.username, role, status: 'pending' });
@@ -190,22 +179,27 @@ export async function DELETE(request) {
   if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
   const { slugid, userId } = await request.json();
-  if (!slugid || !userId) return NextResponse.json({ error: 'Missing slugid or userId' }, { status: 400 });
+  if (!slugid) return NextResponse.json({ error: 'Missing slugid' }, { status: 400 });
 
   try {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
 
-    // Allow self-removal (leaving) or admin removal
-    if (userId === session.userId) {
-      await db.prepare('DELETE FROM blog_co_authors WHERE blog_id = ? AND user_id = ?').bind(slugid, userId).run();
+    // Omitting userId means the invitee is declining their own invitation.
+    const effectiveUserId = userId || session.userId;
+
+    // Allow self-removal (leaving/declining) or admin removal.
+    if (effectiveUserId === session.userId) {
+      await db.prepare('DELETE FROM blog_co_authors WHERE blog_id = ? AND user_id = ?')
+        .bind(slugid, effectiveUserId).run();
       return NextResponse.json({ ok: true });
     }
 
     const { allowed } = await canManage(db, slugid, session.userId);
     if (!allowed) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
-    await db.prepare('DELETE FROM blog_co_authors WHERE blog_id = ? AND user_id = ?').bind(slugid, userId).run();
+    await db.prepare('DELETE FROM blog_co_authors WHERE blog_id = ? AND user_id = ?')
+      .bind(slugid, effectiveUserId).run();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: 'Failed to remove' }, { status: 500 });
