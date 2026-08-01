@@ -1211,6 +1211,28 @@ startLabelEdit(labelElement) {
                             shape.y = this.y + relTY * this.height;
                             break;
                         }
+                        case 'freehandStroke': {
+                            // Pie sectors are editable closed freehand polygons.
+                            // Scale their source points with the frame so their
+                            // geometry stays attached instead of being clipped
+                            // at its previous canvas coordinates.
+                            if (Array.isArray(shape.points)) {
+                                shape.points = shape.points.map(point => {
+                                    if (!Array.isArray(point) || point.length < 2) return point;
+                                    const relPX = (point[0] - oldX) / oldW;
+                                    const relPY = (point[1] - oldY) / oldH;
+                                    return [
+                                        this.x + relPX * this.width,
+                                        this.y + relPY * this.height,
+                                        point[2] || 0.5
+                                    ];
+                                });
+                                shape._moveOffsetX = 0;
+                                shape._moveOffsetY = 0;
+                                if (typeof shape.draw === 'function') shape.draw();
+                            }
+                            break;
+                        }
                     }
 
                     if (typeof shape.updateAttachedArrows === 'function') {
