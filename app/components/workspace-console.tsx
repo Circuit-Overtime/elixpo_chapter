@@ -10,6 +10,10 @@ import {
     Button,
     Chip,
     CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     FormControl,
     IconButton,
     MenuItem,
@@ -785,6 +789,7 @@ function MembersCard({
 }) {
     const [busyId, setBusyId] = useState<string | null>(null);
     const [msg, setMsg] = useState<Msg | null>(null);
+    const [removeMember, setRemoveMember] = useState<Member | null>(null);
 
     const mutate = useCallback(
         async (id: string, init: RequestInit, okText?: string) => {
@@ -828,11 +833,6 @@ function MembersCard({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ role: nextRole }),
         });
-    }
-
-    function remove(id: string) {
-        if (!window.confirm("Remove this member from the workspace?")) return;
-        void mutate(id, { method: "DELETE" });
     }
 
     return (
@@ -976,7 +976,7 @@ function MembersCard({
                                         <Tooltip title="Remove member">
                                             <span>
                                                 <IconButton
-                                                    onClick={() => remove(m.id)}
+                                                    onClick={() => setRemoveMember(m)}
                                                     disabled={busy}
                                                     size="small"
                                                     sx={{
@@ -1020,7 +1020,124 @@ function MembersCard({
             </Stack>
 
             {msg && <MessageLine msg={msg} />}
+
+            <RemoveMemberDialog
+                member={removeMember}
+                onClose={() => setRemoveMember(null)}
+                onRemoved={() => {
+                    setRemoveMember(null);
+                    void onRefresh();
+                }}
+            />
         </GlassCard>
+    );
+}
+
+function RemoveMemberDialog({
+    member,
+    onClose,
+    onRemoved,
+}: {
+    member: Member | null;
+    onClose: () => void;
+    onRemoved: () => void;
+}) {
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (member) {
+            setBusy(false);
+            setError(null);
+        }
+    }, [member]);
+
+    async function confirm() {
+        if (!member || busy) return;
+        setBusy(true);
+        setError(null);
+        try {
+            const res = await fetch(`/api/workspace/members/${member.id}`, { method: "DELETE" });
+            const data = (await res.json().catch(() => null)) as {
+                error?: string;
+                message?: string;
+            } | null;
+            if (!res.ok) {
+                throw new Error(friendlyApiError(data, "Could not remove the member."));
+            }
+            onRemoved();
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Could not remove the member.");
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    return (
+        <Dialog
+            open={member != null}
+            onClose={() => !busy && onClose()}
+            fullWidth
+            maxWidth="xs"
+            slotProps={{
+                paper: {
+                    sx: {
+                        background: "var(--surface)",
+                        border: `1px solid ${BORDER}`,
+                        borderRadius: "16px",
+                        backgroundImage: "none",
+                    },
+                },
+            }}
+        >
+            <DialogTitle sx={{ color: TEXT, fontWeight: 800, fontSize: "1.1rem" }}>
+                Remove member
+            </DialogTitle>
+            <DialogContent>
+                <Typography sx={{ color: MUTED, fontSize: "0.9rem", lineHeight: 1.6 }}>
+                    Remove <strong style={{ color: TEXT }}>{member?.name || member?.email}</strong>{" "}
+                    from the workspace? They will lose access to all workspace resources
+                    immediately.
+                </Typography>
+                {error && (
+                    <Stack direction="row" spacing={0.8} alignItems="flex-start" sx={{ mt: 1.6 }}>
+                        <ErrorOutlineIcon sx={{ fontSize: 16, color: "var(--danger)", mt: 0.2 }} />
+                        <Typography sx={{ fontSize: "0.82rem", color: "var(--danger)" }}>
+                            {error}
+                        </Typography>
+                    </Stack>
+                )}
+            </DialogContent>
+            <DialogActions sx={{ px: 3, py: 2.2, gap: 1 }}>
+                <Button onClick={onClose} disabled={busy} sx={ghostButtonSx}>
+                    Cancel
+                </Button>
+                <Button
+                    onClick={confirm}
+                    disabled={busy}
+                    sx={{
+                        ...gradientButtonSx,
+                        minWidth: 100,
+                        background: "linear-gradient(135deg, #f87171 0%, #ef4444 100%)",
+                        boxShadow: "0 8px 24px rgba(239,68,68,0.3)",
+                        "&:hover": {
+                            background: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)",
+                        },
+                        "&.Mui-disabled": {
+                            background: "var(--overlay)",
+                            color: "var(--fg-faint)",
+                            boxShadow: "none",
+                        },
+                    }}
+                >
+                    {busy ? (
+                        <CircularProgress size={18} sx={{ color: "var(--fg-muted)" }} />
+                    ) : (
+                        "Remove"
+                    )}
+                </Button>
+            </DialogActions>
+        </Dialog>
     );
 }
 
