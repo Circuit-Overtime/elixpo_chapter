@@ -82,7 +82,7 @@ export default {
     // logic, so it calls back into the Pages app's /v1/internal/redeliver, which
     // owns the full pipeline. The shared SMTP_SENDER_SECRET authenticates us.
     async queue(batch, env) {
-        const isRetryQueue = batch.queue && batch.queue.endsWith("-retry");
+        const isRetryQueue = batch.queue?.endsWith("-retry");
         for (const msg of batch.messages) {
             const deliveryId = msg.body?.deliveryId;
             if (!deliveryId) {
