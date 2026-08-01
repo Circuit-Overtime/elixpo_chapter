@@ -28,7 +28,7 @@ CCR creates multiple routes with that same key. No route has a separate credenti
 
 Token ceilings are centralized in `.github/ci_config.py`. The prompt directs the agent to read the prepared context once, use targeted repository reads, and avoid search unless local context is insufficient. RTK compresses supported shell output before it reaches the model.
 
-PR context is bounded to metadata, diff statistics, and changed-file names. The agent requests per-file diffs only when needed; the workflow never injects the full patch. Agent execution is capped at 20 turns and 12 minutes.
+PR context is bounded to metadata, diff statistics, and changed-file names. The agent requests per-file diffs only when needed; the workflow never injects the full patch. Agent execution is capped at 32 turns and 12 minutes, with prompt-level budgets of 12 tool calls for questions/reviews and 30 for implementation.
 
 The setup script also maps the harness's Sonnet, Opus, and Haiku aliases to these configured free models. This prevents the upstream API from receiving an unavailable Anthropic model name after CCR has selected a Pollinations provider.
 

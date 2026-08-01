@@ -268,7 +268,7 @@ jobs:
             echo
             echo "Infer intent and finish the smallest complete path: answer a question; triage or clarify; update issue/PR title or description; inspect/review a PR; or implement requested repository changes. If an issue has a linked writable PR, update that branch. Otherwise implementation from an issue uses elixpo/issue-$TARGET_NUMBER-<hex>, pushes it, and opens one PR whose body ends with Fixes #$TARGET_NUMBER."
             echo
-            echo "Tool policy: use tools only when they advance the request. Start from provided context instead of rediscovering the repository. Prefer rg and targeted reads. RTK compresses supported shell output. Use the background/code route only for actual code work, thinking only for complex reasoning, and web search only when repository context cannot answer a time-sensitive question. Run focused checks proportional to risk."
+            echo "Tool policy: use tools only when they advance the request. Start from provided context instead of rediscovering the repository. Prefer rg and targeted reads. RTK compresses supported shell output. Use the background/code route only for actual code work, thinking only for complex reasoning, and web search only when repository context cannot answer a time-sensitive question. Run focused checks proportional to risk. For questions and reviews, use at most 12 tool calls and then publish the result. For implementation, use at most 30 tool calls. Do not inspect generated router configuration, credentials, workflow internals, or repeat checks already represented by the prepared context unless the request explicitly concerns them."
             echo
             echo "Repository safety: obey AGENTS.md and .claude/commands. Never push main, force-push, merge, expose secrets, modify another repository, or act outside this issue/PR. task.json.write_allowed must be true before changing an existing PR branch. Preserve closing references when editing PR bodies. One concise public comment/review is enough; avoid progress spam."
             echo
@@ -289,10 +289,10 @@ jobs:
           anthropic_api_key: ccr-pollinations
           github_token: ${{ secrets.CI_AGENT_TOKEN }}
           branch_prefix: elixpo/
-          show_full_output: ${{ github.event_name == 'workflow_dispatch' }}
+          show_full_output: false
           trigger_phrase: "@elixpoo"
           prompt: ${{ steps.prompt.outputs.body }}
-          claude_args: --permission-mode bypassPermissions --max-turns 20
+          claude_args: --permission-mode bypassPermissions --max-turns 32
           additional_permissions: |
             actions: read
 
