@@ -2,20 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readUploadRequest } from '../lib/mediaUploadRequest.js';
 
-test('reads durable raw image uploads without multipart parsing', async () => {
+test('reads durable JSON image uploads without multipart parsing', async () => {
   const request = new Request('https://blogs.elixpo.com/api/media/upload', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'image/webp',
-      'X-Lix-Media-Type': 'cover',
-      'X-Lix-Blog-Id': 'acirznth',
-      'X-Lix-Upload-Id': 'upload-1',
-    },
-    body: new Uint8Array([1, 2, 3]),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      data: 'AQID',
+      mimeType: 'image/webp',
+      type: 'cover',
+      blogId: 'acirznth',
+      uploadId: 'upload-1',
+    }),
   });
 
   const upload = await readUploadRequest(request);
-  assert.equal(upload.transport, 'raw');
+  assert.equal(upload.transport, 'json');
   assert.equal(upload.mediaType, 'cover');
   assert.equal(upload.blogId, 'acirznth');
   assert.equal(upload.requestedUploadId, 'upload-1');
@@ -35,4 +36,14 @@ test('keeps multipart uploads compatible for existing callers', async () => {
   assert.equal(upload.mediaType, 'avatar');
   assert.equal(upload.file.type, 'image/png');
   assert.equal(upload.file.size, 2);
+});
+
+test('rejects malformed JSON image bodies', async () => {
+  const request = new Request('https://blogs.elixpo.com/api/media/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: 'not base64!', mimeType: 'image/webp' }),
+  });
+
+  await assert.rejects(() => readUploadRequest(request), /Invalid base64 image body/);
 });
