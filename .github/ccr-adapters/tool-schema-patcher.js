@@ -55,7 +55,9 @@ class ToolSchemaPatcher {
             // Tool shipped a parameters object but it's missing required fields
             // — qwen-coder also rejects `{}` with no `type`.
             if (!fn.parameters.type) fn.parameters.type = "object";
-            if (fn.parameters.type === "object" && fn.parameters.properties == null) {
+            const isObjectSchema = fn.parameters.type === "object";
+            const hasNoProperties = fn.parameters.properties == null;
+            if (isObjectSchema && hasNoProperties) {
                 fn.parameters.properties = {};
             }
         }
