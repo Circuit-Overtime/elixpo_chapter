@@ -1,32 +1,37 @@
 @import "tailwindcss";
 
 @theme {
-  /* Warm light is the default across the product. The historical token
-   * name `accent-blue` is retained for compatibility, but now resolves to
-   * a muted sage so existing buttons stop appearing blue. */
-  --color-surface: #f4f1e9;
-  --color-surface-hover: #ebe7dc;
-  --color-surface-active: #dcd8ca;
-  --color-surface-dark: #efebe1;
-  --color-surface-card: #fbfaf6;
-  --color-accent: #a26f55;
-  --color-accent-dim: #d8d0c1;
-  --color-accent-blue: #6f846f;
-  --color-accent-blue-hover: #5f765f;
-  --color-text-primary: #30342f;
-  --color-text-secondary: #474c46;
-  --color-text-muted: #666c64;
-  --color-text-dim: #81867e;
-  --color-border: #d6d1c5;
-  --color-border-light: #c7c1b4;
-  --color-border-accent: #879a87;
+  /* Public pages were designed on a dark surface, so their global tokens
+   * stay dark. Canvas-only selectors below own both complete canvas themes. */
+  --color-surface: #232329;
+  --color-surface-hover: #343448;
+  --color-surface-active: #444450;
+  --color-surface-dark: #1a1a20;
+  --color-surface-card: #1e1e28;
+  --color-accent: #c873e4;
+  --color-accent-dim: #444450;
+  --color-accent-blue: #8ea28e;
+  --color-accent-blue-hover: #a2b3a2;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e8e8ee;
+  --color-text-muted: #b8b8c8;
+  --color-text-dim: #a0a0b0;
+  --color-border: #333333;
+  --color-border-light: #3a3a50;
+  --color-border-accent: #748874;
 }
+
+body.canvas-mode,
 body.canvas-mode.theme-light {
   --color-surface: #f4f3ee;
   --color-surface-hover: #eceae3;
   --color-surface-active: #dcd9cd;
   --color-surface-dark: #f4f3ee;
   --color-surface-card: #fbfaf6;
+  --color-accent: #a26f55;
+  --color-accent-dim: #d8d0c1;
+  --color-accent-blue: #6f846f;
+  --color-accent-blue-hover: #5f765f;
   --color-text-primary: #38384e;
   --color-text-secondary: #4a4a60;
   --color-text-muted: #62627a;
@@ -44,6 +49,10 @@ body.canvas-mode.theme-dark {
   --color-surface-active: #444480;
   --color-surface-dark: #20202a;
   --color-surface-card: #292932;
+  --color-accent: #c873e4;
+  --color-accent-dim: #444450;
+  --color-accent-blue: #8ea28e;
+  --color-accent-blue-hover: #a2b3a2;
   --color-text-primary: #f0f0f5;
   --color-text-secondary: #d8d8e0;
   --color-text-muted: #b0b0c0;
@@ -80,8 +89,8 @@ body.canvas-mode.theme-dark {
 /* Global utilities */
 body {
   margin: 0;
-  background: #faf9f5;
-  color: #30342f;
+  background: #13171C;
+  color: #ffffff;
   font-family: "lixFont", sans-serif;
   font-size: 14px;
 }
@@ -100,7 +109,7 @@ body.canvas-mode {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #bbb7ac;
+  background: #2a2a3a;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -113,7 +122,7 @@ body.canvas-mode {
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #bbb7ac transparent;
+  scrollbar-color: #2a2a3a transparent;
 }
 
 /* Hide scrollbars on specific elements */

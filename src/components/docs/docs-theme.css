@@ -29,6 +29,7 @@
  * Copied from blogs.elixpo/app/globals.css `:root`. Scoped to
  * `body.canvas-mode` so they only apply inside the canvas page and
  * don't leak to landing / blog / pricing on the sketch site. */
+body.canvas-mode,
 body.canvas-mode.theme-light {
   --bg-base: #f4f4f6;
   --bg-app: #ffffff;
