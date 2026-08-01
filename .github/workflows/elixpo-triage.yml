@@ -21,7 +21,7 @@ jobs:
       issues: write
       pull-requests: write
     env:
-      AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+      AGENT_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
       POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY_GITHUB }}
       REPO: ${{ github.repository }}
 
@@ -41,7 +41,7 @@ jobs:
           workflow: artifact-update.yml
           path: .elixpo-context
           if_no_artifact_found: warn
-          github_token: ${{ secrets.CI_AGENT_TOKEN }}
+          github_token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
 
       - name: Complete sparse issue description
         if: github.event_name == 'issues'
