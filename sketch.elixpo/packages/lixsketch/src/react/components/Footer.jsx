@@ -23,6 +23,10 @@ export default function Footer() {
     if (window.zoomReset) window.zoomReset()
   }, [])
 
+  const handleZoomFit = useCallback(() => {
+    if (window.zoomFit) window.zoomFit()
+  }, [])
+
   const handleUndo = useCallback(() => {
     if (window.undo) window.undo()
   }, [])
@@ -56,6 +60,15 @@ export default function Footer() {
 
       {/* Zoom controls */}
       <div className="flex items-center bg-surface rounded-lg overflow-hidden">
+        <button
+          onClick={handleZoomFit}
+          aria-label="Fit canvas to content"
+          title="Fit to Content (Shift+1)"
+          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+        >
+          <i className="bx bx-target-lock text-lg" />
+        </button>
+        <div className="w-px h-5 bg-border-light" />
         <button
           onClick={handleZoomOut}
           title="Zoom Out (Ctrl+-)"

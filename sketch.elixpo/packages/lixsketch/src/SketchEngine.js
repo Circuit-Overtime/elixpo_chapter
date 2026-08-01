@@ -57,6 +57,7 @@ class SketchEngine {
         // Core SVG reference
         window.svg = this.svg;
         window.freehandCanvas = this.svg;
+        window.__sketchInteractionReady = false;
 
         // RoughJS from npm
         window.rough = rough;
@@ -288,6 +289,14 @@ class SketchEngine {
             if (eventDispatcher.initEventDispatcher) {
                 eventDispatcher.initEventDispatcher(this.svg);
             }
+            window.__sketchInteractionReady = true;
+
+            // Restore only after pointer handlers are bound. This still keeps
+            // first canvas paint ahead of optional AI/graph/LixScript chunks,
+            // while guaranteeing every visible restored shape is immediately
+            // selectable and draggable.
+            const sceneSerializer = await import('./core/SceneSerializer.js');
+            if (sceneSerializer.initSceneSerializer) sceneSerializer.initSceneSerializer();
 
             // Import standalone tools
             await Promise.all([
@@ -313,10 +322,6 @@ class SketchEngine {
             // Initialize graph engine bridge
             const graphEngine = await import('./core/GraphEngine.js');
             if (graphEngine.initGraphEngine) graphEngine.initGraphEngine();
-
-            // Initialize scene serializer bridge
-            const sceneSerializer = await import('./core/SceneSerializer.js');
-            if (sceneSerializer.initSceneSerializer) sceneSerializer.initSceneSerializer();
 
             // Initialize layer ordering
             const layerOrder = await import('./core/LayerOrder.js');
@@ -470,6 +475,8 @@ class SketchEngine {
         window.shapes = [];
         window.currentShape = null;
         window.lastMousePos = null;
+        window.__sketchInteractionReady = false;
+        delete window.__sceneSerializer;
         this._modules = {};
         this._initialized = false;
         console.log('[SketchEngine] Cleaned up');

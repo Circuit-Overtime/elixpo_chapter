@@ -107,7 +107,7 @@ export default function FrameSidebar() {
           type="text"
           value={frameName}
           onChange={updateName}
-          className="w-32 px-2.5 py-1.5 bg-white/[0.05] border border-white/[0.1] rounded-lg text-white text-xs outline-none focus:border-[#5B57D1]/50 transition-all duration-150 font-[lixFont]"
+          className="w-32 px-2.5 py-1.5 bg-surface-hover border border-border-light rounded-lg text-text-primary text-xs outline-none focus:border-[#5B57D1]/50 transition-all duration-150 font-[lixFont]"
           spellCheck={false}
         />
       </ToolbarButton>
@@ -125,8 +125,8 @@ export default function FrameSidebar() {
               title={s.label}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${
                 fillStyle === s.id
-                  ? 'bg-white/[0.12] text-white'
-                  : 'text-text-muted hover:text-white hover:bg-white/[0.06]'
+                  ? 'bg-surface-active text-text-primary'
+                  : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
               }`}
             >
               <i className={`bx ${s.icon} text-sm`} />
@@ -198,7 +198,7 @@ export default function FrameSidebar() {
               }
               input.click()
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-white transition-all duration-100"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-surface-hover hover:text-text-primary transition-all duration-100"
           >
             <i className="bx bx-upload text-sm" />
             Set Image
@@ -211,7 +211,7 @@ export default function FrameSidebar() {
                 shape.draw()
               }
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-red-400 transition-all duration-100"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-surface-hover hover:text-red-400 transition-all duration-100"
           >
             <i className="bx bx-x text-sm" />
             Remove
@@ -240,8 +240,8 @@ export default function FrameSidebar() {
                     }}
                     className={`px-2 py-1 rounded-md text-[10px] transition-all ${
                       shape._frameImageFit === f.id
-                        ? 'bg-white/[0.12] text-white'
-                        : 'text-text-muted hover:text-white hover:bg-white/[0.06]'
+                        ? 'bg-surface-active text-text-primary'
+                        : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
                     }`}
                   >{f.label}</button>
                 ))}
@@ -254,7 +254,7 @@ export default function FrameSidebar() {
       <Divider />
 
       <ToolbarButton icon="bxs-expand" tooltip="Actions">
-        <button onClick={resizeToFit} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-white/[0.06] hover:text-white transition-all duration-100">
+        <button onClick={resizeToFit} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-text-secondary text-xs hover:bg-surface-hover hover:text-text-primary transition-all duration-100">
           <i className="bx bxs-expand text-sm" />
           Resize to Fit
         </button>

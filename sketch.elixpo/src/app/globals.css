@@ -1,9 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  /* Site default = dark (landing, blog, /pricing, etc.). The canvas
-   * page overrides these to light via `body.canvas-mode` below — keeps
-   * the public-facing pages on the original dark palette. */
+  /* Site and canvas default to dark. Explicit theme classes below switch
+   * every canvas token together, avoiding a mixed first paint. */
   --color-surface: #232329;
   --color-surface-hover: #343448;
   --color-surface-active: #444480;
@@ -22,7 +21,7 @@
   --color-border-light: #3a3a50;
   --color-border-accent: #5555a0;
 }
-body.canvas-mode {
+body.canvas-mode.theme-light {
   --color-surface: #f4f3ee;
   --color-surface-hover: #eceae3;
   --color-surface-active: #dcd9cd;
@@ -39,6 +38,7 @@ body.canvas-mode {
   --lixsketch-grid-major: rgba(60, 60, 80, 0.14);
 }
 
+body.canvas-mode,
 body.canvas-mode.theme-dark {
   --color-surface: #25252f;
   --color-surface-hover: #35354a;

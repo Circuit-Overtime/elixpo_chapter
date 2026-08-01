@@ -87,7 +87,7 @@ export default function ArrowSidebar() {
         <div className="flex items-center gap-1">
           {HEAD_STYLES.map((h) => (
             <button key={h.value} onClick={() => updateHead(h.value)}
-              className={`w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${headStyle === h.value ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-secondary hover:bg-white/[0.06]'}`}
+              className={`w-10 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${headStyle === h.value ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-secondary hover:bg-surface-hover'}`}
             >
               <SvgIcon svg={h.svg} />
             </button>
@@ -111,7 +111,7 @@ export default function ArrowSidebar() {
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-secondary hover:bg-white/[0.06]'}`}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-secondary hover:bg-surface-hover'}`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
@@ -126,7 +126,7 @@ export default function ArrowSidebar() {
         <div className="flex items-center gap-1">
           {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
             <button key={s.v} onClick={() => updateOutline(s.v)}
-              className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${outlineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-white/[0.06]'}`}
+              className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${outlineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-surface-hover'}`}
             >
               <svg width="28" height="4" viewBox="0 0 28 4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" /></svg>
             </button>
@@ -146,19 +146,19 @@ export default function ArrowSidebar() {
             { v: 'elbow', i: 'bxs-network-chart', l: 'Elbow' },
           ].map((a) => (
             <button key={a.v} onClick={() => updateType(a.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${arrowType === a.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${arrowType === a.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-surface-hover'}`}
             >
               <i className={`bx ${a.i} text-sm`} /> {a.l}
             </button>
           ))}
           {arrowType === 'curved' && (
             <>
-              <div className="w-full h-px bg-white/[0.08] my-1" />
+              <div className="w-full h-px bg-border-light my-1" />
               <p className="text-[9px] text-text-dim uppercase tracking-wider mb-1">Curvature</p>
               <div className="flex items-center gap-1">
                 {[{ v: 8, l: 'Lo' }, { v: 20, l: 'Md' }, { v: 40, l: 'Hi' }].map((c) => (
                   <button key={c.v} onClick={() => updateCurvature(c.v)}
-                    className={`flex-1 py-1 rounded-md text-xs text-center transition-all duration-100 ${curvature === c.v ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-secondary hover:bg-white/[0.06]'}`}
+                    className={`flex-1 py-1 rounded-md text-xs text-center transition-all duration-100 ${curvature === c.v ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-secondary hover:bg-surface-hover'}`}
                   >{c.l}</button>
                 ))}
               </div>

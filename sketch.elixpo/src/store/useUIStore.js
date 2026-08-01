@@ -1,4 +1,47 @@
 import { create } from 'zustand'
+import useSketchStore from '@/store/useSketchStore'
+
+export const THEME_CANVAS_BACKGROUNDS = {
+  dark: '#13171C',
+  light: '#faf9f5',
+}
+
+export function resolveTheme(theme) {
+  if (theme !== 'system') return theme === 'light' ? 'light' : 'dark'
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function themeColor(value, resolved) {
+  if (!value || typeof value !== 'string') return value
+  const normalized = value.toLowerCase().trim()
+  if (resolved === 'dark' && ['#000', '#000000', 'black', '#1a1a2e'].includes(normalized)) {
+    return '#ffffff'
+  }
+  if (resolved === 'light' && ['#fff', '#ffffff', 'white'].includes(normalized)) {
+    return '#1a1a2e'
+  }
+  return value
+}
+
+/** Normalize serialized theme-default colors before constructors draw them. */
+export function normalizeSceneColorsForTheme(sceneData, resolved) {
+  if (!Array.isArray(sceneData?.shapes)) return sceneData
+  for (const shape of sceneData.shapes) {
+    if (shape.options) {
+      shape.options.stroke = themeColor(shape.options.stroke, resolved)
+      shape.options.fill = themeColor(shape.options.fill, resolved)
+    }
+    for (const htmlKey of ['groupHTML', 'elementHTML']) {
+      if (typeof shape[htmlKey] !== 'string') continue
+      shape[htmlKey] = shape[htmlKey].replace(
+        /\b(fill|stroke)=(['"])(#fff(?:fff)?|white|#000(?:000)?|black|#1a1a2e)\2/gi,
+        (match, attribute, quote, color) => `${attribute}=${quote}${themeColor(color, resolved)}${quote}`,
+      )
+    }
+  }
+  return sceneData
+}
 
 /**
  * Swap black↔white colors on all shapes when theme changes.
@@ -9,9 +52,13 @@ function invertShapeColors(prevResolved, nextResolved) {
   const shapes = window.shapes
   if (!shapes || shapes.length === 0) return
 
-  // Going light → dark: #000 → #fff.  Going dark → light: #fff → #000.
-  const from = nextResolved === 'light' ? '#ffffff' : '#000000'
-  const to   = nextResolved === 'light' ? '#000000' : '#ffffff'
+  // The light tools use a near-black default, while older scenes may use
+  // pure black. Treat both as theme-owned colors so existing strokes do not
+  // disappear when the canvas changes underneath them.
+  const fromColors = nextResolved === 'light'
+    ? new Set(['#ffffff'])
+    : new Set(['#000000', '#1a1a2e'])
+  const to = nextResolved === 'light' ? '#1a1a2e' : '#ffffff'
 
   const normalize = (c) => {
     if (!c || c === 'transparent' || c === 'none') return c
@@ -24,23 +71,34 @@ function invertShapeColors(prevResolved, nextResolved) {
   for (const shape of shapes) {
     let changed = false
     if (shape.options) {
-      if (normalize(shape.options.stroke) === from) {
+      if (fromColors.has(normalize(shape.options.stroke))) {
         shape.options.stroke = to
         changed = true
       }
-      if (normalize(shape.options.fill) === from) {
+      if (fromColors.has(normalize(shape.options.fill))) {
         shape.options.fill = to
         changed = true
       }
     }
     // Text shapes store color directly
-    if (shape.color !== undefined && normalize(shape.color) === from) {
+    if (shape.color !== undefined && fromColors.has(normalize(shape.color))) {
       shape.color = to
       changed = true
     }
-    if (shape.strokeColor !== undefined && normalize(shape.strokeColor) === from) {
+    if (shape.strokeColor !== undefined && fromColors.has(normalize(shape.strokeColor))) {
       shape.strokeColor = to
       changed = true
+    }
+    // Text shapes keep their color in the restored SVG rather than on the
+    // shape object. Update only theme-default fills; explicit user colors
+    // remain untouched.
+    if (shape.group) {
+      shape.group.querySelectorAll('[fill]').forEach((element) => {
+        if (fromColors.has(normalize(element.getAttribute('fill')))) {
+          element.setAttribute('fill', to)
+          changed = true
+        }
+      })
     }
     if (changed && typeof shape.draw === 'function') {
       shape.draw()
@@ -54,23 +112,40 @@ export function applyTheme(theme) {
   // rather than html inline styles so the override:
   //   • only kicks in when body.canvas-mode is present (canvas page),
   //   • doesn't leak across SPA navigations (no persistent inline styles).
-  // The actual token values live in src/app/globals.css under
-  // `body.canvas-mode` (light = default) and
-  // `body.canvas-mode.theme-dark` (toggle override).
+  // The actual token values live in src/app/globals.css under explicit
+  // light/dark canvas selectors; the unclassified first paint is dark.
   const body = document.body
   if (!body) return
-  const resolved = theme === 'system'
-    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    : theme
+  const resolved = resolveTheme(theme)
   body.classList.remove('theme-dark', 'theme-light')
-  if (resolved === 'dark') body.classList.add('theme-dark')
+  body.classList.add(`theme-${resolved}`)
+  body.dataset.resolvedTheme = resolved
+  document.documentElement.style.colorScheme = resolved
+  return resolved
+}
 
-  // SVG canvas background flips with the theme so the artwork lives on
-  // top of a matching surface. Reset it when going dark so the
-  // `canvasBackground` store value (which the user picks from the menu)
-  // takes over again.
-  const svgEl = window.svg
-  if (svgEl) svgEl.style.background = resolved === 'light' ? '#f4f3ee' : ''
+function readStoredTheme() {
+  if (typeof window === 'undefined') return 'dark'
+  try {
+    const prefs = JSON.parse(localStorage.getItem('lix_ui_prefs') || '{}')
+    return ['dark', 'light', 'system'].includes(prefs.theme) ? prefs.theme : 'dark'
+  } catch {
+    return 'dark'
+  }
+}
+
+function persistTheme(theme) {
+  if (typeof window === 'undefined') return
+  try {
+    const prefs = JSON.parse(localStorage.getItem('lix_ui_prefs') || '{}')
+    localStorage.setItem('lix_ui_prefs', JSON.stringify({ ...prefs, theme }))
+  } catch {
+    localStorage.setItem('lix_ui_prefs', JSON.stringify({ theme }))
+  }
+}
+
+function applyCanvasTheme(resolved) {
+  useSketchStore.getState().setCanvasBackground(THEME_CANVAS_BACKGROUNDS[resolved])
 }
 
 const useUIStore = create((set, get) => ({
@@ -162,37 +237,30 @@ const useUIStore = create((set, get) => ({
   setCanvasLoading: (loading, message) => set({ canvasLoading: loading, canvasLoadingMessage: message || 'Loading canvas...' }),
 
   // --- Theme ---
-  // Issue #38 bug #1: light is the default. `applyTheme('dark')` is
-  // still wired below for the toggle path.
   theme: 'dark',
+  resolvedTheme: 'dark',
+  hydrateTheme: () => {
+    const theme = readStoredTheme()
+    const resolvedTheme = applyTheme(theme)
+    set({ theme, resolvedTheme })
+    applyCanvasTheme(resolvedTheme)
+  },
+  syncSystemTheme: () => {
+    if (get().theme !== 'system') return
+    const previous = get().resolvedTheme
+    const resolvedTheme = applyTheme('system')
+    invertShapeColors(previous, resolvedTheme)
+    set({ resolvedTheme })
+    applyCanvasTheme(resolvedTheme)
+  },
   setTheme: (newTheme) => {
-    const prev = get().theme
-    const resolve = (t) => t === 'system'
-      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-      : t
-    invertShapeColors(resolve(prev), resolve(newTheme))
-    applyTheme(newTheme)
-    set({ theme: newTheme })
-
-    // Issue #38 follow-up: when the user toggles themes, swap the canvas
-    // background to a matching swatch from the NEW theme's palette if it
-    // currently matches one from the OLD theme's. This keeps a swatch
-    // highlighted as "selected" in the menu and prevents the canvas from
-    // looking light in dark mode (or vice versa). User-customised colours
-    // (not in either list) stay untouched. Lazy-load the sketch store to
-    // avoid the cross-store import cycle.
-    const LIGHT_BGS = ['#ffffff', '#faf9f5', '#f5f3ed', '#f0f5fb', '#f0f5ef', '#f4f3ee']
-    const DARK_BGS  = ['#000000', '#161718', '#13171C', '#181605', '#1B1615']
-    const resolved = resolve(newTheme)
-    Promise.resolve().then(async () => {
-      const { default: useSketchStore } = await import('@/store/useSketchStore')
-      const ss = useSketchStore.getState()
-      const cur = (ss.canvasBackground || '').toLowerCase()
-      const inLight = LIGHT_BGS.some((c) => c.toLowerCase() === cur)
-      const inDark  = DARK_BGS .some((c) => c.toLowerCase() === cur)
-      if (resolved === 'dark' && inLight) ss.setCanvasBackground(DARK_BGS[2])  // blue-black, the previous default
-      else if (resolved === 'light' && inDark) ss.setCanvasBackground(LIGHT_BGS[1])  // cream
-    }).catch(() => {})
+    if (!['dark', 'light', 'system'].includes(newTheme)) return
+    const previous = get().resolvedTheme
+    const resolvedTheme = applyTheme(newTheme)
+    invertShapeColors(previous, resolvedTheme)
+    set({ theme: newTheme, resolvedTheme })
+    applyCanvasTheme(resolvedTheme)
+    persistTheme(newTheme)
   },
 
   // --- Language / i18n ---

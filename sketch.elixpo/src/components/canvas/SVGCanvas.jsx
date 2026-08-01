@@ -12,12 +12,12 @@ export default function SVGCanvas() {
   const svgRef = useRef(null)
   const canvasBackground = useSketchStore((s) => s.canvasBackground)
   const gridEnabled = useSketchStore((s) => s.gridEnabled)
-  const theme = useUIStore((s) => s.theme)
+  const resolvedTheme = useUIStore((s) => s.resolvedTheme)
   // Issue #38 follow-up: grid strokes were hardcoded to white-on-dark
   // (`rgba(255,255,255,0.06)`) — invisible on the new light canvas.
   // Pick a dark-on-light stroke when the theme is light so the grid
   // stays visible regardless of canvas background.
-  const isLight = theme !== 'dark'
+  const isLight = resolvedTheme === 'light'
   const gridStrokeFine  = isLight ? 'rgba(40,40,60,0.10)'  : 'rgba(255,255,255,0.06)'
   const gridStrokeMajor = isLight ? 'rgba(40,40,60,0.18)'  : 'rgba(255,255,255,0.12)'
   const getCursor = useSketchStore((s) => s.getCursor)

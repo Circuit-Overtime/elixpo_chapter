@@ -152,13 +152,13 @@ export default function FindBar() {
           <div className="flex items-center gap-0.5">
             <button
               onClick={() => goToResult((activeIndex - 1 + results.length) % results.length)}
-              className="w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-white hover:bg-white/10 transition-colors"
+              className="w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
             >
               <i className="bx bx-chevron-up text-sm" />
             </button>
             <button
               onClick={() => goToResult((activeIndex + 1) % results.length)}
-              className="w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-white hover:bg-white/10 transition-colors"
+              className="w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
             >
               <i className="bx bx-chevron-down text-sm" />
             </button>
@@ -167,7 +167,7 @@ export default function FindBar() {
 
         <button
           onClick={closeFindBar}
-          className="w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-white hover:bg-white/10 transition-colors"
+          className="w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
         >
           <i className="bx bx-x text-sm" />
         </button>

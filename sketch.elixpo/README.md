@@ -180,6 +180,11 @@ npm run dev
 This runs the Next.js app and the Cloudflare Worker together. Then open
 [http://localhost:3000](http://localhost:3000).
 
+> **Local collaboration:** `npm run dev` starts both Next.js and the `ROOM`
+> Durable Object worker on port 8787. The client defaults to
+> `ws://localhost:8787`; set `NEXT_PUBLIC_ROOM_WS_URL` in `.env.local` to
+> override that endpoint.
+
 ## Built by the community
 
 Elixpo is made by people, in the open. **45+ contributors** have shaped these

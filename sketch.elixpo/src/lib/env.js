@@ -28,9 +28,8 @@ export function getWorkerURL() {
 }
 
 export function getCollabURL() {
-  if (process.env.NEXT_PUBLIC_COLLAB_URL) {
-    return process.env.NEXT_PUBLIC_COLLAB_URL
-  }
+  const configuredURL = process.env.NEXT_PUBLIC_ROOM_WS_URL || process.env.NEXT_PUBLIC_COLLAB_URL
+  if (configuredURL) return configuredURL
   return isLocalhost() ? 'ws://localhost:8787' : PROD_COLLAB
 }
 

@@ -163,6 +163,12 @@ export default function useKeyboardShortcuts() {
         return
       }
 
+      if (e.shiftKey && (key === '1' || key === '!')) {
+        e.preventDefault()
+        if (typeof window.zoomFit === 'function') window.zoomFit()
+        return
+      }
+
       // Delete / Backspace — delete selected shape(s)
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
