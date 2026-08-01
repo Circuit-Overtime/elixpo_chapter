@@ -1,4 +1,4 @@
-# Rewrite a PR body when a whitelisted author embeds `@elixpoo fill` in it.
+# Rewrite a PR body when a whitelisted author explicitly embeds `@elixpoo fill`.
 # Single LLM call (no CCR, no tracking comments) — see scripts/pr_fill_description.py.
 
 name: Elixpo PR Description Fill
@@ -16,13 +16,12 @@ jobs:
     # Fire only if:
     #  - actor is a whitelisted org member (no external PRs),
     #  - actor is not elixpoo itself (loop prevention on our own edits),
-    #  - the PR body mentions @elixpoo (any phrasing: "fill", "write",
-    #    "draft the description", etc.). The Python script does a word-bounded
-    #    recheck and strips the trigger line from the rewritten body.
+    #  - the PR body contains the explicit @elixpoo fill command. Other
+    #    mentions belong to the unified repository-agent workflow.
     if: |
       github.event.pull_request.user.login != 'elixpoo' &&
       contains(fromJSON('["Circuit-Overtime","anwe-ch","elixpoo","ez-vivek"]'), github.event.pull_request.user.login) &&
-      contains(github.event.pull_request.body, '@elixpoo')
+      contains(github.event.pull_request.body, '@elixpoo fill')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
