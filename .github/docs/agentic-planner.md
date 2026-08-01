@@ -53,6 +53,32 @@ Use expirations and rotation reminders on both PATs. Organization secret
 visibility should be limited to selected agent-enabled repositories until the
 workflow is rolled out everywhere.
 
+### Portable repository baseline
+
+For another Elixpo repository, copy the agent workflows, supporting scripts,
+`ci_config.py`, and this document. Then customize only the repository identity,
+description, core paths, maintainers, and project mappings in `ci_config.py`.
+
+Required organization secrets:
+
+- `ELIXPO_POLLINATIONS_API_KEY_GITHUB`
+- `ELIXPOO_GITHUB_AGENTIC_TOKEN`
+- `ELIXPOO_GIST_AGENTIC_TOKEN`
+
+No `GH_SECRET` is required. GitHub supplies `GITHUB_TOKEN` automatically, while
+cross-repository and Project V2 operations use
+`ELIXPOO_GITHUB_AGENTIC_TOKEN`.
+
+No SOPS/age key is required by the agent stack. If a repository separately
+decrypts deployment configuration, keep that key in a deployment environment
+secret and expose it only to the deployment job as `SOPS_AGE_KEY`. Never pass
+an age private key to the repository agent, triage, acknowledgement, retry, or
+changelog jobs.
+
+`CI_GIST_ID` is a repository Actions variable, not a secret. It may start
+unset; `on-merge.yml` creates a changelog gist on the first merge and persists
+the resulting ID for later runs.
+
 ### Other secrets referenced only by this repository
 
 These are not part of the organization agent bundle:
