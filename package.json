@@ -38,8 +38,9 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "concurrently -k -n next,worker -c blue,magenta \"next dev --turbo\" \"wrangler dev --port 8787 --local\"",
+    "dev": "concurrently -k -n next,worker -c blue,magenta \"npm run dev:next\" \"npm run dev:rooms\"",
     "dev:next": "next dev --turbo",
+    "dev:rooms": "wrangler dev worker/src/index.ts --persist-to .wrangler/state --local --port 8787",
     "build": "next build",
     "start": "next start",
     "worker:dev": "wrangler dev --port 8787 --local",
