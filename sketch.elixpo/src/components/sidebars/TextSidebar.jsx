@@ -27,7 +27,7 @@ export default function TextSidebar() {
   const activeTool = useSketchStore((s) => s.activeTool)
   const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const [textColor, setTextColor] = useState('#fff')
-  const [fontSize, setFontSize] = useState('M')
+  const [fontSize, setFontSize] = useState('S')
   const [font, setFont] = useState('lixFont')
   const [codeMode, setCodeMode] = useState(false)
   const [language, setLanguage] = useState('javascript')
