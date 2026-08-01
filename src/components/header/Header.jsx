@@ -26,7 +26,7 @@ function LayoutModeToggle() {
 
   return (
     <div
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center bg-surface/80 backdrop-blur-md rounded-lg border border-border-light p-0.5 shadow-lg"
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center bg-surface/80 backdrop-blur-md rounded-lg border border-border-light p-0.5"
       role="tablist"
       aria-label="Layout mode"
     >
@@ -41,7 +41,7 @@ function LayoutModeToggle() {
             role="tab"
             className={`group flex items-center gap-1.5 h-7 px-2.5 rounded-md transition-all duration-150 ${
               active
-                ? 'bg-accent-blue text-text-primary shadow-sm'
+                ? 'bg-accent-blue text-white'
                 : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
             }`}
           >
@@ -297,7 +297,7 @@ export default function Header() {
         {/* Share button */}
         <button
           onClick={toggleSaveModal}
-          className="px-3.5 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-text-primary text-sm rounded-lg transition-all duration-200 font-[lixFont]"
+          className="px-3.5 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 font-[lixFont]"
         >
           Share
         </button>

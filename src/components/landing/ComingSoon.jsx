@@ -33,7 +33,7 @@ export default function ComingSoon({ title, description, icon }) {
       const h = canvas.offsetHeight
 
       // Subtle background doodles
-      rc.circle(w * 0.15, h * 0.3, 60, { stroke: '#5B57D1', strokeWidth: 1, roughness: 3 })
+      rc.circle(w * 0.15, h * 0.3, 60, { stroke: '#7667a8', strokeWidth: 1, roughness: 3 })
       rc.rectangle(w * 0.75, h * 0.2, 80, 50, { stroke: '#444480', strokeWidth: 1, roughness: 2.5 })
       rc.line(w * 0.3, h * 0.7, w * 0.5, h * 0.6, { stroke: '#c873e4', strokeWidth: 1, roughness: 2 })
       rc.ellipse(w * 0.85, h * 0.75, 100, 50, { stroke: '#3a3a50', strokeWidth: 1, roughness: 3 })

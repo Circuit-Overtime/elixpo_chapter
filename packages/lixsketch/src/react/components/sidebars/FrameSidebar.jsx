@@ -101,7 +101,7 @@ export default function FrameSidebar() {
           type="text"
           value={frameName}
           onChange={updateName}
-          className="w-32 px-2.5 py-1.5 bg-white/[0.05] border border-white/[0.1] rounded-lg text-white text-xs outline-none focus:border-[#5B57D1]/50 transition-all duration-150 font-[lixFont]"
+          className="w-32 px-2.5 py-1.5 bg-white/[0.05] border border-white/[0.1] rounded-lg text-white text-xs outline-none focus:border-[#7667a8]/50 transition-all duration-150 font-[lixFont]"
           spellCheck={false}
         />
       </ToolbarButton>

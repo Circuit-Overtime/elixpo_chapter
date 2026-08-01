@@ -15,7 +15,7 @@ function ColorGrid({ colors, selected, onSelect }) {
     <div className="grid grid-cols-4 gap-1.5">
       {colors.map((c) => (
         <button key={c} onClick={() => onSelect(c)}
-          className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'}`}
+          className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? 'border-[#7667a8] scale-110' : 'border-white/[0.08] hover:border-white/20'}`}
           style={{ backgroundColor: c }}
         />
       ))}
@@ -56,7 +56,7 @@ export default function PaintbrushSidebar() {
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-white/[0.06]'}`}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#7667a8]/20 text-[#7667a8]' : 'text-text-muted hover:bg-white/[0.06]'}`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
@@ -75,7 +75,7 @@ export default function PaintbrushSidebar() {
             { v: 'brush', i: 'bxs-brush', l: 'Brush' },
           ].map((t) => (
             <button key={t.v} onClick={() => updateTaper(t.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${taper === t.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${taper === t.v ? 'bg-[#7667a8] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
             >
               <i className={`bx ${t.i} text-sm`} /> {t.l}
             </button>
@@ -94,7 +94,7 @@ export default function PaintbrushSidebar() {
             { v: 'rough', i: 'bxs-bolt', l: 'Rough' },
           ].map((r) => (
             <button key={r.v} onClick={() => updateRoughness(r.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${roughness === r.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${roughness === r.v ? 'bg-[#7667a8] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
             >
               <i className={`bx ${r.i} text-sm`} /> {r.l}
             </button>
@@ -109,7 +109,7 @@ export default function PaintbrushSidebar() {
         <input
           type="range" min="0" max="1" step="0.05" value={opacity}
           onChange={(e) => updateOpacity(parseFloat(e.target.value))}
-          className="w-28 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#5B57D1]"
+          className="w-28 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#7667a8]"
         />
       </ToolbarButton>
       <Divider />

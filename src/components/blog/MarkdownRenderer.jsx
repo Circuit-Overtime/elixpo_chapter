@@ -27,7 +27,7 @@ function CopyButton({ text }) {
 }
 
 // ── RoughJS heading underline (drawn on a canvas element) ─────────────────────
-function RoughHeadingLine({ width = 200, color = '#5B57D1', roughness = 2 }) {
+function RoughHeadingLine({ width = 200, color = '#7667a8', roughness = 2 }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
@@ -92,7 +92,7 @@ function RoughBlockquote({ children }) {
 
       const rc = rough.canvas(canvas)
       rc.line(4, 2, 4, h - 2, {
-        stroke: '#5B57D1',
+        stroke: '#7667a8',
         strokeWidth: 2,
         roughness: 1.8,
         bowing: 0.5,
@@ -138,10 +138,10 @@ function RoughBullet() {
 
       const rc = rough.canvas(canvas)
       rc.circle(5, 5, 6, {
-        stroke: '#5B57D1',
+        stroke: '#7667a8',
         strokeWidth: 1,
         roughness: 2,
-        fill: '#5B57D1',
+        fill: '#7667a8',
         fillStyle: 'solid',
       })
     }
