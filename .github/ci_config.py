@@ -8,8 +8,8 @@ LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 # Cost-aware routing. Prices/capabilities were checked against Pollinations'
 # /text/models catalog. Routine work stays on the cheapest tool-capable model;
 # specialized models are only selected by CCR when their route is required.
-LLM_MODEL_AGENT = "nova-fast"
-LLM_MODEL_CODE = "deepseek"
+LLM_MODEL_AGENT = "deepseek"
+LLM_MODEL_CODE = "nova-fast"
 LLM_MODEL_CHAT = "nova-fast"
 LLM_MODEL_THINKING = "deepseek"
 LLM_MODEL_SEARCH = "perplexity-fast"

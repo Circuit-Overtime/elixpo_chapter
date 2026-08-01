@@ -21,8 +21,8 @@ CCR creates multiple routes with that same key. No route has a separate credenti
 
 | Route | Model | Use |
 | --- | --- | --- |
-| default | `nova-fast` | intent, metadata, questions, routine tool use |
-| background | `deepseek` | repository changes only |
+| default | `deepseek` | repository changes, review, and scoped tool use |
+| background | `nova-fast` | inexpensive metadata and supporting work |
 | think | `deepseek` | complex reasoning or review only |
 | webSearch | `perplexity-fast` | time-sensitive external lookup only |
 

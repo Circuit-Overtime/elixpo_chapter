@@ -172,7 +172,7 @@ jobs:
             -H 'x-api-key: ccr-pollinations' \
             -H 'anthropic-version: 2023-06-01' \
             -H 'content-type: application/json' \
-            --data '{"model":"nova-fast","max_tokens":32,"messages":[{"role":"user","content":"Reply OK"}],"tools":[{"name":"read_file","description":"Read one file","input_schema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}}]}')
+            --data '{"model":"deepseek","max_tokens":32,"messages":[{"role":"user","content":"Reply OK"}],"tools":[{"name":"read_file","description":"Read one file","input_schema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}}]}')
           if [ "$STATUS" != "200" ]; then
             echo "CCR smoke request failed with HTTP $STATUS"
             python3 -c 'import json; data=json.load(open("/tmp/ccr-smoke.json")); print(str(data.get("error", data))[:1000])'
