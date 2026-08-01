@@ -1505,8 +1505,21 @@ function handleMultiSelectionMouseDown(e) {
     let clickedOnShape = false;
     let clickedShape = null;
     if (typeof shapes !== 'undefined') {
-        let fallbackFrame = null;
+        // Prefer the actual SVG event target. This remains exact regardless
+        // of pan/zoom and also covers shapes whose visual bounds come from a
+        // foreignObject or imported SVG rather than simple geometry.
         for (let i = shapes.length - 1; i >= 0; i--) {
+            const shape = shapes[i];
+            const element = shape?.group || shape?.element;
+            if (element && (element === e.target || element.contains?.(e.target))) {
+                clickedOnShape = true;
+                clickedShape = shape;
+                break;
+            }
+        }
+
+        let fallbackFrame = null;
+        for (let i = shapes.length - 1; !clickedOnShape && i >= 0; i--) {
             const shape = shapes[i];
             if (shape.contains && shape.contains(x, y)) {
                 if (shape.shapeName === 'frame') {

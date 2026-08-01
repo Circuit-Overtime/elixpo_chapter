@@ -392,11 +392,17 @@ function createShapeFromData(data, offsetX, offsetY) {
         }
 
         case 'icon': {
-            // Parse the cloned icon element HTML
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = data.elementHTML;
-            const clonedEl = tempDiv.firstElementChild;
-            if (!clonedEl) return null;
+            // Parse inside an SVG document. Parsing a copied <g> through an
+            // HTML <div> creates it in the HTML namespace, so it can be added
+            // to shapes[] but the SVG renderer will not paint it.
+            const parser = new DOMParser();
+            const parsed = parser.parseFromString(
+                `<svg xmlns="http://www.w3.org/2000/svg">${data.elementHTML}</svg>`,
+                'image/svg+xml'
+            );
+            const parsedGroup = parsed.querySelector('g');
+            if (!parsedGroup || parsed.querySelector('parsererror')) return null;
+            const clonedEl = svgEl.ownerDocument.importNode(parsedGroup, true);
 
             const newX = data.x + offsetX;
             const newY = data.y + offsetY;

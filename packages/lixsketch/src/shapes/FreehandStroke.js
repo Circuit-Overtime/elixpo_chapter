@@ -350,6 +350,24 @@ class FreehandStroke {
     }
 
     move(dx, dy) {
+        // Diagram polygons (currently pie sectors) are redrawn by their parent
+        // frame after every movement step. Moving them with a deferred SVG
+        // transform therefore loses the visible transform on that redraw while
+        // leaving a hidden offset behind, which makes sectors detach from the
+        // frame and jump the next time they are selected. Keep their geometry
+        // authoritative instead.
+        if (this.options.closedFill) {
+            this.points = this.points.map(point => [
+                point[0] + dx,
+                point[1] + dy,
+                point[2] || 0.5
+            ]);
+            this._moveOffsetX = 0;
+            this._moveOffsetY = 0;
+            this.draw();
+            return;
+        }
+
         // Accumulate offset for transform-based movement (avoids full path rebuild)
         this._moveOffsetX = (this._moveOffsetX || 0) + dx;
         this._moveOffsetY = (this._moveOffsetY || 0) + dy;

@@ -604,18 +604,21 @@ class Rectangle {
     }
 
     contains(x, y) {
-         if (!this.element) return false; 
-        const CTM = this.group.getCTM();
-        if (!CTM) return false; 
-        const inverseCTM = CTM.inverse();
-
-        const svgPoint = svg.createSVGPoint();
-        svgPoint.x = x;
-        svgPoint.y = y;
-        const transformedPoint = svgPoint.matrixTransform(inverseCTM);
+        if (!this.element) return false;
+        // x/y are already canvas (viewBox) coordinates. getCTM() operates in
+        // viewport coordinates and made hit testing drift after pan/zoom.
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        const angle = -(this.rotation || 0) * Math.PI / 180;
+        const translatedX = x - this.x;
+        const translatedY = y - this.y;
+        const dx = translatedX - centerX;
+        const dy = translatedY - centerY;
+        const localX = dx * Math.cos(angle) - dy * Math.sin(angle) + centerX;
+        const localY = dx * Math.sin(angle) + dy * Math.cos(angle) + centerY;
         const tolerance = 5;
-        return transformedPoint.x >= -tolerance && transformedPoint.x <= this.width + tolerance &&
-               transformedPoint.y >= -tolerance && transformedPoint.y <= this.height + tolerance;
+        return localX >= -tolerance && localX <= this.width + tolerance &&
+               localY >= -tolerance && localY <= this.height + tolerance;
     }
 
      // Helper to check if a point is near an anchor
