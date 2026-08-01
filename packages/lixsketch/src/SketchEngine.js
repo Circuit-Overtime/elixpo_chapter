@@ -238,6 +238,13 @@ class SketchEngine {
                 Frame, FreehandStroke
             };
 
+            // Expose restore as soon as the shape constructors are ready.
+            // Tool handlers, AI/graph renderers, and LixScript are not needed
+            // to deserialize a cached scene, so keeping the serializer behind
+            // those chunks unnecessarily delayed first canvas paint.
+            const sceneSerializer = await import('./core/SceneSerializer.js');
+            if (sceneSerializer.initSceneSerializer) sceneSerializer.initSceneSerializer();
+
             // Import tool handlers (they run top-level code that reads globals)
             const [
                 rectangleTool, circleTool, arrowTool, lineTool,
@@ -313,10 +320,6 @@ class SketchEngine {
             // Initialize graph engine bridge
             const graphEngine = await import('./core/GraphEngine.js');
             if (graphEngine.initGraphEngine) graphEngine.initGraphEngine();
-
-            // Initialize scene serializer bridge
-            const sceneSerializer = await import('./core/SceneSerializer.js');
-            if (sceneSerializer.initSceneSerializer) sceneSerializer.initSceneSerializer();
 
             // Initialize layer ordering
             const layerOrder = await import('./core/LayerOrder.js');

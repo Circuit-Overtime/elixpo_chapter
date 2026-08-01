@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import Header from '@/components/header/Header'
-import useUIStore, { applyTheme } from '@/store/useUIStore'
+import useUIStore from '@/store/useUIStore'
 import Toolbar from '@/components/toolbar/Toolbar'
 import Footer from '@/components/footer/Footer'
 import AppMenu from '@/components/menu/AppMenu'
@@ -48,11 +48,20 @@ const DocsPanel = dynamic(() => import('@/components/docs/DocsPanel'), {
 export default function CanvasPage() {
   useEffect(() => {
     document.body.classList.add('canvas-mode')
-    applyTheme(useUIStore.getState().theme)
+    const ui = useUIStore.getState()
+    ui.hydrateTheme()
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleSystemTheme = () => useUIStore.getState().syncSystemTheme()
+    media.addEventListener?.('change', handleSystemTheme)
     // Restore the user's last-used layout mode (canvas / split / docs)
     // before the editor or split layout decides to render.
     useSketchStore.getState().hydrateLayoutMode?.()
-    return () => document.body.classList.remove('canvas-mode')
+    return () => {
+      media.removeEventListener?.('change', handleSystemTheme)
+      document.body.classList.remove('canvas-mode', 'theme-dark', 'theme-light')
+      delete document.body.dataset.resolvedTheme
+      document.documentElement.style.removeProperty('color-scheme')
+    }
   }, [])
 
   useAuth()

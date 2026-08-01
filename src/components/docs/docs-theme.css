@@ -12,9 +12,8 @@
  *
  * Strategy:
  *   1. Mirror the blogs token set (`--text-primary`, `--bg-app`,
- *      `--code-bg`, etc.) under `body.canvas-mode` (light default) and
- *      `body.canvas-mode.theme-dark` (dark override). Values copied
- *      verbatim from blogs.elixpo/app/globals.css.
+ *      `--code-bg`, etc.) under explicit light/dark canvas selectors.
+ *      Values copied verbatim from blogs.elixpo/app/globals.css.
  *   2. Override BlockNote's own `--bn-colors-*` tokens to point at the
  *      mirrored values so the editor chrome adopts the same palette.
  *   3. Port the per-block styles from blogs.elixpo/src/styles/editor/
@@ -30,7 +29,7 @@
  * Copied from blogs.elixpo/app/globals.css `:root`. Scoped to
  * `body.canvas-mode` so they only apply inside the canvas page and
  * don't leak to landing / blog / pricing on the sketch site. */
-body.canvas-mode {
+body.canvas-mode.theme-light {
   --bg-base: #f4f4f6;
   --bg-app: #ffffff;
   --bg-surface: #f7f7f9;
@@ -60,6 +59,7 @@ body.canvas-mode {
   --code-lang-text: #44485a;
 }
 
+body.canvas-mode,
 body.canvas-mode.theme-dark {
   --bg-base: #0c1017;
   --bg-app: #131922;

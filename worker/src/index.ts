@@ -449,21 +449,27 @@ async function handleSceneLoad(request: Request, env: Env): Promise<Response> {
   try {
     const url = new URL(request.url);
     const token = url.searchParams.get('token');
+    const sessionId = url.searchParams.get('sessionId');
+    const lookupValue = token || sessionId;
 
-    if (!token) {
-      return json({ error: 'Missing token' }, 400);
+    if (!lookupValue) {
+      return json({ error: 'Missing token or sessionId' }, 400);
     }
 
-    const perm = await env.DB.prepare(
-      `SELECT sp.permission, s.encrypted_data, s.workspace_name, s.session_id
-       FROM scene_permissions sp
-       JOIN scenes s ON sp.scene_id = s.id
-       WHERE sp.token = ?`
-    ).bind(token).first<{
+    const query = token
+      ? `SELECT sp.permission, s.encrypted_data, s.workspace_name, s.session_id, s.updated_at
+         FROM scene_permissions sp
+         JOIN scenes s ON sp.scene_id = s.id
+         WHERE sp.token = ?`
+      : `SELECT permission, encrypted_data, workspace_name, session_id, updated_at
+         FROM scenes
+         WHERE session_id = ?`;
+    const perm = await env.DB.prepare(query).bind(lookupValue).first<{
       permission: string;
       encrypted_data: string;
       workspace_name: string;
       session_id: string;
+      updated_at: string;
     }>();
 
     if (!perm) {
@@ -479,6 +485,7 @@ async function handleSceneLoad(request: Request, env: Env): Promise<Response> {
       encryptedData: perm.encrypted_data,
       permission: perm.permission,
       workspaceName: perm.workspace_name,
+      updatedAt: perm.updated_at,
     });
   } catch (err) {
     return json({ error: 'Failed to load scene' }, 500);

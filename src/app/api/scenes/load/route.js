@@ -29,7 +29,7 @@ export async function GET(request) {
     
     if (token) {
       perm = await DB.prepare(
-        `SELECT sp.permission, s.encrypted_data, s.workspace_name, s.session_id
+        `SELECT sp.permission, s.encrypted_data, s.workspace_name, s.session_id, s.updated_at
          FROM scene_permissions sp
          JOIN scenes s ON sp.scene_id = s.id
          WHERE sp.token = ?`
@@ -38,7 +38,7 @@ export async function GET(request) {
       // Intentional bypass: querying by sessionId directly allows owners/initial creators
       // to load the scene from their local storage or URL without needing a share token.
       perm = await DB.prepare(
-        `SELECT permission, encrypted_data, workspace_name, session_id
+        `SELECT permission, encrypted_data, workspace_name, session_id, updated_at
          FROM scenes
          WHERE session_id = ?`
       ).bind(sessionId).first()
@@ -57,6 +57,7 @@ export async function GET(request) {
       encryptedData: perm.encrypted_data,
       permission: perm.permission,
       workspaceName: perm.workspace_name,
+      updatedAt: perm.updated_at,
     })
   } catch (err) {
     console.error('[api/scenes/load] Error:', err)

@@ -9,7 +9,7 @@ export default function CanvasLoadingOverlay() {
   if (!loading) return null
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm font-[lixFont] pointer-events-all">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-surface-dark/80 backdrop-blur-sm font-[lixFont] pointer-events-all">
       <div className="flex flex-col items-center gap-5">
         <style>{`
           @keyframes cl-glob {
@@ -53,8 +53,8 @@ export default function CanvasLoadingOverlay() {
             willChange: 'transform, opacity',
           }} />
           <div className="absolute inset-0 flex items-center justify-center" style={{ animation: 'cl-float 2.5s ease-in-out infinite' }}>
-            <div className="w-9 h-9 rounded-lg bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+            <div className="w-9 h-9 rounded-lg bg-surface/60 backdrop-blur-sm border border-border-light flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-primary opacity-70">
                 <rect x="3" y="3" width="7" height="7" rx="1" />
                 <rect x="14" y="3" width="7" height="7" rx="1" />
                 <rect x="3" y="14" width="7" height="7" rx="1" />
