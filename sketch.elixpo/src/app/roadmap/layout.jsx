@@ -6,12 +6,12 @@ export const metadata = {
     title: 'LixSketch Roadmap',
     description:
       'Shipped features, in-progress work, and future plans — follow the journey of an open-source diagram tool.',
-    images: [{ url: '/Images/og-image.png', width: 1322, height: 612, alt: 'LixSketch Roadmap' }],
+    images: [{ url: '/og-image.png', width: 1280, height: 720, alt: 'LixSketch Roadmap' }],
   },
   twitter: {
     title: 'LixSketch Roadmap',
     description: 'What we\'ve shipped, what we\'re building, and where we\'re headed.',
-    images: ['/Images/og-image.png'],
+    images: ['/og-image.png'],
   },
   alternates: { canonical: '/roadmap' },
 }

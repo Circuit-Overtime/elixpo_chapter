@@ -30,61 +30,62 @@
  * `body.canvas-mode` so they only apply inside the canvas page and
  * don't leak to landing / blog / pricing on the sketch site. */
 body.canvas-mode.theme-light {
-  --bg-base: #f4f4f6;
-  --bg-app: #ffffff;
-  --bg-surface: #f7f7f9;
-  --bg-elevated: #eeeff2;
+  --bg-base: #f5f1fa;
+  --bg-app: #fdfaff;
+  --bg-surface: #f8f4fc;
+  --bg-elevated: #eee6f6;
   --bg-hover: rgba(0, 0, 0, 0.04);
   --bg-active: rgba(0, 0, 0, 0.07);
-  --border-default: #dcdce4;
-  --border-hover: #c8c8d4;
-  --text-primary: #111118;
-  --text-secondary: #2d2d3a;
-  --text-body: #3d3d50;
-  --text-muted: #5c5c72;
-  --text-faint: #8585a0;
-  --accent: #9b7bf7;
-  --accent-hover: #8b6ae6;
-  --accent-subtle: rgba(155, 123, 247, 0.08);
-  --accent-text: #7c5ce7;
+  --border-default: #ddd1e8;
+  --border-hover: #c8b6d9;
+  --text-primary: #2d233a;
+  --text-secondary: #493b58;
+  --text-body: #514360;
+  --text-muted: #71617f;
+  --text-faint: #91849d;
+  --accent: #8b63c7;
+  --accent-hover: #7650b4;
+  --accent-subtle: rgba(139, 99, 199, 0.1);
+  --accent-text: #7047ad;
   --selection-bg: rgba(155, 123, 247, 0.15);
   --selection-text: #111118;
-  --divider: #e8e8ee;
+  --divider: #eadff2;
 
   /* Code block tokens — light. Slightly stronger lang chip so it's
    * visible against the page (blogs has the same comment in their CSS). */
-  --code-bg: #f8f8fb;
-  --code-text: #3d3d50;
-  --code-lang-bg: #dfe3ea;
-  --code-lang-text: #44485a;
+  --code-bg: #f7f2fb;
+  --code-text: #4d3f5b;
+  --code-lang-bg: #e5d9ef;
+  --code-lang-text: #594768;
 }
 
+body.canvas-mode,
 body.canvas-mode.theme-dark {
-  --bg-base: #0c1017;
-  --bg-app: #131922;
-  --bg-surface: #141a26;
-  --bg-elevated: #1c2333;
+  --bg-base: #100c18;
+  --bg-app: #171120;
+  --bg-surface: #1d1628;
+  --bg-elevated: #291f37;
   --bg-hover: rgba(255, 255, 255, 0.03);
   --bg-active: rgba(255, 255, 255, 0.05);
-  --border-default: #232d3f;
-  --border-hover: #2e3b50;
-  --text-primary: #e8edf5;
-  --text-secondary: #b0bdd0;
-  --text-body: #cbd5e1;
-  --text-muted: #7b8da4;
-  --text-faint: #566479;
-  --accent: #9b7bf7;
-  --accent-hover: #b69aff;
-  --accent-subtle: rgba(155, 123, 247, 0.08);
-  --accent-text: #b69aff;
-  --selection-bg: #9b7bf740;
+  --border-default: #342743;
+  --border-hover: #4b3860;
+  --text-primary: #f5effb;
+  --text-secondary: #cdbfda;
+  --text-body: #e1d7ea;
+  --text-muted: #9d8cab;
+  --text-faint: #71627e;
+  --accent: #b88aef;
+  --accent-hover: #caa2f7;
+  --accent-subtle: rgba(184, 138, 239, 0.1);
+  --accent-text: #c7a4f3;
+  --selection-bg: #b88aef40;
   --selection-text: #fff;
-  --divider: #232d3f;
+  --divider: #342743;
 
-  --code-bg: #0e1219;
-  --code-text: #c8d1e0;
-  --code-lang-bg: #1a2030;
-  --code-lang-text: #9ba8b9;
+  --code-bg: #120d1a;
+  --code-text: #dfd4e8;
+  --code-lang-bg: #2a2037;
+  --code-lang-text: #b9a8c8;
 }
 
 /* ── BlockNote token map ────────────────────────────────────────────

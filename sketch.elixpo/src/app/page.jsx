@@ -163,7 +163,7 @@ function ParticleField({ className }) {
       if (li > 0) {
         gl.useProgram(lineProg)
         gl.uniform2f(gl.getUniformLocation(lineProg, 'uRes'), canvas.width, canvas.height)
-        gl.uniform3f(gl.getUniformLocation(lineProg, 'uColor'), 0.357, 0.341, 0.82) // #5B57D1
+        gl.uniform3f(gl.getUniformLocation(lineProg, 'uColor'), 0.545, 0.427, 0.878) // #8b6de0
         gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf)
         gl.bufferData(gl.ARRAY_BUFFER, lineData.subarray(0, li), gl.DYNAMIC_DRAW)
         const lPos = gl.getAttribLocation(lineProg, 'aPos')
@@ -183,7 +183,7 @@ function ParticleField({ className }) {
       }
       gl.useProgram(dotProg)
       gl.uniform2f(gl.getUniformLocation(dotProg, 'uRes'), canvas.width, canvas.height)
-      gl.uniform3f(gl.getUniformLocation(dotProg, 'uColor'), 0.357, 0.341, 0.82)
+      gl.uniform3f(gl.getUniformLocation(dotProg, 'uColor'), 0.545, 0.427, 0.878)
       gl.bindBuffer(gl.ARRAY_BUFFER, dotBuf)
       gl.bufferData(gl.ARRAY_BUFFER, dotData, gl.DYNAMIC_DRAW)
       const dPos = gl.getAttribLocation(dotProg, 'aPos')
@@ -355,7 +355,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#13171C] text-white font-[lixFont] overflow-x-hidden">
+    <div className="min-h-screen bg-[#120e1a] text-white font-[lixFont] overflow-x-hidden">
       <LandingNav />
 
       {/* Hero Section */}
@@ -475,7 +475,7 @@ export default function LandingPage() {
                 </div>
                 <span className="text-text-dim text-xs ml-2">LixSketch &mdash; Untitled Canvas</span>
               </div>
-              <div className="relative h-72 md:h-80 bg-[#121212]">
+              <div className="relative h-72 md:h-80 bg-[#171120]">
                 <RoughCanvas className="absolute inset-0 w-full h-full opacity-60" />
                 <div className="absolute left-3 top-3">
                   <ToolbarPreview />
@@ -550,7 +550,7 @@ export default function LandingPage() {
                 <p className="text-text-muted text-sm leading-relaxed mb-5">
                   Mount a full infinite canvas on any SVG element. Works with React, Vue, Svelte, or plain HTML.
                 </p>
-                <div className="bg-[#0d0d14] rounded-lg border border-white/[0.06] px-4 py-3">
+                <div className="bg-[#171120] rounded-lg border border-white/[0.06] px-4 py-3">
                   <code className="text-green-400 text-sm font-[lixCode]">npm install @elixpo/lixsketch</code>
                 </div>
               </Link>
@@ -580,7 +580,7 @@ export default function LandingPage() {
                 <p className="text-text-muted text-sm leading-relaxed mb-5">
                   Draw diagrams inside your editor. Full canvas tab, LixScript syntax highlighting, and live preview.
                 </p>
-                <div className="bg-[#0d0d14] rounded-lg border border-white/[0.06] px-4 py-3">
+                <div className="bg-[#171120] rounded-lg border border-white/[0.06] px-4 py-3">
                   <code className="text-blue-400 text-sm font-[lixCode]">https://marketplace.visualstudio.com/items?itemName=elixpo.lixsketch</code>
                 </div>
               </Link>
@@ -796,7 +796,7 @@ export default function LandingPage() {
                     <div className="w-2 h-2 rounded-full bg-green-400/50" />
                     <span className="text-text-dim text-[10px] ml-1.5">inkflowa.vercel.app</span>
                   </div>
-                  <div className="h-44 bg-[#0d0d0d] flex items-center justify-center relative overflow-hidden">
+                  <div className="h-44 bg-[#171120] flex items-center justify-center relative overflow-hidden">
                     <RoughCanvas className="absolute inset-0 w-full h-full opacity-40" />
                     <div className="relative z-10 text-center">
                       <i className="bx bx-pen text-4xl text-[#8B88E8]/60 mb-2" />

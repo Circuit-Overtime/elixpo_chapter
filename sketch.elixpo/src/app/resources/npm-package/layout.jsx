@@ -6,12 +6,12 @@ export const metadata = {
     title: '@elixpo/lixsketch — NPM Package',
     description:
       'The LixSketch drawing engine as an npm package. React, Vue, Svelte, or plain HTML — mount on any SVG.',
-    images: [{ url: '/Images/og-image.png', width: 1322, height: 612, alt: 'LixSketch NPM Package' }],
+    images: [{ url: '/og-image.png', width: 1280, height: 720, alt: 'LixSketch NPM Package' }],
   },
   twitter: {
     title: '@elixpo/lixsketch — NPM Package',
     description: 'Mount a hand-drawn infinite canvas on any SVG element.',
-    images: ['/Images/og-image.png'],
+    images: ['/og-image.png'],
   },
   alternates: { canonical: '/resources/npm-package' },
 }

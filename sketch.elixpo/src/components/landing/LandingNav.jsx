@@ -109,10 +109,10 @@ export default function LandingNav() {
       transition={{ duration: 0.5 }}
       className="fixed top-0 left-0 right-0 z-50 border-b border-white/5"
     >
-      <div className="backdrop-blur-xl bg-[#13171C]/80 px-6 py-3 flex items-center justify-between max-w-7xl mx-auto">
+      <div className="backdrop-blur-xl bg-[#120e1a]/85 px-6 py-3 flex items-center justify-between max-w-7xl mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
-          <img src="/Images/logo.png" alt="LixSketch" className="w-7 h-7 invert" />
+          <img src="/icon.png" alt="LixSketch" className="w-7 h-7 rounded-md" />
           <span className="text-lg tracking-wide text-text-secondary">LixSketch</span>
         </Link>
 
@@ -209,7 +209,7 @@ export default function LandingNav() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden backdrop-blur-xl bg-[#13171C]/95 border-b border-white/5 overflow-hidden"
+            className="md:hidden backdrop-blur-xl bg-[#120e1a]/95 border-b border-white/5 overflow-hidden"
           >
             <div className="px-6 py-4 flex flex-col gap-1">
               {[

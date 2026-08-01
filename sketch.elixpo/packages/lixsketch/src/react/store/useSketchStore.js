@@ -177,8 +177,13 @@ const useSketchStore = create((set, get) => ({
   setPanStart: (p) => set({ panStart: p }),
 
   // --- Canvas background ---
-  canvasBackground: 'var(--lixsketch-bg, #ffffff)',
-  setCanvasBackground: (color) => set({ canvasBackground: color }),
+  canvasBackground: 'var(--lixsketch-bg, #15111f)',
+  setCanvasBackground: (color) => {
+    set({ canvasBackground: color })
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(() => window.__adaptCanvasContrast?.(color))
+    }
+  },
 
   // --- Grid ---
   gridEnabled: false,

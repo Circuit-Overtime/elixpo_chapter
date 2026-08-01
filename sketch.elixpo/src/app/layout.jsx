@@ -61,20 +61,12 @@ export const metadata = {
 
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
-      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
-      { url: '/favicon-96x96.png', type: 'image/png', sizes: '96x96' },
-      { url: '/favicon-192x192.png', type: 'image/png', sizes: '192x192' },
       { url: '/icon.png', type: 'image/png', sizes: '1024x1024' },
     ],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/icon.png', sizes: '1024x1024', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico',
-    other: [
-      { rel: 'mask-icon', url: '/icon.svg', color: '#5B57D1' },
-    ],
+    shortcut: '/icon.png',
   },
   manifest: '/site.webmanifest',
 
@@ -87,9 +79,9 @@ export const metadata = {
     locale: 'en_US',
     images: [
       {
-        url: '/Images/og-image.png',
-        width: 1322,
-        height: 612,
+        url: '/og-image.png',
+        width: 1280,
+        height: 720,
         alt: 'Elixpo Sketch, hand drawn infinite canvas with real time collaboration and built in docs editor',
         type: 'image/png',
       },
@@ -100,7 +92,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: `${SITE_NAME} | ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
-    images: ['/Images/og-image.png'],
+    images: ['/og-image.png'],
     creator: '@elixpo',
     site: '@elixpo',
   },
@@ -125,7 +117,7 @@ export const metadata = {
 }
 
 export const viewport = {
-  themeColor: '#13171C',
+  themeColor: '#120e1a',
   width: 'device-width',
   initialScale: 1,
   colorScheme: 'dark',
@@ -139,6 +131,7 @@ const jsonLd = {
   description: SITE_DESCRIPTION,
   applicationCategory: 'DesignApplication',
   operatingSystem: 'Web',
+  logo: `${SITE_URL}/icon.png`,
   offers: {
     '@type': 'Offer',
     price: '0',
@@ -149,8 +142,8 @@ const jsonLd = {
     name: 'Elixpo',
     url: 'https://elixpo.com',
   },
-  image: `${SITE_URL}/Images/og-image.png`,
-  screenshot: `${SITE_URL}/Images/og-image.png`,
+  image: `${SITE_URL}/og-image.png`,
+  screenshot: `${SITE_URL}/og-image.png`,
   featureList: [
     'Infinite canvas with hand-drawn aesthetics',
     'Real-time collaboration with live cursors',

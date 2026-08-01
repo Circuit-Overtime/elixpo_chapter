@@ -2,13 +2,13 @@ import { create } from 'zustand'
 import useSketchStore from '@/store/useSketchStore'
 
 export const THEME_CANVAS_BACKGROUNDS = {
-  dark: '#13171C',
-  light: '#faf9f5',
+  dark: '#15111f',
+  light: '#fbf9fd',
 }
 
 export function resolveTheme(theme) {
   if (theme !== 'system') return theme === 'light' ? 'light' : 'dark'
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'light'
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark'
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
@@ -120,12 +120,12 @@ export function applyTheme(theme) {
 }
 
 function readStoredTheme() {
-  if (typeof window === 'undefined') return 'light'
+  if (typeof window === 'undefined') return 'dark'
   try {
     const prefs = JSON.parse(localStorage.getItem('lix_ui_prefs') || '{}')
-    return ['dark', 'light', 'system'].includes(prefs.theme) ? prefs.theme : 'light'
+    return ['dark', 'light', 'system'].includes(prefs.theme) ? prefs.theme : 'dark'
   } catch {
-    return 'light'
+    return 'dark'
   }
 }
 
@@ -232,8 +232,8 @@ const useUIStore = create((set, get) => ({
   setCanvasLoading: (loading, message) => set({ canvasLoading: loading, canvasLoadingMessage: message || 'Loading canvas...' }),
 
   // --- Theme ---
-  theme: 'light',
-  resolvedTheme: 'light',
+  theme: 'dark',
+  resolvedTheme: 'dark',
   hydrateTheme: () => {
     const theme = readStoredTheme()
     const resolvedTheme = applyTheme(theme)

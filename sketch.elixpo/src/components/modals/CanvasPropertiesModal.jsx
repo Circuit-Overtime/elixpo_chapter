@@ -320,7 +320,7 @@ export default function CanvasPropertiesModal() {
                         >
                           <span
                             className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ background: user.color || '#5B57D1' }}
+                            style={{ background: user.color || '#7667a8' }}
                           />
                           <span className="text-text-secondary text-[11px] flex-1 truncate">
                             {user.displayName || user.name || `User ${i + 1}`}

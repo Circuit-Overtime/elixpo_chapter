@@ -5,12 +5,12 @@ export const metadata = {
   openGraph: {
     title: 'LixSketch Docs',
     description: 'Notion-like editor with live markdown, code blocks, and embedded diagrams.',
-    images: [{ url: '/Images/og-image.png', width: 1322, height: 612, alt: 'LixSketch Docs' }],
+    images: [{ url: '/og-image.png', width: 1280, height: 720, alt: 'LixSketch Docs' }],
   },
   twitter: {
     title: 'LixSketch Docs',
     description: 'Notion-like editor with live markdown and embedded diagrams.',
-    images: ['/Images/og-image.png'],
+    images: ['/og-image.png'],
   },
   alternates: { canonical: '/docs' },
 }

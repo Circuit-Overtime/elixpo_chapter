@@ -12,7 +12,7 @@ import { useTranslation } from '../hooks/useTranslation'
 // matching list at render time based on the active theme.
 const CANVAS_BACKGROUNDS_LIGHT = [
   { color: '#ffffff', label: 'menu.canvasBg.white' },
-  { color: '#faf9f5', label: 'menu.canvasBg.cream' },
+  { color: '#fbf9fd', label: 'menu.canvasBg.cream' },
   { color: '#f5f3ed', label: 'menu.canvasBg.paper' },
   { color: '#f0f5fb', label: 'menu.canvasBg.skyTint' },
   { color: '#f0f5ef', label: 'menu.canvasBg.sageTint' },
@@ -20,7 +20,7 @@ const CANVAS_BACKGROUNDS_LIGHT = [
 const CANVAS_BACKGROUNDS_DARK = [
   { color: '#000000', label: 'menu.canvasBg.black' },
   { color: '#161718', label: 'menu.canvasBg.darkGray' },
-  { color: '#13171C', label: 'menu.canvasBg.blueBlack' },
+  { color: '#15111f', label: 'menu.canvasBg.blueBlack' },
   { color: '#181605', label: 'menu.canvasBg.darkYellow' },
   { color: '#1B1615', label: 'menu.canvasBg.darkBrown' },
 ]

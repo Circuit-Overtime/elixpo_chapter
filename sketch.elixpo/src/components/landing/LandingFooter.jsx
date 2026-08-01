@@ -57,7 +57,7 @@ export default function LandingFooter() {
         {/* Bottom row */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/5">
           <div className="flex items-center gap-3">
-            <img src="/Images/logo.png" alt="LixSketch" className="w-5 h-5 invert" />
+            <img src="/icon.png" alt="LixSketch" className="w-5 h-5 rounded" />
             <span className="text-text-dim text-xs">LixSketch &mdash; Open source canvas for visual thinking</span>
           </div>
 

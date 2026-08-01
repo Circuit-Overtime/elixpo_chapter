@@ -26,7 +26,7 @@ function ColorGrid({ colors, selected, onSelect }) {
             key={c}
             onClick={() => onSelect(c)}
             className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${
-              selected === c ? 'border-[#5B57D1] scale-110' : 'border-white/[0.08] hover:border-white/20'
+              selected === c ? 'border-[#7667a8] scale-110' : 'border-white/[0.08] hover:border-white/20'
             }`}
             style={!isTrans ? { backgroundColor: c } : undefined}
           >
@@ -102,7 +102,7 @@ export default function RectangleSidebar() {
               key={w}
               onClick={() => updateThickness(w)}
               className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${
-                thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-white/[0.06]'
+                thickness === w ? 'bg-[#7667a8]/20 text-[#7667a8]' : 'text-text-muted hover:bg-white/[0.06]'
               }`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
@@ -126,7 +126,7 @@ export default function RectangleSidebar() {
               key={s.v}
               onClick={() => updateStyle(s.v)}
               className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${
-                lineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-white/[0.06]'
+                lineStyle === s.v ? 'bg-[#7667a8]/20' : 'hover:bg-white/[0.06]'
               }`}
             >
               <svg width="28" height="4" viewBox="0 0 28 4">
@@ -148,7 +148,7 @@ export default function RectangleSidebar() {
               key={f.value}
               onClick={() => updateFill(f.value)}
               className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${
-                fillStyle === f.value ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'
+                fillStyle === f.value ? 'bg-[#7667a8] text-white' : 'text-text-secondary hover:bg-white/[0.06]'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-current" />

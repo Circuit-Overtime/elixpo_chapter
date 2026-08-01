@@ -6,12 +6,12 @@ export const metadata = {
     title: 'Security at LixSketch',
     description:
       'Zero-knowledge architecture, E2E encryption, and full open-source transparency — your diagrams stay private.',
-    images: [{ url: '/Images/og-image.png', width: 1322, height: 612, alt: 'LixSketch Security' }],
+    images: [{ url: '/og-image.png', width: 1280, height: 720, alt: 'LixSketch Security' }],
   },
   twitter: {
     title: 'Security at LixSketch',
     description: 'E2E encrypted canvas with zero-knowledge architecture.',
-    images: ['/Images/og-image.png'],
+    images: ['/og-image.png'],
   },
   alternates: { canonical: '/resources/security' },
 }
