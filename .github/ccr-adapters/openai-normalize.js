@@ -124,18 +124,12 @@ function flattenMessages(messages) {
             for (const b of m.content) {
                 if (b?.type === "text" && b.text) texts.push(b.text);
             }
-            if (texts.length > 0)
-                out.push({ role: "assistant", content: texts.join("\n") });
+            if (texts.length > 0) out.push({ role: "assistant", content: texts.join("\n") });
             continue;
         }
 
-        if (
-            role === "assistant" &&
-            Array.isArray(m.tool_calls) &&
-            m.tool_calls.length > 0
-        ) {
-            const c =
-                typeof m.content === "string" ? m.content : asString(m.content);
+        if (role === "assistant" && Array.isArray(m.tool_calls) && m.tool_calls.length > 0) {
+            const c = typeof m.content === "string" ? m.content : asString(m.content);
             if (c) out.push({ role: "assistant", content: c });
             continue;
         }
@@ -151,28 +145,17 @@ function flattenMessages(messages) {
             for (const b of m.content) {
                 if (b?.type === "text" && b.text) parts.push(b.text);
                 else if (b?.type === "tool_result") {
-                    parts.push(
-                        toolResultNarrative(
-                            toolUseIndex,
-                            b.tool_use_id,
-                            b.content,
-                        ),
-                    );
+                    parts.push(toolResultNarrative(toolUseIndex, b.tool_use_id, b.content));
                 }
             }
-            if (parts.length > 0)
-                out.push({ role: "user", content: parts.join("\n") });
+            if (parts.length > 0) out.push({ role: "user", content: parts.join("\n") });
             continue;
         }
 
         if (role === "tool") {
             out.push({
                 role: "user",
-                content: toolResultNarrative(
-                    toolUseIndex,
-                    m.tool_call_id,
-                    m.content,
-                ),
+                content: toolResultNarrative(toolUseIndex, m.tool_call_id, m.content),
             });
             continue;
         }
@@ -192,8 +175,8 @@ function flattenMessages(messages) {
 
     for (const m of merged) {
         if (m && typeof m === "object") {
-            delete m.tool_calls;
-            delete m.tool_call_id;
+            m.tool_calls = undefined;
+            m.tool_call_id = undefined;
         }
     }
     return merged;
@@ -218,10 +201,7 @@ class OpenAINormalizeAdapter {
         if (!Array.isArray(body.messages)) return request;
         // Only pass through unchanged for real Claude models; everything else
         // (kimi, qwen, perplexity, glm, gemini, ...) gets flattened.
-        if (
-            typeof body.model === "string" &&
-            ANTHROPIC_NATIVE_RE.test(body.model)
-        ) {
+        if (typeof body.model === "string" && ANTHROPIC_NATIVE_RE.test(body.model)) {
             return request;
         }
 
