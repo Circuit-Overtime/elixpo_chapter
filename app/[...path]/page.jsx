@@ -54,7 +54,7 @@ export async function generateMetadata({ params, searchParams }) {
     // so the byline, avatar and tier hint would fall away on their own — but assert
     // it explicitly here too. A share card is the one artifact that outlives the page,
     // and it must never carry the author of an anonymous post.
-    const blogMeta = (b, url) => {
+      const blogMeta = (b, url) => {
       const secret = !!b.secret;
       const title = b.title || 'Untitled';
       const primary = secret ? '' : (b.author_name || b.author_username || '');
@@ -91,7 +91,7 @@ export async function generateMetadata({ params, searchParams }) {
         alternates: { canonical: url },
         // Keep secret blogs out of search engines: an indexed anonymous post is a
         // permanent, crawlable artifact its author can never fully retract.
-        ...(secret ? { robots: { index: false, follow: false } } : {}),
+        ...((secret || b.status !== 'published') ? { robots: { index: false, follow: false } } : {}),
         openGraph: {
           type: 'article', title, description, url, siteName: 'LixBlogs',
           publishedTime: b.published_at ? new Date(b.published_at * 1000).toISOString() : undefined,
@@ -188,7 +188,10 @@ export async function generateMetadata({ params, searchParams }) {
       const title = inviterName || 'LixBlogs';
       const description = `You're invited to collaborate on "${b.title || 'a post'}".`;
       const og = ogUrl({ type: 'profile', kind: 'Invitation to collaborate', title, sub: `on "${(b.title || 'a post').slice(0, 50)}"`, avatar });
-      return cardMeta({ title: `Invitation · ${title}`, description, url, og, ogType: 'website' });
+      return {
+        ...cardMeta({ title: `Invitation · ${title}`, description, url, og, ogType: 'website' }),
+        robots: { index: false, follow: false },
+      };
     }
 
     // Normal blog → mark + title + author list (small). Secret blogs never reach
@@ -335,7 +338,18 @@ export default async function CatchAllHandle({ params }) {
   const { path } = await params;
   const h = await headers();
   const origin = `${h.get('x-forwarded-proto') || 'https'}://${h.get('host')}`;
-  const jsonLd = await buildJsonLd(path, origin);
+  const rawName = path?.[0] || '';
+  const slug = path?.length === 2 ? (path[1] || '').toLowerCase() : path?.length === 3 ? (path[2] || '').toLowerCase() : '';
+  const collection = path?.length === 3 ? (path[1] || '').toLowerCase() : '';
+  const qs = new URLSearchParams({ name: rawName });
+  if (slug) qs.set('slug', slug);
+  if (collection) qs.set('collection', collection);
+  const [jsonLd, initialData] = await Promise.all([
+    buildJsonLd(path, origin),
+    fetch(`${origin}/api/resolve?${qs}`, { headers: { 'user-agent': 'lixblogs-ssr' } })
+      .then((response) => response.ok ? response.json() : null)
+      .catch(() => null),
+  ]);
 
   return (
     <>
@@ -345,7 +359,7 @@ export default async function CatchAllHandle({ params }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <CatchAllClient params={params} />
+      <CatchAllClient params={params} initialData={initialData} />
     </>
   );
 }
