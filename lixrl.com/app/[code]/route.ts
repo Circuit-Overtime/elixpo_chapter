@@ -33,9 +33,11 @@ export async function GET(
       return notFoundPage(request);
     }
     try {
-      const { url, id } = JSON.parse(cached);
-      const db = getDB();
-      scheduleTracking(db, id, request);
+      const { url, id, guest } = JSON.parse(cached);
+      if (!guest && typeof id === 'number') {
+        const db = getDB();
+        scheduleTracking(db, id, request);
+      }
       return redirect(url);
     } catch {
       // Corrupted cache entry — fall through to D1 lookup and re-cache.
@@ -51,6 +53,29 @@ export async function GET(
     .first<{ id: number; original_url: string; is_active: number; expires_at: string | null }>();
 
   if (!urlRecord || !urlRecord.is_active) {
+    const guestRecord = await db
+      .prepare(
+        `SELECT original_url, expires_at
+         FROM guest_links
+         WHERE short_code = ? AND expires_at > ?`,
+      )
+      .bind(code, new Date().toISOString())
+      .first<{ original_url: string; expires_at: string }>();
+
+    if (guestRecord) {
+      const ttl = Math.floor(
+        (new Date(guestRecord.expires_at).getTime() - Date.now()) / 1000,
+      );
+      if (ttl >= 60) {
+        kv.put(
+          `url:${code}`,
+          JSON.stringify({ url: guestRecord.original_url, guest: true }),
+          { expirationTtl: ttl },
+        ).catch(() => {});
+      }
+      return redirect(guestRecord.original_url);
+    }
+
     // Negative cache the miss so scanners don't keep burning D1 reads.
     // Real creates populate the KV entry directly (see api/urls POST),
     // which overwrites this sentinel.
