@@ -18,7 +18,9 @@ import { STAFF_ORG_ID } from '../../lib/staff';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 
-const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { ssr: false });
+// Keep the published article in the initial HTML. Search crawlers should not
+// need to execute JavaScript before they can see a post's title and body.
+const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'));
 
 function FollowButton({ username }) {
   const { user: currentUser } = useAuth();
@@ -79,10 +81,10 @@ export default function HandlePage(props) {
   );
 }
 
-function HandlePageInner({ path }) {
+function HandlePageInner({ path, initialData = null }) {
   const { user: currentUser } = useAuth();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(initialData);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState(null);
   const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
   const [hideHighlights, setHideHighlights] = useState(false); // strip text colors/highlights
@@ -105,6 +107,11 @@ function HandlePageInner({ path }) {
   useEffect(() => {
     if (!name) { setLoading(false); setError('Not found'); return; }
 
+    // Public page data was rendered on the server. A member-only teaser is
+    // refreshed after authentication so an entitled reader still gets the
+    // complete post without sacrificing crawlable initial HTML.
+    if (initialData && !(initialData.blog?.paywalled && currentUser)) return;
+
     if (isReadingList) {
       fetch(`/api/library/public?username=${encodeURIComponent(name)}&slug=${encodeURIComponent(third)}`)
         .then(r => r.ok ? r.json() : r.json().then(d => { throw new Error(d.error || 'Not found'); }))
@@ -123,7 +130,7 @@ function HandlePageInner({ path }) {
       .then(d => setData(d))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [rawName, name, slug, collection, isReadingList, third]);
+  }, [rawName, name, slug, collection, isReadingList, third, initialData, currentUser]);
 
   if (loading) {
     return (
