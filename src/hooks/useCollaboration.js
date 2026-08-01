@@ -31,6 +31,16 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
 
     async function init() {
       try {
+        // The collaboration worker runs on workers.dev, so the app's session
+        // cookie cannot cross that domain boundary. Exchange it server-side for
+        // a signed, blog-scoped token before contacting the worker.
+        const tokenResponse = await fetch(`/api/collab/token?blogId=${encodeURIComponent(blogId)}`);
+        const tokenData = await tokenResponse.json().catch(() => ({}));
+        if (!tokenResponse.ok || !tokenData.token) {
+          throw new Error(tokenData.error || 'Collaboration authorization failed');
+        }
+        const collabToken = tokenData.token;
+
         // Dynamic imports — only load Yjs when collab is active
         const Y = await import('yjs');
         const { WebsocketProvider } = await import('y-websocket');
@@ -42,7 +52,7 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
         try {
           const httpBase = COLLAB_WS_URL.replace(/^ws/, 'http');
           const path = subpageId ? `blog/${blogId}/sub/${subpageId}/status` : `blog/${blogId}/status`;
-          const res = await fetch(`${httpBase}/${path}`, { credentials: 'include' });
+          const res = await fetch(`${httpBase}/${path}?token=${encodeURIComponent(collabToken)}`);
           if (res.ok) {
             const { users = [], count = 0 } = await res.json();
             const alreadyIn = users.some((u) => u.userId === user.id);
@@ -68,8 +78,7 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
           ydoc,
           {
             params: {
-              userId: user.id,
-              userName: user.display_name || user.username || 'Anonymous',
+              token: collabToken,
             },
             connect: true,
           }
@@ -86,7 +95,14 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
 
         // Track connection state
         provider.on('status', ({ status }) => {
-          if (!cancelled) setIsConnected(status === 'connected');
+          if (!cancelled) {
+            setIsConnected(status === 'connected');
+            if (status === 'connected') setError(null);
+          }
+        });
+
+        provider.on('connection-error', () => {
+          if (!cancelled) setError('Live collaboration connection failed');
         });
 
         // After initial sync, check if the Yjs fragment is empty (needs seeding from existing content)
