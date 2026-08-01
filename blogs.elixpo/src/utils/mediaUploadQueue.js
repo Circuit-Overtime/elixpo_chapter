@@ -63,15 +63,21 @@ async function runUpload(id) {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
         const formData = new FormData();
-        formData.append('file', job.blob, job.filename);
+        const uploadBlob = job.blob?.type
+          ? job.blob
+          : new Blob([job.blob], { type: 'image/webp' });
+        formData.append('file', uploadBlob, job.filename);
         formData.append('type', job.type);
         formData.append('uploadId', job.id);
         if (job.blogId) formData.append('blogId', job.blogId);
         if (job.orgId) formData.append('orgId', job.orgId);
         const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
-        data = await response.json().catch(() => ({}));
+        const responseText = await response.text();
+        try { data = responseText ? JSON.parse(responseText) : {}; } catch { data = {}; }
         if (response.ok) break;
-        lastError = new Error(data.error || `Upload failed (${response.status})`);
+        const isHtml = /^\s*<!doctype|^\s*<html/i.test(responseText);
+        const detail = isHtml ? '' : responseText.slice(0, 300).trim();
+        lastError = new Error(data.error || detail || `Upload failed (${response.status})`);
         if (![502, 503, 504].includes(response.status)) {
           lastError.nonRetryable = true;
           throw lastError;
