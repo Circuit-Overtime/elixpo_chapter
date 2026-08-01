@@ -39,8 +39,8 @@ jobs:
 
       - name: Generate description if empty
         env:
-          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
-          POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
+          AGENT_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN || secrets.GITHUB_TOKEN }}
+          POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
           REPO: ${{ github.repository }}
@@ -49,8 +49,8 @@ jobs:
 
       - name: Triage issue
         env:
-          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
-          POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
+          AGENT_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN || secrets.GITHUB_TOKEN }}
+          POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
           REPO: ${{ github.repository }}

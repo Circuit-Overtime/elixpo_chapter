@@ -37,8 +37,8 @@ jobs:
         with:
           # Need a PAT (not GITHUB_TOKEN) so the auto-bump push back to
           # main can re-trigger downstream workflows that listen on
-          # push. CI_AGENT_TOKEN already exists in repo secrets.
-          token: ${{ secrets.CI_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
+          # push. ELIXPOO_GITHUB_AGENTIC_TOKEN already exists in repo secrets.
+          token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Setup Python
@@ -120,7 +120,7 @@ jobs:
           # Use the elixpoo PAT so the release card on GitHub shows
           # "elixpoo released..." rather than "github-actions[bot]".
           # The PAT must have `contents:write` for the repo.
-          token: ${{ secrets.CI_AGENT_TOKEN }}
+          token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           tag_name: ${{ steps.meta.outputs.tag }}
           name: "OreoOS ${{ steps.meta.outputs.version }} (${{ steps.meta.outputs.channel }})"
           prerelease: ${{ steps.meta.outputs.channel != 'stable' }}
@@ -145,6 +145,6 @@ jobs:
           TWINE_USERNAME: __token__
           # Attribute the package upload to elixpoo too. The PAT needs
           # `write:packages` (and `read:packages` for re-uploads).
-          TWINE_PASSWORD: ${{ secrets.CI_AGENT_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           TWINE_REPOSITORY_URL: https://${{ github.repository_owner }}.pkg.github.com/${{ github.repository_owner }}/
         run: twine upload --skip-existing dist/oreoos-*.tar.gz dist/oreoos-*.whl

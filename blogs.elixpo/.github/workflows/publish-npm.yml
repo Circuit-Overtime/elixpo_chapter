@@ -35,7 +35,7 @@ jobs:
         with:
           # Use the agent token so the follow-up `git push` is authorized
           # to write back to the protected `main` branch.
-          token: ${{ secrets.CI_AGENT_TOKEN }}
+          token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           # We need full history so commit/push works cleanly.
           fetch-depth: 0
 
