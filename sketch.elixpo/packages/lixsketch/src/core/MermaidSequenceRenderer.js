@@ -35,7 +35,7 @@ function themeColors() {
     const isDark = typeof document !== 'undefined'
         && document.body
         && document.body.classList.contains('theme-dark');
-    if (isDark) return THEME;
+    if (isDark) return DARK_THEME;
     return {
         bg: '#fbfaf6',
         participantBg: '#ffffff',
@@ -56,7 +56,7 @@ function themeColors() {
 }
 
 // Theme colors (dark theme — preview/SVG-string path).
-const THEME = {
+const DARK_THEME = {
     bg: '#1e1e28',
     participantBg: '#232329',
     participantBorder: '#555',
@@ -124,6 +124,8 @@ function wrapText(text, fontSize, maxWidth) {
  */
 export function renderSequenceSVG(diagram, opts = {}) {
     if (!diagram || diagram.type !== 'sequenceDiagram') return '';
+
+    const THEME = themeColors();
 
     const participants = diagram.participants;
     const messages = diagram.messages;
@@ -401,9 +403,9 @@ export function parseAndRenderSequence(src) {
  * Issue #34 bug #3 (follow-up to #24 per-actor split): drops the shared
  * `groupId` glue so clicking one shape selects only that shape.
  *
- * Notes and block-frames (alt/opt/loop) are skipped for now — they'd
- * either need their own shape types or a richer label model. Self-
- * messages are also skipped (would need a curved arrow).
+ * Notes and block frames are ordinary labelled rectangles. Self messages
+ * use three line segments plus an arrow, keeping every visible component
+ * editable with the same primitives users draw manually.
  */
 export function renderSequenceOnCanvas(diagram) {
     if (!diagram || diagram.type !== 'sequenceDiagram') return false;
@@ -414,6 +416,8 @@ export function renderSequenceOnCanvas(diagram) {
 
     const participants = diagram.participants || [];
     const messages = diagram.messages || [];
+    const notes = diagram.notes || [];
+    const blocks = diagram.blocks || [];
     if (participants.length === 0) return false;
 
     // Mirror the layout math from renderSequenceSVG so the canvas layout
@@ -425,12 +429,23 @@ export function renderSequenceOnCanvas(diagram) {
     const pCenters = participants.map((_, i) => startX + i * PARTICIPANT_GAP + PARTICIPANT_W / 2);
 
     const topBoxBottom = TOP_MARGIN + PARTICIPANT_H;
+    const noteAtMsg = new Map();
+    notes.forEach((note) => {
+        const lines = wrapText(note.text, 11, NOTE_MAX_W - NOTE_PAD * 2);
+        const height = lines.length * 15 + NOTE_PAD * 2;
+        if (!noteAtMsg.has(note.atMessage)) noteAtMsg.set(note.atMessage, []);
+        noteAtMsg.get(note.atMessage).push({ ...note, lines, height });
+    });
     const msgYPositions = [];
     let currentY = topBoxBottom + 30;
     for (let mi = 0; mi < messages.length; mi++) {
+        const before = noteAtMsg.get(mi);
+        if (before?.length) currentY += Math.max(...before.map(note => note.height)) + 10;
         msgYPositions.push(currentY);
         currentY += MSG_ROW_HEIGHT;
     }
+    const trailingNotes = noteAtMsg.get(messages.length);
+    if (trailingNotes?.length) currentY += Math.max(...trailingNotes.map(note => note.height)) + 10;
     const bottomBoxTop = currentY + 20;
     const totalHeight = bottomBoxTop + PARTICIPANT_H + BOTTOM_MARGIN;
 
@@ -532,13 +547,43 @@ export function renderSequenceOnCanvas(diagram) {
         }
     }
 
+    // ── Blocks: editable containers behind message rows ───────────────
+    for (const block of blocks) {
+        const startY = block.startMsg < msgYPositions.length ? msgYPositions[block.startMsg] - 22 : topBoxBottom + 15;
+        const endY = block.endMsg < msgYPositions.length ? msgYPositions[block.endMsg] - 8 : currentY;
+        try {
+            const blockShape = new window.Rectangle(
+                startX - 18 + ox,
+                startY + oy,
+                contentWidth + 36,
+                Math.max(36, endY - startY),
+                {
+                    stroke: TK.blockBorder,
+                    strokeWidth: 1,
+                    strokeDasharray: '5 3',
+                    fill: 'transparent',
+                    fillStyle: 'none',
+                    roughness: .5,
+                    label: [block.type, block.label].filter(Boolean).join(': '),
+                    labelColor: TK.blockLabel,
+                    labelFontSize: 10,
+                }
+            );
+            window.shapes.push(blockShape);
+            if (window.pushCreateAction) window.pushCreateAction(blockShape);
+            frame.addShapeToFrame(blockShape);
+            created.push(blockShape);
+        } catch (err) {
+            console.warn('[SequenceRenderer] Block creation failed:', block, err);
+        }
+    }
+
     // ── Messages: arrow (or line for --x style) per row ───────────────
     for (let mi = 0; mi < messages.length; mi++) {
         const m = messages[mi];
         const fromI = pIndex.get(m.from);
         const toI = pIndex.get(m.to);
         if (fromI == null || toI == null) continue;
-        if (fromI === toI) continue;  // skip self-messages (v1 limitation)
 
         const fromCx = pCenters[fromI] + ox;
         const toCx = pCenters[toI] + ox;
@@ -562,6 +607,26 @@ export function renderSequenceOnCanvas(diagram) {
         try {
             const sp = { x: fromCx, y };
             const ep = { x: toCx, y };
+            if (fromI === toI) {
+                const loopWidth = 46;
+                const loopHeight = 28;
+                const a = { x: fromCx, y };
+                const b = { x: fromCx + loopWidth, y };
+                const c = { x: fromCx + loopWidth, y: y + loopHeight };
+                const d = { x: fromCx + 5, y: y + loopHeight };
+                const segments = [
+                    new window.Line(a, b, opts),
+                    new window.Line(b, c, opts),
+                    new window.Arrow(c, d, opts),
+                ];
+                segments.forEach((segment) => {
+                    window.shapes.push(segment);
+                    if (window.pushCreateAction) window.pushCreateAction(segment);
+                    frame.addShapeToFrame(segment);
+                    created.push(segment);
+                });
+                continue;
+            }
             const connector = isCross
                 ? new window.Line(sp, ep, opts)
                 : new window.Arrow(sp, ep, opts);
@@ -572,6 +637,51 @@ export function renderSequenceOnCanvas(diagram) {
         } catch (err) {
             console.warn('[SequenceRenderer] Message creation failed:', m, err);
         }
+    }
+
+
+    // ── Notes: one independently editable rectangle per note ─────────
+    for (const [messageIndex, noteGroup] of noteAtMsg.entries()) {
+        const baseY = messageIndex < msgYPositions.length
+            ? msgYPositions[messageIndex] - 15
+            : (messageIndex > 0 ? msgYPositions[messageIndex - 1] + MSG_ROW_HEIGHT - 15 : topBoxBottom + 30);
+        noteGroup.forEach((note, noteIndex) => {
+            const indexes = note.targets.map(target => pIndex.get(target)).filter(index => index !== undefined);
+            if (!indexes.length) return;
+            const noteWidth = NOTE_MAX_W;
+            let centerX = pCenters[indexes[0]];
+            if (note.position === 'over' && indexes.length > 1) {
+                centerX = (pCenters[Math.min(...indexes)] + pCenters[Math.max(...indexes)]) / 2;
+            } else if (note.position === 'left of') {
+                centerX -= PARTICIPANT_W / 2 + noteWidth / 2 + 8;
+            } else if (note.position === 'right of') {
+                centerX += PARTICIPANT_W / 2 + noteWidth / 2 + 8;
+            }
+            try {
+                const noteShape = new window.Rectangle(
+                    centerX - noteWidth / 2 + ox,
+                    baseY - note.height - noteIndex * (note.height + 6) + oy,
+                    noteWidth,
+                    note.height,
+                    {
+                        stroke: TK.noteBorder,
+                        strokeWidth: 1,
+                        fill: TK.noteBg,
+                        fillStyle: 'solid',
+                        roughness: .7,
+                        label: note.text,
+                        labelColor: TK.noteText,
+                        labelFontSize: 11,
+                    }
+                );
+                window.shapes.push(noteShape);
+                if (window.pushCreateAction) window.pushCreateAction(noteShape);
+                frame.addShapeToFrame(noteShape);
+                created.push(noteShape);
+            } catch (err) {
+                console.warn('[SequenceRenderer] Note creation failed:', note, err);
+            }
+        });
     }
 
     // Auto-select the first node so the user has feedback that the
@@ -586,4 +696,3 @@ export function renderSequenceOnCanvas(diagram) {
     console.log(`[SequenceRenderer] Done: ${pCount} participants, ${messages.length} messages`);
     return true;
 }
-

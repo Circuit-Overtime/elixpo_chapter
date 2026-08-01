@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  /* Site and canvas default to dark. Explicit theme classes below switch
-   * every canvas token together, avoiding a mixed first paint. */
-  --color-surface: #232329;
-  --color-surface-hover: #343448;
-  --color-surface-active: #444480;
-  --color-surface-dark: #1a1a20;
-  --color-surface-card: #1e1e28;
-  --color-accent: #c873e4;
-  --color-accent-dim: #444480;
-  --color-accent-blue: #5B57D1;
-  --color-accent-blue-hover: #6c67f3;
-  --color-text-primary: #fff;
-  --color-text-secondary: #e8e8ee;
-  /* PR #39 contrast bump kept here so dark-mode small labels stay legible. */
-  --color-text-muted: #b8b8c8;
-  --color-text-dim: #a0a0b0;
-  --color-border: #333;
-  --color-border-light: #3a3a50;
-  --color-border-accent: #5555a0;
+  /* Warm light is the default across the product. The historical token
+   * name `accent-blue` is retained for compatibility, but now resolves to
+   * a muted sage so existing buttons stop appearing blue. */
+  --color-surface: #f4f1e9;
+  --color-surface-hover: #ebe7dc;
+  --color-surface-active: #dcd8ca;
+  --color-surface-dark: #efebe1;
+  --color-surface-card: #fbfaf6;
+  --color-accent: #a26f55;
+  --color-accent-dim: #d8d0c1;
+  --color-accent-blue: #6f846f;
+  --color-accent-blue-hover: #5f765f;
+  --color-text-primary: #30342f;
+  --color-text-secondary: #474c46;
+  --color-text-muted: #666c64;
+  --color-text-dim: #81867e;
+  --color-border: #d6d1c5;
+  --color-border-light: #c7c1b4;
+  --color-border-accent: #879a87;
 }
 body.canvas-mode.theme-light {
   --color-surface: #f4f3ee;
@@ -33,12 +33,11 @@ body.canvas-mode.theme-light {
   --color-text-dim: #80808f;
   --color-border: #d6d4ca;
   --color-border-light: #c5c3ba;
-  --color-border-accent: #8080c0;
+  --color-border-accent: #879a87;
   --lixsketch-grid-fine: rgba(60, 60, 80, 0.07);
   --lixsketch-grid-major: rgba(60, 60, 80, 0.14);
 }
 
-body.canvas-mode,
 body.canvas-mode.theme-dark {
   --color-surface: #25252f;
   --color-surface-hover: #35354a;
@@ -81,7 +80,8 @@ body.canvas-mode.theme-dark {
 /* Global utilities */
 body {
   margin: 0;
-  background: #13171C;
+  background: #faf9f5;
+  color: #30342f;
   font-family: "lixFont", sans-serif;
   font-size: 14px;
 }
@@ -100,11 +100,11 @@ body.canvas-mode {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a3a;
+  background: #bbb7ac;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #8B88E8;
+  background: #879a87;
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
@@ -113,7 +113,7 @@ body.canvas-mode {
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2a2a3a transparent;
+  scrollbar-color: #bbb7ac transparent;
 }
 
 /* Hide scrollbars on specific elements */
