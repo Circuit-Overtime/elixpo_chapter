@@ -26,7 +26,8 @@ TOOL_PATCHER="$CCR_HOME/tool-schema-patcher.js"
 
 cat > "$CCR_HOME/config.json" <<EOF
 {
-  "LOG": false,
+  "LOG": true,
+  "LOG_LEVEL": "error",
   "NON_INTERACTIVE_MODE": true,
   "API_TIMEOUT_MS": 600000,
   "HOST": "127.0.0.1",
