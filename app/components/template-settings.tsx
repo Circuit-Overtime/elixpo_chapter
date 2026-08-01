@@ -1,5 +1,6 @@
 "use client";
 
+import type { EmailFooter } from "@/lib/render";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BoltIcon from "@mui/icons-material/Bolt";
 import SaveIcon from "@mui/icons-material/Save";
@@ -20,7 +21,6 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { EmailFooter } from "@/lib/render";
 import { GHOST_BTN, PRIMARY_BTN } from "./dashboard-ui";
 import GlassCard from "./glass-card";
 import TemplateSendDialog from "./template-send-dialog";
@@ -81,7 +81,13 @@ interface Tmpl {
 function FieldLabel({ children }: { children: React.ReactNode }) {
     return (
         <Typography
-            sx={{ fontSize: "0.72rem", fontWeight: 700, color: TEXT_60, mb: 0.5, letterSpacing: "0.02em" }}
+            sx={{
+                fontSize: "0.72rem",
+                fontWeight: 700,
+                color: TEXT_60,
+                mb: 0.5,
+                letterSpacing: "0.02em",
+            }}
         >
             {children}
         </Typography>
@@ -130,7 +136,8 @@ export default function TemplateSettings({ templateId }: { templateId: string })
                 const pData: any = await pRes.json().catch(() => ({}));
                 const sData: any = await sRes.json().catch(() => ({}));
                 if (!alive) return;
-                if (!tRes.ok || !tData?.ok) throw new Error(tData?.error || "Could not load template.");
+                if (!tRes.ok || !tData?.ok)
+                    throw new Error(tData?.error || "Could not load template.");
                 const t: Tmpl = tData.template;
                 setTmpl(t);
                 setMode(t.product_id ? "webhook" : "one_time");
@@ -197,7 +204,9 @@ export default function TemplateSettings({ templateId }: { templateId: string })
     if (!tmpl) {
         return (
             <Box sx={{ p: 4 }}>
-                <Typography sx={{ color: "var(--danger)" }}>{error || "Template not found."}</Typography>
+                <Typography sx={{ color: "var(--danger)" }}>
+                    {error || "Template not found."}
+                </Typography>
             </Box>
         );
     }
@@ -224,16 +233,40 @@ export default function TemplateSettings({ templateId }: { templateId: string })
                         <Typography sx={{ fontWeight: 800, fontSize: "1.15rem", color: TEXT }}>
                             Settings
                         </Typography>
-                        <Typography sx={{ fontSize: "0.8rem", color: TEXT_60 }}>{tmpl.name}</Typography>
+                        <Typography sx={{ fontSize: "0.8rem", color: TEXT_60 }}>
+                            {tmpl.name}
+                        </Typography>
                     </Box>
                 </Stack>
-                <Button onClick={save} disabled={saving} startIcon={saving ? <CircularProgress size={15} sx={{ color: "var(--fg-muted)" }} /> : <SaveIcon sx={{ fontSize: "1.05rem !important" }} />} sx={PRIMARY_BTN}>
+                <Button
+                    onClick={save}
+                    disabled={saving}
+                    startIcon={
+                        saving ? (
+                            <CircularProgress size={15} sx={{ color: "var(--fg-muted)" }} />
+                        ) : (
+                            <SaveIcon sx={{ fontSize: "1.05rem !important" }} />
+                        )
+                    }
+                    sx={PRIMARY_BTN}
+                >
                     Save settings
                 </Button>
             </Stack>
 
             {error && (
-                <Box sx={{ mb: 2, px: 2, py: 1, borderRadius: "10px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "var(--danger)", fontSize: "0.85rem" }}>
+                <Box
+                    sx={{
+                        mb: 2,
+                        px: 2,
+                        py: 1,
+                        borderRadius: "10px",
+                        background: "rgba(239,68,68,0.1)",
+                        border: "1px solid rgba(239,68,68,0.3)",
+                        color: "var(--danger)",
+                        fontSize: "0.85rem",
+                    }}
+                >
                     {error}
                 </Box>
             )}
@@ -294,14 +327,22 @@ export default function TemplateSettings({ templateId }: { templateId: string })
                 {/* Footer (one-time only) */}
                 {mode === "one_time" && (
                     <GlassCard sx={{ p: 2.5 }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: TEXT, mb: 0.4 }}>
+                        <Typography
+                            sx={{ fontWeight: 700, fontSize: "0.95rem", color: TEXT, mb: 0.4 }}
+                        >
                             Footer
                         </Typography>
                         <Typography sx={{ fontSize: "0.82rem", color: TEXT_60, mb: 1.6 }}>
                             One-time templates carry their own footer (no product to inherit from).
                             Leave blank for just the Elixpo Mails attribution.
                         </Typography>
-                        <Box sx={{ display: "grid", gap: 1.4, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" } }}>
+                        <Box
+                            sx={{
+                                display: "grid",
+                                gap: 1.4,
+                                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                            }}
+                        >
                             {FOOTER_FIELDS.map((f) => (
                                 <Box key={f.key}>
                                     <FieldLabel>{f.label}</FieldLabel>
@@ -348,7 +389,9 @@ export default function TemplateSettings({ templateId }: { templateId: string })
                             size="small"
                             sx={{
                                 "& .Mui-checked": { color: ACCENT },
-                                "& .Mui-checked + .MuiSwitch-track": { backgroundColor: `${ACCENT} !important` },
+                                "& .Mui-checked + .MuiSwitch-track": {
+                                    backgroundColor: `${ACCENT} !important`,
+                                },
                             }}
                         />
                         <Box>
@@ -356,7 +399,8 @@ export default function TemplateSettings({ templateId }: { templateId: string })
                                 Transactional
                             </Typography>
                             <Typography sx={{ fontSize: "0.74rem", color: TEXT_60 }}>
-                                Always sends (even to unsubscribed recipients) and carries no unsubscribe link.
+                                Always sends (even to unsubscribed recipients) and carries no
+                                unsubscribe link.
                             </Typography>
                         </Box>
                     </Stack>
@@ -368,7 +412,8 @@ export default function TemplateSettings({ templateId }: { templateId: string })
                         Variables
                     </Typography>
                     <Typography sx={{ fontSize: "0.82rem", color: TEXT_60, mb: 1.4 }}>
-                        Declared with <code>{"{{name}}"}</code> in the subject or body. Filled in per send.
+                        Declared with <code>{"{{name}}"}</code> in the subject or body. Filled in
+                        per send.
                     </Typography>
                     {tmpl.variables.length ? (
                         <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.7 }}>
@@ -377,7 +422,14 @@ export default function TemplateSettings({ templateId }: { templateId: string })
                                     key={v}
                                     label={`{{${v}}}`}
                                     size="small"
-                                    sx={{ height: 24, fontFamily: "var(--font-geist-mono)", fontSize: "0.74rem", color: ACCENT, bgcolor: "var(--accent-tint)", border: "1px solid var(--accent-border)" }}
+                                    sx={{
+                                        height: 24,
+                                        fontFamily: "var(--font-geist-mono)",
+                                        fontSize: "0.74rem",
+                                        color: ACCENT,
+                                        bgcolor: "var(--accent-tint)",
+                                        border: "1px solid var(--accent-border)",
+                                    }}
                                 />
                             ))}
                         </Stack>
@@ -399,10 +451,18 @@ export default function TemplateSettings({ templateId }: { templateId: string })
                             : "Send this template to one or more recipients."}
                     </Typography>
                     <Stack direction="row" spacing={1.2}>
-                        <Button onClick={() => setTestOpen(true)} startIcon={<BoltIcon sx={{ fontSize: "1.05rem !important" }} />} sx={GHOST_BTN}>
+                        <Button
+                            onClick={() => setTestOpen(true)}
+                            startIcon={<BoltIcon sx={{ fontSize: "1.05rem !important" }} />}
+                            sx={GHOST_BTN}
+                        >
                             Test send
                         </Button>
-                        <Button onClick={() => setSendOpen(true)} startIcon={<SendIcon sx={{ fontSize: "1.05rem !important" }} />} sx={PRIMARY_BTN}>
+                        <Button
+                            onClick={() => setSendOpen(true)}
+                            startIcon={<SendIcon sx={{ fontSize: "1.05rem !important" }} />}
+                            sx={PRIMARY_BTN}
+                        >
                             Send now
                         </Button>
                     </Stack>
@@ -469,11 +529,18 @@ function TypeCard({
                 "&:hover": { borderColor: ACCENT },
             }}
         >
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.6, color: active ? ACCENT : TEXT }}>
+            <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ mb: 0.6, color: active ? ACCENT : TEXT }}
+            >
                 {icon}
                 <Typography sx={{ fontWeight: 700, fontSize: "0.92rem" }}>{title}</Typography>
             </Stack>
-            <Typography sx={{ fontSize: "0.78rem", color: TEXT_60, lineHeight: 1.5 }}>{body}</Typography>
+            <Typography sx={{ fontSize: "0.78rem", color: TEXT_60, lineHeight: 1.5 }}>
+                {body}
+            </Typography>
         </Box>
     );
 }
