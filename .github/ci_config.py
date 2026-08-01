@@ -11,7 +11,7 @@ LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
 LLM_MODEL_AGENT = "qwen3.7-flash"
 LLM_MODEL_CODE = "qwen-coder"
 LLM_MODEL_CHAT = "qwen3.7-flash"
-LLM_MODEL_THINKING = "deepseek"
+LLM_MODEL_THINKING = "qwen3.7-flash"
 LLM_MODEL_SEARCH = "gemini-fast"
 
 LLM_MAX_TOKENS_AGENT = 3500
