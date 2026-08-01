@@ -175,6 +175,13 @@ export function installEngineShortcuts(engine, options = {}) {
             return; // Other Ctrl combos are app-level; let the consumer handle them.
         }
 
+        // Shift+1 = Fit to content
+        if (e.shiftKey && (key === '1' || key === '!')) {
+            e.preventDefault();
+            if (typeof window.zoomFit === 'function') window.zoomFit();
+            return;
+        }
+
         // Delete / Backspace — remove selected shapes.
         if (e.key === 'Delete' || e.key === 'Backspace') {
             e.preventDefault();
