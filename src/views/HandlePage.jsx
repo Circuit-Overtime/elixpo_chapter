@@ -230,6 +230,7 @@ function HandlePageInner({ path }) {
                     tags={blog.tags || []}
                     hideHighlights={hideHighlights}
                     onToggleHighlights={() => setHideHighlights(v => !v)}
+                    canEdit={canEdit}
                   />
                 }
               />

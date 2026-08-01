@@ -42,6 +42,9 @@ function FeedCardMenu({ post, onHide }) {
   const ref = useRef(null);
   const author = post.author || {};
   const org = post.org || null;
+  const ownsPost = !!post.can_edit;
+  const ownsAuthor = !!post.is_author || (!!user && post.author_id === user.id);
+  const ownsPublication = !!org && ownsPost;
 
   useEffect(() => {
     if (!open) return;
@@ -64,7 +67,7 @@ function FeedCardMenu({ post, onHide }) {
   const followOrg = () => { if (needAuth() || fOrg) return; setFOrg(true); post_(`/api/orgs/${org.slug}/follow`); setOpen(false); };
   const muteAuthor = () => { if (needAuth()) return; post_('/api/mutes', { targetType: 'author', targetId: post.author_id }); setOpen(false); onHide?.(post.id); };
   const muteOrg = () => { if (needAuth()) return; post_('/api/mutes', { targetType: 'org', targetId: org.id }); setOpen(false); onHide?.(post.id); };
-  const muteTopics = () => { if (needAuth()) return; (post.tags || []).forEach(t => post_('/api/mutes', { targetType: 'tag', targetId: t })); setOpen(false); onHide?.(post.id); };
+  const muteTopics = () => { if (needAuth()) return; (post.tags || []).forEach(t => post_('/api/mutes', { targetType: 'tag', targetId: t, blogId: post.id })); setOpen(false); onHide?.(post.id); };
   const report = () => {
     if (needAuth()) return;
     setOpen(false);
@@ -88,14 +91,24 @@ function FeedCardMenu({ post, onHide }) {
       </button>
       {open && (
         <div className="absolute right-0 top-9 z-50 w-56 rounded-xl py-1.5 overflow-hidden" style={{ backgroundColor: 'var(--dropdown-bg, var(--bg-surface))', border: '1px solid var(--border-default)', boxShadow: '0 12px 40px rgba(0,0,0,0.35)' }}>
-          {!isSelf && item(fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`, followAuthor, false, false, fAuthor)}
-          {org && item(fOrg ? `Following ${org.name}` : `Follow ${org.name}`, followOrg, false, false, fOrg)}
-          <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
-          {!isSelf && item('Mute author', muteAuthor)}
-          {org && item('Mute publication', muteOrg)}
-          {(post.tags || []).length > 0 && item('Mute topics', muteTopics, false, true)}
-          <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
-          {!isSelf && item('Report story…', report, true)}
+          {ownsPost ? (
+            <>
+              {item('Edit story', () => { window.location.href = `/edit/${post.slug || post.id}`; })}
+              {item('Story settings', () => { window.location.href = `/edit/${post.slug || post.id}?panel=settings`; })}
+              {ownsPublication && item('Publication settings', () => { window.location.href = `/settings/org/${org.slug}`; })}
+            </>
+          ) : (
+            <>
+              {!ownsAuthor && !isSelf && item(fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`, followAuthor, false, false, fAuthor)}
+              {org && !ownsPublication && item(fOrg ? `Following ${org.name}` : `Follow ${org.name}`, followOrg, false, false, fOrg)}
+              <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
+              {!ownsAuthor && !isSelf && item('Mute author', muteAuthor)}
+              {org && !ownsPublication && item('Mute publication', muteOrg)}
+              {(post.tags || []).length > 0 && item('Mute topics', muteTopics, false, true)}
+              <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
+              {item('Report story…', report, true)}
+            </>
+          )}
         </div>
       )}
     </div>
