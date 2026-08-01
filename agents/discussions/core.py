@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from agents.discussions.mood import Genre, MOOD_EMOJI, MoodDecision
 from rtk.models import FunctionDef, Message, ToolDef
 
 PROMPTS = Path(__file__).resolve().parents[2] / "prompts"
@@ -38,7 +39,10 @@ def _skill(name: str) -> str:
 
 
 def _instructions(skill: str, prompt: str) -> str:
-    return f"{_skill(skill)}\n\n## Runtime output requirements\n\n{_prompt(prompt)}"
+    return (
+        f"{_skill('living-repo-persona')}\n\n"
+        f"{_skill(skill)}\n\n## Runtime output requirements\n\n{_prompt(prompt)}"
+    )
 
 
 def _content(response) -> str:
@@ -122,6 +126,66 @@ def public_body(body: str, marker: str) -> str:
     return f"{body.strip()}\n\n{DISCLOSURE}\n{marker}"
 
 
+def emoji_title(title: str, emoji: str) -> str:
+    """Apply exactly one deterministic mood emoji to a Discussion title."""
+    clean = str(title or "").strip()
+    for existing in {*MOOD_EMOJI.values(), "🧠"}:
+        if clean.startswith(existing):
+            clean = clean[len(existing):].lstrip(" :-—")
+            break
+    return f"{emoji} {clean}"
+
+
+def render_activity(genre: Genre | str, draft: dict[str, Any], sources: list[dict] | None = None) -> str:
+    """Render generated fields through a stable, readable Markdown contract."""
+    genre = Genre(genre)
+    summary = str(draft.get("summary", "")).strip()
+    impact = str(draft.get("impact", "")).strip()
+    prompt = str(draft.get("prompt", "")).strip()
+    highlights = [str(item).strip() for item in draft.get("highlights", []) if str(item).strip()][:6]
+    if not summary or not impact or not highlights:
+        raise RuntimeError("activity draft requires summary, impact, and at least one highlight")
+    bullets = "\n".join(f"- {item}" for item in highlights)
+
+    if genre is Genre.ANNOUNCEMENT:
+        sections = [
+            f"## What changed\n\n{summary}\n\n{bullets}",
+            f"## Why it matters\n\n{impact}",
+        ]
+        if prompt:
+            sections.append(f"## What you can do\n\n{prompt}")
+    elif genre is Genre.POLL:
+        options = [str(item).strip() for item in draft.get("options", []) if str(item).strip()][:6]
+        if len(options) < 2:
+            raise RuntimeError("a poll activity needs at least two options")
+        choices = "\n".join(f"{index}. **{option}**" for index, option in enumerate(options, 1))
+        sections = [
+            f"## Context\n\n{summary}\n\n{bullets}",
+            f"## The decision\n\n{impact}",
+            f"## Options\n\n{choices}",
+            f"## Vote with context\n\n{prompt or 'Reply with the option number and the constraint driving your choice.'}",
+        ]
+    elif genre is Genre.QNA:
+        sections = [
+            f"## Scenario\n\n{summary}",
+            f"## Questions\n\n{bullets}",
+            f"## What a useful answer includes\n\n{impact}",
+        ]
+        if prompt:
+            sections.append(f"## Share your approach\n\n{prompt}")
+    else:
+        raise RuntimeError("skip decisions cannot be rendered")
+
+    source_lines = [
+        f"- [#{item.get('number')}: {item.get('title', 'Merged change')}]({item.get('html_url')})"
+        for item in (sources or [])
+        if item.get("html_url")
+    ]
+    if source_lines:
+        sections.append("## Merged sources\n\n" + "\n".join(source_lines))
+    return "\n\n".join(sections)
+
+
 def _change_priority(file: dict) -> tuple[int, str]:
     filename = str(file.get("filename", "")).casefold()
     evidence = ("changelog", "release", "migration", "breaking", "readme", "docs/")
@@ -147,31 +211,36 @@ def _compact_changes(files: list[dict], patch_budget: int = 18_000) -> list[dict
     return changes
 
 
-async def merge_draft(router, pull: dict, files: list[dict]) -> dict[str, Any]:
+async def merge_draft(router, pulls: list[dict], files: list[dict], decision: MoodDecision) -> dict[str, Any]:
     changes = _compact_changes(files)
     return await _structured_call(
         router,
         task="submit_merge_decision",
         system_prompt=_instructions("merge-discussion-orchestrator", "discussions_merge.md"),
         payload={
-            "pull_request": {
-                "number": pull.get("number"),
-                "title": pull.get("title", ""),
-                "body": str(pull.get("body") or "")[:6000],
-                "url": pull.get("html_url", ""),
-                "labels": [label.get("name", "") for label in pull.get("labels", [])],
-            },
+            "mood_decision": decision.model_context(),
+            "pull_requests": [
+                {
+                    "number": pull.get("number"),
+                    "title": pull.get("title", ""),
+                    "body": str(pull.get("body") or "")[:3000],
+                    "url": pull.get("html_url", ""),
+                    "labels": [label.get("name", "") for label in pull.get("labels", [])],
+                }
+                for pull in pulls[:5]
+            ],
             "changed_files": changes,
         },
         schema={
             "type": "object",
             "additionalProperties": False,
-            "required": ["action", "reason", "title", "body", "options", "topic"],
+            "required": ["title", "summary", "highlights", "impact", "prompt", "options", "topic"],
             "properties": {
-                "action": {"type": "string", "enum": ["announcement", "poll", "skip"]},
-                "reason": {"type": "string"},
                 "title": {"type": "string"},
-                "body": {"type": "string"},
+                "summary": {"type": "string"},
+                "highlights": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 6},
+                "impact": {"type": "string"},
+                "prompt": {"type": "string"},
                 "options": {"type": "array", "items": {"type": "string"}, "maxItems": 6},
                 "topic": {
                     "type": "string",
@@ -192,10 +261,13 @@ async def qna_draft(router, recent_titles: list[str]) -> dict[str, Any]:
         schema={
             "type": "object",
             "additionalProperties": False,
-            "required": ["title", "body", "topic"],
+            "required": ["title", "summary", "highlights", "impact", "prompt", "topic"],
             "properties": {
                 "title": {"type": "string"},
-                "body": {"type": "string"},
+                "summary": {"type": "string"},
+                "highlights": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 4},
+                "impact": {"type": "string"},
+                "prompt": {"type": "string"},
                 "topic": {"type": "string", "enum": ["mlops", "gitops", "docker", "kubernetes"]},
             },
         },

@@ -161,6 +161,20 @@ class GitHubAPI:
     async def get_pull_files(self, owner: str, repo: str, pr_number: int) -> list:
         return await self._request("GET", f"/repos/{owner}/{repo}/pulls/{pr_number}/files")
 
+    async def list_pulls(
+        self,
+        owner: str,
+        repo: str,
+        *,
+        state: str = "closed",
+        per_page: int = 30,
+    ) -> list:
+        return await self._request(
+            "GET",
+            f"/repos/{owner}/{repo}/pulls",
+            params={"state": state, "sort": "updated", "direction": "desc", "per_page": per_page},
+        )
+
     async def get_pull_comments(self, owner: str, repo: str, pr_number: int) -> list:
         return await self._request("GET", f"/repos/{owner}/{repo}/pulls/{pr_number}/comments")
 

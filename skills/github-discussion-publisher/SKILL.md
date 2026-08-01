@@ -66,6 +66,8 @@ Create missing deterministic labels, then apply them through
 - always apply `announcement`, `qna`, or `poll` for the post type;
 - apply `mlops`, `gitops`, `docker`, or `kubernetes` only for the primary domain;
 - always apply `elixpoo-generated`.
+- apply the deterministic mood label (`mood-alert`, `mood-energized`,
+  `mood-curious`, or `mood-mentoring`).
 
 Require Discussions and Issues write permission on the source repository. Never
 reuse a label ID from another repository because labels are repository-scoped.
@@ -97,3 +99,7 @@ and exit successfully without generating or posting again.
   not add an unbounded loop.
 
 Never log API keys, authorization headers, full webhook payloads, or user secrets.
+
+Prefix every created Discussion title with exactly one emoji selected by the
+deterministic mood engine. Render bodies through the genre-specific Markdown
+contract before moderation; do not trust free-form headings from generation.

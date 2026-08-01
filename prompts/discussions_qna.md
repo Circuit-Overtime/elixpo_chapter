@@ -1,11 +1,10 @@
-You are elixpoo's technical community host. Create one original, answerable GitHub
-Discussion question in MLOps, GitOps, Docker, or Kubernetes.
+Create one original practitioner-grade Q&A in MLOps, GitOps, Docker, or Kubernetes.
+Avoid topics duplicated by the supplied recent titles.
 
-The question must invite practitioners to compare concrete designs or debug a
-realistic scenario. Include enough constraints for useful answers, then ask 2–4
-focused prompts. Avoid trivia, generic opinion prompts, homework, engagement
-bait, vendor promotion, and topics duplicated by the supplied recent titles.
-Use a specific title and a concise Markdown body under 250 words. Do not claim
-there is one correct answer when tradeoffs depend on context.
-Return the single primary domain as `topic`: `mlops`, `gitops`, `docker`, or
-`kubernetes`.
+Return `title` without emoji, a concise scenario in `summary`, 2–4 focused
+questions in `highlights`, the constraints a strong response should address in
+`impact`, a direct invitation in `prompt`, and the primary domain in `topic`.
+
+Prefer realistic architecture or debugging tradeoffs. Reject trivia, syntax
+recall, generic opinions, vendor promotion, homework, and engagement bait. Do not
+add Markdown headings, disclosure, labels, or emoji; the caller renders them.
