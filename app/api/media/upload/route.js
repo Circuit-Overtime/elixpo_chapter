@@ -2,9 +2,10 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { getLimits } from '../../../../lib/tiers';
-import { MAX_MEDIA_PER_BLOG, MAX_BLOG_IMAGE_BYTES } from '../../../../lib/limits';
+import { MAX_MEDIA_PER_BLOG, MAX_BLOG_IMAGE_BYTES, requestTooLarge } from '../../../../lib/limits';
 import { getCloudinaryUrl, uploadToCloudinary } from '../../../../lib/cloudinary';
 import { stripImageMetadata } from '../../../../lib/stripImageMetadata';
+import { readUploadRequest } from '../../../../lib/mediaUploadRequest';
 import { isAllowedMime, ALLOWED_IMAGE_MIME_TYPES } from '../../../../src/utils/allowedImageTypes';
 
 // Profile image types — these get overwritten (no history), no storage tracking
@@ -17,23 +18,33 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const file = formData.get('file');
-    const blogId = formData.get('blogId');
-    const orgId = formData.get('orgId');
-    const mediaType = formData.get('type') || 'image';
-    const requestedUploadId = String(formData.get('uploadId') || '');
+    if (requestTooLarge(request)) {
+      return NextResponse.json({ error: 'Image is too large', code: 'MEDIA_BODY_TOO_LARGE' }, { status: 413 });
+    }
+
+    let upload;
+    try {
+      upload = await readUploadRequest(request);
+    } catch (error) {
+      console.warn('[media/upload] Could not parse upload request', error?.message || error);
+      return NextResponse.json({
+        error: 'The uploaded image body could not be read. Please select the image again.',
+        code: 'INVALID_MEDIA_BODY',
+      }, { status: 400 });
+    }
+    const { file, blogId, orgId, mediaType, requestedUploadId, fields, transport } = upload;
 
     // Cloudflare's multipart parser can return a File-compatible object from a
     // different realm, where `instanceof File` is false. Validate capabilities
     // instead of constructor identity so valid uploads are not rejected as 400.
-    if (!file || typeof file.arrayBuffer !== 'function' || typeof file.size !== 'number') {
+    if (!file || typeof file.arrayBuffer !== 'function' || typeof file.size !== 'number' || file.size <= 0) {
       console.warn('[media/upload] Invalid multipart file field', {
         present: !!file,
         valueType: typeof file,
         hasArrayBuffer: typeof file?.arrayBuffer === 'function',
         sizeType: typeof file?.size,
-        fields: [...formData.keys()],
+        fields,
+        transport,
       });
       return NextResponse.json({
         error: 'The uploaded image body was invalid. Please select the image again.',
@@ -58,7 +69,7 @@ export async function POST(request) {
       }, { status: 415 });
     }
 
-    console.log(`[media/upload] type=${mediaType} size=${file.size} mime=${file.type} blogId=${blogId} user=${session.userId}`);
+    console.log(`[media/upload] transport=${transport} type=${mediaType} size=${file.size} mime=${file.type} blogId=${blogId} user=${session.userId}`);
 
     let db;
     try {
@@ -233,6 +244,7 @@ export async function POST(request) {
       result = await uploadToCloudinary(arrayBuffer, {
         folder,
         publicId,
+        mimeType: file.type,
         // Covers also use a deterministic public id (`.../<blogId>/cover`).
         // Without overwrite, every replacement is rejected by Cloudinary
         // because the asset already exists.

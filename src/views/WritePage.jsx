@@ -592,7 +592,8 @@ export default function WritePage({ slugid }) {
         const pub = state?.lixPublished;
         if (pub?.url && pub.at >= mountedAt) {
           bypassUnloadRef.current = true;
-          window.location.href = pub.url;
+          try { provider.disconnect(); } catch {}
+          window.location.replace(pub.url);
         }
       });
     };
@@ -1389,7 +1390,23 @@ export default function WritePage({ slugid }) {
           collabConfig?.provider?.awareness?.setLocalStateField('lixPublished', { url: destination, at: Date.now() });
         } catch {}
         bypassUnloadRef.current = true;
-        window.location.assign(destination);
+        // Close the cross-origin socket deliberately before leaving the editor.
+        // Otherwise the browser reports an interrupted WebSocket while the new
+        // published page is loading. Lock release is best-effort and survives
+        // the navigation where supported.
+        if (collabConfig?.provider) {
+          // Give the awareness update one event-loop turn to reach peers before
+          // intentionally closing this editor's socket.
+          await new Promise((resolve) => setTimeout(resolve, 40));
+          try { collabConfig.provider.disconnect(); } catch {}
+        }
+        fetch('/api/collab/lock', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blogId }),
+          keepalive: true,
+        }).catch(() => {});
+        window.location.replace(destination);
         return;
       }
     } catch { /* silent */ }
