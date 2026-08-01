@@ -26,7 +26,7 @@ import PageShell from "./components/page-shell";
 import PixelHero from "./components/pixel-hero";
 
 const CORAL = "#ff7759";
-const ACTION_BLUE = "#1863dc";
+const ACTION_BLUE = "var(--action-fg)";
 
 // Cohere primary CTA button styles
 const PRIMARY_BTN = {

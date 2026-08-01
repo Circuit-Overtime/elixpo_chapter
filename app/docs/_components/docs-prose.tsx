@@ -5,7 +5,7 @@ import Link from "next/link";
 import type React from "react";
 
 const CORAL = "#ff7759";
-const ACTION_BLUE = "#1863dc";
+const ACTION_BLUE = "var(--action-fg)";
 const INK = "var(--fg)";
 const SLATE = "var(--fg-muted)";
 const HAIRLINE = "var(--border)";

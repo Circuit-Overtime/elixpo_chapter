@@ -92,7 +92,7 @@ export function LegalShell({
                             component="a"
                             href="mailto:hello@elixpo.com"
                             sx={{
-                                color: "#1863dc",
+                                color: "var(--action-fg)",
                                 textDecoration: "underline",
                                 "&:hover": { color: "var(--accent)" },
                             }}
