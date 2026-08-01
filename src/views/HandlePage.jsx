@@ -187,9 +187,15 @@ function HandlePageInner({ path, initialData = null }) {
     if (slug) params.set('slug', slug);
     if (collection) params.set('collection', collection);
 
-    fetch(`/api/resolve?${params}`)
+    fetch(`/api/resolve?${params}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : r.json().then(d => { throw new Error(d.error || 'Not found'); }))
-      .then(d => setData(d))
+      .then(d => {
+        if (d?.type === 'redirect' && d.location) {
+          window.location.replace(d.location);
+          return;
+        }
+        setData(d);
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [rawName, name, slug, collection, isReadingList, third, initialData, currentUser]);

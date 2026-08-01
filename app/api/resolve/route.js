@@ -146,6 +146,24 @@ export async function GET(request) {
     // straight from the source tables so the profile still loads, then
     // self-heal the namespace so future lookups hit the fast path.
     if (!ns) {
+      // Keep old profile and personal-blog links valid after Accounts changes
+      // the username. This table is introduced in migration 0039; tolerate it
+      // being absent during a staggered deployment.
+      try {
+        const alias = await db.prepare(`
+          SELECT u.username
+          FROM username_aliases a JOIN users u ON u.id = a.user_id
+          WHERE a.username = ?
+        `).bind(name).first();
+        if (alias?.username && alias.username !== name) {
+          const suffix = [collection, slug].filter(Boolean).join('/');
+          return NextResponse.json({
+            type: 'redirect',
+            location: `/${alias.username}${suffix ? `/${suffix}` : ''}`,
+          });
+        }
+      } catch { /* migration may not be applied yet */ }
+
       const u = await db.prepare('SELECT id FROM users WHERE LOWER(username) = ?').bind(name).first();
       if (u) {
         ownerType = 'user';
