@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
+import { clearAccountSessionsCookie } from "@/lib/account-sessions";
 import { getDatabase } from "@/lib/d1-client";
 import { verifyJWT } from "@/lib/jwt";
 
@@ -114,6 +115,7 @@ export async function POST(request: NextRequest) {
         });
         response.cookies.set("access_token", "", { maxAge: 0, path: "/" });
         response.cookies.set("refresh_token", "", { maxAge: 0, path: "/" });
+        clearAccountSessionsCookie(response);
         return response;
     } catch (error) {
         console.error("[Account] Delete error:", error);

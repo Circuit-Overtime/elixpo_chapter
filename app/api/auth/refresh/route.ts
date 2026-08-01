@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
+import { setAccountSessionsCookie } from "@/lib/account-sessions";
 import { getDatabase } from "@/lib/d1-client";
 import {
     getRefreshTokenByHash,
@@ -57,12 +58,16 @@ export async function POST(request: NextRequest) {
             payload.sub,
             payload.email,
             payload.provider,
+            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
+            payload.scopes,
         );
 
         // Rotate refresh token
         const newRefreshToken = await createRefreshToken(
             payload.sub,
             payload.provider,
+            parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30", 10),
+            payload.scopes,
         );
 
         // Store new refresh token and revoke old one
@@ -125,6 +130,16 @@ export async function POST(request: NextRequest) {
                 60,
             path: "/",
         });
+
+        await setAccountSessionsCookie(
+            request,
+            response,
+            newRefreshToken,
+            parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30", 10) *
+                24 *
+                60 *
+                60,
+        );
 
         return response;
     } catch (error) {

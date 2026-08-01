@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
+import { clearAccountSessionsCookie } from "@/lib/account-sessions";
 import { getDatabase } from "@/lib/d1-client";
 import { revokeRefreshToken } from "@/lib/db";
 import { hashString } from "@/lib/webcrypto";
@@ -98,6 +99,7 @@ export async function POST(request: NextRequest) {
             maxAge: 0,
             path: "/",
         });
+        clearAccountSessionsCookie(response);
 
         // Clear session/state cookies if present
         response.cookies.set("oauth_state", "", {

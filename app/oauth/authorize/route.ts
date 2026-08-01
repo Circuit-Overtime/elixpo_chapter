@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { createAuthRequest, getOAuthClientById, getUserById } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
+import { parseOAuthScopes, unsupportedOAuthScopes } from "@/lib/oauth-scopes";
 import { generateRandomString, generateUUID } from "@/lib/webcrypto";
 
 /**
@@ -113,6 +114,26 @@ export async function GET(request: NextRequest) {
                 },
                 { status: 400 },
             );
+        }
+
+        const requestedScopes = parseOAuthScopes(scope);
+        const registeredScopes: string[] = JSON.parse(client.scopes || "[]");
+        const invalidScopes = [
+            ...unsupportedOAuthScopes(requestedScopes),
+            ...requestedScopes.filter(
+                (requestedScope) => !registeredScopes.includes(requestedScope),
+            ),
+        ];
+        if (invalidScopes.length > 0) {
+            parsedRedirect.searchParams.set("error", "invalid_scope");
+            parsedRedirect.searchParams.set(
+                "error_description",
+                `Unsupported or unregistered scopes: ${[
+                    ...new Set(invalidScopes),
+                ].join(", ")}`,
+            );
+            parsedRedirect.searchParams.set("state", state);
+            return NextResponse.redirect(parsedRedirect);
         }
 
         // --- 3. Check if user is authenticated ---
@@ -230,7 +251,11 @@ export async function GET(request: NextRequest) {
             const { applyRefreshedCookies } = await import(
                 "@/lib/auth-refresh"
             );
-            applyRefreshedCookies(consentResponse, rotatedTokens);
+            await applyRefreshedCookies(
+                consentResponse,
+                rotatedTokens,
+                request,
+            );
         }
         return consentResponse;
     } catch (err) {

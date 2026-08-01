@@ -2,6 +2,7 @@ export const runtime = "edge";
 
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import { type NextRequest, NextResponse } from "next/server";
+import { setAccountSessionsCookie } from "@/lib/account-sessions";
 import { getDatabase } from "@/lib/d1-client";
 import {
     logAuditEvent,
@@ -334,6 +335,12 @@ export async function POST(request: NextRequest) {
         maxAge: refreshMaxAge,
         path: "/",
     });
+    await setAccountSessionsCookie(
+        request,
+        response,
+        refreshToken,
+        refreshMaxAge,
+    );
 
     // ── Optional: trust this device for 30d ────────────────────────────
     if (body?.trust_device === true) {
