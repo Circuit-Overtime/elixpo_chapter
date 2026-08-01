@@ -284,6 +284,16 @@ jobs:
         if: always() && steps.gate.outputs.authorized == 'true'
         run: rtk gain || true
 
+      - name: Report sanitized router error
+        if: failure() && steps.gate.outputs.authorized == 'true'
+        continue-on-error: true
+        run: |
+          LOG_FILES=$(rg --files "$HOME/.claude-code-router" | rg '(\.log$|/logs/)')
+          [ -z "$LOG_FILES" ] && exit 0
+          rg -i 'error|failed|status.?400|bad.request|forbidden|invalid' $LOG_FILES \
+            | sed "s|$ELIXPO_POLLINATIONS_API_KEY_GITHUB|***|g" \
+            | tail -80
+
       - name: Remove generated branding
         if: always() && steps.gate.outputs.authorized == 'true'
         continue-on-error: true
