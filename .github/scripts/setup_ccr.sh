@@ -76,3 +76,14 @@ cat > "$CCR_HOME/config.json" <<EOF
 EOF
 
 echo "CCR routes: default=$AGENT_MODEL background=$CODE_MODEL think=$THINK_MODEL webSearch=$SEARCH_MODEL"
+
+# Recent harness versions pass their selected Anthropic model name through the
+# gateway. Point those aliases at configured free models so Pollinations does
+# not reject an otherwise correctly routed request during model resolution.
+if [ -n "${GITHUB_ENV:-}" ]; then
+  {
+    echo "ANTHROPIC_DEFAULT_SONNET_MODEL=$AGENT_MODEL"
+    echo "ANTHROPIC_DEFAULT_OPUS_MODEL=$AGENT_MODEL"
+    echo "ANTHROPIC_DEFAULT_HAIKU_MODEL=$CODE_MODEL"
+  } >> "$GITHUB_ENV"
+fi

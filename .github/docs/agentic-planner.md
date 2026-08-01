@@ -28,6 +28,8 @@ CCR creates multiple routes with that same key. No route has a separate credenti
 
 Token ceilings are centralized in `.github/ci_config.py`. The prompt directs the agent to read the prepared context once, use targeted repository reads, and avoid search unless local context is insufficient. RTK compresses supported shell output before it reaches the model.
 
+The setup script also maps the harness's Sonnet, Opus, and Haiku aliases to these configured free models. This prevents the upstream API from receiving an unavailable Anthropic model name after CCR has selected a Pollinations provider.
+
 ## Scope and safety
 
 - Only configured organization members can invoke the workflow.
