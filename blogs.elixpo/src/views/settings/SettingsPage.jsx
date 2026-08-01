@@ -13,6 +13,7 @@ const TABS = [
   { label: 'Publishing', icon: 'create-outline' },
   { label: 'Notifications', icon: 'notifications-outline' },
   { label: 'Organization', icon: 'people-outline' },
+  { label: 'Media', icon: 'images-outline' },
   { label: 'Subscription', icon: 'diamond-outline' },
 ];
 
@@ -1109,6 +1110,73 @@ function SubscriptionTab({ user }) {
   );
 }
 
+function formatBytes(bytes = 0) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+}
+
+function MediaTab() {
+  const [media, setMedia] = useState(null);
+  const [usage, setUsage] = useState(null);
+  const [busyId, setBusyId] = useState('');
+  const load = useCallback(() => Promise.all([
+    fetch('/api/media').then((r) => r.ok ? r.json() : Promise.reject()),
+    fetch('/api/tier/usage').then((r) => r.ok ? r.json() : Promise.reject()),
+  ]).then(([mediaData, usageData]) => { setMedia(mediaData); setUsage(usageData); }).catch(() => setMedia({ items: [], organisations: [], collections: [], totalBytes: 0, count: 0 })), []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const remove = async (id) => {
+    if (!window.confirm('Delete this media permanently and free its storage?')) return;
+    setBusyId(id);
+    try {
+      const response = await fetch('/api/media/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mediaId: id }),
+      });
+      if (!response.ok) throw new Error('Delete failed');
+      await load();
+    } finally { setBusyId(''); }
+  };
+
+  if (!media) return <div className="mt-8 h-48 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />;
+  return (
+    <div>
+      <SectionHeader title="Storage" />
+      <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
+        <div className="mb-3 flex items-end justify-between">
+          <div><p className="text-2xl font-bold text-[var(--text-primary)]">{formatBytes(media.totalBytes)}</p><p className="text-xs text-[var(--text-muted)]">{media.count} uploaded assets</p></div>
+          <p className="text-xs text-[var(--text-muted)]">{usage?.storage?.limitFormatted || '—'} available</p>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div className="h-full rounded-full bg-[#9b7bf7]" style={{ width: `${Math.min(100, usage?.storage?.percent || 0)}%` }} /></div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {[['Organizations', media.organisations], ['Collections', media.collections]].map(([title, rows]) => (
+          <div key={title} className="rounded-xl border border-[var(--border-default)] p-4">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{title}</p>
+            {rows.length ? rows.slice(0, 6).map((row) => <div key={row.id} className="flex justify-between gap-3 py-1.5 text-xs"><span className="truncate text-[var(--text-body)]">{row.name}</span><span className="shrink-0 text-[var(--text-muted)]">{formatBytes(row.bytes)}</span></div>) : <p className="text-xs text-[var(--text-faint)]">No stored media</p>}
+          </div>
+        ))}
+      </div>
+
+      <SectionHeader title="Media controls" />
+      <div className="space-y-2">
+        {media.items.map((item) => (
+          <div key={item.id} className="flex items-center gap-3 rounded-xl border border-[var(--border-default)] p-3">
+            <img src={item.url} alt="" className="h-12 w-16 shrink-0 rounded-lg bg-[var(--bg-elevated)] object-cover" />
+            <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-[var(--text-primary)]">{item.blog_title || (item.media_type === 'cover' ? 'Blog cover' : 'Unattached media')}</p><p className="truncate text-xs text-[var(--text-muted)]">{item.org_name || 'Personal'}{item.collection_name ? ` · ${item.collection_name}` : ''} · {formatBytes(item.size_bytes)}</p></div>
+            <button disabled={busyId === item.id} onClick={() => remove(item.id)} className="rounded-lg border border-red-400/25 px-3 py-2 text-xs text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50">{busyId === item.id ? 'Deleting…' : 'Delete'}</button>
+          </div>
+        ))}
+        {!media.items.length && <p className="py-8 text-center text-sm text-[var(--text-muted)]">No uploaded media yet.</p>}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Settings Page ──
 export default function SettingsPage() {
   const { user, loading, refetchUser } = useAuth();
@@ -1157,7 +1225,8 @@ export default function SettingsPage() {
         {activeTab === 1 && <PublishingTab user={user} />}
         {activeTab === 2 && <NotificationsTab />}
         {activeTab === 3 && <OrganizationTab user={user} />}
-        {activeTab === 4 && <SubscriptionTab user={user} />}
+        {activeTab === 4 && <MediaTab />}
+        {activeTab === 5 && <SubscriptionTab user={user} />}
       </div>
     </AppShell>
   );
