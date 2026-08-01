@@ -89,6 +89,18 @@ export default function PrivacyPage() {
             </p>
           </Section>
 
+          <Section title="What we collect when you create a guest link">
+            <p>
+              To enforce the one-link guest allowance, we derive a temporary
+              abuse-prevention identity from the request IP and coarse browser,
+              device, operating-system, and language categories. The raw values
+              are processed in memory and discarded; we store only a
+              secret-peppered hash, a risk score, and the time the allowance
+              becomes available again. Guest links and quota records are not
+              used for click analytics or advertising.
+            </p>
+          </Section>
+
           <Section title="What we collect when you sign in">
             <p>
               ElixpoURL uses{' '}

@@ -163,6 +163,37 @@ export default async function DashboardPage({
         </Link>
       </div>
 
+      {user.tier === 'free' && (
+        <div
+          className="mb-6 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          style={{
+            background: 'rgba(229,57,53,0.08)',
+            border: '1px dashed rgba(229,57,53,0.35)',
+          }}
+        >
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-white">
+                Free daily links: 2 per day
+              </span>
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#c62828] bg-white/80">
+                Coming soon
+              </span>
+            </div>
+            <p className="text-xs text-white/55 mt-1">
+              Planned allowance with privacy-conscious network and request-risk
+              checks. Your current account quota is unchanged.
+            </p>
+          </div>
+          <Link
+            href="/pricing"
+            className="text-xs font-semibold text-[#e53935] no-underline hover:underline shrink-0"
+          >
+            Compare plans →
+          </Link>
+        </div>
+      )}
+
       {/* Tier upgrade nudge — only when free + ≥80% of quota */}
       {showUpgradeNudge && (
         <div

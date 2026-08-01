@@ -6,6 +6,7 @@ interface CloudflareEnv {
   OAUTH_REDIRECT_URI: string;
   BASE_URL: string;
   SAFE_BROWSING_API_KEY: string;
+  GUEST_FINGERPRINT_SECRET: string;
   ELIXPO_WEBHOOK_SECRET: string;
   // Elixpo Pay — subscriptions / autopay.
   ELIXPO_PAY_BASE_URL: string;
