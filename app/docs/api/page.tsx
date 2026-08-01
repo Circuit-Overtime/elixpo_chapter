@@ -175,9 +175,7 @@ export default function ApiPage() {
         is not a replacement for the authenticated integration API.
       </div>
 
-      <h2 id="guest-shortening" className={H2}>
-        <MethodBadge method="POST" />Guest shortening
-      </h2>
+      <h2 id="guest-shortening" className={H2}>Guest shortening</h2>
       <Endpoint method="POST" path="/api/guest/urls" />
       <p className={P}>
         Creates one temporary short link from the public landing page. The
@@ -212,9 +210,7 @@ export default function ApiPage() {
         converted into account links after creation.
       </p>
 
-      <h2 id="create-a-short-link" className={H2}>
-        <MethodBadge method="POST" />Create an account link
-      </h2>
+      <h2 id="create-a-short-link" className={H2}>Create an account link</h2>
       <Endpoint method="POST" path="/api/urls" />
       <FieldTable rows={[
         ['url', 'string', 'Yes', 'Absolute HTTP or HTTPS destination. The same private-network and safe-content checks used by guest shortening apply.'],
@@ -245,9 +241,7 @@ export default function ApiPage() {
         exhausted account quotas return <code className={INLINE_CODE}>403</code>.
       </p>
 
-      <h2 id="list-your-links" className={H2}>
-        <MethodBadge method="GET" />List account links
-      </h2>
+      <h2 id="list-your-links" className={H2}>List account links</h2>
       <Endpoint method="GET" path="/api/urls" />
       <FieldTable rows={[
         ['limit', 'integer', 'No', 'Page size from 1–100. Defaults to 50.'],
@@ -276,9 +270,7 @@ export default function ApiPage() {
   "offset": 0
 }`}</CodeBlock>
 
-      <h2 id="get-a-link" className={H2}>
-        <MethodBadge method="GET" />Get an account link
-      </h2>
+      <h2 id="get-a-link" className={H2}>Get an account link</h2>
       <Endpoint method="GET" path="/api/urls/{code}" />
       <p className={P}>
         Returns the complete URL record shown in the list response. Ownership
@@ -288,9 +280,7 @@ export default function ApiPage() {
       <CodeBlock label="cURL">{`curl https://lixrl.com/api/urls/launch \\
   -H "Authorization: Bearer elu_YOUR_KEY"`}</CodeBlock>
 
-      <h2 id="update-a-link" className={H2}>
-        <MethodBadge method="PATCH" />Update an account link
-      </h2>
+      <h2 id="update-a-link" className={H2}>Update an account link</h2>
       <Endpoint method="PATCH" path="/api/urls/{code}" />
       <p className={P}>Send at least one mutable field. The short code itself cannot be changed.</p>
       <FieldTable rows={[
@@ -307,9 +297,7 @@ export default function ApiPage() {
   "success": true
 }`}</CodeBlock>
 
-      <h2 id="delete-a-link" className={H2}>
-        <MethodBadge method="DELETE" />Delete an account link
-      </h2>
+      <h2 id="delete-a-link" className={H2}>Delete an account link</h2>
       <Endpoint method="DELETE" path="/api/urls/{code}" />
       <p className={P}>
         Permanently removes the link and its click records. This operation is
