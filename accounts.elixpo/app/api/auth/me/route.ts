@@ -577,10 +577,15 @@ export async function PATCH(request: NextRequest) {
             // Fire user.updated webhook to every authorized OAuth app.
             // Awaited so caller-visible state stays consistent in the dev
             // logs, but the helper catches its own errors so we never 500.
-            if (displayNameChange !== null) {
+            if (displayNameChange !== null || usernameChange !== null) {
                 const { fireUserUpdated } = await import("@/lib/user-events");
                 await fireUserUpdated(payload.sub, {
-                    display_name: displayNameChange,
+                    ...(displayNameChange !== null
+                        ? { display_name: displayNameChange }
+                        : {}),
+                    ...(usernameChange !== null
+                        ? { username: usernameChange.next }
+                        : {}),
                 });
             }
 
