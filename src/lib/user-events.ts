@@ -13,6 +13,7 @@
  *     elixpo_id: "<user-id>",
  *     updated_at: "<ISO timestamp>",
  *     data: {
+ *       username?:     string,
  *       display_name?: string | null,
  *       avatar_url?:   string | null,
  *       email?:        string,
@@ -31,6 +32,7 @@ import { defaultSecretResolver, dispatchAppEvent } from "./app-webhooks";
 import { getDatabase } from "./d1-client";
 
 export interface UserUpdatedFields {
+    username?: string;
     email?: string;
     display_name?: string | null;
     avatar_url?: string | null;
