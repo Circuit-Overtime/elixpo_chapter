@@ -33,7 +33,14 @@ export function middleware(request) {
     }
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  // Reader/profile HTML references deployment-hashed Next chunks. Never cache
+  // this document across releases or it can point at a chunk from an older
+  // deployment and fail with a text/html MIME mismatch.
+  if (firstSegment && !APP_ROUTES.has(firstSegment) && !firstSegment.startsWith('_')) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  }
+  return response;
 }
 
 export const config = {

@@ -1,7 +1,11 @@
 export const runtime = 'edge';
 
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import CatchAllClient from './client';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // Per-blog SEO: shared links pick up the blog's cover (if set) + title/author,
 // otherwise a dynamic GitHub-style card from /api/og.
@@ -104,7 +108,7 @@ export async function generateMetadata({ params, searchParams }) {
 
     // ── 1-segment: user or org profile ──
     if (!slug) {
-      const res = await fetch(`${origin}/api/resolve?name=${encodeURIComponent(name)}`, { headers: { 'user-agent': 'lixblogs-ssr' } });
+      const res = await fetch(`${origin}/api/resolve?name=${encodeURIComponent(name)}`, { cache: 'no-store', headers: { 'user-agent': 'lixblogs-ssr' } });
       if (!res.ok) return {};
       const data = await res.json();
       const url = `${origin}/${name}`;
@@ -158,7 +162,7 @@ export async function generateMetadata({ params, searchParams }) {
     // ── 2/3-segment: blog, collection, or a blog invite link ──
     const qs = new URLSearchParams({ name, slug });
     if (collection) qs.set('collection', collection);
-    const res = await fetch(`${origin}/api/resolve?${qs}`, { headers: { 'user-agent': 'lixblogs-ssr' } });
+    const res = await fetch(`${origin}/api/resolve?${qs}`, { cache: 'no-store', headers: { 'user-agent': 'lixblogs-ssr' } });
     if (!res.ok) return {};
     const data = await res.json();
     const url = `${origin}/${path.join('/')}`;
@@ -228,7 +232,7 @@ async function buildJsonLd(path, origin) {
     const qs = new URLSearchParams({ name });
     if (slug) qs.set('slug', slug);
     if (collection) qs.set('collection', collection);
-    const res = await fetch(`${origin}/api/resolve?${qs}`, { headers: { 'user-agent': 'lixblogs-ssr' } });
+    const res = await fetch(`${origin}/api/resolve?${qs}`, { cache: 'no-store', headers: { 'user-agent': 'lixblogs-ssr' } });
     if (!res.ok) return null;
     const data = await res.json();
 
@@ -346,10 +350,14 @@ export default async function CatchAllHandle({ params }) {
   if (collection) qs.set('collection', collection);
   const [jsonLd, initialData] = await Promise.all([
     buildJsonLd(path, origin),
-    fetch(`${origin}/api/resolve?${qs}`, { headers: { 'user-agent': 'lixblogs-ssr' } })
+    fetch(`${origin}/api/resolve?${qs}`, { cache: 'no-store', headers: { 'user-agent': 'lixblogs-ssr' } })
       .then((response) => response.ok ? response.json() : null)
       .catch(() => null),
   ]);
+
+  if (initialData?.type === 'redirect' && initialData.location) {
+    redirect(initialData.location);
+  }
 
   return (
     <>
