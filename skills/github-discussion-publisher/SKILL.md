@@ -1,85 +1,86 @@
 ---
 name: github-discussion-publisher
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Validate, moderate, deduplicate, categorize, and publish Elixpo GitHub Discussions and replies through the bot identity. Use immediately before any public Announcement, Q&A, Poll, or @elixpoo reply, and when implementing GitHub GraphQL publication, safety gates, idempotency, disclosure, or failure handling.
 ---
 
-# Github Discussion Publisher
+# GitHub Discussion Publisher
 
-## Overview
+Apply this skill as the final gate for every public Discussion title, body, and
+reply. Fail closed: an uncertain validation or moderation result means no post.
 
-[TODO: 1-2 sentences explaining what this skill enables]
+## Pre-publication sequence
 
-## Structuring This Skill
+Perform these steps in order:
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+1. Validate the event and target repository.
+2. Derive a stable source marker from the PR, schedule date, discussion, or comment.
+3. Search recent Discussions or comments for that exact marker.
+4. Reject duplicates before making a generation call when possible.
+5. Validate required title, body, category, and poll options.
+6. Append the autonomous-contributor disclosure and marker.
+7. Send the complete final title and body through the RTK `safety` role.
+8. Publish only after an explicit safe verdict.
+9. Log the created URL or a factual skip reason without logging secrets.
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" -> "Reading" -> "Creating" -> "Editing"
-- Structure: ## Overview -> ## Workflow Decision Tree -> ## Step 1 -> ## Step 2...
+Never call Pollinations directly. Use `rtk.Router` so budget, ledger, role mapping,
+and model changes remain centralized. Use only `ELIXPO_POLLINATIONS_API_KEY` for
+provider authentication.
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" -> "Merge PDFs" -> "Split PDFs" -> "Extract Text"
-- Structure: ## Overview -> ## Quick Start -> ## Task Category 1 -> ## Task Category 2...
+## Moderate the complete post
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" -> "Colors" -> "Typography" -> "Features"
-- Structure: ## Overview -> ## Guidelines -> ## Specifications -> ## Usage...
+Evaluate the exact text that would become public, including the title, disclosure,
+and option list. Reject content containing harassment, hate, sexual exploitation,
+instructions facilitating wrongdoing, exposed credentials or personal data,
+targeted abuse, deceptive impersonation, or unsafe operational instructions.
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" -> numbered capability list
-- Structure: ## Overview -> ## Core Capabilities -> ### 1. Feature -> ### 2. Feature...
+Also reject a verdict that is empty, malformed, ambiguous, or not explicitly safe.
+Never reinterpret “unsafe” as safe because it contains the substring “safe.”
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+## Preserve identity and disclosure
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+Publish with the configured elixpoo-owned GitHub token. Append:
 
-## [TODO: Replace with the first main section based on chosen structure]
-
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
-
-## Resources (optional)
-
-Create only the resource directories this skill actually needs. Delete this section if no resources are required.
-
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
-
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
-
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
-
-**Note:** Scripts may be executed without loading into context, but can still be read by Codex for patching or environment adjustments.
-
-### references/
-Documentation and reference material intended to be loaded into context to inform Codex's process and thinking.
-
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
-
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Codex should reference while working.
-
-### assets/
-Files not intended to be loaded into context, but rather used within the output Codex produces.
-
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
-
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
-
+```markdown
 ---
+_Posted by @elixpoo, an autonomous contributor._
+```
 
-**Not every skill requires all three types of resources.**
+Do not claim maintainer authorship or hide automation. Prevent loops by ignoring
+events authored by `elixpoo`, `elixpoo[bot]`, or the configured bot username.
+
+## Map categories
+
+- Announcement: accept `Announcement` or `Announcements`.
+- Q&A: accept `Q&A`, `QNA`, or `Questions and Answers`.
+- Poll: accept `Poll` or `Polls`.
+
+Stop with an actionable error when a required category is absent. Do not silently
+post into a semantically different category.
+
+GitHub’s public GraphQL API does not create native poll options. Publish numbered
+options in the Poll body and ask readers to reply with an option plus reasoning.
+Require 2–6 non-empty options.
+
+## Keep publication idempotent
+
+Use HTML comments so markers remain invisible in rendered prose:
+
+```text
+<!-- elixpoo-discussions:merge:<pr-node-id> -->
+<!-- elixpoo-discussions:qna:<utc-date> -->
+<!-- elixpoo-discussions:reply:<source-node-id> -->
+```
+
+Check top-level comments and nested replies. A workflow retry must find the marker
+and exit successfully without generating or posting again.
+
+## Handle failures
+
+- Missing credentials or repository: fail the run with a configuration hint.
+- Missing category or GraphQL error: fail without falling back to another identity.
+- Unsafe draft: log a redacted block reason and exit without publishing.
+- Non-eligible mention or duplicate: log a skip and exit successfully.
+- Provider or GitHub transient error: allow the client’s bounded retry policy; do
+  not add an unbounded loop.
+
+Never log API keys, authorization headers, full webhook payloads, or user secrets.

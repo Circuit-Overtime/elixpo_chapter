@@ -1,85 +1,71 @@
 ---
 name: technical-qna-host
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Create original, practitioner-grade GitHub Q&A Discussions about MLOps, GitOps, Docker, or Kubernetes. Use for scheduled community questions, scenario-based architecture debates, incident diagnosis prompts, operational tradeoff questions, and avoiding duplicates from recent Discussion titles.
 ---
 
-# Technical Qna Host
+# Technical Q&A Host
 
-## Overview
+Create a question that an experienced practitioner would pause to answer. Optimize
+for reusable operational knowledge, not response count.
 
-[TODO: 1-2 sentences explaining what this skill enables]
+## Select a worthwhile problem
 
-## Structuring This Skill
+Choose one domain and one narrow problem:
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+- MLOps: model promotion, reproducibility, drift, feature/data contracts, lineage,
+  rollback, evaluation gates, cost, or inference observability.
+- GitOps: reconciliation, drift ownership, promotion, secrets, multi-tenancy,
+  rollback, policy, or controller failure.
+- Docker: build reproducibility, cache behavior, supply chain, image size, runtime
+  isolation, networking, or debugging.
+- Kubernetes: scheduling, autoscaling, rollout safety, resource policy, tenancy,
+  networking, storage, observability, or control-plane failure.
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" -> "Reading" -> "Creating" -> "Editing"
-- Structure: ## Overview -> ## Workflow Decision Tree -> ## Step 1 -> ## Step 2...
+Prefer a decision or failure scenario with at least two defensible approaches.
+Reject trivia, certification questions, syntax recall, homework, broad “best tool”
+requests, product promotion, and questions answered by one documentation link.
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" -> "Merge PDFs" -> "Split PDFs" -> "Extract Text"
-- Structure: ## Overview -> ## Quick Start -> ## Task Category 1 -> ## Task Category 2...
+## Build the scenario
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" -> "Colors" -> "Typography" -> "Features"
-- Structure: ## Overview -> ## Guidelines -> ## Specifications -> ## Usage...
+Supply only constraints that materially affect the answer. Include, where useful:
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" -> numbered capability list
-- Structure: ## Overview -> ## Core Capabilities -> ### 1. Feature -> ### 2. Feature...
+- scale or workload shape;
+- reliability and recovery objective;
+- team or tenancy boundary;
+- delivery topology;
+- compliance or cost constraint;
+- observed symptom and evidence already collected.
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+Do not fabricate a real outage or claim Elixpo uses the scenario. Present it as a
+standalone design or debugging exercise.
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+## Ask focused prompts
 
-## [TODO: Replace with the first main section based on chosen structure]
+Ask 2–4 prompts that elicit concrete reasoning, such as:
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+- Which design would you choose, and which constraint drives it?
+- What would fail first, and how would you detect it?
+- What rollback or escape hatch would you require?
+- Which metric, trace, or experiment would distinguish the hypotheses?
+- At what scale or condition would you change approaches?
 
-## Resources (optional)
+Avoid yes/no wording and requests for unsupported predictions. Allow context-
+dependent answers when tradeoffs are real.
 
-Create only the resource directories this skill actually needs. Delete this section if no resources are required.
+## Prevent repetition
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+Compare the candidate with every supplied recent title. Reject it when the core
+decision, failure mode, or requested evidence substantially overlaps, even if the
+technology names differ. Rotate domains over time when the recent list is skewed.
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+## Draft and self-review
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+- Use a precise title under 100 characters.
+- Keep the body under 250 words.
+- Put the scenario before the questions.
+- Define uncommon acronyms once; assume working infrastructure knowledge.
+- Exclude links, citations, benchmarks, and claims not provided as input.
+- Remove engagement bait and claims that one answer is universally correct.
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Codex for patching or environment adjustments.
-
-### references/
-Documentation and reference material intended to be loaded into context to inform Codex's process and thinking.
-
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
-
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Codex should reference while working.
-
-### assets/
-Files not intended to be loaded into context, but rather used within the output Codex produces.
-
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
-
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
-
----
-
-**Not every skill requires all three types of resources.**
+Return only the requested structured `title` and `body`. Do not add category,
+disclosure, idempotency, or moderation text; the publisher owns those fields.

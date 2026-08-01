@@ -73,14 +73,19 @@ async def test_merge_generation_uses_discussions_role_and_forced_schema():
     result = await merge_draft(
         router,
         {"number": 12, "title": "feat: deployment view", "body": "Release note", "labels": []},
-        [{"filename": "CHANGELOG.md", "status": "modified", "patch": "+ Added deployment view"}],
+        [
+            {"filename": "src/large.py", "status": "modified", "patch": "+ internal\n" * 10_000},
+            {"filename": "CHANGELOG.md", "status": "modified", "patch": "+ Added deployment view"},
+        ],
     )
     assert result == draft
     role, messages, kwargs = router.calls[0]
     assert role == "discussions"
     assert kwargs["effort"] == "low"
     assert kwargs["tool_choice"]["function"]["name"] == "submit_merge_decision"
+    assert "Treat silence as a valid outcome" in messages[0].content
     assert "CHANGELOG.md" in messages[1].content
+    assert len(messages[1].content) < 25_000
 
 
 @pytest.mark.asyncio
@@ -88,6 +93,7 @@ async def test_safety_gate_accepts_only_explicit_safe_verdict():
     safe = FakeRouter(response("SAFE"))
     await safety_check(safe, "A useful technical post")
     assert safe.calls[0][0] == "safety"
+    assert "Pre-publication sequence" in safe.calls[0][1][0].content
 
     for verdict in ("UNSAFE: harassment", "unclear", ""):
         router = FakeRouter(response(verdict))

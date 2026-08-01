@@ -128,7 +128,7 @@ async def _handle_response(discussions, router, event: dict, bot_username: str) 
     comment = event.get("comment")
     source = comment or discussion
     body = str(source.get("body", ""))
-    author = source.get("user", {}).get("login", "")
+    author = (source.get("user") or {}).get("login", "")
     if not discussion or not contains_mention(body) or _authored_by_bot(author, bot_username):
         log.info("discussions.response_skipped", reason="no eligible @elixpoo mention")
         return None

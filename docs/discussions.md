@@ -11,6 +11,16 @@ general text model in the checked-in Pollinations registry). Every title/body or
 reply is then sent through the `safety` role before it can be posted. Posts carry
 an autonomous-contributor disclosure and an idempotency marker.
 
+Runtime behavior is defined by the repo-owned skills in `skills/`:
+
+- `merge-discussion-orchestrator` — evidence ranking and announce/poll/skip rules;
+- `technical-qna-host` — domain selection, scenario quality, and duplicate avoidance;
+- `discussion-mention-responder` — grounded answers and prompt-injection boundaries;
+- `github-discussion-publisher` — categories, identity, moderation, and idempotency.
+
+The squad loads the relevant complete `SKILL.md` into each model call. The Python
+publisher independently enforces the safety, disclosure, and duplicate checks.
+
 ## Repository setup
 
 1. Enable GitHub Discussions.

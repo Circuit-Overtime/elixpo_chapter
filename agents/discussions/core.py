@@ -10,6 +10,7 @@ from typing import Any
 from rtk.models import FunctionDef, Message, ToolDef
 
 PROMPTS = Path(__file__).resolve().parents[2] / "prompts"
+SKILLS = Path(__file__).resolve().parents[2] / "skills"
 DISCLOSURE = "---\n_Posted by @elixpoo, an autonomous contributor._"
 MENTION_RE = re.compile(r"(?<![A-Za-z0-9_.+-])@elixpoo(?![A-Za-z0-9_.+-])", re.IGNORECASE)
 
@@ -24,6 +25,20 @@ def contains_mention(body: str) -> bool:
 
 def _prompt(name: str) -> str:
     return (PROMPTS / name).read_text().strip()
+
+
+def _skill(name: str) -> str:
+    """Load a repo skill while omitting discovery-only YAML frontmatter."""
+    text = (SKILLS / name / "SKILL.md").read_text().strip()
+    if text.startswith("---"):
+        parts = text.split("---", 2)
+        if len(parts) == 3:
+            return parts[2].strip()
+    return text
+
+
+def _instructions(skill: str, prompt: str) -> str:
+    return f"{_skill(skill)}\n\n## Runtime output requirements\n\n{_prompt(prompt)}"
 
 
 def _content(response) -> str:
@@ -86,7 +101,9 @@ async def safety_check(router, text: str) -> None:
         [
             Message(
                 role="system",
-                content=(
+                content=_skill("github-discussion-publisher")
+                + "\n\n"
+                + (
                     "Moderate the following public GitHub post. Reply with exactly SAFE when it "
                     "is acceptable, otherwise reply UNSAFE and a short category."
                 ),
@@ -105,26 +122,42 @@ def public_body(body: str, marker: str) -> str:
     return f"{body.strip()}\n\n{DISCLOSURE}\n{marker}"
 
 
-async def merge_draft(router, pull: dict, files: list[dict]) -> dict[str, Any]:
+def _change_priority(file: dict) -> tuple[int, str]:
+    filename = str(file.get("filename", "")).casefold()
+    evidence = ("changelog", "release", "migration", "breaking", "readme", "docs/")
+    rank = next((index for index, term in enumerate(evidence) if term in filename), len(evidence))
+    return rank, filename
+
+
+def _compact_changes(files: list[dict], patch_budget: int = 18_000) -> list[dict]:
+    """Prioritize release evidence and bound aggregate model input cost."""
     changes = []
-    for file in files[:40]:
-        patch = str(file.get("patch", ""))
+    remaining = patch_budget
+    for file in sorted(files, key=_change_priority)[:24]:
+        raw_patch = str(file.get("patch") or "")
+        patch = raw_patch[: min(3500, remaining)] if remaining else ""
+        remaining -= len(patch)
         changes.append(
             {
                 "filename": file.get("filename", ""),
                 "status": file.get("status", ""),
-                "patch": patch[:4000],
+                "patch": patch,
             }
         )
+    return changes
+
+
+async def merge_draft(router, pull: dict, files: list[dict]) -> dict[str, Any]:
+    changes = _compact_changes(files)
     return await _structured_call(
         router,
         task="submit_merge_decision",
-        system_prompt=_prompt("discussions_merge.md"),
+        system_prompt=_instructions("merge-discussion-orchestrator", "discussions_merge.md"),
         payload={
             "pull_request": {
                 "number": pull.get("number"),
                 "title": pull.get("title", ""),
-                "body": pull.get("body", ""),
+                "body": str(pull.get("body") or "")[:6000],
                 "url": pull.get("html_url", ""),
                 "labels": [label.get("name", "") for label in pull.get("labels", [])],
             },
@@ -150,7 +183,7 @@ async def qna_draft(router, recent_titles: list[str]) -> dict[str, Any]:
     return await _structured_call(
         router,
         task="submit_qna",
-        system_prompt=_prompt("discussions_qna.md"),
+        system_prompt=_instructions("technical-qna-host", "discussions_qna.md"),
         payload={"recent_discussion_titles_to_avoid": recent_titles[:30]},
         schema={
             "type": "object",
@@ -164,13 +197,13 @@ async def qna_draft(router, recent_titles: list[str]) -> dict[str, Any]:
 
 async def reply_draft(router, discussion: dict, comment: dict, context: list[dict]) -> str:
     compact_context = [
-        {"author": item.get("author", {}).get("login", "unknown"), "body": item.get("body", "")[:1500]}
+        {"author": (item.get("author") or {}).get("login", "unknown"), "body": item.get("body", "")[:1500]}
         for item in context[-8:]
     ]
     result = await _structured_call(
         router,
         task="submit_reply",
-        system_prompt=_prompt("discussions_reply.md"),
+        system_prompt=_instructions("discussion-mention-responder", "discussions_reply.md"),
         payload={
             "discussion": {
                 "title": discussion.get("title", ""),
@@ -179,7 +212,7 @@ async def reply_draft(router, discussion: dict, comment: dict, context: list[dic
             },
             "conversation": compact_context,
             "mention": {
-                "author": comment.get("user", {}).get("login", "unknown"),
+                "author": (comment.get("user") or {}).get("login", "unknown"),
                 "body": comment.get("body", "")[:4000],
             },
         },

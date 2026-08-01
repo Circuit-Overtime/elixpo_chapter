@@ -1,85 +1,82 @@
 ---
 name: merge-discussion-orchestrator
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Triage a merged GitHub pull request and its changed-file patches into an Elixpo Announcement, a future-facing Poll, or no Discussion. Use for post-merge changelog review, release communication decisions, announcement drafting, and community poll design driven by concrete merged work.
 ---
 
 # Merge Discussion Orchestrator
 
-## Overview
+Convert merged work into a community post only when the evidence justifies one.
+Treat silence as a valid outcome: routine merges must not create noise.
 
-[TODO: 1-2 sentences explaining what this skill enables]
+## Inputs
 
-## Structuring This Skill
+Require the merged PR number, title, body, URL, labels, and changed-file patches.
+Prioritize evidence in this order:
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+1. Added or changed entries in `CHANGELOG*`, release notes, or migration guides.
+2. User-visible behavior shown by code, CLI, API, configuration, or documentation diffs.
+3. Explicit PR claims that agree with the patches.
+4. Labels and title prefixes as weak supporting signals only.
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" -> "Reading" -> "Creating" -> "Editing"
-- Structure: ## Overview -> ## Workflow Decision Tree -> ## Step 1 -> ## Step 2...
+Never infer a shipped capability from a title alone. Never treat plans in an
+unmerged issue, TODO, or speculative paragraph as completed work.
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" -> "Merge PDFs" -> "Split PDFs" -> "Extract Text"
-- Structure: ## Overview -> ## Quick Start -> ## Task Category 1 -> ## Task Category 2...
+## Decide the outcome
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" -> "Colors" -> "Typography" -> "Features"
-- Structure: ## Overview -> ## Guidelines -> ## Specifications -> ## Usage...
+Choose exactly one outcome.
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" -> numbered capability list
-- Structure: ## Overview -> ## Core Capabilities -> ### 1. Feature -> ### 2. Feature...
+### Announcement
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+Choose `announcement` when the merge provides concrete community value:
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+- a released or immediately usable capability;
+- a breaking change, deprecation, security-relevant change, or migration step;
+- a meaningful reliability or performance change supported by evidence;
+- a community milestone that readers can verify.
 
-## [TODO: Replace with the first main section based on chosen structure]
+Reject announcement candidates that are dependency-only, test-only, internal
+refactors, formatting, typo fixes, CI maintenance, or vague implementation work.
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+### Poll
 
-## Resources (optional)
+Choose `poll` only when the merged work exposes a real next decision and community
+answers can change what happens next. Require one neutral question and 2–6 options
+that are mutually distinct, feasible, and comparable under the same constraints.
 
-Create only the resource directories this skill actually needs. Delete this section if no resources are required.
+Do not use a poll to ratify an already-made decision, advertise a feature, collect
+generic sentiment, or ask readers to predict facts maintainers can measure.
+Include an “another approach” option only when the option space is genuinely open.
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+### Skip
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+Choose `skip` whenever evidence is thin, impact is internal, the change was already
+announced, or no actionable future choice exists. Give a short factual reason.
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+## Draft an announcement
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Codex for patching or environment adjustments.
+- Keep the title specific and under 90 characters.
+- Open with what changed, without celebratory filler.
+- Explain why it matters to users or contributors.
+- Include required migration or configuration actions.
+- Link the merged PR supplied in the input.
+- Stay below 300 words.
+- State only versions, dates, metrics, compatibility, and availability present in
+  the evidence.
 
-### references/
-Documentation and reference material intended to be loaded into context to inform Codex's process and thinking.
+## Draft a poll
 
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
+- State the decision, constraints, and affected users before listing options.
+- Make options short noun phrases or actions; do not combine multiple choices.
+- Avoid a preferred option in the wording or order.
+- Ask voters to explain workload, failure modes, or operational tradeoffs.
+- Stay below 250 words before the option list.
 
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Codex should reference while working.
+## Output contract
 
-### assets/
-Files not intended to be loaded into context, but rather used within the output Codex produces.
+Return the requested structured object with `action`, `reason`, `title`, `body`,
+and `options`. For `skip`, return empty `title`, `body`, and `options`. For an
+announcement, return `options: []`. Do not add the bot disclosure, idempotency
+marker, or safety verdict; the publisher adds them.
 
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
-
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
-
----
-
-**Not every skill requires all three types of resources.**
+Before submitting, verify every factual sentence against the supplied PR or patch,
+remove duplicated claims, and downgrade to `skip` if the central claim is unproven.
