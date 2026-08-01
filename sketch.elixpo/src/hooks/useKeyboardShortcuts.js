@@ -12,6 +12,30 @@ export default function useKeyboardShortcuts() {
     function handleKeyDown(e) {
       const key = e.key.toLowerCase()
 
+      // Escape is modal-global and must work even when focus is inside an
+      // input or textarea. Close every open modal in one state update so
+      // overlapping dialogs cannot leave a hidden modal behind.
+      if (e.key === 'Escape') {
+        const uiStore = useUIStore.getState()
+        const hasOpenModal = [
+          uiStore.shortcutsModalOpen,
+          uiStore.saveModalOpen,
+          uiStore.aiModalOpen,
+          uiStore.commandPaletteOpen,
+          uiStore.helpModalOpen,
+          uiStore.exportImageModalOpen,
+          uiStore.findBarOpen,
+          uiStore.canvasPropertiesOpen,
+          uiStore.imageGenerateModalOpen,
+        ].some(Boolean)
+        if (hasOpenModal) {
+          e.preventDefault()
+          e.stopImmediatePropagation()
+          uiStore.closeAllModals()
+          return
+        }
+      }
+
       // Global Ctrl shortcuts (work even when typing)
       if (e.ctrlKey || e.metaKey) {
         if (key === 's' && e.shiftKey) {
@@ -267,30 +291,6 @@ export default function useKeyboardShortcuts() {
             return
           }
           const uiStore = useUIStore.getState()
-          if (uiStore.findBarOpen) {
-            uiStore.closeFindBar()
-            return
-          }
-          if (uiStore.commandPaletteOpen) {
-            uiStore.toggleCommandPalette()
-            return
-          }
-          if (uiStore.exportImageModalOpen) {
-            uiStore.toggleExportImageModal()
-            return
-          }
-          if (uiStore.helpModalOpen) {
-            uiStore.toggleHelpModal()
-            return
-          }
-          if (uiStore.shortcutsModalOpen) {
-            uiStore.toggleShortcutsModal()
-            return
-          }
-          if (uiStore.saveModalOpen) {
-            uiStore.toggleSaveModal()
-            return
-          }
           if (uiStore.menuOpen) {
             uiStore.closeMenu()
             return

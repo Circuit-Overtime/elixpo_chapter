@@ -415,18 +415,14 @@ class Circle {
         this.isSelected = false;
     }
     contains(x, y) {
-        if (!this.element) return false; 
-        const CTM = this.group.getCTM();
-        if (!CTM) return false; 
-        const inverseCTM = CTM.inverse();
-
-        const svgPoint = svg.createSVGPoint();
-        svgPoint.x = x;
-        svgPoint.y = y;
-        const transformedPoint = svgPoint.matrixTransform(inverseCTM);
-
-        const dx = transformedPoint.x - 0; 
-        const dy = transformedPoint.y - 0;
+        if (!this.element || !this.rx || !this.ry) return false;
+        // Mouse coordinates are in canvas space; invert the circle's own
+        // translation/rotation without mixing in the viewport CTM.
+        const angle = -(this.rotation || 0) * Math.PI / 180;
+        const translatedX = x - this.x;
+        const translatedY = y - this.y;
+        const dx = translatedX * Math.cos(angle) - translatedY * Math.sin(angle);
+        const dy = translatedX * Math.sin(angle) + translatedY * Math.cos(angle);
         const rx = this.rx;
         const ry = this.ry;
         return ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)) <= 1.05; 

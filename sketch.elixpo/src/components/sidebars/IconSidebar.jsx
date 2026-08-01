@@ -51,14 +51,14 @@ function IconCell({ icon, onClick }) {
     >
       {normalizedSvg ? (
         <div
-          style={{ width: '24px', height: '24px', overflow: 'visible', flexShrink: 0, pointerEvents: 'none', filter: 'brightness(0) invert(1)' }}
+          style={{ width: '24px', height: '24px', overflow: 'visible', flexShrink: 0, pointerEvents: 'none', filter: 'var(--lix-icon-filter, brightness(0) invert(1))' }}
           dangerouslySetInnerHTML={{ __html: normalizedSvg }}
         />
       ) : (
         <img
           src={`/icons/${encodeURIComponent(icon.filename)}`}
           alt=""
-          style={{ width: '24px', height: '24px', pointerEvents: 'none', filter: 'invert(1)' }}
+          style={{ width: '24px', height: '24px', pointerEvents: 'none', filter: 'var(--lix-icon-filter, brightness(0) invert(1))' }}
           loading="lazy"
         />
       )}

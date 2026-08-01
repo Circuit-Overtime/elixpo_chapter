@@ -111,6 +111,10 @@ export default function LixSketchCanvas({
   // real persistence layer.
   useEffect(() => {
     function handleKey(e) {
+      if (e.key === 'Escape') {
+        useUIStore.getState().closeAllModals?.();
+        return;
+      }
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = (e.key || '').toLowerCase();
       if (key !== 's' || e.shiftKey) return;

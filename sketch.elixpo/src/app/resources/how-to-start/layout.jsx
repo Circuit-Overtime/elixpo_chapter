@@ -6,12 +6,12 @@ export const metadata = {
     title: 'How to Start with LixSketch',
     description:
       'Complete getting-started guide — drawing tools, keyboard shortcuts, LixScript diagrams, and sharing.',
-    images: [{ url: '/Images/og-image.png', width: 1322, height: 612, alt: 'LixSketch Getting Started' }],
+    images: [{ url: '/og-image.png', width: 1280, height: 720, alt: 'LixSketch Getting Started' }],
   },
   twitter: {
     title: 'How to Start with LixSketch',
     description: 'From zero to diagram in minutes. No account, no install.',
-    images: ['/Images/og-image.png'],
+    images: ['/og-image.png'],
   },
   alternates: { canonical: '/resources/how-to-start' },
 }

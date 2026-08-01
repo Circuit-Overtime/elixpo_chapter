@@ -22,7 +22,7 @@ const FILL_STYLES = [
 
 const FILL_COLORS = [
   '#1e1e28',
-  '#13171C',
+  '#15111f',
   '#1a1a2e',
   '#0d1117',
   '#2d2d3a',
@@ -107,7 +107,7 @@ export default function FrameSidebar() {
           type="text"
           value={frameName}
           onChange={updateName}
-          className="w-32 px-2.5 py-1.5 bg-surface-hover border border-border-light rounded-lg text-text-primary text-xs outline-none focus:border-[#6f846f]/50 transition-all duration-150 font-[lixFont]"
+          className="w-32 px-2.5 py-1.5 bg-surface-hover border border-border-light rounded-lg text-text-primary text-xs outline-none focus:border-[#7667a8]/50 transition-all duration-150 font-[lixFont]"
           spellCheck={false}
         />
       </ToolbarButton>
@@ -125,7 +125,7 @@ export default function FrameSidebar() {
               title={s.label}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${
                 fillStyle === s.id
-                  ? 'bg-surface-active text-text-primary'
+                  ? 'bg-accent-blue/20 text-accent-blue'
                   : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
               }`}
             >
@@ -240,7 +240,7 @@ export default function FrameSidebar() {
                     }}
                     className={`px-2 py-1 rounded-md text-[10px] transition-all ${
                       shape._frameImageFit === f.id
-                        ? 'bg-surface-active text-text-primary'
+                        ? 'bg-accent-blue/20 text-accent-blue'
                         : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
                     }`}
                   >{f.label}</button>

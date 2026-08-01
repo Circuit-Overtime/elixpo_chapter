@@ -140,6 +140,48 @@ function renderGraphOnCanvas(equations, settings) {
                     window.updateAttachedArrows(this);
                 }
             },
+            adaptToBackground(background, foreground, muted) {
+                const ensureContrast = window.__ensureCanvasContrast || ((color) => color);
+
+                this.group.querySelectorAll('rect').forEach((rect) => {
+                    const fill = rect.getAttribute('fill');
+                    const stroke = rect.getAttribute('stroke');
+                    if (fill && fill !== 'none') rect.setAttribute('fill', background);
+                    if (stroke && stroke !== 'none') {
+                        rect.setAttribute('stroke', muted);
+                        rect.setAttribute('stroke-opacity', '0.45');
+                    }
+                });
+
+                this.group.querySelectorAll('line').forEach((line) => {
+                    const width = Number.parseFloat(line.getAttribute('stroke-width') || '1');
+                    line.setAttribute('stroke', foreground);
+                    line.setAttribute('stroke-opacity', width <= 0.5 ? '0.18' : '0.5');
+                });
+
+                this.group.querySelectorAll('path[stroke]').forEach((path) => {
+                    const original = path.dataset.graphColor || path.getAttribute('stroke');
+                    if (!original || original === 'none') return;
+                    path.dataset.graphColor = original;
+                    path.setAttribute('stroke', ensureContrast(original, background, 3));
+                });
+
+                this.group.querySelectorAll('circle[fill]').forEach((circle) => {
+                    const original = circle.dataset.graphColor || circle.getAttribute('fill');
+                    if (!original || original === 'none') return;
+                    circle.dataset.graphColor = original;
+                    circle.setAttribute('fill', ensureContrast(original, background, 3));
+                });
+
+                this.group.querySelectorAll('text').forEach((text) => {
+                    const original = text.dataset.graphColor || text.getAttribute('fill');
+                    if (original) text.dataset.graphColor = original;
+                    const isAxisLabel = !original || ['#8b949e', '#62627a'].includes(original.toLowerCase());
+                    text.setAttribute('fill', isAxisLabel
+                        ? muted
+                        : ensureContrast(original, background, 4.5));
+                });
+            },
         };
 
         window.shapes.push(graphShape);
@@ -148,6 +190,9 @@ function renderGraphOnCanvas(equations, settings) {
         // Auto-select so the user sees something landed.
         window.currentShape = graphShape;
         graphShape.selectShape();
+        window.__adaptCanvasContrast?.(
+            window.getComputedStyle(window.svg).backgroundColor || '#13171C'
+        );
     } catch (err) {
         console.error('[GraphEngine] SVG insertion failed:', err);
         return false;

@@ -28,7 +28,7 @@ export function ToolbarButton({ icon, preview, children, tooltip }) {
         title={tooltip}
         className={`h-9 flex items-center gap-1.5 px-3 rounded-lg transition-all duration-100 ${
           open
-            ? 'bg-surface-active text-text-primary'
+            ? 'bg-accent-blue/20 text-accent-blue'
             : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
         }`}
       >

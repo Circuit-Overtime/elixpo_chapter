@@ -49,7 +49,7 @@ function RoughFrame({ children, className }) {
       const rc = rough.canvas(canvas)
 
       rc.rectangle(4, 4, w - 8, h - 8, {
-        stroke: '#5B57D1',
+        stroke: '#7667a8',
         strokeWidth: 1.2,
         roughness: 1.5,
         bowing: 0.8,
@@ -79,7 +79,7 @@ function RoughFrame({ children, className }) {
 }
 
 // ── RoughJS underline ─────────────────────────────────────────────────────────
-function RoughUnderline({ width = 300, color = '#5B57D1' }) {
+function RoughUnderline({ width = 300, color = '#7667a8' }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
@@ -143,10 +143,10 @@ function MarginDoodles() {
 
       const rc = rough.canvas(canvas)
 
-      rc.circle(30, 120, 20, { stroke: '#5B57D1', strokeWidth: 0.8, roughness: 2.5, fill: 'rgba(91,87,209,0.03)', fillStyle: 'solid' })
+      rc.circle(30, 120, 20, { stroke: '#7667a8', strokeWidth: 0.8, roughness: 2.5, fill: 'rgba(91,87,209,0.03)', fillStyle: 'solid' })
       rc.rectangle(w - 60, 200, 35, 25, { stroke: '#c873e4', strokeWidth: 0.8, roughness: 2 })
       rc.line(20, 350, 55, 340, { stroke: '#444480', strokeWidth: 0.8, roughness: 2 })
-      rc.ellipse(w - 40, 500, 30, 18, { stroke: '#5B57D1', strokeWidth: 0.7, roughness: 2.5 })
+      rc.ellipse(w - 40, 500, 30, 18, { stroke: '#7667a8', strokeWidth: 0.7, roughness: 2.5 })
       rc.circle(35, 650, 14, { stroke: '#3a3a50', strokeWidth: 0.8, roughness: 3 })
       rc.rectangle(w - 55, 800, 28, 20, { stroke: '#444480', strokeWidth: 0.7, roughness: 2.5 })
       rc.line(25, 950, 50, 960, { stroke: '#c873e4', strokeWidth: 0.7, roughness: 2 })
@@ -185,16 +185,16 @@ export default function CanvasPageLayout({
   content,
 }) {
   return (
-    <div className="min-h-screen bg-[#121212] text-white font-[lixFont] relative">
+    <div className="min-h-screen bg-[#120e1a] text-white font-[lixFont] relative">
       <DotGrid className="fixed inset-0 pointer-events-none opacity-60" />
       <MarginDoodles />
 
       {/* Top bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#121212]/90 backdrop-blur-xl border-b border-[#30363d]">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#120e1a]/90 backdrop-blur-xl border-b border-[#49385e]">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img src="/Images/logo.png" alt="LixSketch" className="w-7 h-7" />
+              <img src="/icon.png" alt="LixSketch" className="w-7 h-7 rounded-md" />
               <span className="text-white font-medium font-[lixFont]">LixSketch</span>
             </Link>
             {breadcrumbs.map((crumb, i) => (

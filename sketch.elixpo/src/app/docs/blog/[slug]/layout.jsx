@@ -21,9 +21,9 @@ export async function generateMetadata({ params }) {
             tags: post.tags,
             images: [
                 {
-                    url: "/Images/og-image.png",
-                    width: 1322,
-                    height: 612,
+                    url: "/og-image.png",
+                    width: 1280,
+                    height: 720,
                     alt: post.title,
                 },
             ],
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }) {
         twitter: {
             title: post.title,
             description: post.description,
-            images: ["/Images/og-image.png"],
+            images: ["/og-image.png"],
         },
         alternates: { canonical: `/docs/blog/${slug}` },
     };
@@ -59,10 +59,10 @@ export default async function BlogPostLayout({ children, params }) {
                 name: "Elixpo",
                 logo: {
                     "@type": "ImageObject",
-                    url: "https://sketch.elixpo.com/Images/logo.png",
+                    url: "https://sketch.elixpo.com/icon.png",
                 },
             },
-            image: "https://sketch.elixpo.com/Images/og-image.png",
+            image: "https://sketch.elixpo.com/og-image.png",
         };
     }
 

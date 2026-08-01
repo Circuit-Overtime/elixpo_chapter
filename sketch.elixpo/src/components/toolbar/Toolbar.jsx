@@ -80,7 +80,6 @@ export default function Toolbar() {
               title={item.title}
               onClick={toggleAIModal}
               className="w-[33px] h-[31px] flex items-center justify-center rounded-lg text-accent hover:bg-accent/15 transition-all duration-200"
-              style={{ color: '#9b7bf7' }}
             >
               <svg
                 width="20"
@@ -106,7 +105,7 @@ export default function Toolbar() {
             onClick={() => setActiveTool(item.tool)}
             className={`relative w-[33px] h-[31px] flex items-center justify-center rounded-lg transition-all duration-200 ${
               isActive
-                ? 'bg-surface-active text-text-primary'
+                ? 'bg-accent-blue/20 text-accent-blue'
                 : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
             }`}
           >

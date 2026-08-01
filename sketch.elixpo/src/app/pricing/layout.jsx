@@ -5,12 +5,12 @@ export const metadata = {
   openGraph: {
     title: 'LixSketch Pricing',
     description: 'Free and open source. Team plans coming soon.',
-    images: [{ url: '/Images/og-image.png', width: 1322, height: 612, alt: 'LixSketch Pricing' }],
+    images: [{ url: '/og-image.png', width: 1280, height: 720, alt: 'LixSketch Pricing' }],
   },
   twitter: {
     title: 'LixSketch Pricing',
     description: 'Free and open source forever. Team plans coming soon.',
-    images: ['/Images/og-image.png'],
+    images: ['/og-image.png'],
   },
   alternates: { canonical: '/pricing' },
 }

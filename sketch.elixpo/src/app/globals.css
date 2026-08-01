@@ -1,58 +1,69 @@
 @import "tailwindcss";
 
 @theme {
-  /* Warm light is the default across the product. The historical token
-   * name `accent-blue` is retained for compatibility, but now resolves to
-   * a muted sage so existing buttons stop appearing blue. */
-  --color-surface: #f4f1e9;
-  --color-surface-hover: #ebe7dc;
-  --color-surface-active: #dcd8ca;
-  --color-surface-dark: #efebe1;
-  --color-surface-card: #fbfaf6;
-  --color-accent: #a26f55;
-  --color-accent-dim: #d8d0c1;
-  --color-accent-blue: #6f846f;
-  --color-accent-blue-hover: #5f765f;
-  --color-text-primary: #30342f;
-  --color-text-secondary: #474c46;
-  --color-text-muted: #666c64;
-  --color-text-dim: #81867e;
-  --color-border: #d6d1c5;
-  --color-border-light: #c7c1b4;
-  --color-border-accent: #879a87;
-}
-body.canvas-mode.theme-light {
-  --color-surface: #f4f3ee;
-  --color-surface-hover: #eceae3;
-  --color-surface-active: #dcd9cd;
-  --color-surface-dark: #f4f3ee;
-  --color-surface-card: #fbfaf6;
-  --color-text-primary: #38384e;
-  --color-text-secondary: #4a4a60;
-  --color-text-muted: #62627a;
-  --color-text-dim: #80808f;
-  --color-border: #d6d4ca;
-  --color-border-light: #c5c3ba;
-  --color-border-accent: #879a87;
-  --lixsketch-grid-fine: rgba(60, 60, 80, 0.07);
-  --lixsketch-grid-major: rgba(60, 60, 80, 0.14);
+  /* Public pages were designed on a dark surface, so their global tokens
+   * stay dark. Canvas-only selectors below own both complete canvas themes. */
+  --color-surface: #211a2e;
+  --color-surface-hover: #342745;
+  --color-surface-active: #4a3563;
+  --color-surface-dark: #15101f;
+  --color-surface-card: #1d1729;
+  --color-accent: #c7a4ff;
+  --color-accent-dim: #5b417b;
+  --color-accent-blue: #8b6de0;
+  --color-accent-blue-hover: #a080ef;
+  --color-text-primary: #fcf9ff;
+  --color-text-secondary: #e9e0f3;
+  --color-text-muted: #beafcd;
+  --color-text-dim: #9586a6;
+  --color-border: #30263f;
+  --color-border-light: #49385e;
+  --color-border-accent: #a987d2;
 }
 
+body.canvas-mode.theme-light {
+  --color-surface: #f4f0fa;
+  --color-surface-hover: #ebe3f5;
+  --color-surface-active: #ddd0ed;
+  --color-surface-dark: #f1ecf7;
+  --color-surface-card: #fdfaff;
+  --color-accent: #8964bd;
+  --color-accent-dim: #e8dcf5;
+  --color-accent-blue: #7c59c3;
+  --color-accent-blue-hover: #6d4caf;
+  --color-text-primary: #31283f;
+  --color-text-secondary: #4c405d;
+  --color-text-muted: #6e607d;
+  --color-text-dim: #897d96;
+  --color-border: #d8cde5;
+  --color-border-light: #c8b8d9;
+  --color-border-accent: #a88bc8;
+  --lixsketch-grid-fine: rgba(60, 60, 80, 0.07);
+  --lixsketch-grid-major: rgba(60, 60, 80, 0.14);
+  --lix-icon-filter: none;
+}
+
+body.canvas-mode,
 body.canvas-mode.theme-dark {
-  --color-surface: #25252f;
-  --color-surface-hover: #35354a;
-  --color-surface-active: #444480;
-  --color-surface-dark: #20202a;
-  --color-surface-card: #292932;
-  --color-text-primary: #f0f0f5;
-  --color-text-secondary: #d8d8e0;
-  --color-text-muted: #b0b0c0;
-  --color-text-dim: #92929e;
-  --color-border: #383848;
-  --color-border-light: #3e3e52;
-  --color-border-accent: #5555a0;
+  --color-surface: #241c31;
+  --color-surface-hover: #38294a;
+  --color-surface-active: #50386a;
+  --color-surface-dark: #171120;
+  --color-surface-card: #20182c;
+  --color-accent: #c7a4ff;
+  --color-accent-dim: #5b417b;
+  --color-accent-blue: #8b6de0;
+  --color-accent-blue-hover: #a080ef;
+  --color-text-primary: #faf7ff;
+  --color-text-secondary: #e7def1;
+  --color-text-muted: #bcaecc;
+  --color-text-dim: #9485a5;
+  --color-border: #332642;
+  --color-border-light: #4a385e;
+  --color-border-accent: #8165a6;
   --lixsketch-grid-fine: rgba(255, 255, 255, 0.06);
   --lixsketch-grid-major: rgba(255, 255, 255, 0.12);
+  --lix-icon-filter: brightness(0) invert(1);
 }
 
 /* Font faces — served from /public/fonts/ */
@@ -80,14 +91,50 @@ body.canvas-mode.theme-dark {
 /* Global utilities */
 body {
   margin: 0;
-  background: #faf9f5;
-  color: #30342f;
+  background: #120e1a;
+  color: #fcf9ff;
   font-family: "lixFont", sans-serif;
   font-size: 14px;
 }
 
 body.canvas-mode {
   overflow: hidden;
+}
+
+/* Canvas labels are draggable content, never browser-selectable text. */
+body.canvas-mode #freehand-canvas text,
+body.canvas-mode #freehand-canvas tspan {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Solid primary controls keep consistent contrast in the light canvas.
+ * Fractional accent backgrounds (for badges and selected tool states) use
+ * escaped class names and are intentionally unaffected by this rule. */
+body.canvas-mode .bg-accent-blue {
+  color: #ffffff;
+}
+
+.e2e-badge {
+  color: #73d995;
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(74, 222, 128, 0.16);
+}
+
+.e2e-badge:hover {
+  color: #8ae3a7;
+  background: rgba(34, 197, 94, 0.18);
+}
+
+body.canvas-mode.theme-light .e2e-badge {
+  color: #285f3c;
+  background: #dcecdf;
+  border-color: #b5d4bd;
+}
+
+body.canvas-mode.theme-light .e2e-badge:hover {
+  color: #1f5031;
+  background: #cfe4d4;
 }
 
 /* ── Global custom scrollbar ────────────────────────────────── */
@@ -100,11 +147,11 @@ body.canvas-mode {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #bbb7ac;
+  background: #49385e;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #879a87;
+  background: #9a7fba;
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
@@ -113,7 +160,7 @@ body.canvas-mode {
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #bbb7ac transparent;
+  scrollbar-color: #2a2a3a transparent;
 }
 
 /* Hide scrollbars on specific elements */

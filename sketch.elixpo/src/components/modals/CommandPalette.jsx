@@ -227,13 +227,13 @@ export default function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-start justify-center pt-[12vh] font-[lixFont]"
+      className="fixed inset-0 z-[9999] flex items-center justify-center font-[lixFont]"
       onClick={toggleCommandPalette}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative bg-surface-card border border-border-light rounded-2xl w-full max-w-[800px] mx-4 overflow-hidden"
+        className="relative bg-surface-card border border-border-light rounded-2xl w-[92vw] max-w-[1200px] h-[88vh] max-h-[88vh] mx-4 overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search */}
@@ -251,7 +251,7 @@ export default function CommandPalette() {
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-[55vh] overflow-y-auto no-scrollbar py-2">
+        <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto no-scrollbar py-2">
           {filtered.length === 0 && (
             <div className="px-4 py-6 text-center text-text-dim text-xs">
               No commands found
