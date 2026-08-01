@@ -160,50 +160,53 @@ const Footer = () => {
                     </Box>
 
                     {/* Columns on Right */}
-                    <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={{ xs: 4, sm: 6, md: 8 }}
-                    >
-                        {COLUMNS.map((col) => (
-                            <Box key={col.heading} sx={{ minWidth: 100 }}>
-                                <Typography
-                                    sx={{
-                                        color: "#ffffff", // White section labels
-                                        fontSize: "12px",
-                                        fontWeight: 500,
-                                        letterSpacing: "0.08em",
-                                        textTransform: "uppercase",
-                                        mb: 2,
-                                        fontFamily: "var(--font-mono)",
-                                    }}
-                                >
-                                    {col.heading}
-                                </Typography>
-                                <Stack spacing={1.2}>
-                                    {col.links.map((l) => (
-                                        <Link
-                                            key={l.label}
-                                            href={l.href}
-                                            style={{
-                                                color: "#93939f", // Muted slate links
-                                                textDecoration: "none",
-                                                fontSize: "0.88rem",
-                                                fontFamily: "var(--font-sans)",
-                                                transition: "color 0.2s ease",
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.color = "#ffffff";
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.color = "#93939f";
-                                            }}
-                                        >
-                                            {l.label}
-                                        </Link>
-                                    ))}
-                                </Stack>
-                            </Box>
-                        ))}
+                    <Stack spacing={{ xs: 3, sm: 0 }}>
+                        <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            spacing={{ xs: 0, sm: 6, md: 8 }}
+                        >
+                            {COLUMNS.map((col) => (
+                                <Box key={col.heading} sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography
+                                        sx={{
+                                            color: "#ffffff", // White section labels
+                                            fontSize: "12px",
+                                            fontWeight: 500,
+                                            letterSpacing: "0.08em",
+                                            textTransform: "uppercase",
+                                            mb: 2,
+                                            fontFamily: "var(--font-mono)",
+                                        }}
+                                    >
+                                        {col.heading}
+                                    </Typography>
+                                    <Stack spacing={1.2}>
+                                        {col.links.map((l) => (
+                                            <Link
+                                                key={l.label}
+                                                href={l.href}
+                                                style={{
+                                                    color: "#93939f", // Muted slate links
+                                                    textDecoration: "none",
+                                                    fontSize: "0.88rem",
+                                                    fontFamily: "var(--font-sans)",
+                                                    transition: "color 0.2s ease",
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.color = "#ffffff";
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.color = "#93939f";
+                                                }}
+                                            >
+                                                {l.label}
+                                            </Link>
+                                        ))}
+                                    </Stack>
+                                </Box>
+                            ))}
+                        </Stack>
 
                         <Box>
                             <Typography
