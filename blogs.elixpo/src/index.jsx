@@ -180,12 +180,31 @@ function FeedCardActions({ post, onHide }) {
 }
 
 function FeedCard({ post, onHide }) {
+  const cardRef = useRef(null);
   const author = post.author || {};
   const cover = post.cover_image_r2_key || generateBlogThumbnail(post.id || post.slug);
   const href = `/${(post.org?.slug) || author.username || 'unknown'}/${post.slug}`;
   const allAuthors = [{ display_name: author.display_name, username: author.username, avatar_url: author.avatar_url }, ...(post.co_authors || [])];
+
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card || !post.id || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= 0.5)) return;
+      fetch('/api/analytics/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blogId: post.id, eventType: 'impression', referrer: window.location.href }),
+        keepalive: true,
+      }).catch(() => {});
+      observer.disconnect();
+    }, { threshold: 0.5 });
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [post.id]);
+
   return (
-    <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
+    <article ref={cardRef} className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
       {post.reshared_by && (
         <div className="flex items-center gap-1.5 mb-2 text-[12px] font-medium" style={{ color: 'var(--text-faint)' }}>
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg>

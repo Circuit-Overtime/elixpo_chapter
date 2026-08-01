@@ -1,297 +1,220 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
-import TabBar from '../components/TabBar';
-import Link from 'next/link';
 
-const TABS = [
-  { label: 'Overview', icon: 'analytics-outline' },
-  { label: 'Posts', icon: 'document-text-outline' },
-  { label: 'Followers', icon: 'people-outline' },
+const TABS = ['Overview', 'Posts', 'Audience', 'Acquisition'];
+const RANGES = [
+  ['7d', '7 days'], ['30d', '30 days'], ['90d', '90 days'], ['12m', '12 months'], ['custom', 'Custom'],
 ];
 
-function MiniStatCard({ label, value, icon }) {
+const fmt = (value) => new Intl.NumberFormat('en', { notation: Number(value) >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(Number(value) || 0);
+
+function Delta({ value }) {
+  const number = Number(value) || 0;
   return (
-    <div className="flex-1 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center">
-          {icon}
-        </div>
-        <span className="text-[13px] text-[var(--text-muted)]">{label}</span>
+    <span className="text-[11px] font-semibold" style={{ color: number > 0 ? '#22c55e' : number < 0 ? '#f87171' : 'var(--text-faint)' }}>
+      {number > 0 ? '↑' : number < 0 ? '↓' : '—'} {Math.abs(number)}% vs previous
+    </span>
+  );
+}
+
+function MetricCard({ label, value, change, suffix = '', definition, accent = '#9b7bf7' }) {
+  return (
+    <div className="rounded-2xl border p-5 min-w-0" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }} title={definition}>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <span className="text-[12px] font-medium" style={{ color: 'var(--text-muted)' }}>{label}</span>
+        <span className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 12px ${accent}66` }} />
       </div>
-      <p className="text-[var(--text-muted)]xl font-bold text-[var(--text-primary)]">{value}</p>
+      <p className="text-[26px] leading-none font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{fmt(value)}{suffix}</p>
+      <Delta value={change} />
     </div>
   );
 }
 
-function LineChart({ data, labels, color, label, height = 200 }) {
-  if (!data || data.length === 0 || data.every(v => v === 0)) {
-    return (
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-5">
-        <p className="text-[14px] font-medium text-[var(--text-primary)] mb-4">{label}</p>
-        <div className="flex items-center justify-center h-40 text-[13px] text-[var(--text-faint)]">
-          No data yet
-        </div>
-      </div>
-    );
-  }
-
-  const max = Math.max(...data, 1);
-  const padding = 40;
-  const chartWidth = 600;
-  const chartHeight = height;
-  const stepX = (chartWidth - padding * 2) / Math.max(data.length - 1, 1);
-
-  const points = data.map((val, i) => ({
-    x: padding + i * stepX,
-    y: chartHeight - padding - ((val / max) * (chartHeight - padding * 2)),
+function TrendChart({ labels = [], values = [], color = '#9b7bf7', chartRef }) {
+  const width = 900;
+  const height = 260;
+  const pad = 42;
+  const max = Math.max(...values, 1);
+  const points = values.map((value, index) => ({
+    x: pad + (index * (width - pad * 2)) / Math.max(values.length - 1, 1),
+    y: height - pad - (Number(value) / max) * (height - pad * 2),
   }));
-
-  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaD = pathD + ` L ${points[points.length - 1].x} ${chartHeight - padding} L ${points[0].x} ${chartHeight - padding} Z`;
-
-  const displayLabels = (labels || []).map(l => {
-    const [, m] = l.split('-');
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[parseInt(m) - 1] || l;
-  });
+  const line = points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ');
+  const area = points.length ? `${line} L ${points.at(-1).x} ${height - pad} L ${points[0].x} ${height - pad} Z` : '';
+  const labelIndexes = labels.map((_, index) => index).filter(index => index === 0 || index === labels.length - 1 || index % Math.ceil(labels.length / 6) === 0);
 
   return (
-    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-5">
-      <p className="text-[14px] font-medium text-[var(--text-primary)] mb-4">{label}</p>
-      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full" preserveAspectRatio="xMidYMid meet">
-        {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
-          const y = chartHeight - padding - frac * (chartHeight - padding * 2);
-          return (
-            <g key={frac}>
-              <line x1={padding} y1={y} x2={chartWidth - padding} y2={y} stroke="#232d3f" strokeWidth="1" />
-              <text x={padding - 8} y={y + 4} textAnchor="end" fill="#555" fontSize="11">
-                {Math.round(max * frac)}
-              </text>
-            </g>
-          );
+    <div className="overflow-x-auto">
+      <svg ref={chartRef} viewBox={`0 0 ${width} ${height}`} className="w-full min-w-[620px]" role="img" aria-label="Analytics trend chart">
+        {[0, .25, .5, .75, 1].map(fraction => {
+          const y = height - pad - fraction * (height - pad * 2);
+          return <g key={fraction}><line x1={pad} y1={y} x2={width - pad} y2={y} stroke="var(--border-default)" /><text x={pad - 8} y={y + 4} textAnchor="end" fill="var(--text-faint)" fontSize="10">{fmt(max * fraction)}</text></g>;
         })}
-
-        {displayLabels.map((m, i) => (
-          <text key={i} x={padding + i * stepX} y={chartHeight - 12} textAnchor="middle" fill="#555" fontSize="11">
-            {m}
-          </text>
-        ))}
-
-        <path d={areaD} fill={color} opacity="0.08" />
-        <path d={pathD} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="#141a26" stroke={color} strokeWidth="2" />
-        ))}
+        {area && <path d={area} fill={color} opacity=".1" />}
+        {line && <path d={line} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />}
+        {points.map((point, index) => <circle key={labels[index]} cx={point.x} cy={point.y} r="3" fill={color}><title>{labels[index]}: {values[index]}</title></circle>)}
+        {labelIndexes.map(index => <text key={labels[index]} x={points[index]?.x || pad} y={height - 12} textAnchor={index === 0 ? 'start' : index === labels.length - 1 ? 'end' : 'middle'} fill="var(--text-faint)" fontSize="10">{new Date(`${labels[index]}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</text>)}
       </svg>
+    </div>
+  );
+}
+
+function Breakdown({ title, rows = [], empty = 'No data yet' }) {
+  const max = Math.max(...rows.map(row => Number(row.value)), 1);
+  return (
+    <section className="rounded-2xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+      <h2 className="text-[14px] font-semibold mb-5" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+      {rows.length ? <div className="space-y-4">{rows.map(row => (
+        <div key={row.label || 'Unknown'}>
+          <div className="flex justify-between text-[12px] mb-1.5"><span style={{ color: 'var(--text-body)' }}>{row.label || 'Unknown'}</span><span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{fmt(row.value)}</span></div>
+          <div className="h-1.5 rounded-full" style={{ background: 'var(--bg-elevated)' }}><div className="h-full rounded-full bg-[#9b7bf7]" style={{ width: `${Math.max(3, (Number(row.value) / max) * 100)}%` }} /></div>
+        </div>
+      ))}</div> : <p className="text-[13px] py-10 text-center" style={{ color: 'var(--text-faint)' }}>{empty}</p>}
+    </section>
+  );
+}
+
+function CollectingNotice() {
+  return (
+    <div className="rounded-xl border px-4 py-3 flex items-start gap-3" style={{ background: 'rgba(155,123,247,.07)', borderColor: 'rgba(155,123,247,.22)' }}>
+      <ion-icon name="hourglass-outline" style={{ color: '#9b7bf7', fontSize: '18px', marginTop: 1 }} />
+      <div><p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Dimensional analytics are collecting</p><p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Historical totals remain available. Audience, device, country, source, completion, and share insights fill in from this deployment onward.</p></div>
     </div>
   );
 }
 
 export default function StatsPage() {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState(0);
-  const [stats, setStats] = useState(null);
-  const [statsLoading, setStatsLoading] = useState(true);
+  const [tab, setTab] = useState('Overview');
+  const [range, setRange] = useState('30d');
+  const [scope, setScope] = useState('personal');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [orgs, setOrgs] = useState([]);
+  const [data, setData] = useState(null);
+  const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState('');
+  const [metric, setMetric] = useState('views');
+  const [postQuery, setPostQuery] = useState('');
+  const [postSort, setPostSort] = useState('views');
+  const chartRef = useRef(null);
 
   useEffect(() => {
     if (!user) return;
-    fetch('/api/stats/overview')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setStats(data); })
-      .catch(() => {})
-      .finally(() => setStatsLoading(false));
+    fetch('/api/orgs').then(response => response.ok ? response.json() : null).then(result => setOrgs(result?.orgs || [])).catch(() => {});
   }, [user]);
 
-  if (loading) {
-    return (
-      <AppShell>
-        <div className="max-w-4xl mx-auto px-6 py-10">
-          <div className="h-10 w-32 bg-[var(--bg-elevated)] animate-pulse rounded mb-8" />
-          <div className="grid grid-cols-4 gap-4 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 bg-[var(--bg-elevated)] animate-pulse rounded-xl" />
-            ))}
-          </div>
-          <div className="h-64 bg-[var(--bg-elevated)] animate-pulse rounded-xl" />
-        </div>
-      </AppShell>
-    );
-  }
+  useEffect(() => {
+    if (!user || (range === 'custom' && (!customFrom || !customTo))) return;
+    const controller = new AbortController();
+    const params = new URLSearchParams({ range, scope });
+    if (range === 'custom') { params.set('from', customFrom); params.set('to', customTo); }
+    setFetching(true);
+    setError('');
+    fetch(`/api/stats/overview?${params}`, { signal: controller.signal })
+      .then(async response => {
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Could not load analytics');
+        return result;
+      })
+      .then(setData)
+      .catch(fetchError => { if (fetchError.name !== 'AbortError') setError(fetchError.message); })
+      .finally(() => setFetching(false));
+    return () => controller.abort();
+  }, [user, range, scope, customFrom, customTo]);
 
-  // Auth is enforced by middleware (redirects to /sign-in?next=/stats).
-  if (!user) return null;
-
-  const s = stats || { views: 0, reads: 0, likes: 0, followers: 0, published: 0, drafts: 0, comments: 0, following: 0, monthly: { labels: [], views: [], reads: [] }, topPosts: [] };
-
-  const chartsRef = useRef(null);
+  const posts = useMemo(() => (data?.posts || [])
+    .filter(post => post.title.toLowerCase().includes(postQuery.toLowerCase()))
+    .sort((a, b) => Number(b[postSort]) - Number(a[postSort])), [data, postQuery, postSort]);
 
   const exportCSV = () => {
+    if (!data) return;
     const rows = [
-      ['Metric', 'Value'],
-      ['Views', s.views], ['Reads', s.reads], ['Likes', s.likes], ['Followers', s.followers],
-      ['Published', s.published], ['Drafts', s.drafts], ['Comments', s.comments],
-      [], ['Month', 'Views', 'Reads'],
-      ...(s.monthly.labels || []).map((l, i) => [l, s.monthly.views[i] || 0, s.monthly.reads[i] || 0]),
+      ['Metric', 'Current', 'Previous', 'Change %'],
+      ...Object.keys(data.totals).map(key => [key, data.totals[key], data.previous[key] ?? '', data.changes[key] ?? '']),
+      [], ['Post', 'Views', 'Unique visitors', 'Reads', 'Average progress %', 'Engagement rate %'],
+      ...posts.map(post => [post.title, post.views, post.uniqueVisitors, post.reads, post.avgReadProgress, post.engagementRate]),
     ];
-    if (s.topPosts?.length) {
-      rows.push([], ['Top posts', 'Views', 'Reads', 'Likes']);
-      s.topPosts.forEach(p => rows.push([p.title || 'Untitled', p.views || 0, p.reads || 0, p.likes || 0]));
-    }
-    const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = 'lixblogs-stats.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const csv = rows.map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    link.download = `lixblogs-analytics-${range}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   };
 
   const exportPNG = () => {
-    const svg = chartsRef.current?.querySelector('svg');
+    const svg = chartRef.current;
     if (!svg) return;
-    const rect = svg.getBoundingClientRect();
-    const xml = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const scale = 2;
-      canvas.width = (rect.width || 600) * scale;
-      canvas.height = (rect.height || 240) * scale;
-      const ctx = canvas.getContext('2d');
-      ctx.scale(scale, scale);
-      ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#0b0b0f';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, rect.width || 600, rect.height || 240);
-      const a = document.createElement('a');
-      a.href = canvas.toDataURL('image/png');
-      a.download = 'lixblogs-stats.png';
-      a.click();
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas'); canvas.width = 1800; canvas.height = 520;
+      const context = canvas.getContext('2d'); context.fillStyle = '#0b0b0f'; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const link = document.createElement('a'); link.href = canvas.toDataURL('image/png'); link.download = `lixblogs-${metric}-${range}.png`; link.click();
     };
-    img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(xml)))}`;
+    image.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(new XMLSerializer().serializeToString(svg))))}`;
   };
+
+  if (loading || !user) return <AppShell><div className="max-w-6xl mx-auto px-5 py-10"><div className="h-10 w-40 rounded-lg animate-pulse bg-[var(--bg-elevated)]" /></div></AppShell>;
+
+  const totals = data?.totals || {};
+  const definitions = data?.definitions || {};
 
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8 gap-3 flex-wrap">
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Stats</h1>
-          <div className="flex items-center gap-2">
-            <button onClick={exportCSV} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
-              <ion-icon name="download-outline" style={{ fontSize: '14px' }} /> CSV
-            </button>
-            <button onClick={exportPNG} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
-              <ion-icon name="image-outline" style={{ fontSize: '14px' }} /> PNG
-            </button>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-7">
+          <div><p className="text-[11px] uppercase tracking-[.18em] font-semibold text-[#9b7bf7] mb-2">Creator dashboard</p><h1 className="text-3xl sm:text-4xl font-bold" style={{ color: 'var(--text-primary)' }}>Analytics</h1><p className="text-[13px] mt-2" style={{ color: 'var(--text-muted)' }}>Understand reach, reading quality, audience, and growth.</p></div>
+          <div className="flex flex-wrap gap-2">
+            <select value={scope} onChange={event => setScope(event.target.value)} className="rounded-lg px-3 py-2 text-[12px]" style={{ background: 'var(--bg-surface)', color: 'var(--text-body)', border: '1px solid var(--border-default)' }} aria-label="Analytics scope"><option value="personal">Personal</option>{orgs.map(org => <option key={org.id} value={`org:${org.id}`}>{org.name}</option>)}</select>
+            <button onClick={exportCSV} disabled={!data} className="rounded-lg px-3 py-2 text-[12px] border disabled:opacity-40" style={{ borderColor: 'var(--border-default)', color: 'var(--text-body)', background: 'var(--bg-surface)' }}><ion-icon name="download-outline" /> CSV</button>
+            <button onClick={exportPNG} disabled={!data} className="rounded-lg px-3 py-2 text-[12px] border disabled:opacity-40" style={{ borderColor: 'var(--border-default)', color: 'var(--text-body)', background: 'var(--bg-surface)' }}><ion-icon name="image-outline" /> PNG</button>
           </div>
+        </header>
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6 border-b" style={{ borderColor: 'var(--border-default)' }}>
+          <nav className="flex overflow-x-auto" aria-label="Analytics sections">{TABS.map(item => <button key={item} onClick={() => setTab(item)} className="px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2" style={{ color: tab === item ? '#9b7bf7' : 'var(--text-muted)', borderColor: tab === item ? '#9b7bf7' : 'transparent' }}>{item}</button>)}</nav>
+          <div className="flex items-center gap-1.5 pb-3 md:pb-0 overflow-x-auto">{RANGES.map(([value, label]) => <button key={value} onClick={() => setRange(value)} className="px-2.5 py-1.5 rounded-md text-[11px] whitespace-nowrap" style={{ background: range === value ? '#9b7bf720' : 'transparent', color: range === value ? '#9b7bf7' : 'var(--text-faint)' }}>{label}</button>)}</div>
         </div>
 
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        {range === 'custom' && <div className="flex flex-wrap gap-3 mb-5"><label className="text-[12px]" style={{ color: 'var(--text-muted)' }}>From <input type="date" value={customFrom} onChange={event => setCustomFrom(event.target.value)} className="ml-2 rounded-lg px-3 py-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }} /></label><label className="text-[12px]" style={{ color: 'var(--text-muted)' }}>To <input type="date" value={customTo} onChange={event => setCustomTo(event.target.value)} className="ml-2 rounded-lg px-3 py-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }} /></label></div>}
 
-        {statsLoading ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-28 bg-[var(--bg-elevated)] animate-pulse rounded-xl" />
-              ))}
+        {error && <div className="rounded-xl border border-red-400/30 bg-red-400/10 text-red-300 px-4 py-3 text-[13px] mb-5 flex justify-between"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss">×</button></div>}
+        {data?.dimensionsCollecting && <div className="mb-5"><CollectingNotice /></div>}
+
+        {fetching ? <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-28 rounded-2xl animate-pulse bg-[var(--bg-elevated)]" />)}</div> : data && <>
+          {tab === 'Overview' && <div className="space-y-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <MetricCard label="Views" value={totals.views} change={data.changes.views} definition={definitions.views} />
+              <MetricCard label="Unique visitors" value={totals.uniqueVisitors} change={data.changes.uniqueVisitors} definition={definitions.uniqueVisitors} accent="#60a5fa" />
+              <MetricCard label="Reads" value={totals.reads} change={data.changes.reads} definition={definitions.reads} accent="#4ade80" />
+              <MetricCard label="Completion" value={totals.completionRate} suffix="%" change={data.changes.completionRate} definition={definitions.completionRate} accent="#f59e0b" />
+              <MetricCard label="Avg. reading depth" value={totals.avgReadProgress} suffix="%" change={data.changes.avgReadProgress} definition={definitions.avgReadProgress} accent="#22d3ee" />
+              <MetricCard label="Avg. read time" value={totals.avgReadTime} suffix="s" change={data.changes.avgReadTime} definition={definitions.avgReadTime} accent="#38bdf8" />
+              <MetricCard label="Engagement rate" value={totals.engagementRate} suffix="%" change={data.changes.engagementRate} definition={definitions.engagementRate} accent="#f472b6" />
+              <MetricCard label="Followers gained" value={totals.followers} change={data.changes.followers} definition={definitions.followers} accent="#a78bfa" />
+              <MetricCard label="Followers lost" value={totals.followersLost} change={data.changes.followersLost} accent="#f87171" />
             </div>
-            <div className="h-64 bg-[var(--bg-elevated)] animate-pulse rounded-xl" />
-          </div>
-        ) : (
-          <>
-            {activeTab === 0 && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <MiniStatCard
-                    label="Views"
-                    value={s.views.toLocaleString()}
-                    icon={<svg className="w-4 h-4 text-[#9b7bf7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
-                  />
-                  <MiniStatCard
-                    label="Reads"
-                    value={s.reads.toLocaleString()}
-                    icon={<svg className="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
-                  />
-                  <MiniStatCard
-                    label="Likes"
-                    value={s.likes.toLocaleString()}
-                    icon={<svg className="w-4 h-4 text-[#f87171]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>}
-                  />
-                  <MiniStatCard
-                    label="Followers"
-                    value={s.followers.toLocaleString()}
-                    icon={<svg className="w-4 h-4 text-[#60a5fa]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-                  />
-                </div>
+            <section className="rounded-2xl border p-4 sm:p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+              <div className="flex items-center justify-between mb-4"><div><h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Performance over time</h2><p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>Daily totals in the selected period</p></div><select value={metric} onChange={event => setMetric(event.target.value)} className="rounded-lg px-3 py-1.5 text-[12px]" style={{ background: 'var(--bg-elevated)', color: 'var(--text-body)' }}><option value="views">Views</option><option value="reads">Reads</option></select></div>
+              <TrendChart chartRef={chartRef} labels={data.trend.labels} values={data.trend[metric]} color={metric === 'views' ? '#9b7bf7' : '#4ade80'} />
+            </section>
+            <div className="grid md:grid-cols-2 gap-4"><Breakdown title="Engagement" rows={[['Likes', totals.likes], ['Comments', totals.comments], ['Bookmarks', totals.bookmarks], ['Shares', totals.shares], ['Claps', totals.claps]].map(([label, value]) => ({ label, value }))} /><Breakdown title="Conversion funnel" rows={data.funnel} /></div>
+          </div>}
 
-                <div ref={chartsRef} className="space-y-6">
-                  <LineChart data={s.monthly.views} labels={s.monthly.labels} color="#9b7bf7" label="Views over time" />
-                  <LineChart data={s.monthly.reads} labels={s.monthly.labels} color="#4ade80" label="Reads over time" />
-                </div>
-              </div>
-            )}
+          {tab === 'Posts' && <section className="rounded-2xl border overflow-hidden" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+            <div className="p-4 border-b flex flex-wrap gap-3 justify-between" style={{ borderColor: 'var(--border-default)' }}><input value={postQuery} onChange={event => setPostQuery(event.target.value)} placeholder="Search posts" className="rounded-lg px-3 py-2 text-[12px] min-w-[220px]" style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }} /><select value={postSort} onChange={event => setPostSort(event.target.value)} className="rounded-lg px-3 py-2 text-[12px]" style={{ background: 'var(--bg-elevated)', color: 'var(--text-body)' }}><option value="views">Sort: views</option><option value="reads">Sort: reads</option><option value="avgReadProgress">Sort: reading depth</option><option value="engagementRate">Sort: engagement</option></select></div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[820px] text-left"><thead><tr className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-faint)' }}>{['Post', 'Views', 'Unique', 'Reads', 'Depth', 'Engagement'].map(label => <th key={label} className="px-4 py-3 font-semibold text-right first:text-left">{label}</th>)}</tr></thead><tbody>{posts.map(post => <tr key={post.id} className="border-t" style={{ borderColor: 'var(--border-default)' }}><td className="px-4 py-4"><p className="text-[13px] font-medium max-w-[300px] truncate" style={{ color: 'var(--text-primary)' }}>{post.title}</p><p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>{post.publishedAt ? new Date(post.publishedAt * 1000).toLocaleDateString() : 'Draft'}</p></td><td className="px-4 py-4 text-right text-[12px]">{fmt(post.views)}</td><td className="px-4 py-4 text-right text-[12px]">{fmt(post.uniqueVisitors)}</td><td className="px-4 py-4 text-right text-[12px]">{fmt(post.reads)}</td><td className="px-4 py-4 text-right text-[12px]">{post.avgReadProgress}%</td><td className="px-4 py-4 text-right text-[12px]">{post.engagementRate}%</td></tr>)}</tbody></table>{!posts.length && <p className="text-center py-16 text-[13px]" style={{ color: 'var(--text-faint)' }}>No matching published posts.</p>}</div>
+          </section>}
 
-            {activeTab === 1 && (
-              <div>
-                {s.topPosts.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-[1fr_80px_80px_80px] gap-4 px-4 py-2 text-[12px] text-[var(--text-faint)] uppercase tracking-wider font-medium">
-                      <span>Post</span>
-                      <span className="text-right">Views</span>
-                      <span className="text-right">Reads</span>
-                      <span className="text-right">Likes</span>
-                    </div>
-                    {s.topPosts.map(post => (
-                      <div key={post.id} className="grid grid-cols-[1fr_80px_80px_80px] gap-4 items-center bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl px-4 py-3.5">
-                        <div className="min-w-0">
-                          <p className="text-[14px] text-[var(--text-primary)] font-medium truncate">{post.title || 'Untitled'}</p>
-                          {post.publishedAt && (
-                            <p className="text-[11px] text-[var(--text-faint)] mt-0.5">
-                              {new Date(post.publishedAt * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </p>
-                          )}
-                        </div>
-                        <p className="text-[14px] text-[var(--text-body)] text-right font-medium">{post.views}</p>
-                        <p className="text-[14px] text-[var(--text-body)] text-right font-medium">{post.reads}</p>
-                        <p className="text-[14px] text-[var(--text-body)] text-right font-medium">{post.likes}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-[var(--text-muted)]enter py-16">
-                    <svg className="w-16 h-16 text-[#232d3f] mx-auto mb-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                    </svg>
-                    <p className="text-[var(--text-muted)] text-[15px] font-medium mb-1">No post stats yet</p>
-                    <p className="text-[var(--text-muted)] text-[13px]">Publish a story to start tracking its performance.</p>
-                  </div>
-                )}
-              </div>
-            )}
+          {tab === 'Audience' && <div className="space-y-5"><div className="grid grid-cols-2 lg:grid-cols-4 gap-4"><MetricCard label="New readers" value={data.audience.newReaders} change={0} accent="#4ade80" /><MetricCard label="Returning readers" value={data.audience.returningReaders} change={0} accent="#60a5fa" /><MetricCard label="Signed-in readers" value={data.audience.signedIn} change={0} /><MetricCard label="Anonymous readers" value={data.audience.anonymous} change={0} accent="#94a3b8" /></div><div className="grid md:grid-cols-2 gap-4"><Breakdown title="Devices" rows={data.audience.devices} /><Breakdown title="Countries" rows={data.audience.countries} /></div></div>}
 
-            {activeTab === 2 && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-8 text-[var(--text-muted)]enter">
-                    <p className="text-4xl font-bold text-[var(--text-primary)] mb-1">{s.followers.toLocaleString()}</p>
-                    <p className="text-[var(--text-muted)] text-[14px]">Followers</p>
-                  </div>
-                  <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-8 text-[var(--text-muted)]enter">
-                    <p className="text-4xl font-bold text-[var(--text-primary)] mb-1">{s.following.toLocaleString()}</p>
-                    <p className="text-[var(--text-muted)] text-[14px]">Following</p>
-                  </div>
-                </div>
-                {s.followers === 0 && (
-                  <div className="text-[var(--text-muted)]enter py-8">
-                    <p className="text-[var(--text-muted)] text-[13px]">Follower growth chart will appear once you have followers.</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          {tab === 'Acquisition' && <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4"><Breakdown title="Traffic sources" rows={data.acquisition.sources} /><Breakdown title="Top referrers" rows={data.acquisition.referrers} /><Breakdown title="UTM campaigns" rows={data.acquisition.campaigns} /></div>}
+        </>}
+      </main>
     </AppShell>
   );
 }

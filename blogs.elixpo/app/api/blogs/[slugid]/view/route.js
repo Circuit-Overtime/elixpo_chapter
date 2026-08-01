@@ -32,6 +32,28 @@ export async function POST(request, { params }) {
 
       // Record taste signal (best-effort, off the critical path)
       try { const { recordSignal } = await import('../../../../../lib/taste'); if (session?.userId) await recordSignal(db, session.userId, 'read', { blogId: slugid }); } catch {}
+
+      // Dimensional analytics are best-effort so a pending migration can never
+      // break the public view counter.
+      try {
+        const context = await request.json().catch(() => ({}));
+        const { classifyDevice, recordAnalyticsEvent } = await import('../../../../../lib/analytics');
+        await recordAnalyticsEvent(db, {
+          blogId: slugid,
+          userId: session?.userId,
+          ip,
+          eventType: 'view',
+          referrer: context.referrer,
+          utmSource: context.utmSource,
+          utmMedium: context.utmMedium,
+          utmCampaign: context.utmCampaign,
+          deviceCategory: classifyDevice(request.headers.get('user-agent') || ''),
+          countryCode: request.headers.get('cf-ipcountry'),
+          occurredAt: now,
+        });
+      } catch (error) {
+        console.warn('[analytics/view] event write failed:', error?.message || error);
+      }
     }
 
     const blog = await db.prepare('SELECT view_count FROM blogs WHERE id = ?').bind(slugid).first();
