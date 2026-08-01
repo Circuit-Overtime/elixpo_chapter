@@ -56,7 +56,7 @@ export default function PaintbrushSidebar() {
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-white/[0.06]'}`}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-surface-hover'}`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
@@ -75,7 +75,7 @@ export default function PaintbrushSidebar() {
             { v: 'brush', i: 'bxs-brush', l: 'Brush' },
           ].map((t) => (
             <button key={t.v} onClick={() => updateTaper(t.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${taper === t.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${taper === t.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-surface-hover'}`}
             >
               <i className={`bx ${t.i} text-sm`} /> {t.l}
             </button>
@@ -94,7 +94,7 @@ export default function PaintbrushSidebar() {
             { v: 'rough', i: 'bxs-bolt', l: 'Rough' },
           ].map((r) => (
             <button key={r.v} onClick={() => updateRoughness(r.v)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${roughness === r.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-white/[0.06]'}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 ${roughness === r.v ? 'bg-[#5B57D1] text-white' : 'text-text-secondary hover:bg-surface-hover'}`}
             >
               <i className={`bx ${r.i} text-sm`} /> {r.l}
             </button>

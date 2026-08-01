@@ -53,6 +53,7 @@ export default function AppMenu() {
   const toggleHelpModal = useUIStore((s) => s.toggleHelpModal)
   const toggleExportImageModal = useUIStore((s) => s.toggleExportImageModal)
   const theme = useUIStore((s) => s.theme)
+  const resolvedTheme = useUIStore((s) => s.resolvedTheme)
   const setTheme = useUIStore((s) => s.setTheme)
   const persistUIPrefs = useUIStore((s) => s.persistUIPrefs)
   const canvasBackground = useSketchStore((s) => s.canvasBackground)
@@ -488,7 +489,7 @@ const [docOpen, setDocOpen] = useState(false)
             {t('menu.canvasBackground')}
           </p>
           <div className="flex items-center gap-1.5">
-            {(theme === 'dark' ? CANVAS_BACKGROUNDS_DARK : CANVAS_BACKGROUNDS_LIGHT).map((bg) => (
+            {(resolvedTheme === 'dark' ? CANVAS_BACKGROUNDS_DARK : CANVAS_BACKGROUNDS_LIGHT).map((bg) => (
               <button
                 key={bg.color}
                 onClick={() => setCanvasBackground(bg.color)}

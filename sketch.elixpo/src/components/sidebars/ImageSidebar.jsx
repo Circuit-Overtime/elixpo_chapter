@@ -54,7 +54,7 @@ export default function ImageSidebar() {
       <button
         onClick={handleReplace}
         title="Replace image"
-        className="h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+        className="h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-100"
       >
         <i className="bx bx-upload text-base" />
         <span className="text-xs">Replace</span>
