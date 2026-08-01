@@ -140,7 +140,11 @@ export default function DocsLayout({
     const list: HeadingItem[] = [];
     headingElements.forEach((el) => {
       const level = Number.parseInt(el.tagName.substring(1), 10);
-      const text = el.textContent || '';
+      const heading = el.cloneNode(true) as HTMLElement;
+      heading.querySelectorAll('[data-toc-ignore]').forEach((node) =>
+        node.remove(),
+      );
+      const text = (heading.textContent || '').trim();
       let id = el.id;
       if (!id) {
         id = text
@@ -199,7 +203,7 @@ export default function DocsLayout({
       {/* Search */}
       <div className="relative mb-5">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#777]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -215,7 +219,7 @@ export default function DocsLayout({
           placeholder="Search docs..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none text-white placeholder-white/40 transition-colors"
+          className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none text-[#222] placeholder:text-[#999] transition-colors"
           style={{
             background: 'rgba(0,0,0,0.03)',
             border: '1px solid rgba(0,0,0,0.10)',
@@ -246,7 +250,7 @@ export default function DocsLayout({
                       : 'transparent',
                     color: active
                       ? ACCENT
-                      : 'rgba(255, 255, 255, 0.65)',
+                      : '#555555',
                     fontWeight: active ? 600 : 500,
                   }}
                   onMouseEnter={(e) => {
@@ -271,7 +275,7 @@ export default function DocsLayout({
             );
           })}
           {filteredNav.length === 0 && (
-            <li className="text-sm text-white/40 text-center py-4">
+            <li className="text-sm text-[#888] text-center py-4">
               No results found
             </li>
           )}
@@ -297,7 +301,7 @@ export default function DocsLayout({
               type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Open sidebar"
-              className="md:hidden w-10 h-10 inline-flex items-center justify-center rounded-lg text-white/85 hover:text-white"
+              className="md:hidden w-10 h-10 inline-flex items-center justify-center rounded-lg text-[#555] hover:text-[#111]"
               style={{ border: '1px solid rgba(0,0,0,0.10)' }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -307,7 +311,7 @@ export default function DocsLayout({
               </svg>
             </button>
 
-            <Link href="/" className="flex items-center gap-2 no-underline text-white">
+            <Link href="/" className="flex items-center gap-2 no-underline text-[#111]">
               <img
                 src="/base_logo.png"
                 alt="ElixpoURL"
@@ -317,7 +321,7 @@ export default function DocsLayout({
               />
               <span className="font-bold text-[1rem] tracking-tight">
                 Elixpo<span style={{ color: ACCENT }}>URL</span>
-                <span className="text-white/55 font-medium"> &nbsp;Docs</span>
+                <span className="text-[#555] font-medium"> &nbsp;Docs</span>
               </span>
             </Link>
 
@@ -329,12 +333,12 @@ export default function DocsLayout({
               title={copied ? 'Copied!' : 'Copy this page as plain text to paste into an LLM'}
               className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all"
               style={{
-                color: copied ? '#86efac' : 'rgba(0,0,0,0.75)',
+                color: copied ? '#15803d' : '#444444',
                 border: '1px solid rgba(0,0,0,0.12)',
               }}
               onMouseEnter={(e) => {
                 if (!copied) {
-                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.color = ACCENT;
                   e.currentTarget.style.background =
                     'rgba(229,57,53,0.08)';
                   e.currentTarget.style.borderColor =
@@ -368,7 +372,7 @@ export default function DocsLayout({
               className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline transition-colors"
               style={{ color: 'rgba(0,0,0,0.65)' }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#fff';
+                e.currentTarget.style.color = '#111';
                 e.currentTarget.style.background = 'rgba(0,0,0,0.08)';
               }}
               onMouseLeave={(e) => {
@@ -390,7 +394,7 @@ export default function DocsLayout({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View source on GitHub"
-              className="w-10 h-10 inline-flex items-center justify-center rounded-lg text-white/85 hover:text-white transition-all"
+              className="w-10 h-10 inline-flex items-center justify-center rounded-lg text-[#555] hover:text-[#111] transition-all"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
@@ -526,7 +530,7 @@ export default function DocsLayout({
                 style={{ height: 'calc(100vh - 60px)' }}
               >
                 <div className="p-6">
-                  <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-white/45 mb-3">
+                  <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#555] mb-3">
                     On this page
                   </div>
                   <ul className="list-none p-0 space-y-2">

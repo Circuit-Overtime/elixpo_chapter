@@ -1,30 +1,131 @@
-'use client';
+import Link from 'next/link';
+import type { CSSProperties, ReactNode } from 'react';
 
-const H1 = 'text-[2.1rem] md:text-[2.4rem] font-extrabold tracking-tight text-white mb-4 leading-tight';
-const LEDE = 'text-white/70 text-base md:text-[1.05rem] leading-relaxed mb-8';
-const H2 = 'text-[1.4rem] font-bold text-white tracking-tight mt-12 mb-3';
-const P = 'text-white/70 text-[0.96rem] leading-relaxed mb-4';
-const PRE = 'p-4 rounded-xl text-[0.85rem] leading-relaxed overflow-x-auto mb-4 font-mono';
-const PRE_STYLE = {
-  background: 'rgba(0,0,0,0.45)',
-  border: '1px solid rgba(0,0,0,0.08)',
-  color: '#e8e8ed',
+const H1 =
+  'text-[2.1rem] md:text-[2.4rem] font-extrabold tracking-tight text-[#111] mb-4 leading-tight';
+const LEDE =
+  'text-[#555] text-base md:text-[1.05rem] leading-relaxed mb-8 max-w-4xl';
+const H2 =
+  'text-[1.4rem] font-bold text-[#111] tracking-tight mt-12 mb-3 scroll-mt-24';
+const H3 =
+  'text-[1.05rem] font-bold text-[#222] tracking-tight mt-7 mb-2 scroll-mt-24';
+const P = 'text-[#555] text-[0.96rem] leading-relaxed mb-4';
+const INLINE_CODE =
+  'font-mono text-[0.88em] text-[#9f211e] bg-[#fff1f0] border border-[#ffd4d1] rounded px-1.5 py-0.5';
+const PRE =
+  'p-4 md:p-5 rounded-xl text-[0.84rem] leading-[1.65] overflow-x-auto mb-5 font-mono';
+const PRE_STYLE: CSSProperties = {
+  background: '#171717',
+  border: '1px solid #2f2f2f',
+  color: '#f5f5f4',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
 };
-const METHOD_STYLE: Record<string, React.CSSProperties> = {
-  POST: { background: 'rgba(229,57,53,0.18)', color: '#c62828', border: '1px solid rgba(229,57,53,0.4)' },
-  GET: { background: 'rgba(95,182,255,0.18)', color: '#bcdcff', border: '1px solid rgba(95,182,255,0.4)' },
-  PATCH: { background: 'rgba(251,191,36,0.18)', color: '#fde7a4', border: '1px solid rgba(251,191,36,0.4)' },
-  DELETE: { background: 'rgba(239,68,68,0.18)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.4)' },
+const CALLOUT_STYLE: CSSProperties = {
+  background: '#fff8f7',
+  border: '1px solid #ffd4d1',
 };
 
-function MethodBadge({ method }: { method: 'GET' | 'POST' | 'PATCH' | 'DELETE' }) {
+const METHOD_STYLE: Record<string, CSSProperties> = {
+  POST: {
+    background: '#fff1f0',
+    color: '#b42318',
+    border: '1px solid #ffc9c5',
+  },
+  GET: {
+    background: '#eaf7ff',
+    color: '#075985',
+    border: '1px solid #bae6fd',
+  },
+  PATCH: {
+    background: '#fff8db',
+    color: '#854d0e',
+    border: '1px solid #fde68a',
+  },
+  DELETE: {
+    background: '#fff0f0',
+    color: '#b91c1c',
+    border: '1px solid #fecaca',
+  },
+};
+
+type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+
+function MethodBadge({ method }: { method: Method }) {
   return (
     <span
-      className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase mr-2 font-mono"
+      data-toc-ignore
+      aria-hidden="true"
+      className="inline-flex align-middle items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase mr-2 font-mono"
       style={METHOD_STYLE[method]}
     >
       {method}
     </span>
+  );
+}
+
+function CodeBlock({ children, label }: { children: string; label?: string }) {
+  return (
+    <div className="mb-5">
+      {label && (
+        <div className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#777]">
+          {label}
+        </div>
+      )}
+      <pre className={`${PRE} mb-0`} style={PRE_STYLE}>
+        <code>{children}</code>
+      </pre>
+    </div>
+  );
+}
+
+function FieldTable({
+  rows,
+}: {
+  rows: Array<[string, string, string, ReactNode]>;
+}) {
+  return (
+    <div className="rounded-xl overflow-x-auto mb-6 border border-[#e2e2e2]">
+      <table className="w-full min-w-[620px] text-sm">
+        <thead className="bg-[#f7f7f6] text-[#444]">
+          <tr>
+            <th className="text-left px-4 py-2.5 font-semibold">Field</th>
+            <th className="text-left px-4 py-2.5 font-semibold">Type</th>
+            <th className="text-left px-4 py-2.5 font-semibold">Required</th>
+            <th className="text-left px-4 py-2.5 font-semibold">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([field, type, required, description]) => (
+            <tr key={field} className="border-t border-[#ececec] text-[#555]">
+              <td className="px-4 py-3 font-mono text-[#9f211e]">{field}</td>
+              <td className="px-4 py-3 font-mono text-[#333]">{type}</td>
+              <td className="px-4 py-3">{required}</td>
+              <td className="px-4 py-3 leading-relaxed">{description}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Endpoint({
+  method,
+  path,
+  children,
+}: {
+  method: Method;
+  path: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="mb-5">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#e2e2e2] bg-[#fafafa] px-4 py-3">
+        <MethodBadge method={method} />
+        <code className="font-mono text-[0.92rem] text-[#222]">{path}</code>
+      </div>
+      {children}
+    </div>
   );
 }
 
@@ -33,98 +134,231 @@ export default function ApiPage() {
     <article>
       <h1 className={H1}>Shortening API</h1>
       <p className={LEDE}>
-        The four endpoints you need to create, list, update, and delete short
-        links. Authenticate every request with an API key in the{' '}
-        <code className="font-mono text-white">Authorization</code> header.
+        Create and manage account-owned short links, or use the browser-only
+        guest flow for one temporary link. This reference documents request
+        fields, response bodies, tier restrictions, pagination, expiry, and
+        failure behavior as implemented by the edge routes.
       </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
+        {[
+          ['Base URL', 'https://lixrl.com'],
+          ['Content type', 'application/json'],
+          ['Authentication', 'Bearer API key'],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-xl border border-[#e2e2e2] bg-[#fafafa] p-4">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-[#777] mb-1">
+              {label}
+            </div>
+            <div className="font-mono text-[0.82rem] text-[#222] break-all">
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
 
       <h2 id="authentication" className={H2}>Authentication</h2>
-      <pre className={PRE} style={PRE_STYLE}>
-        <code>Authorization: Bearer elu_YOUR_API_KEY</code>
-      </pre>
+      <p className={P}>
+        Account endpoints accept a scoped API key in the standard Bearer
+        header. Create a key under{' '}
+        <Link href="/profile/keys" className="text-[#b42318] underline">
+          Profile → API Keys
+        </Link>
+        . Never place API keys in URLs or browser-delivered JavaScript.
+      </p>
+      <CodeBlock label="Request header">
+        Authorization: Bearer elu_YOUR_API_KEY
+      </CodeBlock>
+      <div className="rounded-xl p-4 text-sm text-[#555] leading-relaxed" style={CALLOUT_STYLE}>
+        The guest endpoint does not accept an API key. It is protected by a
+        same-origin browser check, risk scoring, and a 24-hour D1 quota, so it
+        is not a replacement for the authenticated integration API.
+      </div>
+
+      <h2 id="guest-shortening" className={H2}>
+        <MethodBadge method="POST" />Guest shortening
+      </h2>
+      <Endpoint method="POST" path="/api/guest/urls" />
+      <p className={P}>
+        Creates one temporary short link from the public landing page. The
+        service fixes the expiry at 24 hours, generates the code, stores no
+        click analytics, and returns <code className={INLINE_CODE}>429</code>{' '}
+        while the derived guest identity is still inside its quota window.
+      </p>
+      <FieldTable rows={[
+        ['url', 'string', 'Yes', 'Absolute HTTP or HTTPS destination, maximum 2,048 characters. Private, loopback, unsafe, and denylisted hosts are rejected.'],
+      ]} />
+      <CodeBlock label="Same-origin browser request">{`fetch('/api/guest/urls', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ url: 'https://example.com/article' })
+})`}</CodeBlock>
+      <CodeBlock label="201 Created">{`{
+  "short_url": "https://lixrl.com/gA1b2C3",
+  "short_code": "gA1b2C3",
+  "original_url": "https://example.com/article",
+  "expires_at": "2026-08-02T10:30:00.000Z",
+  "guest": true
+}`}</CodeBlock>
+      <h3 id="guest-limit-response" className={H3}>Guest quota response</h3>
+      <CodeBlock label="429 Too Many Requests">{`{
+  "error": "Your guest link has already been used. Sign in for persistent links.",
+  "account_required": true,
+  "available_at": "2026-08-02T10:30:00.000Z"
+}`}</CodeBlock>
+      <p className={P}>
+        The response includes <code className={INLINE_CODE}>Retry-After</code>{' '}
+        in seconds. Guest links cannot be listed, edited, recovered, or
+        converted into account links after creation.
+      </p>
 
       <h2 id="create-a-short-link" className={H2}>
-        <MethodBadge method="POST" />Create a short link
+        <MethodBadge method="POST" />Create an account link
       </h2>
-      <p className={P}>
-        <code className="font-mono text-white">POST /api/urls</code>
-      </p>
-      <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl -X POST https://lixrl.com/api/urls \\
+      <Endpoint method="POST" path="/api/urls" />
+      <FieldTable rows={[
+        ['url', 'string', 'Yes', 'Absolute HTTP or HTTPS destination. The same private-network and safe-content checks used by guest shortening apply.'],
+        ['title', 'string', 'No', 'Human-readable label between 1 and 255 characters.'],
+        ['custom_code', 'string', 'No', 'Pro or higher. A unique 3–32 character slug containing letters, digits, hyphens, or underscores.'],
+        ['expires_at', 'ISO 8601', 'No', 'Pro or higher. A future timestamp; null/omitted links do not expire.'],
+      ]} />
+      <CodeBlock label="cURL">{`curl -X POST https://lixrl.com/api/urls \\
   -H "Authorization: Bearer elu_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
     "url": "https://example.com/long-url",
-    "title": "My Link",
-    "custom_code": "my-link"
-  }'`}</code>
-      </pre>
-      <pre className={PRE} style={PRE_STYLE}>
-        <code>{`{
-  "short_url": "https://lixrl.com/my-link",
-  "short_code": "my-link",
+    "title": "Launch announcement",
+    "custom_code": "launch",
+    "expires_at": "2026-12-31T23:59:59.000Z"
+  }'`}</CodeBlock>
+      <CodeBlock label="201 Created">{`{
+  "short_url": "https://lixrl.com/launch",
+  "short_code": "launch",
   "original_url": "https://example.com/long-url",
-  "title": "My Link",
-  "created_at": "2026-03-20T12:00:00Z"
-}`}</code>
-      </pre>
+  "title": "Launch announcement",
+  "created_at": "2026-08-01 10:30:00",
+  "expires_at": "2026-12-31T23:59:59.000Z"
+}`}</CodeBlock>
+      <p className={P}>
+        Free accounts can own up to 25 links. A duplicate custom code returns{' '}
+        <code className={INLINE_CODE}>409</code>; unavailable tier features and
+        exhausted account quotas return <code className={INLINE_CODE}>403</code>.
+      </p>
 
       <h2 id="list-your-links" className={H2}>
-        <MethodBadge method="GET" />List your links
+        <MethodBadge method="GET" />List account links
       </h2>
-      <p className={P}>
-        <code className="font-mono text-white">
-          GET /api/urls?limit=20&amp;offset=0&amp;search=example
-        </code>
-      </p>
-      <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl https://lixrl.com/api/urls?limit=20&offset=0 \\
-  -H "Authorization: Bearer elu_YOUR_KEY"`}</code>
-      </pre>
+      <Endpoint method="GET" path="/api/urls" />
+      <FieldTable rows={[
+        ['limit', 'integer', 'No', 'Page size from 1–100. Defaults to 50.'],
+        ['offset', 'integer', 'No', 'Number of matching records to skip. Defaults to 0; maximum 100,000.'],
+        ['search', 'string', 'No', 'Case-insensitive match against short code, destination, or title. Input is capped at 100 characters.'],
+      ]} />
+      <CodeBlock label="cURL">{`curl 'https://lixrl.com/api/urls?limit=20&offset=0&search=example' \\
+  -H "Authorization: Bearer elu_YOUR_KEY"`}</CodeBlock>
+      <CodeBlock label="200 OK">{`{
+  "urls": [
+    {
+      "id": 42,
+      "user_id": 7,
+      "short_code": "launch",
+      "original_url": "https://example.com/long-url",
+      "title": "Launch announcement",
+      "is_active": 1,
+      "clicks": 18,
+      "created_at": "2026-08-01 10:30:00",
+      "updated_at": "2026-08-01 10:30:00",
+      "expires_at": null
+    }
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0
+}`}</CodeBlock>
 
       <h2 id="get-a-link" className={H2}>
-        <MethodBadge method="GET" />Get a link
+        <MethodBadge method="GET" />Get an account link
       </h2>
+      <Endpoint method="GET" path="/api/urls/{code}" />
       <p className={P}>
-        <code className="font-mono text-white">
-          GET /api/urls/{'{code}'}
-        </code>
+        Returns the complete URL record shown in the list response. Ownership
+        is enforced: an unknown code or a code belonging to another account
+        returns <code className={INLINE_CODE}>404</code>.
       </p>
-      <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl https://lixrl.com/api/urls/my-link \\
-  -H "Authorization: Bearer elu_YOUR_KEY"`}</code>
-      </pre>
+      <CodeBlock label="cURL">{`curl https://lixrl.com/api/urls/launch \\
+  -H "Authorization: Bearer elu_YOUR_KEY"`}</CodeBlock>
 
       <h2 id="update-a-link" className={H2}>
-        <MethodBadge method="PATCH" />Update a link
+        <MethodBadge method="PATCH" />Update an account link
       </h2>
-      <p className={P}>
-        <code className="font-mono text-white">
-          PATCH /api/urls/{'{code}'}
-        </code>{' '}
-        — change destination URL, title, or active status.
-      </p>
-      <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl -X PATCH https://lixrl.com/api/urls/my-link \\
+      <Endpoint method="PATCH" path="/api/urls/{code}" />
+      <p className={P}>Send at least one mutable field. The short code itself cannot be changed.</p>
+      <FieldTable rows={[
+        ['url', 'string', 'No', 'New validated HTTP or HTTPS destination.'],
+        ['title', 'string | null', 'No', 'New 1–255 character title, or null to remove it.'],
+        ['is_active', 'boolean', 'No', 'False disables redirects without deleting the record or analytics.'],
+        ['expires_at', 'ISO 8601 | null', 'No', 'Future timestamp, or null to remove expiry.'],
+      ]} />
+      <CodeBlock label="cURL">{`curl -X PATCH https://lixrl.com/api/urls/launch \\
   -H "Authorization: Bearer elu_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"url": "https://new-destination.com", "is_active": true}'`}</code>
-      </pre>
+  -d '{"url":"https://example.com/new","title":null,"is_active":true}'`}</CodeBlock>
+      <CodeBlock label="200 OK">{`{
+  "success": true
+}`}</CodeBlock>
 
       <h2 id="delete-a-link" className={H2}>
-        <MethodBadge method="DELETE" />Delete a link
+        <MethodBadge method="DELETE" />Delete an account link
       </h2>
+      <Endpoint method="DELETE" path="/api/urls/{code}" />
       <p className={P}>
-        <code className="font-mono text-white">
-          DELETE /api/urls/{'{code}'}
-        </code>{' '}
-        — permanently removes the link and its analytics. This is
-        irreversible.
+        Permanently removes the link and its click records. This operation is
+        irreversible; use <code className={INLINE_CODE}>is_active: false</code>{' '}
+        when you may need to restore the redirect later.
       </p>
-      <pre className={PRE} style={PRE_STYLE}>
-        <code>{`curl -X DELETE https://lixrl.com/api/urls/my-link \\
-  -H "Authorization: Bearer elu_YOUR_KEY"`}</code>
-      </pre>
+      <CodeBlock label="cURL">{`curl -X DELETE https://lixrl.com/api/urls/launch \\
+  -H "Authorization: Bearer elu_YOUR_KEY"`}</CodeBlock>
+      <CodeBlock label="200 OK">{`{
+  "success": true
+}`}</CodeBlock>
+
+      <h2 id="status-codes" className={H2}>Status codes and retries</h2>
+      <div className="rounded-xl overflow-x-auto mb-6 border border-[#e2e2e2]">
+        <table className="w-full min-w-[560px] text-sm">
+          <thead className="bg-[#f7f7f6] text-[#444]">
+            <tr>
+              <th className="text-left px-4 py-2.5">Status</th>
+              <th className="text-left px-4 py-2.5">Meaning</th>
+              <th className="text-left px-4 py-2.5">Action</th>
+            </tr>
+          </thead>
+          <tbody className="text-[#555]">
+            {[
+              ['400', 'Malformed input or unsupported field value.', 'Correct the request before retrying.'],
+              ['401', 'Missing, invalid, expired, or revoked credentials.', 'Replace the API key.'],
+              ['403', 'Tier restriction, quota, risk rejection, or CSRF failure.', 'Read the error string; signing in or upgrading may be required.'],
+              ['404', 'The account does not own a matching short code.', 'Verify the code and credentials.'],
+              ['409', 'Requested custom code is already taken.', 'Choose another code or omit custom_code.'],
+              ['422', 'Safe Browsing rejected the destination.', 'Use a safe destination; do not retry unchanged.'],
+              ['429', 'Rate or guest quota exceeded.', 'Wait for Retry-After before retrying.'],
+              ['500/503', 'Transient service or configuration failure.', 'Retry with capped exponential backoff.'],
+            ].map(([status, meaning, action]) => (
+              <tr key={status} className="border-t border-[#ececec]">
+                <td className="px-4 py-3 font-mono font-semibold text-[#222]">{status}</td>
+                <td className="px-4 py-3">{meaning}</td>
+                <td className="px-4 py-3">{action}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className={P}>
+        See the dedicated{' '}
+        <Link href="/docs/errors" className="text-[#b42318] underline">
+          error reference
+        </Link>{' '}
+        for response conventions and retry guidance.
+      </p>
     </article>
   );
 }
