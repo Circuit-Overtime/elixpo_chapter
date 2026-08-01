@@ -47,6 +47,16 @@ function announce(job) {
   }));
 }
 
+async function blobToBase64(blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return btoa(binary);
+}
+
 async function runUpload(id) {
   if (activeUploads.has(id)) return activeUploads.get(id);
   const task = (async () => {
@@ -65,22 +75,21 @@ async function runUpload(id) {
         const uploadBlob = job.blob?.type
           ? job.blob
           : new Blob([job.blob], { type: 'image/webp' });
-        // Send the persisted image as the request body. Cloudflare's multipart
-        // parser has intermittently returned an empty/non-File `file` field in
-        // production, rejecting valid uploads before Cloudinary is contacted.
-        // The route still accepts multipart for older/direct callers, while the
-        // durable queue uses this simpler, unambiguous wire format.
-        const headers = {
-          'Content-Type': uploadBlob.type || 'image/webp',
-          'X-Lix-Media-Type': job.type,
-          'X-Lix-Upload-Id': job.id,
-        };
-        if (job.blogId) headers['X-Lix-Blog-Id'] = job.blogId;
-        if (job.orgId) headers['X-Lix-Org-Id'] = job.orgId;
+        // Use the same JSON transport as the rest of the Pages API. Production
+        // Cloudflare rejected both multipart and raw image requests before the
+        // Function ran (generic HTML 400), while JSON requests reach the route.
+        const body = JSON.stringify({
+          data: await blobToBase64(uploadBlob),
+          mimeType: uploadBlob.type || 'image/webp',
+          type: job.type,
+          uploadId: job.id,
+          blogId: job.blogId || '',
+          orgId: job.orgId || '',
+        });
         const response = await fetch('/api/media/upload', {
           method: 'POST',
-          headers,
-          body: uploadBlob,
+          headers: { 'Content-Type': 'application/json' },
+          body,
         });
         const responseText = await response.text();
         try { data = responseText ? JSON.parse(responseText) : {}; } catch { data = {}; }
