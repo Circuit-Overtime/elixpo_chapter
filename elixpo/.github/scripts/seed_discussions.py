@@ -12,7 +12,7 @@ exists. Run it via the "Seed Discussions" workflow (workflow_dispatch) after
 Discussions has been enabled on the source repo.
 
 Environment:
-    AGENT_TOKEN       GitHub token for @elixpoo (secret: CI_AGENT_TOKEN)
+    AGENT_TOKEN       GitHub token for @elixpoo (secret: ELIXPOO_GITHUB_AGENTIC_TOKEN)
     DISCUSSIONS_REPO  owner/name of the discussions source repo
                       (default: elixpo/elixpo_chapter)
 """

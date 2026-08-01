@@ -3,7 +3,7 @@
 # Trigger: mention "@elixpoo" in an issue or PR comment
 # Whitelist: Elixpo org members (Circuit-Overtime, anwe-ch, elixpoo, ez-vivek)
 #
-# The bot acts as @elixpoo (via CI_AGENT_TOKEN - a PAT on that account).
+# The bot acts as @elixpoo (via ELIXPOO_GITHUB_AGENTIC_TOKEN - a PAT on that account).
 # All comments, reviews, commits, and PRs are attributed to @elixpoo.
 
 name: Elixpo Pull Request Review
@@ -50,15 +50,15 @@ jobs:
       id-token: write
       actions: read
     env:
-      POLLINATIONS_TOKEN: ${{ secrets.CI_POLLINATIONS_KEY }}
-      POLLINATIONS_TOKEN_CODER: ${{ secrets.CI_POLLINATIONS_KEY_CODER }}
-      AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+      POLLINATIONS_TOKEN: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+      POLLINATIONS_TOKEN_CODER: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+      AGENT_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
     steps:
       - name: Check Whitelist
         id: whitelist
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.CI_AGENT_TOKEN }}
+          github-token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           script: |
             // review_requested is a structured action (no free-text mention) -
             // the job-level `if` already checked the requested reviewer is
@@ -206,7 +206,7 @@ jobs:
             fi
           done
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
 
       - uses: actions/checkout@v4
         if: steps.whitelist.outputs.authorized == 'true'
@@ -214,7 +214,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
           repository: ${{ github.repository }}
-          token: ${{ secrets.CI_AGENT_TOKEN }}
+          token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
 
       # When the checkout ref is refs/pull/N/head, `origin/main` may not be
       # resolvable locally - `git diff origin/main...HEAD` then fails with
@@ -243,7 +243,7 @@ jobs:
           workflow: artifact-update.yml
           path: .elixpo-context
           if_no_artifact_found: warn
-          github_token: ${{ secrets.CI_AGENT_TOKEN }}
+          github_token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
 
       # Build the prompt by inlining the repo context snapshot. The model
       # gets the cold repo context up front - same advantage a human using
@@ -304,7 +304,7 @@ jobs:
         with:
           anthropic_api_key: "ccr-pollinations"
           show_full_output: true
-          github_token: ${{ secrets.CI_AGENT_TOKEN }}
+          github_token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           trigger_phrase: "@elixpoo"
           branch_prefix: "elixpo/"
           # No allowed_tools cap - every Claude Code tool is available.
@@ -327,7 +327,7 @@ jobs:
       - name: Strip Claude branding from tracking comment
         if: always() && steps.whitelist.outputs.authorized == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
           set +e
@@ -361,7 +361,7 @@ jobs:
       - name: Ensure PR exists for any new elixpo/* branch
         if: steps.whitelist.outputs.authorized == 'true' && github.event_name == 'issue_comment' && !github.event.issue.pull_request
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           REPO: ${{ github.repository }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
@@ -425,7 +425,7 @@ jobs:
       - name: Post failure notice
         if: failure() && steps.whitelist.outputs.authorized == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

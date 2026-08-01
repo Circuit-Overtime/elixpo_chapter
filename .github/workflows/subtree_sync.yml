@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.CI_AGENT_TOKEN }}
+          token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
 
       - name: Configure git as elixpoo
         run: |
@@ -30,7 +30,7 @@ jobs:
       # what upstream commits were pulled in without relying on merge parents.
       - name: Sync each subtree via PR + auto-merge
         env:
-          GH_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           REPO_FULL: ${{ github.repository }}
         run: |
           set -u
