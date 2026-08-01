@@ -11,9 +11,6 @@ name: Deploy
 on:
   push:
     branches: [main]
-  # In Actions, choose "Run workflow" and select the branch/ref to deploy.
-  # The selected ref is used for both the Worker and Pages deployment.
-  workflow_dispatch:
 
 concurrency:
   group: deploy-main
@@ -24,9 +21,11 @@ permissions:
 
 jobs:
   deploy-worker:
-    # Skip the deploy.sh bump-commit re-trigger (mirrors deploy.sh's commit msg).
+    # Defense in depth: production deploys only from a push to main. Even if
+    # another trigger is added later, feature branches cannot reach this job.
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
       !contains(github.event.head_commit.message, '[skip deploy]')
     runs-on: ubuntu-latest
     environment: production
