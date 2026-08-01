@@ -193,6 +193,8 @@ function makeTextEditable(textElement, groupElement) {
 
     let input = document.createElement("textarea");
     input.className = "svg-text-editor";
+    input.setAttribute("aria-label", "Edit canvas text");
+    input.setAttribute("data-editing", "true");
 
     // Issue #48 phase D follow-up: prefer the persisted `data-wrap-
     // source` when present so re-opening the editor shows the user's
@@ -267,17 +269,19 @@ function makeTextEditable(textElement, groupElement) {
     input.style.lineHeight = "1.2em";
     input.style.textAlign = currentAnchor === "middle" ? "center" : currentAnchor === "end" ? "right" : "left";
     input.style.backgroundColor = "transparent";
-    // Issue #34 bug #5a + #48 bug #2: dashed creation outline that grows
-    // with the text. Originally `rgba(255,255,255,0.55)` — invisible on
-    // the new light canvas. Read the active theme so the dashes stay
-    // visible in both modes.
+    // Keep an obvious editing-only bounding box around the textarea. The
+    // editor is removed by renderText(), so this never becomes part of the
+    // rendered canvas or exported scene.
     const _isDark = typeof document !== 'undefined'
         && document.body
         && document.body.classList.contains('theme-dark');
-    input.style.border = _isDark
-        ? "1px dashed rgba(255,255,255,0.55)"
-        : "1px dashed rgba(40,40,60,0.45)";
-    input.style.borderRadius = "3px";
+    const editingBorder = _isDark ? "rgba(139,136,232,0.95)" : "rgba(91,87,209,0.92)";
+    input.style.border = `2px solid ${editingBorder}`;
+    input.style.backgroundColor = _isDark
+        ? "rgba(91,87,209,0.08)"
+        : "rgba(91,87,209,0.05)";
+    input.style.boxShadow = `0 0 0 2px ${_isDark ? "rgba(139,136,232,0.18)" : "rgba(91,87,209,0.14)"}`;
+    input.style.borderRadius = "4px";
     input.style.outline = "none";
     document.body.appendChild(input);
 

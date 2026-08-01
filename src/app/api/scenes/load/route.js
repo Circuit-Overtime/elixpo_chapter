@@ -45,6 +45,12 @@ export async function GET(request) {
     }
 
     if (!perm) {
+      // A canvas URL can still have a valid local autosave even when it has
+      // never been synced (or its cloud row expired). This is normal state,
+      // not a failed request. Token-based share links still return 404.
+      if (sessionId) {
+        return NextResponse.json({ encryptedData: null, missing: true })
+      }
       return NextResponse.json({ error: 'Scene not found or link expired' }, { status: 404 })
     }
 

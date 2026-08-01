@@ -473,6 +473,11 @@ async function handleSceneLoad(request: Request, env: Env): Promise<Response> {
     }>();
 
     if (!perm) {
+      // Session URLs may legitimately exist only in the browser's local
+      // autosave buffer. Reserve 404 for invalid public share tokens.
+      if (sessionId) {
+        return json({ encryptedData: null, missing: true });
+      }
       return json({ error: 'Scene not found or link expired' }, 404);
     }
 

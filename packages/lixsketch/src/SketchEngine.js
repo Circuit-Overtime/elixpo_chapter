@@ -57,6 +57,7 @@ class SketchEngine {
         // Core SVG reference
         window.svg = this.svg;
         window.freehandCanvas = this.svg;
+        window.__sketchInteractionReady = false;
 
         // RoughJS from npm
         window.rough = rough;
@@ -238,13 +239,6 @@ class SketchEngine {
                 Frame, FreehandStroke
             };
 
-            // Expose restore as soon as the shape constructors are ready.
-            // Tool handlers, AI/graph renderers, and LixScript are not needed
-            // to deserialize a cached scene, so keeping the serializer behind
-            // those chunks unnecessarily delayed first canvas paint.
-            const sceneSerializer = await import('./core/SceneSerializer.js');
-            if (sceneSerializer.initSceneSerializer) sceneSerializer.initSceneSerializer();
-
             // Import tool handlers (they run top-level code that reads globals)
             const [
                 rectangleTool, circleTool, arrowTool, lineTool,
@@ -295,6 +289,14 @@ class SketchEngine {
             if (eventDispatcher.initEventDispatcher) {
                 eventDispatcher.initEventDispatcher(this.svg);
             }
+            window.__sketchInteractionReady = true;
+
+            // Restore only after pointer handlers are bound. This still keeps
+            // first canvas paint ahead of optional AI/graph/LixScript chunks,
+            // while guaranteeing every visible restored shape is immediately
+            // selectable and draggable.
+            const sceneSerializer = await import('./core/SceneSerializer.js');
+            if (sceneSerializer.initSceneSerializer) sceneSerializer.initSceneSerializer();
 
             // Import standalone tools
             await Promise.all([
@@ -473,6 +475,8 @@ class SketchEngine {
         window.shapes = [];
         window.currentShape = null;
         window.lastMousePos = null;
+        window.__sketchInteractionReady = false;
+        delete window.__sceneSerializer;
         this._modules = {};
         this._initialized = false;
         console.log('[SketchEngine] Cleaned up');

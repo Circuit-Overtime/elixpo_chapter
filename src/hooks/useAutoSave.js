@@ -87,6 +87,10 @@ const CLOUD_SYNC_INTERVAL = 5 * 60_000 // DB sync: every 5 minutes
 const RATE_LIMIT_WINDOW = 60_000
 const RATE_LIMIT_MAX = 2
 const _dbSaveTimestamps = []
+// Sessions confirmed missing from cloud should remain local until the user
+// explicitly requests a cloud save. This prevents an automatic 404 → POST
+// → workspace-limit loop for guest canvases restored from the browser.
+const _automaticCloudSyncBlocked = new Set()
 
 function isRateLimited() {
   const now = Date.now()
@@ -146,8 +150,12 @@ function showSaveToast() {
 }
 
 // ── Save to DB (from localStorage buffer) ──
-async function saveToDb() {
+async function saveToDb({ force = false } = {}) {
   if (!WORKER_URL) return false
+
+  const sessionId = getSessionID()
+  if (!sessionId) return false
+  if (!force && _automaticCloudSyncBlocked.has(sessionId)) return false
 
   if (isRateLimited()) {
     console.log('[AutoSave] Rate limited — skipping DB save')
@@ -178,7 +186,6 @@ async function saveToDb() {
     const key = await generateKey()
     const encryptedData = await encrypt(sceneJSON, key)
 
-    const sessionId = getSessionID()
     const createdBy = authState.isAuthenticated
       ? (authState.user?.id || 'anonymous')
       : (useProfileStore.getState().profile?.id || localStorage.getItem('lixsketch-guest-session') || 'anonymous')
@@ -197,6 +204,7 @@ async function saveToDb() {
     })
 
     if (res.ok) {
+      _automaticCloudSyncBlocked.delete(sessionId)
       recordDbSave()
       useUIStore.getState().setSaveStatus('cloud')
       // Store encryption key for this session
@@ -204,6 +212,7 @@ async function saveToDb() {
       console.log('[AutoSave] Synced to cloud')
       return true
     } else if (res.status === 429) {
+      _automaticCloudSyncBlocked.add(sessionId)
       const data = await res.json().catch(() => ({}))
       console.warn(`[AutoSave] Workspace limit reached (${data.currentCount}/${data.maxWorkspaces}). ${data.message || ''}`)
       useUIStore.getState().setSaveStatus('local')
@@ -226,7 +235,7 @@ async function saveToDb() {
  */
 export async function triggerCloudSync() {
   saveToLocalStorage()
-  const ok = await saveToDb()
+  const ok = await saveToDb({ force: true })
   if (ok) showSaveToast()
   return ok
 }
@@ -322,33 +331,39 @@ export default function useAutoSave() {
     }
 
     const fetchCloudScene = async (showLoading = false) => {
-      if (!WORKER_URL) return false
+      if (!WORKER_URL) return { status: 'unavailable' }
       try {
         if (showLoading) useUIStore.getState().setCanvasLoading(true, 'Fetching from cloud...')
         const sessionId = getSessionID()
         const res = await fetch(`${WORKER_URL}/api/scenes/load?sessionId=${sessionId}`)
-        if (!res.ok || cancelled) return false
+        if (!res.ok || cancelled) return { status: 'unavailable' }
         const data = await res.json()
-        if (!data.encryptedData) return false
+        if (data.missing || !data.encryptedData) {
+          _automaticCloudSyncBlocked.add(sessionId)
+          return { status: 'missing', metadata: data }
+        }
 
         const encKey = useUIStore.getState().loadEncryptionKeyForSession(sessionId)
-        if (!encKey) return false
+        if (!encKey) return { status: 'locked', metadata: data }
         const { decrypt } = await import('@/utils/encryption')
         const decrypted = await decrypt(data.encryptedData, encKey)
         const sceneData = JSON.parse(decrypted)
-        if (cancelled || sceneData?.format !== 'lixsketch' || !Array.isArray(sceneData.shapes)) return false
+        if (cancelled || sceneData?.format !== 'lixsketch' || !Array.isArray(sceneData.shapes)) {
+          return { status: 'invalid' }
+        }
 
+        _automaticCloudSyncBlocked.delete(sessionId)
         normalizeSceneColorsForTheme(sceneData, useUIStore.getState().resolvedTheme)
-        return { sceneData, metadata: data }
+        return { status: 'found', sceneData, metadata: data }
       } catch (err) {
         console.warn('[AutoSave] Cloud fetch failed:', err)
-        return false
+        return { status: 'unavailable' }
       }
     }
 
     const restoreFromCloud = async (serializer, currentKey) => {
       const cloud = await fetchCloudScene(true)
-      if (!cloud || cancelled) return false
+      if (cloud.status !== 'found' || cancelled) return false
       if (currentKey) writeLocalScene(currentKey, cloud.sceneData)
       serializer.load(cloud.sceneData)
       if (cloud.metadata.workspaceName) {
@@ -362,8 +377,18 @@ export default function useAutoSave() {
     const tryRestore = async () => {
       if (cancelled) return
 
-      // Blank/new workspaces and scenes loaded by another route do not need
-      // to wait for the serializer bundle.
+      // Never expose the canvas before its pointer dispatcher is bound. This
+      // applies to blank canvases too: drawing immediately after navigation
+      // must work just as reliably as dragging a restored shape.
+      const serializer = window.__sceneSerializer
+      if (!serializer || !window.svg || !window.__sketchInteractionReady) {
+        // Poll on the next paint instead of sleeping for 500–800 ms. This
+        // makes engine initialization, not an arbitrary timer, the fast-path
+        // boundary.
+        restoreFrame = requestAnimationFrame(tryRestore)
+        return
+      }
+
       if (window.__isNewWorkspace) {
         console.log('[AutoSave] New workspace — starting with blank canvas')
         finishRestore('blank')
@@ -371,15 +396,6 @@ export default function useAutoSave() {
       }
       if (window.shapes?.length > 0) {
         finishRestore('existing', window.shapes.length)
-        return
-      }
-
-      const serializer = window.__sceneSerializer
-      if (!serializer || !window.svg) {
-        // Poll on the next paint instead of sleeping for 500–800 ms. This
-        // makes engine initialization, not an arbitrary timer, the fast-path
-        // boundary.
-        restoreFrame = requestAnimationFrame(tryRestore)
         return
       }
 
@@ -405,13 +421,17 @@ export default function useAutoSave() {
               } catch {}
             }
             useUIStore.getState().setSaveStatus('local')
+            // Treat a restored browser buffer as local-only until the
+            // background lookup proves that its cloud row exists.
+            _automaticCloudSyncBlocked.add(getSessionID())
             finishRestore('local', sceneData.shapes.length)
             backgroundTimer = setTimeout(async () => {
               cleanupStaleCaches(currentKey, currentMetaKey)
               const cloud = await fetchCloudScene()
               if (cancelled) return
-              const cloudUpdatedAt = cloud ? parseCloudTimestamp(cloud.metadata.updatedAt) : 0
-              if (cloud && cloudUpdatedAt > localSavedAt) {
+              if (cloud.status !== 'found') return
+              const cloudUpdatedAt = parseCloudTimestamp(cloud.metadata.updatedAt)
+              if (cloudUpdatedAt > localSavedAt) {
                 writeLocalScene(currentKey, cloud.sceneData)
                 serializer.load(cloud.sceneData)
                 makeRestoredSceneInteractive()
@@ -421,8 +441,8 @@ export default function useAutoSave() {
                 useUIStore.getState().setSaveStatus('cloud')
                 window.__canvasRestoreMetrics.reconciledFrom = 'cloud'
               } else {
-                // Local edits are newer (or the server has no timestamp), so
-                // preserve the buffer and reconcile it up to the cloud.
+                // The row exists and local edits are newer, so reconcile the
+                // browser buffer up to that same cloud workspace.
                 saveToDb()
               }
             }, 1000)
