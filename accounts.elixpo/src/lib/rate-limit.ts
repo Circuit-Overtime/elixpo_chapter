@@ -198,4 +198,12 @@ export function createPasswordResetRateLimiter(): DatabaseRateLimiter {
     });
 }
 
+export function createAccountSwitchRateLimiter(): DatabaseRateLimiter {
+    return new DatabaseRateLimiter({
+        windowMs: 60 * 1000,
+        maxRequests: 30,
+        blockDurationMs: 5 * 60 * 1000,
+    });
+}
+
 export { DatabaseRateLimiter };

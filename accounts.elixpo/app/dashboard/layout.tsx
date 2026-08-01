@@ -8,8 +8,10 @@ import {
     Logout,
     MenuBook,
     Person,
+    PersonAddAlt,
     Receipt,
     Security,
+    SwapHoriz,
     Webhook,
 } from "@mui/icons-material";
 import {
@@ -107,6 +109,17 @@ interface DashboardLayoutProps {
     children: React.ReactNode;
 }
 
+type SavedAccount = {
+    id: string;
+    email: string;
+    displayName: string | null;
+};
+
+type AccountsResponse = {
+    activeUserId: string | null;
+    accounts: SavedAccount[];
+};
+
 const navItems = [
     { label: "OAuth Apps", icon: Apps, href: "/dashboard/oauth-apps" },
     { label: "Services", icon: DevicesOther, href: "/dashboard/services" },
@@ -120,6 +133,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const [userEmail, setUserEmail] = useState<string>("");
     const [displayName, setDisplayName] = useState<string>("");
     const [userAvatar, setUserAvatar] = useState<string | null>(null);
+    const [activeUserId, setActiveUserId] = useState<string>("");
+    const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
     const [authChecked, setAuthChecked] = useState(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const { theme: appTheme, toggle: toggleAppTheme } = useAppTheme();
@@ -158,6 +173,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 if (data.email) setUserEmail(data.email);
                 if (data.displayName) setDisplayName(data.displayName);
                 if (data.avatar) setUserAvatar(data.avatar);
+                fetch("/api/auth/accounts", {
+                    credentials: "include",
+                    cache: "no-store",
+                })
+                    .then(async (response) =>
+                        response.ok
+                            ? ((await response.json()) as AccountsResponse)
+                            : null,
+                    )
+                    .then((accountData) => {
+                        if (!accountData) return;
+                        setActiveUserId(accountData.activeUserId || "");
+                        setSavedAccounts(accountData.accounts);
+                    })
+                    .catch(() => {});
                 setAuthChecked(true);
             })
             .catch(() => {
@@ -177,6 +207,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             // silent
         }
         router.push("/");
+    };
+
+    const handleSwitchAccount = async (userId: string) => {
+        setAnchorEl(null);
+        const response = await fetch("/api/auth/accounts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ userId }),
+        });
+        if (response.ok) window.location.reload();
     };
 
     const isActive = (href: string) => pathname.startsWith(href);
@@ -450,6 +491,80 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                         {userEmail}
                                     </Typography>
                                 </Box>
+                                <Divider
+                                    sx={{
+                                        borderColor: "var(--border)",
+                                    }}
+                                />
+                                {savedAccounts
+                                    .filter(
+                                        (account) =>
+                                            account.id !== activeUserId,
+                                    )
+                                    .map((account) => (
+                                        <MenuItem
+                                            key={account.id}
+                                            onClick={() =>
+                                                handleSwitchAccount(account.id)
+                                            }
+                                            sx={{
+                                                py: 1.1,
+                                                color: "var(--fg-muted)",
+                                                "&:hover": {
+                                                    bgcolor: "var(--overlay)",
+                                                    color: "var(--fg)",
+                                                },
+                                            }}
+                                        >
+                                            <ListItemIcon
+                                                sx={{
+                                                    color: "inherit",
+                                                    minWidth: 36,
+                                                }}
+                                            >
+                                                <SwapHoriz fontSize="small" />
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={
+                                                    account.displayName ||
+                                                    account.email
+                                                }
+                                                secondary={account.email}
+                                                primaryTypographyProps={{
+                                                    fontSize: "0.875rem",
+                                                }}
+                                                secondaryTypographyProps={{
+                                                    fontSize: "0.72rem",
+                                                    color: "var(--fg-faint)",
+                                                }}
+                                            />
+                                        </MenuItem>
+                                    ))}
+                                <MenuItem
+                                    component={Link}
+                                    href={`/login?add_account=1&next=${encodeURIComponent(pathname)}`}
+                                    onClick={() => setAnchorEl(null)}
+                                    sx={{
+                                        py: 1.1,
+                                        color: "#ff7759",
+                                        "&:hover": {
+                                            bgcolor: "rgba(255,119,89,0.08)",
+                                        },
+                                    }}
+                                >
+                                    <ListItemIcon
+                                        sx={{ color: "inherit", minWidth: 36 }}
+                                    >
+                                        <PersonAddAlt fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primaryTypographyProps={{
+                                            fontSize: "0.875rem",
+                                        }}
+                                    >
+                                        Add another account
+                                    </ListItemText>
+                                </MenuItem>
                                 <Divider
                                     sx={{
                                         borderColor: "var(--border)",

@@ -10,6 +10,10 @@ import {
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
 import { sendMail } from "@/lib/mails";
+import {
+    SUPPORTED_OAUTH_SCOPES,
+    unsupportedOAuthScopes,
+} from "@/lib/oauth-scopes";
 import { generateRandomString, hashString } from "@/lib/webcrypto";
 
 /**
@@ -104,6 +108,19 @@ export async function PUT(
                     );
                 }
             }
+        }
+
+        if (
+            scopes !== undefined &&
+            (!Array.isArray(scopes) ||
+                unsupportedOAuthScopes(scopes).length > 0)
+        ) {
+            return NextResponse.json(
+                {
+                    error: `scopes must only contain: ${SUPPORTED_OAUTH_SCOPES.join(", ")}`,
+                },
+                { status: 400 },
+            );
         }
 
         try {

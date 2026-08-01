@@ -11,6 +11,7 @@ import {
     validateOAuthClient,
 } from "@/lib/db";
 import { createAccessToken, createRefreshToken, verifyJWT } from "@/lib/jwt";
+import { parseOAuthScopes } from "@/lib/oauth-scopes";
 import { generateUUID, hashString } from "@/lib/webcrypto";
 
 export async function POST(request: NextRequest) {
@@ -170,21 +171,42 @@ export async function POST(request: NextRequest) {
                     /* best-effort */
                 }
 
-                const scopes = (
-                    scope ||
-                    authRequest.scopes ||
-                    "openid profile email"
-                ).split(" ");
-
+                const authorizedScopes = parseOAuthScopes(
+                    authRequest.scopes || "openid profile email",
+                );
+                const scopes = scope
+                    ? parseOAuthScopes(scope)
+                    : authorizedScopes;
+                if (
+                    scopes.some(
+                        (requestedScope) =>
+                            !authorizedScopes.includes(requestedScope),
+                    )
+                ) {
+                    return NextResponse.json(
+                        {
+                            error: "invalid_scope",
+                            error_description:
+                                "Requested scope exceeds the user's authorization grant",
+                        },
+                        { status: 400 },
+                    );
+                }
                 const accessToken = await createAccessToken(
                     userId,
                     user.email,
                     "email",
                     parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
+                    scopes,
                 );
                 const refreshTokenJWT = await createRefreshToken(
                     userId,
                     "email",
+                    parseInt(
+                        process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30",
+                        10,
+                    ),
+                    scopes,
                 );
 
                 // Store refresh token
@@ -294,17 +316,47 @@ export async function POST(request: NextRequest) {
                 // Get fresh user data
                 const user = (await getUserById(db, payload.sub)) as any;
                 const email = user ? user.email : payload.email;
+                // Tokens issued before scope claims were introduced carried
+                // the documented default grant. Preserve those sessions
+                // during their normal refresh lifetime.
+                const originalScopes = payload.scopes || [
+                    "openid",
+                    "profile",
+                    "email",
+                ];
+                const scopes = scope ? parseOAuthScopes(scope) : originalScopes;
+                if (
+                    scopes.some(
+                        (requestedScope) =>
+                            !originalScopes.includes(requestedScope),
+                    )
+                ) {
+                    return NextResponse.json(
+                        {
+                            error: "invalid_scope",
+                            error_description:
+                                "Requested scope exceeds the refresh token grant",
+                        },
+                        { status: 400 },
+                    );
+                }
 
                 const newAccessToken = await createAccessToken(
                     payload.sub,
                     email,
                     payload.provider,
                     parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
+                    scopes,
                 );
 
                 const newRefreshToken = await createRefreshToken(
                     payload.sub,
                     payload.provider,
+                    parseInt(
+                        process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30",
+                        10,
+                    ),
+                    scopes,
                 );
                 const newRefreshTokenHash = await hashString(newRefreshToken);
 
@@ -345,6 +397,7 @@ export async function POST(request: NextRequest) {
                                 process.env.JWT_EXPIRATION_MINUTES || "15",
                                 10,
                             ) * 60,
+                        scope: scopes.join(" "),
                     },
                     { status: 200 },
                 );
