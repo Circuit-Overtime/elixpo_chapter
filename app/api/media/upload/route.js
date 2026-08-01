@@ -28,10 +28,23 @@ export async function POST(request) {
     // different realm, where `instanceof File` is false. Validate capabilities
     // instead of constructor identity so valid uploads are not rejected as 400.
     if (!file || typeof file.arrayBuffer !== 'function' || typeof file.size !== 'number') {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      console.warn('[media/upload] Invalid multipart file field', {
+        present: !!file,
+        valueType: typeof file,
+        hasArrayBuffer: typeof file?.arrayBuffer === 'function',
+        sizeType: typeof file?.size,
+        fields: [...formData.keys()],
+      });
+      return NextResponse.json({
+        error: 'The uploaded image body was invalid. Please select the image again.',
+        code: 'INVALID_MEDIA_BODY',
+      }, { status: 400 });
     }
     if (mediaType === 'cover' && !blogId) {
-      return NextResponse.json({ error: 'Missing blogId for cover upload' }, { status: 400 });
+      return NextResponse.json({
+        error: 'The cover upload is missing its blog identifier. Reload the editor and try again.',
+        code: 'MISSING_BLOG_ID',
+      }, { status: 400 });
     }
 
     // Static-image allowlist enforcement. Anything outside the canonical

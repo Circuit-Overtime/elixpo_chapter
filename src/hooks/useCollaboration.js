@@ -49,19 +49,27 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
 
         // Pre-flight the room: if 5 distinct users are already editing and we're
         // not one of them, don't connect — caller renders read-only (#11 F).
+        const httpBase = COLLAB_WS_URL.replace(/^ws/, 'http');
+        const path = subpageId ? `blog/${blogId}/sub/${subpageId}/status` : `blog/${blogId}/status`;
+        let roomResponse;
         try {
-          const httpBase = COLLAB_WS_URL.replace(/^ws/, 'http');
-          const path = subpageId ? `blog/${blogId}/sub/${subpageId}/status` : `blog/${blogId}/status`;
-          const res = await fetch(`${httpBase}/${path}?token=${encodeURIComponent(collabToken)}`);
-          if (res.ok) {
-            const { users = [], count = 0 } = await res.json();
-            const alreadyIn = users.some((u) => u.userId === user.id);
-            if (!alreadyIn && count >= MAX_ACTIVE_USERS) {
-              if (!cancelled) setRoomFull(true);
-              return;
-            }
-          }
-        } catch { /* status unavailable → proceed and let the DO enforce */ }
+          roomResponse = await fetch(`${httpBase}/${path}?token=${encodeURIComponent(collabToken)}`, {
+            cache: 'no-store',
+            referrerPolicy: 'no-referrer',
+          });
+        } catch {
+          throw new Error('Live collaboration is temporarily unavailable');
+        }
+        if (!roomResponse.ok) {
+          const detail = await roomResponse.json().catch(() => ({}));
+          throw new Error(detail.error || `Collaboration service rejected access (${roomResponse.status})`);
+        }
+        const { users = [], count = 0 } = await roomResponse.json();
+        const alreadyIn = users.some((u) => u.userId === user.id);
+        if (!alreadyIn && count >= MAX_ACTIVE_USERS) {
+          if (!cancelled) setRoomFull(true);
+          return;
+        }
         if (cancelled) return;
 
         const ydoc = new Y.Doc();
@@ -102,7 +110,14 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
         });
 
         provider.on('connection-error', () => {
-          if (!cancelled) setError('Live collaboration connection failed');
+          if (!cancelled) {
+            setIsConnected(false);
+            setError('Live collaboration connection failed');
+            // y-websocket retries forever by default. A rejected authenticated
+            // upgrade will not recover without a fresh token/page load, so stop
+            // the retry loop instead of flooding the browser console and worker.
+            provider.disconnect();
+          }
         });
 
         // After initial sync, check if the Yjs fragment is empty (needs seeding from existing content)
