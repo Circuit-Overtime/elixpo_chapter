@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { getLimits } from '../../../../lib/tiers';
 import { MAX_MEDIA_PER_BLOG, MAX_BLOG_IMAGE_BYTES } from '../../../../lib/limits';
-import { uploadToCloudinary } from '../../../../lib/cloudinary';
+import { getCloudinaryUrl, uploadToCloudinary } from '../../../../lib/cloudinary';
 import { stripImageMetadata } from '../../../../lib/stripImageMetadata';
 import { isAllowedMime, ALLOWED_IMAGE_MIME_TYPES } from '../../../../src/utils/allowedImageTypes';
 
@@ -22,6 +22,7 @@ export async function POST(request) {
     const blogId = formData.get('blogId');
     const orgId = formData.get('orgId');
     const mediaType = formData.get('type') || 'image';
+    const requestedUploadId = String(formData.get('uploadId') || '');
 
     if (!file || !(file instanceof File)) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -52,6 +53,7 @@ export async function POST(request) {
     }
 
     const isProfileImage = PROFILE_TYPES.includes(mediaType);
+    const uploadId = /^[a-zA-Z0-9_-]{1,64}$/.test(requestedUploadId) ? requestedUploadId : '';
     let trackedBlogId = null;
 
     // A new editor URL has a blog id before its draft row exists. In that case,
@@ -68,6 +70,21 @@ export async function POST(request) {
         }
         trackedBlogId = blogId;
       }
+    }
+
+    // A persisted client job always retries with the same id. Return its prior
+    // result before touching storage or Cloudinary again.
+    if (db && !isProfileImage && uploadId) {
+      const existing = await db.prepare(
+        'SELECT id, cloudinary_public_id, size_bytes FROM media_uploads WHERE id = ? AND user_id = ?'
+      ).bind(uploadId, session.userId).first();
+      if (existing) return NextResponse.json({
+        id: existing.id,
+        publicId: existing.cloudinary_public_id,
+        url: getCloudinaryUrl(existing.cloudinary_public_id),
+        sizeBytes: existing.size_bytes,
+        idempotent: true,
+      });
     }
 
     // For org uploads, verify membership
@@ -89,6 +106,10 @@ export async function POST(request) {
     // Storage checks only for non-profile images (blog content images)
     if (db && !isProfileImage) {
       try {
+        const replacing = mediaType === 'cover' && blogId
+          ? await db.prepare('SELECT size_bytes FROM media_uploads WHERE cloudinary_public_id = ?')
+            .bind(`lixblogs/${blogId}/cover`).first()
+          : null;
         const user = await db.prepare('SELECT tier, storage_used_bytes FROM users WHERE id = ?')
           .bind(session.userId).first();
 
@@ -98,7 +119,7 @@ export async function POST(request) {
           const limits = getLimits(user.tier);
           const fileBytes = file.size;
 
-          if (user.storage_used_bytes + fileBytes > limits.totalStorageBytes) {
+          if (user.storage_used_bytes - (replacing?.size_bytes || 0) + fileBytes > limits.totalStorageBytes) {
             return NextResponse.json({
               error: 'Storage limit exceeded',
               used: user.storage_used_bytes,
@@ -112,7 +133,7 @@ export async function POST(request) {
               'SELECT COALESCE(SUM(size_bytes), 0) as total, COUNT(*) as n FROM media_uploads WHERE blog_id = ?'
             ).bind(blogId).first();
 
-            if (blogUsage.total + fileBytes > MAX_BLOG_IMAGE_BYTES) {
+            if (blogUsage.total - (replacing?.size_bytes || 0) + fileBytes > MAX_BLOG_IMAGE_BYTES) {
               return NextResponse.json({
                 error: 'Per-blog image limit exceeded (max 10 MB of images per blog)',
                 used: blogUsage.total,
@@ -120,7 +141,7 @@ export async function POST(request) {
               }, { status: 413 });
             }
 
-            if ((blogUsage.n || 0) >= MAX_MEDIA_PER_BLOG) {
+            if (!replacing && (blogUsage.n || 0) >= MAX_MEDIA_PER_BLOG) {
               return NextResponse.json({
                 error: 'Image count limit reached for this blog',
                 count: blogUsage.n,
@@ -174,7 +195,7 @@ export async function POST(request) {
         break;
       default:
         folder = `lixblogs/${blogId || 'unsorted'}`;
-        publicId = crypto.randomUUID();
+        publicId = uploadId || crypto.randomUUID();
         break;
     }
 
@@ -251,11 +272,11 @@ export async function POST(request) {
     if (db) {
       try {
         const fileBytes = file.size;
-        const mediaId = crypto.randomUUID();
+        const mediaId = uploadId || crypto.randomUUID();
         const now = Math.floor(Date.now() / 1000);
 
         const previous = await db.prepare(
-          'SELECT user_id, size_bytes FROM media_uploads WHERE cloudinary_public_id = ?'
+          'SELECT id, user_id, size_bytes FROM media_uploads WHERE cloudinary_public_id = ?'
         ).bind(result.public_id).first();
 
         await db.prepare(`
@@ -269,12 +290,12 @@ export async function POST(request) {
         `).bind(mediaId, session.userId, trackedBlogId, result.public_id, fileBytes, mediaType, now).run();
 
         const storageOwner = previous?.user_id || session.userId;
-        const storageDelta = fileBytes - (previous?.size_bytes || 0);
-        await db.prepare('UPDATE users SET storage_used_bytes = MAX(0, storage_used_bytes + ?) WHERE id = ?')
-          .bind(storageDelta, storageOwner).run();
+        await db.prepare(`UPDATE users SET storage_used_bytes = (
+          SELECT COALESCE(SUM(size_bytes), 0) FROM media_uploads WHERE user_id = ?
+        ) WHERE id = ?`).bind(storageOwner, storageOwner).run();
 
         return NextResponse.json({
-          id: mediaId,
+          id: previous?.id || mediaId,
           publicId: result.public_id,
           url: result.secure_url,
           sizeBytes: fileBytes,

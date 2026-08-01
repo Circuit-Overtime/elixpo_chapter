@@ -19,7 +19,7 @@ export async function POST(request) {
 
   // Only allow deleting own media
   const media = await db.prepare(
-    'SELECT id, cloudinary_public_id, size_bytes FROM media_uploads WHERE id = ? AND user_id = ?'
+    'SELECT id, blog_id, media_type, cloudinary_public_id, size_bytes FROM media_uploads WHERE id = ? AND user_id = ?'
   ).bind(mediaId, session.userId).first();
 
   if (!media) {
@@ -29,12 +29,14 @@ export async function POST(request) {
   // Delete from Cloudinary
   await deleteFromCloudinary(media.cloudinary_public_id);
 
-  // Remove record and update storage
-  await db.batch([
-    db.prepare('DELETE FROM media_uploads WHERE id = ?').bind(mediaId),
-    db.prepare('UPDATE users SET storage_used_bytes = MAX(0, storage_used_bytes - ?) WHERE id = ?')
-      .bind(media.size_bytes, session.userId),
-  ]);
+  await db.prepare('DELETE FROM media_uploads WHERE id = ?').bind(mediaId).run();
+  if (media.media_type === 'cover' && media.blog_id) {
+    await db.prepare('UPDATE blogs SET cover_image_r2_key = NULL, updated_at = ? WHERE id = ?')
+      .bind(Math.floor(Date.now() / 1000), media.blog_id).run();
+  }
+  await db.prepare(`UPDATE users SET storage_used_bytes = (
+    SELECT COALESCE(SUM(size_bytes), 0) FROM media_uploads WHERE user_id = ?
+  ) WHERE id = ?`).bind(session.userId, session.userId).run();
 
   return NextResponse.json({ ok: true });
 }
