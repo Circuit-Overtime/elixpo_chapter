@@ -2092,6 +2092,7 @@ export default function WritePage({ slugid }) {
                         quality={0.55}
                         maxSizeKB={120}
                         initialSrc={coverCropSrc}
+                        belowHeader
                         onSave={handleCoverCropSave}
                         onClose={() => setCoverCropSrc(null)}
                       />
