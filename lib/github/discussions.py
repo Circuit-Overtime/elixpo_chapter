@@ -16,6 +16,12 @@ class DiscussionCategory:
     slug: str
 
 
+@dataclass(frozen=True)
+class DiscussionLabel:
+    id: str
+    name: str
+
+
 class GitHubDiscussions:
     def __init__(self, api, owner: str, repo: str):
         self.api = api
@@ -70,6 +76,30 @@ class GitHubDiscussions:
         )
         return data["repository"]["discussions"]["nodes"]
 
+    async def recent_threads(self, limit: int = 20) -> list[dict]:
+        """Fetch recently active Discussions and bounded comment context for mention polling."""
+        data = await self.api.graphql(
+            """
+            query($owner: String!, $repo: String!, $limit: Int!) {
+              repository(owner: $owner, name: $repo) {
+                discussions(first: $limit, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                  nodes {
+                    id number title body url createdAt author { login }
+                    comments(last: 20) {
+                      nodes {
+                        id body createdAt author { login }
+                        replies(last: 20) { nodes { id body createdAt author { login } } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """,
+            {"owner": self.owner, "repo": self.repo, "limit": limit},
+        )
+        return data["repository"]["discussions"]["nodes"]
+
     async def create(self, category_id: str, title: str, body: str) -> dict:
         repository = await self.repository()
         data = await self.api.graphql(
@@ -89,6 +119,78 @@ class GitHubDiscussions:
             },
         )
         return data["createDiscussion"]["discussion"]
+
+    async def labels(self) -> list[DiscussionLabel]:
+        """Return every label in the source repository, following pagination."""
+        labels: list[DiscussionLabel] = []
+        cursor = None
+        while True:
+            data = await self.api.graphql(
+                """
+                query($owner: String!, $repo: String!, $cursor: String) {
+                  repository(owner: $owner, name: $repo) {
+                    labels(first: 100, after: $cursor) {
+                      nodes { id name }
+                      pageInfo { hasNextPage endCursor }
+                    }
+                  }
+                }
+                """,
+                {"owner": self.owner, "repo": self.repo, "cursor": cursor},
+            )
+            connection = data["repository"]["labels"]
+            labels.extend(DiscussionLabel(id=node["id"], name=node["name"]) for node in connection["nodes"])
+            page_info = connection["pageInfo"]
+            if not page_info["hasNextPage"]:
+                return labels
+            cursor = page_info["endCursor"]
+
+    async def ensure_labels(self, specs: dict[str, dict[str, str]]) -> list[DiscussionLabel]:
+        """Resolve labels by name and create any missing deterministic labels."""
+        repository = await self.repository()
+        existing = {label.name.casefold(): label for label in await self.labels()}
+        resolved: list[DiscussionLabel] = []
+        for name, spec in specs.items():
+            label = existing.get(name.casefold())
+            if label is None:
+                data = await self.api.graphql(
+                    """
+                    mutation(
+                      $repositoryId: ID!, $name: String!, $color: String!, $description: String
+                    ) {
+                      createLabel(input: {
+                        repositoryId: $repositoryId, name: $name,
+                        color: $color, description: $description
+                      }) { label { id name } }
+                    }
+                    """,
+                    {
+                        "repositoryId": repository["id"],
+                        "name": name,
+                        "color": spec["color"],
+                        "description": spec.get("description", ""),
+                    },
+                )
+                raw = data["createLabel"]["label"]
+                label = DiscussionLabel(id=raw["id"], name=raw["name"])
+                existing[name.casefold()] = label
+            resolved.append(label)
+        return resolved
+
+    async def add_labels(self, discussion_id: str, label_ids: list[str]) -> None:
+        """Apply repository labels to a Discussion through the Labelable interface."""
+        if not label_ids:
+            return
+        await self.api.graphql(
+            """
+            mutation($discussionId: ID!, $labelIds: [ID!]!) {
+              addLabelsToLabelable(input: {labelableId: $discussionId, labelIds: $labelIds}) {
+                labelable { labels(first: 20) { nodes { id name } } }
+              }
+            }
+            """,
+            {"discussionId": discussion_id, "labelIds": label_ids},
+        )
 
     async def comments(self, discussion_number: int, limit: int = 30) -> list[dict]:
         data = await self.api.graphql(

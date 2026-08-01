@@ -166,13 +166,17 @@ async def merge_draft(router, pull: dict, files: list[dict]) -> dict[str, Any]:
         schema={
             "type": "object",
             "additionalProperties": False,
-            "required": ["action", "reason", "title", "body", "options"],
+            "required": ["action", "reason", "title", "body", "options", "topic"],
             "properties": {
                 "action": {"type": "string", "enum": ["announcement", "poll", "skip"]},
                 "reason": {"type": "string"},
                 "title": {"type": "string"},
                 "body": {"type": "string"},
                 "options": {"type": "array", "items": {"type": "string"}, "maxItems": 6},
+                "topic": {
+                    "type": "string",
+                    "enum": ["general", "mlops", "gitops", "docker", "kubernetes"],
+                },
             },
         },
         max_tokens=900,
@@ -188,8 +192,12 @@ async def qna_draft(router, recent_titles: list[str]) -> dict[str, Any]:
         schema={
             "type": "object",
             "additionalProperties": False,
-            "required": ["title", "body"],
-            "properties": {"title": {"type": "string"}, "body": {"type": "string"}},
+            "required": ["title", "body", "topic"],
+            "properties": {
+                "title": {"type": "string"},
+                "body": {"type": "string"},
+                "topic": {"type": "string", "enum": ["mlops", "gitops", "docker", "kubernetes"]},
+            },
         },
         max_tokens=700,
     )

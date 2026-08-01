@@ -67,5 +67,6 @@ technology names differ. Rotate domains over time when the recent list is skewed
 - Exclude links, citations, benchmarks, and claims not provided as input.
 - Remove engagement bait and claims that one answer is universally correct.
 
-Return only the requested structured `title` and `body`. Do not add category,
+Return only the requested structured `title`, `body`, and primary `topic` from
+`mlops`, `gitops`, `docker`, or `kubernetes`. Do not add category,
 disclosure, idempotency, or moderation text; the publisher owns those fields.

@@ -6,6 +6,10 @@
 - weekly schedule → one MLOps, GitOps, Docker, or Kubernetes Q&A;
 - `@elixpoo` in a discussion or discussion comment → contextual reply.
 
+Generated Discussions are published to `elixpo/elixpo`, which must be configured
+as the source repository for organization Discussions. Merge evidence still comes
+from the repository that emitted the pull-request event.
+
 Every generation uses the `discussions` RTK role (`nova-fast`, the lowest-priced
 general text model in the checked-in Pollinations registry). Every title/body or
 reply is then sent through the `safety` role before it can be posted. Posts carry
@@ -25,15 +29,26 @@ publisher independently enforces the safety, disclosure, and duplicate checks.
 
 1. Enable GitHub Discussions.
 2. Create categories named `Announcement` (or `Announcements`), `Q&A` (or
-   `QNA`), and `Polls`.
-3. Give the token stored as `CI_AGENT_TOKEN` Discussions write access. Use an
-   elixpoo-owned token so posts have the intended identity.
+   `QNA`), and `Polls` in `elixpo/elixpo`.
+3. Give `ELIXPOO_GITHUB_DISCUSSIONS_TOKEN` access to both `elixpo/agent.elixpo`
+   and `elixpo/elixpo`, with Discussions and Issues read/write plus Pull requests
+   read. Issues write is required to create and attach labels.
 4. Add the Actions secret `ELIXPO_POLLINATIONS_API_KEY`. This is the only model
    provider key used by the squad.
 
 The workflow runs Q&A each Wednesday at 09:17 UTC and can also be started with
-`workflow_dispatch`. Set `ELIXPO_DISCUSSIONS_REPOSITORY=owner/name` to target a
-different repository when running locally.
+`workflow_dispatch`. `ELIXPO_DISCUSSIONS_REPOSITORY` defaults to `elixpo/elixpo`
+and can override the destination for local testing.
+
+Because Discussion events originate in `elixpo/elixpo` while this workflow lives
+in `agent.elixpo`, a ten-minute schedule scans the last 24 hours for exact,
+unhandled `@elixpoo` mentions. It makes no model call when no eligible mention is
+present and replies to at most five mentions per run. Run the `poll-mentions`
+workflow-dispatch option to test this path immediately.
+
+The publisher creates missing labels and attaches `announcement`, `qna`, or
+`poll`, the primary domain (`mlops`, `gitops`, `docker`, or `kubernetes`) when
+applicable, and `elixpoo-generated`.
 
 GitHub's public GraphQL API does not expose native poll-option creation. Poll
 discussions therefore publish numbered options and collect votes plus reasoning
