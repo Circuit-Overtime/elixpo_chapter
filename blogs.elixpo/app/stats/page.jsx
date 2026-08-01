@@ -1,10 +1,10 @@
-import StatsPage from '../../src/views/StatsPage';
+import { redirect } from 'next/navigation';
 
 export const metadata = {
   title: 'Stats',
-  description: 'Author analytics — track views, reads, likes, and follower growth on LixBlogs.',
+  robots: { index: false, follow: false },
 };
 
 export default function Stats() {
-  return <StatsPage />;
+  redirect('/settings/stats');
 }

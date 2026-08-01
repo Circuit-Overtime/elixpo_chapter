@@ -26,7 +26,10 @@ export async function POST(request, { params }) {
        FROM blogs b JOIN users u ON u.id = b.author_id WHERE b.id = ?`
     ).bind(slugid).first();
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
-    if (blog.author_id === session.userId) return NextResponse.json({ error: "You can't report your own post" }, { status: 400 });
+    const { canEditBlog } = await import('../../../../../lib/permissions');
+    if ((await canEditBlog(db, blog.id, session.userId)).ok) {
+      return NextResponse.json({ error: "You can't report a post you manage" }, { status: 400 });
+    }
 
     // Dedup: one report per (blog, reporter).
     const reportId = crypto.randomUUID();
