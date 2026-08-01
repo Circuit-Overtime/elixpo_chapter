@@ -47,7 +47,7 @@ jobs:
         )
       )
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 12
     permissions:
       actions: read
       contents: write
@@ -203,6 +203,7 @@ jobs:
           set -euo pipefail
           mkdir -p .elixpo-context
           printf '%s' "$REQUEST_B64" | base64 --decode > .elixpo-context/request.txt
+          git fetch origin main --depth=50
           gh issue view "$TARGET_NUMBER" --repo "$REPO" --comments \
             --json number,title,body,author,labels,assignees,state,comments > .elixpo-context/thread.json
 
@@ -216,7 +217,6 @@ jobs:
           if [ "$TARGET_SCOPE" = "pull_request" ]; then
             gh pr view "$TARGET_NUMBER" --repo "$REPO" \
               --json number,title,body,author,baseRefName,headRefName,headRepository,headRepositoryOwner,isCrossRepository,isDraft,mergeable,reviewDecision,statusCheckRollup,files > .elixpo-context/pull-request.json
-            gh pr diff "$TARGET_NUMBER" --repo "$REPO" > .elixpo-context/pull-request.diff
             HEAD_REF=$(jq -r '.headRefName' .elixpo-context/pull-request.json)
             IS_FORK=$(jq -r '.isCrossRepository' .elixpo-context/pull-request.json)
             if [ "$IS_FORK" = "false" ] && [ "$HEAD_REF" != "main" ]; then
@@ -264,7 +264,7 @@ jobs:
             echo 'body<<ELIXPO_PROMPT'
             echo "You are @elixpoo, the repository agent for ${{ github.repository }}. Work only on $TARGET_SCOPE #$TARGET_NUMBER and this repository."
             echo
-            echo "Read .elixpo-context/task.json, request.txt, thread.json, and context.md once if present. Read changelog.md once if present. For a pull request also read pull-request.json, diff-stat.txt, changed-files.txt, and only the relevant portions of pull-request.diff. For an issue, inspect linked-pull-requests.json before deciding where code belongs."
+            echo "Read .elixpo-context/task.json, request.txt, thread.json, and context.md once if present. Read changelog.md once if present. For a pull request also read pull-request.json, diff-stat.txt, and changed-files.txt, then inspect only targeted per-file diffs with git diff origin/main...HEAD -- <path>. Never dump the entire PR diff. For an issue, inspect linked-pull-requests.json before deciding where code belongs."
             echo
             echo "Infer intent and finish the smallest complete path: answer a question; triage or clarify; update issue/PR title or description; inspect/review a PR; or implement requested repository changes. If an issue has a linked writable PR, update that branch. Otherwise implementation from an issue uses elixpo/issue-$TARGET_NUMBER-<hex>, pushes it, and opens one PR whose body ends with Fixes #$TARGET_NUMBER."
             echo
@@ -292,7 +292,7 @@ jobs:
           show_full_output: ${{ github.event_name == 'workflow_dispatch' }}
           trigger_phrase: "@elixpoo"
           prompt: ${{ steps.prompt.outputs.body }}
-          claude_args: --permission-mode bypassPermissions
+          claude_args: --permission-mode bypassPermissions --max-turns 20
           additional_permissions: |
             actions: read
 
