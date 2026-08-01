@@ -50,12 +50,36 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
   // Record view on mount
   useEffect(() => {
     if (!blogId) return;
-    fetch(`/api/blogs/${blogId}/view`, { method: 'POST' }).catch(() => {});
+    const params = new URLSearchParams(window.location.search);
+    fetch(`/api/blogs/${blogId}/view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        referrer: document.referrer,
+        utmSource: params.get('utm_source'),
+        utmMedium: params.get('utm_medium'),
+        utmCampaign: params.get('utm_campaign'),
+      }),
+    }).catch(() => {});
   }, [blogId]);
 
-  // Track scroll progress + report dwell time on unmount
+  // Track scroll progress for signed-in and anonymous readers. Anonymous
+  // sessions use the privacy-safe analytics endpoint instead of read history.
   useEffect(() => {
-    if (!blogId || !user) return;
+    if (!blogId) return;
+
+    const sendProgress = (progress, dwellSeconds = 0, beacon = false) => {
+      const complete = progress >= 0.9;
+      const url = user ? `/api/blogs/${blogId}/progress` : '/api/analytics/event';
+      const body = user
+        ? { progress, dwellSeconds }
+        : { blogId, eventType: complete ? 'read_complete' : 'read_progress', value: complete ? dwellSeconds : progress };
+      if (beacon) {
+        try { navigator.sendBeacon(url, new Blob([JSON.stringify(body)], { type: 'application/json' })); } catch {}
+        return;
+      }
+      fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
+    };
 
     const reportProgress = () => {
       const scrollTop = window.scrollY;
@@ -66,11 +90,7 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
       // Only report if progress increased by at least 10%
       if (progress - progressReported.current >= 0.1) {
         progressReported.current = progress;
-        fetch(`/api/blogs/${blogId}/progress`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ progress: Math.round(progress * 100) / 100 }),
-        }).catch(() => {});
+        sendProgress(Math.round(progress * 100) / 100);
       }
     };
 
@@ -83,10 +103,7 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
       window.removeEventListener('scroll', reportProgress);
       const dwellSeconds = Math.floor((Date.now() - startTime.current) / 1000);
       if (dwellSeconds > 10) {
-        try {
-          const blob = new Blob([JSON.stringify({ blogId, dwellSeconds })], { type: 'application/json' });
-          navigator.sendBeacon(`/api/blogs/${blogId}/progress`, blob);
-        } catch {}
+        sendProgress(progressReported.current, dwellSeconds, true);
       }
     };
   }, [blogId, user]);
@@ -189,11 +206,13 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
   };
 
   const copyLink = () => {
+    trackShare('link');
     navigator.clipboard.writeText(window.location.href).catch(() => {});
     setShareOpen(false);
   };
 
   const copyEmbed = () => {
+    trackShare('embed');
     const url = window.location.href;
     const code = `<iframe src="${url}?embed=1" width="100%" height="600" frameborder="0"></iframe>`;
     navigator.clipboard.writeText(code).catch(() => {});
@@ -201,10 +220,20 @@ export default function BlogInteractionBar({ blogId, blogAuthorId, canRepost = f
   };
 
   const copyMarkdown = () => {
+    trackShare('markdown');
     const url = window.location.href;
     const md = `[${document.title || 'Blog post'}](${url})`;
     navigator.clipboard.writeText(md).catch(() => {});
     setShareOpen(false);
+  };
+
+  const trackShare = (method) => {
+    fetch('/api/analytics/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blogId, eventType: 'share', method }),
+      keepalive: true,
+    }).catch(() => {});
   };
 
   if (!interactions) return null;
