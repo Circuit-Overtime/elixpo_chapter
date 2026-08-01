@@ -8,6 +8,17 @@ function getConfig() {
   };
 }
 
+function assertCloudinaryConfig(config) {
+  const missing = Object.entries(config).filter(([, value]) => !value).map(([key]) => key);
+  const unresolved = Object.entries(config)
+    .filter(([, value]) => typeof value === 'string' && /^ENC\[/.test(value.trim()))
+    .map(([key]) => key);
+  if (missing.length) throw new Error(`Cloudinary configuration missing: ${missing.join(', ')}`);
+  if (unresolved.length) {
+    throw new Error(`Cloudinary configuration contains unresolved encrypted values: ${unresolved.join(', ')}`);
+  }
+}
+
 async function sha1(message) {
   const msgBuffer = new TextEncoder().encode(message);
   const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
@@ -20,9 +31,7 @@ export async function createCloudinaryUploadSignature({
   overwrite = false,
 }) {
   const config = getConfig();
-  if (!config.cloudName || !config.apiKey || !config.apiSecret) {
-    throw new Error('Cloudinary is not configured');
-  }
+  assertCloudinaryConfig(config);
 
   const timestamp = Math.floor(Date.now() / 1000);
   const params = { folder, timestamp };

@@ -1091,43 +1091,26 @@ export default function WritePage({ slugid }) {
       let lastError;
       for (let attempt = 0; attempt < 3; attempt += 1) {
         try {
-          // Keep the image body off the Pages Worker. The Worker authorizes a
-          // small JSON request and returns a short-lived Cloudinary signature;
-          // the browser then sends the bytes straight to Cloudinary. This
-          // avoids intermittent Cloudflare 502s while keeping the API secret
-          // server-side.
-          const signatureRes = await fetch('/api/media/cover-signature', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ blogId, size: blob.size, mime: blob.type }),
-          });
-          const signature = await signatureRes.json().catch(() => ({}));
-          if (!signatureRes.ok) {
-            throw new Error(signature.error || `Could not prepare cover upload (${signatureRes.status})`);
-          }
-
+          // Upload through our own origin. Cloudinary credentials and account
+          // configuration must never be returned to or interpreted by the
+          // browser; the media route validates permission and forwards bytes.
           const formData = new FormData();
           formData.append('file', blob, `cover_${blogId}.webp`);
-          formData.append('timestamp', String(signature.timestamp));
-          formData.append('folder', signature.folder);
-          formData.append('api_key', signature.apiKey);
-          formData.append('signature', signature.signature);
-          formData.append('public_id', signature.publicId);
-          formData.append('overwrite', 'true');
-          formData.append('invalidate', 'true');
+          formData.append('type', 'cover');
+          formData.append('blogId', blogId);
 
-          const res = await fetch(signature.uploadUrl, { method: 'POST', body: formData });
+          const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
           const responseText = await res.text();
           let data = {};
           try { data = responseText ? JSON.parse(responseText) : {}; } catch {}
-          const uploadedUrl = data.secure_url || data.url;
+          const uploadedUrl = data.url;
           if (res.ok && uploadedUrl) {
             draftDataRef.current = { ...draftDataRef.current, coverPreview: uploadedUrl };
             setCoverPreview(uploadedUrl);
             return uploadedUrl;
           }
           const isHtmlError = /^\s*<!doctype html|^\s*<html/i.test(responseText);
-          const message = data.error || (isHtmlError ? `Upload gateway unavailable (${res.status})` : responseText.slice(0, 500)) || `Cover upload failed (${res.status})`;
+          const message = data.error || (isHtmlError ? `Upload service unavailable (${res.status})` : responseText.slice(0, 500)) || `Cover upload failed (${res.status})`;
           lastError = new Error(message);
           if (![502, 503, 504].includes(res.status)) break;
         } catch (err) {
