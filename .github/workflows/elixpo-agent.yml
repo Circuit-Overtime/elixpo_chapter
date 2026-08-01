@@ -56,7 +56,7 @@ jobs:
       id-token: write
     env:
       GH_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
-      ELIXPO_POLLINATIONS_API_KEY_GITHUB: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY_GITHUB }}
+      ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
 
     steps:
       - name: Authorize and resolve scope
@@ -306,7 +306,7 @@ jobs:
         run: |
           grep -R -i -E 'error|failed|status.?400|bad.request|forbidden|invalid' \
             "$HOME/.claude-code-router/logs" "$HOME/.claude-code-router/claude-code-router.log" 2>/dev/null \
-            | sed "s|$ELIXPO_POLLINATIONS_API_KEY_GITHUB|***|g" \
+            | sed "s|$ELIXPO_POLLINATIONS_API_KEY|***|g" \
             | tail -80
 
       - name: Remove generated branding

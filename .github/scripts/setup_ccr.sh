@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${ELIXPO_POLLINATIONS_API_KEY_GITHUB:?missing ELIXPO_POLLINATIONS_API_KEY_GITHUB}"
+: "${ELIXPO_POLLINATIONS_API_KEY:?missing ELIXPO_POLLINATIONS_API_KEY}"
 
 CONFIG_ROOT="${1:-.}"
 CCR_HOME="$HOME/.claude-code-router"
@@ -40,28 +40,28 @@ cat > "$CCR_HOME/config.json" <<EOF
     {
       "name": "pollinations-agent",
       "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
-      "api_key": "$ELIXPO_POLLINATIONS_API_KEY_GITHUB",
+      "api_key": "$ELIXPO_POLLINATIONS_API_KEY",
       "models": ["$AGENT_MODEL"],
       "transformer": {"use": ["openai-normalize", "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $AGENT_TOKENS}]]}
     },
     {
       "name": "pollinations-code",
       "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
-      "api_key": "$ELIXPO_POLLINATIONS_API_KEY_GITHUB",
+      "api_key": "$ELIXPO_POLLINATIONS_API_KEY",
       "models": ["$CODE_MODEL"],
       "transformer": {"use": ["openai-normalize", "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $CODE_TOKENS}]]}
     },
     {
       "name": "pollinations-thinking",
       "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
-      "api_key": "$ELIXPO_POLLINATIONS_API_KEY_GITHUB",
+      "api_key": "$ELIXPO_POLLINATIONS_API_KEY",
       "models": ["$THINK_MODEL"],
       "transformer": {"use": ["openai-normalize", "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $THINK_TOKENS}]]}
     },
     {
       "name": "pollinations-search",
       "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
-      "api_key": "$ELIXPO_POLLINATIONS_API_KEY_GITHUB",
+      "api_key": "$ELIXPO_POLLINATIONS_API_KEY",
       "models": ["$SEARCH_MODEL"],
       "transformer": {"use": ["openai-normalize", "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $SEARCH_TOKENS}]]}
     }

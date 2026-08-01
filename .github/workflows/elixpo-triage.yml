@@ -22,7 +22,7 @@ jobs:
       pull-requests: write
     env:
       AGENT_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
-      POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY_GITHUB }}
+      POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
       REPO: ${{ github.repository }}
 
     steps:

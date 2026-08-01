@@ -16,7 +16,7 @@ repository that installs the agent workflows:
 
 | Secret | Purpose | Required access |
 | --- | --- | --- |
-| `ELIXPO_POLLINATIONS_API_KEY_GITHUB` | Every model request: agent, triage, PR metadata, and changelog summaries | Pollinations text API; this is the only model credential |
+| `ELIXPO_POLLINATIONS_API_KEY` | Every model request: agent, triage, PR metadata, and changelog summaries | Pollinations text API; this is the only model credential |
 | `ELIXPOO_GITHUB_AGENTIC_TOKEN` | Repository reads/writes, issue and PR metadata, branches, failed-run retries, repository variables, and Project V2 fields | See the token profiles below |
 | `ELIXPOO_GIST_AGENTIC_TOKEN` | Shared reusable `merge-gist.yml` workflow in `agent.elixpo` | Gist read/write |
 
@@ -24,7 +24,7 @@ repository that installs the agent workflows:
 organization secret and must not be copied into organization settings.
 
 CCR creates all model routes with
-`ELIXPO_POLLINATIONS_API_KEY_GITHUB`. Do not create per-model or per-provider
+`ELIXPO_POLLINATIONS_API_KEY`. Do not create per-model or per-provider
 keys. Repository-specific deployment, package publishing, payment, and
 moderation secrets are unrelated to the agent and remain scoped only to repos
 whose workflows use them.
@@ -46,7 +46,7 @@ profile.
 `ELIXPOO_GIST_AGENTIC_TOKEN` needs only classic PAT scope `gist`. It does not need `repo`,
 `workflow`, or organization administration scopes.
 
-`ELIXPO_POLLINATIONS_API_KEY_GITHUB` is not a GitHub token and receives no
+`ELIXPO_POLLINATIONS_API_KEY` is not a GitHub token and receives no
 GitHub permissions. Give it only Pollinations text-generation access.
 
 Use expirations and rotation reminders on both PATs. Organization secret
@@ -61,7 +61,7 @@ description, core paths, maintainers, and project mappings in `ci_config.py`.
 
 Required organization secrets:
 
-- `ELIXPO_POLLINATIONS_API_KEY_GITHUB`
+- `ELIXPO_POLLINATIONS_API_KEY`
 - `ELIXPOO_GITHUB_AGENTIC_TOKEN`
 - `ELIXPOO_GIST_AGENTIC_TOKEN`
 

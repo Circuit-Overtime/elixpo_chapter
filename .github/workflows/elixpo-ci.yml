@@ -58,7 +58,7 @@ jobs:
     with:
       issue_number: ${{ github.event.issue.number }}
     secrets:
-      POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY_GITHUB }}
+      POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
 
   merge-gist:
     if: >-
@@ -68,7 +68,7 @@ jobs:
     with:
       pr_number: ${{ github.event.pull_request.number }}
     secrets:
-      POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY_GITHUB }}
+      POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
       GIST_TOKEN: ${{ secrets.ELIXPOO_GIST_AGENTIC_TOKEN }}
 
   # ── Agentic (full agent engine) — COMING SOON ───────

@@ -27,7 +27,7 @@ jobs:
       - name: Assign PR
         env:
           AGENT_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
-          POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY_GITHUB }}
+          POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
