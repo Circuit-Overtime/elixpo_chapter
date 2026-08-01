@@ -6,7 +6,7 @@
 
 name: Update Repo Context Artifact
 
-# Only keep the latest run - older pushes don't need their artifacts rebuilt.
+# Only keep the latest run — older pushes don't need their artifacts rebuilt.
 concurrency:
   group: artifact-update
   cancel-in-progress: true
@@ -33,7 +33,7 @@ jobs:
 
       - name: Build context
         env:
-          AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          AGENT_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           REPO: ${{ github.repository }}
         run: python .github/scripts/build_artifact.py
 
