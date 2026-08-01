@@ -247,100 +247,6 @@ export default function LandingPage() {
               with click analytics, custom slugs, and a REST API, all from one
               dashboard.
             </p>
-            <form
-              onSubmit={shortenGuestUrl}
-              className="max-w-[570px] mx-auto lg:mx-0"
-            >
-              <div
-                className="flex flex-col sm:flex-row gap-2 rounded-xl p-2 bg-white"
-                style={{
-                  border: '1px solid var(--line)',
-                  boxShadow: '0 12px 30px rgba(0,0,0,0.07)',
-                }}
-              >
-                <label htmlFor="guest-url" className="sr-only">
-                  URL to shorten
-                </label>
-                <input
-                  id="guest-url"
-                  type="url"
-                  required
-                  inputMode="url"
-                  autoComplete="url"
-                  placeholder="https://your-long-url.com"
-                  value={guestUrl}
-                  onChange={(event) => setGuestUrl(event.target.value)}
-                  className="min-w-0 flex-1 px-3 py-2.5 text-[14px] text-[#111] bg-transparent outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={guestLoading}
-                  className="btn-accent justify-center disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {guestLoading
-                    ? 'Shortening…'
-                    : 'Shorten Your URL in 1 Click'}
-                </button>
-              </div>
-              <div className="min-h-6 mt-2 text-left">
-                {guestError && (
-                  <p className="text-[12px] text-red-600" role="alert">
-                    {guestError}{' '}
-                    <Link href="/api/auth/login" className="font-semibold underline">
-                      Create an account
-                    </Link>
-                  </p>
-                )}
-                {guestResult && (
-                  <div
-                    className="rounded-xl p-3 text-[13px]"
-                    style={{
-                      background: 'var(--accent-dim)',
-                      border: '1px solid var(--accent-border)',
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={guestResult.short_url}
-                        className="font-mono font-bold truncate"
-                        style={{ color: ACCENT }}
-                      >
-                        {guestResult.short_url}
-                      </a>
-                      <button
-                        type="button"
-                        onClick={copyGuestUrl}
-                        className="ml-auto font-semibold shrink-0"
-                        style={{ color: ACCENT }}
-                      >
-                        {copied ? 'Copied' : 'Copy'}
-                      </button>
-                    </div>
-                    <p className="mt-1 text-[#555]">
-                      Expires in 24 hours.{' '}
-                      <Link href="/api/auth/login" className="font-semibold underline">
-                        Create an account
-                      </Link>{' '}
-                      to keep links and manage them.
-                    </p>
-                  </div>
-                )}
-                {!guestError && !guestResult && (
-                  <p className="text-[12px] text-[#777]">
-                    One guest link, valid for 24 hours. Sign in for persistent
-                    links.
-                  </p>
-                )}
-              </div>
-            </form>
-            <div className="flex items-center justify-center lg:justify-start gap-4 mt-3 text-[13px]">
-              <Link href="/api/auth/login" className="font-semibold no-underline" style={{ color: ACCENT }}>
-                Sign in for persistent links
-              </Link>
-              <Link href="/docs" className="text-[#555] no-underline hover:text-[#111]">
-                Explore the docs →
-              </Link>
-            </div>
           </div>
 
           {/* Static brand artwork — blends into the white hero surface. */}
@@ -359,6 +265,110 @@ export default function LandingPage() {
             />
           </div>
         </div>
+
+        <form
+          onSubmit={shortenGuestUrl}
+          className="w-full max-w-[1240px] mx-auto mt-8 lg:mt-4"
+        >
+          <div
+            className="flex flex-col sm:flex-row gap-2 rounded-xl p-2 bg-white"
+            style={{
+              border: '1px solid var(--line)',
+              boxShadow: '0 12px 30px rgba(0,0,0,0.07)',
+            }}
+          >
+            <label htmlFor="guest-url" className="sr-only">
+              URL to shorten
+            </label>
+            <input
+              id="guest-url"
+              type="url"
+              required
+              inputMode="url"
+              autoComplete="url"
+              placeholder="https://your-long-url.com"
+              value={guestUrl}
+              onChange={(event) => setGuestUrl(event.target.value)}
+              className="min-w-0 flex-1 px-4 py-3 text-[15px] text-[#111] bg-transparent outline-none"
+            />
+            <button
+              type="submit"
+              disabled={guestLoading}
+              className="btn-accent justify-center sm:min-w-[260px] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {guestLoading
+                ? 'Shortening…'
+                : 'Shorten Your URL in 1 Click'}
+            </button>
+          </div>
+          <div className="min-h-6 mt-2 text-left">
+            {guestError && (
+              <p className="text-[12px] text-red-600" role="alert">
+                {guestError}{' '}
+                <Link href="/api/auth/login" className="font-semibold underline">
+                  Create an account
+                </Link>
+              </p>
+            )}
+            {guestResult && (
+              <div
+                className="rounded-xl p-3 text-[13px]"
+                style={{
+                  background: 'var(--accent-dim)',
+                  border: '1px solid var(--accent-border)',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <a
+                    href={guestResult.short_url}
+                    className="font-mono font-bold truncate"
+                    style={{ color: ACCENT }}
+                  >
+                    {guestResult.short_url}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={copyGuestUrl}
+                    className="ml-auto font-semibold shrink-0"
+                    style={{ color: ACCENT }}
+                  >
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p className="mt-1 text-[#555]">
+                  Expires in 24 hours.{' '}
+                  <Link href="/api/auth/login" className="font-semibold underline">
+                    Create an account
+                  </Link>{' '}
+                  to keep links and manage them.
+                </p>
+              </div>
+            )}
+            {!guestError && !guestResult && (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[12px] text-[#777]">
+                <p>
+                  One guest link, valid for 24 hours. Sign in for persistent
+                  links.
+                </p>
+                <div className="flex items-center gap-4 shrink-0">
+                  <Link
+                    href="/api/auth/login"
+                    className="font-semibold no-underline"
+                    style={{ color: ACCENT }}
+                  >
+                    Sign in for persistent links
+                  </Link>
+                  <Link
+                    href="/docs"
+                    className="text-[#555] no-underline hover:text-[#111]"
+                  >
+                    Explore the docs →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </form>
       </section>
 
       {/* ── Edge network strip ──────────────────────────────────────────── */}
