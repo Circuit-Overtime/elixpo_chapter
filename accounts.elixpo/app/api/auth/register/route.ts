@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
+import { setAccountSessionsCookie } from "@/lib/account-sessions";
 import { getDatabase } from "@/lib/d1-client";
 import {
     createIdentity,
@@ -373,6 +374,16 @@ export async function POST(request: NextRequest) {
             maxAge,
             path: "/",
         });
+
+        await setAccountSessionsCookie(
+            request,
+            response,
+            refreshTokenJWT,
+            parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "30", 10) *
+                24 *
+                60 *
+                60,
+        );
 
         return response;
     } catch (error) {

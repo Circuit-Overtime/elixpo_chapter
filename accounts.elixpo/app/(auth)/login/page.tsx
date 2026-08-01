@@ -82,6 +82,7 @@ const MicrosoftIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const LoginContent = () => {
     const searchParams = useSearchParams();
     const next = searchParams.get("next");
+    const addAccount = searchParams.get("add_account") === "1";
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
@@ -93,6 +94,10 @@ const LoginContent = () => {
     // Auto-redirect if session is active
     useEffect(() => {
         const checkExistingSession = async () => {
+            if (addAccount) {
+                setCheckingAuth(false);
+                return;
+            }
             try {
                 const res = await fetch("/api/auth/me", {
                     credentials: "include",
@@ -114,7 +119,7 @@ const LoginContent = () => {
             setCheckingAuth(false);
         };
         checkExistingSession();
-    }, [next]);
+    }, [addAccount, next]);
 
     // GSAP staggered loading animation
     useEffect(() => {
@@ -233,10 +238,14 @@ const LoginContent = () => {
                             />
                         </div>
                         <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight mb-1.5">
-                            Welcome Back
+                            {addAccount
+                                ? "Add another account"
+                                : "Welcome Back"}
                         </h2>
                         <p className="text-sm opacity-60 font-semibold tracking-wide">
-                            Sign in to your Elixpo Account
+                            {addAccount
+                                ? "Sign in without logging out your current account"
+                                : "Sign in to your Elixpo Account"}
                         </p>
                     </div>
 

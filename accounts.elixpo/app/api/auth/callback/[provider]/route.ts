@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
+import { setAccountSessionsCookie } from "@/lib/account-sessions";
 import { getDatabase } from "@/lib/d1-client";
 import {
     createIdentity,
@@ -535,6 +536,13 @@ async function buildSuccessResponse(
         maxAge,
         path: "/",
     });
+
+    await setAccountSessionsCookie(
+        request,
+        response,
+        refreshToken,
+        refreshMaxAge,
+    );
 
     // Clear OAuth state cookies
     response.cookies.set("oauth_state", "", { maxAge: 0, path: "/" });

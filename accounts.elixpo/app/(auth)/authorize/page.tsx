@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { OAUTH_SCOPE_DETAILS } from "@/lib/oauth-scopes";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
 
 interface AuthorizationRequest {
@@ -14,12 +15,12 @@ interface AuthorizationRequest {
     state: string;
 }
 
-const SCOPE_LABELS: Record<string, { label: string; desc: string }> = {
-    openid: { label: "OpenID", desc: "Verify your identity" },
-    profile: { label: "Profile", desc: "Name and account info" },
-    email: { label: "Email", desc: "Your email address" },
-    phone: { label: "Phone", desc: "Your phone number" },
-    address: { label: "Address", desc: "Your address info" },
+type Account = {
+    id: string;
+    email: string;
+    displayName: string | null;
+    username: string | null;
+    avatar: string | null;
 };
 
 function ClientIcon({
@@ -89,10 +90,9 @@ function AuthorizeContent() {
     const [hasTimedOut, setHasTimedOut] = useState(false);
     // The signed-in user this authorization is for — shown so the person can
     // confirm which account they're authorizing with.
-    const [account, setAccount] = useState<{
-        email: string;
-        displayName: string | null;
-    } | null>(null);
+    const [account, setAccount] = useState<Account | null>(null);
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [isSwitching, setIsSwitching] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -120,13 +120,30 @@ function AuthorizeContent() {
             try {
                 const meData: any = await meRes.clone().json();
                 if (meData?.email) {
+                    if (!meData.username) {
+                        const currentUrl = `/authorize?${searchParams.toString()}`;
+                        window.location.href = `/setup-name?next=${encodeURIComponent(currentUrl)}`;
+                        return;
+                    }
                     setAccount({
+                        id: meData.id,
                         email: meData.email,
                         displayName: meData.displayName ?? null,
+                        username: meData.username ?? null,
+                        avatar: meData.avatar ?? null,
                     });
                 }
             } catch {
                 // non-fatal — header just won't show the account line
+            }
+
+            const accountsRes = await fetch("/api/auth/accounts", {
+                credentials: "include",
+                cache: "no-store",
+            });
+            if (accountsRes.ok) {
+                const accountData: any = await accountsRes.json();
+                setAccounts(accountData.accounts || []);
             }
 
             try {
@@ -221,6 +238,29 @@ function AuthorizeContent() {
                 err instanceof Error ? err.message : "Authorization failed",
             );
             setIsLoading(false);
+        }
+    };
+
+    const handleSwitchAccount = async (userId: string) => {
+        if (userId === account?.id || isSwitching) return;
+        setIsSwitching(true);
+        setError(null);
+        try {
+            const response = await fetch("/api/auth/accounts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId }),
+            });
+            if (!response.ok) {
+                const data: any = await response.json();
+                throw new Error(data.error || "Unable to switch account");
+            }
+            window.location.reload();
+        } catch (err) {
+            setError(
+                err instanceof Error ? err.message : "Unable to switch account",
+            );
+            setIsSwitching(false);
         }
     };
 
@@ -499,29 +539,84 @@ function AuthorizeContent() {
                                 padding: "0 16px 14px",
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 8,
+                                gap: 10,
                                 flexWrap: "wrap",
                             }}
                         >
-                            <span
+                            <img
+                                src={
+                                    account.avatar ||
+                                    generatePixelAvatar(account.email, 32)
+                                }
+                                alt=""
+                                width={32}
+                                height={32}
                                 style={{
-                                    color: "var(--fg-faint)",
-                                    fontSize: 12.5,
+                                    borderRadius: "50%",
+                                    flexShrink: 0,
                                 }}
-                            >
-                                Signing in as
-                            </span>
-                            <span
+                            />
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <span
+                                    style={{
+                                        display: "block",
+                                        color: "var(--fg)",
+                                        fontSize: 12.5,
+                                        fontWeight: 650,
+                                    }}
+                                >
+                                    {account.displayName || account.email}
+                                </span>
+                                <span
+                                    style={{
+                                        display: "block",
+                                        color: "var(--fg-faint)",
+                                        fontSize: 11.5,
+                                    }}
+                                >
+                                    {account.email}
+                                </span>
+                            </div>
+                            {accounts.length > 1 && (
+                                <select
+                                    aria-label="Choose an account"
+                                    value={account.id}
+                                    disabled={isSwitching}
+                                    onChange={(event) =>
+                                        handleSwitchAccount(event.target.value)
+                                    }
+                                    style={{
+                                        maxWidth: 150,
+                                        border: "1px solid var(--border)",
+                                        borderRadius: 8,
+                                        background: "var(--surface)",
+                                        color: "var(--fg-muted)",
+                                        fontSize: 12,
+                                        padding: "7px 9px",
+                                    }}
+                                >
+                                    {accounts.map((candidate) => (
+                                        <option
+                                            key={candidate.id}
+                                            value={candidate.id}
+                                        >
+                                            {candidate.displayName ||
+                                                candidate.email}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                            <a
+                                href={`/login?add_account=1&next=${encodeURIComponent(`/authorize?${searchParams.toString()}`)}`}
                                 style={{
                                     color: "#ff7759",
-                                    fontSize: 12.5,
-                                    fontWeight: 600,
+                                    fontSize: 12,
+                                    fontWeight: 650,
+                                    textDecoration: "none",
                                 }}
                             >
-                                {account.displayName
-                                    ? `${account.displayName} · ${account.email}`
-                                    : account.email}
-                            </span>
+                                Add account
+                            </a>
                         </div>
                     )}
 
@@ -554,7 +649,7 @@ function AuthorizeContent() {
                                     margin: "0 0 10px",
                                 }}
                             >
-                                Requesting access to
+                                {authRequest.clientName} will be able to
                             </p>
                             <div
                                 style={{
@@ -564,16 +659,19 @@ function AuthorizeContent() {
                                 }}
                             >
                                 {authRequest.scopes.map((scope) => {
-                                    const info = SCOPE_LABELS[scope] || {
+                                    const info = OAUTH_SCOPE_DETAILS[
+                                        scope as keyof typeof OAUTH_SCOPE_DETAILS
+                                    ] || {
                                         label: scope,
-                                        desc: scope,
+                                        description:
+                                            "Use this permission as described by the application.",
                                     };
                                     return (
                                         <div
                                             key={scope}
                                             style={{
                                                 display: "flex",
-                                                alignItems: "center",
+                                                alignItems: "flex-start",
                                                 gap: 8,
                                             }}
                                         >
@@ -590,13 +688,25 @@ function AuthorizeContent() {
                                                     clipRule="evenodd"
                                                 />
                                             </svg>
-                                            <span
-                                                style={{
-                                                    color: "var(--fg-muted)",
-                                                    fontSize: 13,
-                                                }}
-                                            >
-                                                {info.desc}
+                                            <span>
+                                                <strong
+                                                    style={{
+                                                        display: "block",
+                                                        color: "var(--fg)",
+                                                        fontSize: 13,
+                                                    }}
+                                                >
+                                                    {info.label}
+                                                </strong>
+                                                <span
+                                                    style={{
+                                                        color: "var(--fg-muted)",
+                                                        fontSize: 12,
+                                                        lineHeight: 1.45,
+                                                    }}
+                                                >
+                                                    {info.description}
+                                                </span>
                                             </span>
                                         </div>
                                     );
@@ -631,8 +741,9 @@ function AuthorizeContent() {
                                     margin: 0,
                                 }}
                             >
-                                Only verified apps can request access. Revoke
-                                anytime from settings.
+                                This app can stay signed in using a renewable
+                                token. You can revoke access anytime from your
+                                connected services.
                             </p>
                         </div>
 

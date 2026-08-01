@@ -5,6 +5,7 @@ import { getDatabase } from "@/lib/d1-client";
 import { createOAuthClient, getOAuthClientById, getUserById } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
 import { sendMail } from "@/lib/mails";
+import { SUPPORTED_OAUTH_SCOPES } from "@/lib/oauth-scopes";
 import { generateRandomString, hashString } from "@/lib/webcrypto";
 
 async function getAuth(request: NextRequest) {
@@ -210,7 +211,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate scopes if provided
-        const validScopes = ["openid", "profile", "email", "phone", "address"];
+        const validScopes = [...SUPPORTED_OAUTH_SCOPES];
         if (scopes && Array.isArray(scopes)) {
             for (const scope of scopes) {
                 if (!validScopes.includes(scope)) {

@@ -4,6 +4,7 @@ export interface JWTPayload {
     sub: string;
     email: string;
     provider?: "google" | "github" | "discord" | "microsoft" | "email";
+    scopes?: string[];
     iat: number;
     exp: number;
     type: "access" | "refresh";
@@ -30,12 +31,14 @@ export async function createAccessToken(
     email: string,
     provider?: "google" | "github" | "discord" | "microsoft" | "email",
     expiresInMinutes: number = 15,
+    scopes?: string[],
 ): Promise<string> {
     const payload: Omit<JWTPayload, "iat" | "exp"> = {
         sub: userId,
         email,
         type: "access",
         ...(provider && { provider }),
+        ...(scopes && { scopes }),
     };
 
     const key = await getSigningKey();
@@ -53,12 +56,14 @@ export async function createRefreshToken(
     userId: string,
     provider?: "google" | "github" | "discord" | "microsoft" | "email",
     expiresInDays: number = 30,
+    scopes?: string[],
 ): Promise<string> {
     const payload: Omit<JWTPayload, "iat" | "exp"> = {
         sub: userId,
         email: "",
         type: "refresh",
         ...(provider && { provider }),
+        ...(scopes && { scopes }),
     };
 
     const key = await getSigningKey();
