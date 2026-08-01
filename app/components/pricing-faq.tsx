@@ -3,9 +3,9 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from "@mui/material";
 
-const INK = "#212121";
-const SLATE = "#75758a";
-const HAIRLINE = "#d9d9dd";
+const INK = "var(--fg)";
+const SLATE = "var(--fg-muted)";
+const HAIRLINE = "var(--border)";
 
 export interface Faq {
     q: string;
@@ -40,7 +40,7 @@ export default function PricingFaq({ items }: { items: Faq[] }) {
                             sx={{
                                 fontWeight: 500,
                                 fontSize: "1.08rem",
-                                color: "#000000",
+                                color: "var(--fg)",
                                 fontFamily: "var(--font-display)",
                             }}
                         >

@@ -26,21 +26,21 @@ import PageShell from "./components/page-shell";
 import PixelHero from "./components/pixel-hero";
 
 const CORAL = "#ff7759";
-const ACTION_BLUE = "#1863dc";
+const ACTION_BLUE = "var(--action-fg)";
 
 // Cohere primary CTA button styles
 const PRIMARY_BTN = {
     textTransform: "none" as const,
     fontWeight: 500,
     fontSize: "0.95rem",
-    color: "#fff",
+    color: "var(--bg)",
     px: 3.5,
     py: 1.3,
     borderRadius: "32px", // Pill
-    background: "#17171c",
+    background: "var(--fg)",
     boxShadow: "none",
     fontFamily: "var(--font-sans)",
-    "&:hover": { background: "#000000" },
+    "&:hover": { background: "var(--fg-muted)" },
 };
 
 // ── Section heading helper ──────────────────────────────────────────────────
@@ -397,10 +397,15 @@ export default function Home() {
                                     boxShadow: "var(--card-shadow)",
                                     display: "flex",
                                     flexDirection: "column",
-                                    transition: "border-color 0.2s ease, transform 0.2s ease",
+                                    transition:
+                                        "border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease",
                                     "&:hover": {
                                         borderColor: "var(--accent-border)",
-                                        transform: "translateY(-2px)",
+                                        transform: "translateY(-3px)",
+                                        boxShadow: "0 12px 32px rgba(0, 0, 0, 0.08)",
+                                        "[data-theme='dark'] &": {
+                                            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4)",
+                                        },
                                     },
                                 }}
                             >
@@ -591,6 +596,10 @@ export default function Home() {
                             borderRadius: "22px", // Signature 22px radius
                             overflow: "hidden",
                             boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+                            "[data-theme='dark'] &": {
+                                background: "var(--surface)",
+                                boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+                            },
                         }}
                     >
                         {/* Video Background */}
