@@ -3,7 +3,7 @@
 apply_refactor.py — Deterministic bulk find/replace across files.
 
 Reads a JSON plan from stdin and applies replacements atomically. Used
-by the agent workflows (issue-auto-fix.yml, pr-review-request.yml) to
+by the repository agent workflow (elixpo-agent.yml) to
 execute mechanical refactors (theme swaps, renames, constant migrations)
 without routing each edit through an LLM — one shell call instead of N
 Read+Edit roundtrips.
