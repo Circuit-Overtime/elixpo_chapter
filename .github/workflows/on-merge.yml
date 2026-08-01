@@ -32,7 +32,7 @@ jobs:
         id: gist
         env:
           AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
-          POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
+          POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY_GITHUB }}
           GIST_ID: ${{ vars.CI_GIST_ID }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
@@ -64,7 +64,7 @@ jobs:
         continue-on-error: true
         env:
           AGENT_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
-          POLLINATIONS_KEY: ${{ secrets.CI_POLLINATIONS_KEY }}
+          POLLINATIONS_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY_GITHUB }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: python .github/scripts/update_readme.py
