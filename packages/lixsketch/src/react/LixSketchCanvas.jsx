@@ -236,7 +236,7 @@ export default function LixSketchCanvas({
       <div className="lixsketch-floating-header absolute top-2 right-2 z-[1000] flex items-center gap-1.5 font-[lixFont]">
         <button
           type="button"
-          title="LixScript — write shapes in DSL"
+          title="LixScript MCP — coming soon"
           onClick={() => useUIStore.getState().toggleAIModal?.()}
           className="w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-border-light text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
         >

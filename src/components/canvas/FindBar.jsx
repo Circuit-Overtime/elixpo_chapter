@@ -49,7 +49,7 @@ export default function FindBar() {
     rect.setAttribute('width', w + 8)
     rect.setAttribute('height', h + 8)
     rect.setAttribute('fill', 'rgba(91, 87, 209, 0.15)')
-    rect.setAttribute('stroke', '#5B57D1')
+    rect.setAttribute('stroke', '#6f846f')
     rect.setAttribute('stroke-width', '2')
     rect.setAttribute('stroke-dasharray', '4,2')
     rect.setAttribute('rx', '4')

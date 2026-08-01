@@ -965,10 +965,9 @@ export default function AIModal() {
               <div className="flex gap-1 mb-4 bg-surface-dark rounded-xl p-1">
                 {[
                   // 'Research Paper' tab was AI-inference-only and is hidden
-                  // while the assistant is offline. The remaining three tabs
-                  // (LixScript / Mermaid / Graph) parse and render entirely
-                  // client-side, no worker round-trip required.
-                  { value: 'code', label: 'LixScript', beta: true },
+                  // while the assistant is offline. LixScript remains visible
+                  // as a preview of the upcoming MCP integration.
+                  { value: 'code', label: 'LixScript', comingSoon: true },
                   { value: 'mermaid', label: 'Mermaid' },
                   { value: 'graph', label: 'Graph' },
                 ].map((t) => (
@@ -978,7 +977,10 @@ export default function AIModal() {
                     className={`flex-1 px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
                       mode === t.value ? 'bg-surface-active text-text-primary' : 'text-text-muted hover:text-text-primary'
                     }`}
-                  >{t.label}{t.beta && <span className="ml-1.5 px-1.5 py-0.5 text-[9px] rounded-md bg-orange-500/20 text-orange-400 font-medium uppercase leading-none">Beta</span>}</button>
+                  >
+                    {t.label}
+                    {t.comingSoon && <span className="ml-1.5 px-1.5 py-0.5 text-[9px] rounded-md bg-[#a97852]/15 text-[#8f6244] font-medium uppercase leading-none">Coming soon</span>}
+                  </button>
                 ))}
               </div>
             )}
@@ -1161,7 +1163,7 @@ export default function AIModal() {
                     value={mermaidCode}
                     onChange={(e) => setMermaidCode(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={'graph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Action]\n  B -->|No| D[End]\n\nsequenceDiagram\n  Alice ->> Bob: Hello\n  Bob -->> Alice: Hi!'}
+                    placeholder={'flowchart TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Action]\n  B -->|No| D[End]\n\nerDiagram\n  USER ||--o{ ORDER : places'}
                     className="flex-1 bg-surface-dark border border-border rounded-xl px-4 py-3 text-text-primary text-sm leading-relaxed resize-none focus:outline-none focus:border-accent-blue placeholder:text-text-dim font-mono"
                     autoFocus
                     spellCheck={false}
@@ -1175,6 +1177,9 @@ export default function AIModal() {
                         { label: 'Flowchart', code: 'graph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Process]\n  B -->|No| D[End]\n  C --> D' },
                         { label: 'LR Flow', code: 'graph LR\n  A[Input] --> B(Process)\n  B --> C((Output))\n  B --> D{Check}\n  D --> A' },
                         { label: 'Sequence', code: 'sequenceDiagram\n  Alice ->> Bob: Hello Bob\n  Bob -->> Alice: Hi Alice\n  Alice ->> Bob: How are you?\n  Bob -->> Alice: Great!' },
+                        { label: 'ER Diagram', code: 'erDiagram\n  CUSTOMER ||--o{ ORDER : places\n  CUSTOMER {\n    string name\n    string email\n  }\n  ORDER {\n    int id PK\n    float total\n  }' },
+                        { label: 'Bar Chart', code: 'xychart-beta\n  title "Weekly Focus"\n  x-axis [Mon, Tue, Wed, Thu, Fri]\n  bar [4, 7, 5, 8, 6]\n  line [3, 5, 6, 7, 8]' },
+                        { label: 'Pie Chart', code: 'pie title Project Time\n  "Design" : 35\n  "Build" : 45\n  "Review" : 20' },
                       ].map((preset) => (
                         <button
                           key={preset.label}
@@ -1207,13 +1212,13 @@ export default function AIModal() {
                 <div className="flex-1 flex flex-col min-w-0">
                   <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Preview</p>
                   {mermaidError ? (
-                    <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
+                    <div className="flex-1 flex items-center justify-center rounded-xl bg-surface-card border border-border">
                       <p className="text-red-400/70 text-sm">{mermaidError}</p>
                     </div>
                   ) : mermaidPreviewSVG ? (
                     <DiagramPreview svgMarkup={mermaidPreviewSVG} className="flex-1 min-h-[300px]" />
                   ) : (
-                    <div className="flex-1 flex items-center justify-center rounded-xl bg-[#111] border border-white/[0.06]">
+                    <div className="flex-1 flex items-center justify-center rounded-xl bg-surface-card border border-border">
                       <p className="text-text-dim text-sm">Type Mermaid code to see a live preview</p>
                     </div>
                   )}
@@ -1221,7 +1226,22 @@ export default function AIModal() {
                 </div>
               </div>
 
-            ) : /* ============ CODE MODE (LixScript) ============ */
+            ) : /* ============ LIXSCRIPT / MCP COMING SOON ============ */
+            isCodeMode && !previewDiagram && !isFrameEdit ? (
+              <div className="h-[calc(100%-100px)] flex items-center justify-center">
+                <div className="w-full max-w-xl rounded-2xl border border-border bg-surface-card px-8 py-10 text-center">
+                  <div className="mx-auto mb-5 w-12 h-12 rounded-xl bg-[#6f846f]/12 border border-[#6f846f]/25 flex items-center justify-center">
+                    <i className="bx bx-plug text-2xl text-[#6f846f]" />
+                  </div>
+                  <span className="inline-flex px-2.5 py-1 rounded-full bg-[#a97852]/12 text-[#8f6244] text-[10px] font-semibold uppercase tracking-wider">Coming soon</span>
+                  <h3 className="mt-4 text-xl text-text-primary">LixScript MCP</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-text-muted">
+                    LixScript is being prepared as the programmable MCP interface for LixSketch. The editor will return when scripts can run through the supported platform workflow.
+                  </p>
+                </div>
+              </div>
+
+            ) : /* ============ LEGACY CODE MODE (kept until MCP ships) ============ */
             isCodeMode && !previewDiagram && !isFrameEdit ? (
               <div className="flex gap-4 h-[calc(100%-100px)]">
                 {/* Left panel - AI prompt + Code editor */}

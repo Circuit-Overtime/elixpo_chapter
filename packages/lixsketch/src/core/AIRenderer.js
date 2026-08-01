@@ -43,6 +43,30 @@ export function parseMermaid(src) {
     const edges = [];
     const classDefs = new Map();   // classDef name -> { fill, stroke, strokeWidth }
     const classAssigns = [];        // { nodeIds: [...], className }
+    const nodeStyles = new Map();   // Mermaid `style A fill:...,stroke:...`
+    const palette = [
+        { fill: '#e8f3ec', stroke: '#5f836c' },
+        { fill: '#f6eadf', stroke: '#a97852' },
+        { fill: '#eee9f4', stroke: '#7e6b91' },
+        { fill: '#f5efcf', stroke: '#9a8745' },
+        { fill: '#e5f0f1', stroke: '#5d7f82' },
+        { fill: '#f4e5e3', stroke: '#9a6863' },
+    ];
+
+    function parseStyleProps(value) {
+        const props = {};
+        for (const part of value.split(',')) {
+            const separator = part.indexOf(':');
+            if (separator < 0) continue;
+            const key = part.slice(0, separator).trim().toLowerCase();
+            const val = part.slice(separator + 1).trim();
+            if (key === 'fill') props.fill = val;
+            else if (key === 'stroke') props.stroke = val;
+            else if (key === 'stroke-width') props.strokeWidth = parseFloat(val);
+            else if (key === 'color') props.labelColor = val;
+        }
+        return props;
+    }
 
     // Clean <br/> and <br> tags in labels → newline marker
     function cleanLabel(label) {
@@ -91,17 +115,23 @@ export function parseMermaid(src) {
         const classDefMatch = line.match(/^classDef\s+(\w+)\s+(.+)$/i);
         if (classDefMatch) {
             const name = classDefMatch[1];
-            const propsStr = classDefMatch[2].replace(/;$/, '');
-            const props = {};
-            for (const part of propsStr.split(',')) {
-                const [key, val] = part.split(':').map(s => s.trim());
-                if (key === 'fill') props.fill = val;
-                else if (key === 'stroke') props.stroke = val;
-                else if (key === 'stroke-width') props.strokeWidth = parseFloat(val);
-            }
-            classDefs.set(name, props);
+            classDefs.set(name, parseStyleProps(classDefMatch[2].replace(/;$/, '')));
             continue;
         }
+
+        // Direct node styling must be consumed before node/edge parsing.
+        // Previously these lines fell through to `parseNodeRef`, producing
+        // visible boxes containing the raw `style A fill:...` source.
+        const styleMatch = line.match(/^style\s+([\w,-]+)\s+(.+)$/i);
+        if (styleMatch) {
+            const props = parseStyleProps(styleMatch[2].replace(/;$/, ''));
+            styleMatch[1].split(',').map(id => id.trim()).filter(Boolean)
+                .forEach(id => nodeStyles.set(id, props));
+            continue;
+        }
+
+        // Presentation-only directives do not represent diagram nodes.
+        if (/^(linkStyle|click)\b/i.test(line)) continue;
 
         // class assignment: class sq,e green
         const classMatch = line.match(/^class\s+(.+?)\s+(\w+)$/i);
@@ -214,6 +244,12 @@ export function parseMermaid(src) {
         }
     }
 
+
+    for (const [nid, style] of nodeStyles) {
+        const node = nodesMap.get(nid);
+        if (node) Object.assign(node, style);
+    }
+
     // Topological BFS layering
     const nodeIds = Array.from(nodesMap.keys());
     const children = new Map();
@@ -247,6 +283,7 @@ export function parseMermaid(src) {
 
     // Compute dynamic node sizes based on label length
     const nodes = [];
+    let paletteIndex = 0;
     Array.from(layerGroups.keys()).sort((a, b) => a - b).forEach((layerIdx, li) => {
         const group = layerGroups.get(layerIdx);
         const startOffset = -(group.length * H_SPACING) / 2 + H_SPACING / 2;
@@ -262,8 +299,12 @@ export function parseMermaid(src) {
             nodes.push({
                 id: nd.id, type: nd.type, label: nd.label,
                 x, y, width: nw, height: nh,
-                fill: nd.fill, stroke: nd.stroke, strokeWidth: nd.strokeWidth,
+                fill: nd.fill || palette[paletteIndex % palette.length].fill,
+                stroke: nd.stroke || palette[paletteIndex % palette.length].stroke,
+                strokeWidth: nd.strokeWidth,
+                labelColor: nd.labelColor,
             });
+            paletteIndex += 1;
         });
     });
 
@@ -1327,6 +1368,9 @@ export function initAIRenderer() {
     let _fcPreview = null;
     let _fcCanvas = null;
 
+    // Lazy-load ER / chart renderer
+    let _structured = null;
+
     async function loadSequenceRenderer() {
         if (_seqParser) return;
         const mod = await import('./MermaidSequenceParser.js');
@@ -1343,9 +1387,25 @@ export function initAIRenderer() {
         _fcCanvas = mod.renderFlowchartOnCanvas;
     }
 
+    async function loadStructuredRenderer() {
+        if (_structured) return;
+        _structured = await import('./MermaidStructuredRenderer.js');
+    }
+
+    function mermaidHeader(src) {
+        return src.split('\n').map(line => line.trim()).find(line => line && !line.startsWith('%%'))?.toLowerCase() || '';
+    }
+
     // Detect if source is a sequence diagram
     function isSequenceDiagram(src) {
-        return src.trim().split('\n')[0].trim().toLowerCase() === 'sequencediagram';
+        return mermaidHeader(src) === 'sequencediagram';
+    }
+
+    function structuredType(src) {
+        const header = mermaidHeader(src);
+        if (header === 'erdiagram') return 'er';
+        if (/^pie(?:\s|$)/.test(header) || /^xychart(?:-beta)?(?:\s|$)/.test(header)) return 'chart';
+        return null;
     }
 
     window.__aiRenderer = renderAIDiagram;
@@ -1363,6 +1423,15 @@ export function initAIRenderer() {
                 return null;
             }
         }
+        if (structuredType(src)) {
+            if (!_structured) {
+                loadStructuredRenderer();
+                return { _pendingStructured: true, src };
+            }
+            return structuredType(src) === 'er'
+                ? _structured.parseERDiagram(src)
+                : _structured.parseChartDiagram(src);
+        }
         return parseMermaid(src);
     };
 
@@ -1373,6 +1442,13 @@ export function initAIRenderer() {
             const diagram = _seqParser(src);
             if (!diagram) return '';
             return _seqPreview(diagram);
+        }
+        const type = structuredType(src);
+        if (type) {
+            await loadStructuredRenderer();
+            const diagram = type === 'er' ? _structured.parseERDiagram(src) : _structured.parseChartDiagram(src);
+            if (!diagram) return '';
+            return type === 'er' ? _structured.renderERPreviewSVG(diagram) : _structured.renderChartPreviewSVG(diagram);
         }
         // Flowchart: use unified flowchart renderer
         await loadFlowchartRenderer();
@@ -1389,6 +1465,13 @@ export function initAIRenderer() {
             if (!diagram) { console.error('[AIRenderer] Sequence parse failed'); return false; }
             return _seqCanvas(diagram);
         }
+        const type = structuredType(src);
+        if (type) {
+            await loadStructuredRenderer();
+            const diagram = type === 'er' ? _structured.parseERDiagram(src) : _structured.parseChartDiagram(src);
+            if (!diagram) { console.error('[AIRenderer] Structured Mermaid parse failed'); return false; }
+            return type === 'er' ? _structured.renderEROnCanvas(diagram) : _structured.renderChartOnCanvas(diagram);
+        }
         // Flowchart: use unified flowchart renderer (same SVG as preview)
         await loadFlowchartRenderer();
         const diagram = parseMermaid(src);
@@ -1399,4 +1482,5 @@ export function initAIRenderer() {
     // Pre-load renderers so they're ready
     loadSequenceRenderer();
     loadFlowchartRenderer();
+    loadStructuredRenderer();
 }

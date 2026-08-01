@@ -12,7 +12,7 @@ function ColorGrid({ colors, selected, onSelect }) {
     <div className="grid grid-cols-4 gap-1.5">
       {colors.map((c) => (
         <button key={c} onClick={() => onSelect(c)}
-          className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? 'border-[#5B57D1] scale-110' : 'border-border-light hover:border-text-dim'}`}
+          className={`w-7 h-7 rounded-md border-[1.5px] transition-all duration-100 ${selected === c ? 'border-[#6f846f] scale-110' : 'border-border-light hover:border-text-dim'}`}
           style={{ backgroundColor: c }}
         />
       ))}
@@ -52,7 +52,7 @@ export default function LineSidebar() {
         <div className="flex items-center gap-1">
           {[1, 2, 4, 7].map((w) => (
             <button key={w} onClick={() => updateThickness(w)}
-              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#5B57D1]/20 text-[#5B57D1]' : 'text-text-muted hover:bg-surface-hover'}`}
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${thickness === w ? 'bg-[#6f846f]/20 text-[#6f846f]' : 'text-text-muted hover:bg-surface-hover'}`}
             >
               <div className="w-5 rounded-full bg-current" style={{ height: Math.max(1, w) }} />
             </button>
@@ -67,7 +67,7 @@ export default function LineSidebar() {
         <div className="flex items-center gap-1">
           {[{ v: 'solid', d: '' }, { v: 'dashed', d: '6 4' }, { v: 'dotted', d: '2 3' }].map((s) => (
             <button key={s.v} onClick={() => updateStyle(s.v)}
-              className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? 'bg-[#5B57D1]/20' : 'hover:bg-surface-hover'}`}
+              className={`w-11 h-8 flex items-center justify-center rounded-lg transition-all duration-100 ${lineStyle === s.v ? 'bg-[#6f846f]/20' : 'hover:bg-surface-hover'}`}
             >
               <svg width="28" height="4" viewBox="0 0 28 4"><line x1="0" y1="2" x2="28" y2="2" stroke="#fff" strokeWidth="2" strokeDasharray={s.d} strokeLinecap="round" /></svg>
             </button>
@@ -82,7 +82,7 @@ export default function LineSidebar() {
         <div className="flex items-center gap-1">
           {[{ v: 0, l: '0' }, { v: 2, l: '2' }, { v: 4, l: '4' }].map((s) => (
             <button key={s.v} onClick={() => updateSloppiness(s.v)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all duration-100 ${sloppiness === s.v ? 'bg-[#5B57D1]/20 text-accent-blue' : 'text-text-muted hover:bg-surface-hover'}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-all duration-100 ${sloppiness === s.v ? 'bg-[#6f846f]/20 text-accent-blue' : 'text-text-muted hover:bg-surface-hover'}`}
             >{s.l}</button>
           ))}
         </div>

@@ -8,7 +8,7 @@ export const THEME_CANVAS_BACKGROUNDS = {
 
 export function resolveTheme(theme) {
   if (theme !== 'system') return theme === 'light' ? 'light' : 'dark'
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark'
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'light'
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
@@ -107,13 +107,8 @@ function invertShapeColors(prevResolved, nextResolved) {
 }
 
 export function applyTheme(theme) {
-  // Issue #38 bug #1: theme is scoped to the CANVAS page only — landing /
-  // blog / pricing stay on the dark @theme palette. We use body classes
-  // rather than html inline styles so the override:
-  //   • only kicks in when body.canvas-mode is present (canvas page),
-  //   • doesn't leak across SPA navigations (no persistent inline styles).
-  // The actual token values live in src/app/globals.css under explicit
-  // light/dark canvas selectors; the unclassified first paint is dark.
+  // Apply one resolved theme class to the complete canvas shell. Global
+  // tokens already default to light, so hydration no longer flashes dark.
   const body = document.body
   if (!body) return
   const resolved = resolveTheme(theme)
@@ -125,12 +120,12 @@ export function applyTheme(theme) {
 }
 
 function readStoredTheme() {
-  if (typeof window === 'undefined') return 'dark'
+  if (typeof window === 'undefined') return 'light'
   try {
     const prefs = JSON.parse(localStorage.getItem('lix_ui_prefs') || '{}')
-    return ['dark', 'light', 'system'].includes(prefs.theme) ? prefs.theme : 'dark'
+    return ['dark', 'light', 'system'].includes(prefs.theme) ? prefs.theme : 'light'
   } catch {
-    return 'dark'
+    return 'light'
   }
 }
 
@@ -237,8 +232,8 @@ const useUIStore = create((set, get) => ({
   setCanvasLoading: (loading, message) => set({ canvasLoading: loading, canvasLoadingMessage: message || 'Loading canvas...' }),
 
   // --- Theme ---
-  theme: 'dark',
-  resolvedTheme: 'dark',
+  theme: 'light',
+  resolvedTheme: 'light',
   hydrateTheme: () => {
     const theme = readStoredTheme()
     const resolvedTheme = applyTheme(theme)

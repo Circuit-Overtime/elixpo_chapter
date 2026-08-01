@@ -180,7 +180,7 @@ const useSketchStore = create((set, get) => ({
   // Issue #38 bug #1: cream is the default — pairs with the light theme
   // and gives shape strokes (default near-black) clear contrast without
   // pure-white glare.
-  canvasBackground: '#13171C',
+  canvasBackground: '#faf9f5',
   setCanvasBackground: (color) => set({ canvasBackground: color }),
 
   // --- Grid ---
