@@ -250,7 +250,7 @@ const NAV_ITEMS = [
   { label: 'Library', icon: 'bookmark-outline', href: '/library' },
   { label: 'Profile', icon: 'person-outline', href: '/profile' },
   { label: 'Stories', icon: 'book-outline', href: '/stories' },
-  { label: 'Stats', icon: 'stats-chart-outline', href: '/stats' },
+  { label: 'Stats', icon: 'stats-chart-outline', href: '/settings/stats' },
 ];
 
 // GitHub star counter (stars only) → links to the repo.

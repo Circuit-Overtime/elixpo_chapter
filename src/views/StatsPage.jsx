@@ -126,12 +126,36 @@ function DonutBreakdown({ title, rows = [] }) {
     cursor += total ? (Number(row.value || 0) / total) * 100 : 0;
     return `${colors[index % colors.length]} ${start}% ${cursor}%`;
   }).join(', ');
-  return <section className="rounded-[22px] border p-5 sm:p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}><div className="flex items-start justify-between mb-5"><div><h2 className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2><p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>Share of audience actions</p></div><span className="text-[11px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{fmt(total)} total</span></div><div className="flex flex-col sm:flex-row items-center gap-7"><div className="w-36 h-36 rounded-full grid place-items-center shrink-0" style={{ background: total ? `conic-gradient(${stops})` : 'var(--bg-elevated)' }}><div className="w-24 h-24 rounded-full grid place-items-center text-center" style={{ background: 'var(--bg-surface)' }}><div><p className="text-2xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(total)}</p><p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-faint)' }}>actions</p></div></div></div><div className="w-full space-y-2.5">{rows.map((row, index) => <div key={row.label} className="grid grid-cols-[10px_1fr_auto] items-center gap-2 text-[11px]"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: colors[index % colors.length] }} /><span style={{ color: 'var(--text-body)' }}>{row.label}</span><span className="font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(row.value)}</span></div>)}</div></div></section>;
+  return <section className="rounded-[22px] border p-5 sm:p-6 min-h-[390px] flex flex-col" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+    <div className="flex items-start justify-between"><div><h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2><p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>Share of audience actions</p></div><span className="rounded-full px-2.5 py-1 text-[10px] tabular-nums" style={{ color: 'var(--text-muted)', background: 'var(--bg-elevated)' }}>{fmt(total)} total</span></div>
+    <div className="flex-1 grid sm:grid-cols-[190px_1fr] items-center justify-center gap-8 py-7 max-w-[510px] w-full mx-auto">
+      <div className="relative w-[176px] h-[176px] mx-auto rounded-full grid place-items-center shrink-0" style={{ background: total ? `conic-gradient(${stops})` : 'var(--bg-elevated)', boxShadow: 'inset 0 0 0 1px var(--border-default), 0 14px 35px rgba(21,16,32,.08)' }}>
+        <div className="w-[112px] h-[112px] rounded-full grid place-items-center text-center" style={{ background: 'var(--bg-surface)', boxShadow: '0 0 0 1px var(--border-default)' }}><div><p className="text-3xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(total)}</p><p className="text-[9px] uppercase tracking-[.16em] mt-1" style={{ color: 'var(--text-faint)' }}>actions</p></div></div>
+      </div>
+      <div className="w-full space-y-3">{rows.map((row, index) => {
+        const share = total ? Math.round((Number(row.value || 0) / total) * 100) : 0;
+        return <div key={row.label}><div className="grid grid-cols-[10px_1fr_auto] items-center gap-2 text-[11px]"><span className="w-2.5 h-2.5 rounded-full" style={{ background: colors[index % colors.length], boxShadow: `0 0 8px ${colors[index % colors.length]}55` }} /><span style={{ color: 'var(--text-body)' }}>{row.label}</span><span className="font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(row.value)} <span className="font-normal" style={{ color: 'var(--text-faint)' }}>· {share}%</span></span></div><div className="ml-[18px] mt-1.5 h-1 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}><div className="h-full rounded-full" style={{ width: `${share}%`, background: colors[index % colors.length] }} /></div></div>;
+      })}</div>
+    </div>
+  </section>;
 }
 
 function FunnelGraph({ rows = [] }) {
   const max = Math.max(...rows.map(row => Number(row.value || 0)), 1);
-  return <section className="rounded-[22px] border p-5 sm:p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}><div className="mb-5"><h2 className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>Conversion funnel</h2><p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>From discovery to retained audience</p></div><div className="space-y-2">{rows.map((row, index) => { const width = Math.max(24, (Number(row.value || 0) / max) * 100); const conversion = index && Number(rows[index - 1].value) ? Math.round((Number(row.value) / Number(rows[index - 1].value)) * 100) : 100; return <div key={row.label} className="text-center"><div className="mx-auto rounded-md px-3 py-2 flex items-center justify-between gap-3 transition-all" style={{ width: `${width}%`, minWidth: 150, background: `rgba(155,123,247,${Math.max(.12, .34 - index * .045)})`, color: 'var(--text-primary)' }}><span className="text-[10px] font-medium truncate">{row.label}</span><span className="text-[11px] font-bold tabular-nums">{fmt(row.value)}</span></div>{index > 0 && <p className="text-[8px] my-0.5 tabular-nums" style={{ color: 'var(--text-faint)' }}>↓ {conversion}%</p>}</div>; })}</div></section>;
+  return <section className="rounded-[22px] border p-5 sm:p-6 min-h-[390px] flex flex-col" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+    <div><h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Conversion funnel</h2><p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>From discovery to retained audience</p></div>
+    <div className="flex-1 flex flex-col justify-center py-5 max-w-[520px] w-full mx-auto">{rows.map((row, index) => {
+      const value = Number(row.value || 0);
+      const width = Math.max(32, (value / max) * 100);
+      const previous = index ? Number(rows[index - 1].value || 0) : 0;
+      const ratio = previous ? value / previous : 1;
+      const comparison = ratio > 1 ? `${ratio.toFixed(1)}× stage volume` : `${Math.round(ratio * 100)}% retained`;
+      return <div key={row.label} className="text-center">
+        {index > 0 && <div className="h-7 flex items-center justify-center gap-2 text-[9px] tabular-nums" style={{ color: ratio > 1 ? '#8b5cf6' : 'var(--text-faint)' }}><span className="h-4 w-px" style={{ background: 'var(--border-default)' }} /><span>{ratio > 1 ? '↑' : '↓'} {comparison}</span></div>}
+        <div className="mx-auto min-w-[170px] h-11 px-4 flex items-center justify-between gap-3 transition-all" style={{ width: `${width}%`, clipPath: 'polygon(3% 0, 97% 0, 100% 50%, 97% 100%, 3% 100%, 0 50%)', background: `linear-gradient(90deg, rgba(155,123,247,${Math.max(.16, .38 - index * .04)}), rgba(96,165,250,${Math.max(.10, .25 - index * .03)}))`, color: 'var(--text-primary)' }}><span className="text-[11px] font-medium truncate">{row.label}</span><span className="text-[12px] font-bold tabular-nums">{fmt(value)}</span></div>
+      </div>;
+    })}</div>
+  </section>;
 }
 
 function ContentInventory({ published, drafts }) {
