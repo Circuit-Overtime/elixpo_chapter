@@ -15,6 +15,7 @@ import { readTimeFromWords } from '../../lib/readTime';
 import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../utils/allowedImageTypes';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
 import { useCollaboration } from '../hooks/useCollaboration';
+import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload } from '../utils/mediaUploadQueue';
 
 function AvatarImg({ src, name, size = 32 }) {
   const [failed, setFailed] = useState(false);
@@ -459,6 +460,7 @@ export default function WritePage({ slugid }) {
   const [showCoverModal, setShowCoverModal] = useState(false);
   const [coverCropSrc, setCoverCropSrc] = useState(null); // device image awaiting crop+stylise
   const [coverUploadError, setCoverUploadError] = useState('');
+  const [coverUploading, setCoverUploading] = useState(false);
   const [coverUrlMode, setCoverUrlMode] = useState(false);
   const [coverUrlInput, setCoverUrlInput] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -1082,44 +1084,25 @@ export default function WritePage({ slugid }) {
 
   // Upload cover image blob to Cloudinary → set coverPreview to permanent URL
   const uploadCover = useCallback(async (blob) => {
+    const uploadJobId = createMediaUploadId();
+    const storageKey = `lixblogs:cover-upload:${blogId}`;
     const task = (async () => {
       setCoverUploadError('');
-
-      // Cloudflare can occasionally return an HTML 502/503/504 before the
-      // route's JSON error handling runs. Covers use a deterministic public id
-      // with overwrite enabled, so retrying the same payload is idempotent.
-      let lastError;
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        try {
-          // Upload through our own origin. Cloudinary credentials and account
-          // configuration must never be returned to or interpreted by the
-          // browser; the media route validates permission and forwards bytes.
-          const formData = new FormData();
-          formData.append('file', blob, `cover_${blogId}.webp`);
-          formData.append('type', 'cover');
-          formData.append('blogId', blogId);
-
-          const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
-          const responseText = await res.text();
-          let data = {};
-          try { data = responseText ? JSON.parse(responseText) : {}; } catch {}
-          const uploadedUrl = data.url;
-          if (res.ok && uploadedUrl) {
-            draftDataRef.current = { ...draftDataRef.current, coverPreview: uploadedUrl };
-            setCoverPreview(uploadedUrl);
-            return uploadedUrl;
-          }
-          const isHtmlError = /^\s*<!doctype html|^\s*<html/i.test(responseText);
-          const message = data.error || (isHtmlError ? `Upload service unavailable (${res.status})` : responseText.slice(0, 500)) || `Cover upload failed (${res.status})`;
-          lastError = new Error(message);
-          if (![502, 503, 504].includes(res.status)) break;
-        } catch (err) {
-          lastError = err;
-          if (attempt === 2) break;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 500 * (2 ** attempt)));
-      }
-      throw lastError || new Error('Cover upload failed');
+      setCoverUploading(true);
+      const { compressCoverImage } = await import('../utils/compressImage');
+      const { blob: compressed } = await compressCoverImage(blob);
+      localStorage.setItem(storageKey, uploadJobId);
+      const data = await enqueueMediaUpload(compressed, {
+        id: uploadJobId,
+        filename: `cover_${blogId}.webp`,
+        blogId,
+        type: 'cover',
+      });
+      if (!data.url) throw new Error('Cover upload did not return a URL');
+      localStorage.removeItem(storageKey);
+      draftDataRef.current = { ...draftDataRef.current, coverPreview: data.url };
+      setCoverPreview(data.url);
+      return data.url;
     })();
     coverUploadRef.current = task;
     try {
@@ -1129,8 +1112,29 @@ export default function WritePage({ slugid }) {
       setCoverUploadError(err?.message || 'Cover upload failed. Please try again.');
       return null;
     } finally {
+      setCoverUploading(false);
       if (coverUploadRef.current === task) coverUploadRef.current = null;
     }
+  }, [blogId]);
+
+  // IndexedDB retains the compressed upload body across navigation/reload.
+  // Reattach this editor to the persisted cover job when it mounts again.
+  useEffect(() => {
+    if (!blogId) return;
+    const storageKey = `lixblogs:cover-upload:${blogId}`;
+    const uploadJobId = localStorage.getItem(storageKey);
+    if (!uploadJobId) return;
+    setCoverUploading(true);
+    const task = resumeMediaUpload(uploadJobId).then((data) => {
+      if (!data?.url) return;
+      draftDataRef.current = { ...draftDataRef.current, coverPreview: data.url };
+      setCoverPreview(data.url);
+      localStorage.removeItem(storageKey);
+    }).catch((error) => setCoverUploadError(error.message || 'Cover upload failed')).finally(() => {
+      setCoverUploading(false);
+      if (coverUploadRef.current === task) coverUploadRef.current = null;
+    });
+    coverUploadRef.current = task;
   }, [blogId]);
 
   // Read a chosen device file into a data URL and open the crop+stylise modal.
@@ -1341,6 +1345,7 @@ export default function WritePage({ slugid }) {
     if (!title.trim() || publishing) return;
     setPublishing(true);
     setShowPublishMenu(false);
+    try { await coverUploadRef.current; } catch {}
     // Flush any buffered subpage drafts so they ship with the post.
     try { await syncSubpageDrafts(); } catch {}
     // Publish the exact revision we are about to send. This prevents a tag-only
@@ -1880,6 +1885,15 @@ export default function WritePage({ slugid }) {
                             transition: isDraggingCover ? 'none' : 'transform 0.2s ease',
                           }}
                         />
+                        {coverUploading && (
+                          <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-black/45 backdrop-blur-[2px]">
+                            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                            <div className="relative flex items-center gap-2 rounded-full border border-white/30 bg-black/55 px-4 py-2 text-xs font-semibold text-white shadow-lg">
+                              <span className="h-2 w-2 animate-ping rounded-full bg-[#b69aff]" />
+                              Uploading cover…
+                            </div>
+                          </div>
+                        )}
                         {/* Hover toolbar — top-right */}
                         <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           {/* Zoom out */}
