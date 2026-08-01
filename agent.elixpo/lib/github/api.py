@@ -91,6 +91,19 @@ class GitHubAPI:
         if self._client:
             await self._client.aclose()
 
+    async def graphql(self, query: str, variables: dict | None = None) -> dict:
+        """Run an authenticated GitHub GraphQL request and surface schema errors."""
+        data = await self._request(
+            "POST",
+            "/graphql",
+            json={"query": query, "variables": variables or {}},
+        )
+        errors = data.get("errors", [])
+        if errors:
+            messages = "; ".join(str(error.get("message", error)) for error in errors)
+            raise RuntimeError(f"GitHub GraphQL error: {messages}")
+        return data.get("data", {})
+
     # --- Repositories ---
 
     async def get_repo(self, owner: str, repo: str) -> dict:
