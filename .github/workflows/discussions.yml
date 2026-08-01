@@ -1,0 +1,84 @@
+name: Elixpoo Discussions
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  discussion:
+    types: [created]
+  discussion_comment:
+    types: [created]
+  schedule:
+    - cron: "17 9 * * 3"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Discussion task to run
+        required: true
+        default: qna
+        type: choice
+        options: [qna]
+
+concurrency:
+  group: elixpoo-discussions-${{ github.event.pull_request.node_id || github.event.comment.node_id || github.event.discussion.node_id || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  discussions: write
+  pull-requests: read
+
+jobs:
+  merge:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Decide and publish merge discussion
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: ${{ github.repository }}
+        run: python -m agents.discussions merge
+
+  qna:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Publish weekly technical Q&A
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: ${{ github.repository }}
+        run: python -m agents.discussions qna
+
+  respond:
+    if: github.event_name == 'discussion' || github.event_name == 'discussion_comment'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Reply to eligible @elixpoo mention
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_AGENT_TOKEN }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: ${{ github.repository }}
+        run: python -m agents.discussions respond

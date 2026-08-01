@@ -13,10 +13,11 @@
 
 ## Repository Structure
 
-- `agents/` — the squads (scout, triage, pick, comprehend, solve, submit, steward). **Independent: a squad never imports another squad.** They talk only via GitHub + `state/`. `comprehend/` is a library used by `solve/`.
+- `agents/` — the squads (scout, triage, pick, comprehend, solve, submit, steward, discussions). **Independent: a squad never imports another squad.** They talk only via GitHub + `state/`. `comprehend/` is a library used by `solve/`.
 - `rtk/` — the token economy over Pollinations: `router` (role→model), `budget`, `cache`, `count`, `compress`, `dedup`, `diff_context`, `retrieve`, `summarize`, `downshift`, `truncate`, `shell` (pipes runner output through the `rtk` CLI), `ledger`.
 - `lib/` — shared plumbing: `github/` (App auth + REST + `dispatch`), `tools/` (file/git/shell/grep/glob/web — publishable as our own MCP/connector later), `state/` (issues + board + json store), `scorer.py`, `config.py`.
 - `config/` — `models.yaml`, `languages.yaml`, `budgets.yaml`. `state/` — `ledger.json`, `candidates.json`, `blocklist.json`, `token_log.jsonl`. `prompts/` — squad prompt templates.
+- `skills/` — repo-owned `SKILL.md` packages loaded by squads for specialized workflows; each skill also carries `agents/openai.yaml` discovery metadata.
 - `.github/workflows/` — squad workflows + home-repo CI/automation. `.github/scripts/` — home-repo issue/PR automation.
 - `agent.elixpo/` — Next.js frontend. `public/agent.elixpo.png` — 1024² brand master. `workers/` — webhook-ingress Worker.
 
