@@ -31,6 +31,16 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
 
     async function init() {
       try {
+        // The collaboration worker runs on workers.dev, so the app's session
+        // cookie cannot cross that domain boundary. Exchange it server-side for
+        // a signed, blog-scoped token before contacting the worker.
+        const tokenResponse = await fetch(`/api/collab/token?blogId=${encodeURIComponent(blogId)}`);
+        const tokenData = await tokenResponse.json().catch(() => ({}));
+        if (!tokenResponse.ok || !tokenData.token) {
+          throw new Error(tokenData.error || 'Collaboration authorization failed');
+        }
+        const collabToken = tokenData.token;
+
         // Dynamic imports — only load Yjs when collab is active
         const Y = await import('yjs');
         const { WebsocketProvider } = await import('y-websocket');
@@ -39,19 +49,27 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
 
         // Pre-flight the room: if 5 distinct users are already editing and we're
         // not one of them, don't connect — caller renders read-only (#11 F).
+        const httpBase = COLLAB_WS_URL.replace(/^ws/, 'http');
+        const path = subpageId ? `blog/${blogId}/sub/${subpageId}/status` : `blog/${blogId}/status`;
+        let roomResponse;
         try {
-          const httpBase = COLLAB_WS_URL.replace(/^ws/, 'http');
-          const path = subpageId ? `blog/${blogId}/sub/${subpageId}/status` : `blog/${blogId}/status`;
-          const res = await fetch(`${httpBase}/${path}`, { credentials: 'include' });
-          if (res.ok) {
-            const { users = [], count = 0 } = await res.json();
-            const alreadyIn = users.some((u) => u.userId === user.id);
-            if (!alreadyIn && count >= MAX_ACTIVE_USERS) {
-              if (!cancelled) setRoomFull(true);
-              return;
-            }
-          }
-        } catch { /* status unavailable → proceed and let the DO enforce */ }
+          roomResponse = await fetch(`${httpBase}/${path}?token=${encodeURIComponent(collabToken)}`, {
+            cache: 'no-store',
+            referrerPolicy: 'no-referrer',
+          });
+        } catch {
+          throw new Error('Live collaboration is temporarily unavailable');
+        }
+        if (!roomResponse.ok) {
+          const detail = await roomResponse.json().catch(() => ({}));
+          throw new Error(detail.error || `Collaboration service rejected access (${roomResponse.status})`);
+        }
+        const { users = [], count = 0 } = await roomResponse.json();
+        const alreadyIn = users.some((u) => u.userId === user.id);
+        if (!alreadyIn && count >= MAX_ACTIVE_USERS) {
+          if (!cancelled) setRoomFull(true);
+          return;
+        }
         if (cancelled) return;
 
         const ydoc = new Y.Doc();
@@ -68,8 +86,7 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
           ydoc,
           {
             params: {
-              userId: user.id,
-              userName: user.display_name || user.username || 'Anonymous',
+              token: collabToken,
             },
             connect: true,
           }
@@ -86,7 +103,21 @@ export function useCollaboration({ blogId, subpageId = null, user, enabled = fal
 
         // Track connection state
         provider.on('status', ({ status }) => {
-          if (!cancelled) setIsConnected(status === 'connected');
+          if (!cancelled) {
+            setIsConnected(status === 'connected');
+            if (status === 'connected') setError(null);
+          }
+        });
+
+        provider.on('connection-error', () => {
+          if (!cancelled) {
+            setIsConnected(false);
+            setError('Live collaboration connection failed');
+            // y-websocket retries forever by default. A rejected authenticated
+            // upgrade will not recover without a fresh token/page load, so stop
+            // the retry loop instead of flooding the browser console and worker.
+            provider.disconnect();
+          }
         });
 
         // After initial sync, check if the Yjs fragment is empty (needs seeding from existing content)

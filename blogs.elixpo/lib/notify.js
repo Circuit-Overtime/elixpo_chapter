@@ -27,6 +27,7 @@
  * @param {string} [opts.targetId]    - Blog/org/comment ID
  * @param {string} [opts.targetTitle] - Blog title, org name, etc.
  * @param {string} [opts.targetUrl]   - URL to navigate to
+ * @param {boolean} [opts.dedupe]     - Create at most one notification per user/type/target
  */
 
   const PREF_MAP = {
@@ -65,32 +66,40 @@ export async function notify(db, opts) {
     const id = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
 
+    const values = [
+      id, opts.userId, opts.type, opts.actorId || null,
+      opts.actorName || null, opts.actorAvatar || null,
+      opts.targetId || null, opts.targetTitle || null,
+      opts.targetUrl || null, now,
+    ];
+
+    if (opts.dedupe && opts.targetId) {
+      await db.prepare(`
+        INSERT INTO notifications (
+          id, user_id, type, actor_id, actor_name, actor_avatar,
+          target_id, target_title, target_url, created_at
+        )
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        WHERE NOT EXISTS (
+          SELECT 1 FROM notifications
+          WHERE user_id = ? AND type = ? AND target_id = ?
+        )
+      `).bind(
+        ...values,
+        opts.userId,
+        opts.type,
+        opts.targetId,
+      ).run();
+      return;
+    }
+
     await db.prepare(`
       INSERT INTO notifications (
-        id,
-        user_id,
-        type,
-        actor_id,
-        actor_name,
-        actor_avatar,
-        target_id,
-        target_title,
-        target_url,
-        created_at
+        id, user_id, type, actor_id, actor_name, actor_avatar,
+        target_id, target_title, target_url, created_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      id,
-      opts.userId,
-      opts.type,
-      opts.actorId || null,
-      opts.actorName || null,
-      opts.actorAvatar || null,
-      opts.targetId || null,
-      opts.targetTitle || null,
-      opts.targetUrl || null,
-      now,
-    ).run();
+    `).bind(...values).run();
   } catch (e) {
     console.error('Failed to create notification:', e?.message || e);
   }

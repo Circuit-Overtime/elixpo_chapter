@@ -1,6 +1,7 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getOAuthConfig, signSession } from '../../../../lib/auth';
+import { normalizeAccountUsername } from '../../../../lib/accountProfileSync';
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 15; // 15 days
 
@@ -79,6 +80,8 @@ export async function GET(request) {
     const { getDB } = await import('../../../../lib/cloudflare');
     const db = getDB();
     const existingUser = await db.prepare('SELECT id, account_status FROM users WHERE id = ?').bind(userId).first();
+    const { syncAccountProfile } = await import('../../../../lib/accountProfileSync');
+    const accountUsername = normalizeAccountUsername(userInfo.username);
 
     // Block permanently deleted accounts
     if (existingUser?.account_status === 'removed') {
@@ -88,7 +91,8 @@ export async function GET(request) {
 
     if (!existingUser) {
       isNewUser = true;
-      const username = (userInfo.username || userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, '');
+      const username = accountUsername
+        || (userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32);
 
       // Mirror OAuth avatar to Cloudinary at deterministic path. Use the
       // returned version so the URL changes on each re-upload (cache-bust).
@@ -123,7 +127,7 @@ export async function GET(request) {
     } else {
       // Get username for deterministic avatar path
       const existingData = await db.prepare('SELECT username FROM users WHERE id = ?').bind(userId).first();
-      const username = existingData?.username || userId;
+      const username = accountUsername || existingData?.username || userId;
 
       // Re-sync the avatar from accounts.elixpo on every login. Versioned URL
       // busts caches so a changed accounts photo shows immediately.
@@ -138,19 +142,17 @@ export async function GET(request) {
         }
       } catch (e) { console.warn('Avatar mirror failed:', e.message); }
 
-      // Only overwrite avatar_url when accounts actually has one — otherwise
-      // keep whatever the user already has rather than wiping it to empty.
-      if (avatarSynced) {
-        await db.prepare(`
-          UPDATE users SET email = ?, display_name = ?, avatar_url = ?, account_status = 'active', updated_at = ?
-          WHERE id = ?
-        `).bind(userInfo.email, userInfo.displayName || '', avatarUrl, now, userId).run();
-      } else {
-        await db.prepare(`
-          UPDATE users SET email = ?, display_name = ?, account_status = 'active', updated_at = ?
-          WHERE id = ?
-        `).bind(userInfo.email, userInfo.displayName || '', now, userId).run();
-      }
+      // Accounts is the identity source of truth, including username. Updating
+      // users.username changes every personal blog's canonical /user/slug URL;
+      // the sync helper also updates the namespace and records the old alias.
+      await syncAccountProfile(db, {
+        userId,
+        username,
+        email: userInfo.email,
+        displayName: userInfo.displayName || '',
+        ...(avatarSynced ? { avatarUrl } : {}),
+      });
+      await db.prepare("UPDATE users SET account_status = 'active' WHERE id = ?").bind(userId).run();
     }
     // Bust the cached profile so the freshly-synced avatar/name shows at once.
     try {
@@ -191,7 +193,8 @@ export async function GET(request) {
       profile: {
         id: userId,
         email: userInfo.email,
-        username: (userInfo.username || userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^\w-]/g, ''),
+        username: normalizeAccountUsername(userInfo.username)
+          || (userInfo.displayName || userInfo.email.split('@')[0]).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32),
         display_name: userInfo.displayName || '',
         avatar_url: userInfo.avatar || '',
         isAdmin: userInfo.isAdmin || false,
