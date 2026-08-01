@@ -1,0 +1,14 @@
+node_modules
+dist/
+.DS_Store
+*.pem
+.env*.local
+wrangler.toml
+.dev.vars
+*.tsbuildinfo
+.vscode
+.next
+.wrangler
+.vercel
+# SOPS: unencrypted local env
+.env.local
