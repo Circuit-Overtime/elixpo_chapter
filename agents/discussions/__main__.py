@@ -76,10 +76,8 @@ async def _handle_merge(api, discussions, router, event: dict) -> dict | None:
         log.info("discussions.duplicate_skipped", marker=marker)
         return None
 
-    files = await api.get_pull(discussions.owner, discussions.repo, int(pull["number"]))
     # The webhook's PR object is the authoritative merged snapshot. Fetch file
     # patches separately because webhook payloads do not include them.
-    del files
     changed_files = await api.get_pull_files(discussions.owner, discussions.repo, int(pull["number"]))
     draft = await merge_draft(router, pull, changed_files)
     action = str(draft.get("action", "skip"))
