@@ -53,7 +53,7 @@ export default function BadgeManager() {
   }
 
   return (
-    <section className="mb-8 rounded-2xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+    <section id="creator-badges" className="mb-8 scroll-mt-20 rounded-2xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-[16px] font-semibold" style={{ color: 'var(--text-primary)' }}>Creator badges</h2>
