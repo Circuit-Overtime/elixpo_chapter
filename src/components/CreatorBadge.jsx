@@ -46,19 +46,26 @@ export function CreatorBadgeMark({ badge, size = 38, muted = false }) {
   );
 }
 
-export function CreatorBadgeStrip({ badges = [], emptyText = null, compact = false }) {
+export function CreatorBadgeStrip({ badges = [], emptyText = null, compact = false, showDetails = true }) {
   if (!badges.length) {
     return emptyText ? <p className="text-[12px]" style={{ color: 'var(--text-faint)' }}>{emptyText}</p> : null;
   }
   return (
     <div className="flex flex-wrap items-center gap-2" aria-label="Creator badges">
       {badges.map((badge) => (
-        <span key={badge.id} className="group/badge relative" title={`${badge.name}: ${badge.description}`}>
+        <span
+          key={badge.id}
+          className={showDetails ? 'group/badge relative' : 'relative'}
+          title={showDetails ? `${badge.name}: ${badge.description}` : undefined}
+          aria-label={!showDetails ? badge.name : undefined}
+        >
           <CreatorBadgeMark badge={badge} size={compact ? 30 : 38} />
-          <span className="pointer-events-none absolute left-1/2 top-full z-40 mt-2 hidden w-52 -translate-x-1/2 rounded-lg px-3 py-2 text-left shadow-xl group-hover/badge:block" style={{ backgroundColor: 'var(--dropdown-bg, var(--bg-surface))', border: '1px solid var(--border-default)' }}>
-            <strong className="block text-[11px]" style={{ color: 'var(--text-primary)' }}>{badge.name}</strong>
-            <span className="mt-0.5 block text-[10px] leading-4" style={{ color: 'var(--text-muted)' }}>{badge.description}</span>
-          </span>
+          {showDetails && (
+            <span className="pointer-events-none absolute left-1/2 top-full z-40 mt-2 hidden w-52 -translate-x-1/2 rounded-lg px-3 py-2 text-left shadow-xl group-hover/badge:block" style={{ backgroundColor: 'var(--dropdown-bg, var(--bg-surface))', border: '1px solid var(--border-default)' }}>
+              <strong className="block text-[11px]" style={{ color: 'var(--text-primary)' }}>{badge.name}</strong>
+              <span className="mt-0.5 block text-[10px] leading-4" style={{ color: 'var(--text-muted)' }}>{badge.description}</span>
+            </span>
+          )}
         </span>
       ))}
     </div>
