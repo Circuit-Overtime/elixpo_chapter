@@ -488,16 +488,16 @@ function HandlePageInner({ path, initialData = null }) {
             <div className="min-w-0 flex-1 pt-1">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h1 className="text-[26px] font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
-                    {u.display_name || u.username}
-                    {u.pronouns && <span className="text-[14px] font-normal text-[var(--text-faint)] ml-2">({u.pronouns})</span>}
-                  </h1>
-                  <p className="text-[var(--text-muted)] text-[15px] mt-0.5 font-medium">@{u.username}</p>
-                  {(u.badges || []).length > 0 && (
-                    <div className="mt-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-[26px] font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
+                      {u.display_name || u.username}
+                      {u.pronouns && <span className="text-[14px] font-normal text-[var(--text-faint)] ml-2">({u.pronouns})</span>}
+                    </h1>
+                    {(u.badges || []).length > 0 && (
                       <CreatorBadgeStrip badges={u.badges} compact showDetails={false} />
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  <p className="text-[var(--text-muted)] text-[15px] mt-0.5 font-medium">@{u.username}</p>
                 </div>
                 {isOwnProfile ? (
                   <Link
