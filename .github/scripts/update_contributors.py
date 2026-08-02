@@ -9,7 +9,7 @@ and read live by the homepage Contributors section, with the bundled copy as a
 build-time fallback.
 
 Environment:
-    AGENT_TOKEN          GitHub token for @elixpoo (secret: CI_AGENT_TOKEN)
+    AGENT_TOKEN          GitHub token for @elixpoo (secret: ELIXPOO_GITHUB_AGENTIC_TOKEN)
     TARGET_REPO          Repo to commit into          (default: github.repository)
     CONTRIB_SOURCE_REPO  Repo to read contributors from (default: elixpo/elixpo_chapter)
 """
