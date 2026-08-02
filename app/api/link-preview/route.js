@@ -65,13 +65,15 @@ export async function GET(request) {
     });
     clearTimeout(timeout);
 
+    const finalUrl = new URL(res.url || parsed.href);
+
     if (!res.ok) {
       return NextResponse.json({
-        title: parsed.hostname,
+        title: finalUrl.hostname,
         description: '',
         image: '',
-        favicon: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=32`,
-        domain: parsed.hostname,
+        favicon: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(finalUrl.hostname)}&sz=32`,
+        domain: finalUrl.hostname,
       }, {
         headers: { 'Cache-Control': 'public, max-age=3600' },
       });
@@ -92,11 +94,11 @@ export async function GET(request) {
     }
     reader.cancel();
 
-    const origin = parsed.origin;
+    const origin = finalUrl.origin;
     const ogTitle = extractMeta(html, 'og:title');
     const ogDesc = extractMeta(html, 'og:description') || extractMeta(html, 'description');
     const ogImage = extractMeta(html, 'og:image');
-    const title = ogTitle || extractTitle(html) || parsed.hostname;
+    const title = ogTitle || extractTitle(html) || finalUrl.hostname;
     const favicon = extractFavicon(html, origin);
 
     // Resolve relative og:image
@@ -112,7 +114,7 @@ export async function GET(request) {
       description: ogDesc || '',
       image: image || '',
       favicon,
-      domain: parsed.hostname,
+      domain: finalUrl.hostname,
     }, {
       headers: { 'Cache-Control': 'public, max-age=3600' },
     });
