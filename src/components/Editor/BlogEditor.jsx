@@ -813,7 +813,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     const handleMouseOver = (e) => {
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
-      if (document.querySelector('.bn-link-toolbar')) return;
+      if (document.querySelector('.bn-link-toolbar') || document.querySelector('.link-editor-popup')) return;
       const href = link.getAttribute('href');
       if (href) {
         const normalized = normalizeUrl(href);
@@ -831,6 +831,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
     // Ctrl+Click (or Cmd+Click) to open link in new tab
     const handleClick = (e) => {
+      editorLinkPreview.hide();
       if (!(e.ctrlKey || e.metaKey)) return;
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
