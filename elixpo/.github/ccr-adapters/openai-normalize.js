@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * openai-normalize.js - CCR transformer for any non-Anthropic provider.
+ * openai-normalize.js — CCR transformer for any non-Anthropic provider.
  *
  * Originally written for Vertex Gemini's `thought_signature` requirement, the
  * same flatten-and-strip pass is needed for every non-Anthropic model served
@@ -19,7 +19,7 @@
  *   1. Tool exchanges (tool_use → tool_result) become user-role narrative
  *      notes like "Earlier I ran X(args). It returned: Y".
  *   2. Assistant messages that contained ONLY tool_use (no real text) are
- *      dropped entirely - no placeholders to copy.
+ *      dropped entirely — no placeholders to copy.
  *   3. Assistant messages with real text keep that text only; any tool_use
  *      blocks inside are discarded (their context moves to the next user
  *      note).
@@ -90,6 +90,14 @@ function toolResultNarrative(toolUseIndex, toolUseId, resultContent) {
         : `Earlier tool output: ${result}`;
 }
 
+function narrate(index, toolId, result) {
+    return toolResultNarrative(index, toolId, result);
+}
+
+function isAnthropicModel(model) {
+    return typeof model === "string" && ANTHROPIC_NATIVE_RE.test(model);
+}
+
 function flattenTextBlocks(content) {
     // Join `[{type:'text',text:'...'}, ...]` into a single string, dropping
     // any cache_control markers and non-text blocks (images, documents, etc.).
@@ -124,18 +132,18 @@ function flattenMessages(messages) {
             for (const b of m.content) {
                 if (b?.type === "text" && b.text) texts.push(b.text);
             }
-            if (texts.length > 0)
-                out.push({ role: "assistant", content: texts.join("\n") });
+            if (texts.length > 0) {
+                const content = texts.join("\n");
+                out.push({ role: "assistant", content });
+            }
             continue;
         }
 
-        if (
-            role === "assistant" &&
-            Array.isArray(m.tool_calls) &&
-            m.tool_calls.length > 0
-        ) {
-            const c =
-                typeof m.content === "string" ? m.content : asString(m.content);
+        const toolCalls = m.tool_calls;
+        const isToolCallArray = Array.isArray(toolCalls);
+        const hasToolCalls = isToolCallArray && toolCalls.length > 0;
+        if (role === "assistant" && hasToolCalls) {
+            const c = asString(m.content);
             if (c) out.push({ role: "assistant", content: c });
             continue;
         }
@@ -151,28 +159,26 @@ function flattenMessages(messages) {
             for (const b of m.content) {
                 if (b?.type === "text" && b.text) parts.push(b.text);
                 else if (b?.type === "tool_result") {
-                    parts.push(
-                        toolResultNarrative(
-                            toolUseIndex,
-                            b.tool_use_id,
-                            b.content,
-                        ),
-                    );
+                    const toolId = b.tool_use_id;
+                    const result = b.content;
+                    const index = toolUseIndex;
+                    const narrative = narrate(index, toolId, result);
+                    parts.push(narrative);
                 }
             }
-            if (parts.length > 0)
-                out.push({ role: "user", content: parts.join("\n") });
+            if (parts.length > 0) {
+                const content = parts.join("\n");
+                out.push({ role: "user", content });
+            }
             continue;
         }
 
         if (role === "tool") {
+            const toolId = m.tool_call_id;
+            const result = m.content;
             out.push({
                 role: "user",
-                content: toolResultNarrative(
-                    toolUseIndex,
-                    m.tool_call_id,
-                    m.content,
-                ),
+                content: toolResultNarrative(toolUseIndex, toolId, result),
             });
             continue;
         }
@@ -192,8 +198,8 @@ function flattenMessages(messages) {
 
     for (const m of merged) {
         if (m && typeof m === "object") {
-            delete m.tool_calls;
-            delete m.tool_call_id;
+            m.tool_calls = undefined;
+            m.tool_call_id = undefined;
         }
     }
     return merged;
@@ -218,10 +224,7 @@ class OpenAINormalizeAdapter {
         if (!Array.isArray(body.messages)) return request;
         // Only pass through unchanged for real Claude models; everything else
         // (kimi, qwen, perplexity, glm, gemini, ...) gets flattened.
-        if (
-            typeof body.model === "string" &&
-            ANTHROPIC_NATIVE_RE.test(body.model)
-        ) {
+        if (isAnthropicModel(body.model)) {
             return request;
         }
 

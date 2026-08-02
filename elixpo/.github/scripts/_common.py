@@ -1,5 +1,5 @@
 """
-_common.py - Shared helpers for all elixpo CI scripts.
+_common.py — Shared helpers for all elixpo CI scripts.
 
 Import pattern:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -52,7 +52,7 @@ def _with_retry(fn, *, label: str = "request"):
         try:
             return fn()
         except urllib.error.HTTPError as exc:
-            # 4xx errors (except 429) are permanent - don't retry.
+            # 4xx errors (except 429) are permanent — don't retry.
             if exc.code < 500 and exc.code != 429:
                 raise
             last_exc = exc
@@ -70,7 +70,7 @@ def _with_retry(fn, *, label: str = "request"):
                 file=sys.stderr,
             )
         except Exception as exc:
-            # Any other exception - let the caller handle it.
+            # Any other exception — let the caller handle it.
             raise
         if attempt < MAX_RETRIES:
             delay = RETRY_BASE_DELAY * (2 ** (attempt - 1)) + random.uniform(0, 0.5)
@@ -92,6 +92,7 @@ def github_rest(
     path: str,
     body: dict | list | None = None,
     *,
+    token: str | None = None,
     accept: str = "application/vnd.github+json",
     raise_on_status: bool = True,
 ) -> dict | list:
@@ -105,7 +106,7 @@ def github_rest(
 
     def _do():
         req = urllib.request.Request(url, data=data, method=method)
-        req.add_header("Authorization", f"Bearer {_agent_token()}")
+        req.add_header("Authorization", f"Bearer {token or _agent_token()}")
         req.add_header("Accept", accept)
         req.add_header("X-GitHub-Api-Version", "2022-11-28")
         req.add_header("User-Agent", USER_AGENT)
