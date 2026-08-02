@@ -17,6 +17,7 @@ const NOTIF_CONFIG = {
   org_invite:     { icon: 'people-outline',          color: '#4ade80', label: 'invited you to' },
   blog_invite:    { icon: 'create-outline',          color: '#c084fc', label: 'invited you to collaborate on' },
   blog_published: { icon: 'document-text-outline',   color: '#60a5fa', label: 'published' },
+  badge_awarded:  { icon: 'ribbon-outline',          color: '#ec4899', label: 'awarded you' },
 };
 
 function timeAgo(ts) {

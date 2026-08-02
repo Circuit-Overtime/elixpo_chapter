@@ -63,6 +63,7 @@
     "deploy": "npm run pages:build && npx wrangler pages deploy .vercel/output/static",
     "db:migrate": "wrangler d1 migrations apply lixblogs --remote",
     "db:migrate:local": "wrangler d1 migrations apply lixblogs --local",
+    "badges:backfill": "node --env-file=.env.local scripts/backfill-creator-badges.mjs",
     "sync:tiers": "node scripts/sync-payouts-tiers.mjs"
   }
 }
