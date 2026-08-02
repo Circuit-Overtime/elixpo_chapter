@@ -766,6 +766,44 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const inlineLatexRef = useRef(null);
   const editorLinkPreview = useLinkPreview();
   const [linkEditor, setLinkEditor] = useState(null); // { anchorText, url, pos, linkEl, range }
+  const [shorteningLink, setShorteningLink] = useState(false);
+  const [linkShortenError, setLinkShortenError] = useState('');
+
+  const shortenCurrentLink = async () => {
+    const normalizedUrl = normalizeUrl(linkEditor?.url || '');
+    if (!normalizedUrl || !/^https?:\/\//i.test(normalizedUrl) || shorteningLink) return;
+    try {
+      const parsed = new URL(normalizedUrl);
+      if (parsed.hostname === 'lixrl.com' || parsed.hostname.endsWith('.lixrl.com')) {
+        setLinkShortenError('This link is already shortened with LixRL.');
+        return;
+      }
+    } catch {
+      setLinkShortenError('Enter a valid web address first.');
+      return;
+    }
+
+    setShorteningLink(true);
+    setLinkShortenError('');
+    try {
+      const response = await fetch('/api/integrations/lixrl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'shorten',
+          url: normalizedUrl,
+          title: linkEditor?.anchorText?.trim() || undefined,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to shorten this URL');
+      setLinkEditor(prev => prev ? { ...prev, url: data.short_url } : prev);
+    } catch (error) {
+      setLinkShortenError(error.message || 'Unable to shorten this URL');
+    } finally {
+      setShorteningLink(false);
+    }
+  };
 
   // Link preview hover listeners on editor links
   useEffect(() => {
@@ -3151,7 +3189,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                 <input
                   type="text"
                   value={linkEditor.url}
-                  onChange={(e) => setLinkEditor(prev => ({ ...prev, url: e.target.value }))}
+                  onChange={(e) => {
+                    setLinkEditor(prev => ({ ...prev, url: e.target.value }));
+                    setLinkShortenError('');
+                  }}
                   onKeyDown={(e) => {
                     e.stopPropagation();
                     if (e.key === 'Enter') {
@@ -3183,6 +3224,23 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                   className="link-editor-input"
                 />
               </div>
+              <div className="link-editor-shortener">
+                <button
+                  type="button"
+                  className="link-editor-shorten"
+                  disabled={shorteningLink || !/^https?:\/\//i.test(normalizeUrl(linkEditor.url) || '')}
+                  onClick={shortenCurrentLink}
+                >
+                  <ion-icon name="flash-outline" />
+                  {shorteningLink ? 'Shortening…' : 'Shorten with LixRL'}
+                </button>
+                <a href="/settings?tab=integrations" className="link-editor-connect">Manage</a>
+              </div>
+              {linkShortenError && (
+                <p className="link-editor-error">
+                  {linkShortenError}{linkShortenError.toLowerCase().includes('connect') && <> <a href="/settings?tab=integrations">Open settings</a></>}
+                </p>
+              )}
             </div>
             <div className="link-editor-actions">
               <button className="link-editor-cancel" onClick={() => setLinkEditor(null)}>Cancel</button>
