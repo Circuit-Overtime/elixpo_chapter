@@ -482,7 +482,7 @@ function recommendedTopics(interests, popular) {
 }
 
 export default function App() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [posts, setPosts] = useState([]);
   const [topPicks, setTopPicks] = useState([]);
   const [popularTags, setPopularTags] = useState([]);
