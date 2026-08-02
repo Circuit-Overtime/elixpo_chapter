@@ -7,6 +7,65 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { generateBlogThumbnail } from './utils/pixelAvatar';
 import SearchBar from './components/SearchBar';
+import { ONBOARDING_TIP_DAYS, tipForDay } from './utils/siteTips';
+
+const TIP_STORAGE_KEY = 'lixblogs:onboarding-tip';
+
+function DailyTipCard({ user, authLoading }) {
+  const [dailyTip, setDailyTip] = useState(null);
+
+  useEffect(() => {
+    if (authLoading) return;
+    const createdAt = Number(user?.created_at || 0);
+    if (createdAt) {
+      const ageDays = (Date.now() - createdAt * 1000) / 86_400_000;
+      if (ageDays > ONBOARDING_TIP_DAYS) {
+        localStorage.removeItem(TIP_STORAGE_KEY);
+        setDailyTip(null);
+        return;
+      }
+    }
+
+    const selected = tipForDay(user?.id || user?.username || 'guest');
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(TIP_STORAGE_KEY) || 'null'); } catch {}
+    if (stored?.day === selected.day && stored?.dismissed) return;
+    localStorage.setItem(TIP_STORAGE_KEY, JSON.stringify({ day: selected.day, dismissed: false }));
+    setDailyTip(selected);
+  }, [authLoading, user?.id, user?.username, user?.created_at]);
+
+  if (!dailyTip) return null;
+  return (
+    <aside
+      className="relative mb-4 overflow-hidden rounded-2xl px-5 py-4"
+      style={{ background: 'linear-gradient(135deg, var(--accent-subtle), var(--bg-surface) 72%)', border: '1px solid color-mix(in srgb, var(--accent) 25%, var(--border-default))' }}
+      aria-label="Tip of the day"
+    >
+      <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full opacity-10" style={{ backgroundColor: 'var(--accent)' }} />
+      <div className="relative flex items-start gap-3 pr-8">
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ color: 'var(--accent)', backgroundColor: 'var(--bg-surface)' }}>
+          <ion-icon name="bulb-outline" style={{ fontSize: '17px' }} />
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--accent)' }}>Tip of the day</p>
+          <p className="mt-1 text-[13px] leading-5" style={{ color: 'var(--text-body)' }}>{dailyTip.tip}</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          localStorage.setItem(TIP_STORAGE_KEY, JSON.stringify({ day: dailyTip.day, dismissed: true }));
+          setDailyTip(null);
+        }}
+        className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-hover)]"
+        style={{ color: 'var(--text-faint)' }}
+        aria-label="Dismiss today's tip"
+      >
+        <ion-icon name="close-outline" style={{ fontSize: '16px' }} />
+      </button>
+    </aside>
+  );
+}
 
 function timeAgo(ts) {
   if (!ts) return '';
@@ -34,7 +93,7 @@ function AuthorStack({ authors }) {
 
 // "..." menu — follow author/publication, mute author/publication/topics, report.
 function FeedCardMenu({ post, onHide }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const [fAuthor, setFAuthor] = useState(false);
   const [isSelf, setIsSelf] = useState(false);
@@ -512,6 +571,7 @@ export default function App() {
 
           {/* Feed */}
           <div className="px-6 pt-4 max-w-[680px] mx-auto">
+            <DailyTipCard user={user} authLoading={authLoading} />
             {tagFilter && (
               <div className="flex items-center gap-2 mb-1 py-2">
                 <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Topic:</span>

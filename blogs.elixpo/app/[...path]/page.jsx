@@ -2,6 +2,7 @@ export const runtime = 'edge';
 
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import CatchAllClient from './client';
 
 export const dynamic = 'force-dynamic';
@@ -10,6 +11,20 @@ export const revalidate = 0;
 // Per-blog SEO: shared links pick up the blog's cover (if set) + title/author,
 // otherwise a dynamic GitHub-style card from /api/og.
 const httpImg = (u) => (typeof u === 'string' && /^https?:\/\//.test(u) ? u : '');
+
+// Metadata, JSON-LD and the page all need the same route resolution. React's
+// request cache keeps that to one API call without persisting member-aware data
+// between visitors.
+const resolvePublicPage = cache(async (origin, name, slug = '', collection = '') => {
+  const qs = new URLSearchParams({ name });
+  if (slug) qs.set('slug', slug);
+  if (collection) qs.set('collection', collection);
+  const response = await fetch(`${origin}/api/resolve?${qs}`, {
+    cache: 'no-store',
+    headers: { 'user-agent': 'lixblogs-ssr' },
+  });
+  return response.ok ? response.json() : null;
+});
 
 // `title.absolute` opts out of the root layout's "%s | LixBlogs" template. These
 // titles already carry the brand, and without this they render double-branded:
@@ -108,9 +123,8 @@ export async function generateMetadata({ params, searchParams }) {
 
     // ── 1-segment: user or org profile ──
     if (!slug) {
-      const res = await fetch(`${origin}/api/resolve?name=${encodeURIComponent(name)}`, { cache: 'no-store', headers: { 'user-agent': 'lixblogs-ssr' } });
-      if (!res.ok) return {};
-      const data = await res.json();
+      const data = await resolvePublicPage(origin, name);
+      if (!data) return {};
       const url = `${origin}/${name}`;
 
       if (data.type === 'user' && data.user) {
@@ -160,11 +174,8 @@ export async function generateMetadata({ params, searchParams }) {
     }
 
     // ── 2/3-segment: blog, collection, or a blog invite link ──
-    const qs = new URLSearchParams({ name, slug });
-    if (collection) qs.set('collection', collection);
-    const res = await fetch(`${origin}/api/resolve?${qs}`, { cache: 'no-store', headers: { 'user-agent': 'lixblogs-ssr' } });
-    if (!res.ok) return {};
-    const data = await res.json();
+    const data = await resolvePublicPage(origin, name, slug, collection);
+    if (!data) return {};
     const url = `${origin}/${path.join('/')}`;
 
     // Collection → org-branded card (org avatar + collection name + org name).
@@ -208,8 +219,7 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 // Structured data for rich results. Emitted server-side so crawlers get it without
-// running JS. This re-fetches /api/resolve, but with identical URL + options to
-// generateMetadata, so Next's per-request fetch memoization serves both from one call.
+// running JS. resolvePublicPage shares the route lookup with metadata and rendering.
 //
 // Secret posts get NO structured data at all. They're already noindex, and JSON-LD
 // exists to describe authorship — exactly what an anonymous post must never publish.
@@ -229,12 +239,8 @@ async function buildJsonLd(path, origin) {
   });
 
   try {
-    const qs = new URLSearchParams({ name });
-    if (slug) qs.set('slug', slug);
-    if (collection) qs.set('collection', collection);
-    const res = await fetch(`${origin}/api/resolve?${qs}`, { cache: 'no-store', headers: { 'user-agent': 'lixblogs-ssr' } });
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await resolvePublicPage(origin, name, slug, collection);
+    if (!data) return null;
 
     if (data.type === 'user' && data.user) {
       const u = data.user;
@@ -298,7 +304,9 @@ async function buildJsonLd(path, origin) {
             '@id': `${url}#post`,
             headline: (b.title || 'Untitled').slice(0, 110), // schema.org caps headline at 110
             description: b.subtitle || b.excerpt || undefined,
-            image: img(b.cover_image_r2_key),
+            // The generated OG card is also the stable default image when a post
+            // has no uploaded cover, so every indexed post has an image.
+            image: img(b.cover_image_r2_key) || `${origin}/api/og?${new URLSearchParams({ type: 'blog', title: b.title || 'Untitled', seed: b.id || b.slugid || b.slug || url })}`,
             datePublished: b.published_at ? new Date(b.published_at * 1000).toISOString() : undefined,
             dateModified: b.updated_at ? new Date(b.updated_at * 1000).toISOString() : undefined,
             author: authors.map((n) => ({ '@type': 'Person', name: n })),
@@ -345,15 +353,8 @@ export default async function CatchAllHandle({ params }) {
   const rawName = path?.[0] || '';
   const slug = path?.length === 2 ? (path[1] || '').toLowerCase() : path?.length === 3 ? (path[2] || '').toLowerCase() : '';
   const collection = path?.length === 3 ? (path[1] || '').toLowerCase() : '';
-  const qs = new URLSearchParams({ name: rawName });
-  if (slug) qs.set('slug', slug);
-  if (collection) qs.set('collection', collection);
-  const [jsonLd, initialData] = await Promise.all([
-    buildJsonLd(path, origin),
-    fetch(`${origin}/api/resolve?${qs}`, { cache: 'no-store', headers: { 'user-agent': 'lixblogs-ssr' } })
-      .then((response) => response.ok ? response.json() : null)
-      .catch(() => null),
-  ]);
+  const initialData = await resolvePublicPage(origin, rawName.toLowerCase(), slug, collection).catch(() => null);
+  const jsonLd = initialData ? await buildJsonLd(path, origin) : null;
 
   if (initialData?.type === 'redirect' && initialData.location) {
     redirect(initialData.location);
