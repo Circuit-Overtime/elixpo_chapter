@@ -537,86 +537,105 @@ function AuthorizeContent() {
                         <div
                             style={{
                                 padding: "0 16px 14px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 10,
-                                flexWrap: "wrap",
                             }}
                         >
-                            <img
-                                src={
-                                    account.avatar ||
-                                    generatePixelAvatar(account.email, 32)
-                                }
-                                alt=""
-                                width={32}
-                                height={32}
+                            <div
                                 style={{
-                                    borderRadius: "50%",
-                                    flexShrink: 0,
-                                }}
-                            />
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                                <span
-                                    style={{
-                                        display: "block",
-                                        color: "var(--fg)",
-                                        fontSize: 12.5,
-                                        fontWeight: 650,
-                                    }}
-                                >
-                                    {account.displayName || account.email}
-                                </span>
-                                <span
-                                    style={{
-                                        display: "block",
-                                        color: "var(--fg-faint)",
-                                        fontSize: 11.5,
-                                    }}
-                                >
-                                    {account.email}
-                                </span>
-                            </div>
-                            {accounts.length > 1 && (
-                                <select
-                                    aria-label="Choose an account"
-                                    value={account.id}
-                                    disabled={isSwitching}
-                                    onChange={(event) =>
-                                        handleSwitchAccount(event.target.value)
-                                    }
-                                    style={{
-                                        maxWidth: 150,
-                                        border: "1px solid var(--border)",
-                                        borderRadius: 8,
-                                        background: "var(--surface)",
-                                        color: "var(--fg-muted)",
-                                        fontSize: 12,
-                                        padding: "7px 9px",
-                                    }}
-                                >
-                                    {accounts.map((candidate) => (
-                                        <option
-                                            key={candidate.id}
-                                            value={candidate.id}
-                                        >
-                                            {candidate.displayName ||
-                                                candidate.email}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                            <a
-                                href={`/login?add_account=1&next=${encodeURIComponent(`/authorize?${searchParams.toString()}`)}`}
-                                style={{
-                                    color: "#ff7759",
-                                    fontSize: 12,
-                                    fontWeight: 650,
-                                    textDecoration: "none",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
                                 }}
                             >
-                                Add account
-                            </a>
+                                <img
+                                    src={
+                                        account.avatar ||
+                                        generatePixelAvatar(account.email, 32)
+                                    }
+                                    alt=""
+                                    width={32}
+                                    height={32}
+                                    style={{
+                                        borderRadius: "50%",
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                    <span
+                                        style={{
+                                            display: "block",
+                                            color: "var(--fg)",
+                                            fontSize: 12.5,
+                                            fontWeight: 650,
+                                        }}
+                                    >
+                                        {account.displayName || account.email}
+                                    </span>
+                                    <span
+                                        style={{
+                                            display: "block",
+                                            color: "var(--fg-faint)",
+                                            fontSize: 11.5,
+                                            overflowWrap: "anywhere",
+                                        }}
+                                    >
+                                        {account.email}
+                                    </span>
+                                </div>
+                            </div>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
+                                    flexWrap: "wrap",
+                                    marginTop: 10,
+                                    marginLeft: 42,
+                                }}
+                            >
+                                {accounts.length > 1 && (
+                                    <select
+                                        aria-label="Choose an account"
+                                        value={account.id}
+                                        disabled={isSwitching}
+                                        onChange={(event) =>
+                                            handleSwitchAccount(
+                                                event.target.value,
+                                            )
+                                        }
+                                        style={{
+                                            minWidth: 0,
+                                            maxWidth: "100%",
+                                            border: "1px solid var(--border)",
+                                            borderRadius: 8,
+                                            background: "var(--surface)",
+                                            color: "var(--fg-muted)",
+                                            fontSize: 12,
+                                            padding: "7px 9px",
+                                        }}
+                                    >
+                                        {accounts.map((candidate) => (
+                                            <option
+                                                key={candidate.id}
+                                                value={candidate.id}
+                                            >
+                                                {candidate.displayName ||
+                                                    candidate.email}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                                <a
+                                    href={`/login?add_account=1&next=${encodeURIComponent(`/authorize?${searchParams.toString()}`)}`}
+                                    style={{
+                                        color: "#ff7759",
+                                        fontSize: 12,
+                                        fontWeight: 650,
+                                        textDecoration: "none",
+                                    }}
+                                >
+                                    Add account
+                                </a>
+                            </div>
                         </div>
                     )}
 
