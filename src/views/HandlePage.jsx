@@ -14,6 +14,7 @@ import BlogDotsMenu from '../components/BlogDotsMenu';
 import AuthorAttribution from '../components/AuthorAttribution';
 import FollowListModal from '../components/FollowListModal';
 import BlogInviteOverlay from '../components/BlogInviteOverlay';
+import { CreatorBadgeStrip } from '../components/CreatorBadge';
 import { STAFF_ORG_ID } from '../../lib/staff';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
@@ -492,6 +493,9 @@ function HandlePageInner({ path, initialData = null }) {
                     {u.pronouns && <span className="text-[14px] font-normal text-[var(--text-faint)] ml-2">({u.pronouns})</span>}
                   </h1>
                   <p className="text-[var(--text-muted)] text-[15px] mt-0.5 font-medium">@{u.username}</p>
+                  <div className="mt-3">
+                    <CreatorBadgeStrip badges={(u.badges || []).filter((badge) => badge.pinned_position).slice(0, 3)} compact />
+                  </div>
                 </div>
                 {isOwnProfile ? (
                   <Link
@@ -510,6 +514,16 @@ function HandlePageInner({ path, initialData = null }) {
 
           {/* ── Bio ── */}
           {u.bio && <p className="text-[var(--text-secondary)] text-[15px] leading-relaxed mb-4">{u.bio}</p>}
+
+          {(u.badges || []).length > 0 && (
+            <section className="mb-5 rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }} aria-label="Creator achievements">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-[12px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Creator achievements</h2>
+                <Link href="/badges" className="text-[11px] text-[#9b7bf7] hover:opacity-75">How badges work</Link>
+              </div>
+              <CreatorBadgeStrip badges={u.badges || []} />
+            </section>
+          )}
 
           {/* ── Meta info row ── */}
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-[var(--text-muted)]">

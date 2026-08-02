@@ -25,6 +25,7 @@ export default async function sitemap() {
     { url: `${SITE_URL}/pricing`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${SITE_URL}/docs`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${SITE_URL}/help`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE_URL}/badges`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
   ].map((p) => ({ ...p, lastModified: new Date() }));

@@ -257,9 +257,17 @@ export async function GET(request) {
         'SELECT COUNT(*) as c FROM follows WHERE follower_id = ?'
       ).bind(ownerId).first();
 
+      // Public profiles expose only creator-approved badges. Missing migration
+      // is tolerated during rolling deployments.
+      let badges = [];
+      try {
+        const { listUserBadges } = await import('../../../lib/creatorBadges');
+        badges = await listUserBadges(db, ownerId);
+      } catch {}
+
       return NextResponse.json({
         type: 'user',
-        user: { ...user, followers: followerCount?.c || 0, following: followingCount?.c || 0 },
+        user: { ...user, followers: followerCount?.c || 0, following: followingCount?.c || 0, badges },
         blogs: blogs?.results || [],
       });
     }

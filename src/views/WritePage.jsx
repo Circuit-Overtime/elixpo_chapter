@@ -1397,6 +1397,9 @@ export default function WritePage({ slugid }) {
 
       if (res.ok) {
         const data = await res.json();
+        // Badge evaluation runs in its own keepalive request so publishing and
+        // navigation are never delayed by analytics qualification queries.
+        fetch('/api/badges', { method: 'POST', keepalive: true }).catch(() => {});
         setLastKnownUpdatedAt(data.updatedAt);
         setBlogVersion(v => v ? { ...v, isPublished: true, updatedAt: data.updatedAt, publishedAt: data.updatedAt, isDraftAhead: false } : v);
         setHasUnsavedEdits(false);
