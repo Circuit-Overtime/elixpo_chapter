@@ -1,0 +1,10 @@
+{
+  "justification": "mealie-recipes/mealie#5422 \u2014 score 13 (threshold 8). Well-scoped parser bug (strip prices/asterisks from ingredient names) with repro steps and a contributor already interested, though no formal acceptance criterion and conflicting \"already fixed\" reports make the exact remaining edge case slightly fuzzy. Signals: aged +1, good_first/help_wanted +5, no_assignee +2, no_maintainer_claim +2, reproducible_bug +3.",
+  "number": 5422,
+  "picked_at": "2026-08-02T10:22:51.734500+00:00",
+  "repo": "mealie-recipes/mealie",
+  "score": 13,
+  "title": "[BUG] - Recipie Parser can't handle prices",
+  "tractable": true,
+  "url": "https://github.com/mealie-recipes/mealie/issues/5422"
+}

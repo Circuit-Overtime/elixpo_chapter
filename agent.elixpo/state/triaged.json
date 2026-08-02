@@ -1,0 +1,194 @@
+[
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "reproducible_bug": 3
+    },
+    "number": 5422,
+    "rationale": "Well-scoped parser bug (strip prices/asterisks from ingredient names) with repro steps and a contributor already interested, though no formal acceptance criterion and conflicting \"already fixed\" reports make the exact remaining edge case slightly fuzzy.",
+    "repo": "mealie-recipes/mealie",
+    "score": 13,
+    "title": "[BUG] - Recipie Parser can't handle prices",
+    "tractable": true,
+    "url": "https://github.com/mealie-recipes/mealie/issues/5422"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 1652,
+    "rationale": "Well-scoped SEO audit with concrete acceptance criteria and representative examples, fixable in docs source/templates by one contributor in one PR.",
+    "repo": "Priivacy-ai/spec-kitty",
+    "score": 12,
+    "title": "SEO audit needed for GitHub Pages docs site",
+    "tractable": true,
+    "url": "https://github.com/Priivacy-ai/spec-kitty/issues/1652"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 5948,
+    "rationale": "",
+    "repo": "sgl-project/sglang",
+    "score": 10,
+    "title": "[Feature] Qwen3 Provide Ability to Turn off Thinking on server startup",
+    "tractable": false,
+    "url": "https://github.com/sgl-project/sglang/issues/5948"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 16601,
+    "rationale": "Real, well-reproduced bug confirmed by a maintainer, but a contributor (RivkaW327) has already claimed it and has a PR in progress, and the fix touches subtle core sparse-indexing internals (slice broadcasting/densification), so it is not a clean one-PR task for a new autonomous contributor.",
+    "repo": "scipy/scipy",
+    "score": 10,
+    "title": "ENH: LIL sparse matrix assigning should be optimized rather than using densified matrixes",
+    "tractable": false,
+    "url": "https://github.com/scipy/scipy/issues/16601"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 3432,
+    "rationale": "Well-scoped test-writing task with concrete references (Harris paper, GH_FFT.pdf, gists) provided by maintainers, suitable for one external contributor in a single PR.",
+    "repo": "scipy/scipy",
+    "score": 10,
+    "title": "Test coverage for scipy.signals.windows needs improvement",
+    "tractable": true,
+    "url": "https://github.com/scipy/scipy/issues/3432"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 20293,
+    "rationale": "A clear, single-PR feature request (add JAX_PROFILE env-var support in jax/_src/profiler.py), with a PR (#21660) already drafted by a contributor, though the issue remains open.",
+    "repo": "jax-ml/jax",
+    "score": 10,
+    "title": "Support profiling without source code changes",
+    "tractable": true,
+    "url": "https://github.com/jax-ml/jax/issues/20293"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 1987,
+    "rationale": "This is a well-scoped \"good first issue\" feature request with clear implementation guidance from maintainers (express via exp/erfc or polynomial expansion in jax/scipy/special.py), suitable for one external contributor in a single PR.",
+    "repo": "jax-ml/jax",
+    "score": 10,
+    "title": "Support erfcx",
+    "tractable": true,
+    "url": "https://github.com/jax-ml/jax/issues/1987"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "op_is_maintainer": -5
+    },
+    "number": 1244,
+    "rationale": "This is a large documentation overhaul spanning dozens of docstrings across many modules (Alarm, Availability, Available, parser, etc.), not a single-PR task; maintainers are working through it incrementally (e.g., Alarm.REPEAT/DURATION already released).",
+    "repo": "collective/icalendar",
+    "score": 7,
+    "title": "Replace copy-paste of RFCs in docstrings with Pythonic docstrings",
+    "tractable": false,
+    "url": "https://github.com/collective/icalendar/issues/1244"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "op_is_maintainer": -5
+    },
+    "number": 1591,
+    "rationale": "This is a well-scoped documentation task with an explicit checklist (parameter docs, ordering, and versionadded admonitions) that one external contributor can complete in a single PR; the prior claim was withdrawn, but the maintainer's follow-up indicates remaining work.",
+    "repo": "collective/icalendar",
+    "score": 7,
+    "title": "consolidate parameters and documentation for Alarm factory methods",
+    "tractable": true,
+    "url": "https://github.com/collective/icalendar/issues/1591"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 1715,
+    "rationale": "Well-scoped feature request with explicit code pointers and a prior (stale) PR to build on, so one external contributor can land it as a single PR.",
+    "repo": "sgl-project/sglang",
+    "score": 0,
+    "title": "[Feature] Cascade attention kernels ",
+    "tractable": true,
+    "url": "https://github.com/sgl-project/sglang/issues/1715"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "op_is_maintainer": -5
+    },
+    "number": 1594,
+    "rationale": "Well-scoped validation feature with a clear checklist and referenced files, implementable by one contributor in a single PR.",
+    "repo": "collective/icalendar",
+    "score": -3,
+    "title": "Validate Alarm repeat when setting",
+    "tractable": true,
+    "url": "https://github.com/collective/icalendar/issues/1594"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "op_is_maintainer": -5
+    },
+    "number": 1072,
+    "rationale": "Well-scoped, beginner-friendly documentation task: convert one or more docstrings in a module to Google Style and open a PR, with clear steps and examples; multiple contributors have already claimed pieces.",
+    "repo": "collective/icalendar",
+    "score": -5,
+    "title": "apply Google Style to a function documentation [beginner, Python]",
+    "tractable": true,
+    "url": "https://github.com/collective/icalendar/issues/1072"
+  }
+]
