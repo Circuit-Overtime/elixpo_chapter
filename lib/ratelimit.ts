@@ -36,3 +36,34 @@ export async function rateLimit(
 
   return null; // Allowed
 }
+
+/** Rate-limit an authenticated subject without coupling the quota to its IP. */
+export async function rateLimitSubject(
+  key: string,
+  subject: string,
+  maxRequests: number,
+  windowSeconds: number,
+): Promise<NextResponse | null> {
+  if (maxRequests === -1) return null;
+
+  const kv = getKV();
+  const rateLimitKey = `rl:${key}:${subject}`;
+  const current = parseInt((await kv.get(rateLimitKey)) || '0', 10);
+
+  if (current >= maxRequests) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(windowSeconds),
+          'X-RateLimit-Limit': String(maxRequests),
+          'X-RateLimit-Remaining': '0',
+        },
+      },
+    );
+  }
+
+  kv.put(rateLimitKey, String(current + 1), { expirationTtl: windowSeconds }).catch(() => {});
+  return null;
+}
