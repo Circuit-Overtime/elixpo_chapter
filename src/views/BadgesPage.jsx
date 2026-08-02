@@ -57,6 +57,7 @@ export default function BadgesPage() {
                         <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)' }}>{badge.difficulty}</span>
                       </div>
                       <p className="mt-1.5 text-[12px] leading-5" style={{ color: 'var(--text-muted)' }}>{badge.description}</p>
+                      <code className="mt-2 block text-[9px]" style={{ color: 'var(--text-faint)' }}>{badge.id}.svg</code>
                     </div>
                   </article>
                 ))}

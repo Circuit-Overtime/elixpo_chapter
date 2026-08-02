@@ -103,6 +103,7 @@ export default function BadgeManager() {
                   disabled={busyId === badge.id}
                   onClick={() => updateBadge(badge, { visible: !badge.visible, pinnedPosition: badge.visible ? null : badge.pinned_position })}
                   className="rounded-full px-2.5 py-1 text-[10px] font-semibold disabled:opacity-50"
+                  aria-pressed={!!badge.visible}
                   style={badge.visible
                     ? { color: '#4ade80', backgroundColor: '#4ade8014', border: '1px solid #4ade8033' }
                     : { color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
