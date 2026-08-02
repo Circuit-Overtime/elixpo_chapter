@@ -36,3 +36,28 @@
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+@keyframes cover-upload-sheen {
+  from { transform: translateX(-40%); }
+  to { transform: translateX(340%); }
+}
+
+@keyframes cover-upload-progress {
+  0% { transform: translateX(-110%); }
+  55% { transform: translateX(95%); }
+  100% { transform: translateX(260%); }
+}
+
+.cover-upload-sheen {
+  animation: cover-upload-sheen 1.8s ease-in-out infinite;
+}
+
+.cover-upload-progress {
+  animation: cover-upload-progress 1.35s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cover-upload-sheen,
+  .cover-upload-progress {
+    animation: none;
+  }
+}

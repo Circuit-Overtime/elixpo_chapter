@@ -2,9 +2,10 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { getLimits } from '../../../../lib/tiers';
-import { MAX_MEDIA_PER_BLOG, MAX_BLOG_IMAGE_BYTES } from '../../../../lib/limits';
-import { uploadToCloudinary } from '../../../../lib/cloudinary';
+import { MAX_MEDIA_PER_BLOG, MAX_BLOG_IMAGE_BYTES, requestTooLarge } from '../../../../lib/limits';
+import { getCloudinaryUrl, uploadToCloudinary } from '../../../../lib/cloudinary';
 import { stripImageMetadata } from '../../../../lib/stripImageMetadata';
+import { readUploadRequest } from '../../../../lib/mediaUploadRequest';
 import { isAllowedMime, ALLOWED_IMAGE_MIME_TYPES } from '../../../../src/utils/allowedImageTypes';
 
 // Profile image types — these get overwritten (no history), no storage tracking
@@ -17,17 +18,44 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const file = formData.get('file');
-    const blogId = formData.get('blogId');
-    const orgId = formData.get('orgId');
-    const mediaType = formData.get('type') || 'image';
+    if (requestTooLarge(request)) {
+      return NextResponse.json({ error: 'Image is too large', code: 'MEDIA_BODY_TOO_LARGE' }, { status: 413 });
+    }
 
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    let upload;
+    try {
+      upload = await readUploadRequest(request);
+    } catch (error) {
+      console.warn('[media/upload] Could not parse upload request', error?.message || error);
+      return NextResponse.json({
+        error: 'The uploaded image body could not be read. Please select the image again.',
+        code: 'INVALID_MEDIA_BODY',
+      }, { status: 400 });
+    }
+    const { file, blogId, orgId, mediaType, requestedUploadId, fields, transport } = upload;
+
+    // Cloudflare's multipart parser can return a File-compatible object from a
+    // different realm, where `instanceof File` is false. Validate capabilities
+    // instead of constructor identity so valid uploads are not rejected as 400.
+    if (!file || typeof file.arrayBuffer !== 'function' || typeof file.size !== 'number' || file.size <= 0) {
+      console.warn('[media/upload] Invalid multipart file field', {
+        present: !!file,
+        valueType: typeof file,
+        hasArrayBuffer: typeof file?.arrayBuffer === 'function',
+        sizeType: typeof file?.size,
+        fields,
+        transport,
+      });
+      return NextResponse.json({
+        error: 'The uploaded image body was invalid. Please select the image again.',
+        code: 'INVALID_MEDIA_BODY',
+      }, { status: 400 });
     }
     if (mediaType === 'cover' && !blogId) {
-      return NextResponse.json({ error: 'Missing blogId for cover upload' }, { status: 400 });
+      return NextResponse.json({
+        error: 'The cover upload is missing its blog identifier. Reload the editor and try again.',
+        code: 'MISSING_BLOG_ID',
+      }, { status: 400 });
     }
 
     // Static-image allowlist enforcement. Anything outside the canonical
@@ -41,7 +69,7 @@ export async function POST(request) {
       }, { status: 415 });
     }
 
-    console.log(`[media/upload] type=${mediaType} size=${file.size} mime=${file.type} blogId=${blogId} user=${session.userId}`);
+    console.log(`[media/upload] transport=${transport} type=${mediaType} size=${file.size} mime=${file.type} blogId=${blogId} user=${session.userId}`);
 
     let db;
     try {
@@ -52,6 +80,7 @@ export async function POST(request) {
     }
 
     const isProfileImage = PROFILE_TYPES.includes(mediaType);
+    const uploadId = /^[a-zA-Z0-9_-]{1,64}$/.test(requestedUploadId) ? requestedUploadId : '';
     let trackedBlogId = null;
 
     // A new editor URL has a blog id before its draft row exists. In that case,
@@ -68,6 +97,21 @@ export async function POST(request) {
         }
         trackedBlogId = blogId;
       }
+    }
+
+    // A persisted client job always retries with the same id. Return its prior
+    // result before touching storage or Cloudinary again.
+    if (db && !isProfileImage && uploadId) {
+      const existing = await db.prepare(
+        'SELECT id, cloudinary_public_id, size_bytes FROM media_uploads WHERE id = ? AND user_id = ?'
+      ).bind(uploadId, session.userId).first();
+      if (existing) return NextResponse.json({
+        id: existing.id,
+        publicId: existing.cloudinary_public_id,
+        url: getCloudinaryUrl(existing.cloudinary_public_id),
+        sizeBytes: existing.size_bytes,
+        idempotent: true,
+      });
     }
 
     // For org uploads, verify membership
@@ -89,6 +133,10 @@ export async function POST(request) {
     // Storage checks only for non-profile images (blog content images)
     if (db && !isProfileImage) {
       try {
+        const replacing = mediaType === 'cover' && blogId
+          ? await db.prepare('SELECT size_bytes FROM media_uploads WHERE cloudinary_public_id = ?')
+            .bind(`lixblogs/${blogId}/cover`).first()
+          : null;
         const user = await db.prepare('SELECT tier, storage_used_bytes FROM users WHERE id = ?')
           .bind(session.userId).first();
 
@@ -98,7 +146,7 @@ export async function POST(request) {
           const limits = getLimits(user.tier);
           const fileBytes = file.size;
 
-          if (user.storage_used_bytes + fileBytes > limits.totalStorageBytes) {
+          if (user.storage_used_bytes - (replacing?.size_bytes || 0) + fileBytes > limits.totalStorageBytes) {
             return NextResponse.json({
               error: 'Storage limit exceeded',
               used: user.storage_used_bytes,
@@ -112,7 +160,7 @@ export async function POST(request) {
               'SELECT COALESCE(SUM(size_bytes), 0) as total, COUNT(*) as n FROM media_uploads WHERE blog_id = ?'
             ).bind(blogId).first();
 
-            if (blogUsage.total + fileBytes > MAX_BLOG_IMAGE_BYTES) {
+            if (blogUsage.total - (replacing?.size_bytes || 0) + fileBytes > MAX_BLOG_IMAGE_BYTES) {
               return NextResponse.json({
                 error: 'Per-blog image limit exceeded (max 10 MB of images per blog)',
                 used: blogUsage.total,
@@ -120,7 +168,7 @@ export async function POST(request) {
               }, { status: 413 });
             }
 
-            if ((blogUsage.n || 0) >= MAX_MEDIA_PER_BLOG) {
+            if (!replacing && (blogUsage.n || 0) >= MAX_MEDIA_PER_BLOG) {
               return NextResponse.json({
                 error: 'Image count limit reached for this blog',
                 count: blogUsage.n,
@@ -174,7 +222,7 @@ export async function POST(request) {
         break;
       default:
         folder = `lixblogs/${blogId || 'unsorted'}`;
-        publicId = crypto.randomUUID();
+        publicId = uploadId || crypto.randomUUID();
         break;
     }
 
@@ -196,6 +244,7 @@ export async function POST(request) {
       result = await uploadToCloudinary(arrayBuffer, {
         folder,
         publicId,
+        mimeType: file.type,
         // Covers also use a deterministic public id (`.../<blogId>/cover`).
         // Without overwrite, every replacement is rejected by Cloudinary
         // because the asset already exists.
@@ -251,11 +300,11 @@ export async function POST(request) {
     if (db) {
       try {
         const fileBytes = file.size;
-        const mediaId = crypto.randomUUID();
+        const mediaId = uploadId || crypto.randomUUID();
         const now = Math.floor(Date.now() / 1000);
 
         const previous = await db.prepare(
-          'SELECT user_id, size_bytes FROM media_uploads WHERE cloudinary_public_id = ?'
+          'SELECT id, user_id, size_bytes FROM media_uploads WHERE cloudinary_public_id = ?'
         ).bind(result.public_id).first();
 
         await db.prepare(`
@@ -269,12 +318,12 @@ export async function POST(request) {
         `).bind(mediaId, session.userId, trackedBlogId, result.public_id, fileBytes, mediaType, now).run();
 
         const storageOwner = previous?.user_id || session.userId;
-        const storageDelta = fileBytes - (previous?.size_bytes || 0);
-        await db.prepare('UPDATE users SET storage_used_bytes = MAX(0, storage_used_bytes + ?) WHERE id = ?')
-          .bind(storageDelta, storageOwner).run();
+        await db.prepare(`UPDATE users SET storage_used_bytes = (
+          SELECT COALESCE(SUM(size_bytes), 0) FROM media_uploads WHERE user_id = ?
+        ) WHERE id = ?`).bind(storageOwner, storageOwner).run();
 
         return NextResponse.json({
-          id: mediaId,
+          id: previous?.id || mediaId,
           publicId: result.public_id,
           url: result.secure_url,
           sizeBytes: fileBytes,

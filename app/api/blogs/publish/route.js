@@ -124,11 +124,11 @@ export async function POST(request) {
     const wantsSlugChange = !!(requestedSlug && requestedSlug.trim());
 
     // Slug rules:
-    //  - Published blog: keep the slug unless the OWNER explicitly changes it
-    //    (destructive — old /owner/slug links break). Non-owners can't change it.
-    //  - Draft / first publish: honour a custom slug, else derive from the title.
+    //  - Existing blog: keep the slug unless the OWNER explicitly changes it.
+    //    This applies to drafts too, so a collaborator cannot rename the URL.
+    //  - First publish: honour a custom slug, else derive from the title.
     let slug;
-    if (existing && existing.status !== 'draft' && existing.slug) {
+    if (existing?.slug) {
       slug = (wantsSlugChange && isOwner)
         ? await ensureUniqueBlogSlug(db, generateSlug(requestedSlug), slugid, slugScope)
         : existing.slug;
@@ -231,6 +231,18 @@ export async function POST(request) {
       url = await getBlogCanonicalPath(db, slugid);
     } catch {
       url = `/${session.profile?.username || 'user'}/${slug}`;
+    }
+
+    // Collaboration invitations become actionable only when their reader URL
+    // exists. The helper is status-gated and deduplicated, so ordinary updates
+    // cannot create repeated notifications.
+    if (targetStatus === 'published' || targetStatus === 'unlisted') {
+      try {
+        const { notifyPendingBlogCollaborators } = await import('../../../../lib/blogInviteNotifications');
+        await notifyPendingBlogCollaborators(db, slugid, existing?.author_id || session.userId);
+      } catch (e) {
+        console.error('Failed to notify pending collaborators:', e?.message || e);
+      }
     }
 
     return NextResponse.json({

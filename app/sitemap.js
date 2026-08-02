@@ -25,6 +25,7 @@ export default async function sitemap() {
     { url: `${SITE_URL}/pricing`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${SITE_URL}/docs`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${SITE_URL}/help`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE_URL}/badges`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
   ].map((p) => ({ ...p, lastModified: new Date() }));
@@ -43,11 +44,13 @@ export default async function sitemap() {
         LEFT JOIN collections col ON col.id = b.collection_id
         WHERE b.status = 'published' AND b.secret = 0
         ORDER BY b.published_at DESC
-        LIMIT 5000
+        LIMIT 40000
       `).all(),
-      db.prepare("SELECT username, updated_at FROM users WHERE username IS NOT NULL LIMIT 2000").all(),
-      db.prepare('SELECT slug, updated_at FROM orgs WHERE visibility != ? LIMIT 1000').bind('private').all(),
-      db.prepare('SELECT c.slug AS cslug, o.slug AS oslug, c.updated_at FROM collections c JOIN orgs o ON o.id = c.org_id WHERE o.visibility != ? LIMIT 1000').bind('private').all(),
+      // Keep the complete sitemap under the protocol's 50,000 URL ceiling while
+      // making room for substantially more individually indexed posts.
+      db.prepare("SELECT username, updated_at FROM users WHERE username IS NOT NULL LIMIT 5000").all(),
+      db.prepare('SELECT slug, updated_at FROM orgs WHERE visibility != ? LIMIT 2000').bind('private').all(),
+      db.prepare('SELECT c.slug AS cslug, o.slug AS oslug, c.updated_at FROM collections c JOIN orgs o ON o.id = c.org_id WHERE o.visibility != ? LIMIT 2000').bind('private').all(),
     ]);
 
     const blogUrls = (blogs?.results || []).map((b) => {

@@ -13,8 +13,9 @@ import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 import { readTimeFromWords } from '../../lib/readTime';
 import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../utils/allowedImageTypes';
-import { generatePixelAvatar } from '../utils/pixelAvatar';
+import { generateBlogBanner, generatePixelAvatar } from '../utils/pixelAvatar';
 import { useCollaboration } from '../hooks/useCollaboration';
+import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload } from '../utils/mediaUploadQueue';
 
 function AvatarImg({ src, name, size = 32 }) {
   const [failed, setFailed] = useState(false);
@@ -228,7 +229,7 @@ function HeaderProfileDropdown({ user, logout }) {
               <ion-icon name="book-outline" style={{ fontSize: '16px', color: '#888' }} />
               Your Stories
             </Link>
-            <Link href="/stats" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2 text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
+            <Link href="/settings/stats" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2 text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
               <ion-icon name="stats-chart-outline" style={{ fontSize: '16px', color: '#888' }} />
               Stats
             </Link>
@@ -459,6 +460,7 @@ export default function WritePage({ slugid }) {
   const [showCoverModal, setShowCoverModal] = useState(false);
   const [coverCropSrc, setCoverCropSrc] = useState(null); // device image awaiting crop+stylise
   const [coverUploadError, setCoverUploadError] = useState('');
+  const [coverUploading, setCoverUploading] = useState(false);
   const [coverUrlMode, setCoverUrlMode] = useState(false);
   const [coverUrlInput, setCoverUrlInput] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -487,6 +489,8 @@ export default function WritePage({ slugid }) {
   const hadUserGestureRef = useRef(false);
   const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
   const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
+  const draftRevisionRef = useRef(0); // prevents an older request clearing newer edits
+  const syncInFlightRef = useRef(null); // serialize saves so publish never races autosave
   const coverUploadRef = useRef(null); // pending upload whose permanent URL must win over blob: preview
   const isPublished = blogVersion?.isPublished;
   const [coverZoom, setCoverZoom] = useState(1);
@@ -503,7 +507,8 @@ export default function WritePage({ slugid }) {
   const [slug, setSlug] = useState('');
   const [slugManual, setSlugManual] = useState(false); // user typed a custom slug → stop auto-deriving from title
   const [slugAvail, setSlugAvail] = useState({ state: 'idle' }); // idle | checking | available | taken
-  const [isOwner, setIsOwner] = useState(true); // owner (author / org admin) — only owners may change a published slug
+  const [isOwner, setIsOwner] = useState(true); // owner (author / org admin) — only owners may change a slug
+  const [slugLockHint, setSlugLockHint] = useState(null);
   const [ownerInfo, setOwnerInfo] = useState(null); // real author {username, display_name, avatar_url} — shown to collaborators
   const [publishing, setPublishing] = useState(false);
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
@@ -590,7 +595,8 @@ export default function WritePage({ slugid }) {
         const pub = state?.lixPublished;
         if (pub?.url && pub.at >= mountedAt) {
           bypassUnloadRef.current = true;
-          window.location.href = pub.url;
+          try { provider.disconnect(); } catch {}
+          window.location.replace(pub.url);
         }
       });
     };
@@ -651,12 +657,24 @@ export default function WritePage({ slugid }) {
 
   // Cloud sync function — saves localStorage then pushes to cloud
   const syncToCloud = useCallback(async ({ showToast = false, silent = false } = {}) => {
+    // Let an existing autosave finish before taking a new snapshot. If it
+    // already saved the latest revision, publishing can reuse its timestamp.
+    if (syncInFlightRef.current) {
+      const updatedAt = await syncInFlightRef.current;
+      if (!dirtyRef.current) return updatedAt;
+    }
     // A cropped cover is first displayed with a temporary blob: URL. Wait for
     // its Cloudinary upload before taking the payload snapshot.
     try { await coverUploadRef.current; } catch {}
+    // The cover wait yields, so another caller may have started a save meanwhile.
+    if (syncInFlightRef.current) {
+      const updatedAt = await syncInFlightRef.current;
+      if (!dirtyRef.current) return updatedAt;
+    }
     const latest = draftDataRef.current;
     const data = { ...latest, coverPreview: persistableCover(latest.coverPreview) };
     if (!data.title && !data.editorContent) return;
+    const revision = draftRevisionRef.current;
 
     // Always save to localStorage first
     saveDraft(blogId, data);
@@ -667,46 +685,53 @@ export default function WritePage({ slugid }) {
     // Also sync any buffered subpage drafts
     syncSubpageDrafts();
 
-    try {
-      const res = await fetch('/api/blogs/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: blogId, ...data }),
-      });
+    const request = (async () => {
+      try {
+        const res = await fetch('/api/blogs/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slugid: blogId, ...data }),
+        });
 
-      if (res.ok) {
-        dirtyRef.current = false;
-        let updatedAt = null;
-        // Keep our known version current so our own saves aren't seen as a
-        // conflict when we later publish.
-        try {
-          const d = await res.json();
-          if (d?.updatedAt) {
-            updatedAt = d.updatedAt;
-            setLastKnownUpdatedAt(d.updatedAt);
-            setBlogVersion(v => v ? { ...v, updatedAt: d.updatedAt } : v);
+        if (res.ok) {
+          if (draftRevisionRef.current === revision) dirtyRef.current = false;
+          let updatedAt = null;
+          // Keep our known version current so our own saves aren't seen as a
+          // conflict when we later publish.
+          try {
+            const d = await res.json();
+            if (d?.updatedAt) {
+              updatedAt = d.updatedAt;
+              setLastKnownUpdatedAt(d.updatedAt);
+              setBlogVersion(v => v ? { ...v, updatedAt: d.updatedAt } : v);
+            }
+          } catch {}
+          if (!silent) {
+            setSyncStatus('synced');
+            if (showToast) {
+              setShowSavedToast(true);
+              setTimeout(() => setShowSavedToast(false), 3000);
+            }
+            setTimeout(() => setSyncStatus('idle'), 5000);
           }
-        } catch {}
-        if (!silent) {
-          setSyncStatus('synced');
-          if (showToast) {
-            setShowSavedToast(true);
-            setTimeout(() => setShowSavedToast(false), 3000);
-          }
+          return updatedAt;
+        } else if (!silent) {
+          setSyncStatus('local');
           setTimeout(() => setSyncStatus('idle'), 5000);
         }
-        return updatedAt;
-      } else {
+      } catch {
         if (!silent) {
           setSyncStatus('local');
           setTimeout(() => setSyncStatus('idle'), 5000);
         }
       }
-    } catch {
-      if (!silent) {
-        setSyncStatus('local');
-        setTimeout(() => setSyncStatus('idle'), 5000);
-      }
+      return null;
+    })();
+    syncInFlightRef.current = request;
+    try {
+      return await request;
+    } finally {
+      if (syncInFlightRef.current === request) syncInFlightRef.current = null;
     }
   }, [blogId, syncSubpageDrafts]);
 
@@ -738,18 +763,6 @@ export default function WritePage({ slugid }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [syncToCloud]);
-
-  // Auto-sync to cloud removed — localStorage acts as buffer,
-  // cloud sync only on Ctrl+S, page load, and beforeunload
-
-  // Sync on page load (after draft loads)
-  useEffect(() => {
-    if (!draftLoading) {
-      // Small delay to let editor content settle
-      const timer = setTimeout(() => syncToCloud({ silent: true }), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [draftLoading, syncToCloud]);
 
   // Intercept in-app link clicks to show custom unsaved changes modal
   const handleNavigation = useCallback((url) => {
@@ -913,23 +926,25 @@ export default function WritePage({ slugid }) {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setHasUnsavedEdits(true);
     dirtyRef.current = true;
+    draftRevisionRef.current += 1;
     autoSaveTimer.current = setTimeout(() => {
       if (title || editorContent) {
         saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly });
         setLastSaved(Date.now());
+        void syncToCloud({ silent: true });
       }
-    }, 2000);
+    }, 1200);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, memberOnly, blogId]);
+  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, memberOnly, blogId, syncToCloud]);
 
   // Background cloud flush — localStorage is the instant buffer, but beforeunload/
-  // sendBeacon is unreliable, so flush unsynced edits to the cloud every 20s.
+  // sendBeacon is unreliable, so keep a fallback flush for unsynced edits.
   // This protects against tab crashes and makes drafts available cross-device.
   useEffect(() => {
     if (draftLoading) return;
     const id = setInterval(() => {
       if (dirtyRef.current) syncToCloud({ silent: true });
-    }, 20000);
+    }, 10000);
     return () => clearInterval(id);
   }, [draftLoading, syncToCloud]);
 
@@ -939,6 +954,8 @@ export default function WritePage({ slugid }) {
   };
 
   const removeCover = () => {
+    localStorage.removeItem(`lixblogs:cover-upload:${blogId}`);
+    draftDataRef.current = { ...draftDataRef.current, coverPreview: null };
     setCoverPreview(null);
   };
 
@@ -1081,62 +1098,29 @@ export default function WritePage({ slugid }) {
   }, [showOwnerDropdown]);
 
   // Upload cover image blob to Cloudinary → set coverPreview to permanent URL
-  const uploadCover = useCallback(async (blob) => {
+  const uploadCover = useCallback(async (blob, { alreadyOptimized = false } = {}) => {
+    const uploadJobId = createMediaUploadId();
+    const storageKey = `lixblogs:cover-upload:${blogId}`;
     const task = (async () => {
       setCoverUploadError('');
-
-      // Cloudflare can occasionally return an HTML 502/503/504 before the
-      // route's JSON error handling runs. Covers use a deterministic public id
-      // with overwrite enabled, so retrying the same payload is idempotent.
-      let lastError;
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        try {
-          // Keep the image body off the Pages Worker. The Worker authorizes a
-          // small JSON request and returns a short-lived Cloudinary signature;
-          // the browser then sends the bytes straight to Cloudinary. This
-          // avoids intermittent Cloudflare 502s while keeping the API secret
-          // server-side.
-          const signatureRes = await fetch('/api/media/cover-signature', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ blogId, size: blob.size, mime: blob.type }),
-          });
-          const signature = await signatureRes.json().catch(() => ({}));
-          if (!signatureRes.ok) {
-            throw new Error(signature.error || `Could not prepare cover upload (${signatureRes.status})`);
-          }
-
-          const formData = new FormData();
-          formData.append('file', blob, `cover_${blogId}.webp`);
-          formData.append('timestamp', String(signature.timestamp));
-          formData.append('folder', signature.folder);
-          formData.append('api_key', signature.apiKey);
-          formData.append('signature', signature.signature);
-          formData.append('public_id', signature.publicId);
-          formData.append('overwrite', 'true');
-          formData.append('invalidate', 'true');
-
-          const res = await fetch(signature.uploadUrl, { method: 'POST', body: formData });
-          const responseText = await res.text();
-          let data = {};
-          try { data = responseText ? JSON.parse(responseText) : {}; } catch {}
-          const uploadedUrl = data.secure_url || data.url;
-          if (res.ok && uploadedUrl) {
-            draftDataRef.current = { ...draftDataRef.current, coverPreview: uploadedUrl };
-            setCoverPreview(uploadedUrl);
-            return uploadedUrl;
-          }
-          const isHtmlError = /^\s*<!doctype html|^\s*<html/i.test(responseText);
-          const message = data.error || (isHtmlError ? `Upload gateway unavailable (${res.status})` : responseText.slice(0, 500)) || `Cover upload failed (${res.status})`;
-          lastError = new Error(message);
-          if (![502, 503, 504].includes(res.status)) break;
-        } catch (err) {
-          lastError = err;
-          if (attempt === 2) break;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 500 * (2 ** attempt)));
+      setCoverUploading(true);
+      let compressed = blob;
+      if (!alreadyOptimized) {
+        const { compressCoverImage } = await import('../utils/compressImage');
+        ({ blob: compressed } = await compressCoverImage(blob));
       }
-      throw lastError || new Error('Cover upload failed');
+      localStorage.setItem(storageKey, uploadJobId);
+      const data = await enqueueMediaUpload(compressed, {
+        id: uploadJobId,
+        filename: `cover_${blogId}.webp`,
+        blogId,
+        type: 'cover',
+      });
+      if (!data.url) throw new Error('Cover upload did not return a URL');
+      localStorage.removeItem(storageKey);
+      draftDataRef.current = { ...draftDataRef.current, coverPreview: data.url };
+      setCoverPreview(data.url);
+      return data.url;
     })();
     coverUploadRef.current = task;
     try {
@@ -1146,8 +1130,29 @@ export default function WritePage({ slugid }) {
       setCoverUploadError(err?.message || 'Cover upload failed. Please try again.');
       return null;
     } finally {
+      setCoverUploading(false);
       if (coverUploadRef.current === task) coverUploadRef.current = null;
     }
+  }, [blogId]);
+
+  // IndexedDB retains the compressed upload body across navigation/reload.
+  // Reattach this editor to the persisted cover job when it mounts again.
+  useEffect(() => {
+    if (!blogId) return;
+    const storageKey = `lixblogs:cover-upload:${blogId}`;
+    const uploadJobId = localStorage.getItem(storageKey);
+    if (!uploadJobId) return;
+    setCoverUploading(true);
+    const task = resumeMediaUpload(uploadJobId).then((data) => {
+      if (!data?.url) return;
+      draftDataRef.current = { ...draftDataRef.current, coverPreview: data.url };
+      setCoverPreview(data.url);
+      localStorage.removeItem(storageKey);
+    }).catch((error) => setCoverUploadError(error.message || 'Cover upload failed')).finally(() => {
+      setCoverUploading(false);
+      if (coverUploadRef.current === task) coverUploadRef.current = null;
+    });
+    coverUploadRef.current = task;
   }, [blogId]);
 
   // Read a chosen device file into a data URL and open the crop+stylise modal.
@@ -1168,7 +1173,10 @@ export default function WritePage({ slugid }) {
     setCoverPreview(previewUrl);
     setCoverZoom(1);
     setCoverPos({ x: 50, y: 50 });
-    uploadCover(blob).then((url) => {
+    // ImageCropModal already emitted a metadata-free, <=120 KB WebP. Re-decoding
+    // it through OffscreenCanvas is redundant and Firefox can reject that second
+    // conversion with AbortError/"The operation was aborted".
+    uploadCover(blob, { alreadyOptimized: true }).then((url) => {
       URL.revokeObjectURL(previewUrl);
       if (!url) {
         draftDataRef.current = { ...draftDataRef.current, coverPreview: previousCover };
@@ -1358,11 +1366,14 @@ export default function WritePage({ slugid }) {
     if (!title.trim() || publishing) return;
     setPublishing(true);
     setShowPublishMenu(false);
+    try { await coverUploadRef.current; } catch {}
     // Flush any buffered subpage drafts so they ship with the post.
     try { await syncSubpageDrafts(); } catch {}
     // Publish the exact revision we are about to send. This prevents a tag-only
     // edit from being rejected when a background draft save changed updated_at.
-    const syncedUpdatedAt = await syncToCloud({ silent: true });
+    const syncedUpdatedAt = (dirtyRef.current || syncInFlightRef.current)
+      ? await syncToCloud({ silent: true })
+      : lastKnownUpdatedAt;
     const persistedCover = persistableCover(draftDataRef.current.coverPreview);
     try {
       const res = await fetch('/api/blogs/publish', {
@@ -1386,6 +1397,9 @@ export default function WritePage({ slugid }) {
 
       if (res.ok) {
         const data = await res.json();
+        // Badge evaluation runs in its own keepalive request so publishing and
+        // navigation are never delayed by analytics qualification queries.
+        fetch('/api/badges', { method: 'POST', keepalive: true }).catch(() => {});
         setLastKnownUpdatedAt(data.updatedAt);
         setBlogVersion(v => v ? { ...v, isPublished: true, updatedAt: data.updatedAt, publishedAt: data.updatedAt, isDraftAhead: false } : v);
         setHasUnsavedEdits(false);
@@ -1401,7 +1415,23 @@ export default function WritePage({ slugid }) {
           collabConfig?.provider?.awareness?.setLocalStateField('lixPublished', { url: destination, at: Date.now() });
         } catch {}
         bypassUnloadRef.current = true;
-        window.location.assign(destination);
+        // Close the cross-origin socket deliberately before leaving the editor.
+        // Otherwise the browser reports an interrupted WebSocket while the new
+        // published page is loading. Lock release is best-effort and survives
+        // the navigation where supported.
+        if (collabConfig?.provider) {
+          // Give the awareness update one event-loop turn to reach peers before
+          // intentionally closing this editor's socket.
+          await new Promise((resolve) => setTimeout(resolve, 40));
+          try { collabConfig.provider.disconnect(); } catch {}
+        }
+        fetch('/api/collab/lock', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blogId }),
+          keepalive: true,
+        }).catch(() => {});
+        window.location.replace(destination);
         return;
       }
     } catch { /* silent */ }
@@ -1897,6 +1927,24 @@ export default function WritePage({ slugid }) {
                             transition: isDraggingCover ? 'none' : 'transform 0.2s ease',
                           }}
                         />
+                        {coverUploading && (
+                          <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-[#17131f]/70 backdrop-blur-[3px]" role="status" aria-live="polite">
+                            <div className="cover-upload-sheen absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                            <div className="relative flex min-w-[220px] flex-col items-center rounded-2xl border border-white/20 bg-[#211b2c]/90 px-6 py-5 text-white shadow-2xl">
+                              <div className="relative mb-3 flex h-11 w-11 items-center justify-center">
+                                <span className="absolute inset-0 animate-ping rounded-full bg-[#9b7bf7]/35" />
+                                <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#9b7bf7] shadow-lg shadow-[#9b7bf7]/30">
+                                  <ion-icon name="cloud-upload-outline" style={{ fontSize: '20px' }} />
+                                </span>
+                              </div>
+                              <span className="text-[13px] font-semibold">Preparing your cover</span>
+                              <span className="mt-1 text-[11px] text-white/60">Optimizing and uploading safely</span>
+                              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                <span className="cover-upload-progress block h-full w-2/5 rounded-full bg-gradient-to-r from-[#8b6ae6] to-[#c4b5fd]" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         {/* Hover toolbar — top-right */}
                         <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           {/* Zoom out */}
@@ -1993,38 +2041,15 @@ export default function WritePage({ slugid }) {
                           </button>
                           <button
                             onClick={() => {
-                              // Generate a blocky default banner using canvas
-                              const canvas = document.createElement('canvas');
-                              canvas.width = 1200;
-                              canvas.height = 400;
-                              const ctx = canvas.getContext('2d');
-                              // Soft gradient background
-                              const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-                              const hue1 = Math.floor(Math.random() * 360);
-                              const hue2 = (hue1 + 40 + Math.floor(Math.random() * 80)) % 360;
-                              grad.addColorStop(0, `hsl(${hue1}, 60%, 75%)`);
-                              grad.addColorStop(1, `hsl(${hue2}, 50%, 80%)`);
-                              ctx.fillStyle = grad;
-                              ctx.fillRect(0, 0, canvas.width, canvas.height);
-                              // Draw random blocky shapes
-                              const blockCount = 12 + Math.floor(Math.random() * 10);
-                              for (let b = 0; b < blockCount; b++) {
-                                const bx = Math.random() * canvas.width;
-                                const by = Math.random() * canvas.height;
-                                const bw = 30 + Math.random() * 120;
-                                const bh = 30 + Math.random() * 120;
-                                const bHue = (hue1 + Math.floor(Math.random() * 120)) % 360;
-                                ctx.fillStyle = `hsla(${bHue}, 50%, ${60 + Math.random() * 20}%, ${0.15 + Math.random() * 0.25})`;
-                                ctx.fillRect(bx, by, bw, bh);
-                              }
-                              canvas.toBlob((blob) => {
-                                if (blob) {
-                                  const url = URL.createObjectURL(blob);
-                                  setCoverPreview(url);
-                                  setShowCoverModal(false);
-                                  uploadCover(blob);
-                                }
-                              }, 'image/webp', 0.85);
+                              // The default is a deterministic cosmetic fallback,
+                              // not user media. Keep it as a data URL for preview;
+                              // persistableCover deliberately stores NULL so the
+                              // reader/feed regenerate it without using storage.
+                              localStorage.removeItem(`lixblogs:cover-upload:${blogId}`);
+                              const defaultCover = generateBlogBanner(blogId);
+                              draftDataRef.current = { ...draftDataRef.current, coverPreview: defaultCover };
+                              setCoverPreview(defaultCover);
+                              setShowCoverModal(false);
                             }}
                             className="flex flex-col items-center gap-2 group/gen"
                           >
@@ -2033,12 +2058,15 @@ export default function WritePage({ slugid }) {
                                 <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
                               </svg>
                             </div>
-                            <span className="text-xs text-black/70 font-medium">Generate default</span>
+                            <span className="text-xs text-black/70 font-medium">Use default</span>
                           </button>
                         </div>
                         {/* Inline URL input — slides up from bottom */}
                         {coverUrlMode && (
-                          <div className="absolute bottom-0 left-0 right-0 z-20 bg-black/60 backdrop-blur-md p-4 rounded-b-xl">
+                          <div
+                            className="absolute bottom-0 left-0 right-0 z-20 backdrop-blur-md p-4 rounded-b-xl"
+                            style={{ backgroundColor: 'color-mix(in srgb, var(--bg-surface) 94%, transparent)', borderTop: '1px solid var(--border-default)' }}
+                          >
                             <div className="flex gap-2">
                               <input
                                 autoFocus
@@ -2056,7 +2084,8 @@ export default function WritePage({ slugid }) {
                                   if (e.key === 'Escape') { setCoverUrlMode(false); setCoverUrlInput(''); }
                                 }}
                                 placeholder="Paste image URL and press Enter..."
-                                className="flex-1 bg-white/10 text-[var(--text-primary)] rounded-lg px-3 py-2 text-[13px] outline-none border border-white/20 focus:border-white/40 placeholder-white/40"
+                                className="flex-1 rounded-lg px-3 py-2 text-[13px] outline-none placeholder:text-[var(--text-faint)] focus:border-[#9b7bf7]"
+                                style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
                               />
                               <button
                                 onClick={() => {
@@ -2068,7 +2097,8 @@ export default function WritePage({ slugid }) {
                                     setCoverUrlInput('');
                                   }
                                 }}
-                                className="px-4 py-2 bg-white/15 text-[var(--text-primary)] rounded-lg text-[13px] font-medium hover:bg-white/25 transition-colors"
+                                className="px-4 py-2 bg-[#9b7bf7] text-white rounded-lg text-[13px] font-medium hover:bg-[#8a68ee] transition-colors disabled:opacity-50"
+                                disabled={!coverUrlInput.trim()}
                               >
                                 Set
                               </button>
@@ -2095,6 +2125,7 @@ export default function WritePage({ slugid }) {
                         quality={0.55}
                         maxSizeKB={120}
                         initialSrc={coverCropSrc}
+                        belowHeader
                         onSave={handleCoverCropSave}
                         onClose={() => setCoverCropSrc(null)}
                       />
@@ -2458,17 +2489,23 @@ export default function WritePage({ slugid }) {
             </div>
           )}
 
-          {/* URL slug — editable before publish; after publish only the owner can
-              change it (destructive — old links break). Non-owners see it locked. */}
+          {/* URL slug — only the owner can change it. Published slug changes are
+              destructive because old links break; collaborators always see it locked. */}
           {(() => {
-            const slugLocked = isPublished && !isOwner;
+            const slugLocked = !isOwner;
             return (
           <div>
             <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
               URL slug
               {slugLocked && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-faint)' }}>(locked)</span>}
             </label>
-            <div className="flex items-center gap-1 rounded-lg px-3 py-2.5 text-[13px]" style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', opacity: slugLocked ? 0.7 : 1 }}>
+            <div
+              className="flex items-center gap-1 rounded-lg px-3 py-2.5 text-[13px]"
+              style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', opacity: slugLocked ? 0.7 : 1 }}
+              onPointerEnter={(event) => slugLocked && setSlugLockHint({ x: event.clientX, y: event.clientY })}
+              onPointerMove={(event) => slugLocked && setSlugLockHint({ x: event.clientX, y: event.clientY })}
+              onPointerLeave={() => setSlugLockHint(null)}
+            >
               <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>
                 /{ownerSlug}/
               </span>
@@ -2483,6 +2520,16 @@ export default function WritePage({ slugid }) {
               />
               {slugLocked && <ion-icon name="lock-closed" style={{ fontSize: '12px', color: 'var(--text-faint)' }} />}
             </div>
+            {slugLocked && slugLockHint && typeof document !== 'undefined' && createPortal(
+              <div
+                role="tooltip"
+                className="fixed z-[90] pointer-events-none rounded-lg px-3 py-2 text-[11px] font-medium text-white shadow-xl"
+                style={{ left: Math.max(8, Math.min(slugLockHint.x, window.innerWidth - 230)), top: slugLockHint.y + 14, backgroundColor: '#27232f' }}
+              >
+                Only the blog owner can edit the slug.
+              </div>,
+              document.body
+            )}
             {!slugLocked && (
               <p
                 className="text-[11px] mt-1"

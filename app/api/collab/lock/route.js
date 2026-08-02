@@ -40,6 +40,9 @@ export async function POST(request) {
           'SELECT username, display_name, avatar_url FROM users WHERE id = ?'
         ).bind(blog.editing_by).first();
 
+        // This is expected advisory state in a collaborative editor, not a
+        // failed request. Returning 200 avoids surfacing a false HTTP error;
+        // the client can still display who currently owns the legacy lock.
         return NextResponse.json({
           locked: true,
           lockedBy: {
@@ -50,7 +53,7 @@ export async function POST(request) {
           },
           lockedSince: blog.editing_since,
           expiresIn: LOCK_TIMEOUT_SECONDS - lockAge,
-        }, { status: 409 });
+        });
       }
       // Lock expired or force-take — fall through to acquire
     }

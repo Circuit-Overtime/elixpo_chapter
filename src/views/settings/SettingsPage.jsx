@@ -13,6 +13,8 @@ const TABS = [
   { label: 'Publishing', icon: 'create-outline' },
   { label: 'Notifications', icon: 'notifications-outline' },
   { label: 'Organization', icon: 'people-outline' },
+  { label: 'Integrations', icon: 'git-network-outline' },
+  { label: 'Media', icon: 'images-outline' },
   { label: 'Subscription', icon: 'diamond-outline' },
 ];
 
@@ -1109,6 +1111,174 @@ function SubscriptionTab({ user }) {
   );
 }
 
+function formatBytes(bytes = 0) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+}
+
+function MediaTab() {
+  const [media, setMedia] = useState(null);
+  const [usage, setUsage] = useState(null);
+  const [busyId, setBusyId] = useState('');
+  const load = useCallback(() => Promise.all([
+    fetch('/api/media').then((r) => r.ok ? r.json() : Promise.reject()),
+    fetch('/api/tier/usage').then((r) => r.ok ? r.json() : Promise.reject()),
+  ]).then(([mediaData, usageData]) => { setMedia(mediaData); setUsage(usageData); }).catch(() => setMedia({ items: [], organisations: [], collections: [], totalBytes: 0, count: 0 })), []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const remove = async (id) => {
+    if (!window.confirm('Delete this media permanently and free its storage?')) return;
+    setBusyId(id);
+    try {
+      const response = await fetch('/api/media/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mediaId: id }),
+      });
+      if (!response.ok) throw new Error('Delete failed');
+      await load();
+    } finally { setBusyId(''); }
+  };
+
+  if (!media) return <div className="mt-8 h-48 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />;
+  return (
+    <div>
+      <SectionHeader title="Storage" />
+      <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
+        <div className="mb-3 flex items-end justify-between">
+          <div><p className="text-2xl font-bold text-[var(--text-primary)]">{formatBytes(media.totalBytes)}</p><p className="text-xs text-[var(--text-muted)]">{media.count} uploaded assets</p></div>
+          <p className="text-xs text-[var(--text-muted)]">{usage?.storage?.limitFormatted || '—'} available</p>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div className="h-full rounded-full bg-[#9b7bf7]" style={{ width: `${Math.min(100, usage?.storage?.percent || 0)}%` }} /></div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {[['Organizations', media.organisations], ['Collections', media.collections]].map(([title, rows]) => (
+          <div key={title} className="rounded-xl border border-[var(--border-default)] p-4">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{title}</p>
+            {rows.length ? rows.slice(0, 6).map((row) => <div key={row.id} className="flex justify-between gap-3 py-1.5 text-xs"><span className="truncate text-[var(--text-body)]">{row.name}</span><span className="shrink-0 text-[var(--text-muted)]">{formatBytes(row.bytes)}</span></div>) : <p className="text-xs text-[var(--text-faint)]">No stored media</p>}
+          </div>
+        ))}
+      </div>
+
+      <SectionHeader title="Media controls" />
+      <div className="space-y-2">
+        {media.items.map((item) => (
+          <div key={item.id} className="flex items-center gap-3 rounded-xl border border-[var(--border-default)] p-3">
+            <img src={item.url} alt="" className="h-12 w-16 shrink-0 rounded-lg bg-[var(--bg-elevated)] object-cover" />
+            <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-[var(--text-primary)]">{item.blog_title || (item.media_type === 'cover' ? 'Blog cover' : 'Unattached media')}</p><p className="truncate text-xs text-[var(--text-muted)]">{item.org_name || 'Personal'}{item.collection_name ? ` · ${item.collection_name}` : ''} · {formatBytes(item.size_bytes)}</p></div>
+            <button disabled={busyId === item.id} onClick={() => remove(item.id)} className="rounded-lg border border-red-400/25 px-3 py-2 text-xs text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50">{busyId === item.id ? 'Deleting…' : 'Delete'}</button>
+          </div>
+        ))}
+        {!media.items.length && <p className="py-8 text-center text-sm text-[var(--text-muted)]">No uploaded media yet.</p>}
+      </div>
+    </div>
+  );
+}
+
+function IntegrationsTab() {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/integrations/lixrl', { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load LixRL');
+      setStatus(data);
+    } catch (err) {
+      setError(err.message || 'Unable to load LixRL');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const changeConnection = async (connect) => {
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch('/api/integrations/lixrl', connect ? {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'connect' }),
+      } : { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to update LixRL connection');
+      setStatus(data);
+    } catch (err) {
+      setError(err.message || 'Unable to update LixRL connection');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const account = status?.account;
+  const maxUrls = account?.limits?.maxUrls;
+  const usedUrls = account?.usage?.urls || 0;
+  const usagePercent = maxUrls === -1 ? 0 : Math.min(100, Math.round((usedUrls / Math.max(maxUrls || 1, 1)) * 100));
+
+  return (
+    <div>
+      <SectionHeader title="Connected services" />
+      <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#9b7bf714] text-lg font-black text-[#9b7bf7]">L/</div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">LixRL URL shortener</h3>
+                {!loading && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status?.connected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}>
+                    {status?.connected ? 'Connected' : 'Not connected'}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">
+                Create account-owned lixrl.com links directly from the blog editor. Your Accounts identity is used; no personal API key is stored in Blogs.
+              </p>
+            </div>
+          </div>
+          {!loading && (
+            <button
+              disabled={busy}
+              onClick={() => changeConnection(!status?.connected)}
+              className={`shrink-0 rounded-lg px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-50 ${status?.connected ? 'border border-red-400/25 text-red-500 hover:bg-red-500/10' : 'bg-[#9b7bf7] text-white hover:bg-[#8b6ae6]'}`}
+            >
+              {busy ? 'Working…' : status?.connected ? 'Disconnect' : 'Connect LixRL'}
+            </button>
+          )}
+        </div>
+
+        {loading && <div className="mt-5 h-20 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />}
+        {error && <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{error}</p>}
+
+        {status?.connected && account && (
+          <div className="mt-5 border-t border-[var(--border-default)] pt-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Plan</p><p className="mt-1 text-sm font-semibold capitalize text-[var(--text-primary)]">{account.tier}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Links</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{usedUrls} / {maxUrls === -1 ? 'Unlimited' : maxUrls}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">API rate</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{account.limits.rateLimitPerMin === -1 ? 'Unlimited' : `${account.limits.rateLimitPerMin}/min`}</p></div>
+            </div>
+            {maxUrls !== -1 && <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div className="h-full rounded-full bg-[#9b7bf7]" style={{ width: `${usagePercent}%` }} /></div>}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <p className="text-[var(--text-muted)]">Disconnecting stops new links from Blogs; existing short links stay active.</p>
+              <a href="https://lixrl.com/dashboard" target="_blank" rel="noreferrer" className="font-medium text-[#9b7bf7] hover:underline">Open LixRL dashboard ↗</a>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Settings Page ──
 export default function SettingsPage() {
   const { user, loading, refetchUser } = useAuth();
@@ -1157,7 +1327,9 @@ export default function SettingsPage() {
         {activeTab === 1 && <PublishingTab user={user} />}
         {activeTab === 2 && <NotificationsTab />}
         {activeTab === 3 && <OrganizationTab user={user} />}
-        {activeTab === 4 && <SubscriptionTab user={user} />}
+        {activeTab === 4 && <IntegrationsTab />}
+        {activeTab === 5 && <MediaTab />}
+        {activeTab === 6 && <SubscriptionTab user={user} />}
       </div>
     </AppShell>
   );

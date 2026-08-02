@@ -14,11 +14,78 @@ import BlogDotsMenu from '../components/BlogDotsMenu';
 import AuthorAttribution from '../components/AuthorAttribution';
 import FollowListModal from '../components/FollowListModal';
 import BlogInviteOverlay from '../components/BlogInviteOverlay';
+import { CreatorBadgeStrip } from '../components/CreatorBadge';
 import { STAFF_ORG_ID } from '../../lib/staff';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 
+// Mermaid and Shiki are intentionally browser-only. Pulling BlogPreview into
+// the Edge bundle pushes the Cloudflare Worker beyond the free-plan limit.
 const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { ssr: false });
+
+function formatUtcDate(value, options = {}) {
+  const date = value instanceof Date ? value : new Date(value * 1000);
+  return new Intl.DateTimeFormat('en-US', { ...options, timeZone: 'UTC' }).format(date);
+}
+
+function StaticInline({ content = [] }) {
+  if (!Array.isArray(content)) return null;
+  return content.map((item, index) => {
+    if (typeof item === 'string') return item;
+    const text = item?.text || '';
+    const styles = item?.styles || {};
+    let node = text;
+    if (styles.bold) node = <strong>{node}</strong>;
+    if (styles.italic) node = <em>{node}</em>;
+    if (styles.underline) node = <u>{node}</u>;
+    if (styles.strike) node = <s>{node}</s>;
+    if (styles.code) node = <code>{node}</code>;
+    if (item?.type === 'link' && item.href) node = <a href={item.href} rel="nofollow ugc">{item.content ? <StaticInline content={item.content} /> : node}</a>;
+    return <span key={index}>{node}</span>;
+  });
+}
+
+function StaticBlocks({ blocks = [] }) {
+  return blocks.map((block, index) => {
+    const key = block.id || index;
+    const children = block.children?.length ? <StaticBlocks blocks={block.children} /> : null;
+    const inline = <StaticInline content={block.content} />;
+    switch (block.type) {
+      case 'heading': {
+        const level = Math.max(2, Math.min(4, Number(block.props?.level) || 2));
+        const Heading = `h${level}`;
+        return <Heading key={key}>{inline}</Heading>;
+      }
+      case 'bulletListItem': return <ul key={key}><li>{inline}{children}</li></ul>;
+      case 'numberedListItem': return <ol key={key}><li>{inline}{children}</li></ol>;
+      case 'checkListItem': return <p key={key}>□ {inline}{children}</p>;
+      case 'quote': return <blockquote key={key}>{inline}{children}</blockquote>;
+      case 'codeBlock': return <pre key={key}><code>{(block.content || []).map(item => item.text || '').join('')}</code></pre>;
+      case 'image': return block.props?.url ? <figure key={key}><img src={block.props.url} alt={block.props.caption || block.props.name || ''} loading="lazy" />{block.props.caption && <figcaption>{block.props.caption}</figcaption>}</figure> : null;
+      case 'mermaidBlock': return <pre key={key}><code>{block.props?.diagram || ''}</code></pre>;
+      case 'blockEquation': return <p key={key}>{block.props?.latex || ''}</p>;
+      default: return <p key={key}>{inline}{children}</p>;
+    }
+  });
+}
+
+function CrawlableArticle({ blog, blocks, owner }) {
+  const cover = blog.cover_image_r2_key || generateBlogBanner(blog.id || blog.slug);
+  const author = blog.secret ? 'Anonymous' : (blog.author_name || blog.author_username || owner?.name || 'LixBlogs');
+  return (
+    <article className="blog-preview" itemScope itemType="https://schema.org/BlogPosting">
+      {cover && <img src={cover} alt={blog.title ? `${blog.title} cover` : 'Blog cover'} className="w-full max-h-[420px] object-cover rounded-xl mb-10" itemProp="image" />}
+      <header className="mb-10">
+        {blog.page_emoji && <p className="text-5xl mb-5" aria-hidden="true">{blog.page_emoji}</p>}
+        <h1 className="text-4xl sm:text-5xl font-bold leading-tight" itemProp="headline">{blog.title || 'Untitled'}</h1>
+        {blog.subtitle && <p className="text-xl mt-4" style={{ color: 'var(--text-muted)' }} itemProp="description">{blog.subtitle}</p>}
+        <p className="mt-5 text-sm" style={{ color: 'var(--text-faint)' }}>By <span itemProp="author">{author}</span>{blog.published_at ? ` · ${formatUtcDate(blog.published_at, { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}</p>
+        {!!blog.tags?.length && <p className="mt-3 text-sm" style={{ color: 'var(--text-faint)' }}>Topics: {blog.tags.join(', ')}</p>}
+      </header>
+      <div className="blog-preview-content max-w-none" itemProp="articleBody"><StaticBlocks blocks={blocks} /></div>
+    </article>
+  );
+}
 
 function FollowButton({ username }) {
   const { user: currentUser } = useAuth();
@@ -79,13 +146,16 @@ export default function HandlePage(props) {
   );
 }
 
-function HandlePageInner({ path }) {
+function HandlePageInner({ path, initialData = null }) {
   const { user: currentUser } = useAuth();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(initialData);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState(null);
   const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
   const [hideHighlights, setHideHighlights] = useState(false); // strip text colors/highlights
+  const [interactiveReady, setInteractiveReady] = useState(false);
+
+  useEffect(() => setInteractiveReady(true), []);
 
   // Parse: path[0] = name, path[1] = slug or collection, path[2] = slug (if collection)
   // rawName keeps the original case: a 1-segment path may be a /[slugid] short link,
@@ -105,6 +175,11 @@ function HandlePageInner({ path }) {
   useEffect(() => {
     if (!name) { setLoading(false); setError('Not found'); return; }
 
+    // Public page data was rendered on the server. A member-only teaser is
+    // refreshed after authentication so an entitled reader still gets the
+    // complete post without sacrificing crawlable initial HTML.
+    if (initialData && !(initialData.blog?.paywalled && currentUser)) return;
+
     if (isReadingList) {
       fetch(`/api/library/public?username=${encodeURIComponent(name)}&slug=${encodeURIComponent(third)}`)
         .then(r => r.ok ? r.json() : r.json().then(d => { throw new Error(d.error || 'Not found'); }))
@@ -118,12 +193,18 @@ function HandlePageInner({ path }) {
     if (slug) params.set('slug', slug);
     if (collection) params.set('collection', collection);
 
-    fetch(`/api/resolve?${params}`)
+    fetch(`/api/resolve?${params}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : r.json().then(d => { throw new Error(d.error || 'Not found'); }))
-      .then(d => setData(d))
+      .then(d => {
+        if (d?.type === 'redirect' && d.location) {
+          window.location.replace(d.location);
+          return;
+        }
+        setData(d);
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [rawName, name, slug, collection, isReadingList, third]);
+  }, [rawName, name, slug, collection, isReadingList, third, initialData, currentUser]);
 
   if (loading) {
     return (
@@ -133,7 +214,7 @@ function HandlePageInner({ path }) {
           <div className="h-8 bg-[var(--bg-elevated)] animate-pulse rounded w-2/3 mb-4" />
           <div className="h-4 bg-[var(--bg-elevated)] animate-pulse rounded w-1/3 mb-6" />
           <div className="space-y-3">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-4 bg-[var(--bg-elevated)] animate-pulse rounded" style={{ width: `${60 + Math.random() * 40}%` }} />)}
+            {[76, 92, 68, 84].map((width, i) => <div key={i} className="h-4 bg-[var(--bg-elevated)] animate-pulse rounded" style={{ width: `${width}%` }} />)}
           </div>
         </div>
       </AppShell>
@@ -189,7 +270,7 @@ function HandlePageInner({ path }) {
               </Link>
             </div>
           )}
-          <BlogPreview
+          {interactiveReady ? <BlogPreview
             title={blog.title}
             subtitle={blog.subtitle}
             pageEmoji={blog.page_emoji}
@@ -230,11 +311,12 @@ function HandlePageInner({ path }) {
                     tags={blog.tags || []}
                     hideHighlights={hideHighlights}
                     onToggleHighlights={() => setHideHighlights(v => !v)}
+                    canEdit={canEdit}
                   />
                 }
               />
             }
-          />
+          /> : <CrawlableArticle blog={blog} blocks={blocks} owner={data.owner} />}
 
           {/* End-of-blog follow card — author (+ org) */}
           <BlogFollowCard
@@ -361,7 +443,7 @@ function HandlePageInner({ path }) {
                           {(b.tags || []).length > 0 && (
                             <span className="text-[#9b7bf7] text-[11px] bg-[#9b7bf714] px-2.5 py-0.5 rounded-full font-medium">{b.tags[0]}</span>
                           )}
-                          {b.published_at && <span>{new Date(b.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+                          {b.published_at && <span>{formatUtcDate(b.published_at, { month: 'short', day: 'numeric' })}</span>}
                           {b.read_time_minutes > 0 && <span>{b.read_time_minutes} min read</span>}
                           {b.like_count > 0 && <span>{b.like_count} likes</span>}
                           {b.comment_count > 0 && <span>{b.comment_count} comments</span>}
@@ -411,6 +493,11 @@ function HandlePageInner({ path }) {
                     {u.pronouns && <span className="text-[14px] font-normal text-[var(--text-faint)] ml-2">({u.pronouns})</span>}
                   </h1>
                   <p className="text-[var(--text-muted)] text-[15px] mt-0.5 font-medium">@{u.username}</p>
+                  {(u.badges || []).length > 0 && (
+                    <div className="mt-3">
+                      <CreatorBadgeStrip badges={u.badges} compact showDetails={false} />
+                    </div>
+                  )}
                 </div>
                 {isOwnProfile ? (
                   <Link
@@ -460,7 +547,7 @@ function HandlePageInner({ path }) {
             {joined && (
               <span className="flex items-center gap-1.5">
                 <ion-icon name="calendar-outline" style={{ fontSize: '14px' }} />
-                Joined {joined.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                Joined {formatUtcDate(joined, { month: 'long', year: 'numeric' })}
               </span>
             )}
           </div>
@@ -523,7 +610,7 @@ function HandlePageInner({ path }) {
                           </span>
                         )}
                         {b.published_at && (
-                          <span>{new Date(b.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          <span>{formatUtcDate(b.published_at, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         )}
                       </div>
                     </div>
@@ -651,7 +738,7 @@ function HandlePageInner({ path }) {
             {founded && (
               <span className="flex items-center gap-1.5">
                 <ion-icon name="calendar-outline" style={{ fontSize: '14px' }} />
-                Founded {founded.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                Founded {formatUtcDate(founded, { month: 'long', year: 'numeric' })}
               </span>
             )}
             <span className="flex items-center gap-1.5">
@@ -819,7 +906,7 @@ function HandlePageInner({ path }) {
                             </span>
                           )}
                           {b.published_at && (
-                            <span>{new Date(b.published_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            <span>{formatUtcDate(b.published_at, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                           )}
                         </div>
                       </div>

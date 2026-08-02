@@ -31,9 +31,11 @@ export default {
     // One Durable Object per editing surface — main vs each sub-page.
     const roomKey = subpageId ? `${blogId}:sub:${subpageId}` : blogId;
 
-    // Authenticate — validate session cookie
-    const session = await validateSession(request, env);
-    if (!session && !isStatus) {
+    // Authenticate using a blog-scoped token. Cookie auth remains supported
+    // for a future same-site custom domain, but workers.dev cannot receive the
+    // blogs.elixpo.com session cookie.
+    const session = await validateSession(request, env, blogId);
+    if (!session) {
       return new Response(JSON.stringify({ error: 'Not authenticated' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
@@ -41,14 +43,12 @@ export default {
     }
 
     // Check the user has edit access to this blog
-    if (session && !isStatus) {
-      const hasAccess = await checkEditAccess(env.DB, blogId, session.userId);
-      if (!hasAccess) {
-        return new Response(JSON.stringify({ error: 'Not authorized' }), {
-          status: 403,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
-        });
-      }
+    const hasAccess = await checkEditAccess(env.DB, blogId, session.userId);
+    if (!hasAccess) {
+      return new Response(JSON.stringify({ error: 'Not authorized' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
+      });
     }
 
     // Get the Durable Object for this editing surface (main or sub-page)
@@ -58,14 +58,21 @@ export default {
     // Add user + room info to the URL for the DO
     url.searchParams.set('blogId', blogId);
     if (subpageId) url.searchParams.set('subpageId', subpageId);
-    if (session) {
-      url.searchParams.set('userId', session.userId);
-      url.searchParams.set('userName', session.displayName || session.username || 'Anonymous');
-      url.searchParams.set('userColor', generateColor(session.userId));
-    }
+    url.searchParams.delete('token');
+    url.searchParams.set('userId', session.userId);
+    url.searchParams.set('userName', session.displayName || session.username || 'Anonymous');
+    url.searchParams.set('userColor', generateColor(session.userId));
 
     // Forward to DO
     const doResponse = await doStub.fetch(new Request(url.toString(), request));
+
+    // A WebSocket upgrade response carries Cloudflare's non-standard
+    // `webSocket` attachment. Reconstructing it with `new Response()` drops
+    // that attachment and interrupts every otherwise-authorized connection.
+    // Upgrade responses must be returned from the Durable Object untouched.
+    if (request.headers.get('Upgrade')?.toLowerCase() === 'websocket') {
+      return doResponse;
+    }
 
     // Add CORS headers to the response
     const response = new Response(doResponse.body, doResponse);
@@ -87,13 +94,15 @@ function b64urlToBytes(str) {
   return bytes;
 }
 
-async function validateSession(request, env) {
+async function validateSession(request, env, expectedBlogId) {
   try {
+    const url = new URL(request.url);
     const cookie = request.headers.get('Cookie') || '';
     const m = cookie.match(/lixblogs_session=([^;]+)/);
-    if (!m || !env.SESSION_SECRET) return null;
+    const queryToken = url.searchParams.get('token');
+    if ((!queryToken && !m) || !env.SESSION_SECRET) return null;
 
-    const raw = decodeURIComponent(m[1]);
+    const raw = queryToken || decodeURIComponent(m[1]);
     const dot = raw.indexOf('.');
     if (dot <= 0) return null;
 
@@ -109,10 +118,23 @@ async function validateSession(request, env) {
 
     const payload = JSON.parse(new TextDecoder().decode(payloadBytes));
     if (!payload?.userId) return null;
+
+    // Query-string credentials are deliberately narrower than the normal app
+    // session: one blog, one purpose, and a fixed expiry.
+    if (queryToken) {
+      const now = Math.floor(Date.now() / 1000);
+      if (
+        payload.purpose !== 'collab'
+        || payload.blogId !== expectedBlogId
+        || !Number.isFinite(payload.exp)
+        || payload.exp < now
+      ) return null;
+    }
+
     return {
       userId: payload.userId,
-      username: payload.profile?.username,
-      displayName: payload.profile?.display_name,
+      username: payload.username || payload.profile?.username,
+      displayName: payload.displayName || payload.profile?.display_name,
     };
   } catch {
     return null;
@@ -133,7 +155,7 @@ async function checkEditAccess(db, blogId, userId) {
 
     // Check co-author
     const coAuthor = await db.prepare(
-      "SELECT user_id FROM blog_co_authors WHERE blog_id = ? AND user_id = ? AND status = 'accepted'"
+      "SELECT user_id FROM blog_co_authors WHERE blog_id = ? AND user_id = ? AND status = 'accepted' AND role IN ('editor','admin')"
     ).bind(blogId, userId).first();
     if (coAuthor) return true;
 
@@ -147,8 +169,9 @@ async function checkEditAccess(db, blogId, userId) {
     }
 
     return false;
-  } catch {
-    return true; // Fail open in dev
+  } catch (error) {
+    console.error('Collaboration access check failed:', error);
+    return false;
   }
 }
 

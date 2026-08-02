@@ -1,6 +1,6 @@
 {
   "name": "lixblogs",
-  "version": "4.9.55",
+  "version": "4.9.59",
   "description": "A modern blogging platform with a rich block editor, AI writing tools, real-time collaboration, and organizations — deployed on Cloudflare's edge.",
   "author": "Elixpo <https://github.com/elixpo>",
   "license": "MIT",
@@ -63,6 +63,7 @@
     "deploy": "npm run pages:build && npx wrangler pages deploy .vercel/output/static",
     "db:migrate": "wrangler d1 migrations apply lixblogs --remote",
     "db:migrate:local": "wrangler d1 migrations apply lixblogs --local",
+    "badges:backfill": "node --env-file=.env.local scripts/backfill-creator-badges.mjs",
     "sync:tiers": "node scripts/sync-payouts-tiers.mjs"
   }
 }

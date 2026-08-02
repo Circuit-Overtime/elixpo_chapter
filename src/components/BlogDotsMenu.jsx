@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null, tags = [], hideHighlights, onToggleHighlights }) {
+export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null, tags = [], hideHighlights, onToggleHighlights, canEdit = false }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [fAuthor, setFAuthor] = useState(false);
@@ -11,6 +11,8 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
   const [done, setDone] = useState('');
   const [coAuthorVisible, setCoAuthorVisible] = useState(null); // null = not a co-author; true/false = show_on_profile
   const ref = useRef(null);
+  const ownsAuthor = !!user && user.id === authorId;
+  const ownsPublication = !!org && canEdit;
 
   useEffect(() => {
     if (!open) return;
@@ -64,7 +66,7 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
   const followOrg = () => { if (needAuth() || fOrg) return; setFOrg(true); post_(`/api/orgs/${org.slug}/follow`); flash('Following'); };
   const muteAuthor = () => { if (needAuth()) return; post_('/api/mutes', { targetType: 'author', targetId: authorId }); flash('Author muted'); };
   const muteOrg = () => { if (needAuth()) return; post_('/api/mutes', { targetType: 'org', targetId: org.id }); flash('Publication muted'); };
-  const muteTopics = () => { if (needAuth()) return; tags.forEach(t => post_('/api/mutes', { targetType: 'tag', targetId: t })); flash('Topics muted'); };
+  const muteTopics = () => { if (needAuth()) return; tags.forEach(t => post_('/api/mutes', { targetType: 'tag', targetId: t, blogId })); flash('Topics muted'); };
   const report = () => { if (needAuth()) return; setOpen(false); if (!confirm('Report this story to the moderators?')) return; post_(`/api/blogs/${blogId}/report`, { reason: 'other', detail: 'Reported from reader' }); };
 
   const Row = ({ icon, label, onClick, danger, badge, disabled, kbd }) => (
@@ -104,14 +106,24 @@ export default function BlogDotsMenu({ blogId, authorId, author = {}, org = null
                 />
               )}
               <Divider />
-              {!isSelf && <Row label={fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`} onClick={followAuthor} disabled={fAuthor} />}
-              {org && <Row label={fOrg ? `Following ${org.name}` : `Follow ${org.name}`} onClick={followOrg} disabled={fOrg} />}
-              <Divider />
-              {!isSelf && <Row label="Mute author" onClick={muteAuthor} />}
-              {org && <Row label="Mute publication" onClick={muteOrg} />}
-              {tags.length > 0 && <Row label="Mute topics" onClick={muteTopics} badge />}
-              <Divider />
-              {!isSelf && <Row label="Report story…" onClick={report} danger />}
+              {canEdit ? (
+                <>
+                  <Row icon="create-outline" label="Edit story" onClick={() => { window.location.href = `/edit/${blogId}`; }} />
+                  <Row icon="options-outline" label="Story settings" onClick={() => { window.location.href = `/edit/${blogId}?panel=settings`; }} />
+                  {ownsPublication && <Row icon="business-outline" label="Publication settings" onClick={() => { window.location.href = `/settings/org/${org.slug}`; }} />}
+                </>
+              ) : (
+                <>
+                  {!ownsAuthor && !isSelf && <Row label={fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`} onClick={followAuthor} disabled={fAuthor} />}
+                  {org && !ownsPublication && <Row label={fOrg ? `Following ${org.name}` : `Follow ${org.name}`} onClick={followOrg} disabled={fOrg} />}
+                  <Divider />
+                  {!ownsAuthor && !isSelf && <Row label="Mute author" onClick={muteAuthor} />}
+                  {org && !ownsPublication && <Row label="Mute publication" onClick={muteOrg} />}
+                  {tags.length > 0 && <Row label="Mute topics" onClick={muteTopics} badge />}
+                  <Divider />
+                  <Row label="Report story…" onClick={report} danger />
+                </>
+              )}
             </>
           )}
         </div>
