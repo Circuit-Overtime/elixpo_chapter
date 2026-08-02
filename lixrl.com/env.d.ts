@@ -8,6 +8,7 @@ interface CloudflareEnv {
   SAFE_BROWSING_API_KEY: string;
   GUEST_FINGERPRINT_SECRET: string;
   ELIXPO_WEBHOOK_SECRET: string;
+  BLOGS_INTEGRATION_TOKEN: string;
   // Elixpo Pay — subscriptions / autopay.
   ELIXPO_PAY_BASE_URL: string;
   ELIXPO_PAY_APP_ID: string;

@@ -27,6 +27,9 @@ export function getEnv() {
     // verify the HMAC on /api/webhooks/elixpo. Must match the secret
     // configured on the accounts.elixpo side.
     ELIXPO_WEBHOOK_SECRET: (ctx as any).ELIXPO_WEBHOOK_SECRET || process.env.ELIXPO_WEBHOOK_SECRET || '',
+    // Server-to-server credential used by Blogs for delegated link creation.
+    // This is never a browser-facing or per-user API key.
+    BLOGS_INTEGRATION_TOKEN: (ctx as any).BLOGS_INTEGRATION_TOKEN || process.env.BLOGS_INTEGRATION_TOKEN || '',
     // Elixpo Pay — subscriptions / autopay. API key creates checkout
     // sessions + authorizes catalog sync (POST /v1/sync); webhook secret
     // verifies the inbound entitlement.updated signature (t=,v1= scheme).
