@@ -63,6 +63,58 @@ check_deps() {
   done
 }
 
+# Wrangler automatically reads .env, but this repository stores that file in
+# SOPS-encrypted form. Export the decrypted deploy credentials first so
+# Wrangler does not mistake an ENC[...] value for an API token. An explicitly
+# supplied plaintext token (for example in CI) still takes precedence.
+load_cloudflare_auth() {
+  if [ -n "${CLOUDFLARE_API_TOKEN:-}" ] &&
+     [[ "$CLOUDFLARE_API_TOKEN" != ENC\[* ]]; then
+    return
+  fi
+
+  if ! command -v sops &>/dev/null; then
+    err "sops is required to decrypt Cloudflare credentials from .env"
+    exit 1
+  fi
+
+  local enc="$SCRIPT_DIR/.env"
+  if [ ! -f "$enc" ]; then
+    err ".env (sops-encrypted) not found"
+    exit 1
+  fi
+
+  if [ -z "${SOPS_AGE_KEY:-}" ]; then
+    local keyfile="$HOME/.config/sops/age/keys.txt"
+    if [ -f "$keyfile" ]; then
+      SOPS_AGE_KEY="$(grep 'AGE-SECRET-KEY' "$keyfile" | head -1)"
+      export SOPS_AGE_KEY
+    else
+      err "No AGE key. Set SOPS_AGE_KEY or create $keyfile"
+      exit 1
+    fi
+  fi
+
+  local decrypted token="" account_id=""
+  decrypted="$(sops decrypt "$enc")"
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      CLOUDFLARE_API_TOKEN=*) token="${line#*=}" ;;
+      CLOUDFLARE_ACCOUNT_ID=*) account_id="${line#*=}" ;;
+    esac
+  done <<< "$decrypted"
+
+  if [ -z "$token" ]; then
+    err "CLOUDFLARE_API_TOKEN not found in decrypted .env"
+    exit 1
+  fi
+
+  export CLOUDFLARE_API_TOKEN="$token"
+  if [ -n "$account_id" ]; then
+    export CLOUDFLARE_ACCOUNT_ID="$account_id"
+  fi
+}
+
 do_build() {
   log "Building ${BOLD}$PROJECT${RESET} with @cloudflare/next-on-pages..."
   npx @cloudflare/next-on-pages
@@ -80,6 +132,7 @@ do_deploy() {
   else
     dim "Preview deploy — production URL stays on whatever's deployed to main."
   fi
+  load_cloudflare_auth
   npx wrangler pages deploy "$OUTDIR" \
     --project-name="$PROJECT" \
     --branch="$BRANCH"
@@ -88,6 +141,7 @@ do_deploy() {
 
 do_migrate() {
   log "Running D1 migrations (remote) for ${BOLD}$PROJECT${RESET}..."
+  load_cloudflare_auth
   npx wrangler d1 migrations apply "$PROJECT" --remote
   log "Migrations applied"
 }
