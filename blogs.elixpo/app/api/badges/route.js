@@ -106,12 +106,14 @@ export async function PATCH(request) {
     if (action === 'revoke') {
       await db.batch([
         db.prepare("DELETE FROM user_badges WHERE user_id = ? AND badge_id = 'staff-pick'").bind(target.id),
+        db.prepare("DELETE FROM notifications WHERE id = ? AND user_id = ? AND type = 'badge_awarded'").bind(`badge-awarded:${target.id}:staff-pick`, target.id),
         db.prepare("INSERT INTO badge_award_events (id, user_id, badge_id, event_type, metadata, created_at) VALUES (?, ?, 'staff-pick', 'revoked', ?, ?)").bind(crypto.randomUUID(), target.id, JSON.stringify({ by: session.userId }), now),
       ]);
     } else {
       await db.batch([
         db.prepare("INSERT OR IGNORE INTO user_badges (user_id, badge_id, awarded_at, visible, source, progress_value, progress_target, updated_at) VALUES (?, 'staff-pick', ?, 0, 'manual', 1, 1, ?)").bind(target.id, now, now),
         db.prepare("INSERT OR IGNORE INTO badge_award_events (id, user_id, badge_id, event_type, metadata, created_at) VALUES (?, ?, 'staff-pick', 'awarded', ?, ?)").bind(crypto.randomUUID(), target.id, JSON.stringify({ by: session.userId }), now),
+        db.prepare("INSERT OR IGNORE INTO notifications (id, user_id, type, actor_name, target_id, target_title, target_url, created_at) VALUES (?, ?, 'badge_awarded', 'LixBlogs', 'staff-pick', 'Staff Pick', '/profile#creator-badges', ?)").bind(`badge-awarded:${target.id}:staff-pick`, target.id, now),
       ]);
     }
     return NextResponse.json({ ok: true, action });

@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
 import JoinedToast from './JoinedToast';
+import { CreatorBadgeMark } from './CreatorBadge';
+import { CREATOR_BADGE_MAP } from '../../lib/badgeDefinitions';
 
 // ─── Notification type config ───
 const NOTIF_CONFIG = {
@@ -150,6 +152,7 @@ function NotificationDropdown() {
             ) : (
               notifications.map(n => {
                 const cfg = NOTIF_CONFIG[n.type] || NOTIF_CONFIG.follow;
+                const awardedBadge = n.type === 'badge_awarded' ? CREATOR_BADGE_MAP.get(n.target_id) : null;
                 return (
                   <Link
                     key={n.id}
@@ -165,7 +168,9 @@ function NotificationDropdown() {
                   >
                     {/* Actor avatar */}
                     <div className="relative flex-shrink-0">
-                      {n.actor_avatar ? (
+                      {awardedBadge ? (
+                        <CreatorBadgeMark badge={awardedBadge} size={38} />
+                      ) : n.actor_avatar ? (
                         <img src={n.actor_avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
                       ) : (
                         <div className="h-9 w-9 rounded-full flex items-center justify-center text-[13px] font-bold"
@@ -174,10 +179,12 @@ function NotificationDropdown() {
                         </div>
                       )}
                       {/* Type icon badge */}
-                      <div className="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: 'var(--card-bg)', border: '1.5px solid var(--divider)' }}>
-                        <ion-icon name={cfg.icon} style={{ fontSize: '10px', color: cfg.color }} />
-                      </div>
+                      {!awardedBadge && (
+                        <div className="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: 'var(--card-bg)', border: '1.5px solid var(--divider)' }}>
+                          <ion-icon name={cfg.icon} style={{ fontSize: '10px', color: cfg.color }} />
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
