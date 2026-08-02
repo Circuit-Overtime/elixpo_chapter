@@ -57,7 +57,7 @@ export default function BadgesPage() {
                         <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)' }}>{badge.difficulty}</span>
                       </div>
                       <p className="mt-1.5 text-[12px] leading-5" style={{ color: 'var(--text-muted)' }}>{badge.description}</p>
-                      <code className="mt-2 block text-[9px]" style={{ color: 'var(--text-faint)' }}>{badge.id}.svg</code>
+                      <span className="mt-2 inline-flex rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-faint)', backgroundColor: 'var(--bg-elevated)' }}>Artwork coming soon</span>
                     </div>
                   </article>
                 ))}
@@ -67,7 +67,7 @@ export default function BadgesPage() {
         </div>
 
         <section className="mt-12 rounded-2xl p-6" style={{ backgroundColor: 'var(--accent-subtle)', border: '1px solid color-mix(in srgb, var(--accent) 24%, var(--border-default))' }}>
-          <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Artwork is arriving separately</h2>
+          <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Badge artwork is coming soon</h2>
           <p className="mt-2 text-[13px] leading-6" style={{ color: 'var(--text-muted)' }}>
             The current marks are placeholders. Final SVG artwork will come from the branding repository and use the stable badge identifiers documented on this page.
           </p>
