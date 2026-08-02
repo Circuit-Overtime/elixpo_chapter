@@ -13,6 +13,7 @@ const TABS = [
   { label: 'Publishing', icon: 'create-outline' },
   { label: 'Notifications', icon: 'notifications-outline' },
   { label: 'Organization', icon: 'people-outline' },
+  { label: 'Integrations', icon: 'git-network-outline' },
   { label: 'Media', icon: 'images-outline' },
   { label: 'Subscription', icon: 'diamond-outline' },
 ];
@@ -1177,6 +1178,107 @@ function MediaTab() {
   );
 }
 
+function IntegrationsTab() {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/integrations/lixrl', { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load LixRL');
+      setStatus(data);
+    } catch (err) {
+      setError(err.message || 'Unable to load LixRL');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const changeConnection = async (connect) => {
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch('/api/integrations/lixrl', connect ? {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'connect' }),
+      } : { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to update LixRL connection');
+      setStatus(data);
+    } catch (err) {
+      setError(err.message || 'Unable to update LixRL connection');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const account = status?.account;
+  const maxUrls = account?.limits?.maxUrls;
+  const usedUrls = account?.usage?.urls || 0;
+  const usagePercent = maxUrls === -1 ? 0 : Math.min(100, Math.round((usedUrls / Math.max(maxUrls || 1, 1)) * 100));
+
+  return (
+    <div>
+      <SectionHeader title="Connected services" />
+      <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#9b7bf714] text-lg font-black text-[#9b7bf7]">L/</div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">LixRL URL shortener</h3>
+                {!loading && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status?.connected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}>
+                    {status?.connected ? 'Connected' : 'Not connected'}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">
+                Create account-owned lixrl.com links directly from the blog editor. Your Accounts identity is used; no personal API key is stored in Blogs.
+              </p>
+            </div>
+          </div>
+          {!loading && (
+            <button
+              disabled={busy}
+              onClick={() => changeConnection(!status?.connected)}
+              className={`shrink-0 rounded-lg px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-50 ${status?.connected ? 'border border-red-400/25 text-red-500 hover:bg-red-500/10' : 'bg-[#9b7bf7] text-white hover:bg-[#8b6ae6]'}`}
+            >
+              {busy ? 'Working…' : status?.connected ? 'Disconnect' : 'Connect LixRL'}
+            </button>
+          )}
+        </div>
+
+        {loading && <div className="mt-5 h-20 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />}
+        {error && <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{error}</p>}
+
+        {status?.connected && account && (
+          <div className="mt-5 border-t border-[var(--border-default)] pt-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Plan</p><p className="mt-1 text-sm font-semibold capitalize text-[var(--text-primary)]">{account.tier}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Links</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{usedUrls} / {maxUrls === -1 ? 'Unlimited' : maxUrls}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">API rate</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{account.limits.rateLimitPerMin === -1 ? 'Unlimited' : `${account.limits.rateLimitPerMin}/min`}</p></div>
+            </div>
+            {maxUrls !== -1 && <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div className="h-full rounded-full bg-[#9b7bf7]" style={{ width: `${usagePercent}%` }} /></div>}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <p className="text-[var(--text-muted)]">Disconnecting stops new links from Blogs; existing short links stay active.</p>
+              <a href="https://lixrl.com/dashboard" target="_blank" rel="noreferrer" className="font-medium text-[#9b7bf7] hover:underline">Open LixRL dashboard ↗</a>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Settings Page ──
 export default function SettingsPage() {
   const { user, loading, refetchUser } = useAuth();
@@ -1225,8 +1327,9 @@ export default function SettingsPage() {
         {activeTab === 1 && <PublishingTab user={user} />}
         {activeTab === 2 && <NotificationsTab />}
         {activeTab === 3 && <OrganizationTab user={user} />}
-        {activeTab === 4 && <MediaTab />}
-        {activeTab === 5 && <SubscriptionTab user={user} />}
+        {activeTab === 4 && <IntegrationsTab />}
+        {activeTab === 5 && <MediaTab />}
+        {activeTab === 6 && <SubscriptionTab user={user} />}
       </div>
     </AppShell>
   );
