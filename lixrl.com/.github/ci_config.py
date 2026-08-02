@@ -5,18 +5,23 @@ Single source of truth for all CI workflows and scripts.
 
 # ── LLM ─────────────────────────────────────────────
 LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
-LLM_MODEL_AGENT = "glm"       
-LLM_MODEL_CODE = "qwen-coder"        
-LLM_MODEL_CHAT = "perplexity-fast"        
-LLM_MODEL_THINKING = "perplexity-reasoning"  
-LLM_MODEL_SEARCH = "gemini-search"    
+LLM_MODEL_AGENT = "deepseek"
+LLM_MODEL_CODE = "nova-fast"
+LLM_MODEL_CHAT = "nova-fast"
+LLM_MODEL_THINKING = "deepseek"
+LLM_MODEL_SEARCH = "perplexity-fast"
+
+LLM_MAX_TOKENS_AGENT = 3500
+LLM_MAX_TOKENS_CODE = 6000
+LLM_MAX_TOKENS_THINKING = 5000
+LLM_MAX_TOKENS_SEARCH = 2500
 
 # Back-compat alias — scripts that haven't been migrated still import LLM_MODEL.
 LLM_MODEL = LLM_MODEL_CHAT
 
 # ── Repository ──────────────────────────────────────
-REPO = "elixpo/url.elixpo"
-PROJECT_NAME = "url.elixpo"
+REPO = "elixpo/lixrl.com"
+PROJECT_NAME = "lixrl.com"
 PROJECT_DESCRIPTION = "Elixpo URL shortener"
 
 # ── GitHub Projects V2 ──────────────────────────────
