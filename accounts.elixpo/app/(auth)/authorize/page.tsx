@@ -425,6 +425,7 @@ function AuthorizeContent() {
                             padding: "24px 24px 20px",
                             display: "flex",
                             alignItems: "center",
+                            justifyContent: "center",
                             gap: 16,
                         }}
                     >
@@ -503,7 +504,13 @@ function AuthorizeContent() {
                         </div>
 
                         {/* Text */}
-                        <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                            style={{
+                                minWidth: 0,
+                                maxWidth: 150,
+                                textAlign: "center",
+                            }}
+                        >
                             <p
                                 style={{
                                     color: "var(--fg)",
@@ -537,86 +544,108 @@ function AuthorizeContent() {
                         <div
                             style={{
                                 padding: "0 16px 14px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 10,
-                                flexWrap: "wrap",
                             }}
                         >
-                            <img
-                                src={
-                                    account.avatar ||
-                                    generatePixelAvatar(account.email, 32)
-                                }
-                                alt=""
-                                width={32}
-                                height={32}
+                            <div
                                 style={{
-                                    borderRadius: "50%",
-                                    flexShrink: 0,
-                                }}
-                            />
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                                <span
-                                    style={{
-                                        display: "block",
-                                        color: "var(--fg)",
-                                        fontSize: 12.5,
-                                        fontWeight: 650,
-                                    }}
-                                >
-                                    {account.displayName || account.email}
-                                </span>
-                                <span
-                                    style={{
-                                        display: "block",
-                                        color: "var(--fg-faint)",
-                                        fontSize: 11.5,
-                                    }}
-                                >
-                                    {account.email}
-                                </span>
-                            </div>
-                            {accounts.length > 1 && (
-                                <select
-                                    aria-label="Choose an account"
-                                    value={account.id}
-                                    disabled={isSwitching}
-                                    onChange={(event) =>
-                                        handleSwitchAccount(event.target.value)
-                                    }
-                                    style={{
-                                        maxWidth: 150,
-                                        border: "1px solid var(--border)",
-                                        borderRadius: 8,
-                                        background: "var(--surface)",
-                                        color: "var(--fg-muted)",
-                                        fontSize: 12,
-                                        padding: "7px 9px",
-                                    }}
-                                >
-                                    {accounts.map((candidate) => (
-                                        <option
-                                            key={candidate.id}
-                                            value={candidate.id}
-                                        >
-                                            {candidate.displayName ||
-                                                candidate.email}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                            <a
-                                href={`/login?add_account=1&next=${encodeURIComponent(`/authorize?${searchParams.toString()}`)}`}
-                                style={{
-                                    color: "#ff7759",
-                                    fontSize: 12,
-                                    fontWeight: 650,
-                                    textDecoration: "none",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 10,
                                 }}
                             >
-                                Add account
-                            </a>
+                                <img
+                                    src={
+                                        account.avatar ||
+                                        generatePixelAvatar(account.email, 32)
+                                    }
+                                    alt=""
+                                    width={32}
+                                    height={32}
+                                    style={{
+                                        borderRadius: "50%",
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <div
+                                    style={{ minWidth: 0, textAlign: "center" }}
+                                >
+                                    <span
+                                        style={{
+                                            display: "block",
+                                            color: "var(--fg)",
+                                            fontSize: 12.5,
+                                            fontWeight: 650,
+                                        }}
+                                    >
+                                        {account.displayName || account.email}
+                                    </span>
+                                    <span
+                                        style={{
+                                            display: "block",
+                                            color: "var(--fg-faint)",
+                                            fontSize: 11.5,
+                                            overflowWrap: "anywhere",
+                                        }}
+                                    >
+                                        {account.email}
+                                    </span>
+                                </div>
+                            </div>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
+                                    flexWrap: "wrap",
+                                    justifyContent: "center",
+                                    marginTop: 10,
+                                }}
+                            >
+                                {accounts.length > 1 && (
+                                    <select
+                                        aria-label="Choose an account"
+                                        value={account.id}
+                                        disabled={isSwitching}
+                                        onChange={(event) =>
+                                            handleSwitchAccount(
+                                                event.target.value,
+                                            )
+                                        }
+                                        style={{
+                                            minWidth: 0,
+                                            maxWidth: "100%",
+                                            border: "1px solid var(--border)",
+                                            borderRadius: 8,
+                                            background: "var(--surface)",
+                                            color: "var(--fg-muted)",
+                                            fontSize: 12,
+                                            padding: "7px 9px",
+                                        }}
+                                    >
+                                        {accounts.map((candidate) => (
+                                            <option
+                                                key={candidate.id}
+                                                value={candidate.id}
+                                            >
+                                                {candidate.displayName ||
+                                                    candidate.email}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                                <a
+                                    href={`/login?add_account=1&next=${encodeURIComponent(`/authorize?${searchParams.toString()}`)}`}
+                                    style={{
+                                        color: "#ff7759",
+                                        fontSize: 12,
+                                        fontWeight: 650,
+                                        textDecoration: "none",
+                                    }}
+                                >
+                                    Add account
+                                </a>
+                            </div>
                         </div>
                     )}
 
@@ -714,42 +743,10 @@ function AuthorizeContent() {
                             </div>
                         </div>
 
-                        {/* Info card */}
+                        {/* Security and expiry chip */}
                         <div
                             style={{
-                                background: "var(--overlay)",
-                                border: "1px solid var(--border)",
-                                borderRadius: 12,
-                                padding: 14,
-                            }}
-                        >
-                            <p
-                                style={{
-                                    color: "var(--fg-faint)",
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    margin: "0 0 6px",
-                                }}
-                            >
-                                Security
-                            </p>
-                            <p
-                                style={{
-                                    color: "var(--fg-faint)",
-                                    fontSize: 12,
-                                    lineHeight: 1.5,
-                                    margin: 0,
-                                }}
-                            >
-                                This app can stay signed in using a renewable
-                                token. You can revoke access anytime from your
-                                connected services.
-                            </p>
-                        </div>
-
-                        {/* Timer card */}
-                        <div
-                            style={{
+                                gridColumn: "1 / -1",
                                 background:
                                     timeRemaining < 60
                                         ? "rgba(239,68,68,0.06)"
@@ -758,35 +755,67 @@ function AuthorizeContent() {
                                 borderRadius: 12,
                                 padding: 14,
                                 display: "flex",
-                                flexDirection: "column",
-                                justifyContent: "center",
                                 alignItems: "center",
+                                gap: 14,
                             }}
                         >
-                            <p
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <p
+                                    style={{
+                                        color: "var(--fg-faint)",
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        margin: "0 0 4px",
+                                    }}
+                                >
+                                    Security
+                                </p>
+                                <p
+                                    style={{
+                                        color: "var(--fg-faint)",
+                                        fontSize: 11.5,
+                                        lineHeight: 1.45,
+                                        margin: 0,
+                                    }}
+                                >
+                                    Renewable access. Revoke it anytime from
+                                    connected services.
+                                </p>
+                            </div>
+                            <div
                                 style={{
-                                    color: "var(--fg-faint)",
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    margin: "0 0 4px",
+                                    flexShrink: 0,
+                                    minWidth: 78,
+                                    paddingLeft: 14,
+                                    borderLeft: "1px solid var(--border)",
+                                    textAlign: "center",
                                 }}
                             >
-                                Expires in
-                            </p>
-                            <p
-                                style={{
-                                    fontFamily: "monospace",
-                                    fontSize: 22,
-                                    fontWeight: 700,
-                                    color:
-                                        timeRemaining < 60
-                                            ? "#b91c1c"
-                                            : "#ff7759",
-                                    margin: 0,
-                                }}
-                            >
-                                {formatTime(timeRemaining)}
-                            </p>
+                                <p
+                                    style={{
+                                        color: "var(--fg-faint)",
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        margin: "0 0 4px",
+                                    }}
+                                >
+                                    Expires in
+                                </p>
+                                <p
+                                    style={{
+                                        fontFamily: "monospace",
+                                        fontSize: 20,
+                                        fontWeight: 700,
+                                        color:
+                                            timeRemaining < 60
+                                                ? "#b91c1c"
+                                                : "#ff7759",
+                                        margin: 0,
+                                    }}
+                                >
+                                    {formatTime(timeRemaining)}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
