@@ -425,6 +425,7 @@ function AuthorizeContent() {
                             padding: "24px 24px 20px",
                             display: "flex",
                             alignItems: "center",
+                            justifyContent: "center",
                             gap: 16,
                         }}
                     >
@@ -503,7 +504,13 @@ function AuthorizeContent() {
                         </div>
 
                         {/* Text */}
-                        <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                            style={{
+                                minWidth: 0,
+                                maxWidth: 150,
+                                textAlign: "center",
+                            }}
+                        >
                             <p
                                 style={{
                                     color: "var(--fg)",
@@ -543,6 +550,7 @@ function AuthorizeContent() {
                                 style={{
                                     display: "flex",
                                     alignItems: "center",
+                                    justifyContent: "center",
                                     gap: 10,
                                 }}
                             >
@@ -559,7 +567,9 @@ function AuthorizeContent() {
                                         flexShrink: 0,
                                     }}
                                 />
-                                <div style={{ minWidth: 0, flex: 1 }}>
+                                <div
+                                    style={{ minWidth: 0, textAlign: "center" }}
+                                >
                                     <span
                                         style={{
                                             display: "block",
@@ -588,8 +598,8 @@ function AuthorizeContent() {
                                     alignItems: "center",
                                     gap: 10,
                                     flexWrap: "wrap",
+                                    justifyContent: "center",
                                     marginTop: 10,
-                                    marginLeft: 42,
                                 }}
                             >
                                 {accounts.length > 1 && (
@@ -733,42 +743,10 @@ function AuthorizeContent() {
                             </div>
                         </div>
 
-                        {/* Info card */}
+                        {/* Security and expiry chip */}
                         <div
                             style={{
-                                background: "var(--overlay)",
-                                border: "1px solid var(--border)",
-                                borderRadius: 12,
-                                padding: 14,
-                            }}
-                        >
-                            <p
-                                style={{
-                                    color: "var(--fg-faint)",
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    margin: "0 0 6px",
-                                }}
-                            >
-                                Security
-                            </p>
-                            <p
-                                style={{
-                                    color: "var(--fg-faint)",
-                                    fontSize: 12,
-                                    lineHeight: 1.5,
-                                    margin: 0,
-                                }}
-                            >
-                                This app can stay signed in using a renewable
-                                token. You can revoke access anytime from your
-                                connected services.
-                            </p>
-                        </div>
-
-                        {/* Timer card */}
-                        <div
-                            style={{
+                                gridColumn: "1 / -1",
                                 background:
                                     timeRemaining < 60
                                         ? "rgba(239,68,68,0.06)"
@@ -777,35 +755,67 @@ function AuthorizeContent() {
                                 borderRadius: 12,
                                 padding: 14,
                                 display: "flex",
-                                flexDirection: "column",
-                                justifyContent: "center",
                                 alignItems: "center",
+                                gap: 14,
                             }}
                         >
-                            <p
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <p
+                                    style={{
+                                        color: "var(--fg-faint)",
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        margin: "0 0 4px",
+                                    }}
+                                >
+                                    Security
+                                </p>
+                                <p
+                                    style={{
+                                        color: "var(--fg-faint)",
+                                        fontSize: 11.5,
+                                        lineHeight: 1.45,
+                                        margin: 0,
+                                    }}
+                                >
+                                    Renewable access. Revoke it anytime from
+                                    connected services.
+                                </p>
+                            </div>
+                            <div
                                 style={{
-                                    color: "var(--fg-faint)",
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    margin: "0 0 4px",
+                                    flexShrink: 0,
+                                    minWidth: 78,
+                                    paddingLeft: 14,
+                                    borderLeft: "1px solid var(--border)",
+                                    textAlign: "center",
                                 }}
                             >
-                                Expires in
-                            </p>
-                            <p
-                                style={{
-                                    fontFamily: "monospace",
-                                    fontSize: 22,
-                                    fontWeight: 700,
-                                    color:
-                                        timeRemaining < 60
-                                            ? "#b91c1c"
-                                            : "#ff7759",
-                                    margin: 0,
-                                }}
-                            >
-                                {formatTime(timeRemaining)}
-                            </p>
+                                <p
+                                    style={{
+                                        color: "var(--fg-faint)",
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        margin: "0 0 4px",
+                                    }}
+                                >
+                                    Expires in
+                                </p>
+                                <p
+                                    style={{
+                                        fontFamily: "monospace",
+                                        fontSize: 20,
+                                        fontWeight: 700,
+                                        color:
+                                            timeRemaining < 60
+                                                ? "#b91c1c"
+                                                : "#ff7759",
+                                        margin: 0,
+                                    }}
+                                >
+                                    {formatTime(timeRemaining)}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
