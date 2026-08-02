@@ -124,11 +124,11 @@ export async function POST(request) {
     const wantsSlugChange = !!(requestedSlug && requestedSlug.trim());
 
     // Slug rules:
-    //  - Published blog: keep the slug unless the OWNER explicitly changes it
-    //    (destructive — old /owner/slug links break). Non-owners can't change it.
-    //  - Draft / first publish: honour a custom slug, else derive from the title.
+    //  - Existing blog: keep the slug unless the OWNER explicitly changes it.
+    //    This applies to drafts too, so a collaborator cannot rename the URL.
+    //  - First publish: honour a custom slug, else derive from the title.
     let slug;
-    if (existing && existing.status !== 'draft' && existing.slug) {
+    if (existing?.slug) {
       slug = (wantsSlugChange && isOwner)
         ? await ensureUniqueBlogSlug(db, generateSlug(requestedSlug), slugid, slugScope)
         : existing.slug;

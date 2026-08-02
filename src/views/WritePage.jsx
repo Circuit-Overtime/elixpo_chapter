@@ -489,6 +489,8 @@ export default function WritePage({ slugid }) {
   const hadUserGestureRef = useRef(false);
   const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
   const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
+  const draftRevisionRef = useRef(0); // prevents an older request clearing newer edits
+  const syncInFlightRef = useRef(null); // serialize saves so publish never races autosave
   const coverUploadRef = useRef(null); // pending upload whose permanent URL must win over blob: preview
   const isPublished = blogVersion?.isPublished;
   const [coverZoom, setCoverZoom] = useState(1);
@@ -505,7 +507,8 @@ export default function WritePage({ slugid }) {
   const [slug, setSlug] = useState('');
   const [slugManual, setSlugManual] = useState(false); // user typed a custom slug → stop auto-deriving from title
   const [slugAvail, setSlugAvail] = useState({ state: 'idle' }); // idle | checking | available | taken
-  const [isOwner, setIsOwner] = useState(true); // owner (author / org admin) — only owners may change a published slug
+  const [isOwner, setIsOwner] = useState(true); // owner (author / org admin) — only owners may change a slug
+  const [slugLockHint, setSlugLockHint] = useState(null);
   const [ownerInfo, setOwnerInfo] = useState(null); // real author {username, display_name, avatar_url} — shown to collaborators
   const [publishing, setPublishing] = useState(false);
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
@@ -654,12 +657,24 @@ export default function WritePage({ slugid }) {
 
   // Cloud sync function — saves localStorage then pushes to cloud
   const syncToCloud = useCallback(async ({ showToast = false, silent = false } = {}) => {
+    // Let an existing autosave finish before taking a new snapshot. If it
+    // already saved the latest revision, publishing can reuse its timestamp.
+    if (syncInFlightRef.current) {
+      const updatedAt = await syncInFlightRef.current;
+      if (!dirtyRef.current) return updatedAt;
+    }
     // A cropped cover is first displayed with a temporary blob: URL. Wait for
     // its Cloudinary upload before taking the payload snapshot.
     try { await coverUploadRef.current; } catch {}
+    // The cover wait yields, so another caller may have started a save meanwhile.
+    if (syncInFlightRef.current) {
+      const updatedAt = await syncInFlightRef.current;
+      if (!dirtyRef.current) return updatedAt;
+    }
     const latest = draftDataRef.current;
     const data = { ...latest, coverPreview: persistableCover(latest.coverPreview) };
     if (!data.title && !data.editorContent) return;
+    const revision = draftRevisionRef.current;
 
     // Always save to localStorage first
     saveDraft(blogId, data);
@@ -670,46 +685,53 @@ export default function WritePage({ slugid }) {
     // Also sync any buffered subpage drafts
     syncSubpageDrafts();
 
-    try {
-      const res = await fetch('/api/blogs/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugid: blogId, ...data }),
-      });
+    const request = (async () => {
+      try {
+        const res = await fetch('/api/blogs/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slugid: blogId, ...data }),
+        });
 
-      if (res.ok) {
-        dirtyRef.current = false;
-        let updatedAt = null;
-        // Keep our known version current so our own saves aren't seen as a
-        // conflict when we later publish.
-        try {
-          const d = await res.json();
-          if (d?.updatedAt) {
-            updatedAt = d.updatedAt;
-            setLastKnownUpdatedAt(d.updatedAt);
-            setBlogVersion(v => v ? { ...v, updatedAt: d.updatedAt } : v);
+        if (res.ok) {
+          if (draftRevisionRef.current === revision) dirtyRef.current = false;
+          let updatedAt = null;
+          // Keep our known version current so our own saves aren't seen as a
+          // conflict when we later publish.
+          try {
+            const d = await res.json();
+            if (d?.updatedAt) {
+              updatedAt = d.updatedAt;
+              setLastKnownUpdatedAt(d.updatedAt);
+              setBlogVersion(v => v ? { ...v, updatedAt: d.updatedAt } : v);
+            }
+          } catch {}
+          if (!silent) {
+            setSyncStatus('synced');
+            if (showToast) {
+              setShowSavedToast(true);
+              setTimeout(() => setShowSavedToast(false), 3000);
+            }
+            setTimeout(() => setSyncStatus('idle'), 5000);
           }
-        } catch {}
-        if (!silent) {
-          setSyncStatus('synced');
-          if (showToast) {
-            setShowSavedToast(true);
-            setTimeout(() => setShowSavedToast(false), 3000);
-          }
+          return updatedAt;
+        } else if (!silent) {
+          setSyncStatus('local');
           setTimeout(() => setSyncStatus('idle'), 5000);
         }
-        return updatedAt;
-      } else {
+      } catch {
         if (!silent) {
           setSyncStatus('local');
           setTimeout(() => setSyncStatus('idle'), 5000);
         }
       }
-    } catch {
-      if (!silent) {
-        setSyncStatus('local');
-        setTimeout(() => setSyncStatus('idle'), 5000);
-      }
+      return null;
+    })();
+    syncInFlightRef.current = request;
+    try {
+      return await request;
+    } finally {
+      if (syncInFlightRef.current === request) syncInFlightRef.current = null;
     }
   }, [blogId, syncSubpageDrafts]);
 
@@ -741,18 +763,6 @@ export default function WritePage({ slugid }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [syncToCloud]);
-
-  // Auto-sync to cloud removed — localStorage acts as buffer,
-  // cloud sync only on Ctrl+S, page load, and beforeunload
-
-  // Sync on page load (after draft loads)
-  useEffect(() => {
-    if (!draftLoading) {
-      // Small delay to let editor content settle
-      const timer = setTimeout(() => syncToCloud({ silent: true }), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [draftLoading, syncToCloud]);
 
   // Intercept in-app link clicks to show custom unsaved changes modal
   const handleNavigation = useCallback((url) => {
@@ -916,23 +926,25 @@ export default function WritePage({ slugid }) {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setHasUnsavedEdits(true);
     dirtyRef.current = true;
+    draftRevisionRef.current += 1;
     autoSaveTimer.current = setTimeout(() => {
       if (title || editorContent) {
         saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly });
         setLastSaved(Date.now());
+        void syncToCloud({ silent: true });
       }
-    }, 2000);
+    }, 1200);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, memberOnly, blogId]);
+  }, [title, subtitle, tags, publishAs, collectionId, coverPreview, editorContent, pageEmoji, coverPos, coverZoom, secret, memberOnly, blogId, syncToCloud]);
 
   // Background cloud flush — localStorage is the instant buffer, but beforeunload/
-  // sendBeacon is unreliable, so flush unsynced edits to the cloud every 20s.
+  // sendBeacon is unreliable, so keep a fallback flush for unsynced edits.
   // This protects against tab crashes and makes drafts available cross-device.
   useEffect(() => {
     if (draftLoading) return;
     const id = setInterval(() => {
       if (dirtyRef.current) syncToCloud({ silent: true });
-    }, 20000);
+    }, 10000);
     return () => clearInterval(id);
   }, [draftLoading, syncToCloud]);
 
@@ -1359,7 +1371,9 @@ export default function WritePage({ slugid }) {
     try { await syncSubpageDrafts(); } catch {}
     // Publish the exact revision we are about to send. This prevents a tag-only
     // edit from being rejected when a background draft save changed updated_at.
-    const syncedUpdatedAt = await syncToCloud({ silent: true });
+    const syncedUpdatedAt = (dirtyRef.current || syncInFlightRef.current)
+      ? await syncToCloud({ silent: true })
+      : lastKnownUpdatedAt;
     const persistedCover = persistableCover(draftDataRef.current.coverPreview);
     try {
       const res = await fetch('/api/blogs/publish', {
@@ -1911,11 +1925,20 @@ export default function WritePage({ slugid }) {
                           }}
                         />
                         {coverUploading && (
-                          <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-black/45 backdrop-blur-[2px]">
-                            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                            <div className="relative flex items-center gap-2 rounded-full border border-white/30 bg-black/55 px-4 py-2 text-xs font-semibold text-white shadow-lg">
-                              <span className="h-2 w-2 animate-ping rounded-full bg-[#b69aff]" />
-                              Uploading cover…
+                          <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-[#17131f]/70 backdrop-blur-[3px]" role="status" aria-live="polite">
+                            <div className="cover-upload-sheen absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                            <div className="relative flex min-w-[220px] flex-col items-center rounded-2xl border border-white/20 bg-[#211b2c]/90 px-6 py-5 text-white shadow-2xl">
+                              <div className="relative mb-3 flex h-11 w-11 items-center justify-center">
+                                <span className="absolute inset-0 animate-ping rounded-full bg-[#9b7bf7]/35" />
+                                <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#9b7bf7] shadow-lg shadow-[#9b7bf7]/30">
+                                  <ion-icon name="cloud-upload-outline" style={{ fontSize: '20px' }} />
+                                </span>
+                              </div>
+                              <span className="text-[13px] font-semibold">Preparing your cover</span>
+                              <span className="mt-1 text-[11px] text-white/60">Optimizing and uploading safely</span>
+                              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                <span className="cover-upload-progress block h-full w-2/5 rounded-full bg-gradient-to-r from-[#8b6ae6] to-[#c4b5fd]" />
+                              </div>
                             </div>
                           </div>
                         )}
@@ -2037,7 +2060,10 @@ export default function WritePage({ slugid }) {
                         </div>
                         {/* Inline URL input — slides up from bottom */}
                         {coverUrlMode && (
-                          <div className="absolute bottom-0 left-0 right-0 z-20 bg-black/60 backdrop-blur-md p-4 rounded-b-xl">
+                          <div
+                            className="absolute bottom-0 left-0 right-0 z-20 backdrop-blur-md p-4 rounded-b-xl"
+                            style={{ backgroundColor: 'color-mix(in srgb, var(--bg-surface) 94%, transparent)', borderTop: '1px solid var(--border-default)' }}
+                          >
                             <div className="flex gap-2">
                               <input
                                 autoFocus
@@ -2055,7 +2081,8 @@ export default function WritePage({ slugid }) {
                                   if (e.key === 'Escape') { setCoverUrlMode(false); setCoverUrlInput(''); }
                                 }}
                                 placeholder="Paste image URL and press Enter..."
-                                className="flex-1 bg-white/10 text-[var(--text-primary)] rounded-lg px-3 py-2 text-[13px] outline-none border border-white/20 focus:border-white/40 placeholder-white/40"
+                                className="flex-1 rounded-lg px-3 py-2 text-[13px] outline-none placeholder:text-[var(--text-faint)] focus:border-[#9b7bf7]"
+                                style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
                               />
                               <button
                                 onClick={() => {
@@ -2067,7 +2094,8 @@ export default function WritePage({ slugid }) {
                                     setCoverUrlInput('');
                                   }
                                 }}
-                                className="px-4 py-2 bg-white/15 text-[var(--text-primary)] rounded-lg text-[13px] font-medium hover:bg-white/25 transition-colors"
+                                className="px-4 py-2 bg-[#9b7bf7] text-white rounded-lg text-[13px] font-medium hover:bg-[#8a68ee] transition-colors disabled:opacity-50"
+                                disabled={!coverUrlInput.trim()}
                               >
                                 Set
                               </button>
@@ -2458,17 +2486,23 @@ export default function WritePage({ slugid }) {
             </div>
           )}
 
-          {/* URL slug — editable before publish; after publish only the owner can
-              change it (destructive — old links break). Non-owners see it locked. */}
+          {/* URL slug — only the owner can change it. Published slug changes are
+              destructive because old links break; collaborators always see it locked. */}
           {(() => {
-            const slugLocked = isPublished && !isOwner;
+            const slugLocked = !isOwner;
             return (
           <div>
             <label className="text-[12px] font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
               URL slug
               {slugLocked && <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'var(--text-faint)' }}>(locked)</span>}
             </label>
-            <div className="flex items-center gap-1 rounded-lg px-3 py-2.5 text-[13px]" style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', opacity: slugLocked ? 0.7 : 1 }}>
+            <div
+              className="flex items-center gap-1 rounded-lg px-3 py-2.5 text-[13px]"
+              style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-default)', opacity: slugLocked ? 0.7 : 1 }}
+              onPointerEnter={(event) => slugLocked && setSlugLockHint({ x: event.clientX, y: event.clientY })}
+              onPointerMove={(event) => slugLocked && setSlugLockHint({ x: event.clientX, y: event.clientY })}
+              onPointerLeave={() => setSlugLockHint(null)}
+            >
               <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>
                 /{ownerSlug}/
               </span>
@@ -2483,6 +2517,16 @@ export default function WritePage({ slugid }) {
               />
               {slugLocked && <ion-icon name="lock-closed" style={{ fontSize: '12px', color: 'var(--text-faint)' }} />}
             </div>
+            {slugLocked && slugLockHint && typeof document !== 'undefined' && createPortal(
+              <div
+                role="tooltip"
+                className="fixed z-[90] pointer-events-none rounded-lg px-3 py-2 text-[11px] font-medium text-white shadow-xl"
+                style={{ left: Math.max(8, Math.min(slugLockHint.x, window.innerWidth - 230)), top: slugLockHint.y + 14, backgroundColor: '#27232f' }}
+              >
+                Only the blog owner can edit the slug.
+              </div>,
+              document.body
+            )}
             {!slugLocked && (
               <p
                 className="text-[11px] mt-1"
