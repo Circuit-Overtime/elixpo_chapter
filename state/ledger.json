@@ -1,7 +1,8 @@
 {
   "blocklist": [],
   "daily_count": {
-    "2026-07-07": 1
+    "2026-07-07": 1,
+    "2026-08-02": 1
   },
   "prs": {
     "PostHog/posthog#29916": {
@@ -10,6 +11,17 @@
       "last_event": "",
       "model_cascade": [],
       "opened_at": "2026-07-07T08:50:39.687145+00:00",
+      "pr_url": "",
+      "status": "claimed",
+      "token_spend": 0,
+      "tracking_issue": ""
+    },
+    "mealie-recipes/mealie#5422": {
+      "fork_url": "",
+      "issue_url": "https://github.com/mealie-recipes/mealie/issues/5422",
+      "last_event": "",
+      "model_cascade": [],
+      "opened_at": "2026-08-02T10:22:51.734500+00:00",
       "pr_url": "",
       "status": "claimed",
       "token_spend": 0,
