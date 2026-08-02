@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
 import Link from 'next/link';
+import { CreatorBadgeMark } from '../components/CreatorBadge';
+import { CREATOR_BADGE_MAP } from '../../lib/badgeDefinitions';
 
 const NOTIF_CONFIG = {
   follow:         { icon: 'person-add-outline',     color: '#9b7bf7', label: 'followed you' },
@@ -272,6 +274,7 @@ export default function NotificationsPage() {
                 <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-default)' }}>
                   {items.map((n, i) => {
                     const cfg = NOTIF_CONFIG[n.type] || NOTIF_CONFIG.follow;
+                    const awardedBadge = n.type === 'badge_awarded' ? CREATOR_BADGE_MAP.get(n.target_id) : null;
                     return (
                       <Link
                         key={n.id}
@@ -287,7 +290,9 @@ export default function NotificationsPage() {
                       >
                         {/* Avatar + type badge */}
                         <div className="relative flex-shrink-0 mt-0.5">
-                          {n.actor_avatar ? (
+                          {awardedBadge ? (
+                            <CreatorBadgeMark badge={awardedBadge} size={42} />
+                          ) : n.actor_avatar ? (
                             <img src={n.actor_avatar} alt="" className="h-10 w-10 rounded-full object-cover" style={{ border: '2px solid var(--border-default)' }} />
                           ) : (
                             <div className="h-10 w-10 rounded-full flex items-center justify-center text-[14px] font-bold"
@@ -295,10 +300,12 @@ export default function NotificationsPage() {
                               {(n.actor_name || '?')[0].toUpperCase()}
                             </div>
                           )}
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--divider)' }}>
-                            <ion-icon name={cfg.icon} style={{ fontSize: '11px', color: cfg.color }} />
-                          </div>
+                          {!awardedBadge && (
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--divider)' }}>
+                              <ion-icon name={cfg.icon} style={{ fontSize: '11px', color: cfg.color }} />
+                            </div>
+                          )}
                         </div>
 
                         {/* Content */}

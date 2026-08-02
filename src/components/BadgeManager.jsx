@@ -63,9 +63,14 @@ export default function BadgeManager() {
       </div>
 
       {newlyEarned.length > 0 && (
-        <div className="mt-4 rounded-xl px-4 py-3" style={{ backgroundColor: 'var(--accent-subtle)', border: '1px solid color-mix(in srgb, var(--accent) 25%, var(--border-default))' }}>
-          <p className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>You earned {newlyEarned.length === 1 ? 'a new badge' : `${newlyEarned.length} new badges`}.</p>
-          <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>They remain hidden until you choose to display them.</p>
+        <div className="mt-4 flex items-center gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: 'var(--accent-subtle)', border: '1px solid color-mix(in srgb, var(--accent) 25%, var(--border-default))' }}>
+          <div className="flex shrink-0 -space-x-2">
+            {newlyEarned.slice(0, 3).map((badge) => <CreatorBadgeMark key={badge.id} badge={badge} size={36} />)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>You earned {newlyEarned.length === 1 ? newlyEarned[0].name : `${newlyEarned.length} new badges`}.</p>
+            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>They remain hidden until you choose to display them.</p>
+          </div>
         </div>
       )}
 
