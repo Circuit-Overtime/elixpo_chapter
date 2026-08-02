@@ -7,6 +7,7 @@ import TabBar from '../components/TabBar';
 import ImageCropModal from '../components/ImageCropModal';
 import FollowListModal from '../components/FollowListModal';
 import Link from 'next/link';
+import BadgeManager from '../components/BadgeManager';
 
 function UsageBar({ label, used, limit, unit, color = '#9b7bf7' }) {
   const percent = limit > 0 ? Math.min(Math.round((used / limit) * 100), 100) : 0;
@@ -290,6 +291,8 @@ export default function ProfilePage() {
         )}
 
         <div className="h-px bg-[var(--bg-elevated)] mb-8" />
+
+        <BadgeManager />
 
         {/* Subscription & Usage */}
         <div className="mb-8">

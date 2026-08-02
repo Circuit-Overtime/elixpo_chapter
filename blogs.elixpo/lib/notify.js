@@ -20,7 +20,7 @@
  * @param {D1Database} db
  * @param {object} opts
  * @param {string} opts.userId        - Who receives the notification
- * @param {string} opts.type          - follow | comment | like | mention | org_invite | blog_invite | blog_published
+ * @param {string} opts.type          - follow | comment | like | mention | org_invite | blog_invite | blog_published | badge_awarded
  * @param {string} [opts.actorId]     - Who triggered it
  * @param {string} [opts.actorName]   - Display name of actor
  * @param {string} [opts.actorAvatar] - Avatar URL of actor
