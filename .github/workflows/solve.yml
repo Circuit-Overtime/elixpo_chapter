@@ -64,6 +64,11 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         with:
           python-version: "3.11"
+      - name: Setup Node harness runtime
+        if: steps.gate.outputs.run == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
       - name: Install
         if: steps.gate.outputs.run == 'true'
         run: pip install -e .
@@ -76,6 +81,8 @@ jobs:
           ISSUE_URL: ${{ inputs.issue_url }}
           OWNED_TEST: ${{ inputs.owned_test }}
         run: |
+          # Python starts CCR and invokes the same bounded Node harness used by
+          # local `python -m agents.solve` runs inside the fork workspace.
           args=()
           if [[ "$OWNED_TEST" == "true" ]]; then
             args+=(--issue-url "$ISSUE_URL" --owned-test)

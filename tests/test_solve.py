@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 
 import httpx
 
@@ -10,7 +11,8 @@ from agents.solve.core import SolveRejected, ensure_fork, resolve_target, valida
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, run_verification, validate_command
-from agents.solve.models import PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
+from agents.solve.harness import _harness_env, _parse_cli_result
+from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from lib.state.store import StateStore
 from rtk.shell import CmdResult
 
@@ -97,6 +99,60 @@ def test_target_command_environment_excludes_agent_credentials(tmp_path, monkeyp
     run_verification(tmp_path, "pytest", allowed_prefixes=["pytest"], timeout=10)
     assert "GITHUB_TOKEN" not in captured
     assert "ELIXPO_POLLINATIONS_API_KEY" not in captured
+
+
+def test_harness_environment_excludes_agent_credentials(monkeypatch):
+    monkeypatch.setenv("GITHUB_TOKEN", "must-not-leak")
+    monkeypatch.setenv("AGENT_GITHUB_SOLVER_TOKEN", "must-not-leak")
+    monkeypatch.setenv("ELIXPO_POLLINATIONS_API_KEY", "must-not-leak")
+
+    env = _harness_env("qwen-coder")
+
+    assert "GITHUB_TOKEN" not in env
+    assert "AGENT_GITHUB_SOLVER_TOKEN" not in env
+    assert "ELIXPO_POLLINATIONS_API_KEY" not in env
+    assert env["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:3456"
+    assert env["ANTHROPIC_AUTH_TOKEN"] == "ccr-pollinations"
+
+
+def test_harness_result_parses_structured_output_and_usage():
+    envelope = {
+        "subtype": "success",
+        "structured_output": {
+            "solvable": True,
+            "estimated_minutes": 8,
+            "rationale": "localized copy behavior",
+            "summary": "Copy the complete response text.",
+            "setup_commands": [],
+            "verification_commands": ["npm run lint"],
+            "commit_message": "fix: copy complete response text",
+        },
+        "usage": {
+            "input_tokens": 1000,
+            "cache_read_input_tokens": 400,
+            "output_tokens": 200,
+        },
+        "num_turns": 6,
+        "duration_ms": 12000,
+        "session_id": "session-1",
+    }
+
+    outcome, usage, metadata = _parse_cli_result(json.dumps(envelope))
+
+    assert outcome.solvable is True
+    assert usage.total_tokens == 1600
+    assert usage.cached_tokens == 400
+    assert metadata == {"session_id": "session-1", "turns": 6, "duration_ms": 12000}
+
+
+def test_declined_harness_outcome_needs_no_commands():
+    outcome = HarnessOutcome(
+        solvable=False,
+        estimated_minutes=0,
+        rationale="scope exceeds the bounded run",
+        summary="Declined without edits.",
+    )
+    assert outcome.verification_commands == []
 
 
 def test_edit_batch_is_exact_and_plan_confined(tmp_path):

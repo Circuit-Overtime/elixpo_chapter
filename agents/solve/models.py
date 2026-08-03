@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class StrictModel(BaseModel):
@@ -58,3 +58,21 @@ class ReviewVerdict(StrictModel):
     approved: bool
     summary: str
     findings: list[str] = Field(default_factory=list, max_length=5)
+
+
+class HarnessOutcome(StrictModel):
+    solvable: bool
+    estimated_minutes: int = Field(ge=0, le=15)
+    rationale: str = Field(min_length=1, max_length=1000)
+    summary: str = Field(min_length=1, max_length=1000)
+    setup_commands: list[str] = Field(default_factory=list, max_length=1)
+    verification_commands: list[str] = Field(default_factory=list, max_length=3)
+    commit_message: str = Field(default="", max_length=120)
+
+    @model_validator(mode="after")
+    def require_execution_fields_for_solution(self) -> HarnessOutcome:
+        if self.solvable and not self.verification_commands:
+            raise ValueError("a solvable outcome requires at least one verification command")
+        if self.solvable and not self.commit_message.strip():
+            raise ValueError("a solvable outcome requires a commit message")
+        return self

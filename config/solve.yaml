@@ -13,6 +13,17 @@ max_test_commands: 3
 max_setup_commands: 1
 command_timeout_seconds: 180
 
+# Python supervises these Node processes for both local and Actions runs.
+harness_model: qwen-coder
+harness_max_turns: 14
+harness_max_output_tokens: 2600
+ccr_start_timeout_seconds: 60
+blocked_change_prefixes:
+  - .github/workflows/
+  - .github/actions/
+  - .env
+  - secrets/
+
 # Explicit manual-test escape hatch. Production automation still requires the
 # normal Pick -> Vet approval. Test mode additionally verifies push permission.
 test_repositories:

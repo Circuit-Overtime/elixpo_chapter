@@ -11,6 +11,7 @@ from typing import Any
 import httpx
 
 from agents.solve.edit import EditRejected
+from agents.solve.harness import HarnessError
 from lib.workspace import WorkspaceError
 from rtk.budget import BudgetExceeded
 
@@ -26,6 +27,7 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
     if (
         isinstance(exc, (asyncio.TimeoutError, subprocess.TimeoutExpired, TimeoutError))
         or "wall-time limit" in lowered
+        or "harness exceeded" in lowered
     ):
         category, retryable, candidate_action = "timeout", True, "retry_once"
     elif isinstance(exc, BudgetExceeded) or "token budget" in lowered or "breach ceiling" in lowered:
@@ -44,9 +46,18 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
         category, retryable, candidate_action = "context_mismatch", True, "refresh_context_once"
     elif isinstance(exc, WorkspaceError) or isinstance(exc, FileNotFoundError):
         category, retryable, candidate_action = "workspace", True, "repair_environment_then_retry"
+    elif isinstance(exc, HarnessError) and (
+        "unavailable" in lowered or "ccr did not become ready" in lowered or "ccr exited" in lowered
+    ):
+        category, retryable, candidate_action = "workspace", True, "repair_environment_then_retry"
     elif "missing credential" in lowered:
         category, candidate_action = "credentials", "repair_credentials"
-    elif "invalid structured model output" in lowered or "model did not return" in lowered:
+    elif (
+        "invalid structured model output" in lowered
+        or "model did not return" in lowered
+        or "harness output failed validation" in lowered
+        or "harness result was not structured" in lowered
+    ):
         category, retryable, candidate_action = "model_output", True, "retry_once_with_stricter_output"
     elif "verification failed" in lowered or "dependency setup failed" in lowered:
         category, candidate_action = "verification", "inspect_checks_or_terminate"

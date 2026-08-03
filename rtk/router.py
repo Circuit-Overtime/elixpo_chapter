@@ -22,11 +22,11 @@ from typing import Any
 import structlog
 import yaml
 
-from rtk.budget import Budget
+from rtk.budget import Budget, BudgetExceeded
 from rtk.client import LLMClient
 from rtk.count import count_messages
 from rtk.ledger import TokenLedger
-from rtk.models import ChatCompletionResponse, Message, ToolDef
+from rtk.models import ChatCompletionResponse, Message, ToolDef, Usage
 
 log = structlog.get_logger()
 
@@ -153,6 +153,43 @@ class Router:
             used=used, spent=self.budget.spent, remaining=self.budget.remaining(),
         )
         return resp
+
+    def record_external_usage(
+        self,
+        role: str,
+        usage: Usage,
+        *,
+        source: str,
+        extra: dict[str, Any] | None = None,
+    ) -> int:
+        """Account for a supervised harness session that routes through CCR."""
+        spec = self.resolve(role)
+        used = max(0, int(usage.total_tokens))
+        self.budget.charge(used)
+        details = {"source": source, **(extra or {})}
+        if self.ledger is not None:
+            self.ledger.record(
+                task_id=self.task_id,
+                role=role,
+                model=spec["model"],
+                usage=usage,
+                extra=details,
+            )
+        log.debug(
+            "rtk.external",
+            role=role,
+            model=spec["model"],
+            source=source,
+            used=used,
+            spent=self.budget.spent,
+            remaining=self.budget.remaining(),
+        )
+        if self.budget.spent > self.budget.ceiling:
+            raise BudgetExceeded(
+                f"{self.task_id}: external harness spent {self.budget.spent} tokens, "
+                f"breaching ceiling {self.budget.ceiling}"
+            )
+        return self.budget.spent
 
     async def aclose(self) -> None:
         for c in self._clients.values():

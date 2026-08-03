@@ -12,10 +12,8 @@ from typing import Any
 
 import httpx
 
-from agents.comprehend.bundle import build_context_bundle, load_exact_context, tracked_files
-from agents.solve.edit import apply_edit_batch
+from agents.solve.harness import run_harness
 from agents.solve.git import changed_files, commit_files, git, run_verification, validate_command
-from agents.solve.model import implement_step, plan_issue, review_diff, search_once
 from agents.solve.models import SolvePlan
 from lib.github.issues import fetch_issue_evidence, parse_issue_url, referenced_pull_requests
 from lib.solve_policy import is_test_repository
@@ -250,109 +248,86 @@ async def solve(
         work_branch=work_branch,
         token=await api._token(),
     )
-    running["stage"] = "planning"
+    running["stage"] = "harness"
     store.write_json("solve.json", running)
 
-    bundle = build_context_bundle(
+    remaining_seconds = max(1, int(policy["max_minutes"]) * 60 - int(time.monotonic() - started))
+    outcome, usage, harness_metadata = await asyncio.to_thread(
+        run_harness,
         root,
         issue,
-        guidance_names=list(policy["guidance_names"]),
-        max_context_tokens=int(policy["max_context_tokens"]),
-        max_file_tokens=int(policy["max_file_tokens"]),
-    )
-    plan = await plan_issue(
-        router,
-        issue,
-        bundle.render(int(policy["max_context_tokens"])),
         policy,
-        allowed_existing_targets=list(bundle.candidates),
+        timeout=remaining_seconds,
     )
+    router.record_external_usage("code", usage, source="ccr-node-harness", extra=harness_metadata)
     _budget_guard(router)
-    validate_plan(
-        plan,
-        policy,
-        set(tracked_files(root)),
-        retrieved_files=set(bundle.candidates),
+    if not outcome.solvable:
+        raise SolveRejected(f"coding harness declined issue: {outcome.rationale}")
+    if outcome.estimated_minutes > int(policy["max_minutes"]):
+        raise SolveRejected(f"harness estimate exceeds {policy['max_minutes']} minutes")
+
+    targets = changed_files(root)
+    if not targets:
+        raise SolveRejected("coding harness produced no diff")
+    if len(targets) > int(policy["max_files"]):
+        raise SolveRejected(f"coding harness changed {len(targets)} files; maximum is {policy['max_files']}")
+    for path in targets:
+        _validate_path(path)
+        lowered_path = path.casefold()
+        blocked = [str(item).casefold() for item in policy.get("blocked_change_prefixes", [])]
+        if any(lowered_path == item.rstrip("/") or lowered_path.startswith(item) for item in blocked):
+            raise SolveRejected(f"coding harness changed a protected path: {path}")
+        resolved = root / path
+        if not resolved.exists():
+            raise SolveRejected(f"coding harness deleted a file: {path}")
+        if resolved.is_symlink():
+            raise SolveRejected(f"coding harness created or changed a symlink: {path}")
+
+    running.update(
+        {
+            "stage": "verifying",
+            "harness": {**outcome.model_dump(), **harness_metadata},
+            "target_files": sorted(targets),
+        }
     )
-    running["plan"] = plan.model_dump()
-    running["stage"] = "searching" if plan.needs_search else "implementing"
     store.write_json("solve.json", running)
 
-    search_context = ""
-    if plan.needs_search:
-        search_context = await search_once(router, plan.search_query, issue)
-        _budget_guard(router)
-
-    commits: list[str] = []
     checks: list[dict] = []
-    all_targets = {path for step in plan.steps for path in step.files}
-    for step_index, step in enumerate(plan.steps):
-        if time.monotonic() - started >= int(policy["max_minutes"]) * 60:
-            raise SolveRejected("Solve reached its wall-time limit")
-        running.update({"stage": "implementing", "step_index": step_index})
-        store.write_json("solve.json", running)
-        exact_paths = list(dict.fromkeys([*step.files, *plan.context_files]))
-        exact_context = load_exact_context(
+    for command in outcome.setup_commands[: int(policy["max_setup_commands"])]:
+        result = run_verification(
             root,
-            exact_paths,
-            guidance_names=list(policy["guidance_names"]),
-            max_tokens=int(policy["max_context_tokens"]),
-            max_file_tokens=int(policy["max_file_tokens"]),
+            command,
+            allowed_prefixes=list(policy["allowed_setup_prefixes"]),
+            timeout=int(policy["command_timeout_seconds"]),
         )
-        implementation = await implement_step(
-            router,
-            issue=issue,
-            step=step.model_dump(),
-            exact_context=exact_context,
-            search_context=search_context,
+        checks.append(
+            {"kind": "setup", "command": command, "exit_code": result.code, "output": result.output}
         )
-        _budget_guard(router)
-        changed = apply_edit_batch(root, implementation.edits, set(step.files))
-        observed = set(changed_files(root))
-        if not observed or not observed.issubset(set(step.files)):
-            raise SolveRejected(f"working tree escaped planned files: {sorted(observed - set(step.files))}")
-        if not set(changed).issubset(all_targets):
-            raise SolveRejected("implementation escaped the full plan")
+        if result.code != 0:
+            raise SolveRejected(f"dependency setup failed: {command}")
+    for command in outcome.verification_commands[: int(policy["max_test_commands"])]:
+        result = run_verification(
+            root,
+            command,
+            allowed_prefixes=list(policy["allowed_command_prefixes"]),
+            timeout=int(policy["command_timeout_seconds"]),
+        )
+        checks.append(
+            {"kind": "verification", "command": command, "exit_code": result.code, "output": result.output}
+        )
+        if result.code != 0:
+            raise SolveRejected(f"verification failed: {command}")
 
-        running["stage"] = "verifying"
-        store.write_json("solve.json", running)
-        for command in step.setup_commands[: int(policy["max_setup_commands"])]:
-            result = run_verification(
-                root,
-                command,
-                allowed_prefixes=list(policy["allowed_setup_prefixes"]),
-                timeout=int(policy["command_timeout_seconds"]),
-            )
-            checks.append(
-                {"kind": "setup", "command": command, "exit_code": result.code, "output": result.output}
-            )
-            if result.code != 0:
-                raise SolveRejected(f"dependency setup failed: {command}")
-        for command in step.verification_commands[: int(policy["max_test_commands"])]:
-            result = run_verification(
-                root,
-                command,
-                allowed_prefixes=list(policy["allowed_command_prefixes"]),
-                timeout=int(policy["command_timeout_seconds"]),
-            )
-            checks.append(
-                {"kind": "verification", "command": command, "exit_code": result.code, "output": result.output}
-            )
-            if result.code != 0:
-                raise SolveRejected(f"verification failed: {command}")
-        commits.append(commit_files(root, changed, step.commit_message))
+    observed = set(changed_files(root))
+    if observed != set(targets):
+        raise SolveRejected(f"verification changed the working tree: {sorted(observed ^ set(targets))}")
+    commits = [commit_files(root, targets, outcome.commit_message)]
 
     if git(root, "status", "--porcelain"):
-        raise SolveRejected("workspace is not clean after step commits")
+        raise SolveRejected("workspace is not clean after the implementation commit")
     diff = git(root, "diff", f"upstream/{base_branch}...HEAD", timeout=60)
     if not diff.strip():
         raise SolveRejected("Solve produced no diff")
-    running["stage"] = "reviewing"
-    store.write_json("solve.json", running)
-    review = await review_diff(router, issue, plan, diff, checks)
-    _budget_guard(router)
-    if not review.approved or review.findings:
-        raise SolveRejected("self-review rejected implementation: " + "; ".join(review.findings or [review.summary]))
 
     result = {
         **running,
@@ -360,13 +335,13 @@ async def solve(
         "stage": "complete",
         "title": str(issue.get("title") or ""),
         "issue_number": number,
-        "plan": plan.model_dump(),
-        "summary": review.summary,
-        "target_files": sorted(all_targets),
+        "summary": outcome.summary,
+        "rationale": outcome.rationale,
+        "target_files": sorted(targets),
         "checks": checks,
         "commits": commits,
         "head_sha": git(root, "rev-parse", "HEAD"),
-        "review": review.model_dump(),
+        "harness": {**outcome.model_dump(), **harness_metadata},
         "token_spent": router.budget.spent,
         "finished_at": datetime.now(timezone.utc).isoformat(),
     }

@@ -75,20 +75,20 @@ lookup constant-time. Each record stores the issue's `updated_at` revision.
 Triage and Pick skip an unchanged rejected revision, while new conversation
 activity permits one fresh evaluation.
 
-### Comprehend — Context loading
-*(Runs as the first step of Solve, not a separate workflow.)*
-- **Job:** Build a tight context bundle from tracked paths, issue-named files, exact symbols, scoped `AGENTS.md`/`CLAUDE.md`, and manifests.
-- **Target:** context bundle under 4.5k tokens; reload only exact plan files for editing.
-- **Skill:** `skills/comprehend-target-code/SKILL.md`
+### Comprehend — Harness tool phase
+*(Runs inside Solve, not as a separate workflow.)*
+- **Job:** Use bounded Glob/Grep/Read calls to locate scoped guidance, manifests, and exact implementation files before editing.
+- **Target:** repository-grounded context discovered on demand; no bulk snapshot or guessed target path.
+- **Skill:** included in `skills/solve-bounded-issue/SKILL.md`
 
 ### Solve — Coding
 - **Trigger:** successful Vet workflow with an approved Pick, or explicit allowlisted owned-test mode.
 - **Budget:** 15 minutes and 24k tokens; no whole-pipeline retry.
-- **Agents:** workspace acquirer, comprehender, planner, optional searcher, exact-file implementer, verifier, reviewer.
-- **Models:** `qwen-coder` for plan/edit/review. `perplexity-fast` is limited to one plan-justified narrow lookup.
+- **Agents:** Python workspace supervisor, CCR-routed Node coding harness, deterministic verifier.
+- **Model:** `qwen-coder` runs through the CCR Node coding harness. Python supervises the same bounded session locally and in Actions, then owns verification and commit gates.
 - **Sandbox:** one isolated temporary Git workspace cloned from the authenticated fork.
-- **Output:** local stepwise commits and `state/solve.json`; no push until final review passes.
-- **Skills:** one compact skill per phase under `skills/`, orchestrated by `solve-bounded-issue`.
+- **Output:** one local reviewed commit and `state/solve.json`; no push until every gate passes.
+- **Skill:** `skills/solve-bounded-issue/SKILL.md`.
 
 ### Submit — PR creation
 - **Trigger:** `state/solve.json` reaches `ready_to_submit` in the same runner.
@@ -206,16 +206,14 @@ Roles map to models, not the other way around. Agents request `model: "code"`, t
 | Issue scoring, triage reasoning | `nova-fast` | Lowest explicitly priced general tool-calling model |
 | Final issue suitability verification | `nova-fast` | One compact structured call after zero-cost gates |
 | Repository comprehension | deterministic retrieval | No model; bounded tracked-file context |
-| Planning (what to change) | `qwen-coder` | One forced structured plan |
-| **Code generation** | `qwen-coder` | At most two exact-edit calls |
-| Self-review of diffs | `qwen-coder` | One compact forced verdict |
+| **Comprehend + implement** | `qwen-coder` | One CCR-routed Node harness, at most 14 turns |
+| Deterministic review | Python | File, diff, command, test, time, and token gates |
 | PR body, commit messages | `mistral` | Natural prose, cheap |
 | Steward replies | `kimi` | Good at conversational follow-ups + tool use |
-| Web search (when indispensable) | `perplexity-fast` | At most one narrow call per Solve run |
 | Safety gate before posting | `qwen-safety` | Costs ~nothing, blocks problematic outputs |
 | Celebration image | `gptimage` | On merge only |
 
-Rough budget per PR: 50k–150k tokens. Well under $1 in pollen per PR even with Claude escalation.
+Solve has a hard 24k-token ceiling; the other squads keep their own independent budgets.
 
 ---
 

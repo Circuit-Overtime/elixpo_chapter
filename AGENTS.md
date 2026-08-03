@@ -13,7 +13,7 @@
 
 ## Repository Structure
 
-- `agents/` — the squads (scout, triage, pick, comprehend, solve, submit, steward, discussions). **Independent: a squad never imports another squad.** They talk only via GitHub + `state/`. `comprehend/` is a library used by `solve/`.
+- `agents/` — the squads (scout, triage, pick, solve, submit, steward, discussions) plus reusable comprehension helpers. **Independent: a squad never imports another squad.** They talk only via GitHub + `state/`. Solve performs comprehension inside its bounded coding harness.
 - `rtk/` — the token economy over Pollinations: `router` (role→model), `budget`, `cache`, `count`, `compress`, `dedup`, `diff_context`, `retrieve`, `summarize`, `downshift`, `truncate`, `shell` (pipes runner output through the `rtk` CLI), `ledger`.
 - `lib/` — shared plumbing: `github/` (App auth + REST + `dispatch`), `tools/` (file/git/shell/grep/glob/web — publishable as our own MCP/connector later), `state/` (issues + board + json store), `scorer.py`, `config.py`.
 - `config/` — `models.yaml`, `languages.yaml`, `budgets.yaml`. `state/` — `ledger.json`, `candidates.json`, `blocklist.json`, `token_log.jsonl`. `prompts/` — squad prompt templates.
@@ -25,11 +25,11 @@
 
 - **Squad independence**: code in `agents/<x>/` may import `rtk` and `lib`, never `agents/<y>/`.
 - **No external DB**: never reach for D1/KV/Postgres. State is issues + board + `state/*.json`.
-- **Every model call goes through `rtk.Router`** — never call Pollinations directly (budget + ledger + caching depend on it).
+- **Every direct model call goes through `rtk.Router`.** The sole exception is Solve's Node coding harness, which must route through loopback CCR under Python supervision and report its returned usage into the Router budget and ledger. Never call Pollinations directly.
 - **Safety gate before any public post**: route through the `qwen-safety` role.
 - **Honest disclosure**: PRs/comments post as `elixpoo[bot]` and say they're from an autonomous contributor.
 - **Publishable design**: build tools/connectors so they can ship as a pypi/npm package later — keep modules dependency-light and interface-clean.
-- **Latest agentic techniques**: structured outputs (JSON schema tool calls), bounded plan→implement→self-review, exact-file retrieval over re-sending context, and no whole-run retry.
+- **Latest agentic techniques**: structured outputs, bounded tool loops, repository-grounded reads before edits, deterministic post-run gates, and no whole-run retry.
 
 ## Solve Safety
 
