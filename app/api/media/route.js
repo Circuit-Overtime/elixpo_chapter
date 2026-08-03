@@ -12,6 +12,7 @@ export async function GET() {
   const db = getDB();
   const { results = [] } = await db.prepare(`
     SELECT m.id, m.size_bytes, m.media_type, m.created_at, m.cloudinary_public_id,
+      m.storage_provider, m.storage_cloud_name, m.secure_url,
       b.id AS blog_id, b.title AS blog_title, b.published_as, b.collection_id,
       c.name AS collection_name, o.id AS org_id, o.name AS org_name
     FROM media_uploads m
@@ -23,7 +24,10 @@ export async function GET() {
     LIMIT 200
   `).bind(session.userId).all();
 
-  const items = results.map((item) => ({ ...item, url: getCloudinaryUrl(item.cloudinary_public_id) }));
+  const items = results.map((item) => ({
+    ...item,
+    url: item.secure_url || getCloudinaryUrl(item.cloudinary_public_id, '', item.storage_cloud_name),
+  }));
   const total = await db.prepare('SELECT COALESCE(SUM(size_bytes), 0) AS bytes, COUNT(*) AS count FROM media_uploads WHERE user_id = ?')
     .bind(session.userId).first();
   const aggregate = async (join, id, name) => {
@@ -41,12 +45,24 @@ export async function GET() {
   };
   const organisations = await aggregate("JOIN orgs o ON b.published_as = ('org:' || o.id)", 'o.id', 'o.name');
   const collections = await aggregate('JOIN collections c ON c.id = b.collection_id', 'c.id', 'c.name');
+  const { results: storageSpaces = [] } = await db.prepare(`
+    SELECT storage_provider AS provider, storage_cloud_name AS cloudName,
+      COALESCE(SUM(size_bytes), 0) AS bytes, COUNT(*) AS count
+    FROM media_uploads WHERE user_id = ?
+    GROUP BY storage_provider, storage_cloud_name
+    ORDER BY bytes DESC
+  `).bind(session.userId).all();
 
   return NextResponse.json({
     totalBytes: Number(total?.bytes || 0),
     count: Number(total?.count || 0),
     organisations,
     collections,
+    storageSpaces: storageSpaces.map((space) => ({
+      ...space,
+      bytes: Number(space.bytes || 0),
+      count: Number(space.count || 0),
+    })),
     items,
   });
 }
