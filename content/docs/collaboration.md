@@ -1,5 +1,3 @@
-# Collaborate on a story
-
 The story owner can invite another LixBlogs user from the editor. An invitation appears in the recipient's notifications and must be accepted before they can edit.
 
 ## Invitations

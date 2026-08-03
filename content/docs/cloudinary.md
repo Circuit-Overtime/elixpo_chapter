@@ -1,5 +1,3 @@
-# Connect personal Cloudinary storage
-
 A personal Cloudinary connection lets new blog covers and editor images use a Cloudinary product environment you control. It is optional; eligible accounts can continue using LixBlogs-managed storage.
 
 ## Connect

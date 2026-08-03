@@ -1,5 +1,3 @@
-# Connected services
-
 Connected services add capabilities without requiring you to share a provider password with LixBlogs. Manage them from **Settings → Integrations**.
 
 ## Available integrations

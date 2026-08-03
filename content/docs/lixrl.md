@@ -1,5 +1,3 @@
-# Connect LixRL short links
-
 LixRL creates short, account-owned URLs without placing a personal API key in the blog editor.
 
 ## Connect

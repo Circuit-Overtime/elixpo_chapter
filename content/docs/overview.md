@@ -1,5 +1,3 @@
-# Welcome to LixBlogs
-
 LixBlogs is a publishing platform for individual creators and organizations. You can draft rich stories, collaborate with co-authors, publish under your profile or an organization, and understand how readers find and engage with your work.
 
 ## The publishing workflow

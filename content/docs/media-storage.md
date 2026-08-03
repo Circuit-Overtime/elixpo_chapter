@@ -1,5 +1,3 @@
-# Media and storage
-
 LixBlogs supports story covers and images inside the editor. Uploads are optimized before storage, tracked against the owning account or organization, and associated with the story that uses them.
 
 ## During an upload

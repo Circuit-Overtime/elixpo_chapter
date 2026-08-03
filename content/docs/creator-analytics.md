@@ -1,5 +1,3 @@
-# Creator analytics
-
 Open **Settings → Stats** to understand reach, reading quality, audience, acquisition, and growth for your personal profile or an organization you are authorized to manage.
 
 ## Choose a scope and range

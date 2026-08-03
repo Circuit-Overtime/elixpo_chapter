@@ -42,14 +42,14 @@ export default function PricingPage() {
         <div className="text-center mb-3">
           <h1 className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>Plans that grow with you</h1>
           <p className="text-[15px] mt-2" style={{ color: 'var(--text-muted)' }}>
-            Publish for free. Upgrade to unlock sub-pages, AI image generation, and member-only posts.
+            Start free with the complete editor. Upgrade for more storage, collaboration, and publishing controls.
           </p>
         </div>
 
         <div className="grid gap-5 md:grid-cols-3 mt-10">
           {PLANS.map((plan) => {
             const isCurrent = currentTier === plan.id;
-            const amount = prices[plan.id] ?? 0;
+            const amount = plan.comingSoon ? null : (prices[plan.id] ?? 0);
             const highlighted = plan.highlighted;
             return (
               <div
@@ -72,8 +72,8 @@ export default function PricingPage() {
                 <p className="text-[12px] mb-4" style={{ color: 'var(--text-muted)' }}>{plan.tagline}</p>
 
                 <div className="mb-5">
-                  <span className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>{fmtPrice(symbol, amount)}</span>
-                  {amount ? (
+                  <span className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>{plan.comingSoon ? 'Not available' : fmtPrice(symbol, amount)}</span>
+                  {amount !== null && amount > 0 ? (
                     <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}> /{plan.perSeat ? 'seat · mo' : 'mo'}</span>
                   ) : null}
                 </div>
@@ -83,6 +83,12 @@ export default function PricingPage() {
                     <li key={f} className="flex items-start gap-2 text-[13px]" style={{ color: 'var(--text-body)' }}>
                       <ion-icon name="checkmark-circle" style={{ fontSize: '16px', color: '#9b7bf7', flexShrink: 0, marginTop: '1px' }} />
                       <span>{f}</span>
+                    </li>
+                  ))}
+                  {(plan.upcomingFeatures || []).map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                      <ion-icon name="time-outline" style={{ fontSize: '16px', color: 'var(--text-faint)', flexShrink: 0, marginTop: '1px' }} />
+                      <span>{feature} <span className="ml-1 rounded-full bg-[var(--bg-elevated)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--text-faint)]">Coming soon</span></span>
                     </li>
                   ))}
                 </ul>
@@ -110,6 +116,19 @@ export default function PricingPage() {
           {pricing?.country ? `Prices adjusted for your region (${pricing.country}). ` : ''}
           Payments are processed securely by Elixpo Pay. Cancel anytime.
         </p>
+
+        <div className="mt-12 grid gap-4 border-t border-[var(--border-default)] pt-8 md:grid-cols-3">
+          {[
+            ['Regional pricing', 'Available plan prices are adjusted by country and shown before checkout.'],
+            ['Bring your own storage', 'Connect personal Cloudinary on any available plan; provider charges and quotas remain separate.'],
+            ['Coming soon means coming soon', 'Preview features, including image generation, are not included in today’s paid entitlement.'],
+          ].map(([title, copy]) => (
+            <div key={title} className="rounded-xl bg-[var(--bg-surface)] p-4">
+              <h2 className="text-sm font-bold text-[var(--text-primary)]">{title}</h2>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{copy}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </AppShell>
   );

@@ -1,5 +1,3 @@
-# Write and publish
-
 ## Start a draft
 
 Choose **Write** from the navigation. LixBlogs saves your draft as you work. The editor supports headings, lists, quotes, code, tables, equations, images, embeds, and links through the slash menu and formatting toolbar.
