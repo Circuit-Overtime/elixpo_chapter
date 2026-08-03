@@ -2,5 +2,4 @@ whitelist:
   - python
   - typescript
   - javascript
-  - go
-  - rust
+  - shell

@@ -11,8 +11,9 @@ The justification is built from the score breakdown + the model's rationale.
 
 from __future__ import annotations
 
-from lib.scorer import THRESHOLD
+from lib.scorer import THRESHOLD, in_issue_age_window, is_recently_active
 from lib.state.ledger import Ledger
+from lib.state.rejections import RejectionLedger
 
 
 def issue_key(repo: str, number: int) -> str:
@@ -38,16 +39,36 @@ def select_top(
     min_score: int = THRESHOLD,
     require_tractable: bool = True,
     require_easy: bool = True,
+    rejections: RejectionLedger | None = None,
 ) -> dict | None:
     """Highest-scoring eligible easy issue, or None when nothing is safe to pick."""
     if not ledger.can_open_today(day):
         return None
-    for t in sorted(triaged, key=lambda x: x.get("score", 0), reverse=True):
+
+    def rank(item: dict) -> tuple[float, float, float]:
+        try:
+            confidence = float(item.get("confidence", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            confidence = 0.0
+        try:
+            estimated_files = float(item.get("estimated_files", 0) or 0)
+        except (TypeError, ValueError):
+            estimated_files = 0.0
+        return float(item.get("score", 0) or 0), confidence, -estimated_files
+
+    for t in sorted(triaged, key=rank, reverse=True):
         if t.get("score", 0) < min_score:
             break  # sorted — nothing below will qualify either
         if require_tractable and not t.get("tractable", False):
             continue
         if require_easy and not t.get("easy", False):
+            continue
+        if not in_issue_age_window(t.get("issue_age_days")):
+            continue
+        if not is_recently_active(t.get("activity_age_days")):
+            continue
+        key = issue_key(t["repo"], t["number"])
+        if rejections and rejections.rejects_unchanged(key, str(t.get("issue_updated_at") or "")):
             continue
         ok, _ = is_eligible(t["repo"], t["number"], ledger)
         if ok:

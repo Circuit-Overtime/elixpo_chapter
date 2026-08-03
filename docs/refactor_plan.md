@@ -42,22 +42,39 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 ### Scout — Discovery
 - **Trigger:** cron, daily
 - **Budget:** 10 min
-- **Job:** Sweep GitHub for candidate repos. Hard filters: 100–50k stars, active in last 30 days, declared license, issues enabled, not a fork, language whitelist, not in blocklist or opted out. Rank by contribution guidance, recent activity, and a manageable issue backlog; popularity is secondary.
+- **Job:** Sweep GitHub for Python, TypeScript, JavaScript, and Shell repositories. Hard filters: 100–15k stars, active in the last 21 days, declared license, issues enabled, not a fork, not in blocklist or opted out. Rank by contribution guidance, recent activity, and a manageable issue backlog; round-robin across language and size lanes so popularity is secondary.
 - **Agents:** trending-crawler, topic-crawler, language-specialist, repo-health-scorer, blocklist-checker, opt-out-checker
 - **Output:** ~20 candidate repos written to `state/candidates.json`
+- **Skill:** `skills/discover-contributor-repositories/SKILL.md`
 
 ### Triage — Issue selection
 - **Trigger:** on Scout completion
 - **Budget:** 15 min
-- **Job:** Pull good-first issues from approved repos, discard obvious non-candidates, score the remainder, and assess bounded solvability.
+- **Job:** Pull recently active open issues from approved repos, discard obvious non-candidates, score the remainder, and assess bounded solvability. `good first issue` is a bonus, not a discovery requirement.
 - **Agents:** label-classifier, complexity-estimator, reproducibility-checker, claim-checker (has anyone already said "I'll take this"?), priority-ranker
 - **Output:** A ranked `state/triaged.json` queue with score, scope, confidence, blockers, and an explicit `easy` verdict.
+- **Skill:** `skills/triage-solvable-issues/SKILL.md` (loaded into each routed triage call)
+- **Supply rule:** Inspect up to 16 Scout repositories and perform free PR-conflict checks on up to three times the paid shortlist. Routed triage remains capped at 12 issues.
 
 ### Pick — Final selection
 - **Trigger:** cron, separate window from Scout
 - **Budget:** 5 min
 - **Job:** Select one eligible issue that passes both the community score and the fail-closed easy-work gate, then record it before implementation starts.
 - **Output:** One justified choice in `state/pick.json`; the ledger prevents duplicate picks and parallel work in the same repository.
+- **Skill:** `skills/pick-safe-issue/SKILL.md`
+
+### Vet — Final issue suitability
+- **Trigger:** manual prototype; later consumes a provisional Pick before any claim or clone.
+- **Budget:** 12k tokens maximum, normally zero or one `nova-fast` call.
+- **Job:** Read the complete issue conversation, parent/sub-issue relationships, and linked PR evidence. Reject tracking parents, occupied work, unresolved decisions, and unbounded tasks.
+- **Output:** `state/vet.json` plus revision-aware rejected issue memory in `state/rejected_issues.json`.
+- **Skill:** `skills/vet-issue-suitability/SKILL.md`
+- **Prototype target:** `https://github.com/horsicq/Detect-It-Easy/issues/365`; `python -m agents.vet [ISSUE_URL]` accepts an override.
+
+Rejected issues are stored in a dictionary keyed by `owner/repo#number`, making
+lookup constant-time. Each record stores the issue's `updated_at` revision.
+Triage and Pick skip an unchanged rejected revision, while new conversation
+activity permits one fresh evaluation.
 
 ### Comprehend — Context loading
 *(Runs as the first step of Solve, not a separate workflow.)*
@@ -96,14 +113,13 @@ A scored decision, not a single rule. An issue qualifies if total ≥ threshold:
 | Signal | Score |
 |---|---|
 | Labelled `good first issue` / `help wanted` / `up-for-grabs` / `hacktoberfest` | +5 |
-| Labelled `bug` with reproducible steps | +3 |
+| Reproducible bug, with or without a label | +3 |
 | No assignee | +2 |
-| No comment from a maintainer claiming it | +2 |
+| Model finds no current maintainer ownership in the conversation | +2 |
 | Has a clear acceptance criterion in description | +2 |
 | Issue older than 7 days (not under active triage) | +1 |
-| Labelled `triage` / `needs-design` / `discussion` / `question` | −5 |
-| OP is a core maintainer (likely a self-note) | −5 |
-| Someone in comments said "I'll take this" within 14 days | −10 |
+| OP is a core maintainer without an explicit community-work label (likely a self-note) | −5 |
+| Model finds that another contributor currently owns the work | −10 |
 | Touches `internal/` or `private/` paths | −10 |
 | Repo's CONTRIBUTING says "discuss first" and no discussion exists | −5 |
 
@@ -113,15 +129,26 @@ The score is necessary but not sufficient. Pick also requires every hard
 solvability gate below:
 
 - `tractable=true`, with `trivial` or `small` complexity;
+- created 7 to 60 calendar days before the triage run, inclusive;
 - an estimated one to five changed files and confidence of at least 0.70;
 - a clear acceptance criterion, or a bug label paired with reproduction steps;
 - no assignee or recent claim;
+- activity within the last 30 days;
 - no unresolved maintainer decision, private access, secrets, privileged
   infrastructure, specialized hardware, or internal/private paths;
 - no design, discussion, question, or triage-stage label.
 
 Missing fields fail closed. The `good first issue` label is supporting evidence,
-not proof that the work is easy.
+not proof that the work is easy, and its absence does not prevent a reproducible
+bug or another explicitly invited community issue from qualifying.
+
+Creation age and literal `internal/` or `private/` path references are computed
+from GitHub timestamps and path patterns. Current ownership, resolution, scope,
+and requirement clarity are interpreted by `nova-fast` from the chronological
+issue conversation through forced structured output. Issues outside the 7–60 day
+creation window or untouched for over 30 days are removed before that call. Pick
+independently rechecks both stored ages, proposes `pending_vet`, and Vet alone
+records the ledger claim after approving the exact pending URL.
 
 ### Local dry run
 
@@ -132,6 +159,7 @@ they do not comment, fork, or open a pull request:
 python -m agents.scout
 python -m agents.triage
 python -m agents.pick
+python -m agents.vet
 ```
 
 Local configuration loads from `.env.local`. Scout accepts either `GITHUB_TOKEN`
@@ -148,7 +176,8 @@ Roles map to models, not the other way around. Agents request `model: "code"`, t
 | Role | Model | Notes |
 |---|---|---|
 | Repo crawling, label classification | `nova-fast` | Cheapest tool-capable model |
-| Issue scoring, triage reasoning | `gemini-fast` | Cheap, fast |
+| Issue scoring, triage reasoning | `nova-fast` | Lowest explicitly priced general tool-calling model |
+| Final issue suitability verification | `nova-fast` | One compact structured call after zero-cost gates |
 | Repo mapping & summarization | `gemini-flash-lite-3.1` | 1M context fits whole small repos |
 | Planning (what to change) | `kimi` | Strong agentic reasoning, mid-cost |
 | **Code generation — primary** | `qwen-coder-large` | First attempt always |
@@ -311,6 +340,7 @@ elixpoo-ops/
 ├── state/
 │   ├── ledger.json
 │   ├── candidates.json
+│   ├── rejected_issues.json
 │   ├── token_log.jsonl
 │   └── blocklist.json
 └── README.md

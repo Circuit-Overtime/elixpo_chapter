@@ -11,8 +11,8 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, Field
 
 MIN_STARS = 100
-MAX_STARS = 50_000
-ACTIVE_DAYS = 30
+MAX_STARS = 15_000
+ACTIVE_DAYS = 21
 
 # A repo carrying any of these topics has opted out — permanently skip it.
 OPT_OUT_TOPICS = {"elixpoo-opt-out", "no-ai-contributions", "no-ai", "no-ai-prs"}
@@ -27,7 +27,6 @@ class RepoCandidate(BaseModel):
     has_contributing: bool = False
     archived: bool = False
     open_issues: int = 0
-    good_first_issues: int = 0  # from the search qualifier — guaranteed > 0
     band: str = ""              # small | mid | large — for size-diverse selection
     url: str = ""
     score: int = 0
@@ -72,6 +71,8 @@ def passes_filters(
         return False, ["fork repository"]
     if repo.get("has_issues") is False:
         return False, ["issues disabled"]
+    if int(repo.get("open_issues_count", 0) or 0) <= 0:
+        return False, ["no open issue surface"]
     if not repo.get("license"):
         return False, ["no declared license"]
     if opted_out(repo.get("topics", [])):
@@ -96,10 +97,9 @@ def health_score(repo: dict, has_contributing: bool, now: datetime | None = None
     """Cheap health signal for ranking WITHIN a band.
 
     Star weight is deliberately small — size diversity comes from band selection,
-    not from popularity. Approachable work is guaranteed by the search query
-    (good-first-issues:>0), so it's a hard filter, not a score term. Here we just
-    rank by contribution readiness, recent activity, and a manageable issue
-    surface among repos that already qualify.
+    not from popularity. Here we rank by contribution readiness, recent
+    activity, and a manageable issue surface; Triage decides whether any
+    individual issue is approachable.
     """
     now = now or datetime.now(timezone.utc)
     score = 0

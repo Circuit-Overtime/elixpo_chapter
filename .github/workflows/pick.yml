@@ -1,7 +1,7 @@
 name: pick
 
-# Chooses ONE justified target from the triaged queue and records it in the
-# ledger so it never repeats. Separate cron window from Scout (refactor_plan §3).
+# Chooses ONE provisional target from the triaged queue. Vet records the ledger
+# claim only after final suitability approval.
 
 on:
   schedule:
@@ -31,6 +31,6 @@ jobs:
         run: |
           git config user.name  "elixpoo[bot]"
           git config user.email "elixpoo[bot]@users.noreply.github.com"
-          git add state/ledger.json state/pick.json
-          git diff --cached --quiet || git commit -m "chore(pick): claim next target"
+          git add state/pick.json
+          git diff --cached --quiet || git commit -m "chore(pick): propose next target"
           git push

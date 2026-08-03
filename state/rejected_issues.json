@@ -1,0 +1,15 @@
+{
+  "issues": {
+    "horsicq/Detect-It-Easy#365": {
+      "confidence": 1.0,
+      "issue_kind": "standalone",
+      "issue_updated_at": "2026-07-15T17:41:55Z",
+      "reasons": [
+        "conversation indicates the repository change is already resolved"
+      ],
+      "rejected_at": "2026-08-03T18:59:37.038880+00:00",
+      "title": "Windows Install via Chocolatey results in unusable Shortcut",
+      "url": "https://github.com/horsicq/Detect-It-Easy/issues/365"
+    }
+  }
+}
