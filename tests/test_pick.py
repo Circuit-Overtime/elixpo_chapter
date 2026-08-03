@@ -12,7 +12,7 @@ DAY = "2026-06-20"
 NOW = datetime(2026, 6, 20, tzinfo=timezone.utc)
 
 
-def _t(repo, number, score, tractable=True):
+def _t(repo, number, score, tractable=True, easy=True):
     return {
         "repo": repo,
         "number": number,
@@ -21,6 +21,10 @@ def _t(repo, number, score, tractable=True):
         "score": score,
         "breakdown": {"good_first/help_wanted": 5, "no_assignee": 2},
         "tractable": tractable,
+        "easy": easy,
+        "complexity": "small",
+        "estimated_files": 3,
+        "confidence": 0.9,
         "rationale": "clear scope",
     }
 
@@ -36,6 +40,7 @@ def test_selects_highest_eligible_tractable():
 def test_below_threshold_and_untractable_skipped():
     assert select_top([_t("o/a", 1, 5)], Ledger(), DAY) is None            # below §4 threshold
     assert select_top([_t("o/a", 1, 20, tractable=False)], Ledger(), DAY) is None
+    assert select_top([_t("o/a", 1, 20, easy=False)], Ledger(), DAY) is None
 
 
 def test_dedup_already_picked():
@@ -68,6 +73,7 @@ def test_daily_cap_blocks_selection():
 def test_justify_mentions_score_and_rationale():
     reason = justify(_t("o/a", 7, 13))
     assert "o/a#7" in reason and "13" in reason and "clear scope" in reason
+    assert "small scope" in reason and "3 files" in reason and "90% confidence" in reason
 
 
 # --- run(): record so we never repeat ---

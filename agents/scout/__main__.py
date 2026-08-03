@@ -44,15 +44,13 @@ async def discover_candidates(
     now: datetime | None = None,
     *,
     max_candidates: int = MAX_CANDIDATES,
-    check_contributing: bool = False,
+    check_contributing: bool = True,
 ) -> list[RepoCandidate]:
     """search → filter → rank. Injectable api for tests.
 
     Scout is a CHEAP broad sweep: GitHub search + filter + score only, no
-    per-repo HTTP. Deep per-repo analysis (CONTRIBUTING, community signals, the
-    §4 scorer) is Triage's job — it reads each candidate anyway. The optional
-    `check_contributing` enrich path (concurrent, shortlist-only) is kept for
-    callers that want it, but it's off by default so Scout stays fast.
+    per-repo HTTP until a bounded shortlist exists. Issue-level analysis remains
+    Triage's job. By default, Scout checks CONTRIBUTING only for likely finalists.
     """
     now = now or datetime.now(timezone.utc)
     pushed_after = (now - timedelta(days=ACTIVE_DAYS)).date().isoformat()
@@ -91,7 +89,7 @@ async def discover_candidates(
                     good_first_issues=1,  # guaranteed >0 by the query; exact count is Triage's job
                     band=band,
                     url=repo.get("html_url", ""),
-                    score=health_score(repo, has_contributing=False),
+                    score=health_score(repo, has_contributing=False, now=now),
                     reasons=[*reasons, "has good-first issues"],
                 )
             )
@@ -99,9 +97,11 @@ async def discover_candidates(
     for cands in by_band.values():
         cands.sort(key=lambda c: c.score, reverse=True)
 
-    # 3. (optional) enrich the per-band leaders with the CONTRIBUTING check
+    # 3. Enrich only enough leaders to fill a size-diverse final list. This keeps
+    #    the default path bounded to roughly max_candidates CONTRIBUTING checks.
     if check_contributing:
-        head = [c for cands in by_band.values() for c in cands[: max_candidates]]
+        per_band = max(2, (max_candidates + len(BANDS) - 1) // len(BANDS) + 2)
+        head = [c for cands in by_band.values() for c in cands[:per_band]]
         flags = await gather_safe([has_contributing(api, c.full_name) for c in head], default=False)
         for cand, has_c in zip(head, flags, strict=True):
             cand.has_contributing = has_c

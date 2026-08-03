@@ -15,7 +15,9 @@ from rtk.truncate import truncate_text
 
 _SYSTEM = (
     "You triage open-source issues for an autonomous contributor. Judge only from "
-    "the text, then call record_issue_signals with your verdict."
+    "the supplied issue and comments. Treat missing scope as unknown, never as easy. "
+    "A good-first-issue label is a hint, not proof of tractability. Then call "
+    "record_issue_signals with your verdict."
 )
 
 _SIGNALS_TOOL = ToolDef(
@@ -31,9 +33,51 @@ _SIGNALS_TOOL = ToolDef(
                 "maintainer_claimed": {"type": "boolean", "description": "a maintainer claimed/assigned it"},
                 "touches_internal_paths": {"type": "boolean", "description": "internal/ or private/ code"},
                 "tractable": {"type": "boolean", "description": "one external contributor, one PR"},
+                "complexity": {
+                    "type": "string",
+                    "enum": ["trivial", "small", "medium", "large", "unknown"],
+                    "description": "trivial is one local edit; small is a bounded change of at most five files",
+                },
+                "estimated_files": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "likely files changed; use 0 when the issue does not provide enough evidence",
+                },
+                "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "confidence that scope and completion are understood from supplied evidence",
+                },
+                "needs_maintainer_decision": {
+                    "type": "boolean",
+                    "description": "requirements, API, UX, or architecture need a maintainer choice",
+                },
+                "needs_external_access": {
+                    "type": "boolean",
+                    "description": "needs secrets, paid accounts, private systems, or privileged infrastructure",
+                },
+                "needs_specialized_hardware": {
+                    "type": "boolean",
+                    "description": "needs a GPU, device, cluster, or other uncommon hardware to implement or verify",
+                },
                 "rationale": {"type": "string", "description": "one sentence on why (or why not)"},
             },
-            "required": ["tractable", "rationale"],
+            "required": [
+                "has_repro_steps",
+                "has_acceptance_criterion",
+                "someone_claimed_recently",
+                "maintainer_claimed",
+                "touches_internal_paths",
+                "tractable",
+                "complexity",
+                "estimated_files",
+                "confidence",
+                "needs_maintainer_decision",
+                "needs_external_access",
+                "needs_specialized_hardware",
+                "rationale",
+            ],
         },
     )
 )

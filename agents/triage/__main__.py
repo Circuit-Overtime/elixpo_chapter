@@ -11,7 +11,7 @@ import asyncio
 
 import structlog
 from lib.aio import gather_safe
-from lib.scorer import score
+from lib.scorer import assess_solvability, score
 from pydantic import BaseModel, Field
 
 from agents.triage.extract import extract_issue_signals
@@ -33,6 +33,11 @@ class TriagedIssue(BaseModel):
     score: int
     breakdown: dict[str, int] = Field(default_factory=dict)
     tractable: bool = False
+    easy: bool = False
+    complexity: str = "unknown"
+    estimated_files: int = 0
+    confidence: float = 0.0
+    blockers: list[str] = Field(default_factory=list)
     rationale: str = ""
 
 
@@ -84,7 +89,9 @@ async def triage_candidates(
     # 4. full §4 score + build ranked records
     out: list[TriagedIssue] = []
     for x, llm in zip(short, llm_results, strict=True):
-        total, breakdown = score(merge_signals(x["det"], llm))
+        signals = merge_signals(x["det"], llm)
+        total, breakdown = score(signals)
+        solvability = assess_solvability(signals, llm)
         iss = x["issue"]
         out.append(
             TriagedIssue(
@@ -95,11 +102,16 @@ async def triage_candidates(
                 score=total,
                 breakdown=breakdown,
                 tractable=bool(llm.get("tractable", False)),
+                easy=solvability.easy,
+                complexity=solvability.complexity,
+                estimated_files=solvability.estimated_files,
+                confidence=solvability.confidence,
+                blockers=solvability.blockers,
                 rationale=str(llm.get("rationale", "")),
             )
         )
 
-    out.sort(key=lambda t: t.score, reverse=True)
+    out.sort(key=lambda t: (t.easy, t.score, t.confidence, -t.estimated_files), reverse=True)
     return out
 
 

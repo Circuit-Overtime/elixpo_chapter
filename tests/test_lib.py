@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from lib.scorer import THRESHOLD, IssueSignals, qualifies, score
+from lib.scorer import THRESHOLD, IssueSignals, assess_solvability, qualifies, score
 from lib.state.ledger import DAILY_PR_CAP, Ledger, PRRecord
 from lib.state.store import StateStore
 
@@ -41,6 +41,40 @@ def test_scorer_reproducible_bug_needs_bug_label():
     assert "reproducible_bug" in score(with_label)[1]
     no_label = IssueSignals(labels=[], has_repro_steps=True)
     assert "reproducible_bug" not in score(no_label)[1]
+
+
+def test_easy_issue_requires_bounded_clear_scope():
+    signals = IssueSignals(
+        labels=["good first issue"],
+        has_acceptance_criterion=True,
+    )
+    verdict = assess_solvability(
+        signals,
+        {
+            "tractable": True,
+            "complexity": "small",
+            "estimated_files": 4,
+            "confidence": 0.85,
+        },
+    )
+    assert verdict.easy is True
+    assert verdict.blockers == []
+
+
+def test_easy_issue_fails_closed_on_unknown_scope_and_access():
+    verdict = assess_solvability(
+        IssueSignals(labels=["good first issue"]),
+        {
+            "tractable": True,
+            "complexity": "unknown",
+            "estimated_files": "many",
+            "confidence": "unclear",
+            "needs_external_access": True,
+        },
+    )
+    assert verdict.easy is False
+    assert "needs external access or credentials" in verdict.blockers
+    assert "no acceptance criterion or reproducible bug" in verdict.blockers
 
 
 # --- state store ---

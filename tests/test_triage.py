@@ -85,13 +85,27 @@ async def test_triage_candidates_scores_and_ranks():
     from agents.triage.__main__ import triage_candidates
 
     api = FakeAPI([_issue(1), _issue(2)])
-    router = FakeRouter({"has_acceptance_criterion": True, "tractable": True, "rationale": "clear scope"})
+    router = FakeRouter(
+        {
+            "has_acceptance_criterion": True,
+            "tractable": True,
+            "complexity": "small",
+            "estimated_files": 3,
+            "confidence": 0.9,
+            "needs_maintainer_decision": False,
+            "needs_external_access": False,
+            "needs_specialized_hardware": False,
+            "rationale": "clear scope",
+        }
+    )
     out = await triage_candidates(api, router, [{"full_name": "o/r"}], NOW)
 
     assert len(out) == 2
     assert router.calls == 2               # one LLM call per shortlisted issue
     assert all(t.score >= 8 for t in out)  # good-first + no-assignee + accept + aged
     assert all(t.tractable for t in out)
+    assert all(t.easy for t in out)
+    assert all(t.estimated_files == 3 for t in out)
     assert out[0].rationale == "clear scope"
 
 
@@ -114,3 +128,28 @@ async def test_triage_handles_bad_llm_json():
     out = await triage_candidates(api, BadRouter(), [{"full_name": "o/r"}], NOW)
     assert len(out) == 1
     assert out[0].tractable is False       # missing → safe default, still scored
+    assert out[0].easy is False
+    assert out[0].blockers
+
+
+@pytest.mark.asyncio
+async def test_triage_rejects_ambiguous_or_privileged_work():
+    from agents.triage.__main__ import triage_candidates
+
+    router = FakeRouter(
+        {
+            "has_acceptance_criterion": True,
+            "tractable": True,
+            "complexity": "unknown",
+            "estimated_files": 0,
+            "confidence": 0.4,
+            "needs_maintainer_decision": True,
+            "needs_external_access": True,
+            "needs_specialized_hardware": False,
+            "rationale": "requirements and access are unresolved",
+        }
+    )
+    out = await triage_candidates(FakeAPI([_issue(3)]), router, [{"full_name": "o/r"}], NOW)
+    assert out[0].easy is False
+    assert "needs a maintainer decision" in out[0].blockers
+    assert "needs external access or credentials" in out[0].blockers

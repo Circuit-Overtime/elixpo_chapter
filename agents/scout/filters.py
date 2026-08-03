@@ -67,6 +67,12 @@ def passes_filters(
         return False, ["blocklisted"]
     if repo.get("archived") or repo.get("disabled"):
         return False, ["archived/disabled"]
+    if repo.get("fork"):
+        return False, ["fork repository"]
+    if repo.get("has_issues") is False:
+        return False, ["issues disabled"]
+    if not repo.get("license"):
+        return False, ["no declared license"]
     if opted_out(repo.get("topics", [])):
         return False, ["opted_out"]
 
@@ -85,20 +91,39 @@ def passes_filters(
     return True, reasons
 
 
-def health_score(repo: dict, has_contributing: bool) -> int:
+def health_score(repo: dict, has_contributing: bool, now: datetime | None = None) -> int:
     """Cheap health signal for ranking WITHIN a band.
 
     Star weight is deliberately small — size diversity comes from band selection,
     not from popularity. Approachable work is guaranteed by the search query
     (good-first-issues:>0), so it's a hard filter, not a score term. Here we just
-    rank by available issue surface + recency among repos that already qualify.
+    rank by contribution readiness, recent activity, and a manageable issue
+    surface among repos that already qualify.
     """
+    now = now or datetime.now(timezone.utc)
     score = 0
     stars = repo.get("stargazers_count", 0)
-    score += min(15, stars // 800)               # popularity, lightly weighted
-    score += min(25, repo.get("open_issues_count", 0) // 4)  # more open work to pick from
+    score += min(10, stars // 1_500)  # popularity is weak evidence, not the objective
+
+    open_issues = int(repo.get("open_issues_count", 0) or 0)
+    if 3 <= open_issues <= 60:
+        score += 18
+    elif 1 <= open_issues <= 150:
+        score += 10
+    elif open_issues > 150:
+        score += 3  # a very large backlog can mean slow triage rather than opportunity
+
+    pushed = _parse_ts(repo.get("pushed_at", ""))
+    if pushed:
+        age = now - pushed
+        if age <= timedelta(days=3):
+            score += 10
+        elif age <= timedelta(days=14):
+            score += 6
+        elif age <= timedelta(days=ACTIVE_DAYS):
+            score += 2
     if has_contributing:
-        score += 15                              # documents how to contribute
+        score += 20  # documents how to contribute
     if repo.get("license"):
-        score += 5
+        score += 8
     return score
