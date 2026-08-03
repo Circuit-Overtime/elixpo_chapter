@@ -47,6 +47,8 @@ def test_scorer_internal_paths_and_discussion_label():
 def test_scorer_reproducible_bug_needs_bug_label():
     with_label = IssueSignals(labels=["bug"], has_repro_steps=True)
     assert "reproducible_bug" in score(with_label)[1]
+    decorated_label = IssueSignals(labels=["❌ Bug"], has_repro_steps=True)
+    assert "reproducible_bug" in score(decorated_label)[1]
     no_label = IssueSignals(labels=[], has_repro_steps=True)
     assert "reproducible_bug" not in score(no_label)[1]
 

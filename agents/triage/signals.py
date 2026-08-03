@@ -16,8 +16,14 @@ MAINTAINER_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
 CLAIM_WINDOW_DAYS = 14
 STALE_DAYS = 365
 _CLAIM_RE = re.compile(
-    r"\b(?:i(?:'m| am) working on|i(?:'ll| will| can| would like to) (?:take|try|work)|"
-    r"let me (?:take|work)|take a stab|pick(?:ing)? this up|working on this)\b",
+    r"\b(?:i(?:'m| am) working on|i(?:'ll| will| can| would like to) "
+    r"(?:take|try|work|handle|implement|fix)|let me (?:take|work|handle)|take a stab|"
+    r"pick(?:ing)? this up|started working|working on this|i(?:'m| am) on it)\b",
+    re.IGNORECASE,
+)
+_UNCLAIM_RE = re.compile(
+    r"\b(?:no longer working|not working on this|won't work on|cannot work on|"
+    r"can no longer|giving this up|unassign me)\b",
     re.IGNORECASE,
 )
 _INTERNAL_PATH_RE = re.compile(
@@ -63,25 +69,34 @@ def deterministic_comment_signals(
     now = now or datetime.now(timezone.utc)
     recent_cutoff = now - timedelta(days=CLAIM_WINDOW_DAYS)
     comments = comments or []
-    recent_claim = False
-    maintainer_claim = False
-    for comment in comments:
+    recent_claimants: set[str] = set()
+    maintainer_claimants: set[str] = set()
+    ordered_comments = sorted(
+        comments,
+        key=lambda comment: _timestamp(comment.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc),
+    )
+    for comment in ordered_comments:
         body = str(comment.get("body") or "")
+        created = _timestamp(comment.get("created_at"))
+        login = str((comment.get("user") or {}).get("login") or comment.get("id") or "unknown")
+        if _UNCLAIM_RE.search(body):
+            recent_claimants.discard(login)
+            maintainer_claimants.discard(login)
+            continue
         if not _CLAIM_RE.search(body):
             continue
-        created = _timestamp(comment.get("created_at"))
         if created and created >= recent_cutoff:
-            recent_claim = True
+            recent_claimants.add(login)
         if comment.get("author_association", "") in MAINTAINER_ASSOCIATIONS:
-            maintainer_claim = True
+            maintainer_claimants.add(login)
 
     path_text = "\n".join(
         [str(issue.get("title") or ""), str(issue.get("body") or "")]
         + [str(comment.get("body") or "") for comment in comments]
     )
     return {
-        "someone_claimed_recently": recent_claim,
-        "maintainer_claimed": maintainer_claim,
+        "someone_claimed_recently": bool(recent_claimants),
+        "maintainer_claimed": bool(maintainer_claimants),
         "touches_internal_paths": bool(_INTERNAL_PATH_RE.search(path_text)),
     }
 

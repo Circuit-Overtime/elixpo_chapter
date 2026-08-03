@@ -116,12 +116,17 @@ solvability gate below:
 - an estimated one to five changed files and confidence of at least 0.70;
 - a clear acceptance criterion, or a bug label paired with reproduction steps;
 - no assignee or recent claim;
+- activity within the last 365 days;
 - no unresolved maintainer decision, private access, secrets, privileged
   infrastructure, specialized hardware, or internal/private paths;
 - no design, discussion, question, or triage-stage label.
 
 Missing fields fail closed. The `good first issue` label is supporting evidence,
 not proof that the work is easy.
+
+Claim windows and literal `internal/` or `private/` path references are computed
+from GitHub timestamps and text patterns, not inferred by the routed triage
+writer. Issues untouched for over 365 days are removed before that call.
 
 ### Local dry run
 
