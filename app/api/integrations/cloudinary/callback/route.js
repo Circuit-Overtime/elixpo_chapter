@@ -23,6 +23,7 @@ function finish(request, result, reference = '') {
   const response = NextResponse.redirect(destination);
   response.cookies.delete('cloudinary_oauth_state');
   response.cookies.delete('cloudinary_oauth_next');
+  response.cookies.delete('cloudinary_oauth_cloud_name');
   return response;
 }
 
@@ -53,7 +54,12 @@ export async function GET(request) {
     if (!tokens.refresh_token) throw new Error('Offline Access did not issue a refresh token');
 
     stage = 'environment';
-    const cloudName = await resolveCloudinaryCloudName(tokens, callbackUrl);
+    const tokenCloudName = await resolveCloudinaryCloudName(tokens, callbackUrl);
+    const requestedCloudName = request.cookies.get('cloudinary_oauth_cloud_name')?.value || '';
+    // Cloudinary self-service OAuth is currently beta. Some otherwise valid
+    // grants omit ext.cloud_name. A user-supplied cloud name is safe to use
+    // only because the following API request verifies the token against it.
+    const cloudName = tokenCloudName || requestedCloudName;
     if (!isValidCloudinaryCloudName(cloudName)) {
       throw new Error('Cloudinary did not identify the selected product environment');
     }

@@ -1274,6 +1274,7 @@ function IntegrationsTab() {
   const [cloudinaryLoading, setCloudinaryLoading] = useState(true);
   const [cloudinaryBusy, setCloudinaryBusy] = useState(false);
   const [cloudinaryError, setCloudinaryError] = useState('');
+  const [cloudinaryCloudName, setCloudinaryCloudName] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1373,7 +1374,8 @@ function IntegrationsTab() {
     config_error: { ok: false, text: 'Cloudinary OAuth is not configured on this deployment.' },
     failed_token_exchange: { ok: false, text: 'Cloudinary authorization could not be exchanged. Verify the OAuth client ID, client secret, and Basic client authentication.' },
     failed_offline_access: { ok: false, text: 'Cloudinary did not grant Offline Access. Enable that scope in the OAuth app and reconnect.' },
-    failed_environment: { ok: false, text: 'Cloudinary did not return the selected product environment. Enable OpenID in the OAuth app and reconnect.' },
+    failed_environment: { ok: false, text: 'Cloudinary authorized the account but omitted its product-environment identifier. Enter the public cloud name below to verify and complete the connection.' },
+    invalid_environment: { ok: false, text: 'Enter a valid Cloudinary cloud name. You can copy it from the Cloudinary dashboard.' },
     failed_validation: { ok: false, text: 'Cloudinary rejected access to the selected product environment. Enable Upload and Asset Management permissions.' },
     failed_database: { ok: false, text: 'LixBlogs could not check the existing media connection. Please retry shortly.' },
     failed_persistence: { ok: false, text: 'Cloudinary authorized successfully, but LixBlogs could not save the encrypted connection. Please retry.' },
@@ -1456,12 +1458,33 @@ function IntegrationsTab() {
         {cloudinaryLoading ? (
           <div className="mt-5 h-20 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />
         ) : !cloudinary?.connected ? (
-          <div className="mt-5 flex flex-col gap-3 border-t border-[var(--border-default)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex flex-col gap-3 border-t border-[var(--border-default)] pt-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-medium text-[var(--text-primary)]">Authorize with Cloudinary</p>
               <p className="mt-1 text-[11px] text-[var(--text-faint)]">Choose a product environment on Cloudinary. LixBlogs never receives its API secret.</p>
+              {oauthResult === 'failed_environment' && (
+                <label className="mt-3 block max-w-sm">
+                  <span className="text-[11px] font-medium text-[var(--text-muted)]">Cloud name</span>
+                  <input
+                    value={cloudinaryCloudName}
+                    onChange={(event) => setCloudinaryCloudName(event.target.value.trim())}
+                    placeholder="your-cloud-name"
+                    autoComplete="off"
+                    spellCheck="false"
+                    className="mt-1.5 w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2 text-xs text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-faint)] focus:border-[#9b7bf7]"
+                  />
+                  <span className="mt-1 block text-[10px] text-[var(--text-faint)]">Cloudinary Dashboard → Product Environment → Cloud name</span>
+                </label>
+              )}
             </div>
-            <a href="/api/integrations/cloudinary/connect" className="shrink-0 rounded-lg bg-[#9b7bf7] px-4 py-2 text-center text-xs font-semibold text-white hover:bg-[#8b6ae6]">Connect Cloudinary</a>
+            <a
+              href={`/api/integrations/cloudinary/connect${oauthResult === 'failed_environment' && cloudinaryCloudName ? `?cloud_name=${encodeURIComponent(cloudinaryCloudName)}` : ''}`}
+              aria-disabled={oauthResult === 'failed_environment' && !cloudinaryCloudName}
+              onClick={(event) => { if (oauthResult === 'failed_environment' && !cloudinaryCloudName) event.preventDefault(); }}
+              className={`shrink-0 rounded-lg bg-[#9b7bf7] px-4 py-2 text-center text-xs font-semibold text-white hover:bg-[#8b6ae6] ${oauthResult === 'failed_environment' && !cloudinaryCloudName ? 'cursor-not-allowed opacity-50' : ''}`}
+            >
+              {oauthResult === 'failed_environment' ? 'Verify & connect' : 'Connect Cloudinary'}
+            </a>
           </div>
         ) : (
           <div className="mt-5 border-t border-[var(--border-default)] pt-4">
