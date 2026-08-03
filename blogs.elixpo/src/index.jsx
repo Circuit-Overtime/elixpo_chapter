@@ -10,6 +10,75 @@ import SearchBar from './components/SearchBar';
 import { ONBOARDING_TIP_DAYS, tipForDay } from './utils/siteTips';
 
 const TIP_STORAGE_KEY = 'lixblogs:onboarding-tip';
+const ACTIONS_STORAGE_KEY = 'lixblogs:onboarding-actions';
+
+const ONBOARDING_ACTIONS = [
+  { label: 'Write a story', description: 'Start with an idea', href: '/new-blog', icon: 'create-outline', color: '#9b7bf7' },
+  { label: 'Complete profile', description: 'Help readers know you', href: '/settings?tab=account', icon: 'person-circle-outline', color: '#3b82f6' },
+  { label: 'Explore badges', description: 'See what you can earn', href: '/badges', icon: 'ribbon-outline', color: '#ec4899' },
+  { label: 'Publishing basics', description: 'Know what works here', href: '/docs', icon: 'shield-checkmark-outline', color: '#10b981' },
+];
+
+function NewUserActions({ user, authLoading }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (authLoading || !user) {
+      setVisible(false);
+      return;
+    }
+    const createdAt = Number(user.created_at || 0);
+    const ageDays = createdAt ? (Date.now() - createdAt * 1000) / 86_400_000 : 0;
+    if (ageDays > ONBOARDING_TIP_DAYS) {
+      localStorage.removeItem(ACTIONS_STORAGE_KEY);
+      setVisible(false);
+      return;
+    }
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(ACTIONS_STORAGE_KEY) || 'null'); } catch {}
+    setVisible(!(stored?.userId === user.id && stored?.dismissed));
+  }, [authLoading, user]);
+
+  if (!visible) return null;
+  return (
+    <section className="relative mb-4 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4" aria-label="Getting started">
+      <div className="mb-3 flex items-start justify-between gap-4 pr-7">
+        <div>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Make LixBlogs yours</p>
+          <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">A few good places to begin.</p>
+        </div>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {ONBOARDING_ACTIONS.map((action) => (
+          <Link
+            key={action.href}
+            href={action.href}
+            className="group flex min-w-[150px] flex-1 items-center gap-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-app)] px-3 py-2.5 transition-all hover:-translate-y-0.5 hover:border-[var(--border-hover)] hover:shadow-sm"
+          >
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg" style={{ color: action.color, backgroundColor: `color-mix(in srgb, ${action.color} 12%, transparent)` }}>
+              <ion-icon name={action.icon} style={{ fontSize: '16px' }} />
+            </span>
+            <span className="min-w-0">
+              <span className="block whitespace-nowrap text-[12px] font-semibold text-[var(--text-primary)]">{action.label}</span>
+              <span className="block whitespace-nowrap text-[10px] text-[var(--text-faint)]">{action.description}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          localStorage.setItem(ACTIONS_STORAGE_KEY, JSON.stringify({ userId: user.id, dismissed: true }));
+          setVisible(false);
+        }}
+        className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full text-[var(--text-faint)] transition-colors hover:bg-[var(--bg-hover)]"
+        aria-label="Dismiss getting started"
+      >
+        <ion-icon name="close-outline" style={{ fontSize: '16px' }} />
+      </button>
+    </section>
+  );
+}
 
 function DailyTipCard({ user, authLoading }) {
   const [dailyTip, setDailyTip] = useState(null);
@@ -571,6 +640,7 @@ export default function App() {
 
           {/* Feed */}
           <div className="px-6 pt-4 max-w-[680px] mx-auto">
+            <NewUserActions user={user} authLoading={authLoading} />
             <DailyTipCard user={user} authLoading={authLoading} />
             {tagFilter && (
               <div className="flex items-center gap-2 mb-1 py-2">
