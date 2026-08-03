@@ -14,6 +14,11 @@ Require a configured prefix allowlist. Reject composition operators, redirects,
 installers, network clients, deployment, publishing, destructive commands, and
 credential access. Apply per-command timeouts and RTK output compression.
 
+Strip token, key, secret, password, and private-key environment variables from
+every target-repository subprocess. Permit at most one configured dependency
+setup command. Treat setup as untrusted code in the disposable sandbox and never
+record its output as a successful behavioral check.
+
 Stop on the first non-zero exit. Do not retry automatically, alter the command,
 weaken configuration, or commit a failed step. Preserve compact failure output
 in state for diagnosis.

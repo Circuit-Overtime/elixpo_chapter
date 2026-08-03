@@ -60,6 +60,7 @@ async def plan_issue(router, issue: dict, context: str, policy: dict) -> SolvePl
             "files": policy["max_files"],
             "commit_steps": policy["max_commit_steps"],
             "test_commands": policy["max_test_commands"],
+            "setup_commands": policy["max_setup_commands"],
         },
         "repository_context": context,
     }

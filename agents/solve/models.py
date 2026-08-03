@@ -12,6 +12,7 @@ class StrictModel(BaseModel):
 class PlanStep(StrictModel):
     purpose: str
     files: list[str] = Field(min_length=1, max_length=5)
+    setup_commands: list[str] = Field(default_factory=list, max_length=1)
     verification_commands: list[str] = Field(default_factory=list, max_length=3)
     commit_message: str
 
@@ -47,4 +48,3 @@ class ReviewVerdict(StrictModel):
     approved: bool
     summary: str
     findings: list[str] = Field(default_factory=list, max_length=5)
-

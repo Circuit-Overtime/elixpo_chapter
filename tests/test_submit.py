@@ -9,7 +9,7 @@ def _state():
         "issue_number": 9,
         "summary": "Copy the complete documentation abstraction.",
         "target_files": ["app/docs/api/page.tsx"],
-        "checks": [{"command": "npm run lint", "exit_code": 0}],
+        "checks": [{"kind": "verification", "command": "npm run lint", "exit_code": 0}],
         "plan": {"steps": [{"purpose": "Use the complete llm_text value."}]},
     }
 

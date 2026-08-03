@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import shlex
 import subprocess
@@ -61,7 +62,13 @@ def run_verification(
     timeout: int,
 ) -> CmdResult:
     args = validate_command(command, allowed_prefixes)
-    result = rtk_run(args, cwd=str(workspace), timeout=timeout)
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if not any(marker in key.casefold() for marker in ("token", "secret", "password", "api_key", "private_key"))
+    }
+    env.update({"CI": "true", "GIT_TERMINAL_PROMPT": "0"})
+    result = rtk_run(args, cwd=str(workspace), timeout=timeout, env=env)
     result.output = truncate_text(result.output, max_tokens=1800)
     return result
 

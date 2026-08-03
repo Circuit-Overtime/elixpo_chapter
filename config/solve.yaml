@@ -10,6 +10,7 @@ max_search_calls: 1
 max_context_tokens: 12000
 max_file_tokens: 5000
 max_test_commands: 3
+max_setup_commands: 1
 command_timeout_seconds: 180
 
 # Explicit manual-test escape hatch. Production automation still requires the
@@ -47,3 +48,8 @@ allowed_command_prefixes:
   - pyright
   - shellcheck
 
+allowed_setup_prefixes:
+  - npm ci --ignore-scripts
+  - pnpm install --frozen-lockfile --ignore-scripts
+  - yarn install --immutable --ignore-scripts
+  - python -m pip install -e .

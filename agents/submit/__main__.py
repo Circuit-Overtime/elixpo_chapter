@@ -36,7 +36,9 @@ def build_pr_body(solve_state: dict) -> str:
     step_lines = "\n".join(f"- {item}" for item in steps if item) or "- Implement the vetted issue scope."
     file_lines = "\n".join(f"- `{path}`" for path in files)
     check_lines = "\n".join(
-        f"- ✅ `{item.get('command')}`" for item in checks if item.get("exit_code") == 0
+        f"- ✅ `{item.get('command')}`"
+        for item in checks
+        if item.get("kind", "verification") == "verification" and item.get("exit_code") == 0
     )
     number = int(solve_state["issue_number"])
     return (
@@ -114,7 +116,12 @@ def push_branch(workspace: Path, branch: str, token: str) -> None:
 async def submit(api, router, store, solve_state: dict) -> dict:
     if solve_state.get("status") != "ready_to_submit":
         raise SubmitRejected("state/solve.json is not ready_to_submit")
-    if not solve_state.get("checks") or any(item.get("exit_code") != 0 for item in solve_state["checks"]):
+    verification = [
+        item
+        for item in solve_state.get("checks", [])
+        if item.get("kind", "verification") == "verification"
+    ]
+    if not verification or any(item.get("exit_code") != 0 for item in solve_state["checks"]):
         raise SubmitRejected("Solve has no complete passing verification record")
     workspace = Path(str(solve_state.get("workspace") or ""))
     if not workspace.is_dir():

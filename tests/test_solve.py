@@ -31,6 +31,7 @@ def _plan(**changes):
             PlanStep(
                 purpose="copy the complete text",
                 files=["app/page.tsx"],
+                setup_commands=[],
                 verification_commands=["npm run lint"],
                 commit_message="fix: copy complete llm text",
             )
@@ -90,4 +91,3 @@ def test_owned_target_requires_matching_test_vet(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "is_test_repository", lambda repo: repo == "elixpo/lixrl.com")
     store.write_json("vet.json", {"url": url, "suitable": True, "test_mode": True})
     assert resolve_target(store, url, True) == url
-

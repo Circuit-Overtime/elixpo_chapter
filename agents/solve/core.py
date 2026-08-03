@@ -80,6 +80,8 @@ def validate_plan(plan: SolvePlan, policy: dict[str, Any], repository_files: set
         for path in step.files:
             _validate_path(path)
             targets.add(path)
+        for command in step.setup_commands:
+            validate_command(command, list(policy["allowed_setup_prefixes"]))
         for command in step.verification_commands:
             validate_command(command, list(policy["allowed_command_prefixes"]))
             command_count += 1
@@ -235,6 +237,18 @@ async def solve(
         if not set(changed).issubset(all_targets):
             raise SolveRejected("implementation escaped the full plan")
 
+        for command in step.setup_commands[: int(policy["max_setup_commands"])]:
+            result = run_verification(
+                root,
+                command,
+                allowed_prefixes=list(policy["allowed_setup_prefixes"]),
+                timeout=int(policy["command_timeout_seconds"]),
+            )
+            checks.append(
+                {"kind": "setup", "command": command, "exit_code": result.code, "output": result.output}
+            )
+            if result.code != 0:
+                raise SolveRejected(f"dependency setup failed: {command}")
         for command in step.verification_commands[: int(policy["max_test_commands"])]:
             result = run_verification(
                 root,
@@ -242,7 +256,9 @@ async def solve(
                 allowed_prefixes=list(policy["allowed_command_prefixes"]),
                 timeout=int(policy["command_timeout_seconds"]),
             )
-            checks.append({"command": command, "exit_code": result.code, "output": result.output})
+            checks.append(
+                {"kind": "verification", "command": command, "exit_code": result.code, "output": result.output}
+            )
             if result.code != 0:
                 raise SolveRejected(f"verification failed: {command}")
         commits.append(commit_files(root, changed, step.commit_message))

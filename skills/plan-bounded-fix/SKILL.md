@@ -19,8 +19,10 @@ generated/vendor changes, installation or privileged infrastructure, unclear
 behavior, or verification that cannot run locally.
 
 Choose commands already supported by the detected repository. Never propose
-package installation, network mutation, shell composition, destructive flags,
-deployment, publishing, or credential access. Include at least one check.
+unlocked dependency changes, shell composition, destructive flags, deployment,
+publishing, or credential access. Include at least one check. When dependencies
+are absent, select at most one configured lockfile-based setup command; prefer
+script-disabled installation and count its time in the estimate.
 
 Set `needs_search=true` only for one narrow external technical fact that source,
 guidance, and manifests cannot answer. Provide a focused query; never request
