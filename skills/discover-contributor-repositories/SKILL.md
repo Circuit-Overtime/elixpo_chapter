@@ -7,7 +7,7 @@ description: Discover and rank active public GitHub repositories that are suitab
 
 Find repositories where a respectful external contribution is plausible. Produce
 a diverse candidate pool for Triage; never claim that a repository is easy merely
-because it is popular or exposes a `good first issue` count.
+because it is popular or has open issues.
 
 ## Preserve the squad boundary
 
@@ -27,14 +27,14 @@ Reject a repository when any condition holds:
 - It is outside the configured star range or inactive beyond the activity window.
 - It appears in the ledger blocklist.
 - Its topics include an elixpoo opt-out or a no-automated-contributions signal.
-- GitHub search cannot prove that it has an open `good first issue` surface.
+- It has no open issue surface.
 
 Never weaken an explicit opt-out to increase candidate count.
 
 Target growing projects with enough maintenance evidence but room for a new
 contributor: 100–15,000 stars and a default-branch push within 21 days. Repositories
 above that ceiling are out of scope, even when they rank highly or carry many
-good-first labels.
+contributor-oriented labels.
 
 ## Rank for contribution readiness
 
@@ -53,7 +53,8 @@ do not crowd out maintained smaller repositories.
 ## Keep discovery bounded
 
 - Search each configured language within each star band.
-- Require `good-first-issues:>0` in repository search.
+- Do not require `good-first-issues:>0`; repository discovery must not make an
+  issue-level solvability decision.
 - Deduplicate by case-sensitive `owner/name`.
 - Check CONTRIBUTING only for a bounded finalist pool.
 - Cap output at the configured candidate limit.

@@ -254,6 +254,7 @@ class FakeAPI:
         self.timeline_error = timeline_error
         self.pull_search = pull_search or []
         self.pull_search_error = pull_search_error
+        self.issue_params = None
 
     async def _request(self, method, path, **kwargs):
         if path == "/search/issues":
@@ -268,6 +269,7 @@ class FakeAPI:
         if path.endswith("/comments"):
             return self.comments
         if path.endswith("/issues"):
+            self.issue_params = kwargs.get("params", {})
             return self.issues
         raise AssertionError(f"unexpected {path}")
 
@@ -348,6 +350,34 @@ async def test_triage_candidates_scores_and_ranks():
     assert all(t.issue_age_days == 17 for t in out)
     assert all(t.activity_age_days == 19 for t in out)
     assert out[0].rationale == "clear scope"
+    assert "labels" not in api.issue_params
+
+
+@pytest.mark.asyncio
+async def test_triage_considers_unlabelled_reproducible_bug():
+    from agents.triage.__main__ import triage_candidates
+
+    issue = _issue(9, labels=[])
+    router = FakeRouter(
+        {
+            "has_repro_steps": True,
+            "has_acceptance_criterion": True,
+            "tractable": True,
+            "complexity": "small",
+            "estimated_files": 2,
+            "confidence": 0.9,
+            "needs_maintainer_decision": False,
+            "needs_external_access": False,
+            "needs_specialized_hardware": False,
+            "rationale": "localized reproducible bug",
+        }
+    )
+    out = await triage_candidates(FakeAPI([issue]), router, [{"full_name": "o/r"}], NOW)
+    assert len(out) == 1
+    assert out[0].easy is True
+    assert out[0].score >= 8
+    assert "good_first/help_wanted" not in out[0].breakdown
+    assert out[0].breakdown["reproducible_bug"] == 3
 
 
 @pytest.mark.asyncio

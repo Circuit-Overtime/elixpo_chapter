@@ -55,6 +55,7 @@ def test_passes_filters_accept():
         (_repo(archived=True), "archived"),
         (_repo(fork=True), "fork"),
         (_repo(has_issues=False), "issues disabled"),
+        (_repo(open_issues_count=0), "no open issue"),
         (_repo(license=None), "license"),
         (_repo(topics=["no-ai-contributions"]), "opted_out"),
     ],
@@ -112,12 +113,10 @@ class FakeAPI:
 
 
 @pytest.mark.asyncio
-async def test_search_query_requires_good_first():
+async def test_search_query_does_not_require_good_first():
     api = FakeAPI([_repo()])
     await search_repos(api, "python", 100, 2000, "2026-05-21")
-    assert "good-first-issues:>0" in api.queries[0]
-    await search_repos(api, "python", 100, 2000, "2026-05-21", require_good_first=False)
-    assert "good-first-issues" not in api.queries[1]
+    assert "good-first-issues" not in api.queries[0]
 
 
 @pytest.mark.asyncio
@@ -141,7 +140,7 @@ async def test_discover_filters_rejects_and_enriches():
     assert {"o/good", "o/ok"} <= names
     assert "o/tiny" not in names and "o/optout" not in names
     assert all(c.has_contributing for c in cands)
-    assert all(c.good_first_issues > 0 for c in cands)
+    assert all(c.open_issues > 0 for c in cands)
 
 
 @pytest.mark.asyncio

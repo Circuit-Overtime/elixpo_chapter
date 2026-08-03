@@ -57,8 +57,8 @@ async def discover_candidates(
     pushed_after = (now - timedelta(days=ACTIVE_DAYS)).date().isoformat()
     lang_set = {lang.lower() for lang in languages}
 
-    # 1. search every (language × star band) concurrently — each query requires
-    #    good-first-issues:>0, so results are guaranteed to have contributable work
+    # 1. search every (language × star band) concurrently. Issue-level evidence
+    #    belongs to Triage; Scout only requires a non-empty open issue surface.
     tasks, task_bands = [], []
     for band, lo, hi in BANDS:
         for lang in languages:
@@ -87,11 +87,10 @@ async def discover_candidates(
                     topics=repo.get("topics", []),
                     archived=bool(repo.get("archived")),
                     open_issues=repo.get("open_issues_count", 0),
-                    good_first_issues=1,  # guaranteed >0 by the query; exact count is Triage's job
                     band=band,
                     url=repo.get("html_url", ""),
                     score=health_score(repo, has_contributing=False, now=now),
-                    reasons=[*reasons, "has good-first issues"],
+                    reasons=[*reasons, "has open issues"],
                 )
             )
 

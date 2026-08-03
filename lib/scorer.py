@@ -74,10 +74,6 @@ def _labels(s: IssueSignals) -> set[str]:
     return {label.lower() for label in s.labels}
 
 
-def _has_label_word(labels: set[str], word: str) -> bool:
-    return any(word in label.replace("-", " ").split() for label in labels)
-
-
 def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
     """Return (total, breakdown). Breakdown maps each fired signal → its points."""
     labels = _labels(s)
@@ -85,7 +81,7 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
 
     if labels & POSITIVE_LABELS:
         b["good_first/help_wanted"] = 5
-    if _has_label_word(labels, "bug") and s.has_repro_steps:
+    if s.has_repro_steps:
         b["reproducible_bug"] = 3
     if s.no_assignee:
         b["no_assignee"] = 2
@@ -154,9 +150,7 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
     }
     blockers.extend(reason for field, reason in hard_flags.items() if extracted.get(field) is not False)
 
-    completion_is_clear = signals.has_acceptance_criterion or (
-        _has_label_word(labels, "bug") and signals.has_repro_steps
-    )
+    completion_is_clear = signals.has_acceptance_criterion or signals.has_repro_steps
     if not completion_is_clear:
         blockers.append("no acceptance criterion or reproducible bug")
     if not signals.no_assignee or not signals.no_maintainer_claim or signals.someone_claimed_recently:

@@ -111,5 +111,10 @@ A maintainer-authored issue carrying an explicit community-work label is an
 invitation, not a self-note. A `good first issue` label supports the verdict but
 never replaces the evidence above.
 
+Do not require `good first issue`. Consider all open issues fetched by Triage.
+Labels such as `help wanted`, `up-for-grabs`, and `hacktoberfest` are supporting
+community signals; a reproducible bug can qualify without any label. Vague
+feature requests and unlabeled wishes must still fail the score or easy-work gate.
+
 Return one factual sentence explaining the decisive scope evidence or blocker.
 Avoid praise, speculation, and restating the score.

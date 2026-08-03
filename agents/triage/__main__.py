@@ -1,6 +1,6 @@
 """Triage — turns candidate repos into scored candidate ISSUES. Run: python -m agents.triage
 
-Reads state/candidates.json, pulls each repo's good-first issues, scores them
+Reads state/candidates.json, pulls each repo's recently active open issues, scores them
 with the §4 scorer (cheap deterministic pre-rank → LLM deep pass on the
 shortlist only, to save tokens), and writes a ranked queue to state/triaged.json.
 """
@@ -24,8 +24,8 @@ from pydantic import BaseModel, Field
 
 from agents.triage.extract import extract_issue_signals
 from agents.triage.fetch import (
+    fetch_candidate_issues,
     fetch_comments,
-    fetch_good_first_issues,
     fetch_issue_timeline,
     search_pull_requests_referencing_issues,
 )
@@ -77,9 +77,9 @@ async def triage_candidates(
     now = now or datetime.now(timezone.utc)
     repos = candidates[:max_repos]
 
-    # 1. fetch each repo's good-first issues concurrently (a flaky repo → skipped)
+    # 1. fetch each repo's open issues concurrently (a flaky repo → skipped)
     issue_lists = await gather_safe(
-        [fetch_good_first_issues(api, r["full_name"], per_repo) for r in repos], default=[]
+        [fetch_candidate_issues(api, r["full_name"], per_repo) for r in repos], default=[]
     )
 
     # 2. deterministic pre-score (no model, no comments) → cheap ranking

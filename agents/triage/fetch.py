@@ -1,4 +1,4 @@
-"""GitHub fetching for Triage — open good-first issues, timelines, and comments.
+"""GitHub fetching for Triage — open issues, timelines, and comments.
 
 Injectable api (`_request`) so the orchestrator is testable without network.
 """
@@ -7,19 +7,22 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
-GOOD_FIRST_LABEL = "good first issue"
-
 
 class Fetcher(Protocol):
     async def _request(self, method: str, path: str, **kwargs: Any) -> Any: ...
 
 
-async def fetch_good_first_issues(api: Fetcher, full_name: str, per_repo: int = 10) -> list[dict]:
-    """Open issues labelled 'good first issue' (Scout guaranteed >0). Excludes PRs."""
+async def fetch_candidate_issues(api: Fetcher, full_name: str, per_repo: int = 10) -> list[dict]:
+    """Fetch recently active open issues without requiring a label. Excludes PRs."""
     data = await api._request(
         "GET",
         f"/repos/{full_name}/issues",
-        params={"labels": GOOD_FIRST_LABEL, "state": "open", "per_page": per_repo, "sort": "updated"},
+        params={
+            "state": "open",
+            "per_page": per_repo,
+            "sort": "updated",
+            "direction": "desc",
+        },
     )
     issues = data if isinstance(data, list) else []
     return [i for i in issues if "pull_request" not in i]

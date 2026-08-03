@@ -50,7 +50,7 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 ### Triage — Issue selection
 - **Trigger:** on Scout completion
 - **Budget:** 15 min
-- **Job:** Pull good-first issues from approved repos, discard obvious non-candidates, score the remainder, and assess bounded solvability.
+- **Job:** Pull recently active open issues from approved repos, discard obvious non-candidates, score the remainder, and assess bounded solvability. `good first issue` is a bonus, not a discovery requirement.
 - **Agents:** label-classifier, complexity-estimator, reproducibility-checker, claim-checker (has anyone already said "I'll take this"?), priority-ranker
 - **Output:** A ranked `state/triaged.json` queue with score, scope, confidence, blockers, and an explicit `easy` verdict.
 - **Skill:** `skills/triage-solvable-issues/SKILL.md` (loaded into each routed triage call)
@@ -100,7 +100,7 @@ A scored decision, not a single rule. An issue qualifies if total ≥ threshold:
 | Signal | Score |
 |---|---|
 | Labelled `good first issue` / `help wanted` / `up-for-grabs` / `hacktoberfest` | +5 |
-| Labelled `bug` with reproducible steps | +3 |
+| Reproducible bug, with or without a label | +3 |
 | No assignee | +2 |
 | No comment from a maintainer claiming it | +2 |
 | Has a clear acceptance criterion in description | +2 |
@@ -127,7 +127,8 @@ solvability gate below:
 - no design, discussion, question, or triage-stage label.
 
 Missing fields fail closed. The `good first issue` label is supporting evidence,
-not proof that the work is easy.
+not proof that the work is easy, and its absence does not prevent a reproducible
+bug or another explicitly invited community issue from qualifying.
 
 Creation age, claim windows, and literal `internal/` or `private/` path references are computed
 from GitHub timestamps and text patterns, not inferred by the routed triage

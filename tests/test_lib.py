@@ -54,13 +54,13 @@ def test_maintainer_good_first_issue_is_an_invitation_not_a_self_note():
     assert self_note_breakdown["op_is_maintainer"] == -5
 
 
-def test_scorer_reproducible_bug_needs_bug_label():
+def test_scorer_reproducible_bug_does_not_need_bug_label():
     with_label = IssueSignals(labels=["bug"], has_repro_steps=True)
     assert "reproducible_bug" in score(with_label)[1]
     decorated_label = IssueSignals(labels=["❌ Bug"], has_repro_steps=True)
     assert "reproducible_bug" in score(decorated_label)[1]
     no_label = IssueSignals(labels=[], has_repro_steps=True)
-    assert "reproducible_bug" not in score(no_label)[1]
+    assert "reproducible_bug" in score(no_label)[1]
 
 
 def test_easy_issue_requires_bounded_clear_scope():
