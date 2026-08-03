@@ -27,7 +27,16 @@ _SECRET_MARKERS = ("TOKEN", "SECRET", "PASSWORD", "PRIVATE_KEY", "API_KEY")
 
 
 class HarnessError(RuntimeError):
-    pass
+    def __init__(
+        self,
+        message: str,
+        *,
+        usage: Usage | None = None,
+        metadata: dict[str, Any] | None = None,
+    ):
+        super().__init__(message)
+        self.usage = usage
+        self.metadata = metadata or {}
 
 
 def _node_command(package: str, *args: str) -> list[str]:
@@ -192,9 +201,19 @@ def _render_harness_event(event: dict[str, Any]) -> None:
         return
     if event_type == "result":
         status = "failed" if event.get("is_error") else "completed"
+        usage = event.get("usage") or {}
+        tokens = sum(
+            int(usage.get(key) or 0)
+            for key in (
+                "input_tokens",
+                "cache_creation_input_tokens",
+                "cache_read_input_tokens",
+                "output_tokens",
+            )
+        )
         print(
             f"[harness] {status} turns={event.get('num_turns', 0)} "
-            f"duration_ms={event.get('duration_ms', 0)}",
+            f"tokens={tokens} duration_ms={event.get('duration_ms', 0)}",
             flush=True,
         )
 
@@ -318,11 +337,28 @@ def _parse_cli_result(stdout: str) -> tuple[HarnessOutcome, Usage, dict[str, Any
             raise HarnessError(f"coding harness returned invalid JSON: {exc}") from nested
     if not isinstance(envelope, dict):
         raise HarnessError("coding harness returned a non-object result")
+    raw_usage = envelope.get("usage") or {}
+    prompt = int(raw_usage.get("input_tokens") or raw_usage.get("prompt_tokens") or 0)
+    prompt += int(raw_usage.get("cache_creation_input_tokens") or 0)
+    cached = int(raw_usage.get("cache_read_input_tokens") or raw_usage.get("cached_tokens") or 0)
+    completion = int(raw_usage.get("output_tokens") or raw_usage.get("completion_tokens") or 0)
+    total = int(raw_usage.get("total_tokens") or (prompt + cached + completion))
+    usage = Usage(
+        prompt_tokens=prompt,
+        completion_tokens=completion,
+        total_tokens=total,
+        prompt_tokens_details=PromptTokensDetails(cached_tokens=cached),
+    )
+    metadata = {
+        "session_id": envelope.get("session_id"),
+        "turns": int(envelope.get("num_turns") or 0),
+        "duration_ms": int(envelope.get("duration_ms") or 0),
+    }
     if envelope.get("is_error") is True or envelope.get("subtype") in {"error", "error_max_turns"}:
         message = str(envelope.get("result") or envelope.get("error") or "coding harness failed")[:1800]
         status = envelope.get("api_error_status")
         prefix = f"coding harness API error {status}: " if status else "coding harness failed: "
-        raise HarnessError(prefix + message)
+        raise HarnessError(prefix + message, usage=usage, metadata=metadata)
 
     payload = envelope.get("structured_output")
     if payload is None:
@@ -335,27 +371,13 @@ def _parse_cli_result(stdout: str) -> tuple[HarnessOutcome, Usage, dict[str, Any
     try:
         outcome = HarnessOutcome.model_validate(payload)
     except ValidationError as exc:
-        raise HarnessError(f"coding harness output failed validation: {exc}") from exc
-
-    raw_usage = envelope.get("usage") or {}
-    prompt = int(raw_usage.get("input_tokens") or raw_usage.get("prompt_tokens") or 0)
-    prompt += int(raw_usage.get("cache_creation_input_tokens") or 0)
-    cached = int(raw_usage.get("cache_read_input_tokens") or raw_usage.get("cached_tokens") or 0)
-    completion = int(raw_usage.get("output_tokens") or raw_usage.get("completion_tokens") or 0)
-    total = int(raw_usage.get("total_tokens") or (prompt + cached + completion))
+        raise HarnessError(
+            f"coding harness output failed validation: {exc}",
+            usage=usage,
+            metadata=metadata,
+        ) from exc
     if total <= 0:
         raise HarnessError("coding harness omitted token usage; refusing an unaccounted session")
-    usage = Usage(
-        prompt_tokens=prompt,
-        completion_tokens=completion,
-        total_tokens=total,
-        prompt_tokens_details=PromptTokensDetails(cached_tokens=cached),
-    )
-    metadata = {
-        "session_id": envelope.get("session_id"),
-        "turns": int(envelope.get("num_turns") or 0),
-        "duration_ms": int(envelope.get("duration_ms") or 0),
-    }
     return outcome, usage, metadata
 
 

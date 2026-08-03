@@ -15,6 +15,7 @@ import httpx
 from agents.solve.harness import run_harness
 from agents.solve.git import changed_files, commit_files, git, run_verification, validate_command
 from agents.solve.models import SolvePlan
+from agents.solve.verification_plan import complete_verification_plan
 from lib.github.issues import fetch_issue_evidence, parse_issue_url, referenced_pull_requests
 from lib.solve_policy import is_test_repository
 from lib.state.ledger import Ledger
@@ -283,10 +284,16 @@ async def solve(
         if resolved.is_symlink():
             raise SolveRejected(f"coding harness created or changed a symlink: {path}")
 
+    outcome, verification_inferred = complete_verification_plan(root, outcome, targets)
+
     running.update(
         {
             "stage": "verifying",
-            "harness": {**outcome.model_dump(), **harness_metadata},
+            "harness": {
+                **outcome.model_dump(),
+                **harness_metadata,
+                "verification_inferred": verification_inferred,
+            },
             "target_files": sorted(targets),
         }
     )
@@ -341,7 +348,11 @@ async def solve(
         "checks": checks,
         "commits": commits,
         "head_sha": git(root, "rev-parse", "HEAD"),
-        "harness": {**outcome.model_dump(), **harness_metadata},
+        "harness": {
+            **outcome.model_dump(),
+            **harness_metadata,
+            "verification_inferred": verification_inferred,
+        },
         "token_spent": router.budget.spent,
         "finished_at": datetime.now(timezone.utc).isoformat(),
     }

@@ -12,6 +12,7 @@ import httpx
 
 from agents.solve.edit import EditRejected
 from agents.solve.harness import HarnessError
+from agents.solve.verification_plan import VerificationPlanError
 from lib.workspace import WorkspaceError
 from rtk.budget import BudgetExceeded
 
@@ -64,6 +65,8 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
     ):
         category, retryable, candidate_action = "model_output", True, "retry_once_with_stricter_output"
     elif "verification failed" in lowered or "dependency setup failed" in lowered:
+        category, candidate_action = "verification", "inspect_checks_or_terminate"
+    elif isinstance(exc, VerificationPlanError):
         category, candidate_action = "verification", "inspect_checks_or_terminate"
     elif "self-review rejected" in lowered:
         category, candidate_action = "review_rejected", "terminate_or_replan"

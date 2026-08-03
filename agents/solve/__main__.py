@@ -14,6 +14,7 @@ import structlog
 
 from agents.solve.core import SolveRejected, resolve_target, solve
 from agents.solve.failure import failure_handoff
+from agents.solve.harness import HarnessError
 
 log = structlog.get_logger()
 
@@ -23,7 +24,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     from lib.github.api import GitHubAPI
     from lib.solve_policy import load_solve_policy
     from lib.state.store import StateStore
-    from rtk import Budget, Router
+    from rtk import Budget, BudgetExceeded, Router
 
     store = StateStore(settings.state_dir)
     policy = load_solve_policy()
@@ -102,6 +103,16 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     except Exception as exc:
         # The broad boundary converts provider/git/tool errors into state; it does
         # not retry the whole pipeline or push a partial branch.
+        if isinstance(exc, HarnessError) and exc.usage and exc.usage.total_tokens > 0:
+            try:
+                router.record_external_usage(
+                    "code",
+                    exc.usage,
+                    source="ccr-node-harness",
+                    extra={**exc.metadata, "failed": True},
+                )
+            except BudgetExceeded as budget_exc:
+                exc = budget_exc
         failed = store.read_json("solve.json", {}) or {"issue_url": target}
         failed = failure_handoff(
             failed,

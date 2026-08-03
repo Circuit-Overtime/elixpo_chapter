@@ -71,8 +71,6 @@ class HarnessOutcome(StrictModel):
 
     @model_validator(mode="after")
     def require_execution_fields_for_solution(self) -> HarnessOutcome:
-        if self.solvable and not self.verification_commands:
-            raise ValueError("a solvable outcome requires at least one verification command")
         if self.solvable and not self.commit_message.strip():
             raise ValueError("a solvable outcome requires a commit message")
         return self

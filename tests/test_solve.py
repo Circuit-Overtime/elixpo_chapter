@@ -13,6 +13,7 @@ from agents.solve.failure import classify_failure, cleanup_manifest, failure_han
 from agents.solve.git import CommandRejected, run_verification, validate_command
 from agents.solve.harness import HarnessError, _harness_env, _parse_cli_result, _render_harness_event
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
+from agents.solve.verification_plan import complete_verification_plan
 from lib.state.store import StateStore
 from rtk.shell import CmdResult
 
@@ -154,6 +155,50 @@ def test_declined_harness_outcome_needs_no_commands():
         summary="Declined without edits.",
     )
     assert outcome.verification_commands == []
+
+
+def test_node_verification_is_inferred_from_lockfile_and_tsconfig(tmp_path):
+    (tmp_path / "package.json").write_text('{"scripts":{"build":"next build"}}')
+    (tmp_path / "package-lock.json").write_text("{}")
+    (tmp_path / "tsconfig.json").write_text("{}")
+    outcome = HarnessOutcome(
+        solvable=True,
+        estimated_minutes=8,
+        rationale="localized docs copy fix",
+        summary="Limit copied content to the article.",
+        commit_message="fix: limit copied docs content",
+    )
+
+    completed, inferred = complete_verification_plan(tmp_path, outcome, ["app/docs/layout.tsx"])
+
+    assert inferred is True
+    assert completed.setup_commands == ["npm ci --ignore-scripts"]
+    assert completed.verification_commands == ["npx tsc --noEmit"]
+
+
+def test_invalid_harness_output_preserves_usage_for_accounting():
+    envelope = {
+        "type": "result",
+        "subtype": "success",
+        "is_error": False,
+        "structured_output": {
+            "solvable": True,
+            "estimated_minutes": 8,
+            "rationale": "localized fix",
+            "summary": "Changed one file.",
+            "commit_message": "",
+        },
+        "usage": {"input_tokens": 700, "output_tokens": 100},
+        "num_turns": 4,
+    }
+    try:
+        _parse_cli_result(json.dumps(envelope))
+    except HarnessError as exc:
+        assert exc.usage is not None
+        assert exc.usage.total_tokens == 800
+        assert exc.metadata["turns"] == 4
+    else:
+        raise AssertionError("invalid harness output passed")
 
 
 def test_harness_auth_error_is_concise_and_classified():

@@ -78,6 +78,13 @@ Require one validated structured outcome containing:
 - allowlisted verification commands;
 - one conventional commit message.
 
+Prefer a model-selected verification command, but do not discard a completed
+edit when that optional field is omitted. Infer a fallback deterministically
+from tracked manifests and changed extensions: choose the lockfile-matched
+install command, then the cheapest applicable typecheck, lint, test, or build
+command. Never invent a command absent from configured allowlists. Record
+whether inference was used.
+
 After the session, derive targets from Git rather than trusting its report.
 Reject no diff, deletions, symlinks, unsafe paths, more than five files, an
 over-time estimate, malformed output, or token use above the configured ceiling.
