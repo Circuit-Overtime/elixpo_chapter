@@ -12,13 +12,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import structlog
-
 from lib.github.issues import parse_issue_url
 from lib.workspace import git_auth_env
 from rtk.models import Message
 
 log = structlog.get_logger()
 SKILL_PATH = Path(__file__).resolve().parents[2] / "skills" / "submit-autonomous-pr" / "SKILL.md"
+PERSONA_PATH = Path(__file__).resolve().parents[2] / "skills" / "living-repo-persona" / "SKILL.md"
 
 
 class SubmitRejected(RuntimeError):
@@ -34,7 +34,7 @@ def build_pr_title(solve_state: dict) -> str:
     return f"[ELIXPO] {raw[:100]}"
 
 
-def build_pr_body(solve_state: dict) -> str:
+def build_pr_body(solve_state: dict, punch_line: str) -> str:
     plan = solve_state.get("plan") or {}
     steps = [str(step.get("purpose") or "").strip() for step in plan.get("steps", [])]
     files = [str(path) for path in solve_state.get("target_files", [])]
@@ -59,8 +59,54 @@ def build_pr_body(solve_state: dict) -> str:
         "> Opened by **elixpoo**, an autonomous contributor. The implementation was "
         "scoped, tested, and self-reviewed before submission.\n\n"
         f"Fixes #{number}\n\n"
-        "<sub>@elixpoo</sub>"
+        f"<sub>“{punch_line}” — @elixpoo</sub>"
     )
+
+
+def _clean_punch_line(raw: str) -> str:
+    line = re.sub(r"\s+", " ", raw).strip().strip("\"'“”")
+    line = re.sub(r"\s*(?:—|--|-)\s*@?elixpoo\.?$", "", line, flags=re.IGNORECASE).strip()
+    if not line or len(line) > 140 or len(line.split()) > 14:
+        raise SubmitRejected("repository punch line is empty or too long")
+    if "@" in line or "http://" in line.casefold() or "https://" in line.casefold():
+        raise SubmitRejected("repository punch line contains a mention or link")
+    if any(marker in line for marker in ("<", ">", "`", "[", "]")):
+        raise SubmitRejected("repository punch line contains unsupported Markdown")
+    return line
+
+
+async def write_punch_line(router, solve_state: dict) -> str:
+    """Write one cheap, grounded personality line for the PR footer only."""
+    persona = PERSONA_PATH.read_text().split("---", 2)[-1].strip()
+    response = await router.call(
+        "prose",
+        [
+            Message(
+                role="system",
+                content=(
+                    persona
+                    + "\n\nWrite one natural punch line reacting to a completed patch. "
+                    "Use at most 14 words. Return only the line: no quotation marks, emoji, "
+                    "Markdown, links, handles, attribution, or unsupported claims. Vary the "
+                    "wording; avoid a reusable slogan."
+                ),
+            ),
+            Message(
+                role="user",
+                content=json.dumps(
+                    {
+                        "issue_title": str(solve_state.get("title") or "")[:180],
+                        "change_summary": str(solve_state.get("summary") or "")[:300],
+                        "files_changed": len(solve_state.get("target_files") or []),
+                    },
+                    separators=(",", ":"),
+                ),
+            ),
+        ],
+        effort="medium",
+        max_tokens=40,
+    )
+    return _clean_punch_line(response.choices[0].message.content or "")
 
 
 async def safety_check(router, title: str, body: str) -> None:
@@ -185,7 +231,8 @@ async def submit(api, router, store, solve_state: dict, workspace_base: Path) ->
     workspace = validate_solve_state(solve_state, workspace_base)
 
     title = build_pr_title(solve_state)
-    body = build_pr_body(solve_state)
+    punch_line = await write_punch_line(router, solve_state)
+    body = build_pr_body(solve_state, punch_line)
     await safety_check(router, title, body)
 
     fork_owner, repo = str(solve_state["fork_repo"]).split("/", 1)

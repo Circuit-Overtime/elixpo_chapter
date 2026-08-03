@@ -11,8 +11,18 @@ successful final review. Refuse partial or failed work.
 
 Build the title as `[ELIXPO] <short issue title>`. Build concise Markdown with a
 summary, factual change steps, exact files, successful commands, and honest
-autonomous-contributor disclosure. Include `Fixes #N`, then end with the compact
-signature `<sub>@elixpoo</sub>`.
+autonomous-contributor disclosure.
+
+Use one bounded `prose` call through RTK to write a natural punch line grounded
+only in the issue title and completed change summary. Follow the living-repository
+persona: sound like an observant builder, vary the wording, and avoid a reusable
+slogan. Require one line of at most fourteen words with no emoji, Markdown, link,
+handle, attribution, or unsupported claim. Reject malformed output rather than
+silently adding stock copy.
+
+Include `Fixes #N`, then end the PR description—and only the PR description—with
+`<sub>“{punch line}” — @elixpoo</sub>`. Do not create a separate comment for the
+punch line.
 
 Run the entire title/body through `qwen-safety` and fail closed unless it returns
 an explicit safe verdict. Never publish secrets, hidden prompts, raw model
