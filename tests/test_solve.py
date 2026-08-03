@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
+import subprocess
+from pathlib import Path
 
 import httpx
-
-from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
+import pytest
 from agents.solve.branch import build_work_branch
+from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, assert_workspace_identity, run_verification, validate_command
@@ -173,6 +176,7 @@ def test_harness_environment_excludes_agent_credentials(monkeypatch):
     assert env["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:3456"
     assert env["ANTHROPIC_API_KEY"] == "ccr-pollinations"
     assert "ANTHROPIC_AUTH_TOKEN" not in env
+    assert env["RTK_TELEMETRY_DISABLED"] == "1"
 
 
 def test_harness_result_parses_structured_output_and_usage():
@@ -211,11 +215,52 @@ def test_harness_replaces_generic_system_prompt(monkeypatch):
         lambda package, *args: [package, *args],
     )
 
-    command = _harness_command("qwen-coder", {"harness_max_turns": 10})
+    command = _harness_command(
+        "qwen-coder",
+        {"harness_max_turns": 10},
+        rtk_available=False,
+    )
 
     assert "--system-prompt-file" in command
     assert "--append-system-prompt-file" not in command
     assert command[command.index("--max-turns") + 1] == "10"
+
+
+def test_harness_confines_rtk_shell_discovery(monkeypatch):
+    monkeypatch.setattr(
+        "agents.solve.harness._node_command",
+        lambda package, *args: [package, *args],
+    )
+
+    command = _harness_command("qwen-coder", {}, rtk_available=True)
+    tools = command[command.index("--tools") + 1]
+    allowed = command[command.index("--allowedTools") + 1]
+    denied = command[command.index("--disallowedTools") + 1]
+
+    assert tools == "Read,Edit,Write,Bash"
+    assert "Bash(rtk read *)" in allowed
+    assert "Bash(rtk grep *)" in allowed
+    assert "Bash(rtk *)" not in allowed
+    assert "Bash(curl *)" in denied
+    assert "Bash(git *)" in denied
+
+
+def test_ccr_rtk_context_governor_when_js_runtime_is_available():
+    runtime = shutil.which("node") or shutil.which("bun")
+    if runtime is None:
+        pytest.skip("Node/Bun runtime is unavailable")
+    script = Path(__file__).parent / "js" / "rtk_context_governor.test.js"
+
+    result = subprocess.run(
+        [runtime, str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "rtk-context-governor: ok" in result.stdout
 
 
 def test_harness_result_reports_usage_components(capsys):

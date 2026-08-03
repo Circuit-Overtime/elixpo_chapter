@@ -19,6 +19,10 @@ command_timeout_seconds: 180
 harness_model: qwen-coder
 harness_max_turns: 10
 harness_max_output_tokens: 1600
+harness_context_max_chars: 48000
+harness_tool_result_max_chars: 6000
+harness_stale_tool_result_chars: 800
+harness_recent_tool_results: 3
 ccr_start_timeout_seconds: 60
 blocked_change_prefixes:
   - .github/workflows/

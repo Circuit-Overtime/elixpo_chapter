@@ -45,12 +45,25 @@ directory set to the isolated fork, enforce the wall clock, account returned
 usage through RTK, validate the diff, run checks, and commit. Local terminal and
 GitHub Actions runs must use this same path; Actions only supplies the runner.
 
-Route the session through CCR to `qwen-coder`. Give the harness only
-`Read`, `Glob`, `Grep`, `Edit`, and `Write`. Remove Bash, web, subagents, MCP,
+Route the session through CCR to `qwen-coder`. When the pinned RTK CLI is
+available, prefer its compact `ls`, `find`, `grep`, `read`, and `smart` commands
+for discovery, then use built-in `Read` only for exact edit context. Expose Bash
+only for those explicit `rtk` prefixes; never permit arbitrary `rtk *`, raw shell,
+git, network, test, or build commands. Without RTK, fall back to bounded built-in
+`Glob`, `Grep`, and `Read`. Keep `Edit` and `Write` available in both modes.
+
+Remove web, subagents, MCP,
 session persistence, user customizations, and nonessential traffic. Strip
 GitHub credentials, the Pollinations key, and all other secrets from the target
 harness environment; only the local CCR URL and its non-secret client token may
 cross the boundary.
+
+Run the deterministic `rtk-context-governor` in every CCR provider chain before
+the OpenAI conversion. Preserve the newest tool evidence, collapse superseded
+reads of the same input, keep only head-and-tail excerpts for stale results,
+deduplicate exact history, and enforce the configured per-turn context ceiling.
+Never summarize context with another model call. Keep usage accounting based on
+the provider response; compression must reduce traffic, not conceal it.
 
 Inject this skill only into the Solve harness session as the replacement system
 prompt. Never append it to the coding CLI's generic system prompt: both prompts

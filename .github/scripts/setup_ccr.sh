@@ -23,6 +23,12 @@ SEARCH_TOKENS="${ELIXPO_CCR_SEARCH_TOKENS:-$(read_config LLM_MAX_TOKENS_SEARCH)}
 
 NORMALIZER="$CCR_HOME/openai-normalize.js"
 TOOL_PATCHER="$CCR_HOME/tool-schema-patcher.js"
+RTK_GOVERNOR="$CCR_HOME/rtk-context-governor.js"
+
+RTK_CONTEXT_CHARS="${ELIXPO_CCR_CONTEXT_CHARS:-48000}"
+RTK_RESULT_CHARS="${ELIXPO_CCR_RESULT_CHARS:-6000}"
+RTK_STALE_CHARS="${ELIXPO_CCR_STALE_CHARS:-800}"
+RTK_RECENT_RESULTS="${ELIXPO_CCR_RECENT_RESULTS:-3}"
 
 cat > "$CCR_HOME/config.json" <<EOF
 {
@@ -34,6 +40,7 @@ cat > "$CCR_HOME/config.json" <<EOF
   "APIKEY": "ccr-pollinations",
   "transformers": [
     {"path": "$NORMALIZER"},
+    {"path": "$RTK_GOVERNOR"},
     {"path": "$TOOL_PATCHER"}
   ],
   "Providers": [
@@ -42,28 +49,28 @@ cat > "$CCR_HOME/config.json" <<EOF
       "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
       "api_key": "$ELIXPO_POLLINATIONS_API_KEY",
       "models": ["$AGENT_MODEL"],
-      "transformer": {"use": ["openai-normalize", "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $AGENT_TOKENS}]]}
+      "transformer": {"use": ["openai-normalize", ["rtk-context-governor", {"max_context_chars": $RTK_CONTEXT_CHARS, "tool_result_max_chars": $RTK_RESULT_CHARS, "stale_tool_result_chars": $RTK_STALE_CHARS, "recent_tool_results": $RTK_RECENT_RESULTS}], "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $AGENT_TOKENS}]]}
     },
     {
       "name": "pollinations-code",
       "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
       "api_key": "$ELIXPO_POLLINATIONS_API_KEY",
       "models": ["$CODE_MODEL"],
-      "transformer": {"use": ["openai-normalize", "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $CODE_TOKENS}]]}
+      "transformer": {"use": ["openai-normalize", ["rtk-context-governor", {"max_context_chars": $RTK_CONTEXT_CHARS, "tool_result_max_chars": $RTK_RESULT_CHARS, "stale_tool_result_chars": $RTK_STALE_CHARS, "recent_tool_results": $RTK_RECENT_RESULTS}], "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $CODE_TOKENS}]]}
     },
     {
       "name": "pollinations-thinking",
       "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
       "api_key": "$ELIXPO_POLLINATIONS_API_KEY",
       "models": ["$THINK_MODEL"],
-      "transformer": {"use": ["openai-normalize", "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $THINK_TOKENS}]]}
+      "transformer": {"use": ["openai-normalize", ["rtk-context-governor", {"max_context_chars": $RTK_CONTEXT_CHARS, "tool_result_max_chars": $RTK_RESULT_CHARS, "stale_tool_result_chars": $RTK_STALE_CHARS, "recent_tool_results": $RTK_RECENT_RESULTS}], "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $THINK_TOKENS}]]}
     },
     {
       "name": "pollinations-search",
       "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
       "api_key": "$ELIXPO_POLLINATIONS_API_KEY",
       "models": ["$SEARCH_MODEL"],
-      "transformer": {"use": ["openai-normalize", "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $SEARCH_TOKENS}]]}
+      "transformer": {"use": ["openai-normalize", ["rtk-context-governor", {"max_context_chars": $RTK_CONTEXT_CHARS, "tool_result_max_chars": $RTK_RESULT_CHARS, "stale_tool_result_chars": $RTK_STALE_CHARS, "recent_tool_results": $RTK_RECENT_RESULTS}], "openai", "tool-schema-patcher", ["maxtoken", {"max_tokens": $SEARCH_TOKENS}]]}
     }
   ],
   "Router": {

@@ -69,6 +69,24 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+      - name: Cache RTK
+        if: steps.gate.outputs.run == 'true'
+        id: rtk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/bin/rtk
+          key: rtk-${{ runner.os }}-${{ runner.arch }}-v0.42.0
+      - name: Install pinned RTK
+        if: steps.gate.outputs.run == 'true'
+        env:
+          RTK_TELEMETRY_DISABLED: "1"
+        run: |
+          if [ "${{ steps.rtk-cache.outputs.cache-hit }}" != "true" ]; then
+            curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/v0.42.0/install.sh | sh
+          fi
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          rtk --version
       - name: Install
         if: steps.gate.outputs.run == 'true'
         run: pip install -e .
