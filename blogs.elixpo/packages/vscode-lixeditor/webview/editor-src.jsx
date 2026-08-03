@@ -297,8 +297,8 @@ function EditorView({ initialContent, isDark, onChange }) {
     const handleMouseOver = (e) => {
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-toolbar') || link.closest('.bn-link-toolbar')) return;
-      // Don't show preview if link toolbar is visible
-      if (document.querySelector('.bn-link-toolbar')) return;
+      // Don't show preview if link toolbar or popup is visible
+      if (document.querySelector('.bn-link-toolbar') || document.querySelector('.link-editor-popup')) return;
       const href = link.getAttribute('href');
       if (href && href.startsWith('http')) linkPreviewRef.current.show(link, href);
     };
@@ -306,7 +306,7 @@ function EditorView({ initialContent, isDark, onChange }) {
       if (e.target.closest('a[href]')) linkPreviewRef.current.cancel();
     };
     // Hide preview when clicking (which triggers the link toolbar)
-    const handleClick = () => { linkPreviewRef.current.cancel(); };
+    const handleClick = () => { linkPreviewRef.current.hide(); };
     wrapper.addEventListener('click', handleClick);
 
     wrapper.addEventListener('mouseover', handleMouseOver);

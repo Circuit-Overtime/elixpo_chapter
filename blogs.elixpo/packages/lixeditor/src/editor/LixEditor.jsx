@@ -410,6 +410,7 @@ const LixEditor = forwardRef(function LixEditor({
     const handleMouseOver = (e) => {
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
+      if (document.querySelector('.bn-link-toolbar') || document.querySelector('.link-editor-popup')) return;
       const href = link.getAttribute('href');
       if (href && href.startsWith('http')) editorLinkPreview.show(link, href);
     };
@@ -419,6 +420,7 @@ const LixEditor = forwardRef(function LixEditor({
       editorLinkPreview.cancel();
     };
     const handleClick = (e) => {
+      editorLinkPreview.hide();
       if (!(e.ctrlKey || e.metaKey)) return;
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar')) return;

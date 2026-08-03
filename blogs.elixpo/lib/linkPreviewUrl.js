@@ -1,0 +1,63 @@
+const BLOCKED_HOSTNAMES = new Set([
+  'localhost',
+  'metadata.google.internal',
+]);
+
+function isPrivateIpv4(hostname) {
+  const octets = hostname.split('.').map(Number);
+  if (octets.length !== 4 || octets.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return false;
+  }
+
+  const [first, second] = octets;
+  return first === 0
+    || first === 10
+    || first === 127
+    || (first === 100 && second >= 64 && second <= 127)
+    || (first === 169 && second === 254)
+    || (first === 172 && second >= 16 && second <= 31)
+    || (first === 192 && (second === 0 || second === 168))
+    || (first === 198 && (second === 18 || second === 19))
+    || first >= 224;
+}
+
+function isPrivateIpv6(hostname) {
+  const normalized = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  return normalized === '::'
+    || normalized === '::1'
+    || normalized.startsWith('fc')
+    || normalized.startsWith('fd')
+    || /^fe[89ab]/.test(normalized)
+    || normalized.startsWith('::ffff:127.')
+    || normalized.startsWith('::ffff:10.')
+    || normalized.startsWith('::ffff:169.254.')
+    || normalized.startsWith('::ffff:192.168.');
+}
+
+export function isSafePreviewUrl(value) {
+  let parsed;
+  try {
+    parsed = value instanceof URL ? value : new URL(value);
+  } catch {
+    return false;
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) return false;
+
+  const hostname = parsed.hostname.toLowerCase();
+  if (BLOCKED_HOSTNAMES.has(hostname) || hostname.endsWith('.localhost') || hostname.endsWith('.local')) {
+    return false;
+  }
+
+  return !isPrivateIpv4(hostname) && !isPrivateIpv6(hostname);
+}
+
+export function resolvePreviewAsset(value, documentUrl) {
+  if (!value) return '';
+  try {
+    const resolved = new URL(value, documentUrl);
+    return ['http:', 'https:'].includes(resolved.protocol) ? resolved.href : '';
+  } catch {
+    return '';
+  }
+}
