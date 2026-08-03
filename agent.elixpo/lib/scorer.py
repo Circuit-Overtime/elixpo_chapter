@@ -13,12 +13,36 @@ from math import isfinite
 from pydantic import BaseModel, Field
 
 THRESHOLD = 8
+MIN_ISSUE_AGE_DAYS = 7
+MAX_ISSUE_AGE_DAYS = 60
+MAX_ACTIVITY_AGE_DAYS = 30
 
 POSITIVE_LABELS = {"good first issue", "help wanted", "up-for-grabs", "hacktoberfest"}
-NEGATIVE_LABELS = {"triage", "needs-design", "discussion", "question"}
 EASY_COMPLEXITIES = {"trivial", "small"}
 MIN_SOLVABILITY_CONFIDENCE = 0.7
 MAX_EASY_FILES = 5
+
+
+def in_issue_age_window(age_days: object) -> bool:
+    """Return whether a calendar-day age is inside the inclusive target window."""
+    if isinstance(age_days, bool):
+        return False
+    try:
+        age = int(age_days)
+    except (TypeError, ValueError):
+        return False
+    return MIN_ISSUE_AGE_DAYS <= age <= MAX_ISSUE_AGE_DAYS
+
+
+def is_recently_active(activity_age_days: object) -> bool:
+    """Return whether an issue was updated inside the inclusive freshness window."""
+    if isinstance(activity_age_days, bool):
+        return False
+    try:
+        age = int(activity_age_days)
+    except (TypeError, ValueError):
+        return False
+    return 0 <= age <= MAX_ACTIVITY_AGE_DAYS
 
 
 class IssueSignals(BaseModel):
@@ -28,10 +52,12 @@ class IssueSignals(BaseModel):
     no_maintainer_claim: bool = True
     has_acceptance_criterion: bool = False
     older_than_7_days: bool = False
+    stale_over_365_days: bool = False
     op_is_core_maintainer: bool = False
-    someone_claimed_recently: bool = False  # "I'll take this" within 14 days
+    someone_claimed_recently: bool = False  # model: conversation shows current ownership
     touches_internal_paths: bool = False
     contributing_discuss_first: bool = False  # CONTRIBUTING says discuss-first AND no discussion exists
+    already_resolved: bool = False
 
 
 class SolvabilityVerdict(BaseModel):
@@ -55,7 +81,7 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
 
     if labels & POSITIVE_LABELS:
         b["good_first/help_wanted"] = 5
-    if "bug" in labels and s.has_repro_steps:
+    if s.has_repro_steps:
         b["reproducible_bug"] = 3
     if s.no_assignee:
         b["no_assignee"] = 2
@@ -65,9 +91,11 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
         b["acceptance_criterion"] = 2
     if s.older_than_7_days:
         b["aged"] = 1
-    if labels & NEGATIVE_LABELS:
-        b["discussion_label"] = -5
-    if s.op_is_core_maintainer:
+    if s.stale_over_365_days:
+        b["stale_issue"] = -5
+    # A maintainer-authored issue is only a probable self-note when maintainers
+    # have not explicitly invited community work through a positive label.
+    if s.op_is_core_maintainer and not labels & POSITIVE_LABELS:
         b["op_is_maintainer"] = -5
     if s.someone_claimed_recently:
         b["already_claimed"] = -10
@@ -75,6 +103,8 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
         b["internal_paths"] = -10
     if s.contributing_discuss_first:
         b["discuss_first"] = -5
+    if s.already_resolved:
+        b["already_resolved"] = -10
 
     return sum(b.values()), b
 
@@ -88,7 +118,6 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
     """Apply hard, fail-closed gates after fuzzy signals have been extracted."""
     extracted = extracted or {}
     blockers: list[str] = []
-    labels = _labels(signals)
 
     if extracted.get("tractable") is not True:
         blockers.append("not confirmed tractable")
@@ -120,9 +149,7 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
     }
     blockers.extend(reason for field, reason in hard_flags.items() if extracted.get(field) is not False)
 
-    completion_is_clear = signals.has_acceptance_criterion or (
-        "bug" in labels and signals.has_repro_steps
-    )
+    completion_is_clear = signals.has_acceptance_criterion or signals.has_repro_steps
     if not completion_is_clear:
         blockers.append("no acceptance criterion or reproducible bug")
     if not signals.no_assignee or not signals.no_maintainer_claim or signals.someone_claimed_recently:
@@ -131,9 +158,10 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
         blockers.append("requires internal or private paths")
     if signals.contributing_discuss_first:
         blockers.append("repository requires discussion before implementation")
-    if labels & NEGATIVE_LABELS:
-        blockers.append("issue is still in design, triage, discussion, or question stage")
-
+    if signals.already_resolved:
+        blockers.append("conversation indicates the repository change is already resolved")
+    if signals.stale_over_365_days:
+        blockers.append("issue has not been updated within 365 days")
     return SolvabilityVerdict(
         easy=not blockers,
         complexity=complexity,

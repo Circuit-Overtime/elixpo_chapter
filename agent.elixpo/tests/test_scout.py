@@ -49,12 +49,13 @@ def test_passes_filters_accept():
     [
         (_repo(full_name="bad/repo"), "blocklisted"),
         (_repo(stargazers_count=50), "stars"),
-        (_repo(stargazers_count=99999), "stars"),
+        (_repo(stargazers_count=15001), "stars"),
         (_repo(language="Brainfuck"), "language"),
         (_repo(pushed_at="2026-01-01T00:00:00Z"), "inactive"),
         (_repo(archived=True), "archived"),
         (_repo(fork=True), "fork"),
         (_repo(has_issues=False), "issues disabled"),
+        (_repo(open_issues_count=0), "no open issue"),
         (_repo(license=None), "license"),
         (_repo(topics=["no-ai-contributions"]), "opted_out"),
     ],
@@ -103,7 +104,16 @@ class FakeAPI:
             self.queries.append(q)
             m = re.search(r"stars:(\d+)\.\.(\d+)", q)
             lo, hi = (int(m.group(1)), int(m.group(2))) if m else (0, 10**9)
-            return {"items": [r for r in self._items if lo <= r.get("stargazers_count", 0) <= hi]}
+            language_match = re.search(r"language:([^ ]+)", q)
+            language = language_match.group(1).casefold() if language_match else ""
+            return {
+                "items": [
+                    repo
+                    for repo in self._items
+                    if lo <= repo.get("stargazers_count", 0) <= hi
+                    and (repo.get("language") or "").casefold() == language
+                ]
+            }
         if "/contents/" in path:
             if self._contributing:
                 return {"path": path}
@@ -112,12 +122,10 @@ class FakeAPI:
 
 
 @pytest.mark.asyncio
-async def test_search_query_requires_good_first():
+async def test_search_query_does_not_require_good_first():
     api = FakeAPI([_repo()])
     await search_repos(api, "python", 100, 2000, "2026-05-21")
-    assert "good-first-issues:>0" in api.queries[0]
-    await search_repos(api, "python", 100, 2000, "2026-05-21", require_good_first=False)
-    assert "good-first-issues" not in api.queries[1]
+    assert "good-first-issues" not in api.queries[0]
 
 
 @pytest.mark.asyncio
@@ -141,7 +149,7 @@ async def test_discover_filters_rejects_and_enriches():
     assert {"o/good", "o/ok"} <= names
     assert "o/tiny" not in names and "o/optout" not in names
     assert all(c.has_contributing for c in cands)
-    assert all(c.good_first_issues > 0 for c in cands)
+    assert all(c.open_issues > 0 for c in cands)
 
 
 @pytest.mark.asyncio
@@ -152,10 +160,44 @@ async def test_discover_mixes_star_bands():
     items = [
         _repo(full_name="o/small", stargazers_count=500),     # small band
         _repo(full_name="o/mid", stargazers_count=6000),      # mid band
-        _repo(full_name="o/large", stargazers_count=30000),   # large band
+        _repo(full_name="o/large", stargazers_count=12000),   # established target band
     ]
     cands = await discover_candidates(FakeAPI(items), ["python"], blocklist=set(), now=NOW)
     assert {c.band for c in cands} == {"small", "mid", "large"}
+
+
+@pytest.mark.asyncio
+async def test_discover_mixes_supported_languages_before_repeating_lanes():
+    from agents.scout.__main__ import discover_candidates
+
+    languages = ["python", "typescript", "javascript", "shell"]
+    items = [
+        _repo(full_name="o/python", language="Python", stargazers_count=500),
+        _repo(full_name="o/typescript", language="TypeScript", stargazers_count=600),
+        _repo(full_name="o/javascript", language="JavaScript", stargazers_count=700),
+        _repo(full_name="o/shell", language="Shell", stargazers_count=800),
+    ]
+    cands = await discover_candidates(
+        FakeAPI(items),
+        languages,
+        blocklist=set(),
+        now=NOW,
+        max_candidates=4,
+        check_contributing=False,
+    )
+    assert {(cand.language or "").casefold() for cand in cands} == set(languages)
+
+
+@pytest.mark.asyncio
+async def test_discover_excludes_famous_repositories():
+    from agents.scout.__main__ import discover_candidates
+
+    items = [
+        _repo(full_name="o/growing", stargazers_count=8000),
+        _repo(full_name="o/famous", stargazers_count=35554),
+    ]
+    cands = await discover_candidates(FakeAPI(items), ["python"], blocklist=set(), now=NOW)
+    assert [c.full_name for c in cands] == ["o/growing"]
 
 
 @pytest.mark.asyncio

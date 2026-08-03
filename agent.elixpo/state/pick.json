@@ -1,10 +1,18 @@
 {
-  "justification": "goauthentik/authentik#16954 \u2014 score 15 (threshold 8). Well-defined bug with clear repro steps and expected behavior (flatten nested attributes into valid LDAP attributes), suitable for a single external contributor to fix in the LDAP outpost. Signals: acceptance_criterion +2, aged +1, good_first/help_wanted +5, no_assignee +2, no_maintainer_claim +2, reproducible_bug +3.",
-  "number": 16954,
-  "picked_at": "2026-08-03T12:10:02.617577+00:00",
-  "repo": "goauthentik/authentik",
-  "score": 15,
-  "title": "Nested user attributes not exposed as valid LDAP attributes in LDAP Outpost",
+  "activity_age_days": 19,
+  "complexity": "small",
+  "confidence": 0.85,
+  "easy": true,
+  "estimated_files": 1,
+  "issue_age_days": 26,
+  "justification": "horsicq/Detect-It-Easy#365 \u2014 score 10 (threshold 8); small scope, ~1 files, 85% confidence. The issue describes a localized change in the installation path, which can be fixed with a single edit and verified by checking the shortcut. Signals: acceptance_criterion +2, aged +1, no_assignee +2, no_maintainer_claim +2, reproducible_bug +3.",
+  "number": 365,
+  "picked": true,
+  "picked_at": "2026-08-03T18:06:38.573129+00:00",
+  "repo": "horsicq/Detect-It-Easy",
+  "score": 10,
+  "status": "picked",
+  "title": "Windows Install via Chocolatey results in unusable Shortcut",
   "tractable": true,
-  "url": "https://github.com/goauthentik/authentik/issues/16954"
+  "url": "https://github.com/horsicq/Detect-It-Easy/issues/365"
 }

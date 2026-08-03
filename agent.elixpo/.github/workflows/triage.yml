@@ -1,6 +1,6 @@
 name: triage
 
-# Scores candidate repos' good-first issues into a ranked queue (state/triaged.json).
+# Scores candidate repos' open issues into a ranked queue (state/triaged.json).
 # Chains off Scout.
 
 on:
@@ -36,6 +36,6 @@ jobs:
         run: |
           git config user.name  "elixpoo[bot]"
           git config user.email "elixpoo[bot]@users.noreply.github.com"
-          git add state/triaged.json
+          git add state/triaged.json state/rejected_issues.json
           git diff --cached --quiet || git commit -m "chore(triage): refresh issue queue"
           git push

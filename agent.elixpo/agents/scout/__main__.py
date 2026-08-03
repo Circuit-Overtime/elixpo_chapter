@@ -3,6 +3,7 @@
 Sweeps GitHub for candidate repos (filters per refactor_plan section 3), scores
 their health, and writes the top ~20 to state/candidates.json for Triage. No
 LLM calls — GitHub search does the heavy lifting, so Scout is cheap and fast.
+Operating contract: skills/discover-contributor-repositories/SKILL.md.
 """
 
 from __future__ import annotations
@@ -32,8 +33,8 @@ PER_BAND_PAGE = 15
 # and mid repos aren't drowned out by giants. (lo, hi) inclusive-ish ranges.
 BANDS: list[tuple[str, int, int]] = [
     ("small", MIN_STARS, 2_000),
-    ("mid", 2_000, 15_000),
-    ("large", 15_000, MAX_STARS),
+    ("mid", 2_001, 8_000),
+    ("large", 8_001, MAX_STARS),
 ]
 
 
@@ -55,20 +56,27 @@ async def discover_candidates(
     now = now or datetime.now(timezone.utc)
     pushed_after = (now - timedelta(days=ACTIVE_DAYS)).date().isoformat()
     lang_set = {lang.lower() for lang in languages}
+    if not languages:
+        return []
 
-    # 1. search every (language × star band) concurrently — each query requires
-    #    good-first-issues:>0, so results are guaranteed to have contributable work
-    tasks, task_bands = [], []
+    # 1. search every (language × star band) concurrently. Issue-level evidence
+    #    belongs to Triage; Scout only requires a non-empty open issue surface.
+    tasks, task_lanes = [], []
     for band, lo, hi in BANDS:
         for lang in languages:
             tasks.append(search_repos(api, lang, lo, hi, pushed_after, PER_BAND_PAGE))
-            task_bands.append(band)
+            task_lanes.append((band, lang.casefold()))
     results = await gather_safe(tasks, default=[])
 
-    # 2. filter + dedupe + base score, keeping each candidate's band
-    by_band: dict[str, list[RepoCandidate]] = {b: [] for b, _, _ in BANDS}
+    # 2. Filter + dedupe into (star band, language) lanes. Keeping lanes
+    #    separate prevents Python's larger search surface from crowding out
+    #    TypeScript, JavaScript, and Shell repositories.
+    by_lane: dict[tuple[str, str], list[RepoCandidate]] = {
+        (band, lang.casefold()): [] for band, _, _ in BANDS for lang in languages
+    }
     seen: set[str] = set()
-    for band, repos in zip(task_bands, results, strict=True):
+    for lane, repos in zip(task_lanes, results, strict=True):
+        band, _searched_language = lane
         for repo in repos:
             name = repo.get("full_name", "")
             if name in seen:
@@ -77,7 +85,7 @@ async def discover_candidates(
             if not ok:
                 continue
             seen.add(name)
-            by_band[band].append(
+            by_lane[lane].append(
                 RepoCandidate(
                     full_name=name,
                     stars=repo.get("stargazers_count", 0),
@@ -86,37 +94,37 @@ async def discover_candidates(
                     topics=repo.get("topics", []),
                     archived=bool(repo.get("archived")),
                     open_issues=repo.get("open_issues_count", 0),
-                    good_first_issues=1,  # guaranteed >0 by the query; exact count is Triage's job
                     band=band,
                     url=repo.get("html_url", ""),
                     score=health_score(repo, has_contributing=False, now=now),
-                    reasons=[*reasons, "has good-first issues"],
+                    reasons=[*reasons, "has open issues"],
                 )
             )
 
-    for cands in by_band.values():
+    for cands in by_lane.values():
         cands.sort(key=lambda c: c.score, reverse=True)
 
     # 3. Enrich only enough leaders to fill a size-diverse final list. This keeps
     #    the default path bounded to roughly max_candidates CONTRIBUTING checks.
     if check_contributing:
-        per_band = max(2, (max_candidates + len(BANDS) - 1) // len(BANDS) + 2)
-        head = [c for cands in by_band.values() for c in cands[:per_band]]
+        per_lane = max(1, (max_candidates + len(by_lane) - 1) // len(by_lane))
+        head = [c for cands in by_lane.values() for c in cands[:per_lane]]
         flags = await gather_safe([has_contributing(api, c.full_name) for c in head], default=False)
         for cand, has_c in zip(head, flags, strict=True):
             cand.has_contributing = has_c
             if has_c:
                 cand.score += 15
-        for cands in by_band.values():
+        for cands in by_lane.values():
             cands.sort(key=lambda c: c.score, reverse=True)
 
-    # 4. round-robin across bands → a size-diverse mix, not all giants
+    # 4. Round-robin across band/language lanes for both size and language
+    #    diversity. Empty lanes do not consume output slots.
     mixed: list[RepoCandidate] = []
-    queues = {b: list(cands) for b, cands in by_band.items()}
+    queues = {lane: list(cands) for lane, cands in by_lane.items()}
     while len(mixed) < max_candidates and any(queues.values()):
-        for band, _, _ in BANDS:
-            if queues[band]:
-                mixed.append(queues[band].pop(0))
+        for lane in by_lane:
+            if queues[lane]:
+                mixed.append(queues[lane].pop(0))
                 if len(mixed) >= max_candidates:
                     break
     return mixed
