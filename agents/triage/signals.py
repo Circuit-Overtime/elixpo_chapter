@@ -10,9 +10,9 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 
+from lib.github.issue_signals import MAINTAINER_ASSOCIATIONS, maintainer_says_resolved
 from lib.scorer import IssueSignals, in_issue_age_window, is_recently_active
 
-MAINTAINER_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
 CLAIM_WINDOW_DAYS = 14
 STALE_DAYS = 365
 _CLAIM_RE = re.compile(
@@ -157,6 +157,7 @@ def deterministic_comment_signals(
     return {
         "someone_claimed_recently": bool(recent_claimants),
         "maintainer_claimed": bool(maintainer_claimants),
+        "resolved_by_maintainer": maintainer_says_resolved(comments),
         "touches_internal_paths": bool(_INTERNAL_PATH_RE.search(path_text)),
     }
 

@@ -104,7 +104,16 @@ class FakeAPI:
             self.queries.append(q)
             m = re.search(r"stars:(\d+)\.\.(\d+)", q)
             lo, hi = (int(m.group(1)), int(m.group(2))) if m else (0, 10**9)
-            return {"items": [r for r in self._items if lo <= r.get("stargazers_count", 0) <= hi]}
+            language_match = re.search(r"language:([^ ]+)", q)
+            language = language_match.group(1).casefold() if language_match else ""
+            return {
+                "items": [
+                    repo
+                    for repo in self._items
+                    if lo <= repo.get("stargazers_count", 0) <= hi
+                    and (repo.get("language") or "").casefold() == language
+                ]
+            }
         if "/contents/" in path:
             if self._contributing:
                 return {"path": path}
@@ -155,6 +164,28 @@ async def test_discover_mixes_star_bands():
     ]
     cands = await discover_candidates(FakeAPI(items), ["python"], blocklist=set(), now=NOW)
     assert {c.band for c in cands} == {"small", "mid", "large"}
+
+
+@pytest.mark.asyncio
+async def test_discover_mixes_supported_languages_before_repeating_lanes():
+    from agents.scout.__main__ import discover_candidates
+
+    languages = ["python", "typescript", "javascript", "shell"]
+    items = [
+        _repo(full_name="o/python", language="Python", stargazers_count=500),
+        _repo(full_name="o/typescript", language="TypeScript", stargazers_count=600),
+        _repo(full_name="o/javascript", language="JavaScript", stargazers_count=700),
+        _repo(full_name="o/shell", language="Shell", stargazers_count=800),
+    ]
+    cands = await discover_candidates(
+        FakeAPI(items),
+        languages,
+        blocklist=set(),
+        now=NOW,
+        max_candidates=4,
+        check_contributing=False,
+    )
+    assert {(cand.language or "").casefold() for cand in cands} == set(languages)
 
 
 @pytest.mark.asyncio

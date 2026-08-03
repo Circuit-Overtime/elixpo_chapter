@@ -49,6 +49,10 @@ _TOOL = ToolDef(
                 "verification_clear": {"type": "boolean"},
                 "conversation_resolved": {"type": "boolean"},
                 "needs_maintainer_decision": {"type": "boolean"},
+                "already_resolved": {
+                    "type": "boolean",
+                    "description": "maintainer conversation says the requested repository change already exists",
+                },
                 "reasons": {
                     "type": "array",
                     "items": {"type": "string"},
@@ -67,6 +71,7 @@ _TOOL = ToolDef(
                 "verification_clear",
                 "conversation_resolved",
                 "needs_maintainer_decision",
+                "already_resolved",
                 "reasons",
                 "summary",
             ],

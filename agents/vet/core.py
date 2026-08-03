@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 
+from lib.github.issue_signals import maintainer_says_resolved
 from lib.scorer import NEGATIVE_LABELS
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
@@ -93,6 +94,8 @@ def deterministic_blockers(evidence: dict, number: int, now: datetime) -> list[s
         blockers.append("an implementation pull request already references the issue")
     if _has_recent_claim(evidence.get("comments", []), now):
         blockers.append("a contributor conversation indicates the issue is claimed")
+    if maintainer_says_resolved(evidence.get("comments", [])):
+        blockers.append("a maintainer says the issue is already resolved upstream")
     if len(str(issue.get("body") or "").strip()) < 40:
         blockers.append("issue description is too short to verify")
     return blockers
@@ -117,6 +120,8 @@ def _model_blockers(verdict: dict) -> list[str]:
     blockers.extend(reason for field, reason in boolean_requirements.items() if verdict.get(field) is not True)
     if verdict.get("needs_maintainer_decision") is not False:
         blockers.append("a maintainer decision is still required")
+    if verdict.get("already_resolved") is not False:
+        blockers.append("conversation indicates the repository change is already resolved")
     if verdict.get("issue_kind") == "tracking_issue":
         blockers.append("issue is a tracking parent rather than one implementation unit")
     if verdict.get("suitable") is not True:

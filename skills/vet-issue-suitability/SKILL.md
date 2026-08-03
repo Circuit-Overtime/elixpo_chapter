@@ -36,6 +36,11 @@ Do not equate a long conversation with bad scope. Reject when the conversation
 contains unresolved choices, competing implementations, or evidence that the
 requested behavior is already implemented.
 
+Treat an OWNER, MEMBER, or COLLABORATOR statement that the change was fixed,
+resolved, implemented, or addressed on the repository side as decisive. Reject
+even when packaging, release publication, cache propagation, or another external
+distribution step remains. That remaining work is not a repository code task.
+
 ## Classify hierarchy and scope
 
 Use `tracking_issue` for an umbrella coordinating multiple deliverables. Use
@@ -52,6 +57,10 @@ Require confidence of at least 0.75, clear requirements, a clear local verificat
 path, resolved conversation, and no pending maintainer decision. `suitable=true`
 must agree with every field. Missing, malformed, or contradictory evidence means
 rejection with short factual reasons.
+
+Set `already_resolved=true` whenever the current repository change already exists,
+including when only a downstream package or release needs updating. Such an issue
+is never suitable.
 
 The rejection ledger is revision-aware. Reuse a rejection only while the issue's
 `updated_at` value is unchanged; new activity permits one fresh evaluation. Take

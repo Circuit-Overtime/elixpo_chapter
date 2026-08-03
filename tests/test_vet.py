@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import pytest
 from agents.vet.core import vet_issue
 from agents.vet.github import parse_issue_url, referenced_pull_requests
+from lib.github.issue_signals import maintainer_says_resolved
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
 from rtk.models import ChatCompletionResponse, Choice, FunctionCall, Message, ToolCall, Usage
@@ -81,6 +82,7 @@ def _approved(**changes):
         "verification_clear": True,
         "conversation_resolved": True,
         "needs_maintainer_decision": False,
+        "already_resolved": False,
         "reasons": [],
         "summary": "localized parser correction with a direct regression test",
     }
@@ -104,6 +106,22 @@ def test_pr_references_are_exact_and_deduplicated():
     assert [pull["number"] for pull in referenced_pull_requests(evidence, 365)] == [8]
 
 
+def test_later_maintainer_reopen_cancels_resolution_signal():
+    comments = [
+        {
+            "created_at": "2026-07-08T00:00:00Z",
+            "author_association": "COLLABORATOR",
+            "body": "This was fixed from our side.",
+        },
+        {
+            "created_at": "2026-07-09T00:00:00Z",
+            "author_association": "MEMBER",
+            "body": "Reopened: it is still broken on the main branch.",
+        },
+    ]
+    assert maintainer_says_resolved(comments) is False
+
+
 @pytest.mark.asyncio
 async def test_tracking_issue_rejected_without_model_and_cached(tmp_path):
     store = StateStore(tmp_path)
@@ -120,6 +138,35 @@ async def test_tracking_issue_rejected_without_model_and_cached(tmp_path):
     second = await vet_issue(router, store, "horsicq", "Detect-It-Easy", 365, evidence, now=NOW)
     assert second["status"] == "cached_rejection"
     assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_issue_365_maintainer_resolution_is_zero_token_rejection(tmp_path):
+    store = StateStore(tmp_path)
+    router = FakeRouter(_approved())
+    comments = [
+        {
+            "created_at": "2026-07-08T16:31:02Z",
+            "author_association": "COLLABORATOR",
+            "user": {"login": "BJNFNE"},
+            "body": "If i remember correctly this was fixed from our side, the chocolatey package has to be updated",
+        }
+    ]
+    result = await vet_issue(
+        router,
+        store,
+        "horsicq",
+        "Detect-It-Easy",
+        365,
+        _evidence(comments=comments),
+        now=NOW,
+        force=True,
+    )
+    assert result["status"] == "rejected"
+    assert result["model_called"] is False
+    assert "already resolved upstream" in " ".join(result["reasons"])
+    assert router.calls == 0
+    assert "horsicq/Detect-It-Easy#365" in RejectionLedger.load(store).issues
 
 
 @pytest.mark.asyncio

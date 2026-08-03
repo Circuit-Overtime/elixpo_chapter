@@ -130,6 +130,7 @@ def test_comment_claims_and_internal_paths_are_deterministic():
     assert signals == {
         "someone_claimed_recently": True,
         "maintainer_claimed": False,
+        "resolved_by_maintainer": False,
         "touches_internal_paths": False,
     }
 
@@ -636,6 +637,35 @@ async def test_triage_rejects_recent_claim_before_model_call():
     )
     assert out == []
     assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_triage_rejects_maintainer_resolved_issue_without_model_and_remembers_it():
+    from agents.triage.__main__ import triage_candidates
+    from lib.state.rejections import RejectionLedger
+
+    comments = [
+        {
+            "body": "If I remember correctly this was fixed from our side; the package has to be updated.",
+            "created_at": "2026-06-18T00:00:00Z",
+            "author_association": "COLLABORATOR",
+            "user": {"login": "maintainer"},
+        }
+    ]
+    rejections = RejectionLedger()
+    router = FakeRouter({"tractable": True})
+    out = await triage_candidates(
+        FakeAPI([_issue(1)], comments=comments),
+        router,
+        [{"full_name": "o/r"}],
+        NOW,
+        rejections=rejections,
+    )
+    assert out == []
+    assert router.calls == 0
+    assert rejections.issues["o/r#1"].reasons == [
+        "a maintainer says the issue is already resolved upstream"
+    ]
 
 
 @pytest.mark.asyncio

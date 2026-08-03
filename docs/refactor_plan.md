@@ -42,7 +42,7 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 ### Scout — Discovery
 - **Trigger:** cron, daily
 - **Budget:** 10 min
-- **Job:** Sweep GitHub for candidate repos. Hard filters: 100–50k stars, active in last 30 days, declared license, issues enabled, not a fork, language whitelist, not in blocklist or opted out. Rank by contribution guidance, recent activity, and a manageable issue backlog; popularity is secondary.
+- **Job:** Sweep GitHub for Python, TypeScript, JavaScript, and Shell repositories. Hard filters: 100–15k stars, active in the last 21 days, declared license, issues enabled, not a fork, not in blocklist or opted out. Rank by contribution guidance, recent activity, and a manageable issue backlog; round-robin across language and size lanes so popularity is secondary.
 - **Agents:** trending-crawler, topic-crawler, language-specialist, repo-health-scorer, blocklist-checker, opt-out-checker
 - **Output:** ~20 candidate repos written to `state/candidates.json`
 - **Skill:** `skills/discover-contributor-repositories/SKILL.md`

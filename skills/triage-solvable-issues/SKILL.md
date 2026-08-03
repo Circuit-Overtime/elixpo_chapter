@@ -41,6 +41,11 @@ pull request, regardless of whether that attempt is open, closed, or merged. Als
 reject recent contributor intent such as "I'd like to investigate this"; do not
 compete for work merely because GitHub has no assignee.
 
+Reject before a routed call when an OWNER, MEMBER, or COLLABORATOR explicitly says
+the repository-side change is already fixed, resolved, implemented, or addressed.
+Do not select an issue merely because a downstream package or release still needs
+to publish that existing fix.
+
 Consult `state/rejected_issues.json` before spending model tokens. Skip an issue
 when its `owner/repo#number` record has the same `updated_at` revision. A changed
 revision may be reconsidered because later conversation can resolve blockers.

@@ -36,6 +36,10 @@ contributor: 100–15,000 stars and a default-branch push within 21 days. Reposi
 above that ceiling are out of scope, even when they rank highly or carry many
 contributor-oriented labels.
 
+Restrict the primary-language search to Python, TypeScript, JavaScript, and Shell.
+Keep separate `(star band, language)` queues and round-robin across them so a large
+Python result surface cannot erase the other supported languages.
+
 ## Rank for contribution readiness
 
 Rank eligible repositories using evidence in this order:
@@ -52,7 +56,7 @@ do not crowd out maintained smaller repositories.
 
 ## Keep discovery bounded
 
-- Search each configured language within each star band.
+- Search Python, TypeScript, JavaScript, and Shell within each star band.
 - Do not require `good-first-issues:>0`; repository discovery must not make an
   issue-level solvability decision.
 - Deduplicate by case-sensitive `owner/name`.
