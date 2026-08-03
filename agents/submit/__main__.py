@@ -248,12 +248,19 @@ async def _run() -> int:
     from lib.state.store import StateStore
     from rtk import Budget, Router
 
-    if not settings.github.token or not settings.pollinations.api_key:
-        log.error("submit.missing_credentials")
+    if not settings.github.solver_token or not settings.pollinations.api_key:
+        log.error(
+            "submit.missing_credentials",
+            missing=(
+                "ELIXPOO_GITHUB_SOLVER_TOKEN"
+                if not settings.github.solver_token
+                else "ELIXPO_POLLINATIONS_API_KEY"
+            ),
+        )
         return 1
     store = StateStore(settings.state_dir)
     solve_state = store.read_json("solve.json", {}) or {}
-    api = GitHubAPI.from_token(settings.github.token)
+    api = GitHubAPI.from_token(settings.github.solver_token)
     router = Router.from_settings("submit", budget=Budget("submit", limit=2500, kill_multiple=1.0))
     try:
         workspace_base = Path(os.getenv("ELIXPO_WORKSPACE_DIR", "/tmp/elixpoo-workspaces"))

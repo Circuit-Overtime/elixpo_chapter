@@ -18,6 +18,7 @@ repository that installs the agent workflows:
 | --- | --- | --- |
 | `ELIXPO_POLLINATIONS_API_KEY` | Every model request: agent, triage, PR metadata, and changelog summaries | Pollinations text API; this is the only model credential |
 | `ELIXPOO_GITHUB_AGENTIC_TOKEN` | Repository reads/writes, issue and PR metadata, branches, failed-run retries, repository variables, and Project V2 fields | See the token profiles below |
+| `ELIXPOO_GITHUB_SOLVER_TOKEN` | Solve/Submit fork creation, fork branch pushes, and pull-request creation | Classic PAT from the fork owner with `public_repo` for public targets |
 | `ELIXPOO_GIST_AGENTIC_TOKEN` | Shared reusable `merge-gist.yml` workflow in `agent.elixpo` | Gist read/write |
 
 `GITHUB_TOKEN` is created automatically for each workflow run. It is not an
@@ -46,6 +47,12 @@ profile.
 `ELIXPOO_GIST_AGENTIC_TOKEN` needs only classic PAT scope `gist`. It does not need `repo`,
 `workflow`, or organization administration scopes.
 
+`ELIXPOO_GITHUB_SOLVER_TOKEN` is deliberately separate from the general
+agentic token. Mint it from the account that owns the forks. Use classic scope
+`public_repo` for public targets; add private-repository access only if private
+targets are explicitly enabled. Solve and Submit never fall back to another
+GitHub credential.
+
 `ELIXPO_POLLINATIONS_API_KEY` is not a GitHub token and receives no
 GitHub permissions. Give it only Pollinations text-generation access.
 
@@ -63,6 +70,7 @@ Required organization secrets:
 
 - `ELIXPO_POLLINATIONS_API_KEY`
 - `ELIXPOO_GITHUB_AGENTIC_TOKEN`
+- `ELIXPOO_GITHUB_SOLVER_TOKEN`
 - `ELIXPOO_GIST_AGENTIC_TOKEN`
 
 No `GH_SECRET` is required. GitHub supplies `GITHUB_TOKEN` automatically, while

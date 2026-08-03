@@ -23,8 +23,15 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     from lib.state.store import StateStore
     from rtk import Budget, Router
 
-    if not settings.github.token or not settings.pollinations.api_key:
-        log.error("solve.missing_credentials")
+    if not settings.github.solver_token or not settings.pollinations.api_key:
+        log.error(
+            "solve.missing_credentials",
+            missing=(
+                "ELIXPOO_GITHUB_SOLVER_TOKEN"
+                if not settings.github.solver_token
+                else "ELIXPO_POLLINATIONS_API_KEY"
+            ),
+        )
         return 1
     store = StateStore(settings.state_dir)
     policy = load_solve_policy()
@@ -44,7 +51,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         },
     )
 
-    api = GitHubAPI.from_token(settings.github.token)
+    api = GitHubAPI.from_token(settings.github.solver_token)
     router = Router.from_settings(
         "solve",
         budget=Budget("solve", limit=int(policy["token_budget"]), kill_multiple=1.0),

@@ -49,6 +49,9 @@ class GitHubSettings(BaseSettings):
         default="",
         validation_alias=AliasChoices("GITHUB_TOKEN", "ELIXPOO_GITHUB_AGENTIC_TOKEN"),
     )
+    # Dedicated cross-owner credential for fork, push, and pull-request work.
+    # Keep this separate from the narrower token used by read-oriented squads.
+    solver_token: str = Field(default="", validation_alias="ELIXPOO_GITHUB_SOLVER_TOKEN")
     # OAuth App (BYOP / login flows) — not needed by squads, kept for completeness.
     client_id: str = Field(default="", validation_alias="ELIXPO_GITHUB_CLIENT_ID")
     client_secret: str = Field(default="", validation_alias="ELIXPO_GITHUB_CLIENT_SECRET")

@@ -16,6 +16,18 @@ def test_github_settings_accepts_agentic_token_alias(monkeypatch):
     monkeypatch.setenv("ELIXPOO_GITHUB_AGENTIC_TOKEN", "test-token")
     assert GitHubSettings().token == "test-token"
 
+
+def test_github_settings_keeps_solver_token_separate(monkeypatch):
+    from lib.config import GitHubSettings
+
+    monkeypatch.setenv("GITHUB_TOKEN", "workflow-token")
+    monkeypatch.setenv("ELIXPOO_GITHUB_AGENTIC_TOKEN", "agentic-token")
+    monkeypatch.setenv("ELIXPOO_GITHUB_SOLVER_TOKEN", "solver-token")
+    configured = GitHubSettings()
+    assert configured.token == "workflow-token"
+    assert configured.solver_token == "solver-token"
+
+
 def test_scorer_good_first_issue_qualifies():
     s = IssueSignals(
         labels=["good first issue"],

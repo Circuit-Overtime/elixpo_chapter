@@ -70,7 +70,7 @@ jobs:
       - name: Solve
         if: steps.gate.outputs.run == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
+          ELIXPOO_GITHUB_SOLVER_TOKEN: ${{ secrets.ELIXPOO_GITHUB_SOLVER_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           ELIXPO_GITHUB_FORK_OWNER: ${{ vars.ELIXPO_GITHUB_FORK_OWNER }}
           ISSUE_URL: ${{ inputs.issue_url }}
@@ -84,7 +84,7 @@ jobs:
       - name: Submit
         if: steps.gate.outputs.run == 'true' && steps.gate.outputs.submit == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
+          ELIXPOO_GITHUB_SOLVER_TOKEN: ${{ secrets.ELIXPOO_GITHUB_SOLVER_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
         run: python -m agents.submit
       - name: Commit state
