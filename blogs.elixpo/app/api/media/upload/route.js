@@ -379,6 +379,10 @@ export async function POST(request) {
             WHERE user_id = ? AND storage_provider = ?
           ) WHERE id = ?`).bind(storageOwner, PLATFORM_CLOUDINARY, storageOwner).run();
         }
+        try {
+          const { kvInvalidate, mediaInventoryCacheKey } = await import('../../../../lib/cache');
+          await kvInvalidate(...[...affectedStorageOwners].map(mediaInventoryCacheKey));
+        } catch {}
 
         return NextResponse.json({
           id: previous?.id || mediaId,

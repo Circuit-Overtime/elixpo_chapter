@@ -4,6 +4,7 @@ import { parseCloudinaryUrl } from '../lib/cloudinaryConnections.js';
 import { decryptIntegrationSecret, encryptIntegrationSecret } from '../lib/integrationSecrets.js';
 import {
   buildCloudinaryAuthorizationUrl,
+  isValidCloudinaryCloudName,
   resolveCloudinaryCloudName,
   tokenExpiry,
 } from '../lib/cloudinaryOAuth.js';
@@ -63,6 +64,14 @@ test('Cloudinary OAuth resolves product environments and conservative expiry', a
   );
   assert.equal(tokenExpiry(300, 1000), 1300);
   assert.equal(tokenExpiry(undefined, 1000), 1300);
+});
+
+test('Cloudinary OAuth accepts safe product-environment cloud names', () => {
+  assert.equal(isValidCloudinaryCloudName('creator-cloud'), true);
+  assert.equal(isValidCloudinaryCloudName('creator_cloud_2'), true);
+  assert.equal(isValidCloudinaryCloudName('2creator'), true);
+  assert.equal(isValidCloudinaryCloudName('../creator'), false);
+  assert.equal(isValidCloudinaryCloudName('creator/cloud'), false);
 });
 
 test('Cloudinary OAuth resolves the official ext.cloud_name access-token claim', async () => {
