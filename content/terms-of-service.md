@@ -56,7 +56,7 @@ You can disconnect optional integrations, but completed actions may remain with 
 
 Current prices, included limits, and availability appear on the [Pricing page](/pricing). Prices may vary by region and may exclude taxes or provider charges where applicable. Checkout is processed by Elixpo Pay and its payment providers. Any additional payment, renewal, cancellation, or refund terms shown during checkout form part of your purchase.
 
-You can cancel a paid plan through the available billing controls. Cancellation stops future renewal according to the checkout terms; access generally continues until the end of the paid period unless required otherwise for abuse, fraud, chargeback, or law. Downgrading can prevent new activity above free limits and may require you to reduce stored content or usage.
+Cancellation and renewal are governed by the controls and terms presented by Elixpo Pay during checkout. If the required control is unavailable, contact **hello@elixpo.com** for assistance. Downgrading can prevent new activity above free limits and may require you to reduce stored content or usage.
 
 Features marked **Coming soon**, preview, beta, or experimental are not part of the currently delivered paid entitlement and may change or never launch.
 

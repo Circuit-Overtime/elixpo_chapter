@@ -114,7 +114,7 @@ export default function PricingPage() {
 
         <p className="text-center text-[12px] mt-8" style={{ color: 'var(--text-faint)' }}>
           {pricing?.country ? `Prices adjusted for your region (${pricing.country}). ` : ''}
-          Payments are processed securely by Elixpo Pay. Cancel anytime.
+          Prices are monthly in {pricing?.currency || 'USD'}. Checkout and subscription terms are provided by Elixpo Pay.
         </p>
 
         <div className="mt-12 grid gap-4 border-t border-[var(--border-default)] pt-8 md:grid-cols-3">
