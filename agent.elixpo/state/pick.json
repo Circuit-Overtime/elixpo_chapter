@@ -1,10 +1,10 @@
 {
-  "justification": "mealie-recipes/mealie#5422 \u2014 score 13 (threshold 8). Well-scoped parser bug (strip prices/asterisks from ingredient names) with repro steps and a contributor already interested, though no formal acceptance criterion and conflicting \"already fixed\" reports make the exact remaining edge case slightly fuzzy. Signals: aged +1, good_first/help_wanted +5, no_assignee +2, no_maintainer_claim +2, reproducible_bug +3.",
-  "number": 5422,
-  "picked_at": "2026-08-02T10:22:51.734500+00:00",
-  "repo": "mealie-recipes/mealie",
-  "score": 13,
-  "title": "[BUG] - Recipie Parser can't handle prices",
+  "justification": "goauthentik/authentik#16954 \u2014 score 15 (threshold 8). Well-defined bug with clear repro steps and expected behavior (flatten nested attributes into valid LDAP attributes), suitable for a single external contributor to fix in the LDAP outpost. Signals: acceptance_criterion +2, aged +1, good_first/help_wanted +5, no_assignee +2, no_maintainer_claim +2, reproducible_bug +3.",
+  "number": 16954,
+  "picked_at": "2026-08-03T12:10:02.617577+00:00",
+  "repo": "goauthentik/authentik",
+  "score": 15,
+  "title": "Nested user attributes not exposed as valid LDAP attributes in LDAP Outpost",
   "tractable": true,
-  "url": "https://github.com/mealie-recipes/mealie/issues/5422"
+  "url": "https://github.com/goauthentik/authentik/issues/16954"
 }
