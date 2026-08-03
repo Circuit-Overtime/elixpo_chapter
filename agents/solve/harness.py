@@ -73,7 +73,7 @@ def _wait_for_router(process: subprocess.Popen[str] | None, timeout: int) -> Non
 def _configure_ccr(policy: dict[str, Any]) -> dict[str, str]:
     env = os.environ.copy()
     model = str(policy.get("harness_model", "qwen-coder"))
-    output_tokens = str(int(policy.get("harness_max_output_tokens", 2600)))
+    output_tokens = str(int(policy.get("harness_max_output_tokens", 1600)))
     env.update(
         {
             "ELIXPO_CCR_AGENT_MODEL": model,
@@ -202,18 +202,15 @@ def _render_harness_event(event: dict[str, Any]) -> None:
     if event_type == "result":
         status = "failed" if event.get("is_error") else "completed"
         usage = event.get("usage") or {}
-        tokens = sum(
-            int(usage.get(key) or 0)
-            for key in (
-                "input_tokens",
-                "cache_creation_input_tokens",
-                "cache_read_input_tokens",
-                "output_tokens",
-            )
-        )
+        prompt = int(usage.get("input_tokens") or 0)
+        cache_write = int(usage.get("cache_creation_input_tokens") or 0)
+        cache_read = int(usage.get("cache_read_input_tokens") or 0)
+        output = int(usage.get("output_tokens") or 0)
+        tokens = prompt + cache_write + cache_read + output
         print(
             f"[harness] {status} turns={event.get('num_turns', 0)} "
-            f"tokens={tokens} duration_ms={event.get('duration_ms', 0)}",
+            f"tokens={tokens} input={prompt + cache_write} cached={cache_read} "
+            f"output={output} duration_ms={event.get('duration_ms', 0)}",
             flush=True,
         )
 
@@ -381,6 +378,39 @@ def _parse_cli_result(stdout: str) -> tuple[HarnessOutcome, Usage, dict[str, Any
     return outcome, usage, metadata
 
 
+def _harness_command(model: str, policy: dict[str, Any]) -> list[str]:
+    schema = json.dumps(HarnessOutcome.model_json_schema(), separators=(",", ":"))
+    return _node_command(
+        _HARNESS_PACKAGE,
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--json-schema",
+        schema,
+        "--max-turns",
+        str(int(policy.get("harness_max_turns", 10))),
+        "--model",
+        model,
+        # Replace the coding CLI's large generic system prompt. Appending
+        # repeats both prompts through every tool turn and can multiply a
+        # one-file solve into hundreds of thousands of input tokens.
+        "--system-prompt-file",
+        str(_SOLVE_SKILL),
+        "--permission-mode",
+        "dontAsk",
+        "--tools",
+        "Read,Glob,Grep,Edit,Write,Find",
+        "--allowedTools",
+        "Read,Glob,Grep,Edit,Write,Find",
+        "--disallowedTools",
+        "Bash,WebFetch,WebSearch,Task,mcp__*",
+        "--strict-mcp-config",
+        "--safe-mode",
+        "--no-session-persistence",
+    )
+
+
 def run_harness(
     workspace: Path,
     issue: dict[str, Any],
@@ -416,33 +446,7 @@ def run_harness(
         print(f"[ccr] ready at {_CCR_URL}", flush=True)
 
         model = str(policy.get("harness_model", "qwen-coder"))
-        schema = json.dumps(HarnessOutcome.model_json_schema(), separators=(",", ":"))
-        command = _node_command(
-            _HARNESS_PACKAGE,
-            "-p",
-            "--output-format",
-            "stream-json",
-            "--verbose",
-            "--json-schema",
-            schema,
-            "--max-turns",
-            str(int(policy.get("harness_max_turns", 14))),
-            "--model",
-            model,
-            "--append-system-prompt-file",
-            str(_SOLVE_SKILL),
-            "--permission-mode",
-            "dontAsk",
-            "--tools",
-            "Read,Glob,Grep,Edit,Write,Find",
-            "--allowedTools",
-            "Read,Glob,Grep,Edit,Write,Find",
-            "--disallowedTools",
-            "Bash,WebFetch,WebSearch,Task,mcp__*",
-            "--strict-mcp-config",
-            "--safe-mode",
-            "--no-session-persistence",
-        )
+        command = _harness_command(model, policy)
         final_event, return_code, stderr = _stream_harness(
             command,
             workspace=workspace,

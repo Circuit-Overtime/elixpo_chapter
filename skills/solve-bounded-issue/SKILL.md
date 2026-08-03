@@ -52,8 +52,10 @@ GitHub credentials, the Pollinations key, and all other secrets from the target
 harness environment; only the local CCR URL and its non-secret client token may
 cross the boundary.
 
-Inject this skill only into the Solve harness session with an explicit system
-prompt file. Do not add its instructions to the global agent prompt.
+Inject this skill only into the Solve harness session as the replacement system
+prompt. Never append it to the coding CLI's generic system prompt: both prompts
+would be resent through every tool turn and multiply paid input. Do not add its
+instructions to the global agent prompt.
 
 Stream useful progress to the caller while the harness works. Relay sanitized
 CCR process lines and compact harness events for session start, assistant
@@ -87,6 +89,12 @@ from tracked manifests and changed extensions: choose the lockfile-matched
 install command, then the cheapest applicable typecheck, lint, test, or build
 command. Never invent a command absent from configured allowlists. Record
 whether inference was used.
+
+Treat the harness ceiling as cumulative usage across all tool turns, including
+input, cache creation, cache reads, and output. Keep the per-turn output and
+turn count bounded in configuration; never hide cache traffic to make a run
+appear smaller. Report the usage components separately so Doctor can distinguish
+large repeated context from excessive generation.
 
 After the session, derive targets from Git rather than trusting its report.
 Reject no diff, deletions, symlinks, unsafe paths, more than five files, an

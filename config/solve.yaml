@@ -1,8 +1,10 @@
 version: 1
 
-# Solve is intentionally smaller than the global RTK defaults. An accepted issue
-# should fit in one planning call, at most two edit calls, and one review call.
-token_budget: 24000
+# CCR reports cumulative input across the coding harness's tool turns. This is
+# deliberately a separate, measured ceiling for one bounded session; qwen-coder
+# remains the lowest-cost capable coding route. The replacement system prompt,
+# lower turn count, and compact per-turn output keep normal runs well below it.
+token_budget: 180000
 max_minutes: 15
 max_files: 5
 max_commit_steps: 2
@@ -15,8 +17,8 @@ command_timeout_seconds: 180
 
 # Python supervises these Node processes for both local and Actions runs.
 harness_model: qwen-coder
-harness_max_turns: 14
-harness_max_output_tokens: 2600
+harness_max_turns: 10
+harness_max_output_tokens: 1600
 ccr_start_timeout_seconds: 60
 blocked_change_prefixes:
   - .github/workflows/

@@ -12,7 +12,13 @@ from agents.solve.branch import build_work_branch
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, assert_workspace_identity, run_verification, validate_command
-from agents.solve.harness import HarnessError, _harness_env, _parse_cli_result, _render_harness_event
+from agents.solve.harness import (
+    HarnessError,
+    _harness_command,
+    _harness_env,
+    _parse_cli_result,
+    _render_harness_event,
+)
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from agents.solve.verification_plan import complete_verification_plan
 from lib.state.store import StateStore
@@ -197,6 +203,38 @@ def test_harness_result_parses_structured_output_and_usage():
     assert usage.total_tokens == 1600
     assert usage.cached_tokens == 400
     assert metadata == {"session_id": "session-1", "turns": 6, "duration_ms": 12000}
+
+
+def test_harness_replaces_generic_system_prompt(monkeypatch):
+    monkeypatch.setattr(
+        "agents.solve.harness._node_command",
+        lambda package, *args: [package, *args],
+    )
+
+    command = _harness_command("qwen-coder", {"harness_max_turns": 10})
+
+    assert "--system-prompt-file" in command
+    assert "--append-system-prompt-file" not in command
+    assert command[command.index("--max-turns") + 1] == "10"
+
+
+def test_harness_result_reports_usage_components(capsys):
+    _render_harness_event(
+        {
+            "type": "result",
+            "num_turns": 3,
+            "duration_ms": 1200,
+            "usage": {
+                "input_tokens": 100,
+                "cache_creation_input_tokens": 20,
+                "cache_read_input_tokens": 40,
+                "output_tokens": 10,
+            },
+        }
+    )
+
+    output = capsys.readouterr().out
+    assert "tokens=170 input=120 cached=40 output=10" in output
 
 
 def test_declined_harness_outcome_needs_no_commands():
