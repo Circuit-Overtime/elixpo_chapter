@@ -17,13 +17,13 @@ export async function GET() {
     mediaInventoryCacheKey(session.userId),
     MEDIA_INVENTORY_TTL_SECONDS,
     async () => {
-      const aggregate = async (join, id, name) => {
+      const aggregate = async (join, id, name, scope = '1 = 1') => {
         const { results: rows = [] } = await db.prepare(`
           SELECT ${id} AS id, ${name} AS name, SUM(m.size_bytes) AS bytes, COUNT(*) AS count
           FROM media_uploads m
           JOIN blogs b ON b.id = m.blog_id
           ${join}
-          WHERE m.user_id = ? AND ${id} IS NOT NULL
+          WHERE m.user_id = ? AND ${id} IS NOT NULL AND ${scope}
           GROUP BY ${id}, ${name}
           ORDER BY bytes DESC
           LIMIT 100
@@ -31,7 +31,7 @@ export async function GET() {
         return rows;
       };
 
-      const [mediaResult, total, organisations, collections, storageResult] = await Promise.all([
+      const [mediaResult, total, personal, organisations, collections, storageResult] = await Promise.all([
         db.prepare(`
           SELECT m.id, m.size_bytes, m.media_type, m.created_at, m.cloudinary_public_id,
             m.storage_provider, m.storage_cloud_name, m.secure_url,
@@ -47,8 +47,20 @@ export async function GET() {
         `).bind(session.userId).all(),
         db.prepare('SELECT COALESCE(SUM(size_bytes), 0) AS bytes, COUNT(*) AS count FROM media_uploads WHERE user_id = ?')
           .bind(session.userId).first(),
+        db.prepare(`
+          SELECT COALESCE(SUM(m.size_bytes), 0) AS bytes, COUNT(*) AS count
+          FROM media_uploads m
+          LEFT JOIN blogs b ON b.id = m.blog_id
+          WHERE m.user_id = ?
+            AND (m.blog_id IS NULL OR (COALESCE(b.published_as, '') NOT LIKE 'org:%' AND b.collection_id IS NULL))
+        `).bind(session.userId).first(),
         aggregate("JOIN orgs o ON b.published_as = ('org:' || o.id)", 'o.id', 'o.name'),
-        aggregate('JOIN collections c ON c.id = b.collection_id', 'c.id', 'c.name'),
+        aggregate(
+          'JOIN collections c ON c.id = b.collection_id',
+          'c.id',
+          'c.name',
+          "COALESCE(b.published_as, '') NOT LIKE 'org:%'",
+        ),
         db.prepare(`
           SELECT storage_provider AS provider, storage_cloud_name AS cloudName,
             COALESCE(SUM(size_bytes), 0) AS bytes, COUNT(*) AS count
@@ -66,6 +78,10 @@ export async function GET() {
       return {
         totalBytes: Number(total?.bytes || 0),
         count: Number(total?.count || 0),
+        personal: {
+          bytes: Number(personal?.bytes || 0),
+          count: Number(personal?.count || 0),
+        },
         organisations,
         collections,
         storageSpaces: storageSpaces.map((space) => ({

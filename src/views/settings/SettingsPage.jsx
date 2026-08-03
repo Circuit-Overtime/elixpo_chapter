@@ -48,6 +48,35 @@ function SectionHeader({ title }) {
   return <h3 className="text-[13px] font-bold text-[var(--text-primary)] uppercase tracking-wider mt-8 mb-2">{title}</h3>;
 }
 
+function StorageScope({ title, icon, bytes, count, children, emptyText = 'No stored media' }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)]">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--bg-elevated)]"
+      >
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--bg-elevated)] text-[var(--text-muted)]">
+          <ion-icon name={icon} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-[var(--text-primary)]">{title}</span>
+          <span className="block text-[11px] text-[var(--text-muted)]">{count ? `${count} asset${count === 1 ? '' : 's'}` : emptyText}</span>
+        </span>
+        <span className="text-xs font-semibold text-[var(--text-body)]">{formatBytes(bytes)}</span>
+        <ion-icon className={open ? 'rotate-180 transition-transform' : 'transition-transform'} name="chevron-down-outline" />
+      </button>
+      {open && (
+        <div className="border-t border-[var(--border-default)] px-4 py-3">
+          {children || <p className="text-xs text-[var(--text-faint)]">{emptyText}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DropdownSelect({ value, options, onChange }) {
   return (
     <select
@@ -1151,40 +1180,64 @@ function MediaTab() {
   const spaces = media.storageSpaces || [];
   const globalSpace = spaces.find((space) => space.provider === 'platform_cloudinary') || { bytes: 0, count: 0 };
   const personalSpaces = spaces.filter((space) => space.provider === 'user_cloudinary');
+  const personalBytes = personalSpaces.reduce((total, space) => total + Number(space.bytes || 0), 0);
+  const personalCount = personalSpaces.reduce((total, space) => total + Number(space.count || 0), 0);
+  const personalScope = media.personal || { bytes: 0, count: 0 };
+  const sumScope = (rows, field) => (rows || []).reduce((total, row) => total + Number(row[field] || 0), 0);
+  const scopeRows = (rows) => rows?.length ? rows.map((row) => (
+    <div key={row.id} className="flex justify-between gap-3 py-1.5 text-xs">
+      <span className="truncate text-[var(--text-body)]">{row.name}</span>
+      <span className="shrink-0 text-[var(--text-muted)]">{formatBytes(row.bytes)} · {row.count} asset{Number(row.count) === 1 ? '' : 's'}</span>
+    </div>
+  )) : null;
   return (
     <div>
       <SectionHeader title="Storage" />
-      <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
-        <div className="mb-3 flex items-end justify-between">
-          <div><p className="text-2xl font-bold text-[var(--text-primary)]">{formatBytes(globalSpace.bytes)}</p><p className="text-xs text-[var(--text-muted)]">LixBlogs global storage · {globalSpace.count} assets</p></div>
-          <p className="text-xs text-[var(--text-muted)]">{usage?.storage?.limitFormatted || '—'} plan limit</p>
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="rounded-2xl border border-[#9b7bf7]/25 bg-[#9b7bf7]/[0.035] p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><ion-icon name="server-outline" /> LixBlogs storage</div>
+              <p className="mt-3 text-2xl font-bold text-[var(--text-primary)]">{formatBytes(globalSpace.bytes)}</p>
+              <p className="text-[11px] text-[var(--text-muted)]">{globalSpace.count} asset{globalSpace.count === 1 ? '' : 's'} · included in your plan</p>
+            </div>
+            <span className="rounded-full bg-[#9b7bf7]/10 px-2.5 py-1 text-[10px] font-semibold text-[#9b7bf7]">Managed</span>
+          </div>
+          <div className="mt-4 flex items-center justify-between text-[10px] text-[var(--text-muted)]"><span>{usage?.storage?.percent || 0}% used</span><span>{usage?.storage?.limitFormatted || '—'} limit</span></div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div className="h-full rounded-full bg-[#9b7bf7] transition-[width]" style={{ width: `${Math.min(100, usage?.storage?.percent || 0)}%` }} /></div>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div className="h-full rounded-full bg-[#9b7bf7]" style={{ width: `${Math.min(100, usage?.storage?.percent || 0)}%` }} /></div>
-        <p className="mt-3 text-xs text-[var(--text-muted)]">{formatBytes(media.totalBytes)} across {media.count} tracked assets in all storage spaces.</p>
+
+        <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.035] p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><ion-icon name="cloud-done-outline" /> Personal storage</div>
+              <p className="mt-3 text-2xl font-bold text-[var(--text-primary)]">{formatBytes(personalBytes)}</p>
+              <p className="text-[11px] text-[var(--text-muted)]">{personalCount} asset{personalCount === 1 ? '' : 's'} · outside your plan quota</p>
+            </div>
+            <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-500">Cloudinary</span>
+          </div>
+          <div className="mt-4 border-t border-emerald-500/15 pt-3">
+            {personalSpaces.length ? personalSpaces.map((space) => (
+              <div key={`${space.provider}:${space.cloudName}`} className="flex items-center justify-between gap-3 text-xs">
+                <span className="truncate text-[var(--text-body)]">{space.cloudName}</span>
+                <span className="shrink-0 text-[var(--text-muted)]">{formatBytes(space.bytes)}</span>
+              </div>
+            )) : <Link href="/settings?tab=integrations" className="text-xs font-semibold text-emerald-500 hover:underline">Connect personal Cloudinary</Link>}
+          </div>
+        </div>
       </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><ion-icon name="server-outline" /> LixBlogs Cloudinary</div>
-          <p className="mt-2 text-lg font-bold text-[var(--text-primary)]">{formatBytes(globalSpace.bytes)}</p>
-          <p className="text-[11px] text-[var(--text-muted)]">Global space · included in your plan quota</p>
-        </div>
-        {personalSpaces.map((space) => (
-          <div key={`${space.provider}:${space.cloudName}`} className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.03] p-4">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><ion-icon name="cloud-done-outline" /> {space.cloudName}</div>
-            <p className="mt-2 text-lg font-bold text-[var(--text-primary)]">{formatBytes(space.bytes)}</p>
-            <p className="text-[11px] text-[var(--text-muted)]">Personal Cloudinary · {space.count} assets</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {[['Organizations', media.organisations], ['Collections', media.collections]].map(([title, rows]) => (
-          <div key={title} className="rounded-xl border border-[var(--border-default)] p-4">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{title}</p>
-            {rows.length ? rows.slice(0, 6).map((row) => <div key={row.id} className="flex justify-between gap-3 py-1.5 text-xs"><span className="truncate text-[var(--text-body)]">{row.name}</span><span className="shrink-0 text-[var(--text-muted)]">{formatBytes(row.bytes)}</span></div>) : <p className="text-xs text-[var(--text-faint)]">No stored media</p>}
-          </div>
-        ))}
+      <p className="mb-2 mt-5 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Usage by publishing space</p>
+      <div className="grid gap-2">
+        <StorageScope title="Personal" icon="person-outline" bytes={personalScope.bytes} count={personalScope.count}>
+          {personalScope.count ? <p className="text-xs text-[var(--text-muted)]">Media from personal posts and uploads not assigned to a collection.</p> : null}
+        </StorageScope>
+        <StorageScope title="Organizations" icon="people-outline" bytes={sumScope(media.organisations, 'bytes')} count={sumScope(media.organisations, 'count')}>
+          {scopeRows(media.organisations)}
+        </StorageScope>
+        <StorageScope title="Collections" icon="albums-outline" bytes={sumScope(media.collections, 'bytes')} count={sumScope(media.collections, 'count')}>
+          {scopeRows(media.collections)}
+        </StorageScope>
       </div>
 
       <SectionHeader title="Media controls" />
