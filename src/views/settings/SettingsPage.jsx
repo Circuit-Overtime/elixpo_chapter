@@ -1231,7 +1231,9 @@ function IntegrationsTab() {
       <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#9b7bf714] text-lg font-black text-[#9b7bf7]">L/</div>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#9b7bf714] text-2xl font-black text-[#9b7bf7]">
+              <ion-icon name="flash-outline" />
+            </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-base font-bold text-[var(--text-primary)]">LixRL URL shortener</h3>
