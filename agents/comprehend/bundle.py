@@ -91,7 +91,7 @@ def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int
     found: list[str] = []
     for term in terms:
         proc = subprocess.run(
-            ["rg", "-l", "-F", "--glob", "!*.lock", "--", term, "."],
+            ["git", "grep", "-l", "-F", "-e", term, "--", "."],
             cwd=workspace,
             capture_output=True,
             text=True,
@@ -102,6 +102,8 @@ def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int
             continue
         for raw in proc.stdout.splitlines():
             rel = raw.removeprefix("./")
+            if rel.endswith(".lock"):
+                continue
             if rel in tracked and rel not in found:
                 found.append(rel)
                 if len(found) >= limit:
