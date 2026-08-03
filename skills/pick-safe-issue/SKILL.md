@@ -21,11 +21,14 @@ Require all of the following:
 - repository is absent from the blocklist;
 - `owner/repo#number` has never been recorded in the ledger;
 - the repository has no other open elixpoo pull request;
+- no unchanged rejection exists in `state/rejected_issues.json`;
 - the daily contribution cap is not exhausted.
 
 Treat missing booleans as false. Never recover an issue rejected by Triage based
 on its title, popularity, label, or rationale. Treat a missing or malformed age
 as ineligible, so stale triage state cannot bypass either age gate.
+Compare rejection memory by both issue key and stored `updated_at`; permit a
+changed revision to return to Vet rather than treating every rejection as permanent.
 
 ## Select predictably
 

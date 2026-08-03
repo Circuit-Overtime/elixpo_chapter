@@ -63,6 +63,19 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 - **Output:** One justified choice in `state/pick.json`; the ledger prevents duplicate picks and parallel work in the same repository.
 - **Skill:** `skills/pick-safe-issue/SKILL.md`
 
+### Vet — Final issue suitability
+- **Trigger:** manual prototype; later consumes a provisional Pick before any claim or clone.
+- **Budget:** 12k tokens maximum, normally zero or one `nova-fast` call.
+- **Job:** Read the complete issue conversation, parent/sub-issue relationships, and linked PR evidence. Reject tracking parents, occupied work, unresolved decisions, and unbounded tasks.
+- **Output:** `state/vet.json` plus revision-aware rejected issue memory in `state/rejected_issues.json`.
+- **Skill:** `skills/vet-issue-suitability/SKILL.md`
+- **Prototype target:** `https://github.com/horsicq/Detect-It-Easy/issues/365`; `python -m agents.vet [ISSUE_URL]` accepts an override.
+
+Rejected issues are stored in a dictionary keyed by `owner/repo#number`, making
+lookup constant-time. Each record stores the issue's `updated_at` revision.
+Triage and Pick skip an unchanged rejected revision, while new conversation
+activity permits one fresh evaluation.
+
 ### Comprehend — Context loading
 *(Runs as the first step of Solve, not a separate workflow.)*
 - **Job:** Build a tight context bundle for the coding squad
@@ -144,6 +157,7 @@ they do not comment, fork, or open a pull request:
 python -m agents.scout
 python -m agents.triage
 python -m agents.pick
+python -m agents.vet
 ```
 
 Local configuration loads from `.env.local`. Scout accepts either `GITHUB_TOKEN`
@@ -161,6 +175,7 @@ Roles map to models, not the other way around. Agents request `model: "code"`, t
 |---|---|---|
 | Repo crawling, label classification | `nova-fast` | Cheapest tool-capable model |
 | Issue scoring, triage reasoning | `nova-fast` | Lowest explicitly priced general tool-calling model |
+| Final issue suitability verification | `nova-fast` | One compact structured call after zero-cost gates |
 | Repo mapping & summarization | `gemini-flash-lite-3.1` | 1M context fits whole small repos |
 | Planning (what to change) | `kimi` | Strong agentic reasoning, mid-cost |
 | **Code generation — primary** | `qwen-coder-large` | First attempt always |
@@ -323,6 +338,7 @@ elixpoo-ops/
 ├── state/
 │   ├── ledger.json
 │   ├── candidates.json
+│   ├── rejected_issues.json
 │   ├── token_log.jsonl
 │   └── blocklist.json
 └── README.md

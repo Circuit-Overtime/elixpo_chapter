@@ -1,0 +1,206 @@
+"""Fail-closed suitability gates and persistent verdict handling."""
+
+from __future__ import annotations
+
+import re
+from datetime import datetime, timedelta, timezone
+
+from lib.scorer import NEGATIVE_LABELS
+from lib.state.rejections import RejectionLedger
+from lib.state.store import StateStore
+
+from agents.vet.evaluate import evaluate_with_rtk
+from agents.vet.github import referenced_pull_requests
+
+MIN_CONFIDENCE = 0.75
+MAX_FILES = 5
+_CLAIM_RE = re.compile(
+    r"\b(?:i(?:'m| am) working on|i(?:'ll| will| can) (?:take|work|handle|fix)|"
+    r"pick(?:ing)? this up|started working|working on this|i(?:'m| am) on it)\b",
+    re.IGNORECASE,
+)
+_UNCLAIM_RE = re.compile(
+    r"\b(?:no longer working|not working on this|won't work on|cannot work on|"
+    r"can no longer|giving this up|unassign me)\b",
+    re.IGNORECASE,
+)
+
+
+def issue_key(owner: str, repo: str, number: int) -> str:
+    return f"{owner}/{repo}#{number}"
+
+
+def _as_int(value: object, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _as_float(value: object, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _timestamp(value: object) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _has_recent_claim(comments: list[dict], now: datetime) -> bool:
+    cutoff = now - timedelta(days=30)
+    claimants: set[str] = set()
+    ordered = sorted(
+        comments,
+        key=lambda item: _timestamp(item.get("created_at"))
+        or datetime.min.replace(tzinfo=timezone.utc),
+    )
+    for comment in ordered:
+        created = _timestamp(comment.get("created_at"))
+        if not created or created < cutoff:
+            continue
+        author = str((comment.get("user") or {}).get("login") or comment.get("id") or "unknown")
+        body = str(comment.get("body") or "")
+        if _UNCLAIM_RE.search(body):
+            claimants.discard(author)
+        elif _CLAIM_RE.search(body):
+            claimants.add(author)
+    return bool(claimants)
+
+
+def deterministic_blockers(evidence: dict, number: int, now: datetime) -> list[str]:
+    issue = evidence["issue"]
+    labels = {str(label.get("name") or "").casefold() for label in issue.get("labels", [])}
+    blockers: list[str] = []
+    if issue.get("pull_request"):
+        blockers.append("target is a pull request, not an issue")
+    if issue.get("state") != "open":
+        blockers.append("issue is not open")
+    if issue.get("locked"):
+        blockers.append("issue conversation is locked")
+    if issue.get("assignee") or issue.get("assignees"):
+        blockers.append("issue is already assigned")
+    if labels & NEGATIVE_LABELS:
+        blockers.append("issue is in design, triage, discussion, or question stage")
+    if evidence.get("sub_issues"):
+        blockers.append("issue is a tracking parent with sub-issues")
+    if referenced_pull_requests(evidence, number):
+        blockers.append("an implementation pull request already references the issue")
+    if _has_recent_claim(evidence.get("comments", []), now):
+        blockers.append("a contributor conversation indicates the issue is claimed")
+    if len(str(issue.get("body") or "").strip()) < 40:
+        blockers.append("issue description is too short to verify")
+    return blockers
+
+
+def _model_blockers(verdict: dict) -> list[str]:
+    blockers = [str(reason) for reason in verdict.get("reasons", []) if str(reason).strip()]
+    scope = str(verdict.get("scope", "unknown")).casefold()
+    if scope not in {"trivial", "small"}:
+        blockers.append(f"scope is {scope}")
+    files = _as_int(verdict.get("estimated_files", 0))
+    if not 1 <= files <= MAX_FILES:
+        blockers.append(f"estimated file count {files} is outside 1-{MAX_FILES}")
+    confidence = _as_float(verdict.get("confidence", 0.0))
+    if confidence < MIN_CONFIDENCE:
+        blockers.append(f"confidence {confidence:.2f} is below {MIN_CONFIDENCE:.2f}")
+    boolean_requirements = {
+        "requirements_clear": "requirements are unclear",
+        "verification_clear": "verification path is unclear",
+        "conversation_resolved": "conversation leaves unresolved scope or ownership",
+    }
+    blockers.extend(reason for field, reason in boolean_requirements.items() if verdict.get(field) is not True)
+    if verdict.get("needs_maintainer_decision") is not False:
+        blockers.append("a maintainer decision is still required")
+    if verdict.get("issue_kind") == "tracking_issue":
+        blockers.append("issue is a tracking parent rather than one implementation unit")
+    if verdict.get("suitable") is not True:
+        blockers.append("verifier did not approve the issue")
+    return list(dict.fromkeys(blockers))
+
+
+async def vet_issue(
+    router,
+    store: StateStore,
+    owner: str,
+    repo: str,
+    number: int,
+    evidence: dict,
+    *,
+    now: datetime | None = None,
+    force: bool = False,
+) -> dict:
+    now = now or datetime.now(timezone.utc)
+    issue = evidence["issue"]
+    key = issue_key(owner, repo, number)
+    updated_at = str(issue.get("updated_at") or "")
+    rejections = RejectionLedger.load(store)
+
+    if not force and rejections.rejects_unchanged(key, updated_at):
+        record = rejections.issues[key]
+        result = {
+            "status": "cached_rejection",
+            "suitable": False,
+            "key": key,
+            "url": record.url,
+            "title": record.title,
+            "issue_kind": record.issue_kind,
+            "confidence": record.confidence,
+            "reasons": record.reasons,
+            "issue_updated_at": updated_at,
+            "checked_at": now.isoformat(),
+            "model_called": False,
+        }
+        store.write_json("vet.json", result)
+        return result
+
+    hard_blockers = deterministic_blockers(evidence, number, now)
+    model_verdict = {} if hard_blockers else await evaluate_with_rtk(router, evidence)
+    model_blockers = [] if hard_blockers else _model_blockers(model_verdict)
+    blockers = [*hard_blockers, *model_blockers]
+    suitable = not blockers
+    issue_kind = (
+        "tracking_issue"
+        if evidence.get("sub_issues")
+        else "sub_issue"
+        if evidence.get("parent")
+        else str(model_verdict.get("issue_kind", "unknown"))
+    )
+    confidence = _as_float(model_verdict.get("confidence", 1.0 if hard_blockers else 0.0))
+    result = {
+        "status": "approved" if suitable else "rejected",
+        "suitable": suitable,
+        "key": key,
+        "url": str(issue.get("html_url") or ""),
+        "title": str(issue.get("title") or ""),
+        "issue_kind": issue_kind,
+        "scope": str(model_verdict.get("scope", "unknown")),
+        "estimated_files": _as_int(model_verdict.get("estimated_files", 0)),
+        "confidence": confidence,
+        "summary": str(model_verdict.get("summary", "")),
+        "reasons": blockers,
+        "issue_updated_at": updated_at,
+        "checked_at": now.isoformat(),
+        "model_called": not hard_blockers,
+    }
+    if suitable:
+        rejections.clear(key)
+    else:
+        rejections.reject(
+            key,
+            url=result["url"],
+            title=result["title"],
+            issue_updated_at=updated_at,
+            reasons=blockers,
+            issue_kind=issue_kind,
+            confidence=confidence,
+            now=now,
+        )
+    rejections.save(store)
+    store.write_json("vet.json", result)
+    return result

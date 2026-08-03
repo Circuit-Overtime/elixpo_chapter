@@ -52,6 +52,7 @@ class TriagedIssue(BaseModel):
     url: str
     issue_age_days: int
     activity_age_days: int
+    issue_updated_at: str
     score: int
     breakdown: dict[str, int] = Field(default_factory=dict)
     tractable: bool = False
@@ -63,6 +64,26 @@ class TriagedIssue(BaseModel):
     rationale: str = ""
 
 
+def remember_triage_verdicts(triaged, rejections, now: datetime) -> None:
+    """Cache rejected model verdicts by issue revision; clear newly viable ones."""
+    for item in triaged:
+        key = f"{item.repo}#{item.number}"
+        if item.easy:
+            rejections.clear(key)
+            continue
+        reasons = item.blockers or ([item.rationale] if item.rationale else ["triage did not approve issue"])
+        rejections.reject(
+            key,
+            url=item.url,
+            title=item.title,
+            issue_updated_at=item.issue_updated_at,
+            reasons=reasons,
+            issue_kind="unknown",
+            confidence=item.confidence,
+            now=now,
+        )
+
+
 async def triage_candidates(
     api,
     router,
@@ -72,6 +93,7 @@ async def triage_candidates(
     max_repos: int = MAX_REPOS,
     per_repo: int = PER_REPO,
     shortlist: int = SHORTLIST,
+    rejections=None,
 ) -> list[TriagedIssue]:
     """Score candidate issues. Injectable api + router → testable in isolation."""
     now = now or datetime.now(timezone.utc)
@@ -86,9 +108,14 @@ async def triage_candidates(
     prelim: list[dict] = []
     age_window_rejected = 0
     inactive_rejected = 0
+    prior_rejections = 0
     for repo, issues in zip(repos, issue_lists, strict=True):
         for iss in issues:
             det = deterministic_signals(iss, now)
+            key = f"{repo['full_name']}#{iss['number']}"
+            if rejections and rejections.rejects_unchanged(key, str(iss.get("updated_at") or "")):
+                prior_rejections += 1
+                continue
             labels = set(det["labels"])
             body = str(iss.get("body") or "").strip()
             if not det["within_target_age_window"]:
@@ -121,6 +148,8 @@ async def triage_candidates(
             count=inactive_rejected,
             max_activity_age_days=MAX_ACTIVITY_AGE_DAYS,
         )
+    if prior_rejections:
+        log.info("triage.prior_rejections_skipped", count=prior_rejections)
 
     prelim.sort(key=lambda x: x["pre"], reverse=True)
 
@@ -212,6 +241,7 @@ async def triage_candidates(
                 url=iss.get("html_url", ""),
                 issue_age_days=x["det"]["issue_age_days"],
                 activity_age_days=x["det"]["activity_age_days"],
+                issue_updated_at=str(iss.get("updated_at") or ""),
                 score=total,
                 breakdown=breakdown,
                 tractable=llm.get("tractable") is True,
@@ -231,6 +261,7 @@ async def triage_candidates(
 async def _run() -> int:
     from lib.config import settings
     from lib.github.api import GitHubAPI
+    from lib.state.rejections import RejectionLedger
     from lib.state.store import StateStore
     from rtk import Budget, Router
 
@@ -247,14 +278,24 @@ async def _run() -> int:
         log.warning("triage.no_candidates", hint="run agents.scout first")
         return 1
 
+    now = datetime.now(timezone.utc)
+    rejections = RejectionLedger.load(store)
     api = GitHubAPI.from_token(settings.github.token)
     router = Router.from_settings("triage", budget=Budget("triage", limit=80_000))
     try:
-        triaged = await triage_candidates(api, router, candidates, datetime.now(timezone.utc))
+        triaged = await triage_candidates(
+            api,
+            router,
+            candidates,
+            now,
+            rejections=rejections,
+        )
     finally:
         await api.close()
         await router.aclose()
 
+    remember_triage_verdicts(triaged, rejections, now)
+    rejections.save(store)
     store.write_json("triaged.json", [t.model_dump() for t in triaged])
     log.info("triage.done", scored=len(triaged), spent=router.budget.spent)
     return 0

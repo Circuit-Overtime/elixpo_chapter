@@ -18,6 +18,7 @@ roles:
 
   # triage / scoring reasoning
   triage:        { model: nova-fast }                  # cheapest explicitly priced tool-capable model
+  vet:           { model: nova-fast }                  # one bounded final suitability verdict
 
   # repo mapping & summarization (large context fits small repos whole)
   map:           { model: nova }                       # free, 1M ctx; paid: gemini-flash-lite-3.1

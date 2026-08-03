@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 
 import structlog
 from lib.state.ledger import Ledger, PRRecord
+from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
 
 from agents.pick.select import issue_key, justify, select_top
@@ -43,7 +44,7 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
         return None
 
     ledger = Ledger.load(store)
-    pick = select_top(triaged, ledger, day)
+    pick = select_top(triaged, ledger, day, rejections=RejectionLedger.load(store))
     if pick is None:
         reason = (
             "daily contribution cap reached"
@@ -84,6 +85,7 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
         "url": pick.get("url", ""),
         "issue_age_days": pick.get("issue_age_days"),
         "activity_age_days": pick.get("activity_age_days"),
+        "issue_updated_at": pick.get("issue_updated_at", ""),
         "score": pick.get("score", 0),
         "tractable": pick.get("tractable", False),
         "easy": pick.get("easy", False),

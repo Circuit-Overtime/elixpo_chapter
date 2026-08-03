@@ -349,6 +349,7 @@ async def test_triage_candidates_scores_and_ranks():
     assert all(t.estimated_files == 3 for t in out)
     assert all(t.issue_age_days == 17 for t in out)
     assert all(t.activity_age_days == 19 for t in out)
+    assert all(t.issue_updated_at == "2026-06-01T00:00:00Z" for t in out)
     assert out[0].rationale == "clear scope"
     assert "labels" not in api.issue_params
 
@@ -470,6 +471,73 @@ async def test_triage_rejects_inactive_issues_before_model_call():
     out = await triage_candidates(FakeAPI(issues), router, [{"full_name": "o/r"}], NOW)
     assert out == []
     assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_triage_skips_unchanged_issue_in_rejection_ledger(tmp_path):
+    from agents.triage.__main__ import triage_candidates
+    from lib.state.rejections import RejectionLedger
+
+    rejections = RejectionLedger()
+    rejections.reject(
+        "o/r#1",
+        url="https://github.com/o/r/issues/1",
+        title="issue 1",
+        issue_updated_at="2026-06-01T00:00:00Z",
+        reasons=["unresolved tracking work"],
+        issue_kind="tracking_issue",
+        confidence=0.9,
+        now=NOW,
+    )
+    router = FakeRouter({})
+    out = await triage_candidates(
+        FakeAPI([_issue(1)]),
+        router,
+        [{"full_name": "o/r"}],
+        NOW,
+        rejections=rejections,
+    )
+    assert out == []
+    assert router.calls == 0
+
+
+def test_triage_remembers_failed_revision_and_clears_approved_one():
+    from agents.triage.__main__ import TriagedIssue, remember_triage_verdicts
+    from lib.state.rejections import RejectionLedger
+
+    def item(number, easy, blockers):
+        return TriagedIssue(
+            repo="o/r",
+            number=number,
+            title=f"issue {number}",
+            url=f"https://github.com/o/r/issues/{number}",
+            issue_age_days=17,
+            activity_age_days=2,
+            issue_updated_at="2026-06-18T00:00:00Z",
+            score=10,
+            easy=easy,
+            blockers=blockers,
+            confidence=0.8,
+        )
+
+    rejections = RejectionLedger()
+    rejections.reject(
+        "o/r#2",
+        url="https://github.com/o/r/issues/2",
+        title="old",
+        issue_updated_at="2026-06-17T00:00:00Z",
+        reasons=["old blocker"],
+        issue_kind="unknown",
+        confidence=0.5,
+        now=NOW,
+    )
+    remember_triage_verdicts(
+        [item(1, False, ["scope is medium"]), item(2, True, [])],
+        rejections,
+        NOW,
+    )
+    assert rejections.issues["o/r#1"].reasons == ["scope is medium"]
+    assert "o/r#2" not in rejections.issues
 
 
 @pytest.mark.asyncio

@@ -20,6 +20,7 @@ def _t(repo, number, score, tractable=True, easy=True):
         "url": f"https://github.com/{repo}/issues/{number}",
         "issue_age_days": 17,
         "activity_age_days": 5,
+        "issue_updated_at": "2026-06-15T00:00:00Z",
         "score": score,
         "breakdown": {"good_first/help_wanted": 5, "no_assignee": 2},
         "tractable": tractable,
@@ -58,6 +59,35 @@ def test_inactive_or_missing_activity_age_is_skipped():
     missing = _t("o/missing", 2, 20)
     missing.pop("activity_age_days")
     assert select_top([inactive, missing], Ledger(), DAY) is None
+
+
+def test_unchanged_rejected_issue_is_skipped(tmp_path):
+    from lib.state.rejections import RejectionLedger
+
+    rejected = RejectionLedger()
+    rejected.reject(
+        "o/rejected#1",
+        url="https://github.com/o/rejected/issues/1",
+        title="rejected",
+        issue_updated_at="2026-06-15T00:00:00Z",
+        reasons=["tracking issue"],
+        issue_kind="tracking_issue",
+        confidence=1.0,
+        now=NOW,
+    )
+    changed = {**_t("o/changed", 2, 19), "issue_updated_at": "2026-06-16T00:00:00Z"}
+    rejected.reject(
+        "o/changed#2",
+        url=changed["url"],
+        title=changed["title"],
+        issue_updated_at="2026-06-15T00:00:00Z",
+        reasons=["old revision"],
+        issue_kind="standalone",
+        confidence=0.6,
+        now=NOW,
+    )
+    pick = select_top([_t("o/rejected", 1, 20), changed], Ledger(), DAY, rejections=rejected)
+    assert pick["repo"] == "o/changed"
 
 
 def test_lower_scoring_easy_issue_beats_high_scoring_blocked_issue():
