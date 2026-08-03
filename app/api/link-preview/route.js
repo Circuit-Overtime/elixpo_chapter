@@ -1,5 +1,8 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
+import { isSafePreviewUrl, resolvePreviewAsset } from '../../../lib/linkPreviewUrl';
+
+const MAX_REDIRECTS = 5;
 
 // Simple meta tag extractor — no DOM parser needed on edge
 function extractMeta(html, property) {
@@ -20,19 +23,34 @@ function extractTitle(html) {
   return m ? m[1].trim() : '';
 }
 
-function extractFavicon(html, origin) {
+function extractFavicon(html, documentUrl) {
   // Look for <link rel="icon" href="..."> or <link rel="shortcut icon" href="...">
   const m = html.match(/<link[^>]+rel=["'](?:shortcut )?icon["'][^>]+href=["']([^"']+)["']/i)
     || html.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["'](?:shortcut )?icon["']/i);
   if (m) {
-    const href = m[1];
-    if (href.startsWith('http')) return href;
-    if (href.startsWith('//')) return 'https:' + href;
-    if (href.startsWith('/')) return origin + href;
-    return origin + '/' + href;
+    return resolvePreviewAsset(m[1], documentUrl);
   }
   // Fallback to Google's favicon service
-  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(origin)}&sz=32`;
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(new URL(documentUrl).hostname)}&sz=32`;
+}
+
+async function fetchPreview(startUrl, options) {
+  let currentUrl = startUrl;
+  for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
+    if (!isSafePreviewUrl(currentUrl)) throw new Error('Unsafe preview URL');
+
+    const response = await fetch(currentUrl.href, { ...options, redirect: 'manual' });
+    if (response.status < 300 || response.status >= 400) {
+      return { response, finalUrl: currentUrl };
+    }
+
+    const location = response.headers.get('location');
+    if (!location || redirects === MAX_REDIRECTS) throw new Error('Invalid preview redirect');
+    response.body?.cancel();
+    currentUrl = new URL(location, currentUrl);
+  }
+
+  throw new Error('Too many preview redirects');
 }
 
 export async function GET(request) {
@@ -50,24 +68,24 @@ export async function GET(request) {
   } catch {
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
   }
+  if (!isSafePreviewUrl(parsed)) {
+    return NextResponse.json({ error: 'Unsupported URL' }, { status: 400 });
+  }
 
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
 
-    const res = await fetch(parsed.href, {
+    const { response: res, finalUrl } = await fetchPreview(parsed, {
       signal: controller.signal,
       headers: {
         'User-Agent': 'LixBlogs-LinkPreview/1.0',
         'Accept': 'text/html',
       },
-      redirect: 'follow',
     });
-    clearTimeout(timeout);
-
-    const finalUrl = new URL(res.url || parsed.href);
 
     if (!res.ok) {
+      clearTimeout(timeout);
       return NextResponse.json({
         title: finalUrl.hostname,
         description: '',
@@ -80,7 +98,8 @@ export async function GET(request) {
     }
 
     // Only read first 50KB to avoid downloading huge pages
-    const reader = res.body.getReader();
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error('Preview response has no body');
     const decoder = new TextDecoder();
     let html = '';
     let bytesRead = 0;
@@ -93,21 +112,16 @@ export async function GET(request) {
       bytesRead += value.length;
     }
     reader.cancel();
+    clearTimeout(timeout);
 
-    const origin = finalUrl.origin;
     const ogTitle = extractMeta(html, 'og:title');
     const ogDesc = extractMeta(html, 'og:description') || extractMeta(html, 'description');
     const ogImage = extractMeta(html, 'og:image');
     const title = ogTitle || extractTitle(html) || finalUrl.hostname;
-    const favicon = extractFavicon(html, origin);
+    const favicon = extractFavicon(html, finalUrl);
 
     // Resolve relative og:image
-    let image = ogImage;
-    if (image && !image.startsWith('http')) {
-      if (image.startsWith('//')) image = 'https:' + image;
-      else if (image.startsWith('/')) image = origin + image;
-      else image = origin + '/' + image;
-    }
+    const image = resolvePreviewAsset(ogImage, finalUrl);
 
     return NextResponse.json({
       title,
