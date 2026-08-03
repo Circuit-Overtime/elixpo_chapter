@@ -36,19 +36,55 @@ def test_scorer_claimed_issue_disqualified():
     assert qualifies(s) is False
 
 
-def test_scorer_internal_paths_and_discussion_label():
-    s = IssueSignals(labels=["question"], touches_internal_paths=True)
+def test_model_resolved_issue_is_blocked_even_with_positive_signals():
+    signals = IssueSignals(
+        labels=["good first issue"],
+        has_acceptance_criterion=True,
+        already_resolved=True,
+    )
+    total, breakdown = score(signals)
+    verdict = assess_solvability(
+        signals,
+        {
+            "tractable": True,
+            "complexity": "small",
+            "estimated_files": 1,
+            "confidence": 0.95,
+            "needs_maintainer_decision": False,
+            "needs_external_access": False,
+            "needs_specialized_hardware": False,
+        },
+    )
+    assert breakdown["already_resolved"] == -10
+    assert total < THRESHOLD
+    assert verdict.easy is False
+    assert "already resolved" in " ".join(verdict.blockers)
+
+
+def test_scorer_internal_paths_are_rejected():
+    s = IssueSignals(touches_internal_paths=True)
     total, b = score(s)
-    assert b["discussion_label"] == -5
     assert b["internal_paths"] == -10
     assert qualifies(s) is False
 
 
-def test_scorer_reproducible_bug_needs_bug_label():
+def test_maintainer_good_first_issue_is_an_invitation_not_a_self_note():
+    invited = IssueSignals(labels=["good first issue"], op_is_core_maintainer=True)
+    self_note = IssueSignals(labels=[], op_is_core_maintainer=True)
+    invited_score, invited_breakdown = score(invited)
+    _, self_note_breakdown = score(self_note)
+    assert invited_score >= THRESHOLD
+    assert "op_is_maintainer" not in invited_breakdown
+    assert self_note_breakdown["op_is_maintainer"] == -5
+
+
+def test_scorer_reproducible_bug_does_not_need_bug_label():
     with_label = IssueSignals(labels=["bug"], has_repro_steps=True)
     assert "reproducible_bug" in score(with_label)[1]
+    decorated_label = IssueSignals(labels=["❌ Bug"], has_repro_steps=True)
+    assert "reproducible_bug" in score(decorated_label)[1]
     no_label = IssueSignals(labels=[], has_repro_steps=True)
-    assert "reproducible_bug" not in score(no_label)[1]
+    assert "reproducible_bug" in score(no_label)[1]
 
 
 def test_easy_issue_requires_bounded_clear_scope():
