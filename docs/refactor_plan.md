@@ -102,7 +102,7 @@ A scored decision, not a single rule. An issue qualifies if total ≥ threshold:
 | Has a clear acceptance criterion in description | +2 |
 | Issue older than 7 days (not under active triage) | +1 |
 | Labelled `triage` / `needs-design` / `discussion` / `question` | −5 |
-| OP is a core maintainer (likely a self-note) | −5 |
+| OP is a core maintainer without an explicit community-work label (likely a self-note) | −5 |
 | Someone in comments said "I'll take this" within 14 days | −10 |
 | Touches `internal/` or `private/` paths | −10 |
 | Repo's CONTRIBUTING says "discuss first" and no discussion exists | −5 |

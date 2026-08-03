@@ -1,7 +1,32 @@
 [
   {
+    "blockers": [],
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "op_is_maintainer": -5
+    },
+    "complexity": "small",
+    "confidence": 0.9,
+    "easy": true,
+    "estimated_files": 2,
+    "number": 552,
+    "rationale": "The issue involves comparing and managing markdown files, which is a small scope change.",
+    "repo": "Ikalus1988/MisakaNet",
+    "score": 7,
+    "title": "[Cleanup] Review near-duplicate Feishu bot setup lessons",
+    "tractable": true,
+    "url": "https://github.com/Ikalus1988/MisakaNet/issues/552"
+  },
+  {
     "blockers": [
-      "complexity is medium"
+      "complexity is medium",
+      "solvability confidence 0.00 is below 0.70",
+      "needs external access or credentials",
+      "needs specialized hardware"
     ],
     "breakdown": {
       "acceptance_criterion": 2,
@@ -11,11 +36,11 @@
       "no_maintainer_claim": 2
     },
     "complexity": "medium",
-    "confidence": 0.8,
+    "confidence": 0.0,
     "easy": false,
     "estimated_files": 3,
     "number": 4,
-    "rationale": "The issue involves testing TypeScript client error paths, which is a bounded change but requires understanding of the existing error handling and test patterns.",
+    "rationale": "The issue involves testing specific TypeScript error paths which require understanding of the existing codebase and test patterns.",
     "repo": "TryCaspian/caspian-sdk",
     "score": 12,
     "title": "Test remaining TypeScript authentication and billing error paths",
@@ -25,8 +50,7 @@
   {
     "blockers": [
       "complexity is unknown",
-      "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.50 is below 0.70"
+      "estimated file count 0 is outside 1-5"
     ],
     "breakdown": {
       "acceptance_criterion": 2,
@@ -37,11 +61,11 @@
       "op_is_maintainer": -5
     },
     "complexity": "unknown",
-    "confidence": 0.5,
+    "confidence": 0.9,
     "easy": false,
     "estimated_files": 0,
     "number": 429,
-    "rationale": "The issue is a blind test and does not require code changes.",
+    "rationale": "The issue is a read-only UX testing task, not requiring code changes or fixes.",
     "repo": "Ikalus1988/MisakaNet",
     "score": 7,
     "title": "[Bounty][$0][agent competition] Blind test homepage SAG-Lite lesson search",
@@ -51,78 +75,25 @@
   {
     "blockers": [
       "complexity is unknown",
-      "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.50 is below 0.70",
-      "issue is already assigned or claimed"
+      "estimated file count 0 is outside 1-5"
     ],
     "breakdown": {
       "acceptance_criterion": 2,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "op_is_maintainer": -5
-    },
-    "complexity": "unknown",
-    "confidence": 0.5,
-    "easy": false,
-    "estimated_files": 0,
-    "number": 646,
-    "rationale": "The issue does not require code changes or external access, but it is not clear how complex it is.",
-    "repo": "Ikalus1988/MisakaNet",
-    "score": 4,
-    "title": "[Onboarding] Try MisakaNet \u2014 search a lesson + register your node",
-    "tractable": true,
-    "url": "https://github.com/Ikalus1988/MisakaNet/issues/646"
-  },
-  {
-    "blockers": [
-      "complexity is medium",
-      "issue is already assigned or claimed"
-    ],
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "already_claimed": -10,
       "good_first/help_wanted": 5,
       "no_assignee": 2,
       "no_maintainer_claim": 2,
       "op_is_maintainer": -5
     },
-    "complexity": "medium",
-    "confidence": 0.8,
-    "easy": false,
-    "estimated_files": 2,
-    "number": 552,
-    "rationale": "The issue involves comparing and managing markdown files, which is not trivial but not overly complex either.",
-    "repo": "Ikalus1988/MisakaNet",
-    "score": -3,
-    "title": "[Cleanup] Review near-duplicate Feishu bot setup lessons",
-    "tractable": true,
-    "url": "https://github.com/Ikalus1988/MisakaNet/issues/552"
-  },
-  {
-    "blockers": [
-      "issue is already assigned or claimed",
-      "requires internal or private paths"
-    ],
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "already_claimed": -10,
-      "good_first/help_wanted": 5,
-      "internal_paths": -10,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "small",
+    "complexity": "unknown",
     "confidence": 0.9,
     "easy": false,
-    "estimated_files": 1,
-    "number": 581,
-    "rationale": "The issue suggests a localized change to how attribute names are handled, likely affecting a single function or method.",
-    "repo": "cheeriojs/cheerio",
-    "score": -8,
-    "title": ".attr(name) should lowercase name property",
+    "estimated_files": 0,
+    "number": 646,
+    "rationale": "The issue does not require code changes or access to special hardware, and the acceptance criteria are clear.",
+    "repo": "Ikalus1988/MisakaNet",
+    "score": 6,
+    "title": "[Onboarding] Try MisakaNet \u2014 search a lesson + register your node",
     "tractable": true,
-    "url": "https://github.com/cheeriojs/cheerio/issues/581"
+    "url": "https://github.com/Ikalus1988/MisakaNet/issues/646"
   }
 ]

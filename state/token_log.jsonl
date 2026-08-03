@@ -39,3 +39,7 @@
 {"task_id": "triage", "role": "triage", "model": "nova-fast", "prompt_tokens": 1125, "cached_tokens": 0, "completion_tokens": 126, "total_tokens": 1251}
 {"task_id": "triage", "role": "triage", "model": "nova-fast", "prompt_tokens": 1407, "cached_tokens": 0, "completion_tokens": 131, "total_tokens": 1538}
 {"task_id": "triage", "role": "triage", "model": "nova-fast", "prompt_tokens": 3192, "cached_tokens": 0, "completion_tokens": 126, "total_tokens": 3318}
+{"task_id": "triage", "role": "triage", "model": "nova-fast", "prompt_tokens": 1309, "cached_tokens": 0, "completion_tokens": 69, "total_tokens": 1378}
+{"task_id": "triage", "role": "triage", "model": "nova-fast", "prompt_tokens": 3399, "cached_tokens": 0, "completion_tokens": 90, "total_tokens": 3489}
+{"task_id": "triage", "role": "triage", "model": "nova-fast", "prompt_tokens": 3195, "cached_tokens": 0, "completion_tokens": 91, "total_tokens": 3286}
+{"task_id": "triage", "role": "triage", "model": "nova-fast", "prompt_tokens": 3094, "cached_tokens": 0, "completion_tokens": 101, "total_tokens": 3195}

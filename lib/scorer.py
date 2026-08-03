@@ -74,7 +74,9 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
         b["stale_issue"] = -5
     if labels & NEGATIVE_LABELS:
         b["discussion_label"] = -5
-    if s.op_is_core_maintainer:
+    # A maintainer-authored issue is only a probable self-note when maintainers
+    # have not explicitly invited community work through a positive label.
+    if s.op_is_core_maintainer and not labels & POSITIVE_LABELS:
         b["op_is_maintainer"] = -5
     if s.someone_claimed_recently:
         b["already_claimed"] = -10

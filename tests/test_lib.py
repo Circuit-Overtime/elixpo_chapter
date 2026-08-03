@@ -44,6 +44,16 @@ def test_scorer_internal_paths_and_discussion_label():
     assert qualifies(s) is False
 
 
+def test_maintainer_good_first_issue_is_an_invitation_not_a_self_note():
+    invited = IssueSignals(labels=["good first issue"], op_is_core_maintainer=True)
+    self_note = IssueSignals(labels=[], op_is_core_maintainer=True)
+    invited_score, invited_breakdown = score(invited)
+    _, self_note_breakdown = score(self_note)
+    assert invited_score >= THRESHOLD
+    assert "op_is_maintainer" not in invited_breakdown
+    assert self_note_breakdown["op_is_maintainer"] == -5
+
+
 def test_scorer_reproducible_bug_needs_bug_label():
     with_label = IssueSignals(labels=["bug"], has_repro_steps=True)
     assert "reproducible_bug" in score(with_label)[1]
