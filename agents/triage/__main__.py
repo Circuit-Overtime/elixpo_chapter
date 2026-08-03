@@ -16,7 +16,6 @@ from lib.scorer import (
     MAX_ACTIVITY_AGE_DAYS,
     MAX_ISSUE_AGE_DAYS,
     MIN_ISSUE_AGE_DAYS,
-    NEGATIVE_LABELS,
     assess_solvability,
     score,
 )
@@ -116,7 +115,6 @@ async def triage_candidates(
             if rejections and rejections.rejects_unchanged(key, str(iss.get("updated_at") or "")):
                 prior_rejections += 1
                 continue
-            labels = set(det["labels"])
             if not det["within_target_age_window"]:
                 age_window_rejected += 1
                 continue
@@ -127,7 +125,6 @@ async def triage_candidates(
                 not det["no_assignee"]
                 or det["stale_over_365_days"]
                 or iss.get("locked", False)
-                or labels & NEGATIVE_LABELS
             ):
                 continue
             pre, _ = score(merge_signals(det))

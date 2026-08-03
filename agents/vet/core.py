@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from lib.scorer import NEGATIVE_LABELS
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
 
@@ -35,7 +34,6 @@ def _as_float(value: object, default: float = 0.0) -> float:
 
 def deterministic_blockers(evidence: dict, number: int, _now: datetime) -> list[str]:
     issue = evidence["issue"]
-    labels = {str(label.get("name") or "").casefold() for label in issue.get("labels", [])}
     blockers: list[str] = []
     if issue.get("pull_request"):
         blockers.append("target is a pull request, not an issue")
@@ -45,8 +43,6 @@ def deterministic_blockers(evidence: dict, number: int, _now: datetime) -> list[
         blockers.append("issue conversation is locked")
     if issue.get("assignee") or issue.get("assignees"):
         blockers.append("issue is already assigned")
-    if labels & NEGATIVE_LABELS:
-        blockers.append("issue is in design, triage, discussion, or question stage")
     if evidence.get("sub_issues"):
         blockers.append("issue is a tracking parent with sub-issues")
     if referenced_pull_requests(evidence, number):

@@ -118,7 +118,6 @@ A scored decision, not a single rule. An issue qualifies if total ≥ threshold:
 | Model finds no current maintainer ownership in the conversation | +2 |
 | Has a clear acceptance criterion in description | +2 |
 | Issue older than 7 days (not under active triage) | +1 |
-| Labelled `triage` / `needs-design` / `discussion` / `question` | −5 |
 | OP is a core maintainer without an explicit community-work label (likely a self-note) | −5 |
 | Model finds that another contributor currently owns the work | −10 |
 | Touches `internal/` or `private/` paths | −10 |

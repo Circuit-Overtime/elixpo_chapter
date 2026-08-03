@@ -18,7 +18,6 @@ MAX_ISSUE_AGE_DAYS = 60
 MAX_ACTIVITY_AGE_DAYS = 30
 
 POSITIVE_LABELS = {"good first issue", "help wanted", "up-for-grabs", "hacktoberfest"}
-NEGATIVE_LABELS = {"triage", "needs-design", "discussion", "question"}
 EASY_COMPLEXITIES = {"trivial", "small"}
 MIN_SOLVABILITY_CONFIDENCE = 0.7
 MAX_EASY_FILES = 5
@@ -94,8 +93,6 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
         b["aged"] = 1
     if s.stale_over_365_days:
         b["stale_issue"] = -5
-    if labels & NEGATIVE_LABELS:
-        b["discussion_label"] = -5
     # A maintainer-authored issue is only a probable self-note when maintainers
     # have not explicitly invited community work through a positive label.
     if s.op_is_core_maintainer and not labels & POSITIVE_LABELS:
@@ -121,7 +118,6 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
     """Apply hard, fail-closed gates after fuzzy signals have been extracted."""
     extracted = extracted or {}
     blockers: list[str] = []
-    labels = _labels(signals)
 
     if extracted.get("tractable") is not True:
         blockers.append("not confirmed tractable")
@@ -166,9 +162,6 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
         blockers.append("conversation indicates the repository change is already resolved")
     if signals.stale_over_365_days:
         blockers.append("issue has not been updated within 365 days")
-    if labels & NEGATIVE_LABELS:
-        blockers.append("issue is still in design, triage, discussion, or question stage")
-
     return SolvabilityVerdict(
         easy=not blockers,
         complexity=complexity,

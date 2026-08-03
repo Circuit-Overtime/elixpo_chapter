@@ -24,6 +24,7 @@ judge whether that child is a complete, bounded implementation unit.
 You own every semantic judgment. Infer current ownership, prior resolution,
 requirement clarity, verification feasibility, and scope from the supplied
 conversation. Never rely on a fixed phrase list or isolated keyword.
+Treat labels as contextual evidence rather than automatic approval or rejection.
 
 ## Read conversation as evolving requirements
 

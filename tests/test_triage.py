@@ -433,9 +433,9 @@ async def test_triage_prefilter_keeps_only_objective_rejections_out_of_model():
         _issue(5, updated_at="2024-01-01T00:00:00Z"),
     ]
     out = await triage_candidates(FakeAPI(issues), router, [{"full_name": "o/r"}], NOW)
-    assert [item.number for item in out] == [3]
-    assert out[0].easy is False
-    assert router.calls == 1
+    assert {item.number for item in out} == {2, 3}
+    assert all(item.easy is False for item in out)
+    assert router.calls == 2
 
 
 @pytest.mark.asyncio

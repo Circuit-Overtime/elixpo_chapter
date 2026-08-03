@@ -61,10 +61,9 @@ def test_model_resolved_issue_is_blocked_even_with_positive_signals():
     assert "already resolved" in " ".join(verdict.blockers)
 
 
-def test_scorer_internal_paths_and_discussion_label():
-    s = IssueSignals(labels=["question"], touches_internal_paths=True)
+def test_scorer_internal_paths_are_rejected():
+    s = IssueSignals(touches_internal_paths=True)
     total, b = score(s)
-    assert b["discussion_label"] == -5
     assert b["internal_paths"] == -10
     assert qualifies(s) is False
 

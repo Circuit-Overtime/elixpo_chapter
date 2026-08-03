@@ -110,8 +110,11 @@ An easy issue must be tractable, trivial/small, one to five estimated files, at
 least 0.70 confidence, created 7–60 calendar days before triage, updated within
 30 days, unassigned and unclaimed, and have either
 a clear acceptance criterion or reproducible labelled bug. It must have no
-maintainer-decision, access, hardware, internal-path, discuss-first, or design-stage
-blocker.
+maintainer-decision, access, hardware, internal-path, or discuss-first blocker.
+
+Labels are contextual evidence for your semantic verdict, not automatic blockers.
+For example, determine from the actual request and conversation whether a label
+signals an unresolved decision or merely repository taxonomy.
 
 It must also have no cross-referenced pull request. An empty assignee field never
 overrides an existing implementation attempt.
