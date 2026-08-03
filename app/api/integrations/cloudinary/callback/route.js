@@ -33,7 +33,10 @@ export async function GET(request) {
   const callbackUrl = new URL(request.url);
   const authorizationError = callbackUrl.searchParams.get('error');
   if (authorizationError) {
-    return finish(request, authorizationError === 'access_denied' ? 'denied' : 'authorization_failed');
+    if (authorizationError === 'access_denied') return finish(request, 'denied');
+    const reference = crypto.randomUUID().slice(0, 8);
+    console.warn(`[cloudinary/oauth] Authorization failed code=${authorizationError} ref=${reference}`);
+    return finish(request, 'authorization_failed', reference);
   }
 
   const code = callbackUrl.searchParams.get('code');
