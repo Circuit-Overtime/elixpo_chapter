@@ -248,7 +248,7 @@ Everything that would normally go in Postgres lives in the control repo.
       "opened_at": "2026-06-20T10:30:00Z",
       "last_event": "2026-06-21T14:12:00Z",
       "token_spend": 47213,
-      "model_cascade": ["qwen-coder-large", "claude"],
+      "model_cascade": ["qwen-coder"],
       "fork_url": "https://github.com/elixpoo/repo"
     }
   },

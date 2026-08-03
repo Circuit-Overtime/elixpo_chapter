@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from lib.github.issues import referenced_pull_requests
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
 
 from agents.vet.evaluate import evaluate_with_rtk
-from agents.vet.github import referenced_pull_requests
 
 MIN_CONFIDENCE = 0.75
 MAX_FILES = 5

@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import structlog
 
 from agents.vet.core import vet_issue
-from agents.vet.github import fetch_issue_evidence, parse_issue_url
+from lib.github.issues import fetch_issue_evidence, parse_issue_url
 
 log = structlog.get_logger()
 

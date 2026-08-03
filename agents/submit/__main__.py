@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import re
 import subprocess
 from datetime import datetime, timezone
@@ -12,6 +13,7 @@ from pathlib import Path
 
 import structlog
 
+from lib.github.issues import parse_issue_url
 from lib.workspace import git_auth_env
 from rtk.models import Message
 
@@ -79,7 +81,37 @@ async def safety_check(router, title: str, body: str) -> None:
         raise SubmitRejected(f"public-post safety gate returned: {verdict[:120] or 'empty'}")
 
 
-def push_branch(workspace: Path, branch: str, token: str) -> None:
+def validate_solve_state(solve_state: dict, workspace_base: Path) -> Path:
+    if solve_state.get("status") != "ready_to_submit":
+        raise SubmitRejected("state/solve.json is not ready_to_submit")
+    review = solve_state.get("review") or {}
+    if review.get("approved") is not True or review.get("findings"):
+        raise SubmitRejected("Solve has no clean approved review")
+    if not re.fullmatch(r"elixpo/issue-\d+-[0-9a-f]{6}", str(solve_state.get("branch") or "")):
+        raise SubmitRejected("recorded branch name is invalid")
+    if not re.fullmatch(r"[^/]+/[^/]+", str(solve_state.get("fork_repo") or "")):
+        raise SubmitRejected("recorded fork repository is invalid")
+    if not re.fullmatch(r"[^/]+/[^/]+", str(solve_state.get("upstream_repo") or "")):
+        raise SubmitRejected("recorded upstream repository is invalid")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(solve_state.get("head_sha") or "")):
+        raise SubmitRejected("recorded reviewed commit SHA is invalid")
+    owner, repo, number = parse_issue_url(str(solve_state.get("issue_url") or ""))
+    if f"{owner}/{repo}" != solve_state.get("upstream_repo") or number != solve_state.get("issue_number"):
+        raise SubmitRejected("issue identity does not match the recorded upstream target")
+    workspace = Path(str(solve_state.get("workspace") or "")).resolve()
+    base = workspace_base.resolve()
+    if not workspace.is_dir() or workspace.parent != base:
+        raise SubmitRejected("Solve workspace is outside the configured workspace root")
+    return workspace
+
+
+def push_branch(
+    workspace: Path,
+    branch: str,
+    expected_sha: str,
+    expected_fork: str,
+    token: str,
+) -> None:
     head = subprocess.run(
         ["git", "branch", "--show-current"],
         cwd=workspace,
@@ -90,6 +122,27 @@ def push_branch(workspace: Path, branch: str, token: str) -> None:
     )
     if head.returncode != 0 or head.stdout.strip() != branch:
         raise SubmitRejected("workspace is not on the recorded Solve branch")
+    actual_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=workspace,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if actual_sha.returncode != 0 or actual_sha.stdout.strip() != expected_sha:
+        raise SubmitRejected("workspace HEAD does not match the reviewed Solve commit")
+    origin = subprocess.run(
+        ["git", "remote", "get-url", "origin"],
+        cwd=workspace,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    normalized_origin = origin.stdout.strip().removesuffix(".git").casefold()
+    if origin.returncode != 0 or not normalized_origin.endswith(f"github.com/{expected_fork}".casefold()):
+        raise SubmitRejected("workspace origin does not match the recorded fork")
     dirty = subprocess.run(
         ["git", "status", "--porcelain"],
         cwd=workspace,
@@ -113,9 +166,7 @@ def push_branch(workspace: Path, branch: str, token: str) -> None:
         raise SubmitRejected((pushed.stderr or pushed.stdout).strip()[:1200])
 
 
-async def submit(api, router, store, solve_state: dict) -> dict:
-    if solve_state.get("status") != "ready_to_submit":
-        raise SubmitRejected("state/solve.json is not ready_to_submit")
+async def submit(api, router, store, solve_state: dict, workspace_base: Path) -> dict:
     verification = [
         item
         for item in solve_state.get("checks", [])
@@ -123,9 +174,7 @@ async def submit(api, router, store, solve_state: dict) -> dict:
     ]
     if not verification or any(item.get("exit_code") != 0 for item in solve_state["checks"]):
         raise SubmitRejected("Solve has no complete passing verification record")
-    workspace = Path(str(solve_state.get("workspace") or ""))
-    if not workspace.is_dir():
-        raise SubmitRejected("Solve workspace is unavailable; run Submit in the same job or machine")
+    workspace = validate_solve_state(solve_state, workspace_base)
 
     title = build_pr_title(solve_state)
     body = build_pr_body(solve_state)
@@ -134,7 +183,13 @@ async def submit(api, router, store, solve_state: dict) -> dict:
     fork_owner, repo = str(solve_state["fork_repo"]).split("/", 1)
     upstream_owner, upstream_repo = str(solve_state["upstream_repo"]).split("/", 1)
     branch = str(solve_state["branch"])
-    push_branch(workspace, branch, await api._token())
+    push_branch(
+        workspace,
+        branch,
+        str(solve_state["head_sha"]),
+        str(solve_state["fork_repo"]),
+        await api._token(),
+    )
 
     existing = await api._request(
         "GET",
@@ -197,7 +252,8 @@ async def _run() -> int:
     api = GitHubAPI.from_token(settings.github.token)
     router = Router.from_settings("submit", budget=Budget("submit", limit=2500, kill_multiple=1.0))
     try:
-        result = await submit(api, router, store, solve_state)
+        workspace_base = Path(os.getenv("ELIXPO_WORKSPACE_DIR", "/tmp/elixpoo-workspaces"))
+        result = await submit(api, router, store, solve_state, workspace_base)
     except Exception as exc:
         store.write_json(
             "submit.json",

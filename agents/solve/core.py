@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import secrets
 import time
 from datetime import datetime, timezone
@@ -16,6 +17,7 @@ from agents.solve.edit import apply_edit_batch
 from agents.solve.git import changed_files, commit_files, git, run_verification, validate_command
 from agents.solve.model import implement_step, plan_issue, review_diff, search_once
 from agents.solve.models import SolvePlan
+from lib.github.issues import fetch_issue_evidence, parse_issue_url, referenced_pull_requests
 from lib.solve_policy import is_test_repository
 from lib.state.ledger import Ledger
 from lib.state.store import StateStore
@@ -49,15 +51,19 @@ def resolve_target(store: StateStore, explicit_url: str | None, owned_test: bool
 
 
 def _repo_from_url(url: str) -> str:
-    from agents.vet.github import parse_issue_url
-
     owner, repo, _ = parse_issue_url(url)
     return f"{owner}/{repo}"
 
 
 def _validate_path(path: str) -> None:
     candidate = Path(path)
-    if not path or candidate.is_absolute() or ".." in candidate.parts or candidate.parts[0] == ".git":
+    if (
+        not path
+        or not re.fullmatch(r"[A-Za-z0-9_./@+\-]+", path)
+        or candidate.is_absolute()
+        or ".." in candidate.parts
+        or candidate.parts[0] == ".git"
+    ):
         raise SolveRejected(f"unsafe planned path: {path}")
 
 
@@ -140,8 +146,6 @@ async def solve(
     workspace_base: Path,
     fork_owner: str | None = None,
 ) -> dict:
-    from agents.vet.github import parse_issue_url
-
     started = time.monotonic()
     owner, repo, number = parse_issue_url(issue_url)
     key = issue_key(owner, repo, number)
@@ -150,7 +154,19 @@ async def solve(
         if key not in ledger.prs or ledger.prs[key].status != "claimed":
             raise SolveRejected("production target is not claimed in the ledger")
 
-    issue = await api.get_issue(owner, repo, number)
+    evidence = await fetch_issue_evidence(api, owner, repo, number)
+    issue = evidence["issue"]
+    vet = store.read_json("vet.json", {}) or {}
+    if str(issue.get("updated_at") or "") != str(vet.get("issue_updated_at") or ""):
+        raise SolveRejected("issue changed after Vet; run Vet again")
+    if issue.get("state") != "open" or issue.get("locked"):
+        raise SolveRejected("issue is no longer open and available")
+    if not owned_test and (issue.get("assignee") or issue.get("assignees")):
+        raise SolveRejected("issue became assigned after Vet")
+    if evidence.get("sub_issues"):
+        raise SolveRejected("issue became a tracking parent after Vet")
+    if referenced_pull_requests(evidence, number):
+        raise SolveRejected("an implementation pull request appeared after Vet")
     upstream = await api.get_repo(owner, repo)
     if owned_test:
         permissions = upstream.get("permissions") or {}
@@ -164,11 +180,13 @@ async def solve(
         fork_owner = str(profile.get("login") or "")
     if not fork_owner:
         raise SolveRejected("cannot resolve the fork owner")
+    if fork_owner.casefold() == owner.casefold():
+        raise SolveRejected("fork owner must differ from the upstream owner")
     fork = await ensure_fork(api, owner, repo, fork_owner)
 
     base_branch = str(upstream.get("default_branch") or "main")
     work_branch = f"elixpo/issue-{number}-{secrets.token_hex(3)}"
-    session_id = f"{owner}-{repo}-{number}-{secrets.token_hex(3)}"
+    session_id = re.sub(r"[^A-Za-z0-9_-]", "-", f"{owner}-{repo}-{number}-{secrets.token_hex(3)}")
     workspace = Workspace(session_id, workspace_base)
     root = workspace.setup(
         fork_url=str(fork.get("clone_url") or f"https://github.com/{fork_owner}/{repo}.git"),
@@ -284,6 +302,7 @@ async def solve(
         "checks": checks,
         "commits": commits,
         "head_sha": git(root, "rev-parse", "HEAD"),
+        "review": review.model_dump(),
         "token_spent": router.budget.spent,
         "finished_at": datetime.now(timezone.utc).isoformat(),
     }

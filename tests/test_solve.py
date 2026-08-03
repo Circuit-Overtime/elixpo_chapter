@@ -89,5 +89,8 @@ def test_owned_target_requires_matching_test_vet(tmp_path, monkeypatch):
     store = StateStore(tmp_path)
     url = "https://github.com/elixpo/lixrl.com/issues/9"
     monkeypatch.setattr(core, "is_test_repository", lambda repo: repo == "elixpo/lixrl.com")
-    store.write_json("vet.json", {"url": url, "suitable": True, "test_mode": True})
+    store.write_json(
+        "vet.json",
+        {"url": url, "suitable": True, "test_mode": True, "issue_updated_at": "2026-08-02T16:41:07Z"},
+    )
     assert resolve_target(store, url, True) == url

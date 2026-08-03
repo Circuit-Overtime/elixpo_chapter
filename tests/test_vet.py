@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 import pytest
 from agents.vet.core import vet_issue
-from agents.vet.github import parse_issue_url, referenced_pull_requests
+from lib.github.issues import parse_issue_url, referenced_pull_requests
 from agents.vet.__main__ import _finalize_pick, _resolve_target
 from lib.state.ledger import Ledger
 from lib.state.rejections import RejectionLedger
