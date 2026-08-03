@@ -5,7 +5,7 @@ Enforces the operating principles before we spend compute on a repo:
   - never an issue we've already picked (recorded in the ledger → no repeats),
   - at most one open PR per repo,
   - respect the daily cap,
-  - only tractable issues above the §4 threshold.
+  - only explicitly easy, tractable issues above the §4 threshold.
 The justification is built from the score breakdown + the model's rationale.
 """
 
@@ -37,15 +37,17 @@ def select_top(
     *,
     min_score: int = THRESHOLD,
     require_tractable: bool = True,
+    require_easy: bool = True,
 ) -> dict | None:
-    """Highest-scoring eligible, tractable issue at/above threshold. None if the
-    daily cap is spent or nothing qualifies."""
+    """Highest-scoring eligible easy issue, or None when nothing is safe to pick."""
     if not ledger.can_open_today(day):
         return None
     for t in sorted(triaged, key=lambda x: x.get("score", 0), reverse=True):
         if t.get("score", 0) < min_score:
             break  # sorted — nothing below will qualify either
         if require_tractable and not t.get("tractable", False):
+            continue
+        if require_easy and not t.get("easy", False):
             continue
         ok, _ = is_eligible(t["repo"], t["number"], ledger)
         if ok:
@@ -57,7 +59,12 @@ def justify(pick: dict) -> str:
     """Human-readable 'why this one' — score, model rationale, and firing signals."""
     signals = ", ".join(f"{k} {v:+d}" for k, v in pick.get("breakdown", {}).items())
     rationale = pick.get("rationale", "").strip()
+    scope = (
+        f"{pick.get('complexity', 'unknown')} scope, "
+        f"~{pick.get('estimated_files', 0)} files, "
+        f"{float(pick.get('confidence', 0.0)):.0%} confidence"
+    )
     return (
         f"{pick['repo']}#{pick['number']} — score {pick.get('score', 0)} "
-        f"(threshold {THRESHOLD}). {rationale} Signals: {signals}."
+        f"(threshold {THRESHOLD}); {scope}. {rationale} Signals: {signals}."
     )

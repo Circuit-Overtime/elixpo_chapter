@@ -58,6 +58,10 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
         "url": pick.get("url", ""),
         "score": pick.get("score", 0),
         "tractable": pick.get("tractable", False),
+        "easy": pick.get("easy", False),
+        "complexity": pick.get("complexity", "unknown"),
+        "estimated_files": pick.get("estimated_files", 0),
+        "confidence": pick.get("confidence", 0.0),
         "justification": reason,
         "picked_at": now.isoformat(),
     }

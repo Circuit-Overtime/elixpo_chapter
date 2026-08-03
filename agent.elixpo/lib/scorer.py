@@ -8,12 +8,17 @@ squad's job — it fills IssueSignals, then calls score(). Threshold ≥ 8 to qu
 
 from __future__ import annotations
 
+from math import isfinite
+
 from pydantic import BaseModel, Field
 
 THRESHOLD = 8
 
 POSITIVE_LABELS = {"good first issue", "help wanted", "up-for-grabs", "hacktoberfest"}
 NEGATIVE_LABELS = {"triage", "needs-design", "discussion", "question"}
+EASY_COMPLEXITIES = {"trivial", "small"}
+MIN_SOLVABILITY_CONFIDENCE = 0.7
+MAX_EASY_FILES = 5
 
 
 class IssueSignals(BaseModel):
@@ -27,6 +32,16 @@ class IssueSignals(BaseModel):
     someone_claimed_recently: bool = False  # "I'll take this" within 14 days
     touches_internal_paths: bool = False
     contributing_discuss_first: bool = False  # CONTRIBUTING says discuss-first AND no discussion exists
+
+
+class SolvabilityVerdict(BaseModel):
+    """Explain whether an issue is safe to send to the implementation squads."""
+
+    easy: bool = False
+    complexity: str = "unknown"
+    estimated_files: int = 0
+    confidence: float = 0.0
+    blockers: list[str] = Field(default_factory=list)
 
 
 def _labels(s: IssueSignals) -> set[str]:
@@ -67,3 +82,62 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
 def qualifies(s: IssueSignals, threshold: int = THRESHOLD) -> bool:
     total, _ = score(s)
     return total >= threshold
+
+
+def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> SolvabilityVerdict:
+    """Apply hard, fail-closed gates after fuzzy signals have been extracted."""
+    extracted = extracted or {}
+    blockers: list[str] = []
+    labels = _labels(signals)
+
+    if extracted.get("tractable") is not True:
+        blockers.append("not confirmed tractable")
+
+    complexity = str(extracted.get("complexity", "unknown")).casefold()
+    if complexity not in EASY_COMPLEXITIES:
+        blockers.append(f"complexity is {complexity or 'unknown'}")
+
+    try:
+        estimated_files = int(extracted.get("estimated_files", 0))
+    except (TypeError, ValueError):
+        estimated_files = 0
+    if not 1 <= estimated_files <= MAX_EASY_FILES:
+        blockers.append(f"estimated file count {estimated_files} is outside 1-{MAX_EASY_FILES}")
+
+    try:
+        confidence = float(extracted.get("confidence", 0.0))
+    except (TypeError, ValueError):
+        confidence = 0.0
+    if not isfinite(confidence) or not 0.0 <= confidence <= 1.0:
+        confidence = 0.0
+    if confidence < MIN_SOLVABILITY_CONFIDENCE:
+        blockers.append(f"solvability confidence {confidence:.2f} is below {MIN_SOLVABILITY_CONFIDENCE:.2f}")
+
+    hard_flags = {
+        "needs_maintainer_decision": "needs a maintainer decision",
+        "needs_external_access": "needs external access or credentials",
+        "needs_specialized_hardware": "needs specialized hardware",
+    }
+    blockers.extend(reason for field, reason in hard_flags.items() if extracted.get(field) is not False)
+
+    completion_is_clear = signals.has_acceptance_criterion or (
+        "bug" in labels and signals.has_repro_steps
+    )
+    if not completion_is_clear:
+        blockers.append("no acceptance criterion or reproducible bug")
+    if not signals.no_assignee or not signals.no_maintainer_claim or signals.someone_claimed_recently:
+        blockers.append("issue is already assigned or claimed")
+    if signals.touches_internal_paths:
+        blockers.append("requires internal or private paths")
+    if signals.contributing_discuss_first:
+        blockers.append("repository requires discussion before implementation")
+    if labels & NEGATIVE_LABELS:
+        blockers.append("issue is still in design, triage, discussion, or question stage")
+
+    return SolvabilityVerdict(
+        easy=not blockers,
+        complexity=complexity,
+        estimated_files=estimated_files,
+        confidence=confidence,
+        blockers=blockers,
+    )
