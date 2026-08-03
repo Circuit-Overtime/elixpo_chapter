@@ -13,6 +13,8 @@ const TABS = [
   { label: 'Publishing', icon: 'create-outline' },
   { label: 'Notifications', icon: 'notifications-outline' },
   { label: 'Organization', icon: 'people-outline' },
+  { label: 'Integrations', icon: 'git-network-outline' },
+  { label: 'Media', icon: 'images-outline' },
   { label: 'Subscription', icon: 'diamond-outline' },
 ];
 
@@ -44,6 +46,35 @@ function SettingRow({ title, description, right, border = true }) {
 
 function SectionHeader({ title }) {
   return <h3 className="text-[13px] font-bold text-[var(--text-primary)] uppercase tracking-wider mt-8 mb-2">{title}</h3>;
+}
+
+function StorageScope({ title, icon, bytes, count, children, emptyText = 'No stored media' }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)]">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--bg-elevated)]"
+      >
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--bg-elevated)] text-[var(--text-muted)]">
+          <ion-icon name={icon} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-[var(--text-primary)]">{title}</span>
+          <span className="block text-[11px] text-[var(--text-muted)]">{count ? `${count} asset${count === 1 ? '' : 's'}` : emptyText}</span>
+        </span>
+        <span className="text-xs font-semibold text-[var(--text-body)]">{formatBytes(bytes)}</span>
+        <ion-icon className={open ? 'rotate-180 transition-transform' : 'transition-transform'} name="chevron-down-outline" />
+      </button>
+      {open && (
+        <div className="border-t border-[var(--border-default)] px-4 py-3">
+          {children || <p className="text-xs text-[var(--text-faint)]">{emptyText}</p>}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function DropdownSelect({ value, options, onChange }) {
@@ -1070,7 +1101,7 @@ function SubscriptionTab({ user }) {
 
       <div className="rounded-xl border border-[var(--border-default)] overflow-hidden">
         {[
-          { label: 'Total storage', value: usage?.storage.limitFormatted || '50 MB', icon: 'cloud-outline' },
+          { label: 'Total storage', value: usage?.storage.limitFormatted || '10 MB', icon: 'cloud-outline' },
           { label: 'Images per blog', value: usage?.limits.imagePerBlogFormatted || '2 MB', icon: 'image-outline' },
           { label: 'AI requests / day', value: `${usage?.ai.limit || 15}`, icon: 'sparkles-outline' },
           { label: 'Co-authors per blog', value: `${usage?.limits.coAuthorsPerBlog || 3}`, icon: 'people-outline' },
@@ -1105,6 +1136,374 @@ function SubscriptionTab({ user }) {
           </Link>
         </div>
       )}
+    </div>
+  );
+}
+
+function formatBytes(bytes = 0) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+}
+
+function MediaTab() {
+  const [media, setMedia] = useState(null);
+  const [usage, setUsage] = useState(null);
+  const [busyId, setBusyId] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const load = useCallback(() => Promise.all([
+    fetch('/api/media').then((r) => r.ok ? r.json() : Promise.reject()),
+    fetch('/api/tier/usage').then((r) => r.ok ? r.json() : Promise.reject()),
+  ]).then(([mediaData, usageData]) => { setMedia(mediaData); setUsage(usageData); }).catch(() => setMedia({ items: [], organisations: [], collections: [], storageSpaces: [], totalBytes: 0, count: 0 })), []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const remove = async (id) => {
+    if (!window.confirm('Delete this media permanently and free its storage?')) return;
+    setBusyId(id);
+    setDeleteError('');
+    try {
+      const response = await fetch('/api/media/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mediaId: id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Delete failed');
+      await load();
+    } catch (error) {
+      setDeleteError(error.message || 'Delete failed');
+    } finally { setBusyId(''); }
+  };
+
+  if (!media) return <div className="mt-8 h-48 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />;
+  const spaces = media.storageSpaces || [];
+  const globalSpace = spaces.find((space) => space.provider === 'platform_cloudinary') || { bytes: 0, count: 0 };
+  const personalSpaces = spaces.filter((space) => space.provider === 'user_cloudinary');
+  const personalBytes = personalSpaces.reduce((total, space) => total + Number(space.bytes || 0), 0);
+  const personalCount = personalSpaces.reduce((total, space) => total + Number(space.count || 0), 0);
+  const personalScope = media.personal || { bytes: 0, count: 0 };
+  const sumScope = (rows, field) => (rows || []).reduce((total, row) => total + Number(row[field] || 0), 0);
+  const scopeRows = (rows) => rows?.length ? rows.map((row) => (
+    <div key={row.id} className="flex justify-between gap-3 py-1.5 text-xs">
+      <span className="truncate text-[var(--text-body)]">{row.name}</span>
+      <span className="shrink-0 text-[var(--text-muted)]">{formatBytes(row.bytes)} · {row.count} asset{Number(row.count) === 1 ? '' : 's'}</span>
+    </div>
+  )) : null;
+  return (
+    <div>
+      <SectionHeader title="Storage" />
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="rounded-2xl border border-[#9b7bf7]/25 bg-[#9b7bf7]/[0.035] p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><ion-icon name="server-outline" /> LixBlogs storage</div>
+              <p className="mt-3 text-2xl font-bold text-[var(--text-primary)]">{formatBytes(globalSpace.bytes)}</p>
+              <p className="text-[11px] text-[var(--text-muted)]">{globalSpace.count} asset{globalSpace.count === 1 ? '' : 's'} · included in your plan</p>
+            </div>
+            <span className="rounded-full bg-[#9b7bf7]/10 px-2.5 py-1 text-[10px] font-semibold text-[#9b7bf7]">Managed</span>
+          </div>
+          <div className="mt-4 flex items-center justify-between text-[10px] text-[var(--text-muted)]"><span>{usage?.storage?.percent || 0}% used</span><span>{usage?.storage?.limitFormatted || '—'} limit</span></div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div className="h-full rounded-full bg-[#9b7bf7] transition-[width]" style={{ width: `${Math.min(100, usage?.storage?.percent || 0)}%` }} /></div>
+        </div>
+
+        <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.035] p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><ion-icon name="cloud-done-outline" /> Personal storage</div>
+              <p className="mt-3 text-2xl font-bold text-[var(--text-primary)]">{formatBytes(personalBytes)}</p>
+              <p className="text-[11px] text-[var(--text-muted)]">{personalCount} asset{personalCount === 1 ? '' : 's'} · outside your plan quota</p>
+            </div>
+            <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-500">Cloudinary</span>
+          </div>
+          <div className="mt-4 border-t border-emerald-500/15 pt-3">
+            {personalSpaces.length ? personalSpaces.map((space) => (
+              <div key={`${space.provider}:${space.cloudName}`} className="flex items-center justify-between gap-3 text-xs">
+                <span className="truncate text-[var(--text-body)]">{space.cloudName}</span>
+                <span className="shrink-0 text-[var(--text-muted)]">{formatBytes(space.bytes)}</span>
+              </div>
+            )) : <Link href="/settings?tab=integrations" className="text-xs font-semibold text-emerald-500 hover:underline">Connect personal Cloudinary</Link>}
+          </div>
+        </div>
+      </div>
+
+      <p className="mb-2 mt-5 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Usage by publishing space</p>
+      <div className="grid gap-2">
+        <StorageScope title="Personal" icon="person-outline" bytes={personalScope.bytes} count={personalScope.count}>
+          {personalScope.count ? <p className="text-xs text-[var(--text-muted)]">Media from personal posts and uploads not assigned to a collection.</p> : null}
+        </StorageScope>
+        <StorageScope title="Organizations" icon="people-outline" bytes={sumScope(media.organisations, 'bytes')} count={sumScope(media.organisations, 'count')}>
+          {scopeRows(media.organisations)}
+        </StorageScope>
+        <StorageScope title="Collections" icon="albums-outline" bytes={sumScope(media.collections, 'bytes')} count={sumScope(media.collections, 'count')}>
+          {scopeRows(media.collections)}
+        </StorageScope>
+      </div>
+
+      <SectionHeader title="Media controls" />
+      {deleteError && <p className="mb-3 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{deleteError}</p>}
+      <div className="space-y-2">
+        {media.items.map((item) => (
+          <div key={item.id} className="flex items-center gap-3 rounded-xl border border-[var(--border-default)] p-3">
+            <img src={item.url} alt="" className="h-12 w-16 shrink-0 rounded-lg bg-[var(--bg-elevated)] object-cover" />
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="truncate text-sm font-medium text-[var(--text-primary)]">{item.blog_title || (item.media_type === 'cover' ? 'Blog cover' : 'Unattached media')}</p>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${item.storage_provider === 'user_cloudinary' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[#9b7bf7]/10 text-[#9b7bf7]'}`}>
+                  {item.storage_provider === 'user_cloudinary' ? item.storage_cloud_name : 'LixBlogs storage'}
+                </span>
+              </div>
+              <p className="truncate text-xs text-[var(--text-muted)]">{item.org_name || 'Personal'}{item.collection_name ? ` · ${item.collection_name}` : ''} · {formatBytes(item.size_bytes)}</p>
+            </div>
+            <button disabled={busyId === item.id} onClick={() => remove(item.id)} className="rounded-lg border border-red-400/25 px-3 py-2 text-xs text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50">{busyId === item.id ? 'Deleting…' : 'Delete'}</button>
+          </div>
+        ))}
+        {!media.items.length && <p className="py-8 text-center text-sm text-[var(--text-muted)]">No uploaded media yet.</p>}
+      </div>
+    </div>
+  );
+}
+
+function IntegrationsTab() {
+  const searchParams = useSearchParams();
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [cloudinary, setCloudinary] = useState(null);
+  const [cloudinaryLoading, setCloudinaryLoading] = useState(true);
+  const [cloudinaryBusy, setCloudinaryBusy] = useState(false);
+  const [cloudinaryError, setCloudinaryError] = useState('');
+  const [cloudinaryCloudName, setCloudinaryCloudName] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/integrations/lixrl', { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load LixRL');
+      setStatus(data);
+    } catch (err) {
+      setError(err.message || 'Unable to load LixRL');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const loadCloudinary = useCallback(async () => {
+    setCloudinaryLoading(true);
+    setCloudinaryError('');
+    try {
+      const response = await fetch('/api/integrations/cloudinary', { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load Cloudinary');
+      setCloudinary(data);
+    } catch (err) {
+      setCloudinaryError(err.message || 'Unable to load Cloudinary');
+    } finally { setCloudinaryLoading(false); }
+  }, []);
+
+  useEffect(() => { loadCloudinary(); }, [loadCloudinary]);
+
+  const changeConnection = async (connect) => {
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch('/api/integrations/lixrl', connect ? {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'connect' }),
+      } : { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to update LixRL connection');
+      setStatus(data);
+    } catch (err) {
+      setError(err.message || 'Unable to update LixRL connection');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const account = status?.account;
+  const maxUrls = account?.limits?.maxUrls;
+  const usedUrls = account?.usage?.urls || 0;
+  const usagePercent = maxUrls === -1 ? 0 : Math.min(100, Math.round((usedUrls / Math.max(maxUrls || 1, 1)) * 100));
+
+  const setCloudinaryStorage = async (useForUploads) => {
+    setCloudinaryBusy(true);
+    setCloudinaryError('');
+    try {
+      const response = await fetch('/api/integrations/cloudinary', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ useForUploads }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to change media storage');
+      setCloudinary(data);
+    } catch (err) {
+      setCloudinaryError(err.message || 'Unable to change media storage');
+    } finally { setCloudinaryBusy(false); }
+  };
+
+  const removeCloudinary = async () => {
+    if (!window.confirm('Remove this Cloudinary connection?')) return;
+    setCloudinaryBusy(true);
+    setCloudinaryError('');
+    try {
+      const response = await fetch('/api/integrations/cloudinary', { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to remove Cloudinary');
+      setCloudinary(data);
+    } catch (err) {
+      setCloudinaryError(err.message || 'Unable to remove Cloudinary');
+    } finally { setCloudinaryBusy(false); }
+  };
+
+  const oauthResult = searchParams.get('cloudinary');
+  const oauthReference = searchParams.get('cloudinary_ref');
+  const oauthMessage = {
+    connected: { ok: true, text: 'Cloudinary connected. New blog media can now use your product environment.' },
+    denied: { ok: false, text: 'Cloudinary authorization was cancelled.' },
+    authorization_failed: { ok: false, text: 'Cloudinary rejected the authorization request. Confirm the registered callback URI and OAuth scopes.' },
+    invalid_state: { ok: false, text: 'The Cloudinary authorization session expired. Please try again.' },
+    storage_in_use: { ok: false, text: 'Delete media from the currently connected personal space before selecting another cloud.' },
+    config_error: { ok: false, text: 'Cloudinary OAuth is not configured on this deployment.' },
+    failed_token_exchange: { ok: false, text: 'Cloudinary authorization could not be exchanged. Verify the OAuth client ID, client secret, and Basic client authentication.' },
+    failed_offline_access: { ok: false, text: 'Cloudinary did not grant Offline Access. Enable that scope in the OAuth app and reconnect.' },
+    failed_environment: { ok: false, text: 'Cloudinary authorized the account but omitted its product-environment identifier. Enter the public cloud name below to verify and complete the connection.' },
+    invalid_environment: { ok: false, text: 'Enter a valid Cloudinary cloud name. You can copy it from the Cloudinary dashboard.' },
+    failed_validation: { ok: false, text: 'Cloudinary rejected access to the selected product environment. Enable Upload and Asset Management permissions.' },
+    failed_database: { ok: false, text: 'LixBlogs could not check the existing media connection. Please retry shortly.' },
+    failed_persistence: { ok: false, text: 'Cloudinary authorized successfully, but LixBlogs could not save the encrypted connection. Please retry.' },
+    failed: { ok: false, text: 'Cloudinary could not be connected. Check the OAuth app scopes and redirect URI.' },
+  }[oauthResult];
+
+  return (
+    <div>
+      <SectionHeader title="Connected services" />
+      <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#9b7bf714] text-2xl font-black text-[#9b7bf7]">
+              <ion-icon name="flash-outline" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">LixRL URL shortener</h3>
+                {!loading && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status?.connected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}>
+                    {status?.connected ? 'Connected' : 'Not connected'}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">
+                Create account-owned lixrl.com links directly from the blog editor. Your Accounts identity is used; no personal API key is stored in Blogs.
+              </p>
+            </div>
+          </div>
+          {!loading && (
+            <button
+              disabled={busy}
+              onClick={() => changeConnection(!status?.connected)}
+              className={`shrink-0 rounded-lg px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-50 ${status?.connected ? 'border border-red-400/25 text-red-500 hover:bg-red-500/10' : 'bg-[#9b7bf7] text-white hover:bg-[#8b6ae6]'}`}
+            >
+              {busy ? 'Working…' : status?.connected ? 'Disconnect' : 'Connect LixRL'}
+            </button>
+          )}
+        </div>
+
+        {loading && <div className="mt-5 h-20 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />}
+        {error && <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{error}</p>}
+
+        {status?.connected && account && (
+          <div className="mt-5 border-t border-[var(--border-default)] pt-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Plan</p><p className="mt-1 text-sm font-semibold capitalize text-[var(--text-primary)]">{account.tier}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Links</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{usedUrls} / {maxUrls === -1 ? 'Unlimited' : maxUrls}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">API rate</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{account.limits.rateLimitPerMin === -1 ? 'Unlimited' : `${account.limits.rateLimitPerMin}/min`}</p></div>
+            </div>
+            {maxUrls !== -1 && <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div className="h-full rounded-full bg-[#9b7bf7]" style={{ width: `${usagePercent}%` }} /></div>}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <p className="text-[var(--text-muted)]">Disconnecting stops new links from Blogs; existing short links stay active.</p>
+              <a href="https://lixrl.com/dashboard" target="_blank" rel="noreferrer" className="font-medium text-[#9b7bf7] hover:underline">Open LixRL dashboard ↗</a>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-2xl text-sky-500"><ion-icon name="cloud-outline" /></div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Personal Cloudinary storage</h3>
+                {cloudinary && <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${cloudinary.connected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}>{cloudinary.connected ? 'Connected' : 'Not connected'}</span>}
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">Store new blog covers and editor images in your own Cloudinary product environment. Existing media stays in its original storage space.</p>
+            </div>
+          </div>
+        </div>
+
+        {oauthMessage && (
+          <p className={`mt-4 rounded-lg px-3 py-2 text-xs ${oauthMessage.ok ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'}`}>
+            {oauthMessage.text}{oauthReference && !oauthMessage.ok ? ` Reference: ${oauthReference}` : ''}
+          </p>
+        )}
+
+        {cloudinaryLoading ? (
+          <div className="mt-5 h-20 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />
+        ) : !cloudinary?.connected ? (
+          <div className="mt-5 flex flex-col gap-3 border-t border-[var(--border-default)] pt-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-medium text-[var(--text-primary)]">Authorize with Cloudinary</p>
+              <p className="mt-1 text-[11px] text-[var(--text-faint)]">Choose a product environment on Cloudinary. LixBlogs never receives its API secret.</p>
+              {oauthResult === 'failed_environment' && (
+                <label className="mt-3 block max-w-sm">
+                  <span className="text-[11px] font-medium text-[var(--text-muted)]">Cloud name</span>
+                  <input
+                    value={cloudinaryCloudName}
+                    onChange={(event) => setCloudinaryCloudName(event.target.value.trim())}
+                    placeholder="your-cloud-name"
+                    autoComplete="off"
+                    spellCheck="false"
+                    className="mt-1.5 w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2 text-xs text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-faint)] focus:border-[#9b7bf7]"
+                  />
+                  <span className="mt-1 block text-[10px] text-[var(--text-faint)]">Cloudinary Dashboard → Product Environment → Cloud name</span>
+                </label>
+              )}
+            </div>
+            <a
+              href={`/api/integrations/cloudinary/connect${oauthResult === 'failed_environment' && cloudinaryCloudName ? `?cloud_name=${encodeURIComponent(cloudinaryCloudName)}` : ''}`}
+              aria-disabled={oauthResult === 'failed_environment' && !cloudinaryCloudName}
+              onClick={(event) => { if (oauthResult === 'failed_environment' && !cloudinaryCloudName) event.preventDefault(); }}
+              className={`shrink-0 rounded-lg bg-[#9b7bf7] px-4 py-2 text-center text-xs font-semibold text-white hover:bg-[#8b6ae6] ${oauthResult === 'failed_environment' && !cloudinaryCloudName ? 'cursor-not-allowed opacity-50' : ''}`}
+            >
+              {oauthResult === 'failed_environment' ? 'Verify & connect' : 'Connect Cloudinary'}
+            </a>
+          </div>
+        ) : (
+          <div className="mt-5 border-t border-[var(--border-default)] pt-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Connected product environment</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{cloudinary.cloudName}</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">{formatBytes(cloudinary.trackedBytes)} across {cloudinary.mediaCount} LixBlogs assets · {cloudinary.authMethod === 'oauth' ? 'OAuth' : 'API credential'}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button disabled={cloudinaryBusy} onClick={() => setCloudinaryStorage(!cloudinary.useForUploads)} className={`rounded-lg px-3 py-2 text-xs font-semibold disabled:opacity-50 ${cloudinary.useForUploads ? 'border border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]' : 'bg-[#9b7bf7] text-white hover:bg-[#8b6ae6]'}`}>{cloudinary.useForUploads ? 'Use LixBlogs storage' : 'Use personal storage'}</button>
+                <button title={cloudinary.mediaCount ? 'Delete personal Cloudinary assets from the Media tab first' : 'Remove connection'} disabled={cloudinaryBusy || cloudinary.mediaCount > 0} onClick={removeCloudinary} className="rounded-lg border border-red-400/25 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-500/10 disabled:opacity-50">{cloudinary.mediaCount ? 'Media still stored here' : 'Remove'}</button>
+              </div>
+            </div>
+            <div className={`mt-4 flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${cloudinary.useForUploads ? 'bg-emerald-500/10 text-emerald-600' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}><ion-icon name={cloudinary.useForUploads ? 'cloud-done-outline' : 'server-outline'} />New blog media will use {cloudinary.useForUploads ? cloudinary.cloudName : 'LixBlogs global storage'}.</div>
+          </div>
+        )}
+        {cloudinaryError && <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{cloudinaryError}</p>}
+      </div>
     </div>
   );
 }
@@ -1157,7 +1556,9 @@ export default function SettingsPage() {
         {activeTab === 1 && <PublishingTab user={user} />}
         {activeTab === 2 && <NotificationsTab />}
         {activeTab === 3 && <OrganizationTab user={user} />}
-        {activeTab === 4 && <SubscriptionTab user={user} />}
+        {activeTab === 4 && <IntegrationsTab />}
+        {activeTab === 5 && <MediaTab />}
+        {activeTab === 6 && <SubscriptionTab user={user} />}
       </div>
     </AppShell>
   );

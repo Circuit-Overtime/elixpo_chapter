@@ -2,7 +2,8 @@
 # (Manual / full releases — npm + VS Code + version bump — stay in deploy.sh.)
 #
 # Required repo secrets:
-#   CLOUDFLARE_API_TOKEN   — token with "Cloudflare Pages: Edit" permission
+#   CLOUDFLARE_API_TOKEN   — token with "Cloudflare Pages: Edit" and
+#                            "Workers Scripts: Edit" permissions
 #   CLOUDFLARE_ACCOUNT_ID  — your Cloudflare account id
 #   ELIXPO_PAY_API_KEY     — Elixpo Pay secret key (for the post-deploy catalog sync)
 name: Deploy
@@ -10,7 +11,6 @@ name: Deploy
 on:
   push:
     branches: [main]
-  workflow_dispatch:   # manual re-deploy of current main
 
 concurrency:
   group: deploy-main
@@ -20,11 +20,36 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-    # Skip the deploy.sh bump-commit re-trigger (mirrors deploy.sh's commit msg).
+  deploy-worker:
+    # Defense in depth: production deploys only from a push to main. Even if
+    # another trigger is added later, feature branches cannot reach this job.
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
       !contains(github.event.head_commit.message, '[skip deploy]')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: worker/collab/package-lock.json
+
+      - name: Install collaboration worker dependencies
+        run: npm ci --prefix worker/collab
+
+      - name: Deploy collaboration worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config worker/collab/wrangler.toml
+
+  deploy-pages:
+    needs: deploy-worker
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -62,7 +87,7 @@ jobs:
   # central catalog (prices/tiers) always matches what's shipped. Idempotent —
   # safe to run every deploy. The sync script uses only Node built-ins (no install).
   sync-catalog:
-    needs: deploy
+    needs: deploy-pages
     runs-on: ubuntu-latest
     environment: production
     steps:

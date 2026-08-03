@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { generatePixelAvatar } from '../utils/pixelAvatar';
 import JoinedToast from './JoinedToast';
+import { CreatorBadgeMark } from './CreatorBadge';
+import { CREATOR_BADGE_MAP } from '../../lib/badgeDefinitions';
 
 // ─── Notification type config ───
 const NOTIF_CONFIG = {
@@ -17,6 +19,7 @@ const NOTIF_CONFIG = {
   org_invite:     { icon: 'people-outline',          color: '#4ade80', label: 'invited you to' },
   blog_invite:    { icon: 'create-outline',          color: '#c084fc', label: 'invited you to collaborate on' },
   blog_published: { icon: 'document-text-outline',   color: '#60a5fa', label: 'published' },
+  badge_awarded:  { icon: 'ribbon-outline',          color: '#ec4899', label: 'awarded you' },
 };
 
 function timeAgo(ts) {
@@ -149,6 +152,7 @@ function NotificationDropdown() {
             ) : (
               notifications.map(n => {
                 const cfg = NOTIF_CONFIG[n.type] || NOTIF_CONFIG.follow;
+                const awardedBadge = n.type === 'badge_awarded' ? CREATOR_BADGE_MAP.get(n.target_id) : null;
                 return (
                   <Link
                     key={n.id}
@@ -164,7 +168,9 @@ function NotificationDropdown() {
                   >
                     {/* Actor avatar */}
                     <div className="relative flex-shrink-0">
-                      {n.actor_avatar ? (
+                      {awardedBadge ? (
+                        <CreatorBadgeMark badge={awardedBadge} size={38} />
+                      ) : n.actor_avatar ? (
                         <img src={n.actor_avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
                       ) : (
                         <div className="h-9 w-9 rounded-full flex items-center justify-center text-[13px] font-bold"
@@ -173,10 +179,12 @@ function NotificationDropdown() {
                         </div>
                       )}
                       {/* Type icon badge */}
-                      <div className="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: 'var(--card-bg)', border: '1.5px solid var(--divider)' }}>
-                        <ion-icon name={cfg.icon} style={{ fontSize: '10px', color: cfg.color }} />
-                      </div>
+                      {!awardedBadge && (
+                        <div className="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: 'var(--card-bg)', border: '1.5px solid var(--divider)' }}>
+                          <ion-icon name={cfg.icon} style={{ fontSize: '10px', color: cfg.color }} />
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
@@ -250,7 +258,7 @@ const NAV_ITEMS = [
   { label: 'Library', icon: 'bookmark-outline', href: '/library' },
   { label: 'Profile', icon: 'person-outline', href: '/profile' },
   { label: 'Stories', icon: 'book-outline', href: '/stories' },
-  { label: 'Stats', icon: 'stats-chart-outline', href: '/stats' },
+  { label: 'Stats', icon: 'stats-chart-outline', href: '/settings/stats' },
 ];
 
 // GitHub star counter (stars only) → links to the repo.
@@ -429,14 +437,14 @@ export default function AppShell({ children }) {
       <JoinedToast />
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-md" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-app) 92%, transparent)', borderBottom: '1px solid var(--border-default)' }}>
-        <div className="max-w-[1400px] mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3">
-              <img src="/logo-mark.png" alt="" className="h-8 w-8 rounded-full" />
-              <span className="hidden sm:inline text-xl font-bold tracking-tight font-kanit" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
+            <Link href="/" className="flex items-center gap-2 sm:gap-3" aria-label="LixBlogs home">
+              <img src="/logo-mark.png" alt="" className="h-7 w-7 rounded-full sm:h-8 sm:w-8" />
+              <span className="whitespace-nowrap text-base font-bold tracking-tight font-kanit sm:text-xl" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
             </Link>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <GitHubStars />
             {/* Theme toggle */}
             <button

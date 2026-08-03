@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
 import Link from 'next/link';
+import { CreatorBadgeMark } from '../components/CreatorBadge';
+import { CREATOR_BADGE_MAP } from '../../lib/badgeDefinitions';
 
 const NOTIF_CONFIG = {
   follow:         { icon: 'person-add-outline',     color: '#9b7bf7', label: 'followed you' },
@@ -13,6 +15,7 @@ const NOTIF_CONFIG = {
   org_invite:     { icon: 'people-outline',          color: '#4ade80', label: 'invited you to' },
   blog_invite:    { icon: 'create-outline',          color: '#c084fc', label: 'invited you to collaborate on' },
   blog_published: { icon: 'document-text-outline',   color: '#60a5fa', label: 'published' },
+  badge_awarded:  { icon: 'ribbon-outline',          color: '#ec4899', label: 'awarded you' },
 };
 
 const FILTERS = [
@@ -23,6 +26,7 @@ const FILTERS = [
   { key: 'like', label: 'Likes' },
   { key: 'mention', label: 'Mentions' },
   { key: 'invite', label: 'Invites' },
+  { key: 'badge_awarded', label: 'Badges' },
 ];
 
 function timeAgo(ts) {
@@ -63,29 +67,32 @@ export default function NotificationsPage() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [resolvedInvites, setResolvedInvites] = useState({}); // notifId -> 'accepted' | 'declined'
+  const [resolvingInvites, setResolvingInvites] = useState({});
 
   // A blog_invite notification carries the blog id in target_id (or /edit/<id>).
   const inviteSlugid = (n) => n.target_id || (n.target_url || '').split('/edit/')[1] || '';
 
   const respondInvite = async (n, accept) => {
     const slugid = inviteSlugid(n);
-    if (!slugid) return;
-    setResolvedInvites(prev => ({ ...prev, [n.id]: accept ? 'accepted' : 'declined' }));
+    if (!slugid || resolvingInvites[n.id]) return;
+    setResolvingInvites(prev => ({ ...prev, [n.id]: true }));
     try {
-      if (accept) {
-        await fetch('/api/blogs/invite', {
+      const res = accept
+        ? await fetch('/api/blogs/invite', {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ slugid, accept: true }),
-        });
-      } else {
-        await fetch('/api/blogs/invite', {
+        })
+        : await fetch('/api/blogs/invite', {
           method: 'DELETE', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ slugid }),
         });
-      }
+      if (!res.ok) throw new Error('Failed to update invitation');
+      setResolvedInvites(prev => ({ ...prev, [n.id]: accept ? 'accepted' : 'declined' }));
       if (!n.read) markRead(n.id);
     } catch {
-      setResolvedInvites(prev => { const c = { ...prev }; delete c[n.id]; return c; });
+      // Keep the authoritative pending state visible so the user can retry.
+    } finally {
+      setResolvingInvites(prev => { const next = { ...prev }; delete next[n.id]; return next; });
     }
   };
 
@@ -267,6 +274,7 @@ export default function NotificationsPage() {
                 <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-default)' }}>
                   {items.map((n, i) => {
                     const cfg = NOTIF_CONFIG[n.type] || NOTIF_CONFIG.follow;
+                    const awardedBadge = n.type === 'badge_awarded' ? CREATOR_BADGE_MAP.get(n.target_id) : null;
                     return (
                       <Link
                         key={n.id}
@@ -282,7 +290,9 @@ export default function NotificationsPage() {
                       >
                         {/* Avatar + type badge */}
                         <div className="relative flex-shrink-0 mt-0.5">
-                          {n.actor_avatar ? (
+                          {awardedBadge ? (
+                            <CreatorBadgeMark badge={awardedBadge} size={42} />
+                          ) : n.actor_avatar ? (
                             <img src={n.actor_avatar} alt="" className="h-10 w-10 rounded-full object-cover" style={{ border: '2px solid var(--border-default)' }} />
                           ) : (
                             <div className="h-10 w-10 rounded-full flex items-center justify-center text-[14px] font-bold"
@@ -290,10 +300,12 @@ export default function NotificationsPage() {
                               {(n.actor_name || '?')[0].toUpperCase()}
                             </div>
                           )}
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--divider)' }}>
-                            <ion-icon name={cfg.icon} style={{ fontSize: '11px', color: cfg.color }} />
-                          </div>
+                          {!awardedBadge && (
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--divider)' }}>
+                              <ion-icon name={cfg.icon} style={{ fontSize: '11px', color: cfg.color }} />
+                            </div>
+                          )}
                         </div>
 
                         {/* Content */}
@@ -308,9 +320,9 @@ export default function NotificationsPage() {
                           <p className="text-[12px] mt-1.5" style={{ color: 'var(--text-faint)' }}>{timeAgo(n.created_at)}</p>
 
                           {n.type === 'blog_invite' && (
-                            resolvedInvites[n.id] ? (
-                              <p className="text-[12px] mt-2 font-medium" style={{ color: resolvedInvites[n.id] === 'accepted' ? '#4ade80' : 'var(--text-faint)' }}>
-                                {resolvedInvites[n.id] === 'accepted' ? 'Joined as collaborator' : 'Declined'}
+                            (resolvedInvites[n.id] || n.invite_status || 'pending') !== 'pending' ? (
+                              <p className="text-[12px] mt-2 font-medium" style={{ color: (resolvedInvites[n.id] || n.invite_status) === 'accepted' ? '#4ade80' : 'var(--text-faint)' }}>
+                                {(resolvedInvites[n.id] || n.invite_status) === 'accepted' ? 'Joined as collaborator' : 'Declined'}
                               </p>
                             ) : (
                               <div className="flex gap-2 mt-2.5">
@@ -318,13 +330,15 @@ export default function NotificationsPage() {
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); respondInvite(n, true); }}
                                   className="px-3 py-1 text-[12px] font-semibold rounded-full text-white"
                                   style={{ backgroundColor: '#9b7bf7' }}
+                                  disabled={!!resolvingInvites[n.id]}
                                 >
-                                  Accept
+                                  {resolvingInvites[n.id] ? 'Saving…' : 'Accept'}
                                 </button>
                                 <button
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); respondInvite(n, false); }}
                                   className="px-3 py-1 text-[12px] font-medium rounded-full"
                                   style={{ color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
+                                  disabled={!!resolvingInvites[n.id]}
                                 >
                                   Decline
                                 </button>

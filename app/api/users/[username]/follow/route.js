@@ -47,6 +47,10 @@ export async function POST(request, { params }) {
     // following) must not stack duplicate "started following you" notifications.
     const isNewFollow = (ins?.meta?.changes ?? 1) > 0;
     if (isNewFollow) try {
+      await db.prepare("INSERT INTO creator_follow_events (id, target_type, target_id, follower_id, delta) VALUES (?, 'user', ?, ?, 1)")
+        .bind(crypto.randomUUID(), target.id, session.userId).run();
+    } catch {}
+    if (isNewFollow) try {
       const { notify } = await import('../../../../../lib/notify');
       const actor = session.profile || {};
       await notify(db, {
@@ -75,9 +79,13 @@ export async function DELETE(request, { params }) {
     const db = getDB();
     const target = await getTarget(db, username);
     if (!target) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    await db.prepare(
+    const removed = await db.prepare(
       "DELETE FROM follows WHERE follower_id = ? AND following_id = ? AND following_type = 'user'"
     ).bind(session.userId, target.id).run();
+    if ((removed?.meta?.changes || 0) > 0) try {
+      await db.prepare("INSERT INTO creator_follow_events (id, target_type, target_id, follower_id, delta) VALUES (?, 'user', ?, ?, -1)")
+        .bind(crypto.randomUUID(), target.id, session.userId).run();
+    } catch {}
     return NextResponse.json({ following: false });
   } catch {
     return NextResponse.json({ error: 'Failed to unfollow' }, { status: 500 });

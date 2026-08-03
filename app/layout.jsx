@@ -143,6 +143,40 @@ export default function RootLayout({ children }) {
             } catch(e) {}
           })();
         `}} />
+        {/* Recover once when cached HTML references a chunk from an older deploy. */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            var key = 'lixblogs_chunk_recovery:' + location.pathname;
+            function recover(value) {
+              var text = String(value || '');
+              if (!/ChunkLoadError|Loading chunk|_next\\/static\\/chunks/i.test(text)) return;
+              try {
+                var last = Number(sessionStorage.getItem(key) || 0);
+                if (Date.now() - last < 60000) return;
+                sessionStorage.setItem(key, String(Date.now()));
+              } catch (_) {}
+              var url = new URL(location.href);
+              url.searchParams.set('__chunk_retry', String(Date.now()));
+              location.replace(url.toString());
+            }
+            addEventListener('error', function (event) {
+              recover((event.message || '') + ' ' + (event.filename || '') + ' ' + (event.target && event.target.src || ''));
+            }, true);
+            addEventListener('unhandledrejection', function (event) {
+              recover(event.reason && (event.reason.stack || event.reason.message) || event.reason);
+            });
+            addEventListener('load', function () {
+              setTimeout(function () {
+                try { sessionStorage.removeItem(key); } catch (_) {}
+                var url = new URL(location.href);
+                if (url.searchParams.has('__chunk_retry')) {
+                  url.searchParams.delete('__chunk_retry');
+                  history.replaceState(history.state, '', url.toString());
+                }
+              }, 10000);
+            });
+          })();
+        `}} />
       </head>
       <body className="antialiased" style={{ fontFamily: "'Source Serif 4', 'Georgia', serif" }}>
         <ThemeProvider>

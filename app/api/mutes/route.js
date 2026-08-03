@@ -22,11 +22,27 @@ export async function GET() {
 export async function POST(request) {
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  const { targetType, targetId } = await request.json();
+  const { targetType, targetId, blogId } = await request.json();
   if (!TYPES.has(targetType) || !targetId) return NextResponse.json({ error: 'Invalid target' }, { status: 400 });
   try {
     const { getDB } = await import('../../../lib/cloudflare');
     const db = getDB();
+    if (targetType === 'author' && String(targetId) === session.userId) {
+      return NextResponse.json({ error: 'Cannot mute yourself' }, { status: 400 });
+    }
+    if (targetType === 'org') {
+      const owned = await db.prepare(`
+        SELECT 1 FROM orgs o LEFT JOIN org_members om ON om.org_id = o.id AND om.user_id = ?
+        WHERE o.id = ? AND (o.owner_id = ? OR om.user_id IS NOT NULL)
+      `).bind(session.userId, String(targetId), session.userId).first();
+      if (owned) return NextResponse.json({ error: 'Cannot mute your own publication' }, { status: 400 });
+    }
+    if (targetType === 'tag' && blogId) {
+      const { canEditBlog } = await import('../../../lib/permissions');
+      if ((await canEditBlog(db, blogId, session.userId)).ok) {
+        return NextResponse.json({ error: 'Cannot mute topics from your own story' }, { status: 400 });
+      }
+    }
     await db.prepare(
       'INSERT OR IGNORE INTO mutes (user_id, target_type, target_id) VALUES (?, ?, ?)'
     ).bind(session.userId, targetType, String(targetId)).run();

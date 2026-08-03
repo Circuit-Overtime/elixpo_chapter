@@ -7,6 +7,134 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { generateBlogThumbnail } from './utils/pixelAvatar';
 import SearchBar from './components/SearchBar';
+import { ONBOARDING_TIP_DAYS, tipForDay } from './utils/siteTips';
+
+const TIP_STORAGE_KEY = 'lixblogs:onboarding-tip';
+const ACTIONS_STORAGE_KEY = 'lixblogs:onboarding-actions';
+
+const ONBOARDING_ACTIONS = [
+  { label: 'Write a story', description: 'Start with an idea', href: '/new-blog', icon: 'create-outline', color: '#9b7bf7' },
+  { label: 'Complete profile', description: 'Help readers know you', href: '/settings?tab=account', icon: 'person-circle-outline', color: '#3b82f6' },
+  { label: 'Explore badges', description: 'See what you can earn', href: '/badges', icon: 'ribbon-outline', color: '#ec4899' },
+  { label: 'Publishing basics', description: 'Know what works here', href: '/docs', icon: 'shield-checkmark-outline', color: '#10b981' },
+];
+
+function NewUserActions({ user, authLoading }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (authLoading || !user) {
+      setVisible(false);
+      return;
+    }
+    const createdAt = Number(user.created_at || 0);
+    const ageDays = createdAt ? (Date.now() - createdAt * 1000) / 86_400_000 : 0;
+    if (ageDays > ONBOARDING_TIP_DAYS) {
+      localStorage.removeItem(ACTIONS_STORAGE_KEY);
+      setVisible(false);
+      return;
+    }
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(ACTIONS_STORAGE_KEY) || 'null'); } catch {}
+    setVisible(!(stored?.userId === user.id && stored?.dismissed));
+  }, [authLoading, user]);
+
+  if (!visible) return null;
+  return (
+    <section className="relative mb-4 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4" aria-label="Getting started">
+      <div className="mb-3 flex items-start justify-between gap-4 pr-7">
+        <div>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Make LixBlogs yours</p>
+          <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">A few good places to begin.</p>
+        </div>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {ONBOARDING_ACTIONS.map((action) => (
+          <Link
+            key={action.href}
+            href={action.href}
+            className="group flex min-w-[150px] flex-1 items-center gap-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-app)] px-3 py-2.5 transition-all hover:-translate-y-0.5 hover:border-[var(--border-hover)] hover:shadow-sm"
+          >
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg" style={{ color: action.color, backgroundColor: `color-mix(in srgb, ${action.color} 12%, transparent)` }}>
+              <ion-icon name={action.icon} style={{ fontSize: '16px' }} />
+            </span>
+            <span className="min-w-0">
+              <span className="block whitespace-nowrap text-[12px] font-semibold text-[var(--text-primary)]">{action.label}</span>
+              <span className="block whitespace-nowrap text-[10px] text-[var(--text-faint)]">{action.description}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          localStorage.setItem(ACTIONS_STORAGE_KEY, JSON.stringify({ userId: user.id, dismissed: true }));
+          setVisible(false);
+        }}
+        className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full text-[var(--text-faint)] transition-colors hover:bg-[var(--bg-hover)]"
+        aria-label="Dismiss getting started"
+      >
+        <ion-icon name="close-outline" style={{ fontSize: '16px' }} />
+      </button>
+    </section>
+  );
+}
+
+function DailyTipCard({ user, authLoading }) {
+  const [dailyTip, setDailyTip] = useState(null);
+
+  useEffect(() => {
+    if (authLoading) return;
+    const createdAt = Number(user?.created_at || 0);
+    if (createdAt) {
+      const ageDays = (Date.now() - createdAt * 1000) / 86_400_000;
+      if (ageDays > ONBOARDING_TIP_DAYS) {
+        localStorage.removeItem(TIP_STORAGE_KEY);
+        setDailyTip(null);
+        return;
+      }
+    }
+
+    const selected = tipForDay(user?.id || user?.username || 'guest');
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(TIP_STORAGE_KEY) || 'null'); } catch {}
+    if (stored?.day === selected.day && stored?.dismissed) return;
+    localStorage.setItem(TIP_STORAGE_KEY, JSON.stringify({ day: selected.day, dismissed: false }));
+    setDailyTip(selected);
+  }, [authLoading, user?.id, user?.username, user?.created_at]);
+
+  if (!dailyTip) return null;
+  return (
+    <aside
+      className="relative mb-4 overflow-hidden rounded-2xl px-5 py-4"
+      style={{ background: 'linear-gradient(135deg, var(--accent-subtle), var(--bg-surface) 72%)', border: '1px solid color-mix(in srgb, var(--accent) 25%, var(--border-default))' }}
+      aria-label="Tip of the day"
+    >
+      <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full opacity-10" style={{ backgroundColor: 'var(--accent)' }} />
+      <div className="relative flex items-start gap-3 pr-8">
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ color: 'var(--accent)', backgroundColor: 'var(--bg-surface)' }}>
+          <ion-icon name="bulb-outline" style={{ fontSize: '17px' }} />
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--accent)' }}>Tip of the day</p>
+          <p className="mt-1 text-[13px] leading-5" style={{ color: 'var(--text-body)' }}>{dailyTip.tip}</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          localStorage.setItem(TIP_STORAGE_KEY, JSON.stringify({ day: dailyTip.day, dismissed: true }));
+          setDailyTip(null);
+        }}
+        className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-hover)]"
+        style={{ color: 'var(--text-faint)' }}
+        aria-label="Dismiss today's tip"
+      >
+        <ion-icon name="close-outline" style={{ fontSize: '16px' }} />
+      </button>
+    </aside>
+  );
+}
 
 function timeAgo(ts) {
   if (!ts) return '';
@@ -34,7 +162,7 @@ function AuthorStack({ authors }) {
 
 // "..." menu — follow author/publication, mute author/publication/topics, report.
 function FeedCardMenu({ post, onHide }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const [fAuthor, setFAuthor] = useState(false);
   const [isSelf, setIsSelf] = useState(false);
@@ -42,6 +170,9 @@ function FeedCardMenu({ post, onHide }) {
   const ref = useRef(null);
   const author = post.author || {};
   const org = post.org || null;
+  const ownsPost = !!post.can_edit;
+  const ownsAuthor = !!post.is_author || (!!user && post.author_id === user.id);
+  const ownsPublication = !!org && ownsPost;
 
   useEffect(() => {
     if (!open) return;
@@ -64,7 +195,7 @@ function FeedCardMenu({ post, onHide }) {
   const followOrg = () => { if (needAuth() || fOrg) return; setFOrg(true); post_(`/api/orgs/${org.slug}/follow`); setOpen(false); };
   const muteAuthor = () => { if (needAuth()) return; post_('/api/mutes', { targetType: 'author', targetId: post.author_id }); setOpen(false); onHide?.(post.id); };
   const muteOrg = () => { if (needAuth()) return; post_('/api/mutes', { targetType: 'org', targetId: org.id }); setOpen(false); onHide?.(post.id); };
-  const muteTopics = () => { if (needAuth()) return; (post.tags || []).forEach(t => post_('/api/mutes', { targetType: 'tag', targetId: t })); setOpen(false); onHide?.(post.id); };
+  const muteTopics = () => { if (needAuth()) return; (post.tags || []).forEach(t => post_('/api/mutes', { targetType: 'tag', targetId: t, blogId: post.id })); setOpen(false); onHide?.(post.id); };
   const report = () => {
     if (needAuth()) return;
     setOpen(false);
@@ -88,14 +219,24 @@ function FeedCardMenu({ post, onHide }) {
       </button>
       {open && (
         <div className="absolute right-0 top-9 z-50 w-56 rounded-xl py-1.5 overflow-hidden" style={{ backgroundColor: 'var(--dropdown-bg, var(--bg-surface))', border: '1px solid var(--border-default)', boxShadow: '0 12px 40px rgba(0,0,0,0.35)' }}>
-          {!isSelf && item(fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`, followAuthor, false, false, fAuthor)}
-          {org && item(fOrg ? `Following ${org.name}` : `Follow ${org.name}`, followOrg, false, false, fOrg)}
-          <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
-          {!isSelf && item('Mute author', muteAuthor)}
-          {org && item('Mute publication', muteOrg)}
-          {(post.tags || []).length > 0 && item('Mute topics', muteTopics, false, true)}
-          <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
-          {!isSelf && item('Report story…', report, true)}
+          {ownsPost ? (
+            <>
+              {item('Edit story', () => { window.location.href = `/edit/${post.slug || post.id}`; })}
+              {item('Story settings', () => { window.location.href = `/edit/${post.slug || post.id}?panel=settings`; })}
+              {ownsPublication && item('Publication settings', () => { window.location.href = `/settings/org/${org.slug}`; })}
+            </>
+          ) : (
+            <>
+              {!ownsAuthor && !isSelf && item(fAuthor ? `Following ${author.display_name || author.username}` : `Follow ${author.display_name || author.username}`, followAuthor, false, false, fAuthor)}
+              {org && !ownsPublication && item(fOrg ? `Following ${org.name}` : `Follow ${org.name}`, followOrg, false, false, fOrg)}
+              <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
+              {!ownsAuthor && !isSelf && item('Mute author', muteAuthor)}
+              {org && !ownsPublication && item('Mute publication', muteOrg)}
+              {(post.tags || []).length > 0 && item('Mute topics', muteTopics, false, true)}
+              <div className="my-1.5" style={{ borderTop: '1px solid var(--divider)' }} />
+              {item('Report story…', report, true)}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -180,12 +321,31 @@ function FeedCardActions({ post, onHide }) {
 }
 
 function FeedCard({ post, onHide }) {
+  const cardRef = useRef(null);
   const author = post.author || {};
   const cover = post.cover_image_r2_key || generateBlogThumbnail(post.id || post.slug);
   const href = `/${(post.org?.slug) || author.username || 'unknown'}/${post.slug}`;
   const allAuthors = [{ display_name: author.display_name, username: author.username, avatar_url: author.avatar_url }, ...(post.co_authors || [])];
+
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card || !post.id || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= 0.5)) return;
+      fetch('/api/analytics/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blogId: post.id, eventType: 'impression', referrer: window.location.href }),
+        keepalive: true,
+      }).catch(() => {});
+      observer.disconnect();
+    }, { threshold: 0.5 });
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [post.id]);
+
   return (
-    <article className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
+    <article ref={cardRef} className="group py-6" style={{ borderBottom: '1px solid var(--divider)' }}>
       {post.reshared_by && (
         <div className="flex items-center gap-1.5 mb-2 text-[12px] font-medium" style={{ color: 'var(--text-faint)' }}>
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg>
@@ -391,7 +551,7 @@ function recommendedTopics(interests, popular) {
 }
 
 export default function App() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [posts, setPosts] = useState([]);
   const [topPicks, setTopPicks] = useState([]);
   const [popularTags, setPopularTags] = useState([]);
@@ -480,6 +640,8 @@ export default function App() {
 
           {/* Feed */}
           <div className="px-6 pt-4 max-w-[680px] mx-auto">
+            <NewUserActions user={user} authLoading={authLoading} />
+            <DailyTipCard user={user} authLoading={authLoading} />
             {tagFilter && (
               <div className="flex items-center gap-2 mb-1 py-2">
                 <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Topic:</span>
@@ -512,7 +674,7 @@ export default function App() {
         </div>
 
         {/* Right Sidebar */}
-        <aside className="hidden xl:block w-[340px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto px-8 py-6 scrollbar-thin">
+        <aside className="hidden xl:block w-[340px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto px-8 py-6 scrollbar-none">
           {/* Top Picks */}
           <div className="mb-8">
             <h3 className="text-[13px] font-bold pb-2 mb-3 tracking-wider uppercase flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>

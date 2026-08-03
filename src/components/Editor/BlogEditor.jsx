@@ -34,6 +34,7 @@ import { BlogMentionInline } from './blocks/BlogMentionInline';
 import { OrgMentionInline } from './blocks/OrgMentionInline';
 import { InlineButton } from './blocks/InlineButton';
 import { normalizeUrl } from '../../utils/linkHelper';
+import { createMediaUploadId, enqueueMediaUpload } from '../../utils/mediaUploadQueue';
 
 // AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
 // are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
@@ -734,7 +735,7 @@ function doSanitize(blocks) {
   return result;
 }
 
-const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded, editable = true, secret = false }, ref) {
+const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, mediaStorageStatus, mediaStorageReturnTo, collaboration, onCollabSeeded, editable = true, secret = false }, ref) {
   const { isDark } = useTheme();
   const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
   const [showMentionMenu, setShowMentionMenu] = useState(false);
@@ -765,6 +766,44 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
   const inlineLatexRef = useRef(null);
   const editorLinkPreview = useLinkPreview();
   const [linkEditor, setLinkEditor] = useState(null); // { anchorText, url, pos, linkEl, range }
+  const [shorteningLink, setShorteningLink] = useState(false);
+  const [linkShortenError, setLinkShortenError] = useState('');
+
+  const shortenCurrentLink = async () => {
+    const normalizedUrl = normalizeUrl(linkEditor?.url || '');
+    if (!normalizedUrl || !/^https?:\/\//i.test(normalizedUrl) || shorteningLink) return;
+    try {
+      const parsed = new URL(normalizedUrl);
+      if (parsed.hostname === 'lixrl.com' || parsed.hostname.endsWith('.lixrl.com')) {
+        setLinkShortenError('This link is already shortened with LixRL.');
+        return;
+      }
+    } catch {
+      setLinkShortenError('Enter a valid web address first.');
+      return;
+    }
+
+    setShorteningLink(true);
+    setLinkShortenError('');
+    try {
+      const response = await fetch('/api/integrations/lixrl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'shorten',
+          url: normalizedUrl,
+          title: linkEditor?.anchorText?.trim() || undefined,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to shorten this URL');
+      setLinkEditor(prev => prev ? { ...prev, url: data.short_url } : prev);
+    } catch (error) {
+      setLinkShortenError(error.message || 'Unable to shorten this URL');
+    } finally {
+      setShorteningLink(false);
+    }
+  };
 
   // Link preview hover listeners on editor links
   useEffect(() => {
@@ -774,7 +813,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
     const handleMouseOver = (e) => {
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
-      if (document.querySelector('.bn-link-toolbar')) return;
+      if (document.querySelector('.bn-link-toolbar') || document.querySelector('.link-editor-popup')) return;
       const href = link.getAttribute('href');
       if (href) {
         const normalized = normalizeUrl(href);
@@ -792,6 +831,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
     // Ctrl+Click (or Cmd+Click) to open link in new tab
     const handleClick = (e) => {
+      editorLinkPreview.hide();
       if (!(e.ctrlKey || e.metaKey)) return;
       const link = e.target.closest('a[href]');
       if (!link || link.closest('.bn-link-toolbar') || link.closest('.bn-toolbar')) return;
@@ -1588,9 +1628,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           if (!cursor?.block) return;
 
           // Insert image block with loading placeholder + empty paragraph below
+          const uploadJobId = createMediaUploadId();
           editor.insertBlocks(
             [
-              { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading' } },
+              { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading', _uploadJobId: uploadJobId } },
               { type: 'paragraph', content: [] },
             ],
             cursor.block,
@@ -1616,22 +1657,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
               const { compressBlogImage } = await import('../../utils/compressImage');
               const { blob } = await compressBlogImage(file);
 
-              const formData = new FormData();
-              formData.append('file', blob, `image_${Date.now()}.webp`);
-              if (blogId) formData.append('blogId', blogId);
-              formData.append('type', 'image');
-
-              const res = await fetch('/api/media/upload', {
-                method: 'POST',
-                body: formData,
-              });
-
-              if (!res.ok) throw new Error('Upload failed');
-              const data = await res.json();
+              const data = await enqueueMediaUpload(blob, { id: uploadJobId, filename: `image_${uploadJobId}.webp`, blogId, type: 'image' });
 
               editor.updateBlock(newBlock.id, {
                 type: 'image',
-                props: { url: data.url, caption: '', previewWidth: 740, _uploading: '' },
+                props: { url: data.url, caption: '', previewWidth: 740, _uploading: '', _uploadJobId: '', _mediaId: data.id || '' },
               });
             } catch (err) {
               console.error('Clipboard image upload failed:', err);
@@ -1661,9 +1691,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       const cursor = editor.getTextCursorPosition();
       if (!cursor?.block) return;
 
+      const uploadJobId = createMediaUploadId();
       editor.insertBlocks(
         [
-          { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading' } },
+          { type: 'image', props: { url: '', caption: '', previewWidth: 740, _uploading: 'uploading', _uploadJobId: uploadJobId } },
           { type: 'paragraph', content: [] },
         ],
         cursor.block,
@@ -1687,18 +1718,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
           const { compressBlogImage } = await import('../../utils/compressImage');
           const { blob } = await compressBlogImage(file);
 
-          const formData = new FormData();
-          formData.append('file', blob, `image_${Date.now()}.webp`);
-          if (blogId) formData.append('blogId', blogId);
-          formData.append('type', 'image');
-
-          const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
-          if (!res.ok) throw new Error('Upload failed');
-          const data = await res.json();
+          const data = await enqueueMediaUpload(blob, { id: uploadJobId, filename: `image_${uploadJobId}.webp`, blogId, type: 'image' });
 
           editor.updateBlock(dropBlock.id, {
             type: 'image',
-            props: { url: data.url, caption: '', previewWidth: 740, _uploading: '' },
+            props: { url: data.url, caption: '', previewWidth: 740, _uploading: '', _uploadJobId: '', _mediaId: data.id || '' },
           });
         } catch (err) {
           console.error('Dropped image upload failed:', err);
@@ -2817,7 +2841,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         setPageMenu({ x: Math.min(e.clientX, window.innerWidth - 230), y: Math.min(e.clientY, window.innerHeight - 320) });
       }}
     >
-      <BlogImageUploadContext.Provider value={{ blogId }}>
+      <BlogImageUploadContext.Provider value={{
+        blogId,
+        mediaStorageStatus,
+        mediaStorageReturnTo,
+      }}>
         <BlockNoteView
           editor={editor}
           onChange={handleChange}
@@ -3166,7 +3194,10 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                 <input
                   type="text"
                   value={linkEditor.url}
-                  onChange={(e) => setLinkEditor(prev => ({ ...prev, url: e.target.value }))}
+                  onChange={(e) => {
+                    setLinkEditor(prev => ({ ...prev, url: e.target.value }));
+                    setLinkShortenError('');
+                  }}
                   onKeyDown={(e) => {
                     e.stopPropagation();
                     if (e.key === 'Enter') {
@@ -3198,6 +3229,23 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
                   className="link-editor-input"
                 />
               </div>
+              <div className="link-editor-shortener">
+                <button
+                  type="button"
+                  className="link-editor-shorten"
+                  disabled={shorteningLink || !/^https?:\/\//i.test(normalizeUrl(linkEditor.url) || '')}
+                  onClick={shortenCurrentLink}
+                >
+                  <ion-icon name="flash-outline" />
+                  {shorteningLink ? 'Shortening…' : 'Shorten with LixRL'}
+                </button>
+                <a href="/settings?tab=integrations" className="link-editor-connect">Manage</a>
+              </div>
+              {linkShortenError && (
+                <p className="link-editor-error">
+                  {linkShortenError}{linkShortenError.toLowerCase().includes('connect') && <> <a href="/settings?tab=integrations">Open settings</a></>}
+                </p>
+              )}
             </div>
             <div className="link-editor-actions">
               <button className="link-editor-cancel" onClick={() => setLinkEditor(null)}>Cancel</button>

@@ -69,7 +69,7 @@ Elixpo ecosystem.
 | :art: | **Themes & Customization** | Light & dark modes, custom page colors, cover images, page emojis |
 | :link: | **Link Previews** | Hover any link to see a rich OG preview card with title, image, favicon |
 | :page_facing_up: | **Sub-Pages** | Nest pages inside your blog for structured, multi-page content |
-| :framed_picture: | **Media Uploads** | Drag & drop images, auto-compressed to WebP, tier-based storage |
+| :framed_picture: | **Media Uploads** | Drag & drop images, auto-compressed to WebP, with platform or creator-owned Cloudinary storage |
 | :bookmark_tabs: | **Library & Bookmarks** | Save posts, organize into collections, track reading history |
 
 </div>
