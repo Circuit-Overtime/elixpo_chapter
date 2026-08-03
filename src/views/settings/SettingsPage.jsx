@@ -1212,13 +1212,13 @@ function MediaTab() {
 }
 
 function IntegrationsTab() {
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [cloudinary, setCloudinary] = useState(null);
   const [cloudinaryLoading, setCloudinaryLoading] = useState(true);
-  const [cloudinaryUrl, setCloudinaryUrl] = useState('');
   const [cloudinaryBusy, setCloudinaryBusy] = useState(false);
   const [cloudinaryError, setCloudinaryError] = useState('');
 
@@ -1278,24 +1278,6 @@ function IntegrationsTab() {
   const usedUrls = account?.usage?.urls || 0;
   const usagePercent = maxUrls === -1 ? 0 : Math.min(100, Math.round((usedUrls / Math.max(maxUrls || 1, 1)) * 100));
 
-  const connectCloudinary = async () => {
-    setCloudinaryBusy(true);
-    setCloudinaryError('');
-    try {
-      const response = await fetch('/api/integrations/cloudinary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cloudinaryUrl }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Unable to connect Cloudinary');
-      setCloudinary(data);
-      setCloudinaryUrl('');
-    } catch (err) {
-      setCloudinaryError(err.message || 'Unable to connect Cloudinary');
-    } finally { setCloudinaryBusy(false); }
-  };
-
   const setCloudinaryStorage = async (useForUploads) => {
     setCloudinaryBusy(true);
     setCloudinaryError('');
@@ -1326,6 +1308,16 @@ function IntegrationsTab() {
       setCloudinaryError(err.message || 'Unable to remove Cloudinary');
     } finally { setCloudinaryBusy(false); }
   };
+
+  const oauthResult = searchParams.get('cloudinary');
+  const oauthMessage = {
+    connected: { ok: true, text: 'Cloudinary connected. New blog media can now use your product environment.' },
+    denied: { ok: false, text: 'Cloudinary authorization was cancelled.' },
+    invalid_state: { ok: false, text: 'The Cloudinary authorization session expired. Please try again.' },
+    storage_in_use: { ok: false, text: 'Delete media from the currently connected personal space before selecting another cloud.' },
+    config_error: { ok: false, text: 'Cloudinary OAuth is not configured on this deployment.' },
+    failed: { ok: false, text: 'Cloudinary could not be connected. Check the OAuth app scopes and redirect URI.' },
+  }[oauthResult];
 
   return (
     <div>
@@ -1394,16 +1386,21 @@ function IntegrationsTab() {
           </div>
         </div>
 
+        {oauthMessage && (
+          <p className={`mt-4 rounded-lg px-3 py-2 text-xs ${oauthMessage.ok ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'}`}>
+            {oauthMessage.text}
+          </p>
+        )}
+
         {cloudinaryLoading ? (
           <div className="mt-5 h-20 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />
         ) : !cloudinary?.connected ? (
-          <div className="mt-5 border-t border-[var(--border-default)] pt-4">
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">API environment URL</label>
-            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-              <input type="password" autoComplete="off" value={cloudinaryUrl} onChange={(event) => setCloudinaryUrl(event.target.value)} placeholder="cloudinary://API_KEY:API_SECRET@CLOUD_NAME" className="min-w-0 flex-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-app)] px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[#9b7bf7]" />
-              <button disabled={cloudinaryBusy || !cloudinaryUrl.trim()} onClick={connectCloudinary} className="rounded-lg bg-[#9b7bf7] px-4 py-2 text-xs font-semibold text-white hover:bg-[#8b6ae6] disabled:opacity-50">{cloudinaryBusy ? 'Checking…' : 'Connect Cloudinary'}</button>
+          <div className="mt-5 flex flex-col gap-3 border-t border-[var(--border-default)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-medium text-[var(--text-primary)]">Authorize with Cloudinary</p>
+              <p className="mt-1 text-[11px] text-[var(--text-faint)]">Choose a product environment on Cloudinary. LixBlogs never receives its API secret.</p>
             </div>
-            <p className="mt-2 text-[11px] text-[var(--text-faint)]">Copied from Cloudinary Console → API Keys. The API secret is encrypted before storage and is never returned to the browser.</p>
+            <a href="/api/integrations/cloudinary/connect" className="shrink-0 rounded-lg bg-[#9b7bf7] px-4 py-2 text-center text-xs font-semibold text-white hover:bg-[#8b6ae6]">Connect Cloudinary</a>
           </div>
         ) : (
           <div className="mt-5 border-t border-[var(--border-default)] pt-4">
@@ -1411,7 +1408,7 @@ function IntegrationsTab() {
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Connected product environment</p>
                 <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{cloudinary.cloudName}</p>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">{formatBytes(cloudinary.trackedBytes)} across {cloudinary.mediaCount} LixBlogs assets</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">{formatBytes(cloudinary.trackedBytes)} across {cloudinary.mediaCount} LixBlogs assets · {cloudinary.authMethod === 'oauth' ? 'OAuth' : 'API credential'}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button disabled={cloudinaryBusy} onClick={() => setCloudinaryStorage(!cloudinary.useForUploads)} className={`rounded-lg px-3 py-2 text-xs font-semibold disabled:opacity-50 ${cloudinary.useForUploads ? 'border border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]' : 'bg-[#9b7bf7] text-white hover:bg-[#8b6ae6]'}`}>{cloudinary.useForUploads ? 'Use LixBlogs storage' : 'Use personal storage'}</button>

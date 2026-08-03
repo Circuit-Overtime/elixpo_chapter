@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseCloudinaryUrl } from '../lib/cloudinaryConnections.js';
 import { decryptIntegrationSecret, encryptIntegrationSecret } from '../lib/integrationSecrets.js';
+import {
+  buildCloudinaryAuthorizationUrl,
+  resolveCloudinaryCloudName,
+  tokenExpiry,
+} from '../lib/cloudinaryOAuth.js';
+import { deleteFromCloudinary, uploadToCloudinary } from '../lib/cloudinary.js';
 
 test('Cloudinary environment URLs are parsed without exposing alternate schemes', () => {
   assert.deepEqual(
@@ -23,5 +29,69 @@ test('integration secrets round-trip through authenticated encryption', async ()
   } finally {
     if (previous === undefined) delete process.env.CLOUDINARY_CONNECTION_ENCRYPTION_KEY;
     else process.env.CLOUDINARY_CONNECTION_ENCRYPTION_KEY = previous;
+  }
+});
+
+test('Cloudinary OAuth authorization uses the registered callback and least scopes', () => {
+  const oldId = process.env.CLOUDINARY_OAUTH_CLIENT_ID;
+  const oldSecret = process.env.CLOUDINARY_OAUTH_CLIENT_SECRET;
+  process.env.CLOUDINARY_OAUTH_CLIENT_ID = 'client-id';
+  process.env.CLOUDINARY_OAUTH_CLIENT_SECRET = 'client-secret';
+  try {
+    const url = new URL(buildCloudinaryAuthorizationUrl({
+      origin: 'https://blogs.elixpo.com',
+      state: 'csrf-state',
+    }));
+    assert.equal(url.origin, 'https://oauth.cloudinary.com');
+    assert.equal(url.pathname, '/oauth2/auth');
+    assert.equal(url.searchParams.get('client_id'), 'client-id');
+    assert.equal(url.searchParams.get('redirect_uri'), 'https://blogs.elixpo.com/api/integrations/cloudinary/callback');
+    assert.equal(url.searchParams.get('scope'), 'upload asset_management offline_access');
+    assert.equal(url.searchParams.get('state'), 'csrf-state');
+  } finally {
+    if (oldId === undefined) delete process.env.CLOUDINARY_OAUTH_CLIENT_ID;
+    else process.env.CLOUDINARY_OAUTH_CLIENT_ID = oldId;
+    if (oldSecret === undefined) delete process.env.CLOUDINARY_OAUTH_CLIENT_SECRET;
+    else process.env.CLOUDINARY_OAUTH_CLIENT_SECRET = oldSecret;
+  }
+});
+
+test('Cloudinary OAuth resolves product environments and conservative expiry', async () => {
+  assert.equal(
+    await resolveCloudinaryCloudName({ cloud_name: 'creator-cloud', access_token: 'opaque' }),
+    'creator-cloud',
+  );
+  assert.equal(tokenExpiry(300, 1000), 1300);
+  assert.equal(tokenExpiry(undefined, 1000), 1300);
+});
+
+test('Cloudinary media operations authenticate OAuth connections with bearer tokens', async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url: String(url), options });
+    return new Response(JSON.stringify({ public_id: 'lixblogs/test/image', secure_url: 'https://example.test/image' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+  try {
+    const config = { cloudName: 'creator-cloud', oauthToken: 'access-token' };
+    await uploadToCloudinary(new Uint8Array([1, 2, 3]), {
+      folder: 'lixblogs/test',
+      publicId: 'image',
+      mimeType: 'image/webp',
+      config,
+    });
+    await deleteFromCloudinary('lixblogs/test/image', { config });
+    assert.equal(requests.length, 2);
+    for (const request of requests) {
+      assert.equal(request.options.headers.Authorization, 'Bearer access-token');
+      assert.match(request.url, /\/v1_1\/creator-cloud\/image\//);
+      assert.equal(request.options.body.has('api_key'), false);
+      assert.equal(request.options.body.has('signature'), false);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });

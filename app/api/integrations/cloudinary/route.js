@@ -9,6 +9,8 @@ import {
   saveCloudinaryConnection,
 } from '../../../../lib/cloudinaryConnections';
 import { testCloudinaryConfig } from '../../../../lib/cloudinary';
+import { decryptIntegrationSecret } from '../../../../lib/integrationSecrets';
+import { revokeCloudinaryToken } from '../../../../lib/cloudinaryOAuth';
 
 async function authenticatedContext() {
   const session = await getSession();
@@ -18,7 +20,7 @@ async function authenticatedContext() {
 
 async function connectionStatus(db, userId) {
   const connection = await db.prepare(`
-    SELECT cloud_name, enabled, created_at, updated_at
+    SELECT cloud_name, enabled, created_at, updated_at, auth_method
     FROM cloudinary_connections WHERE user_id = ?
   `).bind(userId).first();
   const usage = await db.prepare(`
@@ -29,6 +31,7 @@ async function connectionStatus(db, userId) {
     connected: !!connection,
     useForUploads: !!connection?.enabled,
     cloudName: connection?.cloud_name || null,
+    authMethod: connection?.auth_method || null,
     mediaCount: Number(usage?.count || 0),
     trackedBytes: Number(usage?.bytes || 0),
     connectedAt: connection?.created_at || null,
@@ -114,6 +117,18 @@ export async function DELETE() {
     return NextResponse.json({
       error: 'This connection still owns blog media. Delete those assets from the Media tab before removing it.',
     }, { status: 409 });
+  }
+  const connection = await context.db.prepare(`
+    SELECT auth_method, refresh_token_encrypted
+    FROM cloudinary_connections WHERE user_id = ?
+  `).bind(context.userId).first();
+  if (connection?.auth_method === 'oauth' && connection.refresh_token_encrypted) {
+    try {
+      const refreshToken = await decryptIntegrationSecret(connection.refresh_token_encrypted);
+      await revokeCloudinaryToken(refreshToken);
+    } catch (error) {
+      console.warn('[cloudinary/integration] Token revocation failed:', error?.message || error);
+    }
   }
   await context.db.prepare('DELETE FROM cloudinary_connections WHERE user_id = ?').bind(context.userId).run();
   return NextResponse.json(await connectionStatus(context.db, context.userId));
