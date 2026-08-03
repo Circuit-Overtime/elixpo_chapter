@@ -8,6 +8,14 @@ from lib.state.store import StateStore
 
 # --- scorer ---
 
+
+def test_github_settings_accepts_agentic_token_alias(monkeypatch):
+    from lib.config import GitHubSettings
+
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setenv("ELIXPOO_GITHUB_AGENTIC_TOKEN", "test-token")
+    assert GitHubSettings().token == "test-token"
+
 def test_scorer_good_first_issue_qualifies():
     s = IssueSignals(
         labels=["good first issue"],

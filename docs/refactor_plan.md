@@ -123,6 +123,22 @@ solvability gate below:
 Missing fields fail closed. The `good first issue` label is supporting evidence,
 not proof that the work is easy.
 
+### Local dry run
+
+The three stages only read public GitHub data and write local `state/*.json`;
+they do not comment, fork, or open a pull request:
+
+```bash
+python -m agents.scout
+python -m agents.triage
+python -m agents.pick
+```
+
+Local configuration loads from `.env.local`. Scout accepts either `GITHUB_TOKEN`
+or `ELIXPOO_GITHUB_AGENTIC_TOKEN`; triage also requires
+`ELIXPO_POLLINATIONS_API_KEY`. Inspect `state/candidates.json`,
+`state/triaged.json`, and `state/pick.json` after each stage.
+
 ---
 
 ## 5. Model routing (Pollinations)

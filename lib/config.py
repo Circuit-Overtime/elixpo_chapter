@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # repo root = parent of lib/
@@ -44,7 +44,10 @@ class GitHubSettings(BaseSettings):
     # Control repo holding state/, candidate issues, the Project board (owner/name).
     control_repo: str = Field(default="", validation_alias="ELIXPO_GITHUB_CONTROL_REPO")
     # Plain token for REST/search; Actions sets GITHUB_TOKEN. For local runs, a PAT.
-    token: str = Field(default="", validation_alias="GITHUB_TOKEN")
+    token: str = Field(
+        default="",
+        validation_alias=AliasChoices("GITHUB_TOKEN", "ELIXPOO_GITHUB_AGENTIC_TOKEN"),
+    )
     # OAuth App (BYOP / login flows) — not needed by squads, kept for completeness.
     client_id: str = Field(default="", validation_alias="ELIXPO_GITHUB_CLIENT_ID")
     client_secret: str = Field(default="", validation_alias="ELIXPO_GITHUB_CLIENT_SECRET")
