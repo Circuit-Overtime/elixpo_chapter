@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from agents.solve.core import SolveRejected, resolve_target, validate_plan
+import asyncio
+
+import httpx
+
+from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.git import CommandRejected, run_verification, validate_command
 from agents.solve.models import FileEdit, PlanStep, Replacement, SolvePlan
@@ -112,3 +116,54 @@ def test_owned_target_requires_matching_test_vet(tmp_path, monkeypatch):
         {"url": url, "suitable": True, "test_mode": True, "issue_updated_at": "2026-08-02T16:41:07Z"},
     )
     assert resolve_target(store, url, True) == url
+
+
+def test_fork_403_explains_fine_grained_permissions():
+    class API:
+        async def get_repo(self, owner, repo):
+            request = httpx.Request("GET", f"https://api.github.com/repos/{owner}/{repo}")
+            response = httpx.Response(404, request=request)
+            raise httpx.HTTPStatusError("missing", request=request, response=response)
+
+        async def _request(self, method, path, **kwargs):
+            if path == "/user":
+                return {"login": "elixpoo"}
+            request = httpx.Request(method, f"https://api.github.com{path}")
+            response = httpx.Response(
+                403,
+                request=request,
+                json={"message": "Resource not accessible by personal access token"},
+                headers={"X-Accepted-GitHub-Permissions": "administration=write; contents=read"},
+            )
+            raise httpx.HTTPStatusError("forbidden", request=request, response=response)
+
+    try:
+        asyncio.run(ensure_fork(API(), "elixpo", "lixrl.com", "elixpoo"))
+    except SolveRejected as exc:
+        message = str(exc)
+        assert "Administration: read/write" in message
+        assert "Resource not accessible by personal access token" in message
+    else:
+        raise AssertionError("fork permission failure was not translated")
+
+
+def test_fork_owner_cannot_be_another_personal_account():
+    class API:
+        async def get_repo(self, owner, repo):
+            request = httpx.Request("GET", f"https://api.github.com/repos/{owner}/{repo}")
+            response = httpx.Response(404, request=request)
+            raise httpx.HTTPStatusError("missing", request=request, response=response)
+
+        async def _request(self, method, path, **kwargs):
+            if path == "/user":
+                return {"login": "elixpoo"}
+            if path == "/users/someone-else":
+                return {"login": "someone-else", "type": "User"}
+            raise AssertionError("fork request must not be attempted")
+
+    try:
+        asyncio.run(ensure_fork(API(), "elixpo", "lixrl.com", "someone-else"))
+    except SolveRejected as exc:
+        assert "not the authenticated user" in str(exc)
+    else:
+        raise AssertionError("foreign personal fork owner passed")

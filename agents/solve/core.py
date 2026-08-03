@@ -115,11 +115,34 @@ async def ensure_fork(api, owner: str, repo: str, fork_owner: str) -> dict:
         if exc.response.status_code != 404:
             raise
 
-    payload: dict[str, str] = {}
     profile = await api._request("GET", "/user")
-    if fork_owner.casefold() != str(profile.get("login") or "").casefold():
+    login = str(profile.get("login") or "")
+    payload: dict[str, str] = {}
+    if fork_owner.casefold() != login.casefold():
+        destination = await api._request("GET", f"/users/{fork_owner}")
+        if str(destination.get("type") or "").casefold() != "organization":
+            raise SolveRejected(
+                f"fork destination {fork_owner} is not the authenticated user {login} or an organization"
+            )
         payload["organization"] = fork_owner
-    await api._request("POST", f"/repos/{owner}/{repo}/forks", json=payload)
+    try:
+        await api._request("POST", f"/repos/{owner}/{repo}/forks", json=payload)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code != 403:
+            raise
+        try:
+            github_message = str(exc.response.json().get("message") or "forbidden")
+        except (TypeError, ValueError):
+            github_message = "forbidden"
+        accepted = exc.response.headers.get("X-Accepted-GitHub-Permissions", "")
+        permission_hint = accepted or "administration=write, contents=read"
+        raise SolveRejected(
+            "GitHub denied fork creation "
+            f"from {owner}/{repo} to {fork_owner}/{repo} for {login}: {github_message}. "
+            "For a fine-grained token, select the source repository and grant "
+            f"Administration: read/write plus Contents: read ({permission_hint}); "
+            "the destination account must also allow repository creation."
+        ) from exc
     for _ in range(12):
         await asyncio.sleep(2)
         try:
