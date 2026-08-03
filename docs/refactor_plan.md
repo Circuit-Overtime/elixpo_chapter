@@ -54,6 +54,7 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 - **Agents:** label-classifier, complexity-estimator, reproducibility-checker, claim-checker (has anyone already said "I'll take this"?), priority-ranker
 - **Output:** A ranked `state/triaged.json` queue with score, scope, confidence, blockers, and an explicit `easy` verdict.
 - **Skill:** `skills/triage-solvable-issues/SKILL.md` (loaded into each routed triage call)
+- **Supply rule:** Inspect up to 16 Scout repositories and perform free PR-conflict checks on up to three times the paid shortlist. Routed triage remains capped at 12 issues.
 
 ### Pick — Final selection
 - **Trigger:** cron, separate window from Scout

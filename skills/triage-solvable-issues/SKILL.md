@@ -40,15 +40,20 @@ compete for work merely because GitHub has no assignee.
 Use these meanings consistently:
 
 - `trivial`: one obvious local edit with a direct verification path.
-- `small`: a bounded change likely touching one to five files in one subsystem.
-- `medium`: cross-file behavior, unfamiliar architecture, migrations, or several
-  interacting test paths even when the file estimate is low.
+- `small`: a bounded change likely touching one to five files in one subsystem;
+  an implementation file plus nearby tests and documentation can still be small.
+- `medium`: evidence shows several interacting components, cross-subsystem
+  behavior, migrations, or substantial fixture/integration work.
 - `large`: cross-package design, broad refactoring, compatibility work, or staged delivery.
 - `unknown`: the issue lacks enough evidence to bound the work.
 
 Estimate files from explicit paths, named components, analogous tests, or a
 clearly localized operation. Use `0` when evidence is insufficient. Do not turn
 `0` into `1` just to make an issue pass.
+
+Do not classify work as medium merely because the repository is unfamiliar or
+the contributor must read existing code and tests. Use confidence to represent
+uncertainty; use complexity to represent the evidenced change surface.
 
 ## Identify clear completion
 

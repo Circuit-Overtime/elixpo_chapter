@@ -32,9 +32,10 @@ from agents.triage.signals import (
 
 log = structlog.get_logger()
 
-MAX_REPOS = 8       # candidate repos to pull issues from
+MAX_REPOS = 16      # cover most of Scout's size-diverse list before giving up
 PER_REPO = 8        # issues per repo
 SHORTLIST = 12      # issues that get the (paid) LLM deep pass
+AVAILABILITY_POOL_FACTOR = 3  # free GitHub checks absorb occupied issues before model calls
 
 
 class TriagedIssue(BaseModel):
@@ -95,7 +96,7 @@ async def triage_candidates(
     # 3. Reject issues that already have a cross-referenced PR before spending
     #    model tokens. Inspect extra candidates so PR conflicts do not starve the
     #    paid shortlist.
-    timeline_pool = prelim[: shortlist * 2]
+    timeline_pool = prelim[: shortlist * AVAILABILITY_POOL_FACTOR]
     timelines = await gather_safe(
         [fetch_issue_timeline(api, x["repo"], x["issue"]["number"]) for x in timeline_pool],
         default=None,

@@ -272,6 +272,7 @@ async def test_extraction_uses_recent_dated_comments_and_marks_them_untrusted():
     assert "untrusted evidence" in system
     assert "# Triage Solvable Issues" in system
     assert "Classify scope conservatively" in system
+    assert "Do not classify work as medium merely because the repository is unfamiliar" in system
     assert "TRIAGE_TIME: 2026-06-20" in prompt
     assert "comment-25" in prompt
     assert "comment-1\n" not in prompt
@@ -369,6 +370,38 @@ async def test_triage_prefilter_avoids_spending_on_obvious_non_candidates():
     out = await triage_candidates(FakeAPI(issues), router, [{"full_name": "o/r"}], NOW)
     assert out == []
     assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_default_triage_supply_reaches_beyond_first_eight_repositories():
+    from agents.triage.__main__ import triage_candidates
+
+    class RepoAwareAPI(FakeAPI):
+        async def _request(self, method, path, **kwargs):
+            if path.startswith("/repos/") and path.endswith("/issues"):
+                repo = path.split("/")[3]
+                return [_issue(90)] if repo == "repo-9" else []
+            return await super()._request(method, path, **kwargs)
+
+    router = FakeRouter(
+        {
+            "has_acceptance_criterion": True,
+            "has_repro_steps": False,
+            "tractable": True,
+            "complexity": "small",
+            "estimated_files": 2,
+            "confidence": 0.9,
+            "needs_maintainer_decision": False,
+            "needs_external_access": False,
+            "needs_specialized_hardware": False,
+            "rationale": "bounded change",
+        }
+    )
+    candidates = [{"full_name": f"o/repo-{index}"} for index in range(1, 10)]
+    out = await triage_candidates(RepoAwareAPI([]), router, candidates, NOW)
+    assert len(out) == 1
+    assert out[0].repo == "o/repo-9"
+    assert router.calls == 1
 
 
 @pytest.mark.asyncio
