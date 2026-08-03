@@ -8,6 +8,8 @@ squad's job — it fills IssueSignals, then calls score(). Threshold ≥ 8 to qu
 
 from __future__ import annotations
 
+from math import isfinite
+
 from pydantic import BaseModel, Field
 
 THRESHOLD = 8
@@ -88,7 +90,7 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
     blockers: list[str] = []
     labels = _labels(signals)
 
-    if not extracted.get("tractable", False):
+    if extracted.get("tractable") is not True:
         blockers.append("not confirmed tractable")
 
     complexity = str(extracted.get("complexity", "unknown")).casefold()
@@ -106,6 +108,8 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
         confidence = float(extracted.get("confidence", 0.0))
     except (TypeError, ValueError):
         confidence = 0.0
+    if not isfinite(confidence) or not 0.0 <= confidence <= 1.0:
+        confidence = 0.0
     if confidence < MIN_SOLVABILITY_CONFIDENCE:
         blockers.append(f"solvability confidence {confidence:.2f} is below {MIN_SOLVABILITY_CONFIDENCE:.2f}")
 
@@ -114,7 +118,7 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
         "needs_external_access": "needs external access or credentials",
         "needs_specialized_hardware": "needs specialized hardware",
     }
-    blockers.extend(reason for field, reason in hard_flags.items() if extracted.get(field, False))
+    blockers.extend(reason for field, reason in hard_flags.items() if extracted.get(field) is not False)
 
     completion_is_clear = signals.has_acceptance_criterion or (
         "bug" in labels and signals.has_repro_steps

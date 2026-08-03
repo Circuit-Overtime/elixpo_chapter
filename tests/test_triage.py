@@ -17,7 +17,7 @@ def _issue(number=1, **kw):
         "number": number,
         "title": f"issue {number}",
         "html_url": f"https://github.com/o/r/issues/{number}",
-        "body": "Steps to reproduce: ...",
+        "body": "Steps to reproduce: run the command, then observe the documented failure output.",
         "labels": [{"name": "good first issue"}],
         "assignees": [],
         "author_association": "NONE",
@@ -50,6 +50,21 @@ def test_merge_signals_maps_llm_fuzzy():
     assert sig.no_maintainer_claim is False
 
 
+def test_merge_signals_rejects_boolean_like_strings():
+    det = deterministic_signals(_issue(), NOW)
+    sig = merge_signals(
+        det,
+        {
+            "has_acceptance_criterion": "true",
+            "someone_claimed_recently": "false",
+            "touches_internal_paths": "false",
+        },
+    )
+    assert sig.has_acceptance_criterion is False
+    assert sig.someone_claimed_recently is False
+    assert sig.touches_internal_paths is False
+
+
 # --- orchestration ---
 
 class FakeAPI:
@@ -69,15 +84,40 @@ class FakeRouter:
     def __init__(self, payload):
         self._payload = payload
         self.calls = 0
+        self.last_messages = []
 
     async def call(self, role, messages, **kw):
         self.calls += 1
+        self.last_messages = messages
         content = json.dumps(self._payload)
         return ChatCompletionResponse(
             id="x",
             choices=[Choice(index=0, message=Message(role="assistant", content=content))],
             usage=Usage(total_tokens=50),
         )
+
+
+@pytest.mark.asyncio
+async def test_extraction_uses_recent_dated_comments_and_marks_them_untrusted():
+    from agents.triage.extract import extract_issue_signals
+
+    router = FakeRouter({"tractable": False, "rationale": "claimed"})
+    comments = [
+        {
+            "created_at": f"2026-06-{day:02d}T00:00:00Z",
+            "body": f"comment-{day}",
+            "user": {"login": "person"},
+            "author_association": "NONE",
+        }
+        for day in range(1, 26)
+    ]
+    await extract_issue_signals(router, _issue(), comments, NOW)
+    system = router.last_messages[0].content
+    prompt = router.last_messages[1].content
+    assert "untrusted evidence" in system
+    assert "TRIAGE_TIME: 2026-06-20" in prompt
+    assert "comment-25" in prompt
+    assert "comment-1\n" not in prompt
 
 
 @pytest.mark.asyncio
@@ -153,3 +193,19 @@ async def test_triage_rejects_ambiguous_or_privileged_work():
     assert out[0].easy is False
     assert "needs a maintainer decision" in out[0].blockers
     assert "needs external access or credentials" in out[0].blockers
+
+
+@pytest.mark.asyncio
+async def test_triage_prefilter_avoids_spending_on_obvious_non_candidates():
+    from agents.triage.__main__ import triage_candidates
+
+    router = FakeRouter({})
+    issues = [
+        _issue(1, assignees=[{"login": "claimed"}]),
+        _issue(2, labels=[{"name": "needs-design"}]),
+        _issue(3, body="too short"),
+        _issue(4, locked=True),
+    ]
+    out = await triage_candidates(FakeAPI(issues), router, [{"full_name": "o/r"}], NOW)
+    assert out == []
+    assert router.calls == 0

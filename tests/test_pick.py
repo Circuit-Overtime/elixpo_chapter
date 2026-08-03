@@ -43,6 +43,15 @@ def test_below_threshold_and_untractable_skipped():
     assert select_top([_t("o/a", 1, 20, easy=False)], Ledger(), DAY) is None
 
 
+def test_lower_scoring_easy_issue_beats_high_scoring_blocked_issue():
+    pick = select_top(
+        [_t("o/risky", 1, 20, easy=False), _t("o/bounded", 2, 11)],
+        Ledger(),
+        DAY,
+    )
+    assert pick["repo"] == "o/bounded"
+
+
 def test_dedup_already_picked():
     led = Ledger()
     led.record_pr("o/b#2", PRRecord(status="claimed"), DAY)

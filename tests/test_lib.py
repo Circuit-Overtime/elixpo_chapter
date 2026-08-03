@@ -55,6 +55,9 @@ def test_easy_issue_requires_bounded_clear_scope():
             "complexity": "small",
             "estimated_files": 4,
             "confidence": 0.85,
+            "needs_maintainer_decision": False,
+            "needs_external_access": False,
+            "needs_specialized_hardware": False,
         },
     )
     assert verdict.easy is True

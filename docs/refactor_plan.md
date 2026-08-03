@@ -42,22 +42,22 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 ### Scout — Discovery
 - **Trigger:** cron, daily
 - **Budget:** 10 min
-- **Job:** Sweep GitHub for candidate repos. Filters: 100–50k stars, active in last 30 days, has CONTRIBUTING.md, accepts PRs, language whitelist, not in blocklist.
+- **Job:** Sweep GitHub for candidate repos. Hard filters: 100–50k stars, active in last 30 days, declared license, issues enabled, not a fork, language whitelist, not in blocklist or opted out. Rank by contribution guidance, recent activity, and a manageable issue backlog; popularity is secondary.
 - **Agents:** trending-crawler, topic-crawler, language-specialist, repo-health-scorer, blocklist-checker, opt-out-checker
 - **Output:** ~20 candidate repos written to `state/candidates.json`
 
 ### Triage — Issue selection
 - **Trigger:** on Scout completion
 - **Budget:** 15 min
-- **Job:** Pull issues from approved repos, score them, open candidate issues in control repo
+- **Job:** Pull good-first issues from approved repos, discard obvious non-candidates, score the remainder, and assess bounded solvability.
 - **Agents:** label-classifier, complexity-estimator, reproducibility-checker, claim-checker (has anyone already said "I'll take this"?), priority-ranker
-- **Output:** ≤10 issues opened in control repo, labelled `triaged`, with full context in the body
+- **Output:** A ranked `state/triaged.json` queue with score, scope, confidence, blockers, and an explicit `easy` verdict.
 
 ### Pick — Final selection
 - **Trigger:** cron, separate window from Scout
 - **Budget:** 5 min
-- **Job:** Select top 4–5 from `triaged` queue by score, post the "picking this up" comment on the upstream issue, label control-repo issue `claimed`
-- **Output:** 4–5 claimed issues, comments posted upstream
+- **Job:** Select one eligible issue that passes both the community score and the fail-closed easy-work gate, then record it before implementation starts.
+- **Output:** One justified choice in `state/pick.json`; the ledger prevents duplicate picks and parallel work in the same repository.
 
 ### Comprehend — Context loading
 *(Runs as the first step of Solve, not a separate workflow.)*
@@ -108,6 +108,20 @@ A scored decision, not a single rule. An issue qualifies if total ≥ threshold:
 | Repo's CONTRIBUTING says "discuss first" and no discussion exists | −5 |
 
 Threshold: ≥ 8 to enter the queue. Tunable based on early merge-rate data.
+
+The score is necessary but not sufficient. Pick also requires every hard
+solvability gate below:
+
+- `tractable=true`, with `trivial` or `small` complexity;
+- an estimated one to five changed files and confidence of at least 0.70;
+- a clear acceptance criterion, or a bug label paired with reproduction steps;
+- no assignee or recent claim;
+- no unresolved maintainer decision, private access, secrets, privileged
+  infrastructure, specialized hardware, or internal/private paths;
+- no design, discussion, question, or triage-stage label.
+
+Missing fields fail closed. The `good first issue` label is supporting evidence,
+not proof that the work is easy.
 
 ---
 

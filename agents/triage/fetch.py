@@ -25,10 +25,12 @@ async def fetch_good_first_issues(api: Fetcher, full_name: str, per_repo: int = 
     return [i for i in issues if "pull_request" not in i]
 
 
-async def fetch_comments(api: Fetcher, full_name: str, number: int, per: int = 10) -> list[dict]:
+async def fetch_comments(api: Fetcher, full_name: str, number: int, per: int = 100) -> list[dict]:
+    """Fetch a broad bounded comment window so recent claims are not hidden."""
     data = await api._request(
         "GET",
         f"/repos/{full_name}/issues/{number}/comments",
         params={"per_page": per},
     )
-    return data if isinstance(data, list) else []
+    comments = data if isinstance(data, list) else []
+    return comments[-per:]

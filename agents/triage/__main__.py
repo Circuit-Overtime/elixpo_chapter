@@ -8,10 +8,11 @@ shortlist only, to save tokens), and writes a ranked queue to state/triaged.json
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 
 import structlog
 from lib.aio import gather_safe
-from lib.scorer import assess_solvability, score
+from lib.scorer import NEGATIVE_LABELS, assess_solvability, score
 from pydantic import BaseModel, Field
 
 from agents.triage.extract import extract_issue_signals
@@ -52,6 +53,7 @@ async def triage_candidates(
     shortlist: int = SHORTLIST,
 ) -> list[TriagedIssue]:
     """Score candidate issues. Injectable api + router → testable in isolation."""
+    now = now or datetime.now(timezone.utc)
     repos = candidates[:max_repos]
 
     # 1. fetch each repo's good-first issues concurrently (a flaky repo → skipped)
@@ -64,6 +66,15 @@ async def triage_candidates(
     for repo, issues in zip(repos, issue_lists, strict=True):
         for iss in issues:
             det = deterministic_signals(iss, now)
+            labels = set(det["labels"])
+            body = str(iss.get("body") or "").strip()
+            if (
+                not det["no_assignee"]
+                or iss.get("locked", False)
+                or labels & NEGATIVE_LABELS
+                or len(body) < 40
+            ):
+                continue
             pre, _ = score(merge_signals(det))
             prelim.append({"repo": repo["full_name"], "issue": iss, "det": det, "pre": pre})
 
@@ -79,7 +90,7 @@ async def triage_candidates(
 
     async def _extract(x, comments):
         async with sem:
-            return await extract_issue_signals(router, x["issue"], comments)
+            return await extract_issue_signals(router, x["issue"], comments, now)
 
     llm_results = await gather_safe(
         [_extract(x, comments) for x, comments in zip(short, comment_lists, strict=True)],
@@ -101,7 +112,7 @@ async def triage_candidates(
                 url=iss.get("html_url", ""),
                 score=total,
                 breakdown=breakdown,
-                tractable=bool(llm.get("tractable", False)),
+                tractable=llm.get("tractable") is True,
                 easy=solvability.easy,
                 complexity=solvability.complexity,
                 estimated_files=solvability.estimated_files,
@@ -116,8 +127,6 @@ async def triage_candidates(
 
 
 async def _run() -> int:
-    from datetime import datetime, timezone
-
     from lib.config import settings
     from lib.github.api import GitHubAPI
     from lib.state.store import StateStore

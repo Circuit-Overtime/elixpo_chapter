@@ -160,7 +160,7 @@ async def test_discover_mixes_star_bands():
 
 @pytest.mark.asyncio
 async def test_discover_search_only_skips_contributing():
-    """Default path does NO per-repo CONTRIBUTING fetch; one search per band."""
+    """The opt-out path does no per-repo CONTRIBUTING fetch; one search per band."""
     from agents.scout.__main__ import BANDS, discover_candidates
 
     api = FakeAPI([_repo(full_name="o/a", stargazers_count=500)])
