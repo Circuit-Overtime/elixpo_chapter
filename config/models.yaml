@@ -17,7 +17,7 @@ roles:
   classify:      { model: nova-fast }
 
   # triage / scoring reasoning
-  triage:        { model: deepseek }                   # free; paid: gemini-fast
+  triage:        { model: nova-fast }                  # cheapest explicitly priced tool-capable model
 
   # repo mapping & summarization (large context fits small repos whole)
   map:           { model: nova }                       # free, 1M ctx; paid: gemini-flash-lite-3.1

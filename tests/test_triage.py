@@ -85,10 +85,12 @@ class FakeRouter:
         self._payload = payload
         self.calls = 0
         self.last_messages = []
+        self.last_kwargs = {}
 
     async def call(self, role, messages, **kw):
         self.calls += 1
         self.last_messages = messages
+        self.last_kwargs = kw
         content = json.dumps(self._payload)
         return ChatCompletionResponse(
             id="x",
@@ -118,6 +120,8 @@ async def test_extraction_uses_recent_dated_comments_and_marks_them_untrusted():
     assert "TRIAGE_TIME: 2026-06-20" in prompt
     assert "comment-25" in prompt
     assert "comment-1\n" not in prompt
+    assert router.last_kwargs["effort"] == "low"
+    assert router.last_kwargs["max_tokens"] == 500
 
 
 @pytest.mark.asyncio

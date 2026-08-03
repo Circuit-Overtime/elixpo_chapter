@@ -148,7 +148,7 @@ Roles map to models, not the other way around. Agents request `model: "code"`, t
 | Role | Model | Notes |
 |---|---|---|
 | Repo crawling, label classification | `nova-fast` | Cheapest tool-capable model |
-| Issue scoring, triage reasoning | `gemini-fast` | Cheap, fast |
+| Issue scoring, triage reasoning | `nova-fast` | Lowest explicitly priced general tool-calling model |
 | Repo mapping & summarization | `gemini-flash-lite-3.1` | 1M context fits whole small repos |
 | Planning (what to change) | `kimi` | Strong agentic reasoning, mid-cost |
 | **Code generation — primary** | `qwen-coder-large` | First attempt always |

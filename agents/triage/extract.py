@@ -111,7 +111,7 @@ def _prompt(issue: dict, comments: list[dict] | None, now: datetime) -> str:
             for c in comments[-20:]
         )
         parts.append(f"COMMENTS:\n{joined}")
-    return truncate_text("\n\n".join(parts), max_tokens=3000)
+    return truncate_text("\n\n".join(parts), max_tokens=2200)
 
 
 async def extract_issue_signals(
@@ -126,7 +126,14 @@ async def extract_issue_signals(
         Message(role="system", content=_SYSTEM),
         Message(role="user", content=_prompt(issue, comments, now)),
     ]
-    resp = await router.call("triage", messages, tools=[_SIGNALS_TOOL], tool_choice=_FORCE)
+    resp = await router.call(
+        "triage",
+        messages,
+        tools=[_SIGNALS_TOOL],
+        tool_choice=_FORCE,
+        effort="low",
+        max_tokens=500,
+    )
     msg = resp.choices[0].message
     if msg.tool_calls:
         try:
