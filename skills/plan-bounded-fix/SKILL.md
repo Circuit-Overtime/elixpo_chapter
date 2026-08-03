@@ -7,6 +7,9 @@ description: Produce one structured, fifteen-minute implementation plan from a v
 
 Plan the smallest complete behavior required by the issue. Use only supplied
 repository evidence; missing evidence is uncertainty, not permission to guess.
+Candidate paths are ranked by issue-term evidence. Select an existing target
+only when its supplied source contains the relevant implementation behavior;
+never choose a file merely because its route or page name resembles the report.
 
 Return at most two coherent commit steps and five total target files. Each step
 must state one purpose, exact paths, repository-native verification commands,

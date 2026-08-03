@@ -73,7 +73,9 @@ async def plan_issue(
         "allowed_existing_targets": allowed_existing_targets,
         "target_rule": (
             "Every existing step file must be selected from allowed_existing_targets. "
-            "The tracked-file index is navigation evidence only."
+            "The list is ordered by issue-term evidence. Select files containing the "
+            "relevant implementation behavior; do not infer an implementation target "
+            "only from a route name, page name, or the tracked-file index."
         ),
         "repository_context": context,
     }

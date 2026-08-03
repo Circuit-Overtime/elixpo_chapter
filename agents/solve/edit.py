@@ -36,14 +36,10 @@ def apply_edit_batch(workspace: Path, edits: list[FileEdit], allowed: set[str]) 
         if edit.operation == "create":
             if path.exists():
                 raise EditRejected(f"create target already exists: {edit.path}")
-            if not edit.content:
-                raise EditRejected(f"new file has empty content: {edit.path}")
             rendered[path] = edit.content
         else:
             if not path.is_file():
                 raise EditRejected(f"replace target does not exist: {edit.path}")
-            if not edit.replacements or edit.content:
-                raise EditRejected(f"replace edit must contain replacements only: {edit.path}")
             text = path.read_text()
             for replacement in edit.replacements:
                 if not replacement.old:
@@ -69,4 +65,3 @@ def apply_edit_batch(workspace: Path, edits: list[FileEdit], allowed: set[str]) 
                 path.write_bytes(data)
         raise
     return changed
-

@@ -240,7 +240,10 @@ def build_context_bundle(
     search_terms, _ = _search_terms(issue_text)
     mentioned = _mentioned_paths(issue_text, tracked)
     searched = _search_candidates(workspace, issue_text, tracked)
-    candidates = list(dict.fromkeys([*mentioned, *searched, *[m for m in _MANIFESTS if m in tracked]]))
+    # Ranked behavioral matches lead. Explicitly mentioned paths remain useful
+    # context, but a route/page named in a report is not necessarily where its
+    # behavior is implemented.
+    candidates = list(dict.fromkeys([*searched, *mentioned, *[m for m in _MANIFESTS if m in tracked]]))
 
     bundle = ContextBundle(tracked_files=files[:350])
     guidance_paths = _guidance_paths(files, set(guidance_names), mentioned)

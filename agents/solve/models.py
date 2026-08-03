@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated, Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -32,11 +34,19 @@ class Replacement(StrictModel):
     new: str = Field(max_length=6000)
 
 
-class FileEdit(StrictModel):
+class ReplaceFileEdit(StrictModel):
     path: str
-    operation: str = Field(pattern="^(replace|create)$")
-    replacements: list[Replacement] = Field(default_factory=list, max_length=8)
-    content: str = Field(default="", max_length=8000)
+    operation: Literal["replace"]
+    replacements: list[Replacement] = Field(min_length=1, max_length=8)
+
+
+class CreateFileEdit(StrictModel):
+    path: str
+    operation: Literal["create"]
+    content: str = Field(min_length=1, max_length=8000)
+
+
+FileEdit = Annotated[ReplaceFileEdit | CreateFileEdit, Field(discriminator="operation")]
 
 
 class StepImplementation(StrictModel):

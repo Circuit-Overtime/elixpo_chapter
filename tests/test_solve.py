@@ -10,7 +10,7 @@ from agents.solve.core import SolveRejected, ensure_fork, resolve_target, valida
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, run_verification, validate_command
-from agents.solve.models import FileEdit, PlanStep, Replacement, SolvePlan
+from agents.solve.models import PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from lib.state.store import StateStore
 from rtk.shell import CmdResult
 
@@ -104,7 +104,7 @@ def test_edit_batch_is_exact_and_plan_confined(tmp_path):
     target.parent.mkdir()
     target.write_text("const value = shortText;\n")
     edits = [
-        FileEdit(
+        ReplaceFileEdit(
             path="app/page.tsx",
             operation="replace",
             replacements=[Replacement(old="shortText", new="llmText")],
@@ -127,6 +127,27 @@ def test_replacement_schema_rejects_whole_file_payloads():
         assert "4000" in str(exc)
     else:
         raise AssertionError("oversized replacement passed")
+
+
+def test_edit_schema_rejects_replace_content_combination():
+    try:
+        StepImplementation.model_validate(
+            {
+                "summary": "small edit",
+                "edits": [
+                    {
+                        "path": "app/page.tsx",
+                        "operation": "replace",
+                        "replacements": [{"old": "before", "new": "after"}],
+                        "content": "forbidden whole-file content",
+                    }
+                ],
+            }
+        )
+    except ValueError as exc:
+        assert "content" in str(exc)
+    else:
+        raise AssertionError("replace edit with content passed")
 
 
 def test_owned_target_requires_matching_test_vet(tmp_path, monkeypatch):
