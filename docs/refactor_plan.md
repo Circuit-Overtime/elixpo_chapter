@@ -45,6 +45,7 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 - **Job:** Sweep GitHub for candidate repos. Hard filters: 100–50k stars, active in last 30 days, declared license, issues enabled, not a fork, language whitelist, not in blocklist or opted out. Rank by contribution guidance, recent activity, and a manageable issue backlog; popularity is secondary.
 - **Agents:** trending-crawler, topic-crawler, language-specialist, repo-health-scorer, blocklist-checker, opt-out-checker
 - **Output:** ~20 candidate repos written to `state/candidates.json`
+- **Skill:** `skills/discover-contributor-repositories/SKILL.md`
 
 ### Triage — Issue selection
 - **Trigger:** on Scout completion
@@ -52,12 +53,14 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 - **Job:** Pull good-first issues from approved repos, discard obvious non-candidates, score the remainder, and assess bounded solvability.
 - **Agents:** label-classifier, complexity-estimator, reproducibility-checker, claim-checker (has anyone already said "I'll take this"?), priority-ranker
 - **Output:** A ranked `state/triaged.json` queue with score, scope, confidence, blockers, and an explicit `easy` verdict.
+- **Skill:** `skills/triage-solvable-issues/SKILL.md` (loaded into each routed triage call)
 
 ### Pick — Final selection
 - **Trigger:** cron, separate window from Scout
 - **Budget:** 5 min
 - **Job:** Select one eligible issue that passes both the community score and the fail-closed easy-work gate, then record it before implementation starts.
 - **Output:** One justified choice in `state/pick.json`; the ledger prevents duplicate picks and parallel work in the same repository.
+- **Skill:** `skills/pick-safe-issue/SKILL.md`
 
 ### Comprehend — Context loading
 *(Runs as the first step of Solve, not a separate workflow.)*

@@ -42,7 +42,19 @@ def select_top(
     """Highest-scoring eligible easy issue, or None when nothing is safe to pick."""
     if not ledger.can_open_today(day):
         return None
-    for t in sorted(triaged, key=lambda x: x.get("score", 0), reverse=True):
+
+    def rank(item: dict) -> tuple[float, float, float]:
+        try:
+            confidence = float(item.get("confidence", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            confidence = 0.0
+        try:
+            estimated_files = float(item.get("estimated_files", 0) or 0)
+        except (TypeError, ValueError):
+            estimated_files = 0.0
+        return float(item.get("score", 0) or 0), confidence, -estimated_files
+
+    for t in sorted(triaged, key=rank, reverse=True):
         if t.get("score", 0) < min_score:
             break  # sorted — nothing below will qualify either
         if require_tractable and not t.get("tractable", False):
