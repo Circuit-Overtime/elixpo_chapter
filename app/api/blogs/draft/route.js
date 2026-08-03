@@ -220,6 +220,10 @@ export async function POST(request) {
       UPDATE media_uploads SET blog_id = ?
       WHERE blog_id IS NULL AND user_id = ? AND cloudinary_public_id LIKE ?
     `).bind(slugid, session.userId, `lixblogs/${slugid}/%`).run();
+    try {
+      const { kvInvalidate, mediaInventoryCacheKey } = await import('../../../../lib/cache');
+      await kvInvalidate(mediaInventoryCacheKey(session.userId));
+    } catch {}
 
     // Sync tags
     if (Array.isArray(tags)) {
