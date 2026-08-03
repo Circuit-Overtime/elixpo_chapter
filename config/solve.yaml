@@ -1,0 +1,49 @@
+version: 1
+
+# Solve is intentionally smaller than the global RTK defaults. An accepted issue
+# should fit in one planning call, at most two edit calls, and one review call.
+token_budget: 24000
+max_minutes: 15
+max_files: 5
+max_commit_steps: 2
+max_search_calls: 1
+max_context_tokens: 12000
+max_file_tokens: 5000
+max_test_commands: 3
+command_timeout_seconds: 180
+
+# Explicit manual-test escape hatch. Production automation still requires the
+# normal Pick -> Vet approval. Test mode additionally verifies push permission.
+test_repositories:
+  - elixpo/lixrl.com
+
+guidance_names:
+  - AGENTS.md
+  - CLAUDE.md
+  - CONTRIBUTING.md
+  - CONTRIBUTING.rst
+
+allowed_command_prefixes:
+  - pytest
+  - python -m pytest
+  - npm test
+  - npm run test
+  - npm run lint
+  - npm run typecheck
+  - npm run build
+  - npx eslint
+  - npx tsc
+  - pnpm test
+  - pnpm lint
+  - pnpm typecheck
+  - pnpm build
+  - yarn test
+  - yarn lint
+  - yarn typecheck
+  - yarn build
+  - ruff check
+  - ruff format --check
+  - mypy
+  - pyright
+  - shellcheck
+

@@ -7,7 +7,7 @@ description: Verify whether a specific GitHub issue is one bounded, available, e
 
 Act as the final read-only boundary between issue selection and implementation.
 Approve only when one external contributor can implement and verify the complete
-request in one focused pull request.
+request in one focused pull request within fifteen minutes of focused work.
 
 ## Separate facts from judgment
 
@@ -56,6 +56,10 @@ exists. Never approve a tracking issue as one coding task.
 Approve only `trivial` or `small` work touching an estimated one to five files.
 Repository unfamiliarity is not complexity; cross-subsystem behavior, migrations,
 new public design, or multiple independent deliverables are.
+
+Estimate focused implementation and local verification time as an integer number
+of minutes. Reject work estimated above fifteen minutes or whose duration cannot
+be bounded confidently. Do not reduce the estimate merely to make an issue pass.
 
 ## Fail closed
 
