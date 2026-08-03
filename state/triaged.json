@@ -1,19 +1,37 @@
 [
   {
     "breakdown": {
+      "acceptance_criterion": 2,
       "aged": 1,
       "good_first/help_wanted": 5,
       "no_assignee": 2,
       "no_maintainer_claim": 2,
       "reproducible_bug": 3
     },
-    "number": 5422,
-    "rationale": "Well-scoped parser bug (strip prices/asterisks from ingredient names) with repro steps and a contributor already interested, though no formal acceptance criterion and conflicting \"already fixed\" reports make the exact remaining edge case slightly fuzzy.",
-    "repo": "mealie-recipes/mealie",
-    "score": 13,
-    "title": "[BUG] - Recipie Parser can't handle prices",
+    "number": 16954,
+    "rationale": "Well-defined bug with clear repro steps and expected behavior (flatten nested attributes into valid LDAP attributes), suitable for a single external contributor to fix in the LDAP outpost.",
+    "repo": "goauthentik/authentik",
+    "score": 15,
+    "title": "Nested user attributes not exposed as valid LDAP attributes in LDAP Outpost",
     "tractable": true,
-    "url": "https://github.com/mealie-recipes/mealie/issues/5422"
+    "url": "https://github.com/goauthentik/authentik/issues/16954"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "reproducible_bug": 3
+    },
+    "number": 1686,
+    "rationale": "Well-specified text-only UI bug with repro steps, clear acceptance criteria, and precise file/line hints; a single contributor can fix it with a small label change in one file.",
+    "repo": "future-agi/future-agi",
+    "score": 15,
+    "title": "Observe: tab labels say \"Primary Graph\" and \"Comparison Graph\" but content shows data tables",
+    "tractable": true,
+    "url": "https://github.com/future-agi/future-agi/issues/1686"
   },
   {
     "breakdown": {
@@ -23,88 +41,13 @@
       "no_assignee": 2,
       "no_maintainer_claim": 2
     },
-    "number": 1652,
-    "rationale": "Well-scoped SEO audit with concrete acceptance criteria and representative examples, fixable in docs source/templates by one contributor in one PR.",
-    "repo": "Priivacy-ai/spec-kitty",
+    "number": 67075,
+    "rationale": "Well-defined feature request with clear acceptance criteria and a specific code change (swap infinite scroll for pagination), suitable for one external contributor in a single PR.",
+    "repo": "Automattic/wp-calypso",
     "score": 12,
-    "title": "SEO audit needed for GitHub Pages docs site",
+    "title": "Marketplace: Logged out view should use pagination",
     "tractable": true,
-    "url": "https://github.com/Priivacy-ai/spec-kitty/issues/1652"
-  },
-  {
-    "breakdown": {
-      "aged": 1,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 5948,
-    "rationale": "",
-    "repo": "sgl-project/sglang",
-    "score": 10,
-    "title": "[Feature] Qwen3 Provide Ability to Turn off Thinking on server startup",
-    "tractable": false,
-    "url": "https://github.com/sgl-project/sglang/issues/5948"
-  },
-  {
-    "breakdown": {
-      "aged": 1,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 16601,
-    "rationale": "Real, well-reproduced bug confirmed by a maintainer, but a contributor (RivkaW327) has already claimed it and has a PR in progress, and the fix touches subtle core sparse-indexing internals (slice broadcasting/densification), so it is not a clean one-PR task for a new autonomous contributor.",
-    "repo": "scipy/scipy",
-    "score": 10,
-    "title": "ENH: LIL sparse matrix assigning should be optimized rather than using densified matrixes",
-    "tractable": false,
-    "url": "https://github.com/scipy/scipy/issues/16601"
-  },
-  {
-    "breakdown": {
-      "aged": 1,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 3432,
-    "rationale": "Well-scoped test-writing task with concrete references (Harris paper, GH_FFT.pdf, gists) provided by maintainers, suitable for one external contributor in a single PR.",
-    "repo": "scipy/scipy",
-    "score": 10,
-    "title": "Test coverage for scipy.signals.windows needs improvement",
-    "tractable": true,
-    "url": "https://github.com/scipy/scipy/issues/3432"
-  },
-  {
-    "breakdown": {
-      "aged": 1,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 20293,
-    "rationale": "A clear, single-PR feature request (add JAX_PROFILE env-var support in jax/_src/profiler.py), with a PR (#21660) already drafted by a contributor, though the issue remains open.",
-    "repo": "jax-ml/jax",
-    "score": 10,
-    "title": "Support profiling without source code changes",
-    "tractable": true,
-    "url": "https://github.com/jax-ml/jax/issues/20293"
-  },
-  {
-    "breakdown": {
-      "aged": 1,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 1987,
-    "rationale": "This is a well-scoped \"good first issue\" feature request with clear implementation guidance from maintainers (express via exp/erfc or polynomial expansion in jax/scipy/special.py), suitable for one external contributor in a single PR.",
-    "repo": "jax-ml/jax",
-    "score": 10,
-    "title": "Support erfcx",
-    "tractable": true,
-    "url": "https://github.com/jax-ml/jax/issues/1987"
+    "url": "https://github.com/Automattic/wp-calypso/issues/67075"
   },
   {
     "breakdown": {
@@ -112,33 +55,116 @@
       "aged": 1,
       "good_first/help_wanted": 5,
       "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "op_is_maintainer": -5
+      "no_maintainer_claim": 2
     },
-    "number": 1244,
-    "rationale": "This is a large documentation overhaul spanning dozens of docstrings across many modules (Alarm, Availability, Available, parser, etc.), not a single-PR task; maintainers are working through it incrementally (e.g., Alarm.REPEAT/DURATION already released).",
-    "repo": "collective/icalendar",
-    "score": 7,
-    "title": "Replace copy-paste of RFCs in docstrings with Pythonic docstrings",
-    "tractable": false,
-    "url": "https://github.com/collective/icalendar/issues/1244"
+    "number": 53845,
+    "rationale": "Well-defined feature request with clear reproduction steps and acceptance criteria; adding one more preview option to existing UI is a self-contained task suitable for one external contributor in one PR.",
+    "repo": "Automattic/wp-calypso",
+    "score": 12,
+    "title": "Social Previews should show WP oEmbed design as a 5th preview option",
+    "tractable": true,
+    "url": "https://github.com/Automattic/wp-calypso/issues/53845"
+  },
+  {
+    "breakdown": {
+      "aged": 1,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 20148,
+    "rationale": "A well-scoped feature request to add a flag that resets reputation score to 0 on successful login, achievable by one contributor in a single PR.",
+    "repo": "goauthentik/authentik",
+    "score": 10,
+    "title": "Option to automatically set reputation score to 0 upon successful login",
+    "tractable": true,
+    "url": "https://github.com/goauthentik/authentik/issues/20148"
   },
   {
     "breakdown": {
       "acceptance_criterion": 2,
       "aged": 1,
+      "already_claimed": -10,
       "good_first/help_wanted": 5,
       "no_assignee": 2,
       "no_maintainer_claim": 2,
-      "op_is_maintainer": -5
+      "reproducible_bug": 3
     },
-    "number": 1591,
-    "rationale": "This is a well-scoped documentation task with an explicit checklist (parameter docs, ordering, and versionadded admonitions) that one external contributor can complete in a single PR; the prior claim was withdrawn, but the maintainer's follow-up indicates remaining work.",
-    "repo": "collective/icalendar",
-    "score": 7,
-    "title": "consolidate parameters and documentation for Alarm factory methods",
+    "number": 22196,
+    "rationale": "Well-scoped observability bug with 10 specific entrypoints listed and clear expected behavior (stable event names/keys), fixable by one contributor in a single PR.",
+    "repo": "goauthentik/authentik",
+    "score": 5,
+    "title": "Bug: Runtime values are used as structured log event names or field keys",
     "tractable": true,
-    "url": "https://github.com/collective/icalendar/issues/1591"
+    "url": "https://github.com/goauthentik/authentik/issues/22196"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 1670,
+    "rationale": "Well-scoped frontend-only feature with clear pointers to the exact file/lines, existing reusable components, and explicit done-when criteria; one contributor already claimed it.",
+    "repo": "future-agi/future-agi",
+    "score": 2,
+    "title": "Add a 'View session' link from annotation queue trace/span items to the parent session",
+    "tractable": true,
+    "url": "https://github.com/future-agi/future-agi/issues/1670"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 19555,
+    "rationale": "Well-scoped refactor with explicit acceptance criteria and small PRs (\u22643 files) explicitly encouraged, and multiple external contributors are already actively submitting PRs against it.",
+    "repo": "MetaMask/metamask-extension",
+    "score": 2,
+    "title": "Replace deprecated Popover component with Modal from the component-library",
+    "tractable": true,
+    "url": "https://github.com/MetaMask/metamask-extension/issues/19555"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 43340,
+    "rationale": "The evergreen tracker explicitly scopes work to one product file per PR, and turjoy18 has claimed a specific single-file migration (home-notifications-container.tsx) with clear acceptance criteria, making it tractable for one external contributor in one PR.",
+    "repo": "MetaMask/metamask-extension",
+    "score": 2,
+    "title": "Replace deprecated extension UI components with MMDS components",
+    "tractable": true,
+    "url": "https://github.com/MetaMask/metamask-extension/issues/43340"
+  },
+  {
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "number": 18714,
+    "rationale": "This is a well-scoped refactor explicitly designed for small 1-3 file PRs with clear acceptance criteria, so a single external contributor can pick up one small piece, though multiple contributors are already actively working on it.",
+    "repo": "MetaMask/metamask-extension",
+    "score": 2,
+    "title": "Replace deprecated constants with enums",
+    "tractable": true,
+    "url": "https://github.com/MetaMask/metamask-extension/issues/18714"
   },
   {
     "breakdown": {
@@ -148,31 +174,13 @@
       "no_assignee": 2,
       "no_maintainer_claim": 2
     },
-    "number": 1715,
-    "rationale": "Well-scoped feature request with explicit code pointers and a prior (stale) PR to build on, so one external contributor can land it as a single PR.",
-    "repo": "sgl-project/sglang",
+    "number": 1147,
+    "rationale": "Well-documented build failure with clear repro steps and a simple, well-scoped fix (add a Text::Template check in the recipe) that one contributor can implement in a single PR; cleeland indicated intent to submit it.",
+    "repo": "conan-io/conan-center-index",
     "score": 0,
-    "title": "[Feature] Cascade attention kernels ",
+    "title": "[package] openssl/1.1.1d: build from source fails on Linux",
     "tractable": true,
-    "url": "https://github.com/sgl-project/sglang/issues/1715"
-  },
-  {
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "already_claimed": -10,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "op_is_maintainer": -5
-    },
-    "number": 1594,
-    "rationale": "Well-scoped validation feature with a clear checklist and referenced files, implementable by one contributor in a single PR.",
-    "repo": "collective/icalendar",
-    "score": -3,
-    "title": "Validate Alarm repeat when setting",
-    "tractable": true,
-    "url": "https://github.com/collective/icalendar/issues/1594"
+    "url": "https://github.com/conan-io/conan-center-index/issues/1147"
   },
   {
     "breakdown": {
@@ -180,15 +188,14 @@
       "already_claimed": -10,
       "good_first/help_wanted": 5,
       "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "op_is_maintainer": -5
+      "no_maintainer_claim": 2
     },
-    "number": 1072,
-    "rationale": "Well-scoped, beginner-friendly documentation task: convert one or more docstrings in a module to Google Style and open a PR, with clear steps and examples; multiple contributors have already claimed pieces.",
-    "repo": "collective/icalendar",
-    "score": -5,
-    "title": "apply Google Style to a function documentation [beginner, Python]",
+    "number": 24224,
+    "rationale": "A contributor has claimed it and proposed a focused approach (start with Policies, which already has last_updated on the model), making it a tractable single-PR UI feature.",
+    "repo": "goauthentik/authentik",
+    "score": 0,
+    "title": "\"Last edited\" column for policies, mappings, providers, etc.",
     "tractable": true,
-    "url": "https://github.com/collective/icalendar/issues/1072"
+    "url": "https://github.com/goauthentik/authentik/issues/24224"
   }
 ]
