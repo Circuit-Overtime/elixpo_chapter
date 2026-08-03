@@ -47,7 +47,7 @@ def test_below_threshold_and_untractable_skipped():
 
 def test_out_of_window_or_missing_age_is_skipped():
     too_new = {**_t("o/new", 1, 20), "issue_age_days": 6}
-    too_old = {**_t("o/old", 2, 20), "issue_age_days": 46}
+    too_old = {**_t("o/old", 2, 20), "issue_age_days": 61}
     missing = _t("o/missing", 3, 20)
     missing.pop("issue_age_days")
     assert select_top([too_new, too_old, missing], Ledger(), DAY) is None

@@ -16,7 +16,7 @@ Require all of the following:
 - score meets `lib.scorer.THRESHOLD`;
 - `tractable` is exactly `true`;
 - `easy` is exactly `true`;
-- `issue_age_days` is present and between 7 and 45, inclusive;
+- `issue_age_days` is present and between 7 and 60, inclusive;
 - `activity_age_days` is present and between 0 and 30, inclusive;
 - repository is absent from the blocklist;
 - `owner/repo#number` has never been recorded in the ledger;

@@ -53,9 +53,9 @@ def test_deterministic_signals():
     ("created_at", "age_days", "eligible"),
     [
         ("2026-06-13T23:59:59Z", 7, True),
-        ("2026-05-06T00:00:00Z", 45, True),
+        ("2026-04-21T00:00:00Z", 60, True),
         ("2026-06-14T00:00:00Z", 6, False),
-        ("2026-05-05T00:00:00Z", 46, False),
+        ("2026-04-20T00:00:00Z", 61, False),
         (None, None, False),
     ],
 )
@@ -420,7 +420,7 @@ async def test_triage_rejects_issues_outside_age_window_before_model_call():
     router = FakeRouter({})
     issues = [
         _issue(1, created_at="2026-06-14T00:00:00Z"),
-        _issue(2, created_at="2026-05-05T00:00:00Z"),
+        _issue(2, created_at="2026-04-20T00:00:00Z"),
         _issue(3, created_at=None),
     ]
     out = await triage_candidates(FakeAPI(issues), router, [{"full_name": "o/r"}], NOW)

@@ -27,7 +27,7 @@ Do not override those facts. Infer only the fuzzy fields supplied in the output
 schema: reproduction quality, acceptance clarity, tractability, complexity,
 likely file count, confidence, and environmental or decision blockers.
 
-Only issues created 7 to 45 calendar days before the triage run, inclusive,
+Only issues created 7 to 60 calendar days before the triage run, inclusive,
 are eligible. Reject missing or malformed creation timestamps and issues outside
 that window before any routed call. Separately, require an update within the last
 30 calendar days so a wider creation window never admits abandoned work. Missing
@@ -98,7 +98,7 @@ Use confidence to express evidence quality, not general optimism.
 ## Honor the final easy-work gate
 
 An easy issue must be tractable, trivial/small, one to five estimated files, at
-least 0.70 confidence, created 7–45 calendar days before triage, updated within
+least 0.70 confidence, created 7–60 calendar days before triage, updated within
 30 days, unassigned and unclaimed, and have either
 a clear acceptance criterion or reproducible labelled bug. It must have no
 maintainer-decision, access, hardware, internal-path, discuss-first, or design-stage

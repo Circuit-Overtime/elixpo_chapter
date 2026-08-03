@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 THRESHOLD = 8
 MIN_ISSUE_AGE_DAYS = 7
-MAX_ISSUE_AGE_DAYS = 45
+MAX_ISSUE_AGE_DAYS = 60
 MAX_ACTIVITY_AGE_DAYS = 30
 
 POSITIVE_LABELS = {"good first issue", "help wanted", "up-for-grabs", "hacktoberfest"}
