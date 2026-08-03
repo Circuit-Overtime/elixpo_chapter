@@ -1,0 +1,4 @@
+interface:
+  display_name: "Solve Bounded Issue"
+  short_description: "Implement vetted issues with minimal context"
+  default_prompt: "Use $solve-bounded-issue to implement this vetted GitHub issue with a bounded, token-efficient workflow."

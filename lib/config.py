@@ -43,6 +43,7 @@ class GitHubSettings(BaseSettings):
     bot_username: str = Field(default="elixpoo", validation_alias="ELIXPO_GITHUB_BOT_USERNAME")
     # Control repo holding state/, candidate issues, the Project board (owner/name).
     control_repo: str = Field(default="", validation_alias="ELIXPO_GITHUB_CONTROL_REPO")
+    fork_owner: str = Field(default="", validation_alias="ELIXPO_GITHUB_FORK_OWNER")
     # Plain token for REST/search; Actions sets GITHUB_TOKEN. For local runs, a PAT.
     token: str = Field(
         default="",
