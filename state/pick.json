@@ -1,10 +1,16 @@
 {
-  "justification": "goauthentik/authentik#16954 \u2014 score 15 (threshold 8). Well-defined bug with clear repro steps and expected behavior (flatten nested attributes into valid LDAP attributes), suitable for a single external contributor to fix in the LDAP outpost. Signals: acceptance_criterion +2, aged +1, good_first/help_wanted +5, no_assignee +2, no_maintainer_claim +2, reproducible_bug +3.",
-  "number": 16954,
-  "picked_at": "2026-08-03T12:10:02.617577+00:00",
-  "repo": "goauthentik/authentik",
-  "score": 15,
-  "title": "Nested user attributes not exposed as valid LDAP attributes in LDAP Outpost",
+  "complexity": "small",
+  "confidence": 0.95,
+  "easy": true,
+  "estimated_files": 2,
+  "justification": "medusajs/medusa#15742 \u2014 score 12 (threshold 8); small scope, ~2 files, 95% confidence. The issue is a bounded change likely touching two files in one subsystem with a clear acceptance criterion. Signals: acceptance_criterion +2, aged +1, good_first/help_wanted +5, no_assignee +2, no_maintainer_claim +2.",
+  "number": 15742,
+  "picked": true,
+  "picked_at": "2026-08-03T15:50:15.378587+00:00",
+  "repo": "medusajs/medusa",
+  "score": 12,
+  "status": "picked",
+  "title": "[Bug]: @medusajs/loyalty-plugin \u2014 Editing gift card denominations crashes the admin dashboard (sends unsupported `options` field)",
   "tractable": true,
-  "url": "https://github.com/goauthentik/authentik/issues/16954"
+  "url": "https://github.com/medusajs/medusa/issues/15742"
 }

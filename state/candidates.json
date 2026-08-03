@@ -41,55 +41,54 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "gosub-io/gosub-engine",
+    "full_name": "lxc/incus",
     "good_first_issues": 1,
     "has_contributing": true,
-    "language": "Rust",
-    "open_issues": 21,
-    "pushed_at": "2026-08-03T15:20:10Z",
+    "language": "Go",
+    "open_issues": 42,
+    "pushed_at": "2026-08-03T15:36:18Z",
     "reasons": [
-      "3674\u2605 rust active",
+      "5833\u2605 go active",
       "has good-first issues"
     ],
-    "score": 53,
-    "stars": 3674,
+    "score": 54,
+    "stars": 5833,
     "topics": [
-      "browser",
-      "html5",
-      "rust"
+      "cloud",
+      "containers",
+      "hacktoberfest",
+      "virtual-machines"
     ],
-    "url": "https://github.com/gosub-io/gosub-engine"
+    "url": "https://github.com/lxc/incus"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "rustfs/rustfs",
+    "full_name": "cheeriojs/cheerio",
     "good_first_issues": 1,
     "has_contributing": true,
-    "language": "Rust",
-    "open_issues": 60,
-    "pushed_at": "2026-08-03T15:33:11Z",
+    "language": "TypeScript",
+    "open_issues": 62,
+    "pushed_at": "2026-08-03T15:45:04Z",
     "reasons": [
-      "30597\u2605 rust active",
+      "30433\u2605 typescript active",
       "has good-first issues"
     ],
-    "score": 61,
-    "stars": 30597,
+    "score": 53,
+    "stars": 30433,
     "topics": [
-      "ai-native",
-      "ai-storage",
-      "amazon-s3",
-      "bigdata",
-      "cloud-native",
-      "filesystem",
-      "minio",
-      "multi-cloud",
-      "object-storage",
-      "objectstorage",
-      "rust",
-      "s3"
+      "cheerio",
+      "dom",
+      "hacktoberfest",
+      "html",
+      "htmlparser",
+      "htmlparser2",
+      "jquery",
+      "parser",
+      "scraper",
+      "selector"
     ],
-    "url": "https://github.com/rustfs/rustfs"
+    "url": "https://github.com/cheeriojs/cheerio"
   },
   {
     "archived": false,
@@ -98,8 +97,8 @@
     "good_first_issues": 1,
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 48,
-    "pushed_at": "2026-08-03T15:26:09Z",
+    "open_issues": 49,
+    "pushed_at": "2026-08-03T15:40:14Z",
     "reasons": [
       "275\u2605 python active",
       "has good-first issues"
@@ -124,125 +123,40 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "mozilla-ai/any-llm",
+    "full_name": "raullenchai/Rapid-MLX",
     "good_first_issues": 1,
     "has_contributing": true,
     "language": "Python",
     "open_issues": 42,
-    "pushed_at": "2026-08-03T15:14:04Z",
+    "pushed_at": "2026-08-03T15:46:14Z",
     "reasons": [
-      "2144\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 52,
-    "stars": 2144,
-    "topics": [
-      "ai",
-      "anthropic",
-      "developer-tools",
-      "inference",
-      "llm",
-      "openai",
-      "python",
-      "text-completion"
-    ],
-    "url": "https://github.com/mozilla-ai/any-llm"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "cheeriojs/cheerio",
-    "good_first_issues": 1,
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 64,
-    "pushed_at": "2026-08-03T15:32:21Z",
-    "reasons": [
-      "30433\u2605 typescript active",
+      "3392\u2605 python active",
       "has good-first issues"
     ],
     "score": 53,
-    "stars": 30433,
+    "stars": 3392,
     "topics": [
-      "cheerio",
-      "dom",
-      "hacktoberfest",
-      "html",
-      "htmlparser",
-      "htmlparser2",
-      "jquery",
-      "parser",
-      "scraper",
-      "selector"
-    ],
-    "url": "https://github.com/cheeriojs/cheerio"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "Ikalus1988/MisakaNet",
-    "good_first_issues": 1,
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 20,
-    "pushed_at": "2026-08-03T15:21:45Z",
-    "reasons": [
-      "378\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 51,
-    "stars": 378,
-    "topics": [
-      "agent-framework",
-      "agent-network",
-      "ai-agent",
-      "claude",
-      "devops",
-      "distributed-memory",
-      "git-based",
-      "knowledge-graph",
-      "knowledge-sharing",
-      "langchain",
-      "llm",
-      "multi-agent",
-      "open-source",
-      "python",
-      "rag",
-      "swarm-intelligence"
-    ],
-    "url": "https://github.com/Ikalus1988/MisakaNet"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "hatchet-dev/hatchet",
-    "good_first_issues": 1,
-    "has_contributing": true,
-    "language": "Go",
-    "open_issues": 130,
-    "pushed_at": "2026-08-03T15:32:40Z",
-    "reasons": [
-      "7655\u2605 go active",
-      "has good-first issues"
-    ],
-    "score": 48,
-    "stars": 7655,
-    "topics": [
-      "concurrency",
-      "dag",
-      "distributed",
-      "distributed-systems",
-      "durable-execution",
-      "event-driven",
+      "apple-silicon",
+      "claude-code",
+      "cursor",
+      "deepseek",
       "fastapi",
-      "golang",
-      "nodejs",
+      "hacktoberfest",
+      "inference",
+      "llm",
+      "local-llm",
+      "m1",
+      "m2",
+      "m3",
+      "macos",
+      "mlx",
+      "ollama-alternative",
+      "openai-api",
       "python",
-      "queue",
-      "typescript",
-      "workflow-engine"
+      "qwen",
+      "tool-calling"
     ],
-    "url": "https://github.com/hatchet-dev/hatchet"
+    "url": "https://github.com/raullenchai/Rapid-MLX"
   },
   {
     "archived": false,
@@ -252,13 +166,13 @@
     "has_contributing": true,
     "language": "TypeScript",
     "open_issues": 97,
-    "pushed_at": "2026-08-03T15:28:45Z",
+    "pushed_at": "2026-08-03T15:39:27Z",
     "reasons": [
-      "35553\u2605 typescript active",
+      "35554\u2605 typescript active",
       "has good-first issues"
     ],
     "score": 53,
-    "stars": 35553,
+    "stars": 35554,
     "topics": [
       "ai-coding",
       "ai-tools",
@@ -277,50 +191,44 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "github-community-projects/contributors",
+    "full_name": "helixnow/deep-student",
     "good_first_issues": 1,
     "has_contributing": true,
-    "language": "Python",
-    "open_issues": 6,
-    "pushed_at": "2026-08-03T15:19:35Z",
+    "language": "TypeScript",
+    "open_issues": 19,
+    "pushed_at": "2026-08-03T15:48:07Z",
     "reasons": [
-      "157\u2605 python active",
+      "235\u2605 typescript active",
       "has good-first issues"
     ],
     "score": 51,
-    "stars": 157,
-    "topics": [
-      "actions",
-      "contributors",
-      "github-actions",
-      "hacktoberfest",
-      "ospo",
-      "python",
-      "sponsors"
-    ],
-    "url": "https://github.com/github-community-projects/contributors"
+    "stars": 235,
+    "topics": [],
+    "url": "https://github.com/helixnow/deep-student"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "Acode-Foundation/Acode",
+    "full_name": "Farama-Foundation/PettingZoo",
     "good_first_issues": 1,
     "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 70,
-    "pushed_at": "2026-08-03T14:27:45Z",
+    "language": "Python",
+    "open_issues": 27,
+    "pushed_at": "2026-08-03T15:38:13Z",
     "reasons": [
-      "6329\u2605 javascript active",
+      "3487\u2605 python active",
       "has good-first issues"
     ],
-    "score": 47,
-    "stars": 6329,
+    "score": 53,
+    "stars": 3487,
     "topics": [
-      "android-application",
-      "code-editor",
-      "cordova"
+      "api",
+      "gymnasium",
+      "multi-agent-reinforcement-learning",
+      "multiagent-reinforcement-learning",
+      "reinforcement-learning"
     ],
-    "url": "https://github.com/Acode-Foundation/Acode"
+    "url": "https://github.com/Farama-Foundation/PettingZoo"
   },
   {
     "archived": false,
@@ -332,11 +240,11 @@
     "open_issues": 132,
     "pushed_at": "2026-08-03T13:37:21Z",
     "reasons": [
-      "36917\u2605 javascript active",
+      "36918\u2605 javascript active",
       "has good-first issues"
     ],
     "score": 53,
-    "stars": 36917,
+    "stars": 36918,
     "topics": [
       "fastify",
       "fastify-core",
@@ -351,45 +259,59 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "ambicuity/New-Grad-Jobs",
+    "full_name": "ch-bas/cctv-camera-database",
     "good_first_issues": 1,
     "has_contributing": true,
-    "language": "Python",
-    "open_issues": 43,
-    "pushed_at": "2026-08-03T15:13:55Z",
+    "language": "JavaScript",
+    "open_issues": 19,
+    "pushed_at": "2026-08-03T15:45:35Z",
     "reasons": [
-      "228\u2605 python active",
+      "135\u2605 javascript active",
       "has good-first issues"
     ],
     "score": 51,
-    "stars": 228,
+    "stars": 135,
     "topics": [
-      "career",
-      "hacktoberfest",
-      "jobs",
-      "new-grad",
-      "newgrad",
-      "software-engineer"
+      "blue-iris",
+      "cctv",
+      "cctv-cameras",
+      "dahua",
+      "data-seed",
+      "frigate",
+      "frigate-nvr",
+      "frontfamily",
+      "hikvision",
+      "home-assistant",
+      "homeassistant",
+      "ip-camera",
+      "open-data",
+      "reolink",
+      "security-camera",
+      "surveillance"
     ],
-    "url": "https://github.com/ambicuity/New-Grad-Jobs"
+    "url": "https://github.com/ch-bas/cctv-camera-database"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "voidzero-dev/vite-plus",
+    "full_name": "gosub-io/gosub-engine",
     "good_first_issues": 1,
     "has_contributing": true,
     "language": "Rust",
-    "open_issues": 146,
-    "pushed_at": "2026-08-03T15:31:28Z",
+    "open_issues": 21,
+    "pushed_at": "2026-08-03T15:20:10Z",
     "reasons": [
-      "5492\u2605 rust active",
+      "3674\u2605 rust active",
       "has good-first issues"
     ],
-    "score": 46,
-    "stars": 5492,
-    "topics": [],
-    "url": "https://github.com/voidzero-dev/vite-plus"
+    "score": 53,
+    "stars": 3674,
+    "topics": [
+      "browser",
+      "html5",
+      "rust"
+    ],
+    "url": "https://github.com/gosub-io/gosub-engine"
   },
   {
     "archived": false,
@@ -421,27 +343,130 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "Lamatic/AgentKit",
+    "full_name": "meshery/meshery.io",
     "good_first_issues": 1,
     "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 54,
-    "pushed_at": "2026-08-03T15:28:29Z",
+    "language": "JavaScript",
+    "open_issues": 58,
+    "pushed_at": "2026-08-03T14:59:46Z",
     "reasons": [
-      "291\u2605 typescript active",
+      "805\u2605 javascript active",
       "has good-first issues"
     ],
     "score": 51,
-    "stars": 291,
+    "stars": 805,
     "topics": [
-      "agents",
-      "ai",
-      "good-first-issue",
+      "best-practices",
+      "catalog",
+      "cloud-native",
+      "cloud-native-architectures",
+      "cloud-native-management",
+      "cncf",
+      "cncf-shapes",
+      "control-plane",
+      "front-end",
       "hacktoberfest",
-      "nocode",
-      "nocode4prod"
+      "jekyll",
+      "kubernetes",
+      "management-plane",
+      "meshery",
+      "meshery-designs",
+      "ui",
+      "ui-design",
+      "ui-development",
+      "ux",
+      "ux-design"
     ],
-    "url": "https://github.com/Lamatic/AgentKit"
+    "url": "https://github.com/meshery/meshery.io"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "hatchet-dev/hatchet",
+    "good_first_issues": 1,
+    "has_contributing": true,
+    "language": "Go",
+    "open_issues": 129,
+    "pushed_at": "2026-08-03T15:35:21Z",
+    "reasons": [
+      "7655\u2605 go active",
+      "has good-first issues"
+    ],
+    "score": 48,
+    "stars": 7655,
+    "topics": [
+      "concurrency",
+      "dag",
+      "distributed",
+      "distributed-systems",
+      "durable-execution",
+      "event-driven",
+      "fastapi",
+      "golang",
+      "nodejs",
+      "python",
+      "queue",
+      "typescript",
+      "workflow-engine"
+    ],
+    "url": "https://github.com/hatchet-dev/hatchet"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "alibaba/open-code-review",
+    "good_first_issues": 1,
+    "has_contributing": true,
+    "language": "Go",
+    "open_issues": 74,
+    "pushed_at": "2026-08-03T13:53:31Z",
+    "reasons": [
+      "18317\u2605 go active",
+      "has good-first issues"
+    ],
+    "score": 53,
+    "stars": 18317,
+    "topics": [
+      "agent",
+      "agent-skills",
+      "code-review",
+      "code-review-assistant",
+      "harness",
+      "repository-level-context"
+    ],
+    "url": "https://github.com/alibaba/open-code-review"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "vshulcz/deja-vu",
+    "good_first_issues": 1,
+    "has_contributing": true,
+    "language": "Go",
+    "open_issues": 48,
+    "pushed_at": "2026-08-03T15:43:01Z",
+    "reasons": [
+      "510\u2605 go active",
+      "has good-first issues"
+    ],
+    "score": 51,
+    "stars": 510,
+    "topics": [
+      "agent-memory",
+      "ai-memory",
+      "claude",
+      "claude-code",
+      "cli",
+      "codex",
+      "coding-agents",
+      "developer-tools",
+      "golang",
+      "mcp",
+      "mcp-server",
+      "opencode",
+      "session-search"
+    ],
+    "url": "https://github.com/vshulcz/deja-vu"
   },
   {
     "archived": false,
@@ -479,66 +504,51 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "alibaba/open-code-review",
+    "full_name": "rustfs/rustfs",
     "good_first_issues": 1,
     "has_contributing": true,
-    "language": "Go",
-    "open_issues": 74,
-    "pushed_at": "2026-08-03T13:53:31Z",
+    "language": "Rust",
+    "open_issues": 61,
+    "pushed_at": "2026-08-03T15:48:20Z",
     "reasons": [
-      "18315\u2605 go active",
+      "30597\u2605 rust active",
       "has good-first issues"
     ],
     "score": 53,
-    "stars": 18315,
+    "stars": 30597,
     "topics": [
-      "agent",
-      "agent-skills",
-      "code-review",
-      "code-review-assistant",
-      "harness",
-      "repository-level-context"
+      "ai-native",
+      "ai-storage",
+      "amazon-s3",
+      "bigdata",
+      "cloud-native",
+      "filesystem",
+      "minio",
+      "multi-cloud",
+      "object-storage",
+      "objectstorage",
+      "rust",
+      "s3"
     ],
-    "url": "https://github.com/alibaba/open-code-review"
+    "url": "https://github.com/rustfs/rustfs"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "jo-duchan/tapflow",
+    "full_name": "opentofu/registry",
     "good_first_issues": 1,
     "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 37,
-    "pushed_at": "2026-08-03T15:20:08Z",
+    "language": "Go",
+    "open_issues": 17,
+    "pushed_at": "2026-08-03T15:40:19Z",
     "reasons": [
-      "282\u2605 typescript active",
+      "408\u2605 go active",
       "has good-first issues"
     ],
     "score": 51,
-    "stars": 282,
-    "topics": [
-      "android",
-      "android-emulator",
-      "app-testing",
-      "appetize-alternative",
-      "browserstack-alternative",
-      "developer-tools",
-      "emulator",
-      "flutter",
-      "good-first-issue",
-      "ios",
-      "ios-simulator",
-      "mcp",
-      "mobile-qa",
-      "mobile-testing",
-      "open-source",
-      "qa-tools",
-      "react-native",
-      "self-hosted",
-      "simulator",
-      "testing"
-    ],
-    "url": "https://github.com/jo-duchan/tapflow"
+    "stars": 408,
+    "topics": [],
+    "url": "https://github.com/opentofu/registry"
   },
   {
     "archived": false,
@@ -547,8 +557,8 @@
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 44,
-    "pushed_at": "2026-08-03T15:34:34Z",
+    "open_issues": 19,
+    "pushed_at": "2026-08-03T15:38:40Z",
     "reasons": [
       "2887\u2605 python active",
       "has good-first issues"

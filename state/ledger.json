@@ -3,7 +3,7 @@
   "daily_count": {
     "2026-07-07": 1,
     "2026-08-02": 1,
-    "2026-08-03": 1
+    "2026-08-03": 2
   },
   "prs": {
     "PostHog/posthog#29916": {
@@ -34,6 +34,17 @@
       "last_event": "",
       "model_cascade": [],
       "opened_at": "2026-08-02T10:22:51.734500+00:00",
+      "pr_url": "",
+      "status": "claimed",
+      "token_spend": 0,
+      "tracking_issue": ""
+    },
+    "medusajs/medusa#15742": {
+      "fork_url": "",
+      "issue_url": "https://github.com/medusajs/medusa/issues/15742",
+      "last_event": "",
+      "model_cascade": [],
+      "opened_at": "2026-08-03T15:50:15.378587+00:00",
       "pr_url": "",
       "status": "claimed",
       "token_spend": 0,
