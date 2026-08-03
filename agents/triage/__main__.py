@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import structlog
 from lib.aio import gather_safe
 from lib.scorer import (
+    MAX_ACTIVITY_AGE_DAYS,
     MAX_ISSUE_AGE_DAYS,
     MIN_ISSUE_AGE_DAYS,
     NEGATIVE_LABELS,
@@ -50,6 +51,7 @@ class TriagedIssue(BaseModel):
     title: str
     url: str
     issue_age_days: int
+    activity_age_days: int
     score: int
     breakdown: dict[str, int] = Field(default_factory=dict)
     tractable: bool = False
@@ -83,6 +85,7 @@ async def triage_candidates(
     # 2. deterministic pre-score (no model, no comments) → cheap ranking
     prelim: list[dict] = []
     age_window_rejected = 0
+    inactive_rejected = 0
     for repo, issues in zip(repos, issue_lists, strict=True):
         for iss in issues:
             det = deterministic_signals(iss, now)
@@ -90,6 +93,9 @@ async def triage_candidates(
             body = str(iss.get("body") or "").strip()
             if not det["within_target_age_window"]:
                 age_window_rejected += 1
+                continue
+            if not det["recently_active"]:
+                inactive_rejected += 1
                 continue
             if (
                 not det["no_assignee"]
@@ -108,6 +114,12 @@ async def triage_candidates(
             count=age_window_rejected,
             min_days=MIN_ISSUE_AGE_DAYS,
             max_days=MAX_ISSUE_AGE_DAYS,
+        )
+    if inactive_rejected:
+        log.info(
+            "triage.inactive_rejected",
+            count=inactive_rejected,
+            max_activity_age_days=MAX_ACTIVITY_AGE_DAYS,
         )
 
     prelim.sort(key=lambda x: x["pre"], reverse=True)
@@ -199,6 +211,7 @@ async def triage_candidates(
                 title=iss.get("title", ""),
                 url=iss.get("html_url", ""),
                 issue_age_days=x["det"]["issue_age_days"],
+                activity_age_days=x["det"]["activity_age_days"],
                 score=total,
                 breakdown=breakdown,
                 tractable=llm.get("tractable") is True,

@@ -117,11 +117,11 @@ The score is necessary but not sufficient. Pick also requires every hard
 solvability gate below:
 
 - `tractable=true`, with `trivial` or `small` complexity;
-- created 15 to 20 calendar days before the triage run, inclusive;
+- created 7 to 45 calendar days before the triage run, inclusive;
 - an estimated one to five changed files and confidence of at least 0.70;
 - a clear acceptance criterion, or a bug label paired with reproduction steps;
 - no assignee or recent claim;
-- activity within the last 365 days;
+- activity within the last 30 days;
 - no unresolved maintainer decision, private access, secrets, privileged
   infrastructure, specialized hardware, or internal/private paths;
 - no design, discussion, question, or triage-stage label.
@@ -131,8 +131,8 @@ not proof that the work is easy.
 
 Creation age, claim windows, and literal `internal/` or `private/` path references are computed
 from GitHub timestamps and text patterns, not inferred by the routed triage
-writer. Issues outside the 15–20 day creation window or untouched for over 365
-days are removed before that call. Pick independently rechecks the stored age.
+writer. Issues outside the 7–45 day creation window or untouched for over 30
+days are removed before that call. Pick independently rechecks both stored ages.
 
 ### Local dry run
 

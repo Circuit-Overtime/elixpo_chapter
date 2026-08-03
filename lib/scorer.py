@@ -13,8 +13,9 @@ from math import isfinite
 from pydantic import BaseModel, Field
 
 THRESHOLD = 8
-MIN_ISSUE_AGE_DAYS = 15
-MAX_ISSUE_AGE_DAYS = 20
+MIN_ISSUE_AGE_DAYS = 7
+MAX_ISSUE_AGE_DAYS = 45
+MAX_ACTIVITY_AGE_DAYS = 30
 
 POSITIVE_LABELS = {"good first issue", "help wanted", "up-for-grabs", "hacktoberfest"}
 NEGATIVE_LABELS = {"triage", "needs-design", "discussion", "question"}
@@ -32,6 +33,17 @@ def in_issue_age_window(age_days: object) -> bool:
     except (TypeError, ValueError):
         return False
     return MIN_ISSUE_AGE_DAYS <= age <= MAX_ISSUE_AGE_DAYS
+
+
+def is_recently_active(activity_age_days: object) -> bool:
+    """Return whether an issue was updated inside the inclusive freshness window."""
+    if isinstance(activity_age_days, bool):
+        return False
+    try:
+        age = int(activity_age_days)
+    except (TypeError, ValueError):
+        return False
+    return 0 <= age <= MAX_ACTIVITY_AGE_DAYS
 
 
 class IssueSignals(BaseModel):

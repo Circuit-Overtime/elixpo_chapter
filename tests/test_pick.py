@@ -19,6 +19,7 @@ def _t(repo, number, score, tractable=True, easy=True):
         "title": f"{repo}#{number}",
         "url": f"https://github.com/{repo}/issues/{number}",
         "issue_age_days": 17,
+        "activity_age_days": 5,
         "score": score,
         "breakdown": {"good_first/help_wanted": 5, "no_assignee": 2},
         "tractable": tractable,
@@ -45,11 +46,18 @@ def test_below_threshold_and_untractable_skipped():
 
 
 def test_out_of_window_or_missing_age_is_skipped():
-    too_new = {**_t("o/new", 1, 20), "issue_age_days": 14}
-    too_old = {**_t("o/old", 2, 20), "issue_age_days": 21}
+    too_new = {**_t("o/new", 1, 20), "issue_age_days": 6}
+    too_old = {**_t("o/old", 2, 20), "issue_age_days": 46}
     missing = _t("o/missing", 3, 20)
     missing.pop("issue_age_days")
     assert select_top([too_new, too_old, missing], Ledger(), DAY) is None
+
+
+def test_inactive_or_missing_activity_age_is_skipped():
+    inactive = {**_t("o/inactive", 1, 20), "activity_age_days": 31}
+    missing = _t("o/missing", 2, 20)
+    missing.pop("activity_age_days")
+    assert select_top([inactive, missing], Ledger(), DAY) is None
 
 
 def test_lower_scoring_easy_issue_beats_high_scoring_blocked_issue():

@@ -27,10 +27,11 @@ Do not override those facts. Infer only the fuzzy fields supplied in the output
 schema: reproduction quality, acceptance clarity, tractability, complexity,
 likely file count, confidence, and environmental or decision blockers.
 
-Only issues created 15 to 20 calendar days before the triage run, inclusive,
+Only issues created 7 to 45 calendar days before the triage run, inclusive,
 are eligible. Reject missing or malformed creation timestamps and issues outside
-that window before any routed call. This creation-age gate is separate from the
-365-day update freshness guard.
+that window before any routed call. Separately, require an update within the last
+30 calendar days so a wider creation window never admits abandoned work. Missing
+or malformed update timestamps fail closed.
 
 Before any model call, search the repository's pull requests for an exact issue
 reference and inspect the issue timeline as a secondary signal. Fine-grained
@@ -97,8 +98,8 @@ Use confidence to express evidence quality, not general optimism.
 ## Honor the final easy-work gate
 
 An easy issue must be tractable, trivial/small, one to five estimated files, at
-least 0.70 confidence, created 15–20 calendar days before triage, updated within
-365 days, unassigned and unclaimed, and have either
+least 0.70 confidence, created 7–45 calendar days before triage, updated within
+30 days, unassigned and unclaimed, and have either
 a clear acceptance criterion or reproducible labelled bug. It must have no
 maintainer-decision, access, hardware, internal-path, discuss-first, or design-stage
 blocker.

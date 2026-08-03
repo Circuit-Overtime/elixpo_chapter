@@ -11,7 +11,7 @@ The justification is built from the score breakdown + the model's rationale.
 
 from __future__ import annotations
 
-from lib.scorer import THRESHOLD, in_issue_age_window
+from lib.scorer import THRESHOLD, in_issue_age_window, is_recently_active
 from lib.state.ledger import Ledger
 
 
@@ -62,6 +62,8 @@ def select_top(
         if require_easy and not t.get("easy", False):
             continue
         if not in_issue_age_window(t.get("issue_age_days")):
+            continue
+        if not is_recently_active(t.get("activity_age_days")):
             continue
         ok, _ = is_eligible(t["repo"], t["number"], ledger)
         if ok:

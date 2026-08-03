@@ -83,6 +83,7 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
         "title": pick.get("title", ""),
         "url": pick.get("url", ""),
         "issue_age_days": pick.get("issue_age_days"),
+        "activity_age_days": pick.get("activity_age_days"),
         "score": pick.get("score", 0),
         "tractable": pick.get("tractable", False),
         "easy": pick.get("easy", False),
