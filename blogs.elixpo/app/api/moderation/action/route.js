@@ -42,12 +42,16 @@ export async function POST(request) {
 
     // ── takedown: hard delete ──
     // Best-effort Cloudinary cleanup before the rows vanish.
+    let mediaOwners = [];
     try {
-      const media = await db.prepare('SELECT cloudinary_public_id FROM media_uploads WHERE blog_id = ?').bind(blogId).all();
-      const ids = (media?.results || []).map(m => m.cloudinary_public_id).filter(Boolean);
-      if (ids.length) {
-        const { deleteFromCloudinary } = await import('../../../../lib/cloudinary');
-        await Promise.allSettled(ids.map(id => deleteFromCloudinary(id)));
+      const media = await db.prepare(`
+        SELECT user_id, cloudinary_public_id, storage_provider, storage_cloud_name
+        FROM media_uploads WHERE blog_id = ?
+      `).bind(blogId).all();
+      if (media?.results?.length) {
+        mediaOwners = media.results.map((item) => item.user_id);
+        const { deleteTrackedMediaBatch } = await import('../../../../lib/mediaStorage');
+        await deleteTrackedMediaBatch(db, media.results);
       }
     } catch (e) {
       console.error('Cloudinary cleanup failed (continuing):', e?.message || e);
@@ -61,6 +65,10 @@ export async function POST(request) {
       db.prepare('DELETE FROM media_uploads WHERE blog_id = ?').bind(blogId),
       db.prepare('DELETE FROM blogs WHERE id = ?').bind(blogId),
     ]);
+    try {
+      const { recalculatePlatformStorage } = await import('../../../../lib/mediaStorage');
+      await recalculatePlatformStorage(db, mediaOwners);
+    } catch {}
 
     // Notify the author by email (best-effort).
     if (blog.author_email) {

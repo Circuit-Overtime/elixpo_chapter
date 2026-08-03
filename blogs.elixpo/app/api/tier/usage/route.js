@@ -36,6 +36,8 @@ export async function GET() {
         limit: limits.totalStorageBytes,
         usedFormatted: formatBytes(user.storage_used_bytes),
         limitFormatted: formatBytes(limits.totalStorageBytes),
+        remaining: Math.max(0, limits.totalStorageBytes - user.storage_used_bytes),
+        remainingFormatted: formatBytes(Math.max(0, limits.totalStorageBytes - user.storage_used_bytes)),
         percent: Math.round((user.storage_used_bytes / limits.totalStorageBytes) * 100),
       },
       ai: {
@@ -65,7 +67,15 @@ function fallbackResponse() {
   const limits = getLimits('free');
   return NextResponse.json({
     tier: 'free',
-    storage: { used: 0, limit: limits.totalStorageBytes, usedFormatted: '0 B', limitFormatted: formatBytes(limits.totalStorageBytes), percent: 0 },
+    storage: {
+      used: 0,
+      limit: limits.totalStorageBytes,
+      remaining: limits.totalStorageBytes,
+      usedFormatted: '0 B',
+      limitFormatted: formatBytes(limits.totalStorageBytes),
+      remainingFormatted: formatBytes(limits.totalStorageBytes),
+      percent: 0,
+    },
     ai: { used: 0, limit: limits.aiRequestsPerDay, percent: 0 },
     orgs: { owned: 0, limit: limits.ownedOrgs },
     limits: {

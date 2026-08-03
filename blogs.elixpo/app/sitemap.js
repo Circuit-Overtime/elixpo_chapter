@@ -3,6 +3,8 @@ export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
+import { docsNavFlat } from '../src/config/docsNav';
+
 const SITE_URL = 'https://blogs.elixpo.com';
 
 // Dynamic sitemap.
@@ -28,6 +30,11 @@ export default async function sitemap() {
     { url: `${SITE_URL}/badges`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
+    ...docsNavFlat.map((doc) => ({
+      url: `${SITE_URL}/docs/${doc.slug}`,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    })),
   ].map((p) => ({ ...p, lastModified: new Date() }));
 
   try {

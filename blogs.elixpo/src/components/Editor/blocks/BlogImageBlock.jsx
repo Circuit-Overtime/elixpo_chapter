@@ -4,6 +4,7 @@ import { createReactBlockSpec } from '@blocknote/react';
 import { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { IMAGE_ACCEPT_ATTR } from '../../../utils/allowedImageTypes';
 import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload } from '../../../utils/mediaUploadQueue';
+import MediaStorageChip from '../MediaStorageChip';
 
 export const BlogImageUploadContext = createContext({ blogId: null });
 
@@ -29,7 +30,7 @@ export const BlogImageBlock = createReactBlockSpec(
 );
 
 function BlogImageRenderer({ block, editor }) {
-  const { blogId } = useContext(BlogImageUploadContext);
+  const { blogId, mediaStorageStatus, mediaStorageReturnTo } = useContext(BlogImageUploadContext);
   const { url, caption, _imageId, _uploading, _uploadJobId } = block.props;
   const [mode, setMode] = useState('idle'); // idle | embed | generate | generating
   const [embedUrl, setEmbedUrl] = useState('');
@@ -267,12 +268,20 @@ function BlogImageRenderer({ block, editor }) {
           <div className="blog-img-skel-image">
             <div className="blog-img-skel-shimmer" />
             <div className="blog-img-skel-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="M21 15l-5-5L5 21" />
-              </svg>
-              {_uploading === 'uploading' && <span className="mt-2 animate-pulse text-xs font-semibold">Uploading image…</span>}
+              <span className="blog-img-upload-orbit">
+                <ion-icon name="cloud-upload-outline" />
+              </span>
+              {_uploading === 'uploading' && (
+                <>
+                  <span className="mt-2 text-xs font-semibold">Uploading image</span>
+                  <small className="blog-img-upload-destination">
+                    {mediaStorageStatus?.useForUploads && mediaStorageStatus?.cloudName
+                      ? `to ${mediaStorageStatus.cloudName}`
+                      : 'to LixBlogs storage'}
+                  </small>
+                  <span className="blog-img-upload-track"><span /></span>
+                </>
+              )}
             </div>
           </div>
           <div className="blog-img-skel-caption">
@@ -472,6 +481,9 @@ function BlogImageRenderer({ block, editor }) {
         >
           {caption || 'Add a caption...'}
         </p>
+      )}
+      {block.props._mediaId && (
+        <MediaStorageChip status={mediaStorageStatus} returnTo={mediaStorageReturnTo} />
       )}
     </div>
   );
