@@ -14,6 +14,11 @@ from lib.scorer import IssueSignals
 MAINTAINER_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
 
 
+def _is_true(value: object) -> bool:
+    """Accept only a real JSON boolean; ambiguous strings fail closed."""
+    return value is True
+
+
 def _created(issue: dict) -> datetime | None:
     ts = issue.get("created_at", "")
     try:
@@ -44,9 +49,9 @@ def merge_signals(deterministic: dict, llm: dict | None = None) -> IssueSignals:
         older_than_7_days=deterministic.get("older_than_7_days", False),
         op_is_core_maintainer=deterministic.get("op_is_core_maintainer", False),
         # fuzzy — from the model (default to the safe/neutral value if absent)
-        has_repro_steps=bool(llm.get("has_repro_steps", False)),
-        has_acceptance_criterion=bool(llm.get("has_acceptance_criterion", False)),
-        someone_claimed_recently=bool(llm.get("someone_claimed_recently", False)),
-        touches_internal_paths=bool(llm.get("touches_internal_paths", False)),
-        no_maintainer_claim=not bool(llm.get("maintainer_claimed", False)),
+        has_repro_steps=_is_true(llm.get("has_repro_steps")),
+        has_acceptance_criterion=_is_true(llm.get("has_acceptance_criterion")),
+        someone_claimed_recently=_is_true(llm.get("someone_claimed_recently")),
+        touches_internal_paths=_is_true(llm.get("touches_internal_paths")),
+        no_maintainer_claim=not _is_true(llm.get("maintainer_claimed")),
     )

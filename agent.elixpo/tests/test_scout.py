@@ -20,6 +20,9 @@ def _repo(**kw):
         "pushed_at": "2026-06-19T00:00:00Z",
         "topics": [],
         "archived": False,
+        "fork": False,
+        "has_issues": True,
+        "license": {"key": "mit"},
         "open_issues_count": 5,
         "html_url": "https://github.com/o/r",
     }
@@ -50,6 +53,9 @@ def test_passes_filters_accept():
         (_repo(language="Brainfuck"), "language"),
         (_repo(pushed_at="2026-01-01T00:00:00Z"), "inactive"),
         (_repo(archived=True), "archived"),
+        (_repo(fork=True), "fork"),
+        (_repo(has_issues=False), "issues disabled"),
+        (_repo(license=None), "license"),
         (_repo(topics=["no-ai-contributions"]), "opted_out"),
     ],
 )
@@ -60,9 +66,17 @@ def test_passes_filters_reject(repo, why):
 
 
 def test_health_score_rewards_signals():
-    low = health_score(_repo(stargazers_count=100, open_issues_count=0, license=None), False)
-    high = health_score(_repo(stargazers_count=10000, open_issues_count=30, license={"key": "mit"}), True)
+    low = health_score(_repo(stargazers_count=100, open_issues_count=300), False, NOW)
+    high = health_score(_repo(stargazers_count=10000, open_issues_count=30), True, NOW)
     assert high > low
+
+
+def test_health_score_prefers_manageable_active_backlog():
+    manageable = health_score(_repo(open_issues_count=20), True, NOW)
+    overloaded = health_score(_repo(open_issues_count=900), True, NOW)
+    stale = health_score(_repo(open_issues_count=20, pushed_at="2026-05-22T00:00:00Z"), True, NOW)
+    assert manageable > overloaded
+    assert manageable > stale
 
 
 # --- discovery with a band-aware fake API ---
@@ -146,10 +160,10 @@ async def test_discover_mixes_star_bands():
 
 @pytest.mark.asyncio
 async def test_discover_search_only_skips_contributing():
-    """Default path does NO per-repo CONTRIBUTING fetch; one search per band."""
+    """The opt-out path does no per-repo CONTRIBUTING fetch; one search per band."""
     from agents.scout.__main__ import BANDS, discover_candidates
 
     api = FakeAPI([_repo(full_name="o/a", stargazers_count=500)])
-    cands = await discover_candidates(api, ["python"], blocklist=set(), now=NOW)
+    cands = await discover_candidates(api, ["python"], blocklist=set(), now=NOW, check_contributing=False)
     assert cands and cands[0].has_contributing is False
     assert api.searches == len(BANDS)  # one search per star band, zero contents calls
