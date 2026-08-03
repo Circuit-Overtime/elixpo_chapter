@@ -16,12 +16,18 @@ from lib.scorer import NEGATIVE_LABELS, assess_solvability, score
 from pydantic import BaseModel, Field
 
 from agents.triage.extract import extract_issue_signals
-from agents.triage.fetch import fetch_comments, fetch_good_first_issues, fetch_issue_timeline
+from agents.triage.fetch import (
+    fetch_comments,
+    fetch_good_first_issues,
+    fetch_issue_timeline,
+    search_pull_requests_referencing_issues,
+)
 from agents.triage.signals import (
     deterministic_comment_signals,
     deterministic_signals,
     linked_pull_requests,
     merge_signals,
+    pull_request_issue_references,
 )
 
 log = structlog.get_logger()
@@ -94,12 +100,32 @@ async def triage_candidates(
         [fetch_issue_timeline(api, x["repo"], x["issue"]["number"]) for x in timeline_pool],
         default=None,
     )
+
+    # Fine-grained tokens can redact timeline cross-reference sources for public
+    # repositories. Search PRs once per repository and match exact #N references
+    # locally; this is the authoritative availability check.
+    by_repo: dict[str, list[int]] = {}
+    for candidate in timeline_pool:
+        by_repo.setdefault(candidate["repo"], []).append(candidate["issue"]["number"])
+    repo_names = list(by_repo)
+    repo_pull_results = await gather_safe(
+        [search_pull_requests_referencing_issues(api, repo, by_repo[repo]) for repo in repo_names],
+        default=None,
+    )
+    searched_refs: dict[str, dict[int, list[dict]] | None] = {}
+    for repo, pulls in zip(repo_names, repo_pull_results, strict=True):
+        searched_refs[repo] = (
+            None if pulls is None else pull_request_issue_references(pulls, set(by_repo[repo]))
+        )
+
     short: list[dict] = []
     pr_conflicts = 0
     for candidate, timeline in zip(timeline_pool, timelines, strict=True):
-        if timeline is None:
+        issue_number = candidate["issue"]["number"]
+        search_refs = searched_refs[candidate["repo"]]
+        if search_refs is None:
             continue
-        if linked_pull_requests(timeline):
+        if search_refs[issue_number] or linked_pull_requests(timeline):
             pr_conflicts += 1
             continue
         short.append(candidate)

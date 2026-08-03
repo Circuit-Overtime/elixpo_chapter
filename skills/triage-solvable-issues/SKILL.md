@@ -27,10 +27,13 @@ Do not override those facts. Infer only the fuzzy fields supplied in the output
 schema: reproduction quality, acceptance clarity, tractability, complexity,
 likely file count, confidence, and environmental or decision blockers.
 
-Before any model call, inspect the issue timeline. Reject an issue when any pull
-request is cross-referenced from it, regardless of whether that attempt is open,
-closed, or merged. Also reject recent contributor intent such as "I'd like to
-investigate this"; do not compete for work merely because GitHub has no assignee.
+Before any model call, search the repository's pull requests for an exact issue
+reference and inspect the issue timeline as a secondary signal. Fine-grained
+tokens can redact timeline cross-reference sources, so an empty timeline alone is
+not proof that work is available. Reject an issue when either API surface finds a
+pull request, regardless of whether that attempt is open, closed, or merged. Also
+reject recent contributor intent such as "I'd like to investigate this"; do not
+compete for work merely because GitHub has no assignee.
 
 ## Classify scope conservatively
 

@@ -44,3 +44,21 @@ async def fetch_issue_timeline(api: Fetcher, full_name: str, number: int, per: i
         params={"per_page": per},
     )
     return data if isinstance(data, list) else []
+
+
+async def search_pull_requests_referencing_issues(
+    api: Fetcher,
+    full_name: str,
+    numbers: list[int],
+    per: int = 100,
+) -> list[dict]:
+    """Search a repository's PRs for references to several issue numbers at once."""
+    if not numbers:
+        return []
+    references = " OR ".join(f'"#{number}"' for number in numbers)
+    data = await api._request(
+        "GET",
+        "/search/issues",
+        params={"q": f"repo:{full_name} is:pr ({references})", "per_page": per},
+    )
+    return data.get("items", []) if isinstance(data, dict) else []

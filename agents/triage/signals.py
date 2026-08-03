@@ -51,6 +51,30 @@ def linked_pull_requests(timeline: list[dict] | None) -> list[dict]:
             }
         )
     return found
+
+
+def pull_request_issue_references(pulls: list[dict] | None, numbers: set[int]) -> dict[int, list[dict]]:
+    """Map issue numbers to PRs whose title/body explicitly references them."""
+    found: dict[int, list[dict]] = {number: [] for number in numbers}
+    for pull in pulls or []:
+        text = f"{pull.get('title') or ''}\n{pull.get('body') or ''}"
+        for number in numbers:
+            patterns = (
+                rf"(?<!\w)#{number}(?!\d)",
+                rf"/issues/{number}(?!\d)",
+            )
+            if not any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns):
+                continue
+            found[number].append(
+                {
+                    "number": pull.get("number"),
+                    "state": pull.get("state", "unknown"),
+                    "url": str(pull.get("html_url") or pull.get("url") or ""),
+                }
+            )
+    return found
+
+
 _UNCLAIM_RE = re.compile(
     r"\b(?:no longer working|not working on this|won't work on|cannot work on|"
     r"can no longer|giving this up|unassign me)\b",

@@ -11,6 +11,7 @@ from agents.triage.signals import (
     deterministic_signals,
     linked_pull_requests,
     merge_signals,
+    pull_request_issue_references,
 )
 from rtk.models import ChatCompletionResponse, Choice, Message, Usage
 
@@ -174,16 +175,52 @@ def test_linked_pull_requests_detects_and_deduplicates_pr_cross_references():
     ]
 
 
+def test_pr_search_results_match_exact_issue_references_without_number_noise():
+    pulls = [
+        {
+            "number": 1271,
+            "state": "closed",
+            "html_url": "https://github.com/o/r/pull/1271",
+            "title": "fix auth",
+            "body": "Partial fix for #337.",
+        },
+        {
+            "number": 207,
+            "state": "closed",
+            "html_url": "https://github.com/o/r/pull/207",
+            "title": "Reduce install size by 337 MB",
+            "body": "No linked issue.",
+        },
+    ]
+    assert pull_request_issue_references(pulls, {337}) == {
+        337: [{"number": 1271, "state": "closed", "url": "https://github.com/o/r/pull/1271"}]
+    }
+
+
 # --- orchestration ---
 
 class FakeAPI:
-    def __init__(self, issues, comments=None, timelines=None, timeline_error=False):
+    def __init__(
+        self,
+        issues,
+        comments=None,
+        timelines=None,
+        timeline_error=False,
+        pull_search=None,
+        pull_search_error=False,
+    ):
         self.issues = issues
         self.comments = comments or []
         self.timelines = timelines or {}
         self.timeline_error = timeline_error
+        self.pull_search = pull_search or []
+        self.pull_search_error = pull_search_error
 
     async def _request(self, method, path, **kwargs):
+        if path == "/search/issues":
+            if self.pull_search_error:
+                raise RuntimeError("pull search unavailable")
+            return {"items": self.pull_search}
         if path.endswith("/timeline"):
             if self.timeline_error:
                 raise RuntimeError("timeline unavailable")
@@ -373,8 +410,8 @@ async def test_triage_skips_issue_when_timeline_cannot_be_verified():
         [{"full_name": "o/r"}],
         NOW,
     )
-    assert out == []
-    assert router.calls == 0
+    assert len(out) == 1
+    assert router.calls == 1
 
 
 @pytest.mark.asyncio
@@ -392,6 +429,43 @@ async def test_triage_rejects_recent_claim_before_model_call():
     router = FakeRouter({"tractable": True})
     out = await triage_candidates(
         FakeAPI([_issue(1)], comments=comments),
+        router,
+        [{"full_name": "o/r"}],
+        NOW,
+    )
+    assert out == []
+    assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_triage_rejects_pr_found_by_search_when_timeline_is_redacted():
+    from agents.triage.__main__ import triage_candidates
+
+    pull = {
+        "number": 1291,
+        "state": "closed",
+        "html_url": "https://github.com/o/r/pull/1291",
+        "title": "fix auth",
+        "body": "Closes the whitespace task from #337.",
+    }
+    router = FakeRouter({"tractable": True})
+    out = await triage_candidates(
+        FakeAPI([_issue(337)], timelines={337: []}, pull_search=[pull]),
+        router,
+        [{"full_name": "o/r"}],
+        NOW,
+    )
+    assert out == []
+    assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_triage_fails_closed_when_pr_search_is_unavailable():
+    from agents.triage.__main__ import triage_candidates
+
+    router = FakeRouter({"tractable": True})
+    out = await triage_candidates(
+        FakeAPI([_issue(1)], pull_search_error=True),
         router,
         [{"full_name": "o/r"}],
         NOW,
