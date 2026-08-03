@@ -1,9 +1,15 @@
 {
-  "error": "GitHub denied fork creation from elixpo/lixrl.com to elixpoo/lixrl.com for elixpoo: Resource not accessible by personal access token. For a fine-grained token, select the source repository and grant Administration: read/write plus Contents: read (administration=write,contents=read); the destination account must also allow repository creation.",
-  "failed_at": "2026-08-03T20:20:58.782793+00:00",
+  "base_branch": "main",
+  "branch": "elixpo/issue-9-54a345",
+  "error": "Client error '403 Forbidden' for url 'https://gen.pollinations.ai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+  "failed_at": "2026-08-03T20:30:33.451105+00:00",
+  "fork_repo": "elixpoo/lixrl.com",
   "issue_url": "https://github.com/elixpo/lixrl.com/issues/9",
-  "started_at": "2026-08-03T20:20:52.658874+00:00",
+  "key": "elixpo/lixrl.com#9",
+  "started_at": "2026-08-03T20:30:31.025561+00:00",
   "status": "failed",
   "test_mode": true,
-  "token_spent": 0
+  "token_spent": 0,
+  "upstream_repo": "elixpo/lixrl.com",
+  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-9-a3efb3"
 }
