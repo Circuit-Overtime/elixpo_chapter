@@ -29,7 +29,15 @@
 - **Safety gate before any public post**: route through the `qwen-safety` role.
 - **Honest disclosure**: PRs/comments post as `elixpoo[bot]` and say they're from an autonomous contributor.
 - **Publishable design**: build tools/connectors so they can ship as a pypi/npm package later — keep modules dependency-light and interface-clean.
-- **Latest agentic techniques**: structured outputs (JSON schema tool calls), plan→implement→self-review loops, model escalation (qwen-coder-large → claude after 2 failures), retrieval over re-sending context.
+- **Latest agentic techniques**: structured outputs (JSON schema tool calls), bounded plan→implement→self-review, exact-file retrieval over re-sending context, and no whole-run retry.
+
+## Solve Safety
+
+- Vet must anticipate no more than 15 focused minutes and five files.
+- Solve uses `qwen-coder` for one plan, at most two edit steps, and one review; `perplexity-fast` is allowed once only when the plan proves source context is insufficient.
+- Load the phase-specific skill under `skills/` for each routed call; never inject the full Solve contract into every phase.
+- Target-repository commands use an allowlist, timeout, compressed output, and a minimal environment with no agent credentials.
+- Keep implementation commits local until checks and review pass. Submit alone pushes and opens the disclosed PR after `qwen-safety` approval.
 
 ## Git & PR Workflow
 

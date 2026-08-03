@@ -73,7 +73,7 @@ async def plan_issue(router, issue: dict, context: str, policy: dict) -> SolvePl
         tools=[_tool(name, "Record a minimal implementation plan.", SolvePlan)],
         tool_choice=_forced(name),
         effort="low",
-        max_tokens=1200,
+        max_tokens=800,
     )
     return _parse(response, SolvePlan)
 
@@ -93,7 +93,7 @@ async def search_once(router, query: str, issue: dict) -> str:
             Message(role="user", content=f"Issue: {issue.get('title', '')}\nQuestion: {query}"),
         ],
         effort="low",
-        max_tokens=450,
+        max_tokens=300,
     )
     return truncate_text(response.choices[0].message.content or "", max_tokens=500)
 
@@ -122,7 +122,7 @@ async def implement_step(
         tools=[_tool(name, "Return exact atomic replacements for only the planned files.", StepImplementation)],
         tool_choice=_forced(name),
         effort="low",
-        max_tokens=4200,
+        max_tokens=2600,
     )
     return _parse(response, StepImplementation)
 
@@ -133,7 +133,7 @@ async def review_diff(router, issue: dict, plan: SolvePlan, diff: str, checks: l
         "issue": {"title": issue.get("title"), "body": issue.get("body")},
         "plan": plan.model_dump(),
         "checks": checks,
-        "diff": truncate_text(diff, max_tokens=7000),
+        "diff": truncate_text(diff, max_tokens=3500),
     }
     response = await router.call(
         "review",
@@ -151,6 +151,6 @@ async def review_diff(router, issue: dict, plan: SolvePlan, diff: str, checks: l
         tools=[_tool(name, "Record the final implementation review.", ReviewVerdict)],
         tool_choice=_forced(name),
         effort="low",
-        max_tokens=650,
+        max_tokens=450,
     )
     return _parse(response, ReviewVerdict)

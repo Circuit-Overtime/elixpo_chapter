@@ -62,12 +62,9 @@ def run_verification(
     timeout: int,
 ) -> CmdResult:
     args = validate_command(command, allowed_prefixes)
-    env = {
-        key: value
-        for key, value in os.environ.items()
-        if not any(marker in key.casefold() for marker in ("token", "secret", "password", "api_key", "private_key"))
-    }
-    env.update({"CI": "true", "GIT_TERMINAL_PROMPT": "0"})
+    inherited = ("PATH", "LANG", "LC_ALL", "TMPDIR", "VIRTUAL_ENV", "SYSTEMROOT", "COMSPEC", "PATHEXT")
+    env = {key: os.environ[key] for key in inherited if key in os.environ}
+    env.update({"CI": "true", "GIT_TERMINAL_PROMPT": "0", "NO_COLOR": "1"})
     result = rtk_run(args, cwd=str(workspace), timeout=timeout, env=env)
     result.output = truncate_text(result.output, max_tokens=1800)
     return result

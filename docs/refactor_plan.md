@@ -78,7 +78,7 @@ activity permits one fresh evaluation.
 ### Comprehend — Context loading
 *(Runs as the first step of Solve, not a separate workflow.)*
 - **Job:** Build a tight context bundle from tracked paths, issue-named files, exact symbols, scoped `AGENTS.md`/`CLAUDE.md`, and manifests.
-- **Target:** context bundle under 12k tokens; reload only exact plan files for editing.
+- **Target:** context bundle under 4.5k tokens; reload only exact plan files for editing.
 - **Skill:** `skills/comprehend-target-code/SKILL.md`
 
 ### Solve — Coding
@@ -154,7 +154,7 @@ records the ledger claim after approving the exact pending URL.
 
 ### Local dry run
 
-The three stages only read public GitHub data and write local `state/*.json`;
+The four stages only read public GitHub data and write local `state/*.json`;
 they do not comment, fork, or open a pull request:
 
 ```bash
@@ -169,6 +169,19 @@ or `ELIXPOO_GITHUB_AGENTIC_TOKEN`; triage also requires
 `ELIXPO_POLLINATIONS_API_KEY`. Inspect `state/candidates.json`,
 `state/triaged.json`, and `state/pick.json` after each stage.
 
+Solve and Submit are mutating stages and are intentionally separate from this
+read-only dry run. For the owned test target:
+
+```bash
+python -m agents.vet https://github.com/elixpo/lixrl.com/issues/9 --owned-test --force
+python -m agents.solve --issue-url https://github.com/elixpo/lixrl.com/issues/9 --owned-test
+python -m json.tool state/solve.json
+python -m agents.submit
+```
+
+Do not run Submit until `state/solve.json` is `ready_to_submit` and its recorded
+checks, files, commits, branch, and token spend are acceptable.
+
 ---
 
 ## 5. Model routing (Pollinations)
@@ -180,14 +193,13 @@ Roles map to models, not the other way around. Agents request `model: "code"`, t
 | Repo crawling, label classification | `nova-fast` | Cheapest tool-capable model |
 | Issue scoring, triage reasoning | `nova-fast` | Lowest explicitly priced general tool-calling model |
 | Final issue suitability verification | `nova-fast` | One compact structured call after zero-cost gates |
-| Repo mapping & summarization | `gemini-flash-lite-3.1` | 1M context fits whole small repos |
-| Planning (what to change) | `kimi` | Strong agentic reasoning, mid-cost |
-| **Code generation — primary** | `qwen-coder-large` | First attempt always |
-| **Code generation — escalation** | `claude` (Sonnet 4.6) | Only after qwen self-review fails twice |
-| Self-review of diffs | `claude-fast` (Haiku) | Cheap, sharp critic |
+| Repository comprehension | deterministic retrieval | No model; bounded tracked-file context |
+| Planning (what to change) | `qwen-coder` | One forced structured plan |
+| **Code generation** | `qwen-coder` | At most two exact-edit calls |
+| Self-review of diffs | `qwen-coder` | One compact forced verdict |
 | PR body, commit messages | `mistral` | Natural prose, cheap |
 | Steward replies | `kimi` | Good at conversational follow-ups + tool use |
-| Web search (when needed) | `gemini-search` | Built-in grounding |
+| Web search (when indispensable) | `perplexity-fast` | At most one narrow call per Solve run |
 | Safety gate before posting | `qwen-safety` | Costs ~nothing, blocks problematic outputs |
 | Celebration image | `gptimage` | On merge only |
 

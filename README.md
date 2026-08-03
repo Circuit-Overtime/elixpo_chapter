@@ -59,6 +59,39 @@ pytest                         # every squad is individually testable
 python -m agents.scout         # run one squad
 ```
 
+### Manual Solve test
+
+The controlled implementation target is
+[`elixpo/lixrl.com#9`](https://github.com/elixpo/lixrl.com/issues/9). It is
+assigned, so test it through the explicit owned-repository boundary:
+
+```bash
+python -m agents.vet \
+  https://github.com/elixpo/lixrl.com/issues/9 \
+  --owned-test --force
+
+python -m agents.solve \
+  --issue-url https://github.com/elixpo/lixrl.com/issues/9 \
+  --owned-test
+
+python -m json.tool state/solve.json
+```
+
+Solve creates/reuses the authenticated fork, checks out a fresh issue branch,
+loads only relevant source and guidance, applies exact edits, runs bounded checks,
+commits locally, and stops at `ready_to_submit`. Inspect the state and fork
+workspace before publishing:
+
+```bash
+python -m agents.submit
+python -m json.tool state/submit.json
+```
+
+Submit pushes the reviewed branch and opens the disclosed PR. Set
+`ELIXPO_GITHUB_FORK_OWNER` only when the fork should belong to an account other
+than the PAT owner. The target checks receive a minimal environment without the
+GitHub or Pollinations credentials.
+
 ## The ecosystem
 
 | Tool | What it does | Link |

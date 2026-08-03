@@ -34,6 +34,16 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         log.error("solve.invalid_target", error=str(exc))
         return 2
 
+    store.write_json(
+        "solve.json",
+        {
+            "status": "starting",
+            "issue_url": target,
+            "test_mode": owned_test,
+            "started_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
     api = GitHubAPI.from_token(settings.github.token)
     router = Router.from_settings(
         "solve",
@@ -54,7 +64,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
             ),
             timeout=int(policy["max_minutes"]) * 60,
         )
-    except (SolveRejected, asyncio.TimeoutError, Exception) as exc:
+    except Exception as exc:
         # The broad boundary converts provider/git/tool errors into state; it does
         # not retry the whole pipeline or push a partial branch.
         failed = store.read_json("solve.json", {}) or {"issue_url": target}
