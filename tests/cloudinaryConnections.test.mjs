@@ -8,7 +8,7 @@ test('Cloudinary environment URLs are parsed without exposing alternate schemes'
     parseCloudinaryUrl('cloudinary://12345:s3cr%40t@creator-cloud'),
     { cloudName: 'creator-cloud', apiKey: '12345', apiSecret: 's3cr@t' },
   );
-  assert.throws(() => parseCloudinaryUrl('https://12345:secret@creator-cloud'), /cloudinary:\/\//);
+  assert.throws(() => parseCloudinaryUrl('https://12345:secret@creator-cloud'), /Cloudinary URL/);
   assert.throws(() => parseCloudinaryUrl('cloudinary://creator-cloud'), /API key/);
 });
 

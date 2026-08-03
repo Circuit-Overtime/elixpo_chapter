@@ -154,10 +154,13 @@ export async function POST(request) {
       try {
         const replacing = mediaType === 'cover' && blogId
           ? await db.prepare(`
-              SELECT size_bytes FROM media_uploads
-              WHERE cloudinary_public_id = ? AND storage_provider = ?
-            `).bind(`lixblogs/${blogId}/cover`, PLATFORM_CLOUDINARY).first()
+              SELECT size_bytes, storage_provider FROM media_uploads
+              WHERE cloudinary_public_id = ?
+            `).bind(`lixblogs/${blogId}/cover`).first()
           : null;
+        const replacedPlatformBytes = replacing?.storage_provider === PLATFORM_CLOUDINARY
+          ? Number(replacing.size_bytes || 0)
+          : 0;
         const user = await db.prepare('SELECT tier, storage_used_bytes FROM users WHERE id = ?')
           .bind(session.userId).first();
 
@@ -168,7 +171,7 @@ export async function POST(request) {
           const fileBytes = file.size;
 
           if (storageTarget.provider === PLATFORM_CLOUDINARY
-            && user.storage_used_bytes - (replacing?.size_bytes || 0) + fileBytes > limits.totalStorageBytes) {
+            && user.storage_used_bytes - replacedPlatformBytes + fileBytes > limits.totalStorageBytes) {
             return NextResponse.json({
               error: 'Storage limit exceeded',
               used: user.storage_used_bytes,
@@ -179,13 +182,16 @@ export async function POST(request) {
 
           if (blogId) {
             const blogUsage = await db.prepare(
-              'SELECT COALESCE(SUM(size_bytes), 0) as total, COUNT(*) as n FROM media_uploads WHERE blog_id = ?'
-            ).bind(blogId).first();
+              `SELECT COALESCE(SUM(CASE WHEN storage_provider = ? THEN size_bytes ELSE 0 END), 0) AS platform_total,
+                      COUNT(*) AS n
+               FROM media_uploads WHERE blog_id = ?`
+            ).bind(PLATFORM_CLOUDINARY, blogId).first();
 
-            if (blogUsage.total - (replacing?.size_bytes || 0) + fileBytes > MAX_BLOG_IMAGE_BYTES) {
+            if (storageTarget.provider === PLATFORM_CLOUDINARY
+              && blogUsage.platform_total - replacedPlatformBytes + fileBytes > MAX_BLOG_IMAGE_BYTES) {
               return NextResponse.json({
                 error: 'Per-blog image limit exceeded (max 10 MB of images per blog)',
-                used: blogUsage.total,
+                used: blogUsage.platform_total,
                 limit: MAX_BLOG_IMAGE_BYTES,
               }, { status: 413 });
             }
