@@ -64,12 +64,11 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 - **Skill:** `skills/pick-safe-issue/SKILL.md`
 
 ### Vet — Final issue suitability
-- **Trigger:** manual prototype; later consumes a provisional Pick before any claim or clone.
+- **Trigger:** consumes a provisional Pick before any claim or clone; manual mode supports configured owned-repository tests.
 - **Budget:** 12k tokens maximum, normally zero or one `nova-fast` call.
-- **Job:** Read the complete issue conversation, parent/sub-issue relationships, and linked PR evidence. Reject tracking parents, occupied work, unresolved decisions, and unbounded tasks.
+- **Job:** Read the complete issue conversation, parent/sub-issue relationships, and linked PR evidence. Reject tracking parents, occupied work, unresolved decisions, unbounded tasks, and work anticipated to exceed 15 focused minutes.
 - **Output:** `state/vet.json` plus revision-aware rejected issue memory in `state/rejected_issues.json`.
 - **Skill:** `skills/vet-issue-suitability/SKILL.md`
-- **Prototype target:** `https://github.com/horsicq/Detect-It-Easy/issues/365`; `python -m agents.vet [ISSUE_URL]` accepts an override.
 
 Rejected issues are stored in a dictionary keyed by `owner/repo#number`, making
 lookup constant-time. Each record stores the issue's `updated_at` revision.
@@ -78,22 +77,25 @@ activity permits one fresh evaluation.
 
 ### Comprehend — Context loading
 *(Runs as the first step of Solve, not a separate workflow.)*
-- **Job:** Build a tight context bundle for the coding squad
-- **Agents:** repo-mapper (AST/symbol index), relevance-pruner (only files touched by stack trace or referenced symbols), history-miner (related closed PRs/issues), test-locator
-- **Target:** context bundle under 30k tokens
+- **Job:** Build a tight context bundle from tracked paths, issue-named files, exact symbols, scoped `AGENTS.md`/`CLAUDE.md`, and manifests.
+- **Target:** context bundle under 12k tokens; reload only exact plan files for editing.
+- **Skill:** `skills/comprehend-target-code/SKILL.md`
 
 ### Solve — Coding
-- **Trigger:** on `claimed` label
-- **Budget:** up to 60 min per task, matrix-parallelized across the 4–5 picks
-- **Agents:** claimer (forks repo), planner, implementer, self-reviewer, test-runner, iterator
-- **Sandbox:** GitHub Actions runner is the sandbox. One matrix job per task = full isolation.
-- **Escalation rule:** qwen-coder-large first. If tests fail or self-review flags issues, escalate to claude. If still failing after 2 attempts, abort and trigger graceful unclaim.
+- **Trigger:** successful Vet workflow with an approved Pick, or explicit allowlisted owned-test mode.
+- **Budget:** 15 minutes and 24k tokens; no whole-pipeline retry.
+- **Agents:** workspace acquirer, comprehender, planner, optional searcher, exact-file implementer, verifier, reviewer.
+- **Models:** `qwen-coder` for plan/edit/review. `perplexity-fast` is limited to one plan-justified narrow lookup.
+- **Sandbox:** one isolated temporary Git workspace cloned from the authenticated fork.
+- **Output:** local stepwise commits and `state/solve.json`; no push until final review passes.
+- **Skills:** one compact skill per phase under `skills/`, orchestrated by `solve-bounded-issue`.
 
 ### Submit — PR creation
-- **Trigger:** on Solve success
+- **Trigger:** `state/solve.json` reaches `ready_to_submit` in the same runner.
 - **Budget:** 5 min
 - **Agents:** branch-namer, commit-message-writer (conventional commits), pr-body-writer (links issue, lists tests, includes bot disclosure), label-applier
-- **Output:** PR opened upstream, tracking issue opened in control repo, ledger updated
+- **Output:** exact fork branch pushed once, disclosed PR opened upstream, ledger updated.
+- **Skill:** `skills/submit-autonomous-pr/SKILL.md`
 
 ### Steward — Follow-through
 Three workflows triggered by webhooks (via the Cloudflare Worker forwarding to `repository_dispatch`):
