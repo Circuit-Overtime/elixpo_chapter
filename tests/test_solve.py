@@ -11,7 +11,7 @@ from agents.solve.core import SolveRejected, ensure_fork, resolve_target, valida
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, run_verification, validate_command
-from agents.solve.harness import _harness_env, _parse_cli_result
+from agents.solve.harness import HarnessError, _harness_env, _parse_cli_result, _render_harness_event
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from lib.state.store import StateStore
 from rtk.shell import CmdResult
@@ -112,7 +112,8 @@ def test_harness_environment_excludes_agent_credentials(monkeypatch):
     assert "AGENT_GITHUB_SOLVER_TOKEN" not in env
     assert "ELIXPO_POLLINATIONS_API_KEY" not in env
     assert env["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:3456"
-    assert env["ANTHROPIC_AUTH_TOKEN"] == "ccr-pollinations"
+    assert env["ANTHROPIC_API_KEY"] == "ccr-pollinations"
+    assert "ANTHROPIC_AUTH_TOKEN" not in env
 
 
 def test_harness_result_parses_structured_output_and_usage():
@@ -153,6 +154,57 @@ def test_declined_harness_outcome_needs_no_commands():
         summary="Declined without edits.",
     )
     assert outcome.verification_commands == []
+
+
+def test_harness_auth_error_is_concise_and_classified():
+    envelope = {
+        "type": "result",
+        "subtype": "success",
+        "is_error": True,
+        "api_error_status": 401,
+        "result": "Failed to authenticate. API Error: 401 Invalid API key.",
+    }
+    try:
+        _parse_cli_result(json.dumps(envelope))
+    except HarnessError as exc:
+        assert str(exc) == (
+            "coding harness API error 401: Failed to authenticate. API Error: 401 Invalid API key."
+        )
+        assert classify_failure(exc, "harness")["category"] == "credentials"
+    else:
+        raise AssertionError("harness authentication error passed")
+
+
+def test_harness_events_render_progress_without_tool_output(capsys):
+    _render_harness_event(
+        {
+            "type": "assistant",
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "name": "Read",
+                        "input": {"file_path": "app/page.tsx"},
+                    }
+                ]
+            },
+        }
+    )
+    _render_harness_event(
+        {
+            "type": "user",
+            "message": {
+                "content": [
+                    {"type": "tool_result", "content": "sensitive source contents"}
+                ]
+            },
+        }
+    )
+
+    output = capsys.readouterr().out
+    assert "tool=Read target=app/page.tsx" in output
+    assert "tool_result count=1" in output
+    assert "sensitive source contents" not in output
 
 
 def test_edit_batch_is_exact_and_plan_confined(tmp_path):

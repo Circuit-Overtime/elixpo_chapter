@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import os
+import queue
 import shutil
 import subprocess
-import tempfile
+import threading
 import time
 import urllib.request
 from pathlib import Path
@@ -85,6 +86,8 @@ def _configure_ccr(policy: dict[str, Any]) -> dict[str, str]:
     )
     if setup.returncode != 0:
         raise HarnessError((setup.stderr or setup.stdout).strip()[:2000])
+    for line in setup.stdout.splitlines():
+        print(f"[ccr] {_redact(line)}", flush=True)
     return env
 
 
@@ -109,7 +112,9 @@ def _harness_env(model: str) -> dict[str, str]:
     env.update(
         {
             "ANTHROPIC_BASE_URL": _CCR_URL,
-            "ANTHROPIC_AUTH_TOKEN": "ccr-pollinations",
+            # CCR's APIKEY is validated through x-api-key. ANTHROPIC_AUTH_TOKEN
+            # produces a bearer Authorization header and is rejected locally.
+            "ANTHROPIC_API_KEY": "ccr-pollinations",
             "ANTHROPIC_MODEL": model,
             "NO_PROXY": "127.0.0.1,localhost",
             "DISABLE_TELEMETRY": "1",
@@ -119,6 +124,162 @@ def _harness_env(model: str) -> dict[str, str]:
         }
     )
     return env
+
+
+def _secret_values() -> list[str]:
+    return [
+        value
+        for key, value in os.environ.items()
+        if any(marker in key.upper() for marker in _SECRET_MARKERS) and len(value) >= 4
+    ]
+
+
+def _redact(text: str) -> str:
+    cleaned = text
+    for secret in _secret_values():
+        cleaned = cleaned.replace(secret, "***")
+    return cleaned
+
+
+def _relay_router_output(stream) -> None:
+    for line in iter(stream.readline, ""):
+        if line.strip():
+            print(f"[ccr] {_redact(line.rstrip())}", flush=True)
+    stream.close()
+
+
+def _render_harness_event(event: dict[str, Any]) -> None:
+    event_type = str(event.get("type") or "")
+    if event_type == "system" and event.get("subtype") == "init":
+        print(
+            f"[harness] started session={event.get('session_id', '?')} model={event.get('model', '?')}",
+            flush=True,
+        )
+        return
+    if event_type == "assistant":
+        message = event.get("message") or {}
+        blocks = message.get("content") or []
+        if not isinstance(blocks, list):
+            return
+        for block in blocks:
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") == "text" and block.get("text"):
+                print(f"[harness] {_redact(str(block['text']).strip())}", flush=True)
+            elif block.get("type") == "tool_use":
+                tool_input = block.get("input") or {}
+                target = next(
+                    (
+                        str(tool_input[key])
+                        for key in ("file_path", "path", "pattern")
+                        if tool_input.get(key)
+                    ),
+                    "",
+                )
+                suffix = f" target={_redact(target)}" if target else ""
+                print(f"[harness] tool={block.get('name', 'unknown')}{suffix}", flush=True)
+        return
+    if event_type == "user":
+        message = event.get("message") or {}
+        blocks = message.get("content") or []
+        if not isinstance(blocks, list):
+            return
+        completed = sum(
+            1 for block in blocks if isinstance(block, dict) and block.get("type") == "tool_result"
+        )
+        if completed:
+            print(f"[harness] tool_result count={completed}", flush=True)
+        return
+    if event_type == "result":
+        status = "failed" if event.get("is_error") else "completed"
+        print(
+            f"[harness] {status} turns={event.get('num_turns', 0)} "
+            f"duration_ms={event.get('duration_ms', 0)}",
+            flush=True,
+        )
+
+
+def _stream_harness(
+    command: list[str],
+    *,
+    workspace: Path,
+    env: dict[str, str],
+    prompt: str,
+    timeout: int,
+) -> tuple[dict[str, Any] | None, int, str]:
+    process = subprocess.Popen(
+        command,
+        cwd=workspace,
+        env=env,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+    )
+    assert process.stdin is not None
+    assert process.stdout is not None
+    assert process.stderr is not None
+    process.stdin.write(prompt)
+    process.stdin.close()
+
+    events: queue.Queue[tuple[str, str | None]] = queue.Queue()
+
+    def pump(name: str, stream) -> None:
+        for line in iter(stream.readline, ""):
+            events.put((name, line))
+        stream.close()
+        events.put((name, None))
+
+    threads = [
+        threading.Thread(target=pump, args=("stdout", process.stdout), daemon=True),
+        threading.Thread(target=pump, args=("stderr", process.stderr), daemon=True),
+    ]
+    for thread in threads:
+        thread.start()
+
+    deadline = time.monotonic() + timeout
+    closed: set[str] = set()
+    final_event: dict[str, Any] | None = None
+    stderr_lines: list[str] = []
+    try:
+        while len(closed) < 2:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise HarnessError(f"coding harness exceeded its {timeout}-second timeout")
+            try:
+                source, line = events.get(timeout=min(0.25, remaining))
+            except queue.Empty:
+                continue
+            if line is None:
+                closed.add(source)
+                continue
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if source == "stderr":
+                clean = _redact(stripped)
+                stderr_lines.append(clean)
+                stderr_lines = stderr_lines[-100:]
+                print(f"[harness:stderr] {clean}", flush=True)
+                continue
+            try:
+                event = json.loads(stripped)
+            except json.JSONDecodeError:
+                print(f"[harness] {_redact(stripped)}", flush=True)
+                continue
+            if isinstance(event, dict):
+                _render_harness_event(event)
+                if event.get("type") == "result":
+                    final_event = event
+        return final_event, process.wait(timeout=5), "\n".join(stderr_lines)
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
 
 
 def _prompt(issue: dict[str, Any], policy: dict[str, Any]) -> str:
@@ -158,7 +319,10 @@ def _parse_cli_result(stdout: str) -> tuple[HarnessOutcome, Usage, dict[str, Any
     if not isinstance(envelope, dict):
         raise HarnessError("coding harness returned a non-object result")
     if envelope.get("is_error") is True or envelope.get("subtype") in {"error", "error_max_turns"}:
-        raise HarnessError(str(envelope.get("result") or envelope.get("error") or "coding harness failed")[:2000])
+        message = str(envelope.get("result") or envelope.get("error") or "coding harness failed")[:1800]
+        status = envelope.get("api_error_status")
+        prefix = f"coding harness API error {status}: " if status else "coding harness failed: "
+        raise HarnessError(prefix + message)
 
     payload = envelope.get("structured_output")
     if payload is None:
@@ -205,18 +369,29 @@ def run_harness(
     """Start/reuse CCR, run the Node harness, and return its validated result."""
     ccr_env = _configure_ccr(policy)
     router_process: subprocess.Popen[str] | None = None
-    router_log = tempfile.TemporaryFile(mode="w+")
+    router_thread: threading.Thread | None = None
     try:
         if not _router_ready():
             router_process = subprocess.Popen(
                 _node_command(_CCR_PACKAGE, "start"),
                 cwd=_CONTROL_ROOT,
                 env=ccr_env,
-                stdout=router_log,
+                stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                bufsize=1,
             )
+            assert router_process.stdout is not None
+            router_thread = threading.Thread(
+                target=_relay_router_output,
+                args=(router_process.stdout,),
+                daemon=True,
+            )
+            router_thread.start()
+        else:
+            print(f"[ccr] reusing router at {_CCR_URL}", flush=True)
         _wait_for_router(router_process, int(policy.get("ccr_start_timeout_seconds", 60)))
+        print(f"[ccr] ready at {_CCR_URL}", flush=True)
 
         model = str(policy.get("harness_model", "qwen-coder"))
         schema = json.dumps(HarnessOutcome.model_json_schema(), separators=(",", ":"))
@@ -224,7 +399,8 @@ def run_harness(
             _HARNESS_PACKAGE,
             "-p",
             "--output-format",
-            "json",
+            "stream-json",
+            "--verbose",
             "--json-schema",
             schema,
             "--max-turns",
@@ -245,19 +421,19 @@ def run_harness(
             "--safe-mode",
             "--no-session-persistence",
         )
-        completed = subprocess.run(
+        final_event, return_code, stderr = _stream_harness(
             command,
-            cwd=workspace,
+            workspace=workspace,
             env=_harness_env(model),
-            input=_prompt(issue, policy),
-            capture_output=True,
-            text=True,
+            prompt=_prompt(issue, policy),
             timeout=timeout,
-            check=False,
         )
-        if completed.returncode != 0:
-            raise HarnessError((completed.stderr or completed.stdout).strip()[:3000])
-        return _parse_cli_result(completed.stdout)
+        if final_event is None:
+            raise HarnessError((stderr or f"coding harness exited {return_code} without a result")[:3000])
+        parsed = _parse_cli_result(json.dumps(final_event))
+        if return_code != 0:
+            raise HarnessError((stderr or f"coding harness exited with status {return_code}")[:3000])
+        return parsed
     except subprocess.TimeoutExpired as exc:
         raise HarnessError(f"coding harness exceeded its {timeout}-second timeout") from exc
     finally:
@@ -267,4 +443,5 @@ def run_harness(
                 router_process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 router_process.kill()
-        router_log.close()
+        if router_thread is not None:
+            router_thread.join(timeout=1)

@@ -52,6 +52,13 @@ cross the boundary.
 Inject this skill only into the Solve harness session with an explicit system
 prompt file. Do not add its instructions to the global agent prompt.
 
+Stream useful progress to the caller while the harness works. Relay sanitized
+CCR process lines and compact harness events for session start, assistant
+progress, tool name and target, tool completion, and final duration/turn count.
+Never print raw tool-result contents, request payloads, credentials, or complete
+stream-JSON envelopes. Preserve the final structured event for validation and
+RTK usage accounting.
+
 Fail preflight with an actionable Node.js 22+/npm or Bun installation message
 when no package runner exists. Do not silently fall back to one-shot generation.
 

@@ -50,6 +50,10 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
         "unavailable" in lowered or "ccr did not become ready" in lowered or "ccr exited" in lowered
     ):
         category, retryable, candidate_action = "workspace", True, "repair_environment_then_retry"
+    elif isinstance(exc, HarnessError) and (
+        "api error 401" in lowered or "api error 403" in lowered or "failed to authenticate" in lowered
+    ):
+        category, candidate_action = "credentials", "repair_credentials"
     elif "missing credential" in lowered:
         category, candidate_action = "credentials", "repair_credentials"
     elif (
