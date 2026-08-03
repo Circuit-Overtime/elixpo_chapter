@@ -1,18 +1,18 @@
 {
-  "checked_at": "2026-08-03T18:59:37.038880+00:00",
-  "confidence": 1.0,
+  "checked_at": "2026-08-03T20:11:57.664056+00:00",
+  "confidence": 0.9,
   "estimated_files": 1,
+  "estimated_minutes": 10,
   "issue_kind": "standalone",
-  "issue_updated_at": "2026-07-15T17:41:55Z",
-  "key": "horsicq/Detect-It-Easy#365",
+  "issue_updated_at": "2026-08-02T16:41:07Z",
+  "key": "elixpo/lixrl.com#9",
   "model_called": true,
-  "reasons": [
-    "conversation indicates the repository change is already resolved"
-  ],
+  "reasons": [],
   "scope": "small",
-  "status": "rejected",
-  "suitable": false,
-  "summary": "Windows Install via Chocolatey results in unusable Shortcut",
-  "title": "Windows Install via Chocolatey results in unusable Shortcut",
-  "url": "https://github.com/horsicq/Detect-It-Easy/issues/365"
+  "status": "approved",
+  "suitable": true,
+  "summary": "The copy functionality for the 'LLM' button on the documentation page is not copying a full abstract version of the `llm_text` from the `lixrl`. This was likely affected by recent updates in the documentation files, as indicated in PR #6.",
+  "test_mode": true,
+  "title": "[BUG]:- the copy for llm button on the docs page must copy a full abstract version of the llm_text of the lixrl",
+  "url": "https://github.com/elixpo/lixrl.com/issues/9"
 }

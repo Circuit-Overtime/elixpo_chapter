@@ -1,0 +1,9 @@
+{
+  "error": "GitHub denied fork creation from elixpo/lixrl.com to elixpoo/lixrl.com for elixpoo: Resource not accessible by personal access token. For a fine-grained token, select the source repository and grant Administration: read/write plus Contents: read (administration=write,contents=read); the destination account must also allow repository creation.",
+  "failed_at": "2026-08-03T20:20:58.782793+00:00",
+  "issue_url": "https://github.com/elixpo/lixrl.com/issues/9",
+  "started_at": "2026-08-03T20:20:52.658874+00:00",
+  "status": "failed",
+  "test_mode": true,
+  "token_spent": 0
+}

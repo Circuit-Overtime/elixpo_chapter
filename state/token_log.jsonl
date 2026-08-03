@@ -88,3 +88,4 @@
 {"task_id": "triage", "role": "triage", "model": "nova-fast", "prompt_tokens": 3541, "cached_tokens": 0, "completion_tokens": 107, "total_tokens": 3648}
 {"task_id": "vet", "role": "vet", "model": "nova-fast", "prompt_tokens": 1450, "cached_tokens": 0, "completion_tokens": 84, "total_tokens": 1534}
 {"task_id": "vet", "role": "vet", "model": "nova-fast", "prompt_tokens": 1722, "cached_tokens": 0, "completion_tokens": 156, "total_tokens": 1878}
+{"task_id": "vet", "role": "vet", "model": "nova-fast", "prompt_tokens": 2100, "cached_tokens": 0, "completion_tokens": 230, "total_tokens": 2330}
