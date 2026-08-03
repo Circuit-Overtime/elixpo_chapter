@@ -27,7 +27,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         log.error(
             "solve.missing_credentials",
             missing=(
-                "ELIXPOO_GITHUB_SOLVER_TOKEN"
+                "AGENT_GITHUB_SOLVER_TOKEN"
                 if not settings.github.solver_token
                 else "ELIXPO_POLLINATIONS_API_KEY"
             ),

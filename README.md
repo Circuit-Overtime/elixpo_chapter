@@ -65,7 +65,7 @@ The controlled implementation target is
 [`elixpo/lixrl.com#9`](https://github.com/elixpo/lixrl.com/issues/9). It is
 assigned, so test it through the explicit owned-repository boundary:
 
-Solve and Submit exclusively use `ELIXPOO_GITHUB_SOLVER_TOKEN`. For public
+Solve and Submit exclusively use `AGENT_GITHUB_SOLVER_TOKEN`. For public
 cross-owner contributions, use a classic PAT owned by the fork account with
 the `public_repo` scope. Other squads continue using
 `ELIXPOO_GITHUB_AGENTIC_TOKEN`.

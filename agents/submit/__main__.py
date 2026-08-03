@@ -252,7 +252,7 @@ async def _run() -> int:
         log.error(
             "submit.missing_credentials",
             missing=(
-                "ELIXPOO_GITHUB_SOLVER_TOKEN"
+                "AGENT_GITHUB_SOLVER_TOKEN"
                 if not settings.github.solver_token
                 else "ELIXPO_POLLINATIONS_API_KEY"
             ),

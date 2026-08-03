@@ -172,7 +172,7 @@ or `ELIXPOO_GITHUB_AGENTIC_TOKEN`; triage also requires
 Solve and Submit are mutating stages and are intentionally separate from this
 read-only dry run. For the owned test target:
 
-Set `ELIXPOO_GITHUB_SOLVER_TOKEN` to the fork owner's dedicated classic PAT
+Set `AGENT_GITHUB_SOLVER_TOKEN` to the fork owner's dedicated classic PAT
 with `public_repo`; Solve and Submit do not fall back to the general agentic
 token or the workflow-provided `GITHUB_TOKEN`.
 

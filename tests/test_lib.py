@@ -22,7 +22,7 @@ def test_github_settings_keeps_solver_token_separate(monkeypatch):
 
     monkeypatch.setenv("GITHUB_TOKEN", "workflow-token")
     monkeypatch.setenv("ELIXPOO_GITHUB_AGENTIC_TOKEN", "agentic-token")
-    monkeypatch.setenv("ELIXPOO_GITHUB_SOLVER_TOKEN", "solver-token")
+    monkeypatch.setenv("AGENT_GITHUB_SOLVER_TOKEN", "solver-token")
     configured = GitHubSettings()
     assert configured.token == "workflow-token"
     assert configured.solver_token == "solver-token"
