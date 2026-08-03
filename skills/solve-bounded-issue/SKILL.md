@@ -40,17 +40,21 @@ Start from deterministic evidence:
 
 1. tracked file names;
 2. paths explicitly named by the issue;
-3. exact symbol-like terms quoted by the issue;
+3. ranked case-insensitive matches across quoted symbols and meaningful issue terms;
 4. root and target-directory guidance files;
 5. the nearest manifest needed to identify validation commands.
 
-Do not load the whole repository. Read full content only for candidate files
-within the per-file and aggregate token limits. After planning, discard the
+Do not load the whole repository. Give concise guidance a fixed minority of the
+context budget and reserve the majority for authoritative source. For large
+candidate files, merge bounded windows around the strongest issue-term matches
+instead of blindly taking only the head and tail. After planning, discard the
 broad candidate bundle and load only plan-declared target/context files plus
-guidance governing those paths.
+guidance governing those paths. Reject an existing target the model selected
+from the file index but that retrieval did not actually provide.
 
 Use shell search only through argument-vector commands rooted in the workspace.
-Prefer `rg`, `git ls-files`, and direct reads. Never use interpolated shell text.
+Prefer `git grep`, `git ls-files`, and direct reads. Never use interpolated
+shell text or require a repository-search binary beyond Git.
 
 ## Produce one structured plan
 
@@ -113,5 +117,15 @@ ends with `Fixes #N`. Update the production ledger only after the PR exists.
 
 Do not restart Solve automatically. Do not recursively invoke another squad,
 raise a budget, repeat search, add model steps, or retry the whole task. Convert
-provider, git, edit, timeout, budget, test, and review failures into bounded
-`failed` state that an operator can inspect.
+provider, git, context, structured-output, timeout, token-budget, test, and
+review failures into `doctor_pending` state.
+
+Record a versioned failure category, stage, exception type, bounded message,
+retryability signal, candidate action, elapsed time, and token spend/limit.
+Candidate actions are evidence, not decisions: Doctor alone chooses retry,
+re-vet, terminate, or wait.
+
+Preserve the failed workspace until that decision. Emit a cleanup manifest with
+an explicit safe root and mark the shared fork for preservation. Janitor may
+remove only resources named by that manifest after Doctor records a terminal
+decision; Solve never deletes or pushes failed work itself.

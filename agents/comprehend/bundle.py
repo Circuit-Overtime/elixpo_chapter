@@ -119,7 +119,7 @@ def _mentioned_paths(text: str, tracked: set[str]) -> list[str]:
     return found
 
 
-def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int = 10) -> list[str]:
+def _search_terms(text: str, limit: int = 12) -> tuple[list[str], set[str]]:
     exact_terms = _CODE_TOKEN_RE.findall(text)
     terms: list[str] = []
     seen_terms: set[str] = set()
@@ -129,8 +129,13 @@ def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int
             continue
         seen_terms.add(normalized)
         terms.append(term)
-        if len(terms) >= 12:
+        if len(terms) >= limit:
             break
+    return terms, set(exact_terms)
+
+
+def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int = 10) -> list[str]:
+    terms, exact_terms = _search_terms(text)
 
     scores: Counter[str] = Counter()
     first_seen: dict[str, int] = {}
@@ -158,6 +163,46 @@ def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int
                 scores[rel] += 2 if term in exact_terms else 1
                 first_seen.setdefault(rel, len(first_seen))
     return sorted(scores, key=lambda rel: (-scores[rel], first_seen[rel], rel))[:limit]
+
+
+def _read_relevant(workspace: Path, rel: str, terms: list[str], max_tokens: int) -> str:
+    """Return merged source windows around issue terms instead of blind head/tail truncation."""
+    path = safe_path(workspace, rel)
+    if not path.is_file() or path.is_symlink():
+        return ""
+    text = path.read_text(errors="replace")
+    if count_text(text) <= max_tokens:
+        return text
+
+    lines = text.splitlines()
+    needles = [term.casefold() for term in terms]
+    matches = [
+        (sum(needle in line.casefold() for needle in needles), index)
+        for index, line in enumerate(lines)
+        if any(needle in line.casefold() for needle in needles)
+    ]
+    if not matches:
+        return truncate_text(text, max_tokens=max_tokens)
+
+    anchors: list[int] = []
+    for _, index in sorted(matches, key=lambda item: (-item[0], item[1])):
+        if all(abs(index - existing) > 36 for existing in anchors):
+            anchors.append(index)
+        if len(anchors) >= 3:
+            break
+
+    spans: list[tuple[int, int]] = []
+    for index in sorted(anchors):
+        start, end = max(0, index - 30), min(len(lines), index + 31)
+        if spans and start <= spans[-1][1]:
+            spans[-1] = (spans[-1][0], max(spans[-1][1], end))
+        else:
+            spans.append((start, end))
+    excerpts = [
+        f"// lines {start + 1}-{end}\n" + "\n".join(lines[start:end])
+        for start, end in spans
+    ]
+    return truncate_text("\n\n// ...\n\n".join(excerpts), max_tokens=max_tokens)
 
 
 def _guidance_paths(files: list[str], names: set[str], targets: list[str]) -> list[str]:
@@ -192,22 +237,36 @@ def build_context_bundle(
     files = tracked_files(workspace)
     tracked = set(files)
     issue_text = f"{issue.get('title', '')}\n{issue.get('body') or ''}"
+    search_terms, _ = _search_terms(issue_text)
     mentioned = _mentioned_paths(issue_text, tracked)
     searched = _search_candidates(workspace, issue_text, tracked)
     candidates = list(dict.fromkeys([*mentioned, *searched, *[m for m in _MANIFESTS if m in tracked]]))
 
     bundle = ContextBundle(tracked_files=files[:350])
-    for rel in _guidance_paths(files, set(guidance_names), mentioned):
-        content = _read(workspace, rel, min(max_file_tokens, 2500))
+    guidance_paths = _guidance_paths(files, set(guidance_names), mentioned)
+    guidance_remaining = min(1200, max_context_tokens // 3)
+    for index, rel in enumerate(guidance_paths):
+        slots = len(guidance_paths) - index
+        content = _read(
+            workspace,
+            rel,
+            min(max_file_tokens, max(250, guidance_remaining // slots)),
+        )
         if content:
             bundle.guidance[rel] = content
+            guidance_remaining -= min(guidance_remaining, count_text(content))
 
     remaining = max_context_tokens - count_text(bundle.render(max_context_tokens))
     for rel in candidates:
         if remaining <= 250:
             bundle.omitted.append(rel)
             continue
-        content = _read(workspace, rel, min(max_file_tokens, remaining))
+        content = _read_relevant(
+            workspace,
+            rel,
+            search_terms,
+            min(max_file_tokens, remaining),
+        )
         if not content:
             continue
         bundle.candidates[rel] = content
@@ -227,10 +286,18 @@ def load_exact_context(
     files = tracked_files(workspace)
     tracked = set(files)
     parts: list[str] = []
-    for rel in _guidance_paths(files, set(guidance_names), paths):
-        text = _read(workspace, rel, min(2500, max_file_tokens))
+    guidance_paths = _guidance_paths(files, set(guidance_names), paths)
+    guidance_remaining = min(1000, max_tokens // 4)
+    for index, rel in enumerate(guidance_paths):
+        slots = len(guidance_paths) - index
+        text = _read(
+            workspace,
+            rel,
+            min(max_file_tokens, max(250, guidance_remaining // slots)),
+        )
         if text:
             parts.append(f"GUIDANCE {rel}:\n{text}")
+            guidance_remaining -= min(guidance_remaining, count_text(text))
     for rel in paths:
         if rel in tracked:
             text = _read(workspace, rel, max_file_tokens)

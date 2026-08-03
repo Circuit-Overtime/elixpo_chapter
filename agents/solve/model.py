@@ -51,7 +51,13 @@ _SYSTEM = (
 )
 
 
-async def plan_issue(router, issue: dict, context: str, policy: dict) -> SolvePlan:
+async def plan_issue(
+    router,
+    issue: dict,
+    context: str,
+    policy: dict,
+    allowed_existing_targets: list[str],
+) -> SolvePlan:
     name = "record_solve_plan"
     prompt = {
         "issue": {"title": issue.get("title"), "body": issue.get("body")},
@@ -64,6 +70,11 @@ async def plan_issue(router, issue: dict, context: str, policy: dict) -> SolvePl
             "allowed_verification_prefixes": policy["allowed_command_prefixes"],
             "allowed_setup_prefixes": policy["allowed_setup_prefixes"],
         },
+        "allowed_existing_targets": allowed_existing_targets,
+        "target_rule": (
+            "Every existing step file must be selected from allowed_existing_targets. "
+            "The tracked-file index is navigation evidence only."
+        ),
         "repository_context": context,
     }
     response = await router.call(

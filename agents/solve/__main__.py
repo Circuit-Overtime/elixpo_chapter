@@ -6,12 +6,14 @@ import argparse
 import asyncio
 import json
 import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 import structlog
 
 from agents.solve.core import SolveRejected, resolve_target, solve
+from agents.solve.failure import failure_handoff
 
 log = structlog.get_logger()
 
@@ -23,21 +25,47 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     from lib.state.store import StateStore
     from rtk import Budget, Router
 
-    if not settings.github.solver_token or not settings.pollinations.api_key:
-        log.error(
-            "solve.missing_credentials",
-            missing=(
-                "AGENT_GITHUB_SOLVER_TOKEN"
-                if not settings.github.solver_token
-                else "ELIXPO_POLLINATIONS_API_KEY"
-            ),
-        )
-        return 1
     store = StateStore(settings.state_dir)
     policy = load_solve_policy()
+    workspace_base = Path(os.getenv("ELIXPO_WORKSPACE_DIR", "/tmp/elixpoo-workspaces"))
+    run_started = time.monotonic()
+    if not settings.github.solver_token or not settings.pollinations.api_key:
+        missing = (
+            "AGENT_GITHUB_SOLVER_TOKEN"
+            if not settings.github.solver_token
+            else "ELIXPO_POLLINATIONS_API_KEY"
+        )
+        error = RuntimeError(f"missing credential: {missing}")
+        store.write_json(
+            "solve.json",
+            failure_handoff(
+                {"stage": "configuration", "issue_url": issue_url, "test_mode": owned_test},
+                error,
+                workspace_base=workspace_base,
+                token_spent=0,
+                token_limit=int(policy["token_budget"]),
+                elapsed_seconds=time.monotonic() - run_started,
+            ),
+        )
+        log.error(
+            "solve.missing_credentials",
+            missing=missing,
+        )
+        return 1
     try:
         target = resolve_target(store, issue_url, owned_test)
     except (SolveRejected, ValueError) as exc:
+        store.write_json(
+            "solve.json",
+            failure_handoff(
+                {"stage": "target_validation", "issue_url": issue_url, "test_mode": owned_test},
+                exc,
+                workspace_base=workspace_base,
+                token_spent=0,
+                token_limit=int(policy["token_budget"]),
+                elapsed_seconds=time.monotonic() - run_started,
+            ),
+        )
         log.error("solve.invalid_target", error=str(exc))
         return 2
 
@@ -45,6 +73,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         "solve.json",
         {
             "status": "starting",
+            "stage": "preflight",
             "issue_url": target,
             "test_mode": owned_test,
             "started_at": datetime.now(timezone.utc).isoformat(),
@@ -56,7 +85,6 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         "solve",
         budget=Budget("solve", limit=int(policy["token_budget"]), kill_multiple=1.0),
     )
-    workspace_base = Path(os.getenv("ELIXPO_WORKSPACE_DIR", "/tmp/elixpoo-workspaces"))
     try:
         result = await asyncio.wait_for(
             solve(
@@ -75,13 +103,13 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         # The broad boundary converts provider/git/tool errors into state; it does
         # not retry the whole pipeline or push a partial branch.
         failed = store.read_json("solve.json", {}) or {"issue_url": target}
-        failed.update(
-            {
-                "status": "failed",
-                "error": str(exc)[:1000],
-                "token_spent": router.budget.spent,
-                "failed_at": datetime.now(timezone.utc).isoformat(),
-            }
+        failed = failure_handoff(
+            failed,
+            exc,
+            workspace_base=workspace_base,
+            token_spent=router.budget.spent,
+            token_limit=router.budget.limit,
+            elapsed_seconds=time.monotonic() - run_started,
         )
         store.write_json("solve.json", failed)
         log.error("solve.failed", error=str(exc), spent=router.budget.spent)

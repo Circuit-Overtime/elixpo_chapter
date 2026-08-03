@@ -186,6 +186,14 @@ python -m agents.submit
 Do not run Submit until `state/solve.json` is `ready_to_submit` and its recorded
 checks, files, commits, branch, and token spend are acceptable.
 
+Every configuration, provider, workspace, context, structured-output, timeout,
+token-budget, verification, policy, and review failure becomes
+`doctor_pending`. The versioned failure record includes its stage, retryability
+signal, candidate action, elapsed time, token spend/limit, and exception type.
+Solve does not retry itself. It preserves the isolated workspace and emits a
+Janitor cleanup manifest; Doctor must record a retry or terminal decision before
+Janitor removes the named workspace. Shared forks are always preserved.
+
 ---
 
 ## 5. Model routing (Pollinations)

@@ -15,6 +15,12 @@ supplied file. Include enough unchanged context to disambiguate. For a new file,
 return complete content and use `create` only when the plan explicitly targets
 that missing path.
 
+Keep replacements surgical. Never return an entire existing file in `old` or
+`new`; include only the smallest enclosing function, block, or declaration
+needed for one unique match. Each `old` value is limited to 4,000 characters
+and each `new` value to 6,000 characters so the forced tool call remains valid
+JSON within its response ceiling.
+
 Never delete, rename, reformat unrelated code, edit dependencies or lockfiles
 without an explicit plan, add speculative abstractions, weaken tests, suppress
 errors, insert secrets, or emit shell commands. Do not modify a context-only

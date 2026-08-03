@@ -67,7 +67,12 @@ def _validate_path(path: str) -> None:
         raise SolveRejected(f"unsafe planned path: {path}")
 
 
-def validate_plan(plan: SolvePlan, policy: dict[str, Any], repository_files: set[str]) -> None:
+def validate_plan(
+    plan: SolvePlan,
+    policy: dict[str, Any],
+    repository_files: set[str],
+    retrieved_files: set[str] | None = None,
+) -> None:
     if not plan.solvable:
         raise SolveRejected(f"coding model declined issue: {plan.rationale}")
     if not 1 <= plan.estimated_minutes <= int(policy["max_minutes"]):
@@ -85,6 +90,8 @@ def validate_plan(plan: SolvePlan, policy: dict[str, Any], repository_files: set
             raise SolveRejected("plan step has no purpose")
         for path in step.files:
             _validate_path(path)
+            if retrieved_files is not None and path in repository_files and path not in retrieved_files:
+                raise SolveRejected(f"plan selected unretrieved existing file: {path}")
             targets.add(path)
         for command in step.setup_commands:
             validate_command(command, list(policy["allowed_setup_prefixes"]))
@@ -205,12 +212,37 @@ async def solve(
         raise SolveRejected("cannot resolve the fork owner")
     if fork_owner.casefold() == owner.casefold():
         raise SolveRejected("fork owner must differ from the upstream owner")
+    preparing = store.read_json("solve.json", {}) or {}
+    preparing.update(
+        {
+            "status": "running",
+            "stage": "forking",
+            "key": key,
+            "upstream_repo": f"{owner}/{repo}",
+            "fork_repo": f"{fork_owner}/{repo}",
+        }
+    )
+    store.write_json("solve.json", preparing)
     fork = await ensure_fork(api, owner, repo, fork_owner)
 
     base_branch = str(upstream.get("default_branch") or "main")
     work_branch = f"elixpo/issue-{number}-{secrets.token_hex(3)}"
     session_id = re.sub(r"[^A-Za-z0-9_-]", "-", f"{owner}-{repo}-{number}-{secrets.token_hex(3)}")
     workspace = Workspace(session_id, workspace_base)
+    running = {
+        "status": "running",
+        "stage": "workspace_setup",
+        "issue_url": issue_url,
+        "key": key,
+        "upstream_repo": f"{owner}/{repo}",
+        "fork_repo": f"{fork_owner}/{repo}",
+        "base_branch": base_branch,
+        "branch": work_branch,
+        "workspace": str(workspace.root),
+        "test_mode": owned_test,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+    }
+    store.write_json("solve.json", running)
     root = workspace.setup(
         fork_url=str(fork.get("clone_url") or f"https://github.com/{fork_owner}/{repo}.git"),
         upstream_url=str(upstream.get("clone_url") or f"https://github.com/{owner}/{repo}.git"),
@@ -218,19 +250,7 @@ async def solve(
         work_branch=work_branch,
         token=await api._token(),
     )
-
-    running = {
-        "status": "running",
-        "issue_url": issue_url,
-        "key": key,
-        "upstream_repo": f"{owner}/{repo}",
-        "fork_repo": f"{fork_owner}/{repo}",
-        "base_branch": base_branch,
-        "branch": work_branch,
-        "workspace": str(root),
-        "test_mode": owned_test,
-        "started_at": datetime.now(timezone.utc).isoformat(),
-    }
+    running["stage"] = "planning"
     store.write_json("solve.json", running)
 
     bundle = build_context_bundle(
@@ -240,10 +260,22 @@ async def solve(
         max_context_tokens=int(policy["max_context_tokens"]),
         max_file_tokens=int(policy["max_file_tokens"]),
     )
-    plan = await plan_issue(router, issue, bundle.render(int(policy["max_context_tokens"])), policy)
+    plan = await plan_issue(
+        router,
+        issue,
+        bundle.render(int(policy["max_context_tokens"])),
+        policy,
+        allowed_existing_targets=list(bundle.candidates),
+    )
     _budget_guard(router)
-    validate_plan(plan, policy, set(tracked_files(root)))
+    validate_plan(
+        plan,
+        policy,
+        set(tracked_files(root)),
+        retrieved_files=set(bundle.candidates),
+    )
     running["plan"] = plan.model_dump()
+    running["stage"] = "searching" if plan.needs_search else "implementing"
     store.write_json("solve.json", running)
 
     search_context = ""
@@ -254,9 +286,11 @@ async def solve(
     commits: list[str] = []
     checks: list[dict] = []
     all_targets = {path for step in plan.steps for path in step.files}
-    for step in plan.steps:
+    for step_index, step in enumerate(plan.steps):
         if time.monotonic() - started >= int(policy["max_minutes"]) * 60:
             raise SolveRejected("Solve reached its wall-time limit")
+        running.update({"stage": "implementing", "step_index": step_index})
+        store.write_json("solve.json", running)
         exact_paths = list(dict.fromkeys([*step.files, *plan.context_files]))
         exact_context = load_exact_context(
             root,
@@ -280,6 +314,8 @@ async def solve(
         if not set(changed).issubset(all_targets):
             raise SolveRejected("implementation escaped the full plan")
 
+        running["stage"] = "verifying"
+        store.write_json("solve.json", running)
         for command in step.setup_commands[: int(policy["max_setup_commands"])]:
             result = run_verification(
                 root,
@@ -311,6 +347,8 @@ async def solve(
     diff = git(root, "diff", f"upstream/{base_branch}...HEAD", timeout=60)
     if not diff.strip():
         raise SolveRejected("Solve produced no diff")
+    running["stage"] = "reviewing"
+    store.write_json("solve.json", running)
     review = await review_diff(router, issue, plan, diff, checks)
     _budget_guard(router)
     if not review.approved or review.findings:
@@ -319,6 +357,7 @@ async def solve(
     result = {
         **running,
         "status": "ready_to_submit",
+        "stage": "complete",
         "title": str(issue.get("title") or ""),
         "issue_number": number,
         "plan": plan.model_dump(),

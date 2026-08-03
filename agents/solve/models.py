@@ -28,19 +28,19 @@ class SolvePlan(StrictModel):
 
 
 class Replacement(StrictModel):
-    old: str
-    new: str
+    old: str = Field(min_length=1, max_length=4000)
+    new: str = Field(max_length=6000)
 
 
 class FileEdit(StrictModel):
     path: str
     operation: str = Field(pattern="^(replace|create)$")
     replacements: list[Replacement] = Field(default_factory=list, max_length=8)
-    content: str = ""
+    content: str = Field(default="", max_length=8000)
 
 
 class StepImplementation(StrictModel):
-    summary: str
+    summary: str = Field(max_length=500)
     edits: list[FileEdit] = Field(min_length=1, max_length=5)
 
 

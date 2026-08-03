@@ -8,6 +8,7 @@ import httpx
 
 from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
 from agents.solve.edit import EditRejected, apply_edit_batch
+from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, run_verification, validate_command
 from agents.solve.models import FileEdit, PlanStep, Replacement, SolvePlan
 from lib.state.store import StateStore
@@ -54,6 +55,20 @@ def test_plan_is_bounded_by_time_files_and_checks():
         assert "15 minutes" in str(exc)
     else:
         raise AssertionError("overlong plan passed")
+
+
+def test_plan_cannot_target_an_existing_file_omitted_from_retrieval():
+    try:
+        validate_plan(
+            _plan(),
+            _policy(),
+            {"app/page.tsx", "app/relevant.tsx"},
+            retrieved_files={"app/relevant.tsx"},
+        )
+    except SolveRejected as exc:
+        assert "unretrieved existing file" in str(exc)
+    else:
+        raise AssertionError("ungrounded target file passed")
 
 
 def test_command_requires_argument_prefix_without_shell_controls():
@@ -103,6 +118,15 @@ def test_edit_batch_is_exact_and_plan_confined(tmp_path):
         pass
     else:
         raise AssertionError("unplanned edit passed")
+
+
+def test_replacement_schema_rejects_whole_file_payloads():
+    try:
+        Replacement(old="x" * 4001, new="small")
+    except ValueError as exc:
+        assert "4000" in str(exc)
+    else:
+        raise AssertionError("oversized replacement passed")
 
 
 def test_owned_target_requires_matching_test_vet(tmp_path, monkeypatch):
@@ -167,3 +191,33 @@ def test_fork_owner_cannot_be_another_personal_account():
         assert "not the authenticated user" in str(exc)
     else:
         raise AssertionError("foreign personal fork owner passed")
+
+
+def test_structured_output_failure_waits_for_doctor_and_janitor(tmp_path):
+    failure = classify_failure(
+        ValueError("invalid structured model output: EOF while parsing a string"),
+        "implementing",
+    )
+    cleanup = cleanup_manifest(
+        {"workspace": str(tmp_path / "run-1"), "fork_repo": "bot/project"},
+        tmp_path,
+    )
+
+    assert failure["category"] == "model_output"
+    assert failure["retryable"] is True
+    assert failure["candidate_action"] == "retry_once_with_stricter_output"
+    assert cleanup["status"] == "blocked_on_doctor"
+    assert cleanup["resources"][0]["safe_root"] == str(tmp_path.resolve())
+    assert cleanup["resources"][1]["disposition"] == "preserve_shared_resource"
+
+    handoff = failure_handoff(
+        {"stage": "implementing", "workspace": str(tmp_path / "run-1")},
+        ValueError("invalid structured model output: truncated JSON"),
+        workspace_base=tmp_path,
+        token_spent=15709,
+        token_limit=24000,
+        elapsed_seconds=84.7,
+    )
+    assert handoff["status"] == "doctor_pending"
+    assert handoff["doctor"] == {"status": "pending", "decision": None}
+    assert handoff["token_spent"] == 15709

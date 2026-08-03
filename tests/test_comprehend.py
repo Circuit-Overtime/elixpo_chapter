@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import subprocess
 
-from agents.comprehend.bundle import _search_candidates
+from agents.comprehend.bundle import _read_relevant, _search_candidates
 
 
 def test_candidate_search_uses_git_without_requiring_ripgrep(tmp_path, monkeypatch):
@@ -55,3 +55,22 @@ def test_candidate_search_ranks_files_matching_multiple_issue_terms(tmp_path, mo
     found = _search_candidates(tmp_path, "Copy the full LLM text from the button", tracked)
 
     assert found[0] == "app/docs/layout.tsx"
+
+
+def test_relevant_read_keeps_middle_match_with_small_budget(tmp_path):
+    target = tmp_path / "layout.tsx"
+    target.write_text(
+        "\n".join(
+            [
+                *[f"const head{i} = {i};" for i in range(150)],
+                "const handleCopyForLlm = () => navigator.clipboard.writeText(payload);",
+                *[f"const tail{i} = {i};" for i in range(150)],
+            ]
+        )
+    )
+
+    excerpt = _read_relevant(tmp_path, "layout.tsx", ["copy", "llm"], max_tokens=300)
+
+    assert "handleCopyForLlm" in excerpt
+    assert "head0" not in excerpt
+    assert "tail149" not in excerpt
