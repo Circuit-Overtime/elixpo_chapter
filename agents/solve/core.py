@@ -13,7 +13,14 @@ from typing import Any
 import httpx
 
 from agents.solve.harness import run_harness
-from agents.solve.git import changed_files, commit_files, git, run_verification, validate_command
+from agents.solve.git import (
+    assert_workspace_identity,
+    changed_files,
+    commit_files,
+    git,
+    run_verification,
+    validate_command,
+)
 from agents.solve.models import SolvePlan
 from agents.solve.verification_plan import complete_verification_plan
 from lib.github.issues import fetch_issue_evidence, parse_issue_url, referenced_pull_requests
@@ -249,6 +256,12 @@ async def solve(
         work_branch=work_branch,
         token=await api._token(),
     )
+    assert_workspace_identity(
+        root,
+        fork_repo=f"{fork_owner}/{repo}",
+        upstream_repo=f"{owner}/{repo}",
+        branch=work_branch,
+    )
     running["stage"] = "harness"
     store.write_json("solve.json", running)
 
@@ -328,7 +341,27 @@ async def solve(
     observed = set(changed_files(root))
     if observed != set(targets):
         raise SolveRejected(f"verification changed the working tree: {sorted(observed ^ set(targets))}")
-    commits = [commit_files(root, targets, outcome.commit_message)]
+    running["stage"] = "committing"
+    store.write_json("solve.json", running)
+    commit_sha = commit_files(root, targets, outcome.commit_message)
+    assert_workspace_identity(
+        root,
+        fork_repo=f"{fork_owner}/{repo}",
+        upstream_repo=f"{owner}/{repo}",
+        branch=work_branch,
+    )
+    committed_targets = set(
+        git(root, "diff-tree", "--no-commit-id", "--name-only", "-r", commit_sha).splitlines()
+    )
+    if committed_targets != set(targets):
+        raise SolveRejected(
+            f"implementation commit files differ from reviewed targets: {sorted(committed_targets ^ set(targets))}"
+        )
+    commits = [commit_sha]
+    print(
+        f"[solve] committed fork={fork_owner}/{repo} branch={work_branch} sha={commit_sha[:12]}",
+        flush=True,
+    )
 
     if git(root, "status", "--porcelain"):
         raise SolveRejected("workspace is not clean after the implementation commit")

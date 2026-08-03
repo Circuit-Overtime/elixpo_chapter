@@ -19,6 +19,13 @@ class CommandRejected(RuntimeError):
     pass
 
 
+def _github_remote_repo(url: str) -> str:
+    match = re.search(r"github\.com[:/]([^/\s]+/[^/\s]+?)(?:\.git)?$", url.strip(), re.IGNORECASE)
+    if not match:
+        raise RuntimeError(f"unsupported GitHub remote URL: {url[:200]}")
+    return match.group(1).removesuffix(".git").casefold()
+
+
 def git(workspace: Path, *args: str, timeout: int = 60) -> str:
     proc = subprocess.run(
         ["git", *args],
@@ -42,6 +49,27 @@ def changed_files(workspace: Path, *, cached: bool = False) -> list[str]:
         untracked = git(workspace, "ls-files", "--others", "--exclude-standard").splitlines()
         found.extend(path for path in untracked if path not in found)
     return found
+
+
+def assert_workspace_identity(
+    workspace: Path,
+    *,
+    fork_repo: str,
+    upstream_repo: str,
+    branch: str,
+) -> None:
+    """Fail closed unless edits are occurring on the expected fork branch."""
+    origin = _github_remote_repo(git(workspace, "remote", "get-url", "origin"))
+    upstream = _github_remote_repo(git(workspace, "remote", "get-url", "upstream"))
+    current_branch = git(workspace, "branch", "--show-current")
+    if origin != fork_repo.casefold():
+        raise RuntimeError(f"workspace origin is {origin}, expected fork {fork_repo}")
+    if upstream != upstream_repo.casefold():
+        raise RuntimeError(f"workspace upstream is {upstream}, expected {upstream_repo}")
+    if current_branch != branch:
+        raise RuntimeError(f"workspace branch is {current_branch}, expected {branch}")
+    if origin == upstream:
+        raise RuntimeError("workspace origin and upstream must be different repositories")
 
 
 def validate_command(command: str, allowed_prefixes: list[str]) -> list[str]:

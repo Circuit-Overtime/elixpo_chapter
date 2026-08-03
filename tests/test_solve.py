@@ -10,7 +10,7 @@ import httpx
 from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
-from agents.solve.git import CommandRejected, run_verification, validate_command
+from agents.solve.git import CommandRejected, assert_workspace_identity, run_verification, validate_command
 from agents.solve.harness import HarnessError, _harness_env, _parse_cli_result, _render_harness_event
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from agents.solve.verification_plan import complete_verification_plan
@@ -83,6 +83,41 @@ def test_command_requires_argument_prefix_without_shell_controls():
             pass
         else:
             raise AssertionError(f"unsafe command passed: {command}")
+
+
+def test_workspace_identity_requires_fork_origin_upstream_and_branch(tmp_path):
+    import subprocess
+
+    subprocess.run(["git", "init", "-b", "elixpo/issue-9-test", str(tmp_path)], check=True)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "https://github.com/elixpoo/lixrl.com.git"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "upstream", "https://github.com/elixpo/lixrl.com.git"],
+        cwd=tmp_path,
+        check=True,
+    )
+
+    assert_workspace_identity(
+        tmp_path,
+        fork_repo="elixpoo/lixrl.com",
+        upstream_repo="elixpo/lixrl.com",
+        branch="elixpo/issue-9-test",
+    )
+
+    try:
+        assert_workspace_identity(
+            tmp_path,
+            fork_repo="elixpo/lixrl.com",
+            upstream_repo="elixpo/lixrl.com",
+            branch="elixpo/issue-9-test",
+        )
+    except RuntimeError as exc:
+        assert "expected fork" in str(exc)
+    else:
+        raise AssertionError("upstream origin passed as the fork")
 
 
 def test_target_command_environment_excludes_agent_credentials(tmp_path, monkeypatch):
