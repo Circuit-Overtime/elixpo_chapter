@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 
-from lib.scorer import IssueSignals
+from lib.scorer import IssueSignals, in_issue_age_window
 
 MAINTAINER_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
 CLAIM_WINDOW_DAYS = 14
@@ -104,11 +104,14 @@ def deterministic_signals(issue: dict, now: datetime | None = None) -> dict:
     now = now or datetime.now(timezone.utc)
     created = _timestamp(issue.get("created_at"))
     updated = _timestamp(issue.get("updated_at"))
+    issue_age_days = (now.date() - created.date()).days if created else None
     labels = [lb.get("name", "").lower() for lb in issue.get("labels", [])]
     return {
         "labels": labels,
         "no_assignee": not issue.get("assignees") and not issue.get("assignee"),
         "older_than_7_days": bool(created and created <= now - timedelta(days=7)),
+        "issue_age_days": issue_age_days,
+        "within_target_age_window": in_issue_age_window(issue_age_days),
         "stale_over_365_days": not updated or updated < now - timedelta(days=STALE_DAYS),
         "op_is_core_maintainer": issue.get("author_association", "") in MAINTAINER_ASSOCIATIONS,
     }

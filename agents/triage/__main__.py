@@ -12,7 +12,13 @@ from datetime import datetime, timezone
 
 import structlog
 from lib.aio import gather_safe
-from lib.scorer import NEGATIVE_LABELS, assess_solvability, score
+from lib.scorer import (
+    MAX_ISSUE_AGE_DAYS,
+    MIN_ISSUE_AGE_DAYS,
+    NEGATIVE_LABELS,
+    assess_solvability,
+    score,
+)
 from pydantic import BaseModel, Field
 
 from agents.triage.extract import extract_issue_signals
@@ -33,7 +39,7 @@ from agents.triage.signals import (
 log = structlog.get_logger()
 
 MAX_REPOS = 16      # cover most of Scout's size-diverse list before giving up
-PER_REPO = 8        # issues per repo
+PER_REPO = 30       # free fetch depth; the narrow age gate may reject most results
 SHORTLIST = 12      # issues that get the (paid) LLM deep pass
 AVAILABILITY_POOL_FACTOR = 3  # free GitHub checks absorb occupied issues before model calls
 
@@ -43,6 +49,7 @@ class TriagedIssue(BaseModel):
     number: int
     title: str
     url: str
+    issue_age_days: int
     score: int
     breakdown: dict[str, int] = Field(default_factory=dict)
     tractable: bool = False
@@ -75,11 +82,15 @@ async def triage_candidates(
 
     # 2. deterministic pre-score (no model, no comments) → cheap ranking
     prelim: list[dict] = []
+    age_window_rejected = 0
     for repo, issues in zip(repos, issue_lists, strict=True):
         for iss in issues:
             det = deterministic_signals(iss, now)
             labels = set(det["labels"])
             body = str(iss.get("body") or "").strip()
+            if not det["within_target_age_window"]:
+                age_window_rejected += 1
+                continue
             if (
                 not det["no_assignee"]
                 or det["stale_over_365_days"]
@@ -90,6 +101,14 @@ async def triage_candidates(
                 continue
             pre, _ = score(merge_signals(det))
             prelim.append({"repo": repo["full_name"], "issue": iss, "det": det, "pre": pre})
+
+    if age_window_rejected:
+        log.info(
+            "triage.age_window_rejected",
+            count=age_window_rejected,
+            min_days=MIN_ISSUE_AGE_DAYS,
+            max_days=MAX_ISSUE_AGE_DAYS,
+        )
 
     prelim.sort(key=lambda x: x["pre"], reverse=True)
 
@@ -179,6 +198,7 @@ async def triage_candidates(
                 number=iss["number"],
                 title=iss.get("title", ""),
                 url=iss.get("html_url", ""),
+                issue_age_days=x["det"]["issue_age_days"],
                 score=total,
                 breakdown=breakdown,
                 tractable=llm.get("tractable") is True,

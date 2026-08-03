@@ -27,7 +27,7 @@ def _issue(number=1, **kw):
         "labels": [{"name": "good first issue"}],
         "assignees": [],
         "author_association": "NONE",
-        "created_at": "2026-01-01T00:00:00Z",
+        "created_at": "2026-06-03T00:00:00Z",
         "updated_at": "2026-06-01T00:00:00Z",
     }
     base.update(kw)
@@ -41,8 +41,26 @@ def test_deterministic_signals():
     assert d["labels"] == ["good first issue"]
     assert d["no_assignee"] is True
     assert d["older_than_7_days"] is True
+    assert d["issue_age_days"] == 17
+    assert d["within_target_age_window"] is True
     assert d["op_is_core_maintainer"] is False
     assert d["stale_over_365_days"] is False
+
+
+@pytest.mark.parametrize(
+    ("created_at", "age_days", "eligible"),
+    [
+        ("2026-06-05T23:59:59Z", 15, True),
+        ("2026-05-31T00:00:00Z", 20, True),
+        ("2026-06-06T00:00:00Z", 14, False),
+        ("2026-05-30T00:00:00Z", 21, False),
+        (None, None, False),
+    ],
+)
+def test_issue_age_window_is_inclusive_and_fails_closed(created_at, age_days, eligible):
+    d = deterministic_signals(_issue(created_at=created_at), NOW)
+    assert d["issue_age_days"] == age_days
+    assert d["within_target_age_window"] is eligible
 
 
 def test_deterministic_maintainer_and_assignee():
@@ -306,6 +324,7 @@ async def test_triage_candidates_scores_and_ranks():
     assert all(t.tractable for t in out)
     assert all(t.easy for t in out)
     assert all(t.estimated_files == 3 for t in out)
+    assert all(t.issue_age_days == 17 for t in out)
     assert out[0].rationale == "clear scope"
 
 
@@ -366,6 +385,21 @@ async def test_triage_prefilter_avoids_spending_on_obvious_non_candidates():
         _issue(3, body="too short"),
         _issue(4, locked=True),
         _issue(5, updated_at="2024-01-01T00:00:00Z"),
+    ]
+    out = await triage_candidates(FakeAPI(issues), router, [{"full_name": "o/r"}], NOW)
+    assert out == []
+    assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_triage_rejects_issues_outside_age_window_before_model_call():
+    from agents.triage.__main__ import triage_candidates
+
+    router = FakeRouter({})
+    issues = [
+        _issue(1, created_at="2026-06-06T00:00:00Z"),
+        _issue(2, created_at="2026-05-30T00:00:00Z"),
+        _issue(3, created_at=None),
     ]
     out = await triage_candidates(FakeAPI(issues), router, [{"full_name": "o/r"}], NOW)
     assert out == []

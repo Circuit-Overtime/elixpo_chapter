@@ -13,12 +13,25 @@ from math import isfinite
 from pydantic import BaseModel, Field
 
 THRESHOLD = 8
+MIN_ISSUE_AGE_DAYS = 15
+MAX_ISSUE_AGE_DAYS = 20
 
 POSITIVE_LABELS = {"good first issue", "help wanted", "up-for-grabs", "hacktoberfest"}
 NEGATIVE_LABELS = {"triage", "needs-design", "discussion", "question"}
 EASY_COMPLEXITIES = {"trivial", "small"}
 MIN_SOLVABILITY_CONFIDENCE = 0.7
 MAX_EASY_FILES = 5
+
+
+def in_issue_age_window(age_days: object) -> bool:
+    """Return whether a calendar-day age is inside the inclusive target window."""
+    if isinstance(age_days, bool):
+        return False
+    try:
+        age = int(age_days)
+    except (TypeError, ValueError):
+        return False
+    return MIN_ISSUE_AGE_DAYS <= age <= MAX_ISSUE_AGE_DAYS
 
 
 class IssueSignals(BaseModel):

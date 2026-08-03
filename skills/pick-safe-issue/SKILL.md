@@ -16,13 +16,15 @@ Require all of the following:
 - score meets `lib.scorer.THRESHOLD`;
 - `tractable` is exactly `true`;
 - `easy` is exactly `true`;
+- `issue_age_days` is present and between 15 and 20, inclusive;
 - repository is absent from the blocklist;
 - `owner/repo#number` has never been recorded in the ledger;
 - the repository has no other open elixpoo pull request;
 - the daily contribution cap is not exhausted.
 
 Treat missing booleans as false. Never recover an issue rejected by Triage based
-on its title, popularity, label, or rationale.
+on its title, popularity, label, or rationale. Treat a missing or malformed age
+as ineligible, so stale triage state cannot bypass the creation-age gate.
 
 ## Select predictably
 
