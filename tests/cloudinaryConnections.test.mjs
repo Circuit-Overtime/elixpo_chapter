@@ -46,7 +46,7 @@ test('Cloudinary OAuth authorization uses the registered callback and least scop
     assert.equal(url.pathname, '/oauth2/auth');
     assert.equal(url.searchParams.get('client_id'), 'client-id');
     assert.equal(url.searchParams.get('redirect_uri'), 'https://blogs.elixpo.com/api/integrations/cloudinary/callback');
-    assert.equal(url.searchParams.get('scope'), 'upload asset_management offline_access');
+    assert.equal(url.searchParams.get('scope'), 'openid offline_access asset_management upload');
     assert.equal(url.searchParams.get('state'), 'csrf-state');
   } finally {
     if (oldId === undefined) delete process.env.CLOUDINARY_OAUTH_CLIENT_ID;
@@ -63,6 +63,18 @@ test('Cloudinary OAuth resolves product environments and conservative expiry', a
   );
   assert.equal(tokenExpiry(300, 1000), 1300);
   assert.equal(tokenExpiry(undefined, 1000), 1300);
+});
+
+test('Cloudinary OAuth resolves the official ext.cloud_name access-token claim', async () => {
+  const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const accessToken = `${encode({ alg: 'none' })}.${encode({
+    ext: { cloud_name: 'selected-product-environment' },
+  })}.signature`;
+
+  assert.equal(
+    await resolveCloudinaryCloudName({ access_token: accessToken }),
+    'selected-product-environment',
+  );
 });
 
 test('Cloudinary media operations authenticate OAuth connections with bearer tokens', async () => {
