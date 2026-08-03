@@ -243,6 +243,8 @@ async def solve(
     plan = await plan_issue(router, issue, bundle.render(int(policy["max_context_tokens"])), policy)
     _budget_guard(router)
     validate_plan(plan, policy, set(tracked_files(root)))
+    running["plan"] = plan.model_dump()
+    store.write_json("solve.json", running)
 
     search_context = ""
     if plan.needs_search:

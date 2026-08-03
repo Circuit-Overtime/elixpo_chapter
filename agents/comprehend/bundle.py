@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -19,6 +20,38 @@ _PATH_RE = re.compile(
     r"(?<![\w.-])(?:[\w.@+-]+/)+[\w.@+-]+(?:\.[A-Za-z0-9][\w.-]*)?"
 )
 _CODE_TOKEN_RE = re.compile(r"`([A-Za-z_$][\w$.-]{2,80})`")
+_SEARCH_TOKEN_RE = re.compile(r"[A-Za-z_$][A-Za-z0-9_$.-]{2,80}")
+_SEARCH_STOPWORDS = {
+    "and",
+    "about",
+    "after",
+    "again",
+    "also",
+    "are",
+    "been",
+    "before",
+    "being",
+    "bug",
+    "does",
+    "for",
+    "from",
+    "have",
+    "into",
+    "not",
+    "must",
+    "should",
+    "that",
+    "the",
+    "their",
+    "this",
+    "was",
+    "version",
+    "what",
+    "when",
+    "where",
+    "which",
+    "with",
+}
 _MANIFESTS = (
     "pyproject.toml",
     "package.json",
@@ -87,11 +120,28 @@ def _mentioned_paths(text: str, tracked: set[str]) -> list[str]:
 
 
 def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int = 10) -> list[str]:
-    terms = list(dict.fromkeys(_CODE_TOKEN_RE.findall(text)))[:6]
-    found: list[str] = []
+    exact_terms = _CODE_TOKEN_RE.findall(text)
+    terms: list[str] = []
+    seen_terms: set[str] = set()
+    for term in [*exact_terms, *_SEARCH_TOKEN_RE.findall(text)]:
+        normalized = term.casefold()
+        if normalized in seen_terms or normalized in _SEARCH_STOPWORDS:
+            continue
+        seen_terms.add(normalized)
+        terms.append(term)
+        if len(terms) >= 12:
+            break
+
+    scores: Counter[str] = Counter()
+    first_seen: dict[str, int] = {}
     for term in terms:
+        normalized = term.casefold()
+        for rel in tracked:
+            if normalized in rel.casefold():
+                scores[rel] += 1
+                first_seen.setdefault(rel, len(first_seen))
         proc = subprocess.run(
-            ["git", "grep", "-l", "-F", "-e", term, "--", "."],
+            ["git", "grep", "-l", "-i", "-F", "-e", term, "--", "."],
             cwd=workspace,
             capture_output=True,
             text=True,
@@ -104,11 +154,10 @@ def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int
             rel = raw.removeprefix("./")
             if rel.endswith(".lock"):
                 continue
-            if rel in tracked and rel not in found:
-                found.append(rel)
-                if len(found) >= limit:
-                    return found
-    return found
+            if rel in tracked:
+                scores[rel] += 2 if term in exact_terms else 1
+                first_seen.setdefault(rel, len(first_seen))
+    return sorted(scores, key=lambda rel: (-scores[rel], first_seen[rel], rel))[:limit]
 
 
 def _guidance_paths(files: list[str], names: set[str], targets: list[str]) -> list[str]:
