@@ -21,5 +21,6 @@ build/
 # without the sibling sketch.elixpo checkout. Remove once 5.5.0 is on npm.
 !packages/lixsketch/*.tgz
 *.lixeditor
+outreach-untracked
 .dev.vars
 outreach-untracked/
