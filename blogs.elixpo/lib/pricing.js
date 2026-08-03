@@ -12,7 +12,7 @@ export const PLANS = [
     features: [
       'Unlimited public posts',
       'Full block editor and creator analytics',
-      '50 MB managed storage · 2 MB per story',
+      '10 MB managed storage · 2 MB per story',
       '3 co-authors per story · 1 organization',
       '15 writing-assistant requests per day',
       'Personal Cloudinary and LixRL connectors',

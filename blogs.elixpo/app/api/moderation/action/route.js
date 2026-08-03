@@ -69,6 +69,10 @@ export async function POST(request) {
       const { recalculatePlatformStorage } = await import('../../../../lib/mediaStorage');
       await recalculatePlatformStorage(db, mediaOwners);
     } catch {}
+    try {
+      const { kvInvalidate, mediaInventoryCacheKey } = await import('../../../../lib/cache');
+      await kvInvalidate(...[...new Set(mediaOwners)].map(mediaInventoryCacheKey));
+    } catch {}
 
     // Notify the author by email (best-effort).
     if (blog.author_email) {

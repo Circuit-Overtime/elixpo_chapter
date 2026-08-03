@@ -46,6 +46,10 @@ export async function DELETE(request, { params }) {
       const { recalculatePlatformStorage } = await import('../../../../lib/mediaStorage');
       await recalculatePlatformStorage(db, mediaOwners);
     } catch {}
+    try {
+      const { kvInvalidate, mediaInventoryCacheKey } = await import('../../../../lib/cache');
+      await kvInvalidate(...[...new Set(mediaOwners)].map(mediaInventoryCacheKey));
+    } catch {}
 
     return NextResponse.json({ ok: true, deleted: true });
   } catch (e) {
