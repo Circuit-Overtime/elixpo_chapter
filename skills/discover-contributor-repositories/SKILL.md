@@ -31,6 +31,11 @@ Reject a repository when any condition holds:
 
 Never weaken an explicit opt-out to increase candidate count.
 
+Target growing projects with enough maintenance evidence but room for a new
+contributor: 100–15,000 stars and a default-branch push within 21 days. Repositories
+above that ceiling are out of scope, even when they rank highly or carry many
+good-first labels.
+
 ## Rank for contribution readiness
 
 Rank eligible repositories using evidence in this order:
@@ -42,8 +47,8 @@ Rank eligible repositories using evidence in this order:
 5. Stars provide only a weak health signal.
 
 Do not reward huge backlogs as if every open issue were available. Maintain the
-small/mid/large band round-robin so large projects do not crowd out maintained
-smaller repositories.
+100–2,000, 2,001–8,000, and 8,001–15,000 band round-robin so established projects
+do not crowd out maintained smaller repositories.
 
 ## Keep discovery bounded
 

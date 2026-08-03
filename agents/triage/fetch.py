@@ -1,4 +1,4 @@
-"""GitHub fetching for Triage — open good-first issues + their comments.
+"""GitHub fetching for Triage — open good-first issues, timelines, and comments.
 
 Injectable api (`_request`) so the orchestrator is testable without network.
 """
@@ -34,3 +34,13 @@ async def fetch_comments(api: Fetcher, full_name: str, number: int, per: int = 1
     )
     comments = data if isinstance(data, list) else []
     return comments[-per:]
+
+
+async def fetch_issue_timeline(api: Fetcher, full_name: str, number: int, per: int = 100) -> list[dict]:
+    """Fetch timeline events used to detect pull requests already attempting the issue."""
+    data = await api._request(
+        "GET",
+        f"/repos/{full_name}/issues/{number}/timeline",
+        params={"per_page": per},
+    )
+    return data if isinstance(data, list) else []

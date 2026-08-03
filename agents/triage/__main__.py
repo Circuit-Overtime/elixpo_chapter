@@ -16,8 +16,13 @@ from lib.scorer import NEGATIVE_LABELS, assess_solvability, score
 from pydantic import BaseModel, Field
 
 from agents.triage.extract import extract_issue_signals
-from agents.triage.fetch import fetch_comments, fetch_good_first_issues
-from agents.triage.signals import deterministic_comment_signals, deterministic_signals, merge_signals
+from agents.triage.fetch import fetch_comments, fetch_good_first_issues, fetch_issue_timeline
+from agents.triage.signals import (
+    deterministic_comment_signals,
+    deterministic_signals,
+    linked_pull_requests,
+    merge_signals,
+)
 
 log = structlog.get_logger()
 
@@ -80,29 +85,63 @@ async def triage_candidates(
             prelim.append({"repo": repo["full_name"], "issue": iss, "det": det, "pre": pre})
 
     prelim.sort(key=lambda x: x["pre"], reverse=True)
-    short = prelim[:shortlist]
 
-    # 3. deep pass on the shortlist only: fetch comments + LLM signal extraction.
+    # 3. Reject issues that already have a cross-referenced PR before spending
+    #    model tokens. Inspect extra candidates so PR conflicts do not starve the
+    #    paid shortlist.
+    timeline_pool = prelim[: shortlist * 2]
+    timelines = await gather_safe(
+        [fetch_issue_timeline(api, x["repo"], x["issue"]["number"]) for x in timeline_pool],
+        default=None,
+    )
+    short: list[dict] = []
+    pr_conflicts = 0
+    for candidate, timeline in zip(timeline_pool, timelines, strict=True):
+        if timeline is None:
+            continue
+        if linked_pull_requests(timeline):
+            pr_conflicts += 1
+            continue
+        short.append(candidate)
+        if len(short) >= shortlist:
+            break
+    if pr_conflicts:
+        log.info("triage.linked_prs_rejected", count=pr_conflicts)
+
+    # 4. deep pass on the shortlist only: fetch comments + LLM signal extraction.
     #    gather_safe → a single 504 or LLM hiccup skips that item, never fails the run.
     comment_lists = await gather_safe(
-        [fetch_comments(api, x["repo"], x["issue"]["number"]) for x in short], default=[]
+        [fetch_comments(api, x["repo"], x["issue"]["number"]) for x in short], default=None
     )
+    verified: list[tuple[dict, list[dict], dict]] = []
+    for candidate, comments in zip(short, comment_lists, strict=True):
+        if comments is None:
+            continue
+        comment_det = deterministic_comment_signals(candidate["issue"], comments, now)
+        if (
+            comment_det["someone_claimed_recently"]
+            or comment_det["maintainer_claimed"]
+            or comment_det["touches_internal_paths"]
+        ):
+            continue
+        verified.append((candidate, comments, comment_det))
+
     sem = asyncio.Semaphore(4)  # cap concurrent LLM calls → fewer rate limits
 
-    async def _extract(x, comments):
+    async def _extract(x, comments, comment_det):
         async with sem:
             extracted = await extract_issue_signals(router, x["issue"], comments, now)
-            extracted.update(deterministic_comment_signals(x["issue"], comments, now))
+            extracted.update(comment_det)
             return extracted
 
     llm_results = await gather_safe(
-        [_extract(x, comments) for x, comments in zip(short, comment_lists, strict=True)],
+        [_extract(x, comments, comment_det) for x, comments, comment_det in verified],
         default={},
     )
 
-    # 4. full §4 score + build ranked records
+    # 5. full §4 score + build ranked records
     out: list[TriagedIssue] = []
-    for x, llm in zip(short, llm_results, strict=True):
+    for (x, _comments, _comment_det), llm in zip(verified, llm_results, strict=True):
         signals = merge_signals(x["det"], llm)
         total, breakdown = score(signals)
         solvability = assess_solvability(signals, llm)

@@ -49,7 +49,7 @@ def test_passes_filters_accept():
     [
         (_repo(full_name="bad/repo"), "blocklisted"),
         (_repo(stargazers_count=50), "stars"),
-        (_repo(stargazers_count=99999), "stars"),
+        (_repo(stargazers_count=15001), "stars"),
         (_repo(language="Brainfuck"), "language"),
         (_repo(pushed_at="2026-01-01T00:00:00Z"), "inactive"),
         (_repo(archived=True), "archived"),
@@ -152,10 +152,22 @@ async def test_discover_mixes_star_bands():
     items = [
         _repo(full_name="o/small", stargazers_count=500),     # small band
         _repo(full_name="o/mid", stargazers_count=6000),      # mid band
-        _repo(full_name="o/large", stargazers_count=30000),   # large band
+        _repo(full_name="o/large", stargazers_count=12000),   # established target band
     ]
     cands = await discover_candidates(FakeAPI(items), ["python"], blocklist=set(), now=NOW)
     assert {c.band for c in cands} == {"small", "mid", "large"}
+
+
+@pytest.mark.asyncio
+async def test_discover_excludes_famous_repositories():
+    from agents.scout.__main__ import discover_candidates
+
+    items = [
+        _repo(full_name="o/growing", stargazers_count=8000),
+        _repo(full_name="o/famous", stargazers_count=35554),
+    ]
+    cands = await discover_candidates(FakeAPI(items), ["python"], blocklist=set(), now=NOW)
+    assert [c.full_name for c in cands] == ["o/growing"]
 
 
 @pytest.mark.asyncio

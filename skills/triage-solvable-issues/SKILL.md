@@ -20,11 +20,17 @@ Python owns deterministic facts:
 - author association and repository labels;
 - issue creation/update age;
 - recent claim and later unclaim timestamps;
+- cross-referenced pull requests in the issue timeline;
 - literal `internal/` or `private/` path references.
 
 Do not override those facts. Infer only the fuzzy fields supplied in the output
 schema: reproduction quality, acceptance clarity, tractability, complexity,
 likely file count, confidence, and environmental or decision blockers.
+
+Before any model call, inspect the issue timeline. Reject an issue when any pull
+request is cross-referenced from it, regardless of whether that attempt is open,
+closed, or merged. Also reject recent contributor intent such as "I'd like to
+investigate this"; do not compete for work merely because GitHub has no assignee.
 
 ## Classify scope conservatively
 
@@ -82,6 +88,9 @@ least 0.70 confidence, recently active, unassigned and unclaimed, and have eithe
 a clear acceptance criterion or reproducible labelled bug. It must have no
 maintainer-decision, access, hardware, internal-path, discuss-first, or design-stage
 blocker.
+
+It must also have no cross-referenced pull request. An empty assignee field never
+overrides an existing implementation attempt.
 
 A maintainer-authored issue carrying an explicit community-work label is an
 invitation, not a self-note. A `good first issue` label supports the verdict but

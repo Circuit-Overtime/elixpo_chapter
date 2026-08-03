@@ -6,7 +6,12 @@ import json
 from datetime import datetime, timezone
 
 import pytest
-from agents.triage.signals import deterministic_comment_signals, deterministic_signals, merge_signals
+from agents.triage.signals import (
+    deterministic_comment_signals,
+    deterministic_signals,
+    linked_pull_requests,
+    merge_signals,
+)
 from rtk.models import ChatCompletionResponse, Choice, Message, Usage
 
 NOW = datetime(2026, 6, 20, tzinfo=timezone.utc)
@@ -135,14 +140,55 @@ def test_recent_unclaim_cancels_same_users_claim():
     assert signals["someone_claimed_recently"] is False
 
 
+def test_investigation_intent_counts_as_a_recent_claim():
+    comments = [
+        {
+            "body": "I'd like to investigate this issue and work on a fix.",
+            "created_at": "2026-06-18T00:00:00Z",
+            "author_association": "NONE",
+            "user": {"login": "contributor"},
+        }
+    ]
+    assert deterministic_comment_signals(_issue(), comments, NOW)["someone_claimed_recently"] is True
+
+
+def test_linked_pull_requests_detects_and_deduplicates_pr_cross_references():
+    pr = {
+        "event": "cross-referenced",
+        "source": {
+            "issue": {
+                "id": 99,
+                "number": 12,
+                "state": "closed",
+                "html_url": "https://github.com/o/r/pull/12",
+                "pull_request": {"merged_at": None},
+            }
+        },
+    }
+    regular_issue = {
+        "event": "cross-referenced",
+        "source": {"issue": {"number": 13, "html_url": "https://github.com/o/r/issues/13"}},
+    }
+    assert linked_pull_requests([pr, pr, regular_issue]) == [
+        {"number": 12, "state": "closed", "url": "https://github.com/o/r/pull/12"}
+    ]
+
+
 # --- orchestration ---
 
 class FakeAPI:
-    def __init__(self, issues, comments=None):
+    def __init__(self, issues, comments=None, timelines=None, timeline_error=False):
         self.issues = issues
         self.comments = comments or []
+        self.timelines = timelines or {}
+        self.timeline_error = timeline_error
 
     async def _request(self, method, path, **kwargs):
+        if path.endswith("/timeline"):
+            if self.timeline_error:
+                raise RuntimeError("timeline unavailable")
+            number = int(path.split("/")[-2])
+            return self.timelines.get(number, [])
         if path.endswith("/comments"):
             return self.comments
         if path.endswith("/issues"):
@@ -284,5 +330,71 @@ async def test_triage_prefilter_avoids_spending_on_obvious_non_candidates():
         _issue(5, updated_at="2024-01-01T00:00:00Z"),
     ]
     out = await triage_candidates(FakeAPI(issues), router, [{"full_name": "o/r"}], NOW)
+    assert out == []
+    assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_triage_rejects_linked_pr_before_model_call():
+    from agents.triage.__main__ import triage_candidates
+
+    timeline = [
+        {
+            "event": "cross-referenced",
+            "source": {
+                "issue": {
+                    "number": 42,
+                    "state": "open",
+                    "html_url": "https://github.com/o/r/pull/42",
+                    "pull_request": {"merged_at": None},
+                }
+            },
+        }
+    ]
+    router = FakeRouter({"tractable": True})
+    out = await triage_candidates(
+        FakeAPI([_issue(1)], timelines={1: timeline}),
+        router,
+        [{"full_name": "o/r"}],
+        NOW,
+    )
+    assert out == []
+    assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_triage_skips_issue_when_timeline_cannot_be_verified():
+    from agents.triage.__main__ import triage_candidates
+
+    router = FakeRouter({"tractable": True})
+    out = await triage_candidates(
+        FakeAPI([_issue(1)], timeline_error=True),
+        router,
+        [{"full_name": "o/r"}],
+        NOW,
+    )
+    assert out == []
+    assert router.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_triage_rejects_recent_claim_before_model_call():
+    from agents.triage.__main__ import triage_candidates
+
+    comments = [
+        {
+            "body": "I'd like to investigate this issue and work on a fix.",
+            "created_at": "2026-06-18T00:00:00Z",
+            "author_association": "NONE",
+            "user": {"login": "contributor"},
+        }
+    ]
+    router = FakeRouter({"tractable": True})
+    out = await triage_candidates(
+        FakeAPI([_issue(1)], comments=comments),
+        router,
+        [{"full_name": "o/r"}],
+        NOW,
+    )
     assert out == []
     assert router.calls == 0

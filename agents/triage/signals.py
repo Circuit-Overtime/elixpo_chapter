@@ -17,10 +17,40 @@ CLAIM_WINDOW_DAYS = 14
 STALE_DAYS = 365
 _CLAIM_RE = re.compile(
     r"\b(?:i(?:'m| am) working on|i(?:'ll| will| can| would like to) "
-    r"(?:take|try|work|handle|implement|fix)|let me (?:take|work|handle)|take a stab|"
+    r"(?:take|try|work|handle|implement|fix|investigate)|i'd like to "
+    r"(?:take|try|work|handle|implement|fix|investigate)|let me (?:take|work|handle)|take a stab|"
     r"pick(?:ing)? this up|started working|working on this|i(?:'m| am) on it)\b",
     re.IGNORECASE,
 )
+
+
+def linked_pull_requests(timeline: list[dict] | None) -> list[dict]:
+    """Return PRs cross-referenced from an issue timeline, deduplicated by URL.
+
+    A closed or unmerged attempt still means the issue has already attracted PR
+    work. Triage excludes it instead of competing with or repeating that work.
+    """
+    found: list[dict] = []
+    seen: set[str] = set()
+    for event in timeline or []:
+        if event.get("event") != "cross-referenced":
+            continue
+        source = (event.get("source") or {}).get("issue") or {}
+        if not source.get("pull_request"):
+            continue
+        url = str(source.get("html_url") or source.get("url") or "")
+        key = url or str(source.get("id") or source.get("number") or "")
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        found.append(
+            {
+                "number": source.get("number"),
+                "state": source.get("state", "unknown"),
+                "url": url,
+            }
+        )
+    return found
 _UNCLAIM_RE = re.compile(
     r"\b(?:no longer working|not working on this|won't work on|cannot work on|"
     r"can no longer|giving this up|unassign me)\b",

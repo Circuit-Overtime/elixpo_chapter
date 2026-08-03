@@ -11,8 +11,8 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, Field
 
 MIN_STARS = 100
-MAX_STARS = 50_000
-ACTIVE_DAYS = 30
+MAX_STARS = 15_000
+ACTIVE_DAYS = 21
 
 # A repo carrying any of these topics has opted out — permanently skip it.
 OPT_OUT_TOPICS = {"elixpoo-opt-out", "no-ai-contributions", "no-ai", "no-ai-prs"}

@@ -33,8 +33,8 @@ PER_BAND_PAGE = 15
 # and mid repos aren't drowned out by giants. (lo, hi) inclusive-ish ranges.
 BANDS: list[tuple[str, int, int]] = [
     ("small", MIN_STARS, 2_000),
-    ("mid", 2_000, 15_000),
-    ("large", 15_000, MAX_STARS),
+    ("mid", 2_001, 8_000),
+    ("large", 8_001, MAX_STARS),
 ]
 
 
