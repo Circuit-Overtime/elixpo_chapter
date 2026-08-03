@@ -15,7 +15,8 @@ import { readTimeFromWords } from '../../lib/readTime';
 import { IMAGE_ACCEPT_ATTR, isAllowedImage } from '../utils/allowedImageTypes';
 import { generateBlogBanner, generatePixelAvatar } from '../utils/pixelAvatar';
 import { useCollaboration } from '../hooks/useCollaboration';
-import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload } from '../utils/mediaUploadQueue';
+import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload, MEDIA_UPLOAD_EVENT } from '../utils/mediaUploadQueue';
+import MediaStorageChip from '../components/Editor/MediaStorageChip';
 
 function AvatarImg({ src, name, size = 32 }) {
   const [failed, setFailed] = useState(false);
@@ -105,6 +106,10 @@ function saveDraft(slugid, data) {
 
 function persistableCover(url) {
   return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : null;
+}
+
+function isCloudinaryMediaUrl(url) {
+  return typeof url === 'string' && /^https:\/\/res\.cloudinary\.com\//i.test(url);
 }
 
 function generateBlogId() {
@@ -461,6 +466,7 @@ export default function WritePage({ slugid }) {
   const [coverCropSrc, setCoverCropSrc] = useState(null); // device image awaiting crop+stylise
   const [coverUploadError, setCoverUploadError] = useState('');
   const [coverUploading, setCoverUploading] = useState(false);
+  const [mediaStorageStatus, setMediaStorageStatus] = useState({ loading: true });
   const [coverUrlMode, setCoverUrlMode] = useState(false);
   const [coverUrlInput, setCoverUrlInput] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -535,6 +541,36 @@ export default function WritePage({ slugid }) {
   // `blogId` is the canonical DB id used for every read/write; it's resolved from
   // the server on load (for slug URLs) and defaults to the param for new blogs.
   const [blogId, setBlogId] = useState(slugid);
+
+  const refreshMediaStorageStatus = useCallback(async () => {
+    try {
+      const [usageResponse, cloudinaryResponse] = await Promise.all([
+        fetch('/api/tier/usage', { cache: 'no-store' }),
+        fetch('/api/integrations/cloudinary', { cache: 'no-store' }),
+      ]);
+      if (!usageResponse.ok || !cloudinaryResponse.ok) throw new Error('Storage status unavailable');
+      const [usage, cloudinary] = await Promise.all([usageResponse.json(), cloudinaryResponse.json()]);
+      setMediaStorageStatus({
+        loading: false,
+        tier: usage.tier,
+        ...usage.storage,
+        connected: cloudinary.connected,
+        useForUploads: cloudinary.useForUploads,
+        cloudName: cloudinary.cloudName,
+      });
+    } catch {
+      setMediaStorageStatus({ loading: false, unavailable: true });
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshMediaStorageStatus();
+    const handleUpload = (event) => {
+      if (event.detail?.status === 'complete') refreshMediaStorageStatus();
+    };
+    window.addEventListener(MEDIA_UPLOAD_EVENT, handleUpload);
+    return () => window.removeEventListener(MEDIA_UPLOAD_EVENT, handleUpload);
+  }, [refreshMediaStorageStatus]);
 
   // Real-time collaboration (enabled when blog has co-authors)
   const hasCollaborators = collaborators.length > 0;
@@ -1938,7 +1974,11 @@ export default function WritePage({ slugid }) {
                                 </span>
                               </div>
                               <span className="text-[13px] font-semibold">Preparing your cover</span>
-                              <span className="mt-1 text-[11px] text-white/60">Optimizing and uploading safely</span>
+                              <span className="mt-1 text-[11px] text-white/60">
+                                Optimizing for {mediaStorageStatus.useForUploads && mediaStorageStatus.cloudName
+                                  ? mediaStorageStatus.cloudName
+                                  : 'LixBlogs storage'}
+                              </span>
                               <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                                 <span className="cover-upload-progress block h-full w-2/5 rounded-full bg-gradient-to-r from-[#8b6ae6] to-[#c4b5fd]" />
                               </div>
@@ -2154,6 +2194,13 @@ export default function WritePage({ slugid }) {
                     )}
                   </div>
 
+                  {isCloudinaryMediaUrl(coverPreview) && !coverUploading && (
+                    <MediaStorageChip
+                      status={mediaStorageStatus}
+                      returnTo={`/edit/${encodeURIComponent(slugid)}`}
+                    />
+                  )}
+
                   {/* Spacer when emoji overlaps banner */}
                   {pageEmoji && (coverPreview || showCoverModal) && <div className="h-8" />}
 
@@ -2326,6 +2373,8 @@ export default function WritePage({ slugid }) {
                         setAiTitleKey(k => k + 1);
                       }}
                       blogId={blogId}
+                      mediaStorageStatus={mediaStorageStatus}
+                      mediaStorageReturnTo={`/edit/${encodeURIComponent(slugid)}`}
                       secret={secret}
                       collaboration={collabConfig}
                       editable={!roomFull}

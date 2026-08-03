@@ -12,10 +12,15 @@ import {
 } from '../../../../../lib/cloudinaryOAuth';
 
 function finish(request, result) {
-  const response = NextResponse.redirect(
-    new URL(`/settings?tab=integrations&cloudinary=${encodeURIComponent(result)}`, request.url),
-  );
+  const savedNext = request.cookies.get('cloudinary_oauth_next')?.value || '';
+  const safeNext = savedNext.startsWith('/') && !savedNext.startsWith('//')
+    ? savedNext
+    : '/settings?tab=integrations';
+  const destination = new URL(safeNext, request.url);
+  destination.searchParams.set('cloudinary', result);
+  const response = NextResponse.redirect(destination);
   response.cookies.delete('cloudinary_oauth_state');
+  response.cookies.delete('cloudinary_oauth_next');
   return response;
 }
 

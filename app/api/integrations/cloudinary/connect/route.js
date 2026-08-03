@@ -12,15 +12,22 @@ export async function GET(request) {
 
   try {
     const state = crypto.randomUUID();
-    const origin = new URL(request.url).origin;
+    const requestUrl = new URL(request.url);
+    const origin = requestUrl.origin;
+    const requestedNext = requestUrl.searchParams.get('next') || '';
+    const safeNext = requestedNext.startsWith('/') && !requestedNext.startsWith('//')
+      ? requestedNext
+      : '/settings?tab=integrations';
     const response = NextResponse.redirect(buildCloudinaryAuthorizationUrl({ origin, state }));
-    response.cookies.set('cloudinary_oauth_state', state, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 600,
       path: '/',
-    });
+    };
+    response.cookies.set('cloudinary_oauth_state', state, cookieOptions);
+    response.cookies.set('cloudinary_oauth_next', safeNext, cookieOptions);
     return response;
   } catch (error) {
     console.error('[cloudinary/oauth] Could not start authorization:', error?.message || error);

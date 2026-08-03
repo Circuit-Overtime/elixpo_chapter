@@ -735,7 +735,7 @@ function doSanitize(blocks) {
   return result;
 }
 
-const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, collaboration, onCollabSeeded, editable = true, secret = false }, ref) {
+const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, onReady, onTitleChange, blogId, mediaStorageStatus, mediaStorageReturnTo, collaboration, onCollabSeeded, editable = true, secret = false }, ref) {
   const { isDark } = useTheme();
   const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
   const [showMentionMenu, setShowMentionMenu] = useState(false);
@@ -2841,7 +2841,11 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         setPageMenu({ x: Math.min(e.clientX, window.innerWidth - 230), y: Math.min(e.clientY, window.innerHeight - 320) });
       }}
     >
-      <BlogImageUploadContext.Provider value={{ blogId }}>
+      <BlogImageUploadContext.Provider value={{
+        blogId,
+        mediaStorageStatus,
+        mediaStorageReturnTo,
+      }}>
         <BlockNoteView
           editor={editor}
           onChange={handleChange}
