@@ -52,6 +52,14 @@ def test_lower_scoring_easy_issue_beats_high_scoring_blocked_issue():
     assert pick["repo"] == "o/bounded"
 
 
+def test_equal_scores_prefer_confidence_then_smaller_scope():
+    low_confidence = {**_t("o/low", 1, 12), "confidence": 0.75, "estimated_files": 1}
+    larger = {**_t("o/large", 2, 12), "confidence": 0.9, "estimated_files": 5}
+    smaller = {**_t("o/small", 3, 12), "confidence": 0.9, "estimated_files": 2}
+    pick = select_top([low_confidence, larger, smaller], Ledger(), DAY)
+    assert pick["repo"] == "o/small"
+
+
 def test_dedup_already_picked():
     led = Ledger()
     led.record_pr("o/b#2", PRRecord(status="claimed"), DAY)
@@ -98,8 +106,25 @@ def test_run_records_and_dedups(tmp_path):
     assert "justification" in first
     # pick.json + ledger.json written
     assert store.read_json("pick.json")["repo"] == "o/b"
+    assert store.read_json("pick.json")["status"] == "picked"
+    assert store.read_json("pick.json")["picked"] is True
     assert "o/b#2" in Ledger.load(store).prs
 
     # second run must NOT re-pick o/b#2 — it moves to the next eligible
     second = run(store, NOW)
     assert second["repo"] == "o/a" and second["number"] == 1
+
+
+def test_no_pick_overwrites_stale_pick_output(tmp_path):
+    from agents.pick.__main__ import run
+
+    store = StateStore(tmp_path)
+    store.write_json("triaged.json", [_t("o/blocked", 1, 20, easy=False)])
+    store.write_json("pick.json", {"status": "picked", "repo": "old/repo", "number": 99})
+
+    assert run(store, NOW) is None
+    result = store.read_json("pick.json")
+    assert result["status"] == "no_pick"
+    assert result["picked"] is False
+    assert result["reason"] == "no candidate passed score, easy-work, and ledger policy"
+    assert "repo" not in result

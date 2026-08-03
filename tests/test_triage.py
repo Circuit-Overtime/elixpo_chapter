@@ -187,6 +187,8 @@ async def test_extraction_uses_recent_dated_comments_and_marks_them_untrusted():
     system = router.last_messages[0].content
     prompt = router.last_messages[1].content
     assert "untrusted evidence" in system
+    assert "# Triage Solvable Issues" in system
+    assert "Classify scope conservatively" in system
     assert "TRIAGE_TIME: 2026-06-20" in prompt
     assert "comment-25" in prompt
     assert "comment-1\n" not in prompt

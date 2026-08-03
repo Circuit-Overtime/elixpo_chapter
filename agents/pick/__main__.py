@@ -7,6 +7,7 @@ the ledger, daily cap, one-open-PR-per-repo, blocklist, tractable, above §4
 threshold), records the claim in state/ledger.json, and writes the justified
 choice to state/pick.json. Recording the pick is what stops us re-spending
 compute on the same issue.
+Operating contract: skills/pick-safe-issue/SKILL.md.
 """
 
 from __future__ import annotations
@@ -30,12 +31,35 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
     triaged = store.read_json("triaged.json", [])
     if not triaged:
         log.warning("pick.no_triaged", hint="run agents.triage first")
+        store.write_json(
+            "pick.json",
+            {
+                "status": "no_pick",
+                "picked": False,
+                "reason": "triaged queue is empty",
+                "evaluated_at": now.isoformat(),
+            },
+        )
         return None
 
     ledger = Ledger.load(store)
     pick = select_top(triaged, ledger, day)
     if pick is None:
-        log.info("pick.nothing_eligible")
+        reason = (
+            "daily contribution cap reached"
+            if not ledger.can_open_today(day)
+            else "no candidate passed score, easy-work, and ledger policy"
+        )
+        store.write_json(
+            "pick.json",
+            {
+                "status": "no_pick",
+                "picked": False,
+                "reason": reason,
+                "evaluated_at": now.isoformat(),
+            },
+        )
+        log.info("pick.nothing_eligible", reason=reason)
         return None
 
     key = issue_key(pick["repo"], pick["number"])
@@ -52,6 +76,8 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
     ledger.save(store)
 
     choice = {
+        "status": "picked",
+        "picked": True,
         "repo": pick["repo"],
         "number": pick["number"],
         "title": pick.get("title", ""),

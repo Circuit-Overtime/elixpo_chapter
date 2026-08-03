@@ -3,6 +3,7 @@
 Sweeps GitHub for candidate repos (filters per refactor_plan section 3), scores
 their health, and writes the top ~20 to state/candidates.json for Triage. No
 LLM calls — GitHub search does the heavy lifting, so Scout is cheap and fast.
+Operating contract: skills/discover-contributor-repositories/SKILL.md.
 """
 
 from __future__ import annotations
