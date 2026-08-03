@@ -6,10 +6,11 @@
   "bin": {
     "lixblogs": "./bin/lixblogs.mjs"
   },
-  "main": "src/index.js",
   "files": [
     "src",
-    "bin"
+    "bin",
+    "README.md",
+    "THREAT_MODEL.md"
   ],
   "scripts": {
     "test": "node --test \"tests/**/*.test.mjs\""
