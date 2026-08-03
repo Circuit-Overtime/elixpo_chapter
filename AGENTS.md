@@ -34,18 +34,18 @@
 ## Solve Safety
 
 - Vet must anticipate no more than 15 focused minutes and five files.
-- Solve uses `qwen-coder` for one plan, at most two edit steps, and one review; `perplexity-fast` is allowed once only when the plan proves source context is insufficient.
-- Load the phase-specific skill under `skills/` for each routed call; never inject the full Solve contract into every phase.
+- Solve uses one bounded CCR-routed `qwen-coder` tool loop followed by deterministic diff, verification, and commit gates.
+- Inject only `skills/solve-bounded-issue/SKILL.md` into the Solve harness session; never add it to the global prompt.
 - Target-repository commands use an allowlist, timeout, compressed output, and a minimal environment with no agent credentials.
 - Keep implementation commits local until checks and review pass. Submit alone pushes and opens the disclosed PR after `qwen-safety` approval.
 
 ## Git & PR Workflow
 
 - **Never commit to `main`.** It's branch-protected; use a feature branch.
-- Branch naming: `elixpo/<issue-n>-<hex>` for agent-driven changes; `feat/<slug>` / `fix/<slug>` for manual.
+- Branch naming: `feat/<issue-slug>-<n>-<hex>` for agent-driven features and `patch/<issue-slug>-<n>-<hex>` for other agent fixes; `feat/<slug>` / `fix/<slug>` for manual work.
 - Commit format: conventional — `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `ci:`.
 - PR title: `[ELIXPO] <short>` for agent PRs.
-- PR body ends with `Fixes #N` so GitHub auto-closes on merge.
+- PR body includes `Fixes #N` so GitHub auto-closes on merge, then ends with `<sub>@elixpoo</sub>`.
 
 ## Communication Style
 

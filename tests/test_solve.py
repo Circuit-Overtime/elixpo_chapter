@@ -8,6 +8,7 @@ import json
 import httpx
 
 from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
+from agents.solve.branch import build_work_branch
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, assert_workspace_identity, run_verification, validate_command
@@ -58,6 +59,22 @@ def test_plan_is_bounded_by_time_files_and_checks():
         assert "15 minutes" in str(exc)
     else:
         raise AssertionError("overlong plan passed")
+
+
+def test_work_branch_uses_natural_feature_or_patch_prefix():
+    feature = build_work_branch(
+        {"title": "Add API token rotation", "labels": [{"name": "enhancement"}]},
+        42,
+        "a1b2",
+    )
+    patch = build_work_branch(
+        {"title": "Copy for LLM includes navigation", "labels": [{"name": "bug"}]},
+        9,
+        "c3d4",
+    )
+
+    assert feature == "feat/add-api-token-rotation-42-a1b2"
+    assert patch == "patch/copy-for-llm-includes-navigation-9-c3d4"
 
 
 def test_plan_cannot_target_an_existing_file_omitted_from_retrieval():

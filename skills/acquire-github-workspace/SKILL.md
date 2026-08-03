@@ -15,8 +15,9 @@ bounded time for readiness. Never overwrite an unrelated same-named repository.
 
 Create one fresh isolated directory. Clone the fork without tags, add the source
 as `upstream`, fetch the upstream default branch, and create exactly one new
-`elixpo/issue-<number>-<hex>` branch from the fetched commit. Configure the bot
-identity locally.
+natural branch from the fetched commit: `feat/<issue-slug>-<number>-<hex>` for
+feature signals or `patch/<issue-slug>-<number>-<hex>` otherwise. Configure the
+bot identity locally.
 
 Pass authentication through process environment, never URLs, prompts, logs, or
 command arguments. Use argument-vector subprocesses without a shell. Do not

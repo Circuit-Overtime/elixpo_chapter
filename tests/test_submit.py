@@ -10,7 +10,7 @@ def _state():
         "issue_url": "https://github.com/elixpo/lixrl.com/issues/9",
         "upstream_repo": "elixpo/lixrl.com",
         "fork_repo": "Circuit-Overtime/lixrl.com",
-        "branch": "elixpo/issue-9-a1b2c3",
+        "branch": "patch/copy-full-llm-text-9-a1b2",
         "status": "ready_to_submit",
         "review": {"approved": True, "findings": []},
         "head_sha": "a" * 40,
@@ -28,7 +28,8 @@ def test_pr_markdown_is_disclosed_verified_and_closing():
     assert "`app/docs/api/page.tsx`" in body
     assert "✅ `npm run lint`" in body
     assert "autonomous contributor" in body
-    assert body.endswith("Fixes #9")
+    assert "Fixes #9" in body
+    assert body.endswith("<sub>@elixpoo</sub>")
 
 
 def test_submit_state_workspace_and_identity_must_match(tmp_path):

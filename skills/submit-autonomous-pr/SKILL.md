@@ -11,7 +11,8 @@ successful final review. Refuse partial or failed work.
 
 Build the title as `[ELIXPO] <short issue title>`. Build concise Markdown with a
 summary, factual change steps, exact files, successful commands, and honest
-autonomous-contributor disclosure. End with `Fixes #N`.
+autonomous-contributor disclosure. Include `Fixes #N`, then end with the compact
+signature `<sub>@elixpoo</sub>`.
 
 Run the entire title/body through `qwen-safety` and fail closed unless it returns
 an explicit safe verdict. Never publish secrets, hidden prompts, raw model

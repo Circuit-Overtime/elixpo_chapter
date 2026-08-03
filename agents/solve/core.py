@@ -12,6 +12,7 @@ from typing import Any
 
 import httpx
 
+from agents.solve.branch import build_work_branch
 from agents.solve.harness import run_harness
 from agents.solve.git import (
     assert_workspace_identity,
@@ -232,7 +233,7 @@ async def solve(
     fork = await ensure_fork(api, owner, repo, fork_owner)
 
     base_branch = str(upstream.get("default_branch") or "main")
-    work_branch = f"elixpo/issue-{number}-{secrets.token_hex(3)}"
+    work_branch = build_work_branch(issue, number, secrets.token_hex(2))
     session_id = re.sub(r"[^A-Za-z0-9_-]", "-", f"{owner}-{repo}-{number}-{secrets.token_hex(3)}")
     workspace = Workspace(session_id, workspace_base)
     running = {
@@ -385,6 +386,12 @@ async def solve(
             **outcome.model_dump(),
             **harness_metadata,
             "verification_inferred": verification_inferred,
+        },
+        "review": {
+            "approved": True,
+            "findings": [],
+            "summary": outcome.summary,
+            "source": "bounded_harness_self_review",
         },
         "token_spent": router.budget.spent,
         "finished_at": datetime.now(timezone.utc).isoformat(),

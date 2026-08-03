@@ -58,7 +58,8 @@ def build_pr_body(solve_state: dict) -> str:
         f"{check_lines}\n\n"
         "> Opened by **elixpoo**, an autonomous contributor. The implementation was "
         "scoped, tested, and self-reviewed before submission.\n\n"
-        f"Fixes #{number}"
+        f"Fixes #{number}\n\n"
+        "<sub>@elixpoo</sub>"
     )
 
 
@@ -91,7 +92,10 @@ def validate_solve_state(solve_state: dict, workspace_base: Path) -> Path:
     review = solve_state.get("review") or {}
     if review.get("approved") is not True or review.get("findings"):
         raise SubmitRejected("Solve has no clean approved review")
-    if not re.fullmatch(r"elixpo/issue-\d+-[0-9a-f]{6}", str(solve_state.get("branch") or "")):
+    if not re.fullmatch(
+        r"(?:feat|patch)/[a-z0-9]+(?:-[a-z0-9]+)*-\d+-[0-9a-f]{4}",
+        str(solve_state.get("branch") or ""),
+    ):
         raise SubmitRejected("recorded branch name is invalid")
     if not re.fullmatch(r"[^/]+/[^/]+", str(solve_state.get("fork_repo") or "")):
         raise SubmitRejected("recorded fork repository is invalid")

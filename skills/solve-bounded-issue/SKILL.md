@@ -29,7 +29,10 @@ force-push, rewrite history, or operate outside the isolated workspace.
 Resolve or create the configured fork through GitHub. Verify that an existing
 same-named repository is actually a fork of the target. Clone the fork, add the
 source as `upstream`, fetch the upstream default branch, and create exactly one
-fresh `elixpo/issue-<number>-<hex>` branch from that fetched commit.
+fresh natural branch from that commit. Use
+`feat/<issue-slug>-<number>-<hex>` for explicit feature signals and
+`patch/<issue-slug>-<number>-<hex>` otherwise. Keep the slug lowercase, bounded,
+and derived from the issue title without another model call.
 
 Keep the commit local until implementation and final review pass.
 Submit owns the single push and pull-request mutation.
