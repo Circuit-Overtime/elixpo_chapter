@@ -2,78 +2,95 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "fluid-cloudnative/fluid",
+    "full_name": "conan-io/conan-center-index",
     "good_first_issues": 1,
     "has_contributing": false,
-    "language": "Go",
-    "open_issues": 321,
-    "pushed_at": "2026-08-01T07:23:15Z",
+    "language": "Python",
+    "open_issues": 2117,
+    "pushed_at": "2026-08-03T09:42:16Z",
     "reasons": [
-      "1956\u2605 go active",
+      "1193\u2605 python active",
       "has good-first issues"
     ],
-    "score": 32,
-    "stars": 1956,
+    "score": 31,
+    "stars": 1193,
     "topics": [
-      "ai-framework",
-      "alluxio",
-      "big-data",
-      "data-abstraction",
-      "distributed-cache",
-      "kubernetes"
+      "conan",
+      "conan-center",
+      "conan-index",
+      "conan-packages",
+      "conan-recipe",
+      "cpp",
+      "cpp-library",
+      "dependencies",
+      "hacktoberfest",
+      "package-management",
+      "package-manager"
     ],
-    "url": "https://github.com/fluid-cloudnative/fluid"
+    "url": "https://github.com/conan-io/conan-center-index"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "get-convex/convex-backend",
+    "full_name": "Automattic/wp-calypso",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 198,
-    "pushed_at": "2026-08-01T08:17:56Z",
+    "open_issues": 3317,
+    "pushed_at": "2026-08-03T09:43:58Z",
     "reasons": [
-      "12281\u2605 typescript active",
+      "12634\u2605 typescript active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 12281,
+    "stars": 12634,
     "topics": [
-      "backend",
-      "convex",
-      "database",
-      "rust",
-      "typescript"
+      "es2015",
+      "es6",
+      "es6-javascript",
+      "javascript",
+      "nodejs",
+      "react",
+      "redux",
+      "wordpress"
     ],
-    "url": "https://github.com/get-convex/convex-backend"
+    "url": "https://github.com/Automattic/wp-calypso"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "nicolargo/glances",
+    "full_name": "goauthentik/authentik",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 101,
-    "pushed_at": "2026-08-01T08:20:13Z",
+    "open_issues": 1177,
+    "pushed_at": "2026-08-03T09:46:30Z",
     "reasons": [
-      "33222\u2605 python active",
+      "22584\u2605 python active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 33222,
+    "stars": 22584,
     "topics": [
-      "monitoring",
-      "multi-platform",
-      "python",
-      "restful",
-      "restful-api",
-      "system",
-      "terminal",
-      "web"
+      "authentication",
+      "authentik",
+      "authorization",
+      "kubernetes",
+      "oauth2",
+      "oauth2-client",
+      "oauth2-server",
+      "oidc",
+      "oidc-client",
+      "oidc-provider",
+      "proxy",
+      "reverse-proxy",
+      "saml",
+      "saml-idp",
+      "saml-sp",
+      "security",
+      "sso"
     ],
-    "url": "https://github.com/nicolargo/glances"
+    "url": "https://github.com/goauthentik/authentik"
   },
   {
     "archived": false,
@@ -82,14 +99,14 @@
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 592,
-    "pushed_at": "2026-08-01T08:13:36Z",
+    "open_issues": 594,
+    "pushed_at": "2026-08-03T09:37:17Z",
     "reasons": [
-      "1543\u2605 python active",
+      "1574\u2605 python active",
       "has good-first issues"
     ],
     "score": 31,
-    "stars": 1543,
+    "stars": 1574,
     "topics": [
       "ai-agents",
       "ai-evals",
@@ -117,30 +134,187 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "ccfos/nightingale",
+    "full_name": "MetaMask/metamask-extension",
     "good_first_issues": 1,
     "has_contributing": false,
-    "language": "Go",
-    "open_issues": 232,
-    "pushed_at": "2026-08-01T06:25:42Z",
+    "language": "TypeScript",
+    "open_issues": 2821,
+    "pushed_at": "2026-08-03T09:46:13Z",
     "reasons": [
-      "13195\u2605 go active",
+      "13192\u2605 typescript active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 13195,
+    "stars": 13192,
     "topics": [
-      "alerting",
-      "ccf",
-      "metrics",
-      "monitoring",
-      "nightingale",
-      "observability",
-      "open-falcon",
-      "time-series",
-      "tsdb"
+      "brave",
+      "chrome",
+      "dapp",
+      "dapp-developers",
+      "edge",
+      "ethereum",
+      "extension",
+      "firefox",
+      "opera"
     ],
-    "url": "https://github.com/ccfos/nightingale"
+    "url": "https://github.com/MetaMask/metamask-extension"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "jax-ml/jax",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 2553,
+    "pushed_at": "2026-08-03T09:45:29Z",
+    "reasons": [
+      "36087\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 36087,
+    "topics": [
+      "jax"
+    ],
+    "url": "https://github.com/jax-ml/jax"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "maka-agent/maka-agent",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 115,
+    "pushed_at": "2026-08-03T09:46:53Z",
+    "reasons": [
+      "1131\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1131,
+    "topics": [],
+    "url": "https://github.com/maka-agent/maka-agent"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "bytebase/bytebase",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Go",
+    "open_issues": 148,
+    "pushed_at": "2026-08-03T09:28:29Z",
+    "reasons": [
+      "14345\u2605 go active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 14345,
+    "topics": [
+      "cicd",
+      "data-governance",
+      "data-masking",
+      "data-security",
+      "database-access",
+      "database-governance",
+      "devops",
+      "devsecops",
+      "flyway",
+      "gitops",
+      "liquibase",
+      "mongodb",
+      "mysql",
+      "oracle",
+      "postgresql",
+      "schema-migrations",
+      "security",
+      "sql-client",
+      "sqlserver",
+      "tidb"
+    ],
+    "url": "https://github.com/bytebase/bytebase"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "eosphoros-ai/DB-GPT",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 421,
+    "pushed_at": "2026-08-03T09:44:26Z",
+    "reasons": [
+      "19622\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 19622,
+    "topics": [
+      "agents",
+      "bgi",
+      "database",
+      "deepseek",
+      "gpt",
+      "gpt-4",
+      "hacktoberfest",
+      "llm",
+      "private",
+      "rag",
+      "security",
+      "vicuna"
+    ],
+    "url": "https://github.com/eosphoros-ai/DB-GPT"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "logchimp/logchimp",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 179,
+    "pushed_at": "2026-08-03T09:43:23Z",
+    "reasons": [
+      "1113\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1113,
+    "topics": [
+      "customer-feedback",
+      "feedback",
+      "hacktoberfest",
+      "product-management",
+      "product-roadmap",
+      "production-ready",
+      "roadmap",
+      "user-feedback"
+    ],
+    "url": "https://github.com/logchimp/logchimp"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "WordPress/gutenberg",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 8212,
+    "pushed_at": "2026-08-03T09:41:58Z",
+    "reasons": [
+      "11743\u2605 javascript active",
+      "has good-first issues"
+    ],
+    "score": 44,
+    "stars": 11743,
+    "topics": [
+      "gutenberg",
+      "wordpress",
+      "wordpress-plugin"
+    ],
+    "url": "https://github.com/WordPress/gutenberg"
   },
   {
     "archived": false,
@@ -149,14 +323,14 @@
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 4868,
-    "pushed_at": "2026-08-01T08:10:08Z",
+    "open_issues": 4923,
+    "pushed_at": "2026-08-03T09:43:40Z",
     "reasons": [
-      "31032\u2605 python active",
+      "31143\u2605 python active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 31032,
+    "stars": 31143,
     "topics": [
       "attention",
       "blackwell",
@@ -182,18 +356,119 @@
   {
     "archived": false,
     "band": "small",
+    "full_name": "ChainSafe/lodestar",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 406,
+    "pushed_at": "2026-08-03T09:42:41Z",
+    "reasons": [
+      "1417\u2605 typescript active",
+      "has good-first issues"
+    ],
+    "score": 31,
+    "stars": 1417,
+    "topics": [
+      "beacon-chain",
+      "blockchain",
+      "eth2",
+      "ethereum",
+      "proof-of-stake",
+      "serenity",
+      "typescript"
+    ],
+    "url": "https://github.com/ChainSafe/lodestar"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "PipedreamHQ/pipedream",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 4494,
+    "pushed_at": "2026-08-03T09:21:59Z",
+    "reasons": [
+      "11593\u2605 javascript active",
+      "has good-first issues"
+    ],
+    "score": 44,
+    "stars": 11593,
+    "topics": [
+      "apis",
+      "automation",
+      "bash",
+      "cli",
+      "data-flow",
+      "event-sourcing",
+      "eventsourcing",
+      "golang",
+      "integration-flow",
+      "integrations",
+      "ipaas",
+      "low-code",
+      "low-code-development-platform",
+      "nodejs",
+      "python",
+      "serverless",
+      "typescript",
+      "workflow",
+      "workflows"
+    ],
+    "url": "https://github.com/PipedreamHQ/pipedream"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "mlflow/mlflow",
+    "good_first_issues": 1,
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 2089,
+    "pushed_at": "2026-08-03T09:36:15Z",
+    "reasons": [
+      "27342\u2605 python active",
+      "has good-first issues"
+    ],
+    "score": 45,
+    "stars": 27342,
+    "topics": [
+      "agentops",
+      "agents",
+      "ai",
+      "ai-governance",
+      "apache-spark",
+      "evaluation",
+      "langchain",
+      "llm-evaluation",
+      "llmops",
+      "machine-learning",
+      "ml",
+      "mlflow",
+      "mlops",
+      "model-management",
+      "observability",
+      "open-source",
+      "openai",
+      "prompt-engineering"
+    ],
+    "url": "https://github.com/mlflow/mlflow"
+  },
+  {
+    "archived": false,
+    "band": "small",
     "full_name": "makecindy/cindy",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 331,
-    "pushed_at": "2026-08-01T08:15:45Z",
+    "open_issues": 429,
+    "pushed_at": "2026-08-03T09:46:26Z",
     "reasons": [
-      "1301\u2605 typescript active",
+      "1570\u2605 typescript active",
       "has good-first issues"
     ],
     "score": 31,
-    "stars": 1301,
+    "stars": 1570,
     "topics": [
       "agent",
       "ai-agent",
@@ -214,350 +489,126 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "EasyTier/EasyTier",
+    "full_name": "frappe/frappe",
     "good_first_issues": 1,
     "has_contributing": false,
-    "language": "Rust",
-    "open_issues": 468,
-    "pushed_at": "2026-08-01T07:37:40Z",
+    "language": "Python",
+    "open_issues": 2259,
+    "pushed_at": "2026-08-03T09:34:35Z",
     "reasons": [
-      "12927\u2605 rust active",
+      "10502\u2605 python active",
       "has good-first issues"
     ],
-    "score": 45,
-    "stars": 12927,
+    "score": 43,
+    "stars": 10502,
     "topics": [
-      "nat-traversal",
-      "p2p",
-      "rust",
-      "tailscale",
-      "vpn",
-      "zerotier"
+      "cms",
+      "email",
+      "erpnext",
+      "frappe",
+      "full-stack",
+      "javascript",
+      "low-code",
+      "mariadb",
+      "multitenant",
+      "postgres",
+      "python",
+      "rest-api",
+      "security",
+      "socket-io",
+      "web-framework",
+      "webhooks"
     ],
-    "url": "https://github.com/EasyTier/EasyTier"
+    "url": "https://github.com/frappe/frappe"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "jax-ml/jax",
+    "full_name": "cvat-ai/cvat",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 2540,
-    "pushed_at": "2026-08-01T08:08:30Z",
+    "open_issues": 598,
+    "pushed_at": "2026-08-03T09:37:34Z",
     "reasons": [
-      "36079\u2605 python active",
+      "16446\u2605 python active",
       "has good-first issues"
     ],
     "score": 45,
-    "stars": 36079,
+    "stars": 16446,
     "topics": [
-      "jax"
+      "annotation",
+      "annotation-tool",
+      "annotations",
+      "boundingbox",
+      "computer-vision",
+      "computer-vision-annotation",
+      "dataset",
+      "deep-learning",
+      "image-annotation",
+      "image-classification",
+      "image-labeling",
+      "image-labelling-tool",
+      "imagenet",
+      "labeling",
+      "labeling-tool",
+      "object-detection",
+      "pytorch",
+      "semantic-segmentation",
+      "tensorflow",
+      "video-annotation"
     ],
-    "url": "https://github.com/jax-ml/jax"
+    "url": "https://github.com/cvat-ai/cvat"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "maka-agent/maka-agent",
+    "full_name": "owid/owid-grapher",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 147,
-    "pushed_at": "2026-08-01T08:13:18Z",
+    "open_issues": 167,
+    "pushed_at": "2026-08-03T09:32:54Z",
     "reasons": [
-      "995\u2605 typescript active",
+      "1550\u2605 typescript active",
       "has good-first issues"
     ],
     "score": 31,
-    "stars": 995,
-    "topics": [],
-    "url": "https://github.com/maka-agent/maka-agent"
+    "stars": 1550,
+    "topics": [
+      "data-visualization",
+      "react",
+      "typescript"
+    ],
+    "url": "https://github.com/owid/owid-grapher"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "web-infra-dev/rspack",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Rust",
-    "open_issues": 277,
-    "pushed_at": "2026-08-01T06:45:16Z",
-    "reasons": [
-      "12832\u2605 rust active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 12832,
-    "topics": [
-      "build-tool",
-      "bundler",
-      "compiler",
-      "esm",
-      "javascript",
-      "jsx",
-      "loaders",
-      "module-bundler",
-      "rspack",
-      "rstack",
-      "rust",
-      "typescript",
-      "web",
-      "web-performance",
-      "webpack"
-    ],
-    "url": "https://github.com/web-infra-dev/rspack"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "Skyvern-AI/skyvern",
+    "full_name": "LMCache/LMCache",
     "good_first_issues": 1,
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 218,
-    "pushed_at": "2026-08-01T08:08:19Z",
+    "open_issues": 465,
+    "pushed_at": "2026-08-03T09:30:07Z",
     "reasons": [
-      "22640\u2605 python active",
+      "10993\u2605 python active",
       "has good-first issues"
     ],
-    "score": 45,
-    "stars": 22640,
+    "score": 43,
+    "stars": 10993,
     "topics": [
-      "ai",
-      "api",
-      "automation",
-      "browser",
-      "browser-automation",
-      "computer",
-      "gpt",
+      "amd",
+      "cuda",
+      "fast",
+      "inference",
+      "kv-cache",
       "llm",
-      "playwright",
-      "powerautomate",
-      "puppeteer",
-      "python",
-      "rpa",
-      "selenium",
-      "vision",
-      "workflow"
+      "pytorch",
+      "rocm",
+      "speed",
+      "vllm"
     ],
-    "url": "https://github.com/Skyvern-AI/skyvern"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "CircuitVerse/CircuitVerse",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 922,
-    "pushed_at": "2026-08-01T08:10:05Z",
-    "reasons": [
-      "1245\u2605 javascript active",
-      "has good-first issues"
-    ],
-    "score": 31,
-    "stars": 1245,
-    "topics": [
-      "circuitverse",
-      "digital-circuit-design",
-      "digital-circuits",
-      "educational-software",
-      "hacktoberfest"
-    ],
-    "url": "https://github.com/CircuitVerse/CircuitVerse"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "Automattic/harper",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Rust",
-    "open_issues": 693,
-    "pushed_at": "2026-08-01T06:05:14Z",
-    "reasons": [
-      "14065\u2605 rust active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 14065,
-    "topics": [
-      "chrome-extension",
-      "developer-tools",
-      "english-language",
-      "grammar-checker",
-      "nodejs",
-      "react",
-      "rust",
-      "svelte",
-      "webassembly"
-    ],
-    "url": "https://github.com/Automattic/harper"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "python-poetry/poetry",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 562,
-    "pushed_at": "2026-08-01T08:06:59Z",
-    "reasons": [
-      "34290\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 34290,
-    "topics": [
-      "dependency-manager",
-      "package-manager",
-      "packaging",
-      "poetry",
-      "python"
-    ],
-    "url": "https://github.com/python-poetry/poetry"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "nextcloud/deck",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 842,
-    "pushed_at": "2026-08-01T05:13:59Z",
-    "reasons": [
-      "1410\u2605 javascript active",
-      "has good-first issues"
-    ],
-    "score": 31,
-    "stars": 1410,
-    "topics": [
-      "cards",
-      "deck",
-      "hacktoberfest",
-      "nextcloud",
-      "organization",
-      "selfhosted",
-      "team"
-    ],
-    "url": "https://github.com/nextcloud/deck"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "WordPress/gutenberg",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 8211,
-    "pushed_at": "2026-08-01T08:06:12Z",
-    "reasons": [
-      "11740\u2605 javascript active",
-      "has good-first issues"
-    ],
-    "score": 44,
-    "stars": 11740,
-    "topics": [
-      "gutenberg",
-      "wordpress",
-      "wordpress-plugin"
-    ],
-    "url": "https://github.com/WordPress/gutenberg"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "PostHog/posthog",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 5261,
-    "pushed_at": "2026-08-01T08:21:47Z",
-    "reasons": [
-      "37415\u2605 python active",
-      "has good-first issues"
-    ],
-    "score": 45,
-    "stars": 37415,
-    "topics": [
-      "ab-testing",
-      "ai-analytics",
-      "analytics",
-      "cdp",
-      "data-warehouse",
-      "experiments",
-      "feature-flags",
-      "javascript",
-      "product-analytics",
-      "python",
-      "react",
-      "session-replay",
-      "surveys",
-      "typescript",
-      "web-analytics"
-    ],
-    "url": "https://github.com/PostHog/posthog"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "stackrox/stackrox",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 634,
-    "pushed_at": "2026-08-01T08:19:49Z",
-    "reasons": [
-      "1302\u2605 go active",
-      "has good-first issues"
-    ],
-    "score": 31,
-    "stars": 1302,
-    "topics": [
-      "containers",
-      "hacktoberfest",
-      "k8s",
-      "kubernetes",
-      "security"
-    ],
-    "url": "https://github.com/stackrox/stackrox"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "owncast/owncast",
-    "good_first_issues": 1,
-    "has_contributing": false,
-    "language": "Go",
-    "open_issues": 182,
-    "pushed_at": "2026-08-01T06:52:18Z",
-    "reasons": [
-      "11431\u2605 go active",
-      "has good-first issues"
-    ],
-    "score": 44,
-    "stars": 11431,
-    "topics": [
-      "activitypub",
-      "broadcasting",
-      "chat",
-      "decentralized",
-      "federation",
-      "fediverse",
-      "golang",
-      "hacktoberfest",
-      "hls",
-      "live",
-      "livestream",
-      "owncast",
-      "rtmp",
-      "self-hosted",
-      "streaming-video",
-      "video"
-    ],
-    "url": "https://github.com/owncast/owncast"
+    "url": "https://github.com/LMCache/LMCache"
   }
 ]
