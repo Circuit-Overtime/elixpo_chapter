@@ -20,9 +20,12 @@ test_repositories:
 
 guidance_names:
   - AGENTS.md
+  - agents.md
   - CLAUDE.md
+  - claude.md
   - CONTRIBUTING.md
   - CONTRIBUTING.rst
+  - copilot-instructions.md
 
 allowed_command_prefixes:
   - pytest

@@ -26,7 +26,11 @@ class SubmitRejected(RuntimeError):
 
 
 def build_pr_title(solve_state: dict) -> str:
-    raw = re.sub(r"^\[[^]]+]\s*[:-]?\s*", "", str(solve_state.get("title") or "Fix issue")).strip()
+    raw = re.sub(
+        r"^\[[^]]+]\s*[:\-–—]*\s*",
+        "",
+        str(solve_state.get("title") or "Fix issue"),
+    ).strip()
     return f"[ELIXPO] {raw[:100]}"
 
 

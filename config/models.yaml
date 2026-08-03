@@ -29,9 +29,6 @@ roles:
 
   # code generation — primary, always tried first
   code:          { model: qwen-coder }                 # cheapest Qwen coder; bounded structured edits
-  # code generation — escalation, only after self-review fails twice
-  code_escalate: { model: deepseek-pro }               # free; paid: claude (Sonnet 4.6)
-
   # self-review of diffs — sharp critic
   review:        { model: qwen-coder }                 # reuse coder context; one compact diff review
 

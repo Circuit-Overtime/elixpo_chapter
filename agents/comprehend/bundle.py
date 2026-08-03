@@ -38,7 +38,11 @@ class ContextBundle:
     omitted: list[str] = field(default_factory=list)
 
     def render(self, max_tokens: int) -> str:
-        parts = ["TRACKED FILE INDEX:\n" + "\n".join(self.tracked_files)]
+        index = truncate_text(
+            "\n".join(self.tracked_files),
+            max_tokens=max(500, max_tokens // 4),
+        )
+        parts = ["TRACKED FILE INDEX:\n" + index]
         for path, text in self.guidance.items():
             parts.append(f"GUIDANCE {path}:\n{text}")
         for path, text in self.candidates.items():
@@ -183,4 +187,3 @@ def load_exact_context(
         else:
             parts.append(f"NEW FILE {rel}: (does not exist)")
     return truncate_text("\n\n".join(parts), max_tokens=max_tokens)
-

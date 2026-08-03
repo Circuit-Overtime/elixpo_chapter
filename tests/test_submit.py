@@ -5,7 +5,7 @@ from agents.submit.__main__ import SubmitRejected, build_pr_body, build_pr_title
 
 def _state():
     return {
-        "title": "[BUG]: copy full llm text",
+        "title": "[BUG]:- copy full llm text",
         "issue_number": 9,
         "issue_url": "https://github.com/elixpo/lixrl.com/issues/9",
         "upstream_repo": "elixpo/lixrl.com",

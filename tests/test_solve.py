@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from agents.solve.core import SolveRejected, resolve_target, validate_plan
 from agents.solve.edit import EditRejected, apply_edit_batch
-from agents.solve.git import CommandRejected, validate_command
+from agents.solve.git import CommandRejected, run_verification, validate_command
 from agents.solve.models import FileEdit, PlanStep, Replacement, SolvePlan
 from lib.state.store import StateStore
+from rtk.shell import CmdResult
 
 
 def _policy():
@@ -60,6 +61,23 @@ def test_command_requires_argument_prefix_without_shell_controls():
             pass
         else:
             raise AssertionError(f"unsafe command passed: {command}")
+
+
+def test_target_command_environment_excludes_agent_credentials(tmp_path, monkeypatch):
+    from agents.solve import git as solve_git
+
+    captured = {}
+    monkeypatch.setenv("GITHUB_TOKEN", "must-not-leak")
+    monkeypatch.setenv("ELIXPO_POLLINATIONS_API_KEY", "must-not-leak")
+
+    def fake_run(args, cwd, timeout, env):
+        captured.update(env)
+        return CmdResult(code=0, output="ok", compressed=True)
+
+    monkeypatch.setattr(solve_git, "rtk_run", fake_run)
+    run_verification(tmp_path, "pytest", allowed_prefixes=["pytest"], timeout=10)
+    assert "GITHUB_TOKEN" not in captured
+    assert "ELIXPO_POLLINATIONS_API_KEY" not in captured
 
 
 def test_edit_batch_is_exact_and_plan_confined(tmp_path):
