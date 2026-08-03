@@ -437,14 +437,14 @@ export default function AppShell({ children }) {
       <JoinedToast />
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-md" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-app) 92%, transparent)', borderBottom: '1px solid var(--border-default)' }}>
-        <div className="max-w-[1400px] mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3">
-              <img src="/logo-mark.png" alt="" className="h-8 w-8 rounded-full" />
-              <span className="hidden sm:inline text-xl font-bold tracking-tight font-kanit" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
+            <Link href="/" className="flex items-center gap-2 sm:gap-3" aria-label="LixBlogs home">
+              <img src="/logo-mark.png" alt="" className="h-7 w-7 rounded-full sm:h-8 sm:w-8" />
+              <span className="whitespace-nowrap text-base font-bold tracking-tight font-kanit sm:text-xl" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
             </Link>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <GitHubStars />
             {/* Theme toggle */}
             <button
