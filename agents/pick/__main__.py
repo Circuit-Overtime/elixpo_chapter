@@ -1,12 +1,11 @@
-"""Pick — choose ONE justified target and record it so it never repeats.
+"""Pick — choose ONE provisional target for Vet.
 
 Run: python -m agents.pick
 
 Reads state/triaged.json, selects the single best eligible issue (dedup against
 the ledger, daily cap, one-open-PR-per-repo, blocklist, tractable, above §4
-threshold), records the claim in state/ledger.json, and writes the justified
-choice to state/pick.json. Recording the pick is what stops us re-spending
-compute on the same issue.
+threshold) and writes the justified provisional choice to state/pick.json. Vet
+records the claim only after its final suitability approval.
 Operating contract: skills/pick-safe-issue/SKILL.md.
 """
 
@@ -15,7 +14,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 import structlog
-from lib.state.ledger import Ledger, PRRecord
+from lib.state.ledger import Ledger
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
 
@@ -25,9 +24,14 @@ log = structlog.get_logger()
 
 
 def run(store: StateStore, now: datetime | None = None) -> dict | None:
-    """Select + record. Injectable store → testable without network. Returns the pick."""
+    """Select a provisional target. Vet records it only after approval."""
     now = now or datetime.now(timezone.utc)
     day = now.date().isoformat()
+
+    pending = store.read_json("pick.json", {}) or {}
+    if pending.get("status") == "pending_vet" and pending.get("url"):
+        log.info("pick.awaiting_vet", key=f"{pending.get('repo')}#{pending.get('number')}")
+        return pending
 
     triaged = store.read_json("triaged.json", [])
     if not triaged:
@@ -63,21 +67,10 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
         log.info("pick.nothing_eligible", reason=reason)
         return None
 
-    key = issue_key(pick["repo"], pick["number"])
     reason = justify(pick)
-    ledger.record_pr(
-        key,
-        PRRecord(
-            issue_url=pick.get("url", ""),
-            status="claimed",
-            opened_at=now.isoformat(),
-        ),
-        day,
-    )
-    ledger.save(store)
 
     choice = {
-        "status": "picked",
+        "status": "pending_vet",
         "picked": True,
         "repo": pick["repo"],
         "number": pick["number"],
@@ -96,7 +89,7 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
         "picked_at": now.isoformat(),
     }
     store.write_json("pick.json", choice)
-    log.info("pick.chosen", key=key, score=pick.get("score", 0), reason=reason)
+    log.info("pick.provisional", key=issue_key(pick["repo"], pick["number"]), score=pick.get("score", 0))
     return choice
 
 

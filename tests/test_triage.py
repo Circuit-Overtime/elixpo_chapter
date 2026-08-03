@@ -112,7 +112,7 @@ def test_merge_signals_rejects_boolean_like_strings():
     assert sig.touches_internal_paths is False
 
 
-def test_comment_claims_and_internal_paths_are_deterministic():
+def test_comment_judgments_are_left_to_model_but_internal_paths_are_deterministic():
     issue = _issue(body="Update the public attribute helper without changing private behavior.")
     comments = [
         {
@@ -127,12 +127,7 @@ def test_comment_claims_and_internal_paths_are_deterministic():
         },
     ]
     signals = deterministic_comment_signals(issue, comments, NOW)
-    assert signals == {
-        "someone_claimed_recently": True,
-        "maintainer_claimed": False,
-        "resolved_by_maintainer": False,
-        "touches_internal_paths": False,
-    }
+    assert signals == {"touches_internal_paths": False}
 
     signals = deterministic_comment_signals(
         _issue(body="Change src/internal/attributes.py to normalize keys."),
@@ -155,12 +150,10 @@ def test_old_claim_is_not_recent_and_old_issue_is_stale():
         }
     ]
     assert deterministic_signals(issue, NOW)["stale_over_365_days"] is True
-    comment_signals = deterministic_comment_signals(issue, comments, NOW)
-    assert comment_signals["someone_claimed_recently"] is False
-    assert comment_signals["touches_internal_paths"] is False
+    assert deterministic_comment_signals(issue, comments, NOW)["touches_internal_paths"] is False
 
 
-def test_recent_unclaim_cancels_same_users_claim():
+def test_claim_conversation_is_not_hardcoded():
     comments = [
         {
             "id": 1,
@@ -177,11 +170,10 @@ def test_recent_unclaim_cancels_same_users_claim():
             "user": {"login": "contributor"},
         },
     ]
-    signals = deterministic_comment_signals(_issue(), comments, NOW)
-    assert signals["someone_claimed_recently"] is False
+    assert deterministic_comment_signals(_issue(), comments, NOW) == {"touches_internal_paths": False}
 
 
-def test_investigation_intent_counts_as_a_recent_claim():
+def test_investigation_intent_is_left_to_model():
     comments = [
         {
             "body": "I'd like to investigate this issue and work on a fix.",
@@ -190,7 +182,7 @@ def test_investigation_intent_counts_as_a_recent_claim():
             "user": {"login": "contributor"},
         }
     ]
-    assert deterministic_comment_signals(_issue(), comments, NOW)["someone_claimed_recently"] is True
+    assert deterministic_comment_signals(_issue(), comments, NOW) == {"touches_internal_paths": False}
 
 
 def test_linked_pull_requests_detects_and_deduplicates_pr_cross_references():
@@ -429,7 +421,7 @@ async def test_triage_rejects_ambiguous_or_privileged_work():
 
 
 @pytest.mark.asyncio
-async def test_triage_prefilter_avoids_spending_on_obvious_non_candidates():
+async def test_triage_prefilter_keeps_only_objective_rejections_out_of_model():
     from agents.triage.__main__ import triage_candidates
 
     router = FakeRouter({})
@@ -441,8 +433,9 @@ async def test_triage_prefilter_avoids_spending_on_obvious_non_candidates():
         _issue(5, updated_at="2024-01-01T00:00:00Z"),
     ]
     out = await triage_candidates(FakeAPI(issues), router, [{"full_name": "o/r"}], NOW)
-    assert out == []
-    assert router.calls == 0
+    assert [item.number for item in out] == [3]
+    assert out[0].easy is False
+    assert router.calls == 1
 
 
 @pytest.mark.asyncio
@@ -617,7 +610,7 @@ async def test_triage_skips_issue_when_timeline_cannot_be_verified():
 
 
 @pytest.mark.asyncio
-async def test_triage_rejects_recent_claim_before_model_call():
+async def test_triage_lets_model_reject_current_claim():
     from agents.triage.__main__ import triage_candidates
 
     comments = [
@@ -628,19 +621,35 @@ async def test_triage_rejects_recent_claim_before_model_call():
             "user": {"login": "contributor"},
         }
     ]
-    router = FakeRouter({"tractable": True})
+    router = FakeRouter(
+        {
+            "tractable": True,
+            "complexity": "small",
+            "estimated_files": 2,
+            "confidence": 0.9,
+            "has_acceptance_criterion": True,
+            "someone_claimed_recently": True,
+            "maintainer_claimed": False,
+            "already_resolved": False,
+            "needs_maintainer_decision": False,
+            "needs_external_access": False,
+            "needs_specialized_hardware": False,
+        }
+    )
     out = await triage_candidates(
         FakeAPI([_issue(1)], comments=comments),
         router,
         [{"full_name": "o/r"}],
         NOW,
     )
-    assert out == []
-    assert router.calls == 0
+    assert len(out) == 1
+    assert out[0].easy is False
+    assert "already assigned or claimed" in " ".join(out[0].blockers)
+    assert router.calls == 1
 
 
 @pytest.mark.asyncio
-async def test_triage_rejects_maintainer_resolved_issue_without_model_and_remembers_it():
+async def test_triage_lets_model_interpret_maintainer_resolution():
     from agents.triage.__main__ import triage_candidates
     from lib.state.rejections import RejectionLedger
 
@@ -652,20 +661,31 @@ async def test_triage_rejects_maintainer_resolved_issue_without_model_and_rememb
             "user": {"login": "maintainer"},
         }
     ]
-    rejections = RejectionLedger()
-    router = FakeRouter({"tractable": True})
+    router = FakeRouter(
+        {
+            "tractable": True,
+            "complexity": "small",
+            "estimated_files": 1,
+            "confidence": 0.95,
+            "has_acceptance_criterion": True,
+            "someone_claimed_recently": False,
+            "maintainer_claimed": False,
+            "already_resolved": True,
+            "needs_maintainer_decision": False,
+            "needs_external_access": False,
+            "needs_specialized_hardware": False,
+        }
+    )
     out = await triage_candidates(
         FakeAPI([_issue(1)], comments=comments),
         router,
         [{"full_name": "o/r"}],
         NOW,
-        rejections=rejections,
     )
-    assert out == []
-    assert router.calls == 0
-    assert rejections.issues["o/r#1"].reasons == [
-        "a maintainer says the issue is already resolved upstream"
-    ]
+    assert len(out) == 1
+    assert out[0].easy is False
+    assert "already resolved" in " ".join(out[0].blockers)
+    assert router.calls == 1
 
 
 @pytest.mark.asyncio

@@ -117,7 +117,6 @@ async def triage_candidates(
                 prior_rejections += 1
                 continue
             labels = set(det["labels"])
-            body = str(iss.get("body") or "").strip()
             if not det["within_target_age_window"]:
                 age_window_rejected += 1
                 continue
@@ -129,7 +128,6 @@ async def triage_candidates(
                 or det["stale_over_365_days"]
                 or iss.get("locked", False)
                 or labels & NEGATIVE_LABELS
-                or len(body) < 40
             ):
                 continue
             pre, _ = score(merge_signals(det))
@@ -201,35 +199,13 @@ async def triage_candidates(
         [fetch_comments(api, x["repo"], x["issue"]["number"]) for x in short], default=None
     )
     verified: list[tuple[dict, list[dict], dict]] = []
-    resolved_rejections = 0
     for candidate, comments in zip(short, comment_lists, strict=True):
         if comments is None:
             continue
         comment_det = deterministic_comment_signals(candidate["issue"], comments, now)
-        if comment_det["resolved_by_maintainer"]:
-            resolved_rejections += 1
-            if rejections:
-                issue = candidate["issue"]
-                rejections.reject(
-                    f"{candidate['repo']}#{issue['number']}",
-                    url=str(issue.get("html_url") or ""),
-                    title=str(issue.get("title") or ""),
-                    issue_updated_at=str(issue.get("updated_at") or ""),
-                    reasons=["a maintainer says the issue is already resolved upstream"],
-                    issue_kind="unknown",
-                    confidence=1.0,
-                    now=now,
-                )
-            continue
-        if (
-            comment_det["someone_claimed_recently"]
-            or comment_det["maintainer_claimed"]
-            or comment_det["touches_internal_paths"]
-        ):
+        if comment_det["touches_internal_paths"]:
             continue
         verified.append((candidate, comments, comment_det))
-    if resolved_rejections:
-        log.info("triage.maintainer_resolved_rejected", count=resolved_rejections)
 
     sem = asyncio.Semaphore(4)  # cap concurrent LLM calls → fewer rate limits
 

@@ -36,6 +36,31 @@ def test_scorer_claimed_issue_disqualified():
     assert qualifies(s) is False
 
 
+def test_model_resolved_issue_is_blocked_even_with_positive_signals():
+    signals = IssueSignals(
+        labels=["good first issue"],
+        has_acceptance_criterion=True,
+        already_resolved=True,
+    )
+    total, breakdown = score(signals)
+    verdict = assess_solvability(
+        signals,
+        {
+            "tractable": True,
+            "complexity": "small",
+            "estimated_files": 1,
+            "confidence": 0.95,
+            "needs_maintainer_decision": False,
+            "needs_external_access": False,
+            "needs_specialized_hardware": False,
+        },
+    )
+    assert breakdown["already_resolved"] == -10
+    assert total < THRESHOLD
+    assert verdict.easy is False
+    assert "already resolved" in " ".join(verdict.blockers)
+
+
 def test_scorer_internal_paths_and_discussion_label():
     s = IssueSignals(labels=["question"], touches_internal_paths=True)
     total, b = score(s)

@@ -115,12 +115,12 @@ A scored decision, not a single rule. An issue qualifies if total ≥ threshold:
 | Labelled `good first issue` / `help wanted` / `up-for-grabs` / `hacktoberfest` | +5 |
 | Reproducible bug, with or without a label | +3 |
 | No assignee | +2 |
-| No comment from a maintainer claiming it | +2 |
+| Model finds no current maintainer ownership in the conversation | +2 |
 | Has a clear acceptance criterion in description | +2 |
 | Issue older than 7 days (not under active triage) | +1 |
 | Labelled `triage` / `needs-design` / `discussion` / `question` | −5 |
 | OP is a core maintainer without an explicit community-work label (likely a self-note) | −5 |
-| Someone in comments said "I'll take this" within 14 days | −10 |
+| Model finds that another contributor currently owns the work | −10 |
 | Touches `internal/` or `private/` paths | −10 |
 | Repo's CONTRIBUTING says "discuss first" and no discussion exists | −5 |
 
@@ -143,10 +143,13 @@ Missing fields fail closed. The `good first issue` label is supporting evidence,
 not proof that the work is easy, and its absence does not prevent a reproducible
 bug or another explicitly invited community issue from qualifying.
 
-Creation age, claim windows, and literal `internal/` or `private/` path references are computed
-from GitHub timestamps and text patterns, not inferred by the routed triage
-writer. Issues outside the 7–60 day creation window or untouched for over 30
-days are removed before that call. Pick independently rechecks both stored ages.
+Creation age and literal `internal/` or `private/` path references are computed
+from GitHub timestamps and path patterns. Current ownership, resolution, scope,
+and requirement clarity are interpreted by `nova-fast` from the chronological
+issue conversation through forced structured output. Issues outside the 7–60 day
+creation window or untouched for over 30 days are removed before that call. Pick
+independently rechecks both stored ages, proposes `pending_vet`, and Vet alone
+records the ledger claim after approving the exact pending URL.
 
 ### Local dry run
 

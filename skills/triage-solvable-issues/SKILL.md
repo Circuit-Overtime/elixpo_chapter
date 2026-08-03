@@ -19,13 +19,14 @@ Python owns deterministic facts:
 - open/locked state and current assignees;
 - author association and repository labels;
 - issue creation/update age;
-- recent claim and later unclaim timestamps;
 - cross-referenced pull requests in the issue timeline;
 - literal `internal/` or `private/` path references.
 
-Do not override those facts. Infer only the fuzzy fields supplied in the output
-schema: reproduction quality, acceptance clarity, tractability, complexity,
-likely file count, confidence, and environmental or decision blockers.
+Do not override those facts. You own every semantic field in the output schema:
+current conversational ownership, whether repository work remains, reproduction
+quality, acceptance clarity, tractability, complexity, likely file count,
+confidence, and environmental or decision blockers. Interpret the conversation
+chronologically. Never use a fixed phrase list or keyword match as a verdict.
 
 Only issues created 7 to 60 calendar days before the triage run, inclusive,
 are eligible. Reject missing or malformed creation timestamps and issues outside
@@ -37,14 +38,13 @@ Before any model call, search the repository's pull requests for an exact issue
 reference and inspect the issue timeline as a secondary signal. Fine-grained
 tokens can redact timeline cross-reference sources, so an empty timeline alone is
 not proof that work is available. Reject an issue when either API surface finds a
-pull request, regardless of whether that attempt is open, closed, or merged. Also
-reject recent contributor intent such as "I'd like to investigate this"; do not
-compete for work merely because GitHub has no assignee.
+pull request, regardless of whether that attempt is open, closed, or merged.
 
-Reject before a routed call when an OWNER, MEMBER, or COLLABORATOR explicitly says
-the repository-side change is already fixed, resolved, implemented, or addressed.
-Do not select an issue merely because a downstream package or release still needs
-to publish that existing fix.
+Use the newest meaning of the conversation to set `someone_claimed_recently`,
+`maintainer_claimed`, and `already_resolved`. Account for later handoff, withdrawal,
+reopening, uncertainty, and corrections. A missing assignee does not prove that
+work is available, and historical resolution language does not prove that the
+current request is resolved.
 
 Consult `state/rejected_issues.json` before spending model tokens. Skip an issue
 when its `owner/repo#number` record has the same `updated_at` revision. A changed

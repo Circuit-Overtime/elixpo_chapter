@@ -1,15 +1,17 @@
 name: vet
 
-# Manual prototype for the final pre-implementation suitability gate. The
-# default target is temporary; pass another public issue URL when dispatching.
+# Automatic final pre-implementation suitability gate. Manual dispatch accepts
+# an optional diagnostic URL; normal runs consume state/pick.json.
 
 on:
+  workflow_run:
+    workflows: [pick]
+    types: [completed]
   workflow_dispatch:
     inputs:
       issue_url:
         description: GitHub issue URL to verify
         required: false
-        default: https://github.com/horsicq/Detect-It-Easy/issues/365
       force:
         description: Recheck an unchanged rejected revision
         type: boolean
@@ -26,6 +28,7 @@ concurrency:
 jobs:
   vet:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -40,13 +43,14 @@ jobs:
           ISSUE_URL: ${{ inputs.issue_url }}
           FORCE_RECHECK: ${{ inputs.force }}
         run: |
-          args=("$ISSUE_URL")
+          args=()
+          if [[ -n "$ISSUE_URL" ]]; then args+=("$ISSUE_URL"); fi
           if [[ "$FORCE_RECHECK" == "true" ]]; then args+=(--force); fi
           python -m agents.vet "${args[@]}"
       - name: Commit verdict memory
         run: |
           git config user.name  "elixpoo[bot]"
           git config user.email "elixpoo[bot]@users.noreply.github.com"
-          git add state/vet.json state/rejected_issues.json
+          git add state/vet.json state/rejected_issues.json state/pick.json state/ledger.json
           git diff --cached --quiet || git commit -m "chore(vet): record issue verdict"
           git push

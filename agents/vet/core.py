@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-from lib.github.issue_signals import maintainer_says_resolved
 from lib.scorer import NEGATIVE_LABELS
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
@@ -15,16 +13,6 @@ from agents.vet.github import referenced_pull_requests
 
 MIN_CONFIDENCE = 0.75
 MAX_FILES = 5
-_CLAIM_RE = re.compile(
-    r"\b(?:i(?:'m| am) working on|i(?:'ll| will| can) (?:take|work|handle|fix)|"
-    r"pick(?:ing)? this up|started working|working on this|i(?:'m| am) on it)\b",
-    re.IGNORECASE,
-)
-_UNCLAIM_RE = re.compile(
-    r"\b(?:no longer working|not working on this|won't work on|cannot work on|"
-    r"can no longer|giving this up|unassign me)\b",
-    re.IGNORECASE,
-)
 
 
 def issue_key(owner: str, repo: str, number: int) -> str:
@@ -45,36 +33,7 @@ def _as_float(value: object, default: float = 0.0) -> float:
         return default
 
 
-def _timestamp(value: object) -> datetime | None:
-    try:
-        parsed = datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
-
-
-def _has_recent_claim(comments: list[dict], now: datetime) -> bool:
-    cutoff = now - timedelta(days=30)
-    claimants: set[str] = set()
-    ordered = sorted(
-        comments,
-        key=lambda item: _timestamp(item.get("created_at"))
-        or datetime.min.replace(tzinfo=timezone.utc),
-    )
-    for comment in ordered:
-        created = _timestamp(comment.get("created_at"))
-        if not created or created < cutoff:
-            continue
-        author = str((comment.get("user") or {}).get("login") or comment.get("id") or "unknown")
-        body = str(comment.get("body") or "")
-        if _UNCLAIM_RE.search(body):
-            claimants.discard(author)
-        elif _CLAIM_RE.search(body):
-            claimants.add(author)
-    return bool(claimants)
-
-
-def deterministic_blockers(evidence: dict, number: int, now: datetime) -> list[str]:
+def deterministic_blockers(evidence: dict, number: int, _now: datetime) -> list[str]:
     issue = evidence["issue"]
     labels = {str(label.get("name") or "").casefold() for label in issue.get("labels", [])}
     blockers: list[str] = []
@@ -92,12 +51,6 @@ def deterministic_blockers(evidence: dict, number: int, now: datetime) -> list[s
         blockers.append("issue is a tracking parent with sub-issues")
     if referenced_pull_requests(evidence, number):
         blockers.append("an implementation pull request already references the issue")
-    if _has_recent_claim(evidence.get("comments", []), now):
-        blockers.append("a contributor conversation indicates the issue is claimed")
-    if maintainer_says_resolved(evidence.get("comments", [])):
-        blockers.append("a maintainer says the issue is already resolved upstream")
-    if len(str(issue.get("body") or "").strip()) < 40:
-        blockers.append("issue description is too short to verify")
     return blockers
 
 
@@ -122,6 +75,8 @@ def _model_blockers(verdict: dict) -> list[str]:
         blockers.append("a maintainer decision is still required")
     if verdict.get("already_resolved") is not False:
         blockers.append("conversation indicates the repository change is already resolved")
+    if verdict.get("already_claimed") is not False:
+        blockers.append("conversation indicates another contributor currently owns the work")
     if verdict.get("issue_kind") == "tracking_issue":
         blockers.append("issue is a tracking parent rather than one implementation unit")
     if verdict.get("suitable") is not True:

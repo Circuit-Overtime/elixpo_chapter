@@ -8,7 +8,8 @@ from datetime import datetime, timezone
 import pytest
 from agents.vet.core import vet_issue
 from agents.vet.github import parse_issue_url, referenced_pull_requests
-from lib.github.issue_signals import maintainer_says_resolved
+from agents.vet.__main__ import _finalize_pick, _resolve_target
+from lib.state.ledger import Ledger
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
 from rtk.models import ChatCompletionResponse, Choice, FunctionCall, Message, ToolCall, Usage
@@ -83,6 +84,7 @@ def _approved(**changes):
         "conversation_resolved": True,
         "needs_maintainer_decision": False,
         "already_resolved": False,
+        "already_claimed": False,
         "reasons": [],
         "summary": "localized parser correction with a direct regression test",
     }
@@ -96,6 +98,58 @@ def test_parse_issue_url_is_strict():
         parse_issue_url("https://example.com/o/r/issues/12")
 
 
+def test_automatic_target_requires_pending_pick(tmp_path):
+    store = StateStore(tmp_path)
+    with pytest.raises(ValueError):
+        _resolve_target(store, None)
+
+    url = "https://github.com/o/r/issues/12"
+    store.write_json("pick.json", {"status": "pending_vet", "url": url})
+    assert _resolve_target(store, None) == (url, True)
+    assert _resolve_target(store, "https://github.com/x/y/issues/9") == (
+        "https://github.com/x/y/issues/9",
+        False,
+    )
+
+
+def test_vet_approval_is_the_only_point_that_claims_pick(tmp_path):
+    store = StateStore(tmp_path)
+    url = "https://github.com/o/r/issues/12"
+    store.write_json(
+        "pick.json",
+        {"status": "pending_vet", "picked": True, "url": url, "repo": "o/r", "number": 12},
+    )
+    _finalize_pick(
+        store,
+        {"suitable": True, "key": "o/r#12", "url": url, "reasons": []},
+        NOW,
+    )
+    assert store.read_json("pick.json")["status"] == "picked"
+    ledger = Ledger.load(store)
+    assert ledger.prs["o/r#12"].status == "claimed"
+    assert ledger.count_today(NOW.date().isoformat()) == 1
+
+
+def test_vet_rejection_does_not_consume_ledger_and_mismatch_fails(tmp_path):
+    store = StateStore(tmp_path)
+    url = "https://github.com/o/r/issues/12"
+    store.write_json("pick.json", {"status": "pending_vet", "url": url})
+    with pytest.raises(RuntimeError):
+        _finalize_pick(
+            store,
+            {"suitable": True, "key": "x/y#9", "url": "https://github.com/x/y/issues/9"},
+            NOW,
+        )
+
+    _finalize_pick(
+        store,
+        {"suitable": False, "key": "o/r#12", "url": url, "reasons": ["scope unclear"]},
+        NOW,
+    )
+    assert store.read_json("pick.json")["status"] == "rejected"
+    assert not Ledger.load(store).prs
+
+
 def test_pr_references_are_exact_and_deduplicated():
     evidence = _evidence(
         pull_requests=[
@@ -104,22 +158,6 @@ def test_pr_references_are_exact_and_deduplicated():
         ]
     )
     assert [pull["number"] for pull in referenced_pull_requests(evidence, 365)] == [8]
-
-
-def test_later_maintainer_reopen_cancels_resolution_signal():
-    comments = [
-        {
-            "created_at": "2026-07-08T00:00:00Z",
-            "author_association": "COLLABORATOR",
-            "body": "This was fixed from our side.",
-        },
-        {
-            "created_at": "2026-07-09T00:00:00Z",
-            "author_association": "MEMBER",
-            "body": "Reopened: it is still broken on the main branch.",
-        },
-    ]
-    assert maintainer_says_resolved(comments) is False
 
 
 @pytest.mark.asyncio
@@ -141,9 +179,15 @@ async def test_tracking_issue_rejected_without_model_and_cached(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_issue_365_maintainer_resolution_is_zero_token_rejection(tmp_path):
+async def test_issue_365_resolution_is_a_model_judgment(tmp_path):
     store = StateStore(tmp_path)
-    router = FakeRouter(_approved())
+    router = FakeRouter(
+        _approved(
+            suitable=False,
+            already_resolved=True,
+            reasons=["repository-side fix already exists; only packaging remains"],
+        )
+    )
     comments = [
         {
             "created_at": "2026-07-08T16:31:02Z",
@@ -163,9 +207,9 @@ async def test_issue_365_maintainer_resolution_is_zero_token_rejection(tmp_path)
         force=True,
     )
     assert result["status"] == "rejected"
-    assert result["model_called"] is False
-    assert "already resolved upstream" in " ".join(result["reasons"])
-    assert router.calls == 0
+    assert result["model_called"] is True
+    assert "already resolved" in " ".join(result["reasons"])
+    assert router.calls == 1
     assert "horsicq/Detect-It-Easy#365" in RejectionLedger.load(store).issues
 
 

@@ -42,14 +42,19 @@ Rank eligible records by:
 Skip ineligible records and continue. Do not stop merely because a higher-scored
 record is blocked. Return no selection when every record fails.
 
-## Record before handoff
+## Propose before final claim
 
 Before exposing a successful pick:
 
-- record `owner/repo#number` in `state/ledger.json` with status `claimed`;
-- increment the correct UTC daily count;
-- write `state/pick.json` with `picked=true`, identity, score, scope, estimated
-  files, confidence, justification, and timestamp.
+- write `state/pick.json` with `status=pending_vet`, identity, score, scope,
+  estimated files, confidence, justification, and timestamp;
+- leave the ledger and UTC daily count unchanged until Vet approves the exact
+  pending URL;
+- return the existing pending target on reruns instead of proposing another issue.
+
+Vet is the only component that converts `pending_vet` to `picked`, records
+`owner/repo#number` with status `claimed`, and increments the daily count. A Vet
+rejection changes the pick to `rejected` without consuming either ledger entry.
 
 When nothing qualifies, overwrite stale pick output with `picked=false`, a
 specific reason, and the evaluation timestamp. Never leave an earlier successful
@@ -62,5 +67,5 @@ why this issue won; do not promise that it is already solved. Pick itself must n
 comment upstream, assign an issue, fork a repository, create a branch, or open a
 pull request.
 
-Before finishing, verify that the ledger and pick file agree and that rerunning
-Pick cannot return the same issue again.
+Before finishing, verify that one pending target exists at most once. Vet must
+reject any result whose URL does not exactly match that pending target.

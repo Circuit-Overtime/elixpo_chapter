@@ -1,4 +1,4 @@
-"""Pick tests — selection rules (pure) + record-so-we-never-repeat (tmp store)."""
+"""Pick tests — selection rules and provisional Vet handoff."""
 
 from __future__ import annotations
 
@@ -140,9 +140,9 @@ def test_justify_mentions_score_and_rationale():
     assert "small scope" in reason and "3 files" in reason and "90% confidence" in reason
 
 
-# --- run(): record so we never repeat ---
+# --- run(): propose for Vet without claiming ---
 
-def test_run_records_and_dedups(tmp_path):
+def test_run_writes_provisional_pick_without_claiming(tmp_path):
     from agents.pick.__main__ import run
 
     store = StateStore(tmp_path)
@@ -151,15 +151,15 @@ def test_run_records_and_dedups(tmp_path):
     first = run(store, NOW)
     assert first["repo"] == "o/b" and first["number"] == 2
     assert "justification" in first
-    # pick.json + ledger.json written
     assert store.read_json("pick.json")["repo"] == "o/b"
-    assert store.read_json("pick.json")["status"] == "picked"
+    assert store.read_json("pick.json")["status"] == "pending_vet"
     assert store.read_json("pick.json")["picked"] is True
-    assert "o/b#2" in Ledger.load(store).prs
+    assert not Ledger.load(store).prs
 
-    # second run must NOT re-pick o/b#2 — it moves to the next eligible
+    store.write_json("triaged.json", [_t("o/a", 1, 99)])
     second = run(store, NOW)
-    assert second["repo"] == "o/a" and second["number"] == 1
+    assert second == first
+    assert not Ledger.load(store).prs
 
 
 def test_no_pick_overwrites_stale_pick_output(tmp_path):

@@ -55,9 +55,10 @@ class IssueSignals(BaseModel):
     older_than_7_days: bool = False
     stale_over_365_days: bool = False
     op_is_core_maintainer: bool = False
-    someone_claimed_recently: bool = False  # "I'll take this" within 14 days
+    someone_claimed_recently: bool = False  # model: conversation shows current ownership
     touches_internal_paths: bool = False
     contributing_discuss_first: bool = False  # CONTRIBUTING says discuss-first AND no discussion exists
+    already_resolved: bool = False
 
 
 class SolvabilityVerdict(BaseModel):
@@ -105,6 +106,8 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
         b["internal_paths"] = -10
     if s.contributing_discuss_first:
         b["discuss_first"] = -5
+    if s.already_resolved:
+        b["already_resolved"] = -10
 
     return sum(b.values()), b
 
@@ -159,6 +162,8 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
         blockers.append("requires internal or private paths")
     if signals.contributing_discuss_first:
         blockers.append("repository requires discussion before implementation")
+    if signals.already_resolved:
+        blockers.append("conversation indicates the repository change is already resolved")
     if signals.stale_over_365_days:
         blockers.append("issue has not been updated within 365 days")
     if labels & NEGATIVE_LABELS:
