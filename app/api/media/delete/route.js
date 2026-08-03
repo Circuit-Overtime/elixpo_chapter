@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '../../../../lib/auth';
 import { deleteFromCloudinary } from '../../../../lib/cloudinary';
 import { PLATFORM_CLOUDINARY, getMediaCloudinaryConfig } from '../../../../lib/cloudinaryConnections';
+import { kvInvalidate, mediaInventoryCacheKey } from '../../../../lib/cache';
 
 export async function POST(request) {
   const session = await getSession();
@@ -52,6 +53,7 @@ export async function POST(request) {
     SELECT COALESCE(SUM(size_bytes), 0) FROM media_uploads
     WHERE user_id = ? AND storage_provider = ?
   ) WHERE id = ?`).bind(session.userId, PLATFORM_CLOUDINARY, session.userId).run();
+  await kvInvalidate(mediaInventoryCacheKey(session.userId));
 
   return NextResponse.json({ ok: true });
 }

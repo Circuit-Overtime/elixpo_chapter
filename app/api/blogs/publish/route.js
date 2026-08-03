@@ -213,12 +213,13 @@ export async function POST(request) {
 
     // Invalidate caches
     try {
-      const { kvInvalidate } = await import('../../../../lib/cache');
+      const { kvInvalidate, mediaInventoryCacheKey } = await import('../../../../lib/cache');
       await kvInvalidate(
         `v1:tags:popular:30`, `v1:tags:popular:12`,
         `v1:trending:3`, `v1:trending:5`, `v1:trending:10`,
         `v1:feed:anon:trending:p1`,
         `v1:interactions:${slugid}`,
+        mediaInventoryCacheKey(session.userId),
       );
     } catch {}
 
