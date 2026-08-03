@@ -1,39 +1,8 @@
 [
   {
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
-    },
-    "number": 16954,
-    "rationale": "Well-defined bug with clear repro steps and expected behavior (flatten nested attributes into valid LDAP attributes), suitable for a single external contributor to fix in the LDAP outpost.",
-    "repo": "goauthentik/authentik",
-    "score": 15,
-    "title": "Nested user attributes not exposed as valid LDAP attributes in LDAP Outpost",
-    "tractable": true,
-    "url": "https://github.com/goauthentik/authentik/issues/16954"
-  },
-  {
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
-    },
-    "number": 1686,
-    "rationale": "Well-specified text-only UI bug with repro steps, clear acceptance criteria, and precise file/line hints; a single contributor can fix it with a small label change in one file.",
-    "repo": "future-agi/future-agi",
-    "score": 15,
-    "title": "Observe: tab labels say \"Primary Graph\" and \"Comparison Graph\" but content shows data tables",
-    "tractable": true,
-    "url": "https://github.com/future-agi/future-agi/issues/1686"
-  },
-  {
+    "blockers": [
+      "complexity is medium"
+    ],
     "breakdown": {
       "acceptance_criterion": 2,
       "aged": 1,
@@ -41,46 +10,74 @@
       "no_assignee": 2,
       "no_maintainer_claim": 2
     },
-    "number": 67075,
-    "rationale": "Well-defined feature request with clear acceptance criteria and a specific code change (swap infinite scroll for pagination), suitable for one external contributor in a single PR.",
-    "repo": "Automattic/wp-calypso",
+    "complexity": "medium",
+    "confidence": 0.8,
+    "easy": false,
+    "estimated_files": 3,
+    "number": 4,
+    "rationale": "The issue involves testing TypeScript client error paths, which is a bounded change but requires understanding of the existing error handling and test patterns.",
+    "repo": "TryCaspian/caspian-sdk",
     "score": 12,
-    "title": "Marketplace: Logged out view should use pagination",
+    "title": "Test remaining TypeScript authentication and billing error paths",
     "tractable": true,
-    "url": "https://github.com/Automattic/wp-calypso/issues/67075"
+    "url": "https://github.com/TryCaspian/caspian-sdk/issues/4"
   },
   {
+    "blockers": [
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70"
+    ],
     "breakdown": {
       "acceptance_criterion": 2,
       "aged": 1,
       "good_first/help_wanted": 5,
       "no_assignee": 2,
-      "no_maintainer_claim": 2
+      "no_maintainer_claim": 2,
+      "op_is_maintainer": -5
     },
-    "number": 53845,
-    "rationale": "Well-defined feature request with clear reproduction steps and acceptance criteria; adding one more preview option to existing UI is a self-contained task suitable for one external contributor in one PR.",
-    "repo": "Automattic/wp-calypso",
-    "score": 12,
-    "title": "Social Previews should show WP oEmbed design as a 5th preview option",
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "number": 429,
+    "rationale": "The issue is a blind test and does not require code changes.",
+    "repo": "Ikalus1988/MisakaNet",
+    "score": 7,
+    "title": "[Bounty][$0][agent competition] Blind test homepage SAG-Lite lesson search",
     "tractable": true,
-    "url": "https://github.com/Automattic/wp-calypso/issues/53845"
+    "url": "https://github.com/Ikalus1988/MisakaNet/issues/429"
   },
   {
+    "blockers": [
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "issue is already assigned or claimed"
+    ],
     "breakdown": {
-      "aged": 1,
+      "acceptance_criterion": 2,
       "good_first/help_wanted": 5,
       "no_assignee": 2,
-      "no_maintainer_claim": 2
+      "op_is_maintainer": -5
     },
-    "number": 20148,
-    "rationale": "A well-scoped feature request to add a flag that resets reputation score to 0 on successful login, achievable by one contributor in a single PR.",
-    "repo": "goauthentik/authentik",
-    "score": 10,
-    "title": "Option to automatically set reputation score to 0 upon successful login",
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "number": 646,
+    "rationale": "The issue does not require code changes or external access, but it is not clear how complex it is.",
+    "repo": "Ikalus1988/MisakaNet",
+    "score": 4,
+    "title": "[Onboarding] Try MisakaNet \u2014 search a lesson + register your node",
     "tractable": true,
-    "url": "https://github.com/goauthentik/authentik/issues/20148"
+    "url": "https://github.com/Ikalus1988/MisakaNet/issues/646"
   },
   {
+    "blockers": [
+      "complexity is medium",
+      "issue is already assigned or claimed"
+    ],
     "breakdown": {
       "acceptance_criterion": 2,
       "aged": 1,
@@ -88,114 +85,44 @@
       "good_first/help_wanted": 5,
       "no_assignee": 2,
       "no_maintainer_claim": 2,
-      "reproducible_bug": 3
+      "op_is_maintainer": -5
     },
-    "number": 22196,
-    "rationale": "Well-scoped observability bug with 10 specific entrypoints listed and clear expected behavior (stable event names/keys), fixable by one contributor in a single PR.",
-    "repo": "goauthentik/authentik",
-    "score": 5,
-    "title": "Bug: Runtime values are used as structured log event names or field keys",
+    "complexity": "medium",
+    "confidence": 0.8,
+    "easy": false,
+    "estimated_files": 2,
+    "number": 552,
+    "rationale": "The issue involves comparing and managing markdown files, which is not trivial but not overly complex either.",
+    "repo": "Ikalus1988/MisakaNet",
+    "score": -3,
+    "title": "[Cleanup] Review near-duplicate Feishu bot setup lessons",
     "tractable": true,
-    "url": "https://github.com/goauthentik/authentik/issues/22196"
+    "url": "https://github.com/Ikalus1988/MisakaNet/issues/552"
   },
   {
+    "blockers": [
+      "issue is already assigned or claimed",
+      "requires internal or private paths"
+    ],
     "breakdown": {
       "acceptance_criterion": 2,
       "aged": 1,
       "already_claimed": -10,
       "good_first/help_wanted": 5,
+      "internal_paths": -10,
       "no_assignee": 2,
       "no_maintainer_claim": 2
     },
-    "number": 1670,
-    "rationale": "Well-scoped frontend-only feature with clear pointers to the exact file/lines, existing reusable components, and explicit done-when criteria; one contributor already claimed it.",
-    "repo": "future-agi/future-agi",
-    "score": 2,
-    "title": "Add a 'View session' link from annotation queue trace/span items to the parent session",
+    "complexity": "small",
+    "confidence": 0.9,
+    "easy": false,
+    "estimated_files": 1,
+    "number": 581,
+    "rationale": "The issue suggests a localized change to how attribute names are handled, likely affecting a single function or method.",
+    "repo": "cheeriojs/cheerio",
+    "score": -8,
+    "title": ".attr(name) should lowercase name property",
     "tractable": true,
-    "url": "https://github.com/future-agi/future-agi/issues/1670"
-  },
-  {
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "already_claimed": -10,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 19555,
-    "rationale": "Well-scoped refactor with explicit acceptance criteria and small PRs (\u22643 files) explicitly encouraged, and multiple external contributors are already actively submitting PRs against it.",
-    "repo": "MetaMask/metamask-extension",
-    "score": 2,
-    "title": "Replace deprecated Popover component with Modal from the component-library",
-    "tractable": true,
-    "url": "https://github.com/MetaMask/metamask-extension/issues/19555"
-  },
-  {
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "already_claimed": -10,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 43340,
-    "rationale": "The evergreen tracker explicitly scopes work to one product file per PR, and turjoy18 has claimed a specific single-file migration (home-notifications-container.tsx) with clear acceptance criteria, making it tractable for one external contributor in one PR.",
-    "repo": "MetaMask/metamask-extension",
-    "score": 2,
-    "title": "Replace deprecated extension UI components with MMDS components",
-    "tractable": true,
-    "url": "https://github.com/MetaMask/metamask-extension/issues/43340"
-  },
-  {
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "already_claimed": -10,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 18714,
-    "rationale": "This is a well-scoped refactor explicitly designed for small 1-3 file PRs with clear acceptance criteria, so a single external contributor can pick up one small piece, though multiple contributors are already actively working on it.",
-    "repo": "MetaMask/metamask-extension",
-    "score": 2,
-    "title": "Replace deprecated constants with enums",
-    "tractable": true,
-    "url": "https://github.com/MetaMask/metamask-extension/issues/18714"
-  },
-  {
-    "breakdown": {
-      "aged": 1,
-      "already_claimed": -10,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 1147,
-    "rationale": "Well-documented build failure with clear repro steps and a simple, well-scoped fix (add a Text::Template check in the recipe) that one contributor can implement in a single PR; cleeland indicated intent to submit it.",
-    "repo": "conan-io/conan-center-index",
-    "score": 0,
-    "title": "[package] openssl/1.1.1d: build from source fails on Linux",
-    "tractable": true,
-    "url": "https://github.com/conan-io/conan-center-index/issues/1147"
-  },
-  {
-    "breakdown": {
-      "aged": 1,
-      "already_claimed": -10,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "number": 24224,
-    "rationale": "A contributor has claimed it and proposed a focused approach (start with Policies, which already has last_updated on the model), making it a tractable single-PR UI feature.",
-    "repo": "goauthentik/authentik",
-    "score": 0,
-    "title": "\"Last edited\" column for policies, mappings, providers, etc.",
-    "tractable": true,
-    "url": "https://github.com/goauthentik/authentik/issues/24224"
+    "url": "https://github.com/cheeriojs/cheerio/issues/581"
   }
 ]

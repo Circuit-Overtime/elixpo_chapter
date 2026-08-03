@@ -31,9 +31,6 @@ _SIGNALS_TOOL = ToolDef(
             "properties": {
                 "has_repro_steps": {"type": "boolean"},
                 "has_acceptance_criterion": {"type": "boolean"},
-                "someone_claimed_recently": {"type": "boolean", "description": "comment claims it <14d ago"},
-                "maintainer_claimed": {"type": "boolean", "description": "a maintainer claimed/assigned it"},
-                "touches_internal_paths": {"type": "boolean", "description": "internal/ or private/ code"},
                 "tractable": {"type": "boolean", "description": "one external contributor, one PR"},
                 "complexity": {
                     "type": "string",
@@ -68,9 +65,6 @@ _SIGNALS_TOOL = ToolDef(
             "required": [
                 "has_repro_steps",
                 "has_acceptance_criterion",
-                "someone_claimed_recently",
-                "maintainer_claimed",
-                "touches_internal_paths",
                 "tractable",
                 "complexity",
                 "estimated_files",

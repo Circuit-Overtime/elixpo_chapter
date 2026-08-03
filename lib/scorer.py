@@ -28,6 +28,7 @@ class IssueSignals(BaseModel):
     no_maintainer_claim: bool = True
     has_acceptance_criterion: bool = False
     older_than_7_days: bool = False
+    stale_over_365_days: bool = False
     op_is_core_maintainer: bool = False
     someone_claimed_recently: bool = False  # "I'll take this" within 14 days
     touches_internal_paths: bool = False
@@ -48,6 +49,10 @@ def _labels(s: IssueSignals) -> set[str]:
     return {label.lower() for label in s.labels}
 
 
+def _has_label_word(labels: set[str], word: str) -> bool:
+    return any(word in label.replace("-", " ").split() for label in labels)
+
+
 def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
     """Return (total, breakdown). Breakdown maps each fired signal → its points."""
     labels = _labels(s)
@@ -55,7 +60,7 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
 
     if labels & POSITIVE_LABELS:
         b["good_first/help_wanted"] = 5
-    if "bug" in labels and s.has_repro_steps:
+    if _has_label_word(labels, "bug") and s.has_repro_steps:
         b["reproducible_bug"] = 3
     if s.no_assignee:
         b["no_assignee"] = 2
@@ -65,6 +70,8 @@ def score(s: IssueSignals) -> tuple[int, dict[str, int]]:
         b["acceptance_criterion"] = 2
     if s.older_than_7_days:
         b["aged"] = 1
+    if s.stale_over_365_days:
+        b["stale_issue"] = -5
     if labels & NEGATIVE_LABELS:
         b["discussion_label"] = -5
     if s.op_is_core_maintainer:
@@ -121,7 +128,7 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
     blockers.extend(reason for field, reason in hard_flags.items() if extracted.get(field) is not False)
 
     completion_is_clear = signals.has_acceptance_criterion or (
-        "bug" in labels and signals.has_repro_steps
+        _has_label_word(labels, "bug") and signals.has_repro_steps
     )
     if not completion_is_clear:
         blockers.append("no acceptance criterion or reproducible bug")
@@ -131,6 +138,8 @@ def assess_solvability(signals: IssueSignals, extracted: dict | None = None) -> 
         blockers.append("requires internal or private paths")
     if signals.contributing_discuss_first:
         blockers.append("repository requires discussion before implementation")
+    if signals.stale_over_365_days:
+        blockers.append("issue has not been updated within 365 days")
     if labels & NEGATIVE_LABELS:
         blockers.append("issue is still in design, triage, discussion, or question stage")
 

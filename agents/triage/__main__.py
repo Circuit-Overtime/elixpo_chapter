@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 
 from agents.triage.extract import extract_issue_signals
 from agents.triage.fetch import fetch_comments, fetch_good_first_issues
-from agents.triage.signals import deterministic_signals, merge_signals
+from agents.triage.signals import deterministic_comment_signals, deterministic_signals, merge_signals
 
 log = structlog.get_logger()
 
@@ -70,6 +70,7 @@ async def triage_candidates(
             body = str(iss.get("body") or "").strip()
             if (
                 not det["no_assignee"]
+                or det["stale_over_365_days"]
                 or iss.get("locked", False)
                 or labels & NEGATIVE_LABELS
                 or len(body) < 40
@@ -90,7 +91,9 @@ async def triage_candidates(
 
     async def _extract(x, comments):
         async with sem:
-            return await extract_issue_signals(router, x["issue"], comments, now)
+            extracted = await extract_issue_signals(router, x["issue"], comments, now)
+            extracted.update(deterministic_comment_signals(x["issue"], comments, now))
+            return extracted
 
     llm_results = await gather_safe(
         [_extract(x, comments) for x, comments in zip(short, comment_lists, strict=True)],
