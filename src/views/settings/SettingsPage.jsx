@@ -1072,7 +1072,7 @@ function SubscriptionTab({ user }) {
 
       <div className="rounded-xl border border-[var(--border-default)] overflow-hidden">
         {[
-          { label: 'Total storage', value: usage?.storage.limitFormatted || '50 MB', icon: 'cloud-outline' },
+          { label: 'Total storage', value: usage?.storage.limitFormatted || '10 MB', icon: 'cloud-outline' },
           { label: 'Images per blog', value: usage?.limits.imagePerBlogFormatted || '2 MB', icon: 'image-outline' },
           { label: 'AI requests / day', value: `${usage?.ai.limit || 15}`, icon: 'sparkles-outline' },
           { label: 'Co-authors per blog', value: `${usage?.limits.coAuthorsPerBlog || 3}`, icon: 'people-outline' },
@@ -1310,12 +1310,20 @@ function IntegrationsTab() {
   };
 
   const oauthResult = searchParams.get('cloudinary');
+  const oauthReference = searchParams.get('cloudinary_ref');
   const oauthMessage = {
     connected: { ok: true, text: 'Cloudinary connected. New blog media can now use your product environment.' },
     denied: { ok: false, text: 'Cloudinary authorization was cancelled.' },
+    authorization_failed: { ok: false, text: 'Cloudinary rejected the authorization request. Confirm the registered callback URI and OAuth scopes.' },
     invalid_state: { ok: false, text: 'The Cloudinary authorization session expired. Please try again.' },
     storage_in_use: { ok: false, text: 'Delete media from the currently connected personal space before selecting another cloud.' },
     config_error: { ok: false, text: 'Cloudinary OAuth is not configured on this deployment.' },
+    failed_token_exchange: { ok: false, text: 'Cloudinary authorization could not be exchanged. Verify the OAuth client ID, client secret, and Basic client authentication.' },
+    failed_offline_access: { ok: false, text: 'Cloudinary did not grant Offline Access. Enable that scope in the OAuth app and reconnect.' },
+    failed_environment: { ok: false, text: 'Cloudinary did not return the selected product environment. Enable OpenID in the OAuth app and reconnect.' },
+    failed_validation: { ok: false, text: 'Cloudinary rejected access to the selected product environment. Enable Upload and Asset Management permissions.' },
+    failed_database: { ok: false, text: 'LixBlogs could not check the existing media connection. Please retry shortly.' },
+    failed_persistence: { ok: false, text: 'Cloudinary authorized successfully, but LixBlogs could not save the encrypted connection. Please retry.' },
     failed: { ok: false, text: 'Cloudinary could not be connected. Check the OAuth app scopes and redirect URI.' },
   }[oauthResult];
 
@@ -1388,7 +1396,7 @@ function IntegrationsTab() {
 
         {oauthMessage && (
           <p className={`mt-4 rounded-lg px-3 py-2 text-xs ${oauthMessage.ok ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'}`}>
-            {oauthMessage.text}
+            {oauthMessage.text}{oauthReference && !oauthMessage.ok ? ` Reference: ${oauthReference}` : ''}
           </p>
         )}
 
