@@ -8,10 +8,11 @@ shortlist only, to save tokens), and writes a ranked queue to state/triaged.json
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 
 import structlog
 from lib.aio import gather_safe
-from lib.scorer import score
+from lib.scorer import NEGATIVE_LABELS, assess_solvability, score
 from pydantic import BaseModel, Field
 
 from agents.triage.extract import extract_issue_signals
@@ -33,6 +34,11 @@ class TriagedIssue(BaseModel):
     score: int
     breakdown: dict[str, int] = Field(default_factory=dict)
     tractable: bool = False
+    easy: bool = False
+    complexity: str = "unknown"
+    estimated_files: int = 0
+    confidence: float = 0.0
+    blockers: list[str] = Field(default_factory=list)
     rationale: str = ""
 
 
@@ -47,6 +53,7 @@ async def triage_candidates(
     shortlist: int = SHORTLIST,
 ) -> list[TriagedIssue]:
     """Score candidate issues. Injectable api + router → testable in isolation."""
+    now = now or datetime.now(timezone.utc)
     repos = candidates[:max_repos]
 
     # 1. fetch each repo's good-first issues concurrently (a flaky repo → skipped)
@@ -59,6 +66,15 @@ async def triage_candidates(
     for repo, issues in zip(repos, issue_lists, strict=True):
         for iss in issues:
             det = deterministic_signals(iss, now)
+            labels = set(det["labels"])
+            body = str(iss.get("body") or "").strip()
+            if (
+                not det["no_assignee"]
+                or iss.get("locked", False)
+                or labels & NEGATIVE_LABELS
+                or len(body) < 40
+            ):
+                continue
             pre, _ = score(merge_signals(det))
             prelim.append({"repo": repo["full_name"], "issue": iss, "det": det, "pre": pre})
 
@@ -74,7 +90,7 @@ async def triage_candidates(
 
     async def _extract(x, comments):
         async with sem:
-            return await extract_issue_signals(router, x["issue"], comments)
+            return await extract_issue_signals(router, x["issue"], comments, now)
 
     llm_results = await gather_safe(
         [_extract(x, comments) for x, comments in zip(short, comment_lists, strict=True)],
@@ -84,7 +100,9 @@ async def triage_candidates(
     # 4. full §4 score + build ranked records
     out: list[TriagedIssue] = []
     for x, llm in zip(short, llm_results, strict=True):
-        total, breakdown = score(merge_signals(x["det"], llm))
+        signals = merge_signals(x["det"], llm)
+        total, breakdown = score(signals)
+        solvability = assess_solvability(signals, llm)
         iss = x["issue"]
         out.append(
             TriagedIssue(
@@ -94,18 +112,21 @@ async def triage_candidates(
                 url=iss.get("html_url", ""),
                 score=total,
                 breakdown=breakdown,
-                tractable=bool(llm.get("tractable", False)),
+                tractable=llm.get("tractable") is True,
+                easy=solvability.easy,
+                complexity=solvability.complexity,
+                estimated_files=solvability.estimated_files,
+                confidence=solvability.confidence,
+                blockers=solvability.blockers,
                 rationale=str(llm.get("rationale", "")),
             )
         )
 
-    out.sort(key=lambda t: t.score, reverse=True)
+    out.sort(key=lambda t: (t.easy, t.score, t.confidence, -t.estimated_files), reverse=True)
     return out
 
 
 async def _run() -> int:
-    from datetime import datetime, timezone
-
     from lib.config import settings
     from lib.github.api import GitHubAPI
     from lib.state.store import StateStore
