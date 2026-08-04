@@ -55,24 +55,35 @@ async def test_punch_line_uses_prose_role_and_removes_duplicate_attribution():
     assert await write_punch_line(Router(), _state()) == "Ship the whole signal"
 
 
-@pytest.mark.parametrize(
-    "line",
-    [
-        "Read more at https://example.com",
-        "Thanks @maintainer",
-        "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen",
-    ],
-)
 @pytest.mark.asyncio
-async def test_punch_line_rejects_links_mentions_and_overlong_copy(line):
+async def test_invalid_punch_line_falls_back_to_grounded_summary():
+    class Router:
+        async def call(self, role, messages, **kwargs):
+            return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Thanks @maintainer"))])
+
+    assert await write_punch_line(Router(), _state()) == "Copy the complete documentation abstraction."
+
+
+@pytest.mark.asyncio
+async def test_overlong_punch_line_is_bounded_without_retry():
     class Router:
         async def call(self, role, messages, **kwargs):
             return SimpleNamespace(
-                choices=[SimpleNamespace(message=SimpleNamespace(content=line))]
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(
+                            content=(
+                                "one two three four five six seven eight nine ten "
+                                "eleven twelve thirteen fourteen fifteen"
+                            )
+                        )
+                    )
+                ]
             )
 
-    with pytest.raises(SubmitRejected):
-        await write_punch_line(Router(), _state())
+    assert await write_punch_line(Router(), _state()) == (
+        "one two three four five six seven eight nine ten eleven twelve thirteen fourteen"
+    )
 
 
 def test_submit_state_workspace_and_identity_must_match(tmp_path):

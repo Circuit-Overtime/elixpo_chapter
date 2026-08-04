@@ -66,13 +66,29 @@ def build_pr_body(solve_state: dict, punch_line: str) -> str:
 def _clean_punch_line(raw: str) -> str:
     line = re.sub(r"\s+", " ", raw).strip().strip("\"'“”")
     line = re.sub(r"\s*(?:—|--|-)\s*@?elixpoo\.?$", "", line, flags=re.IGNORECASE).strip()
-    if not line or len(line) > 140 or len(line.split()) > 14:
-        raise SubmitRejected("repository punch line is empty or too long")
+    if not line:
+        raise SubmitRejected("repository punch line is empty")
     if "@" in line or "http://" in line.casefold() or "https://" in line.casefold():
         raise SubmitRejected("repository punch line contains a mention or link")
     if any(marker in line for marker in ("<", ">", "`", "[", "]")):
         raise SubmitRejected("repository punch line contains unsupported Markdown")
+    words = line.split()
+    line = " ".join(words[:14])[:140].rstrip(" ,;:-")
+    if not line:
+        raise SubmitRejected("repository punch line is empty after normalization")
     return line
+
+
+def _grounded_punch_line(solve_state: dict) -> str:
+    """Use completed-work text when the optional prose response is malformed."""
+    for field in ("summary", "title"):
+        candidate = str(solve_state.get(field) or "")
+        candidate = re.sub(r"^\[[^]]+]\s*[:\-–—]*\s*", "", candidate).strip()
+        try:
+            return _clean_punch_line(candidate)
+        except SubmitRejected:
+            continue
+    raise SubmitRejected("repository punch line and grounded fallback are invalid")
 
 
 async def write_punch_line(router, solve_state: dict) -> str:
@@ -84,8 +100,7 @@ async def write_punch_line(router, solve_state: dict) -> str:
             Message(
                 role="system",
                 content=(
-                    persona
-                    + "\n\nWrite one natural punch line reacting to a completed patch. "
+                    persona + "\n\nWrite one natural punch line reacting to a completed patch. "
                     "Use at most 14 words. Return only the line: no quotation marks, emoji, "
                     "Markdown, links, handles, attribution, or unsupported claims. Vary the "
                     "wording; avoid a reusable slogan."
@@ -106,7 +121,13 @@ async def write_punch_line(router, solve_state: dict) -> str:
         effort="medium",
         max_tokens=40,
     )
-    return _clean_punch_line(response.choices[0].message.content or "")
+    try:
+        return _clean_punch_line(response.choices[0].message.content or "")
+    except SubmitRejected:
+        # Personality copy must not strand an already reviewed implementation.
+        # This fallback is issue-specific evidence, not a reusable slogan, and
+        # the complete PR body still passes through the public safety gate.
+        return _grounded_punch_line(solve_state)
 
 
 async def safety_check(router, title: str, body: str) -> None:
@@ -222,9 +243,7 @@ def push_branch(
 
 async def submit(api, router, store, solve_state: dict, workspace_base: Path) -> dict:
     verification = [
-        item
-        for item in solve_state.get("checks", [])
-        if item.get("kind", "verification") == "verification"
+        item for item in solve_state.get("checks", []) if item.get("kind", "verification") == "verification"
     ]
     if not verification or any(item.get("exit_code") != 0 for item in solve_state["checks"]):
         raise SubmitRejected("Solve has no complete passing verification record")
@@ -303,9 +322,7 @@ async def _run() -> int:
         log.error(
             "submit.missing_credentials",
             missing=(
-                "AGENT_GITHUB_SOLVER_TOKEN"
-                if not settings.github.solver_token
-                else "ELIXPO_POLLINATIONS_API_KEY"
+                "AGENT_GITHUB_SOLVER_TOKEN" if not settings.github.solver_token else "ELIXPO_POLLINATIONS_API_KEY"
             ),
         )
         return 1

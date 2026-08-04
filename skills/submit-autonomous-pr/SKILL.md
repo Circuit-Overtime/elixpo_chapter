@@ -17,8 +17,11 @@ Use one bounded `prose` call through RTK to write a natural punch line grounded
 only in the issue title and completed change summary. Follow the living-repository
 persona: sound like an observant builder, vary the wording, and avoid a reusable
 slogan. Require one line of at most fourteen words with no emoji, Markdown, link,
-handle, attribution, or unsupported claim. Reject malformed output rather than
-silently adding stock copy.
+handle, attribution, or unsupported claim. Normalize excess prose to the first
+fourteen safe words. If the optional prose response is empty or unsafe, fall back
+once to a cleaned, bounded line derived from the completed Solve summary or issue
+title. Never call the model again and never insert a reusable stock slogan. The
+full PR body still requires the safety gate.
 
 Include `Fixes #N`, then end the PR description—and only the PR description—with
 `<sub>“{punch line}” — @elixpoo</sub>`. Do not create a separate comment for the
