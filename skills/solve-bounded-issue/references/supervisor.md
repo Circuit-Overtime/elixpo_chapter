@@ -283,12 +283,15 @@ allow the deterministic metadata fallback so the guard cannot form a loop.
 
 If a successful, usage-bearing harness envelope omits StructuredOutput, require
 a non-empty Git worktree diff and hook evidence that every edited path was read
-after its latest edit. Only then derive its orchestration metadata
+after its latest edit. Apply the same recovery to `error_max_turns` only when
+the hook also records that StructuredOutput was accepted before the client
+closed the turn. Only then derive its orchestration metadata
 deterministically: bounded elapsed estimate, conventional commit subject, and
 the existing manifest-based verification plan. Continue through all normal
 diff, protected-path, file-count, verification, clean-tree, and commit gates.
-Never use this fallback for an error envelope, zero usage, an empty worktree, or
-an unreviewed changed path, and label the final review source accurately.
+Never use this fallback for any other error envelope, zero usage, an empty
+worktree, or an unreviewed changed path, and label the final review source
+accurately.
 
 Prefer a model-selected verification command, but do not discard a completed
 edit when that optional field is omitted. Infer a fallback deterministically

@@ -38,12 +38,14 @@ from agents.solve.harness import (
     _render_harness_event,
     _router_ready,
     _stop_stale_isolated_routers,
+    _structured_fallback_reason,
 )
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from agents.solve.tool_gate import _decision
 from agents.solve.verification_plan import complete_verification_plan
 from lib.solve_policy import load_solve_policy, solve_hard_token_limit, solve_token_limit
 from lib.state.store import StateStore
+from rtk.models import Usage
 from rtk.shell import CmdResult
 
 
@@ -1135,6 +1137,40 @@ def test_harness_turn_limit_is_actionable_and_preserves_usage():
     failure = classify_failure(error, "harness")
     assert failure["category"] == "turn_limit"
     assert failure["candidate_action"] == "reduce_discovery_then_retry_once"
+
+
+def test_reviewed_structured_handoff_survives_turn_limit_boundary():
+    error = HarnessError(
+        "coding harness reached its 41-turn limit before self-review",
+        usage=Usage(prompt_tokens=1000, completion_tokens=100, total_tokens=1100),
+        metadata={"terminal_subtype": "error_max_turns", "turns": 41},
+    )
+    gate = {
+        "edited_paths": ["app/pricing/page.tsx"],
+        "review_reads": ["app/pricing/page.tsx"],
+        "structured_output": True,
+    }
+
+    assert _structured_fallback_reason(error, gate, has_diff=True) == (
+        "turn_limit_after_structured_handoff"
+    )
+    assert _structured_fallback_reason(error, {**gate, "structured_output": False}, has_diff=True) is None
+    assert _structured_fallback_reason(error, gate, has_diff=False) is None
+
+
+def test_turn_limit_without_post_edit_review_cannot_fallback():
+    error = HarnessError(
+        "coding harness reached its turn limit",
+        usage=Usage(prompt_tokens=1000, completion_tokens=100, total_tokens=1100),
+        metadata={"terminal_subtype": "error_max_turns"},
+    )
+    gate = {
+        "edited_paths": ["app/pricing/page.tsx"],
+        "review_reads": [],
+        "structured_output": True,
+    }
+
+    assert _structured_fallback_reason(error, gate, has_diff=True) is None
 
 
 def test_unstructured_harness_result_preserves_usage_for_doctor():

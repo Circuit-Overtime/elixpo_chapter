@@ -696,6 +696,29 @@ def _has_worktree_diff(workspace: Path) -> bool:
     return result.returncode == 0 and bool(result.stdout.strip())
 
 
+def _structured_fallback_reason(
+    error: HarnessError,
+    gate_state: dict[str, Any],
+    *,
+    has_diff: bool,
+) -> str | None:
+    """Accept only reviewed, usage-bearing terminal handoffs with a real diff."""
+    if error.usage is None or error.usage.total_tokens <= 0 or not has_diff:
+        return None
+    edited_paths = set(gate_state.get("edited_paths") or [])
+    reviewed_paths = set(gate_state.get("review_reads") or [])
+    if not edited_paths or not edited_paths.issubset(reviewed_paths):
+        return None
+    if "result was not structured JSON" in str(error):
+        return "missing_structured_payload"
+    if (
+        error.metadata.get("terminal_subtype") == "error_max_turns"
+        and gate_state.get("structured_output") is True
+    ):
+        return "turn_limit_after_structured_handoff"
+    return None
+
+
 def _prompt(
     issue: dict[str, Any],
     policy: dict[str, Any],
@@ -1011,31 +1034,26 @@ def run_harness(
                 time.sleep(0.5 * (attempt + 1))
             if final_event is None:
                 raise HarnessError((stderr or f"coding harness exited {return_code} without a result")[:3000])
+            recovered_error_envelope = False
             try:
                 parsed = _parse_cli_result(json.dumps(final_event))
             except HarnessError as exc:
-                if (
-                    "result was not structured JSON" not in str(exc)
-                    or exc.usage is None
-                    or exc.usage.total_tokens <= 0
-                    or not _has_worktree_diff(workspace)
-                ):
+                fallback_reason = _structured_fallback_reason(
+                    exc,
+                    observed_gate,
+                    has_diff=_has_worktree_diff(workspace),
+                )
+                if fallback_reason is None:
                     raise
-                edited_paths = set(observed_gate.get("edited_paths") or [])
                 reviewed_paths = set(observed_gate.get("review_reads") or [])
-                if not edited_paths or not edited_paths.issubset(reviewed_paths):
-                    raise HarnessError(
-                        "coding harness omitted structured output before reviewing every changed file",
-                        usage=exc.usage,
-                        metadata=exc.metadata,
-                    ) from exc
                 metadata = {
                     **exc.metadata,
                     "structured_fallback": True,
+                    "structured_fallback_reason": fallback_reason,
                     "reviewed_paths": sorted(reviewed_paths),
                 }
                 print(
-                    "[harness] structured metadata omitted; using deterministic diff and verification gates",
+                    "[harness] accepted reviewed terminal handoff; using deterministic diff and verification gates",
                     flush=True,
                 )
                 parsed = (
@@ -1043,7 +1061,8 @@ def run_harness(
                     exc.usage,
                     metadata,
                 )
-            if return_code != 0:
+                recovered_error_envelope = fallback_reason == "turn_limit_after_structured_handoff"
+            if return_code != 0 and not recovered_error_envelope:
                 raise HarnessError((stderr or f"coding harness exited with status {return_code}")[:3000])
             return parsed
         except subprocess.TimeoutExpired as exc:
