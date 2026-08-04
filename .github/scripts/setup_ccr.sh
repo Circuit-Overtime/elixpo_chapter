@@ -37,6 +37,7 @@ cat > "$CCR_HOME/config.json" <<EOF
   "NON_INTERACTIVE_MODE": true,
   "API_TIMEOUT_MS": 600000,
   "HOST": "127.0.0.1",
+  "PORT": ${ELIXPO_CCR_PORT:-3456},
   "APIKEY": "ccr-pollinations",
   "transformers": [
     {"path": "$NORMALIZER"},

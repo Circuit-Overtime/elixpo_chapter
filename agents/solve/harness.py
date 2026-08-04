@@ -6,7 +6,9 @@ import json
 import os
 import queue
 import shutil
+import socket
 import subprocess
+import tempfile
 import threading
 import time
 import urllib.request
@@ -21,7 +23,7 @@ from agents.solve.models import HarnessOutcome
 _CONTROL_ROOT = Path(__file__).resolve().parents[2]
 _CCR_PACKAGE = "@musistudio/claude-code-router"
 _HARNESS_PACKAGE = "@anthropic-ai/claude-code"
-_CCR_URL = "http://127.0.0.1:3456"
+_CCR_HOST = "127.0.0.1"
 _SOLVE_SKILL = _CONTROL_ROOT / "skills/solve-bounded-issue/SKILL.md"
 _SECRET_MARKERS = ("TOKEN", "SECRET", "PASSWORD", "PRIVATE_KEY", "API_KEY")
 
@@ -51,26 +53,33 @@ def _node_command(package: str, *args: str) -> list[str]:
     )
 
 
-def _router_ready() -> bool:
+def _router_ready(router_url: str) -> bool:
     try:
-        with urllib.request.urlopen(_CCR_URL, timeout=1) as response:  # noqa: S310 - fixed loopback URL
+        with urllib.request.urlopen(router_url, timeout=1) as response:  # noqa: S310 - loopback URL
             return response.status < 500
     except OSError:
         return False
 
 
-def _wait_for_router(process: subprocess.Popen[str] | None, timeout: int) -> None:
+def _wait_for_router(process: subprocess.Popen[str], timeout: int, router_url: str) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        if _router_ready():
+        if _router_ready(router_url):
             return
-        if process is not None and process.poll() is not None:
+        if process.poll() is not None:
             raise HarnessError(f"CCR exited before becoming ready (exit {process.returncode})")
         time.sleep(0.25)
     raise HarnessError(f"CCR did not become ready within {timeout} seconds")
 
 
-def _configure_ccr(policy: dict[str, Any]) -> dict[str, str]:
+def _loopback_port() -> int:
+    """Reserve an ephemeral port long enough to choose an isolated CCR endpoint."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.bind((_CCR_HOST, 0))
+        return int(listener.getsockname()[1])
+
+
+def _configure_ccr(policy: dict[str, Any], *, router_home: Path, port: int) -> dict[str, str]:
     env = os.environ.copy()
     model = str(policy.get("harness_model", "qwen-coder"))
     output_tokens = str(int(policy.get("harness_max_output_tokens", 1600)))
@@ -86,8 +95,16 @@ def _configure_ccr(policy: dict[str, Any]) -> dict[str, str]:
             "ELIXPO_CCR_RESULT_CHARS": str(int(policy.get("harness_tool_result_max_chars", 6000))),
             "ELIXPO_CCR_STALE_CHARS": str(int(policy.get("harness_stale_tool_result_chars", 800))),
             "ELIXPO_CCR_RECENT_RESULTS": str(int(policy.get("harness_recent_tool_results", 3))),
+            "ELIXPO_CCR_PORT": str(port),
+            # Keep Solve independent from a user's interactive CCR profile and
+            # service registry. Otherwise `start` may attach to an unrelated
+            # provider already listening on the default port.
+            "HOME": str(router_home),
         }
     )
+    original_home = Path.home()
+    env.setdefault("npm_config_cache", str(original_home / ".npm"))
+    env.setdefault("BUN_INSTALL_CACHE_DIR", str(original_home / ".bun" / "install" / "cache"))
     setup = subprocess.run(
         ["bash", str(_CONTROL_ROOT / ".github/scripts/setup_ccr.sh"), str(_CONTROL_ROOT)],
         cwd=_CONTROL_ROOT,
@@ -104,7 +121,12 @@ def _configure_ccr(policy: dict[str, Any]) -> dict[str, str]:
     return env
 
 
-def _harness_env(model: str, policy: dict[str, Any] | None = None) -> dict[str, str]:
+def _harness_env(
+    model: str,
+    policy: dict[str, Any] | None = None,
+    *,
+    router_url: str,
+) -> dict[str, str]:
     """Expose only runtime basics and the local CCR credential to target code."""
     policy = policy or {}
     keep = {
@@ -125,7 +147,7 @@ def _harness_env(model: str, policy: dict[str, Any] | None = None) -> dict[str, 
     }
     env.update(
         {
-            "ANTHROPIC_BASE_URL": _CCR_URL,
+            "ANTHROPIC_BASE_URL": router_url,
             # CCR's APIKEY is validated through x-api-key. ANTHROPIC_AUTH_TOKEN
             # produces a bearer Authorization header and is rejected locally.
             "ANTHROPIC_API_KEY": "ccr-pollinations",
@@ -449,11 +471,6 @@ def _harness_command(
         # one-file solve into hundreds of thousands of input tokens.
         "--system-prompt-file",
         str(_SOLVE_SKILL),
-        # Bare mode bypasses the proven CCR auth path in current coding CLI
-        # builds. Empty setting sources provide the same filesystem isolation
-        # while preserving ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY routing.
-        "--setting-sources",
-        "",
         "--permission-mode",
         "dontAsk",
         "--tools",
@@ -475,12 +492,18 @@ def run_harness(
     *,
     timeout: int,
 ) -> tuple[HarnessOutcome, Usage, dict[str, Any]]:
-    """Start/reuse CCR, run the Node harness, and return its validated result."""
-    ccr_env = _configure_ccr(policy)
+    """Start an isolated CCR, run the Node harness, and return its validated result."""
     router_process: subprocess.Popen[str] | None = None
     router_thread: threading.Thread | None = None
-    try:
-        if not _router_ready():
+    with tempfile.TemporaryDirectory(prefix="elixpoo-ccr-") as router_home_name:
+        port = _loopback_port()
+        router_url = f"http://{_CCR_HOST}:{port}"
+        ccr_env = _configure_ccr(
+            policy,
+            router_home=Path(router_home_name),
+            port=port,
+        )
+        try:
             router_process = subprocess.Popen(
                 _node_command(_CCR_PACKAGE, "start"),
                 cwd=_CONTROL_ROOT,
@@ -497,41 +520,47 @@ def run_harness(
                 daemon=True,
             )
             router_thread.start()
-        else:
-            print(f"[ccr] reusing router at {_CCR_URL}", flush=True)
-        _wait_for_router(router_process, int(policy.get("ccr_start_timeout_seconds", 60)))
-        print(f"[ccr] ready at {_CCR_URL}", flush=True)
+            _wait_for_router(
+                router_process,
+                int(policy.get("ccr_start_timeout_seconds", 60)),
+                router_url,
+            )
+            print(f"[ccr] ready at {router_url}", flush=True)
 
-        model = str(policy.get("harness_model", "qwen-coder"))
-        rtk_available = shutil.which("rtk") is not None
-        print(
-            "[rtk] discovery compression enabled"
-            if rtk_available
-            else "[rtk] CLI unavailable; CCR context governor remains enabled",
-            flush=True,
-        )
-        command = _harness_command(model, policy, rtk_available=rtk_available)
-        final_event, return_code, stderr = _stream_harness(
-            command,
-            workspace=workspace,
-            env=_harness_env(model, policy),
-            prompt=_prompt(issue, policy, rtk_available=rtk_available),
-            timeout=timeout,
-        )
-        if final_event is None:
-            raise HarnessError((stderr or f"coding harness exited {return_code} without a result")[:3000])
-        parsed = _parse_cli_result(json.dumps(final_event))
-        if return_code != 0:
-            raise HarnessError((stderr or f"coding harness exited with status {return_code}")[:3000])
-        return parsed
-    except subprocess.TimeoutExpired as exc:
-        raise HarnessError(f"coding harness exceeded its {timeout}-second timeout") from exc
-    finally:
-        if router_process is not None and router_process.poll() is None:
-            router_process.terminate()
-            try:
-                router_process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                router_process.kill()
-        if router_thread is not None:
-            router_thread.join(timeout=1)
+            model = str(policy.get("harness_model", "qwen-coder"))
+            rtk_available = shutil.which("rtk") is not None
+            print(
+                "[rtk] discovery compression enabled"
+                if rtk_available
+                else "[rtk] CLI unavailable; CCR context governor remains enabled",
+                flush=True,
+            )
+            command = _harness_command(model, policy, rtk_available=rtk_available)
+            final_event, return_code, stderr = _stream_harness(
+                command,
+                workspace=workspace,
+                env=_harness_env(model, policy, router_url=router_url),
+                prompt=_prompt(issue, policy, rtk_available=rtk_available),
+                timeout=timeout,
+            )
+            if final_event is None:
+                raise HarnessError(
+                    (stderr or f"coding harness exited {return_code} without a result")[:3000]
+                )
+            parsed = _parse_cli_result(json.dumps(final_event))
+            if return_code != 0:
+                raise HarnessError(
+                    (stderr or f"coding harness exited with status {return_code}")[:3000]
+                )
+            return parsed
+        except subprocess.TimeoutExpired as exc:
+            raise HarnessError(f"coding harness exceeded its {timeout}-second timeout") from exc
+        finally:
+            if router_process is not None and router_process.poll() is None:
+                router_process.terminate()
+                try:
+                    router_process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    router_process.kill()
+            if router_thread is not None:
+                router_thread.join(timeout=1)

@@ -168,13 +168,13 @@ def test_harness_environment_excludes_agent_credentials(monkeypatch):
     monkeypatch.setenv("AGENT_GITHUB_SOLVER_TOKEN", "must-not-leak")
     monkeypatch.setenv("ELIXPO_POLLINATIONS_API_KEY", "must-not-leak")
 
-    env = _harness_env("qwen-coder")
+    env = _harness_env("qwen-coder", router_url="http://127.0.0.1:4567")
 
     assert "GITHUB_TOKEN" not in env
     assert "AGENT_GITHUB_SOLVER_TOKEN" not in env
     assert "ELIXPO_POLLINATIONS_API_KEY" not in env
-    assert env["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:3456"
     assert env["ANTHROPIC_API_KEY"] == "ccr-pollinations"
+    assert env["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:4567"
     assert "ANTHROPIC_AUTH_TOKEN" not in env
     assert env["RTK_TELEMETRY_DISABLED"] == "1"
     assert env["CLAUDE_CODE_DISABLE_AUTO_MEMORY"] == "1"
@@ -233,7 +233,7 @@ def test_harness_replaces_generic_system_prompt(monkeypatch):
     assert "--system-prompt-file" in command
     assert "--append-system-prompt-file" not in command
     assert "--bare" not in command
-    assert command[command.index("--setting-sources") + 1] == ""
+    assert "--setting-sources" not in command
     assert command[command.index("--max-turns") + 1] == "10"
 
 

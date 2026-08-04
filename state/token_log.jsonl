@@ -96,3 +96,5 @@
 {"task_id": "solve", "role": "plan", "model": "qwen-coder", "prompt_tokens": 6903, "cached_tokens": 0, "completion_tokens": 167, "total_tokens": 7070}
 {"task_id": "solve", "role": "code", "model": "qwen-coder", "prompt_tokens": 5548, "cached_tokens": 0, "completion_tokens": 894, "total_tokens": 6442}
 {"task_id": "solve", "role": "plan", "model": "qwen-coder", "prompt_tokens": 7507, "cached_tokens": 0, "completion_tokens": 196, "total_tokens": 7703}
+{"task_id": "solve", "role": "code", "model": "qwen-coder", "prompt_tokens": 144167, "cached_tokens": 91648, "completion_tokens": 3812, "total_tokens": 239627, "source": "ccr-node-harness", "session_id": "7f3d87dc-c7a0-4da1-9850-f931c313e84b", "turns": 26, "duration_ms": 81100}
+{"task_id": "solve", "role": "code", "model": "qwen-coder", "prompt_tokens": 104088, "cached_tokens": 64512, "completion_tokens": 2725, "total_tokens": 171325, "source": "ccr-node-harness", "session_id": "dd8821c0-4f10-4daf-87a0-82cf2803e60e", "turns": 11, "duration_ms": 63753, "failed": true}

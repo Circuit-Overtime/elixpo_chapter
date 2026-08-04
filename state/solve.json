@@ -1,13 +1,49 @@
 {
   "base_branch": "main",
-  "branch": "elixpo/issue-9-2e0f21",
+  "branch": "patch/bug-the-copy-for-llm-button-on-the-docs-page-9-2688",
+  "cleanup": {
+    "owner": "janitor",
+    "resources": [
+      {
+        "disposition": "remove_after_terminal_decision",
+        "kind": "workspace",
+        "locator": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-9-b7aad5",
+        "safe_root": "/tmp/elixpoo-workspaces"
+      },
+      {
+        "disposition": "preserve_shared_resource",
+        "kind": "fork",
+        "locator": "elixpoo/lixrl.com"
+      }
+    ],
+    "status": "blocked_on_doctor"
+  },
+  "doctor": {
+    "decision": null,
+    "status": "pending"
+  },
+  "elapsed_seconds": 24.482,
+  "error": "coding harness API error 401: Failed to authenticate. API Error: 401 Invalid API key.",
+  "failed_at": "2026-08-04T04:55:13.109170+00:00",
+  "failure": {
+    "candidate_action": "repair_credentials",
+    "category": "credentials",
+    "exception_type": "HarnessError",
+    "message": "coding harness API error 401: Failed to authenticate. API Error: 401 Invalid API key.",
+    "occurred_at": "2026-08-04T04:55:13.109170+00:00",
+    "retryable": false,
+    "schema_version": 1,
+    "stage": "harness"
+  },
   "fork_repo": "elixpoo/lixrl.com",
   "issue_url": "https://github.com/elixpo/lixrl.com/issues/9",
   "key": "elixpo/lixrl.com#9",
-  "stage": "workspace_setup",
-  "started_at": "2026-08-03T21:35:58.303891+00:00",
-  "status": "running",
+  "stage": "harness",
+  "started_at": "2026-08-04T04:54:53.291079+00:00",
+  "status": "doctor_pending",
   "test_mode": true,
+  "token_limit": 180000,
+  "token_spent": 0,
   "upstream_repo": "elixpo/lixrl.com",
-  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-9-147263"
+  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-9-b7aad5"
 }
