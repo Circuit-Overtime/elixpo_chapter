@@ -78,10 +78,20 @@ index, and ranked relevant excerpts without another model call. Require RTK to
 read that bundle exactly once. Let the coding model compare compressed excerpts
 and choose one candidate containing concrete implementation evidence; rank one
 and issue-mentioned paths are priors, never forced targets. Permit one fallback
-candidate read only when the first exact read disproves the choice. Permit one
+candidate read when the first exact read disproves the choice, or one supporting
+read when it resolves a concrete acceptance-criteria gap. Two exact source reads
+is the complete pre-edit limit. Permit one
 candidate-directory grep only when every bundled excerpt lacks actionable
 evidence. Never use find, repository-wide grep, tool help, repeated queries, a
 third candidate read, or another model call for retrieval.
+
+Split every issue into observable behavior and implementation hypotheses.
+Repository evidence overrides guessed paths, symbols, data flow, and proposed
+edits. An absent claimed symbol is not a reason to decline when the harness has
+located the real implementation of the behavior. Continue from that source and
+make the smallest behavior-level fix. Decline only when current code already
+satisfies the observable requirement or the bounded evidence cannot support a
+safe change.
 
 Rank behavior using both document frequency and same-line term co-occurrence;
 repeated issue prose must not outweigh a source expression containing the action,

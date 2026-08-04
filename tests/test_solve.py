@@ -302,7 +302,9 @@ def test_prompt_keeps_ranked_candidates_advisory():
     assert "1. app/docs/layout.tsx" in rendered
     assert "2. app/page.tsx" in rendered
     assert "rank one or the issue-mentioned path" in rendered
-    assert "one fallback `rtk read`" in rendered
+    assert "Two exact source reads is the total pre-edit limit" in rendered
+    assert "Repository evidence" in rendered
+    assert "do not decline merely because" in rendered
     assert "next command must be exactly" not in rendered
 
 
