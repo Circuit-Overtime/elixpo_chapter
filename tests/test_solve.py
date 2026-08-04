@@ -246,7 +246,7 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
     assert gate_state["read_offsets"]["app/pricing/page.tsx"] == 287
     hook_settings = json.loads((config_dir / "settings.json").read_text())
     assert hook_settings["hooks"]["PreToolUse"][0]["matcher"] == (
-        "Read|Glob|Grep|Edit|Write|Bash|StructuredOutput"
+        "Read|Glob|Grep|Edit|Write|Bash|WebSearch|StructuredOutput"
     )
     assert hook_settings["hooks"]["PostToolUse"][0]["matcher"] == "Edit|Write"
     assert hook_settings["hooks"]["Stop"]
@@ -407,6 +407,16 @@ def test_tool_gate_brokers_read_only_shell_and_enforces_structured_completion(tm
     assert _decision(read_only_git, state)[0] == 0
     mutating_git = {**raw, "tool_input": {"command": "git checkout main"}}
     assert _decision(mutating_git, state)[0] == 2
+
+    search_state = {"max_web_search_calls": 1}
+    web_search = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "WebSearch",
+        "tool_input": {"query": "Next.js clipboard button accessibility"},
+    }
+    assert _decision(web_search, search_state)[0] == 0
+    assert search_state["web_search_calls"] == 1
+    assert _decision(web_search, search_state)[0] == 2
 
     state["source_reads"] = ["app/page.tsx"]
     scoped_grep = {
@@ -645,6 +655,7 @@ def test_harness_replaces_generic_system_prompt(monkeypatch):
     assert "--bare" not in command
     assert "--safe-mode" not in command
     assert "--setting-sources" not in command
+    assert command[command.index("--permission-mode") + 1] == "bypassPermissions"
     assert command[command.index("--max-turns") + 1] == "10"
     assert command[command.index("--settings") + 1] == "/tmp/isolated/settings.json"
 
@@ -660,10 +671,10 @@ def test_harness_confines_rtk_shell_discovery(monkeypatch):
     allowed = command[command.index("--allowedTools") + 1]
     denied = command[command.index("--disallowedTools") + 1]
 
-    assert tools == "Read,Glob,Grep,Edit,Write,Bash"
+    assert tools == "Read,Glob,Grep,Edit,Write,Bash,WebSearch"
     assert allowed == tools
     assert "WebFetch" in denied
-    assert "WebSearch" in denied
+    assert "WebSearch" not in denied
 
 
 def test_context_bundle_is_injected_and_git_ignored(tmp_path, monkeypatch):

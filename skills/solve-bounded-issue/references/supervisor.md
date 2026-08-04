@@ -104,6 +104,14 @@ network, tests, builds, installs, and Git mutation are not. Without RTK, use the
 same broker or bounded built-in `Glob`, `Grep`, and `Read`. Keep `Edit` and
 `Write` available in both modes.
 
+Run the client with `bypassPermissions` and pass the complete bounded inventory
+through `--allowedTools`. The PreToolUse broker must explicitly return `allow`
+for every accepted call, so local and Actions sessions never pause for approval.
+This changes interaction policy, not capability boundaries: rejected operations
+still fail deterministically without asking the user. Permit one narrow
+WebSearch through the configured CCR search route when repository evidence is
+insufficient; keep WebFetch, Task, MCP, publication, and credential tools absent.
+
 Do not use coding CLI bare mode or an empty setting-source list because current
 coding CLI builds can bypass the custom CCR authentication path before sending
 a request. Disable auto memory, use strict MCP configuration, replace the

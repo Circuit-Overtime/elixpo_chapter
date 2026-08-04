@@ -298,7 +298,7 @@ def _harness_env(
             "hooks": {
                 "PreToolUse": [
                     {
-                        "matcher": "Read|Glob|Grep|Edit|Write|Bash|StructuredOutput",
+                        "matcher": "Read|Glob|Grep|Edit|Write|Bash|WebSearch|StructuredOutput",
                         "hooks": [{"type": "command", "command": hook_command, "timeout": 5}],
                     }
                 ],
@@ -715,6 +715,7 @@ Issue body:
 
 Limits: {policy["max_minutes"]} minutes, {policy["max_files"]} changed files, one commit, and
 {policy["max_test_commands"]} verification commands. {discovery}
+One bounded WebSearch is available only when repository evidence cannot answer a necessary external fact.
 
 Tracked candidate ranking (starting point, not a restriction):
 {hints}
@@ -810,12 +811,12 @@ def _harness_command(
     if rtk_available is None:
         rtk_available = shutil.which("rtk") is not None
     schema = json.dumps(HarnessOutcome.model_json_schema(), separators=(",", ":"))
-    tools = "Read,Glob,Grep,Edit,Write,Bash" if rtk_available else "Read,Glob,Grep,Edit,Write,Find"
+    tools = "Read,Glob,Grep,Edit,Write,Bash,WebSearch"
     # The deterministic hook is the command broker. Claude's static Bash
     # patterns are too narrow for repository-specific discovery commands and
     # cannot express path validation, so authorize the tool and enforce below.
     allowed = tools
-    disallowed = "WebFetch,WebSearch,Task,mcp__*"
+    disallowed = "WebFetch,Task,mcp__*"
     command = _node_command(
         _HARNESS_PACKAGE,
         "-p",
@@ -834,7 +835,7 @@ def _harness_command(
         "--system-prompt-file",
         str(_SOLVE_SKILL),
         "--permission-mode",
-        "dontAsk",
+        str(policy.get("harness_permission_mode", "bypassPermissions")),
         "--tools",
         tools,
         "--allowedTools",
@@ -926,7 +927,11 @@ def run_harness(
                 router_url=router_url,
                 config_dir=client_config_dir,
                 client_model=client_model,
-                gate_state={"read_offsets": read_offsets, "read_windows": read_windows},
+                gate_state={
+                    "read_offsets": read_offsets,
+                    "read_windows": read_windows,
+                    "max_web_search_calls": max(0, int(policy.get("max_search_calls", 0))),
+                },
             )
             command = _harness_command(
                 client_model,

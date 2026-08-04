@@ -24,6 +24,9 @@ outside the coding session and must not be explored from the target repository.
 - Use shell only for one repository-relative, read-only discovery command at a
   time. Prefer RTK compression. Do not run test, build, install, network, Git
   mutation, or publication commands; return checks for the supervisor to run.
+- All accepted tools are pre-authorized. Never request permission or wait for a
+  user response. Use the single bounded WebSearch only when a necessary external
+  fact is absent from repository evidence; never use it for routine discovery.
 
 ## Use evidence efficiently
 

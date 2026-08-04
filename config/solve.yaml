@@ -24,6 +24,7 @@ setup_network_access: true
 
 # Python supervises these Node processes for both local and Actions runs.
 harness_model: qwen-coder
+harness_permission_mode: bypassPermissions
 # CCR 2.x requires provider-qualified client model IDs (`provider,model`).
 harness_provider: pollinations-code
 # Discovery-heavy but still bounded sessions need room to re-read and review

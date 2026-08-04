@@ -233,6 +233,17 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
         state["structured_output"] = True
         return 0, None, None
 
+    if tool == "WebSearch":
+        query = str(tool_input.get("query") or "").strip()
+        limit = max(0, int(state.get("max_web_search_calls") or 0))
+        used = int(state.get("web_search_calls") or 0)
+        if not query or len(query) > 300:
+            return 2, None, "Use one narrow WebSearch query of at most 300 characters."
+        if used >= limit:
+            return 2, None, "The bounded WebSearch allowance is exhausted; continue from repository evidence."
+        state["web_search_calls"] = used + 1
+        return 0, None, None
+
     if tool in {"Glob", "Grep"}:
         if tool == "Glob":
             pattern = str(tool_input.get("pattern") or "")
@@ -368,6 +379,14 @@ def main() -> int:
         except json.JSONDecodeError:
             state = {}
         code, output, reason = _decision(event, state)
+        if code == 0 and output is None and str(event.get("hook_event_name") or "") == "PreToolUse":
+            output = {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "allow",
+                    "permissionDecisionReason": "Accepted by the supervised Solve capability broker.",
+                }
+            }
         if code == 2:
             state["denied_calls"] = int(state.get("denied_calls") or 0) + 1
             if reason:
