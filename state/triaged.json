@@ -1,26 +1,118 @@
 [
   {
-    "activity_age_days": 19,
-    "blockers": [],
+    "activity_age_days": 12,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is medium"
+    ],
     "breakdown": {
       "acceptance_criterion": 2,
       "aged": 1,
       "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
+      "no_maintainer_claim": 2
     },
-    "complexity": "small",
-    "confidence": 0.85,
-    "easy": true,
-    "estimated_files": 1,
-    "issue_age_days": 26,
-    "number": 365,
-    "rationale": "The issue describes a localized change in the installation path, which can be fixed with a single edit and verified by checking the shortcut.",
-    "repo": "horsicq/Detect-It-Easy",
-    "score": 10,
-    "title": "Windows Install via Chocolatey results in unusable Shortcut",
-    "tractable": true,
-    "url": "https://github.com/horsicq/Detect-It-Easy/issues/365"
+    "complexity": "medium",
+    "confidence": 0.75,
+    "easy": false,
+    "estimated_files": 5,
+    "issue_age_days": 12,
+    "issue_updated_at": "2026-07-23T19:04:19Z",
+    "number": 1353,
+    "rationale": "The scope involves multiple components and requires integration with existing scheduler jobs and pipelines, which suggests a medium complexity and cannot be completed in one focused pull request.",
+    "repo": "stella/stella",
+    "score": 7,
+    "title": "feat(scheduler): schedule case-law ingestion task",
+    "tractable": false,
+    "url": "https://github.com/stella/stella/issues/1353"
+  },
+  {
+    "activity_age_days": 4,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is medium",
+      "estimated file count 0 is outside 1-5",
+      "needs a maintainer decision",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "medium",
+    "confidence": 0.7,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 14,
+    "issue_updated_at": "2026-07-31T06:29:21Z",
+    "number": 4114,
+    "rationale": "The feature request involves several interacting components and cross-subsystem behavior, including webmail actions and Rspamd training commands. The scope is not trivial or small, and the complexity of the implementation is not fully clear.",
+    "repo": "modoboa/modoboa",
+    "score": 5,
+    "title": "rspamd training from and by Modoboa",
+    "tractable": false,
+    "url": "https://github.com/modoboa/modoboa/issues/4114"
+  },
+  {
+    "activity_age_days": 3,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is medium",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.65 is below 0.70",
+      "needs a maintainer decision",
+      "needs external access or credentials",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "medium",
+    "confidence": 0.65,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 11,
+    "issue_updated_at": "2026-08-01T01:18:01Z",
+    "number": 211,
+    "rationale": "The proposal requires a maintainer decision on the architecture and API design for the BLE framework.",
+    "repo": "MicroPythonOS/MicroPythonOS",
+    "score": 5,
+    "title": "Add Bluetooth Low Energy (BLE) framework",
+    "tractable": false,
+    "url": "https://github.com/MicroPythonOS/MicroPythonOS/issues/211"
+  },
+  {
+    "activity_age_days": 2,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is medium",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.65 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "medium",
+    "confidence": 0.65,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 9,
+    "issue_updated_at": "2026-08-02T18:44:27Z",
+    "number": 1378,
+    "rationale": "The issue scope is broad and involves multiple components, including a scheduler and event handlers, which suggests a medium complexity change.",
+    "repo": "stella/stella",
+    "score": 5,
+    "title": "feat(workflows): routines - scheduled and event-driven triggers",
+    "tractable": false,
+    "url": "https://github.com/stella/stella/issues/1378"
   },
   {
     "activity_age_days": 9,
@@ -28,111 +120,9 @@
       "not confirmed tractable",
       "complexity is medium",
       "estimated file count 0 is outside 1-5",
-      "needs a maintainer decision"
-    ],
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
-    },
-    "complexity": "medium",
-    "confidence": 0.75,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 14,
-    "number": 65,
-    "rationale": "The issue involves a complex interaction between the index and vector sharding, with a need for maintainer decision on API behavior.",
-    "repo": "SeekStorm/SeekStorm",
-    "score": 10,
-    "title": "commit() hides shard panic and fails to persist lexical-only append after reopening external-vector index",
-    "tractable": false,
-    "url": "https://github.com/SeekStorm/SeekStorm/issues/65"
-  },
-  {
-    "activity_age_days": 19,
-    "blockers": [
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5"
-    ],
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "medium",
-    "confidence": 0.85,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 19,
-    "number": 367,
-    "rationale": "The issue describes a clear bug with observable expected results and testable behavior, but the scope is medium due to the complexity of the packaging and environment issues.",
-    "repo": "horsicq/Detect-It-Easy",
-    "score": 7,
-    "title": "Installation from Microsoft Store cannot switch off Spanish",
-    "tractable": true,
-    "url": "https://github.com/horsicq/Detect-It-Easy/issues/367"
-  },
-  {
-    "activity_age_days": 24,
-    "blockers": [
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5"
-    ],
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "medium",
-    "confidence": 0.85,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 24,
-    "number": 881,
-    "rationale": "The issue describes a panic with clear reproduction steps and expected behavior, but the complexity of the fix is unknown.",
-    "repo": "emmett-framework/granian",
-    "score": 7,
-    "title": "Rust panic during shutdown  with --metrics enabled",
-    "tractable": true,
-    "url": "https://github.com/emmett-framework/granian/issues/881"
-  },
-  {
-    "activity_age_days": 7,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is unknown",
-      "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.60 is below 0.70",
-      "needs a maintainer decision"
-    ],
-    "breakdown": {
-      "acceptance_criterion": 2,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "unknown",
-    "confidence": 0.6,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 7,
-    "number": 1297,
-    "rationale": "Needs maintainer decision on API interpretation and design choice for wstring support.",
-    "repo": "RobotWebTools/rosbridge_suite",
-    "score": 6,
-    "title": "ROS2 Messages Containing wstring Appear Broken",
-    "tractable": false,
-    "url": "https://github.com/RobotWebTools/rosbridge_suite/issues/1297"
-  },
-  {
-    "activity_age_days": 7,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.65 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware",
       "no acceptance criterion or reproducible bug"
     ],
     "breakdown": {
@@ -141,51 +131,120 @@
       "no_maintainer_claim": 2
     },
     "complexity": "medium",
-    "confidence": 0.7,
+    "confidence": 0.65,
     "easy": false,
     "estimated_files": 0,
     "issue_age_days": 9,
-    "number": 871,
-    "rationale": "The issue lacks enough evidence to determine if it is a simple or medium-sized change, and it requires testing on real hardware to verify.",
-    "repo": "ymichael/bb",
+    "issue_updated_at": "2026-07-26T14:10:45Z",
+    "number": 1377,
+    "rationale": "The scope involves multiple components and interactions, including database tables and triggers, which suggests a medium complexity change.",
+    "repo": "stella/stella",
     "score": 5,
-    "title": "iOS/iPadOS standalone PWA: app shell renders shorter than the viewport (bottom gap, content under status bar)",
+    "title": "feat(workflows): saved multi-step workflows with run history",
     "tractable": false,
-    "url": "https://github.com/ymichael/bb/issues/871"
+    "url": "https://github.com/stella/stella/issues/1377"
   },
   {
-    "activity_age_days": 23,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5",
-      "no acceptance criterion or reproducible bug"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "medium",
-    "confidence": 0.7,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 24,
-    "number": 603,
-    "rationale": "The feature request involves several components and could require integration with existing scheduling or rate limit systems.",
-    "repo": "ymichael/bb",
-    "score": 5,
-    "title": "Add scheduled message feature",
-    "tractable": false,
-    "url": "https://github.com/ymichael/bb/issues/603"
-  },
-  {
-    "activity_age_days": 13,
+    "activity_age_days": 2,
     "blockers": [
       "not confirmed tractable",
       "complexity is unknown",
       "estimated file count 0 is outside 1-5",
       "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "needs external access or credentials",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 15,
+    "issue_updated_at": "2026-08-02T16:45:35Z",
+    "number": 207,
+    "rationale": "The feature request lacks sufficient details to determine the scope and completion, and API/UX decisions are needed.",
+    "repo": "MicroPythonOS/MicroPythonOS",
+    "score": 5,
+    "title": "Feature Request: Add uPyStore.io as an Optional Application Store Provider for MicroPythonOS",
+    "tractable": false,
+    "url": "https://github.com/MicroPythonOS/MicroPythonOS/issues/207"
+  },
+  {
+    "activity_age_days": 2,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "needs external access or credentials",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 10,
+    "issue_updated_at": "2026-08-02T12:29:44Z",
+    "number": 215,
+    "rationale": "The issue lacks enough evidence to bound the work and requires a maintainer decision on the API or architecture.",
+    "repo": "MicroPythonOS/MicroPythonOS",
+    "score": 5,
+    "title": "Add simple way to force DeviceInfo.hardware_id, skip board detection, and customize hardware board initialization",
+    "tractable": false,
+    "url": "https://github.com/MicroPythonOS/MicroPythonOS/issues/215"
+  },
+  {
+    "activity_age_days": 11,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 40,
+    "issue_updated_at": "2026-07-24T13:35:19Z",
+    "number": 172,
+    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work.",
+    "repo": "MicroPythonOS/MicroPythonOS",
+    "score": 5,
+    "title": "Add support for  2.8inch ESP32-S3 Display (Cheap Black Display)",
+    "tractable": false,
+    "url": "https://github.com/MicroPythonOS/MicroPythonOS/issues/172"
+  },
+  {
+    "activity_age_days": 0,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware",
       "no acceptance criterion or reproducible bug"
     ],
     "breakdown": {
@@ -198,13 +257,74 @@
     "easy": false,
     "estimated_files": 0,
     "issue_age_days": 13,
-    "number": 838,
-    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work.",
-    "repo": "ymichael/bb",
+    "issue_updated_at": "2026-08-04T01:10:37Z",
+    "number": 1334,
+    "rationale": "The issue lacks enough evidence to bound the work and does not provide clear completion criteria or reproducible steps.",
+    "repo": "stella/stella",
     "score": 5,
-    "title": "Have bb auto login claude when the token has expired",
+    "title": "epic: Roadmap Q3 2026",
     "tractable": false,
-    "url": "https://github.com/ymichael/bb/issues/838"
+    "url": "https://github.com/stella/stella/issues/1334"
+  },
+  {
+    "activity_age_days": 9,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is medium",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "medium",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 9,
+    "issue_updated_at": "2026-07-26T14:09:31Z",
+    "number": 1376,
+    "rationale": "The issue involves multiple components and requires architectural decisions, which makes it non-trivial and not easily solvable by one external contributor in one PR.",
+    "repo": "stella/stella",
+    "score": 5,
+    "title": "feat(artifacts): Living Matter Artifacts: Chronologies, Risk Registers & AI-Driven Diff Review",
+    "tractable": false,
+    "url": "https://github.com/stella/stella/issues/1376"
+  },
+  {
+    "activity_age_days": 9,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 10,
+    "issue_updated_at": "2026-07-26T01:42:42Z",
+    "number": 1725,
+    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work.",
+    "repo": "middleapi/orpc",
+    "score": 5,
+    "title": "[v2] Native Angular support for client-side fetching using Angular resources",
+    "tractable": false,
+    "url": "https://github.com/middleapi/orpc/issues/1725"
   },
   {
     "activity_age_days": 21,
@@ -212,52 +332,30 @@
       "not confirmed tractable",
       "complexity is unknown",
       "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.50 is below 0.70",
       "needs a maintainer decision",
-      "no acceptance criterion or reproducible bug"
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug",
+      "issue is already assigned or claimed"
     ],
     "breakdown": {
       "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
       "no_assignee": 2,
       "no_maintainer_claim": 2
     },
     "complexity": "unknown",
-    "confidence": 0.5,
+    "confidence": 0.7,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 22,
-    "number": 634,
-    "rationale": "The issue lacks enough evidence to determine the scope and completion, and the API or architecture needs a maintainer choice.",
-    "repo": "ymichael/bb",
-    "score": 5,
-    "title": "Support for Antigravity CLI & Models?",
+    "issue_age_days": 21,
+    "issue_updated_at": "2026-07-14T16:35:29Z",
+    "number": 202,
+    "rationale": "The contributor has claimed recent ownership of the work, but the scope and complexity of the task are unclear.",
+    "repo": "MicroPythonOS/MicroPythonOS",
+    "score": 0,
+    "title": "Add Screensaver to main app layout",
     "tractable": false,
-    "url": "https://github.com/ymichael/bb/issues/634"
-  },
-  {
-    "activity_age_days": 17,
-    "blockers": [
-      "complexity is unknown",
-      "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.50 is below 0.70",
-      "no acceptance criterion or reproducible bug"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "unknown",
-    "confidence": 0.5,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 18,
-    "number": 3120,
-    "rationale": "The issue is informational and does not describe a bug or feature request.",
-    "repo": "MervinPraison/PraisonAI",
-    "score": 5,
-    "title": "Your project is on StackMap \u2014 a curated map of the AI stack",
-    "tractable": true,
-    "url": "https://github.com/MervinPraison/PraisonAI/issues/3120"
+    "url": "https://github.com/MicroPythonOS/MicroPythonOS/issues/202"
   }
 ]
