@@ -40,10 +40,14 @@ Submit owns the single push and pull-request mutation.
 ## Run one harness in the isolated checkout
 
 Keep Python as the supervisor in every environment. Python must configure and
-start or reuse loopback CCR, invoke the Node coding harness with its working
+start one private loopback CCR on an ephemeral port, invoke the Node coding harness with its working
 directory set to the isolated fork, enforce the wall clock, account returned
 usage through RTK, validate the diff, run checks, and commit. Local terminal and
 GitHub Actions runs must use this same path; Actions only supplies the runner.
+Give that CCR process a temporary home so it cannot read, mutate, or attach to
+an interactive user's CCR profile or service registry. Never reuse a process
+merely because it answers on the default CCR port. Remove the temporary router
+configuration after the supervised process stops.
 
 Route the session through CCR to `qwen-coder`. When the pinned RTK CLI is
 available, prefer its compact `find`, `grep`, `read`, and `smart` commands
@@ -52,11 +56,13 @@ only for those explicit `rtk` prefixes; never permit arbitrary `rtk *`, raw shel
 git, network, test, or build commands. Without RTK, fall back to bounded built-in
 `Glob`, `Grep`, and `Read`. Keep `Edit` and `Write` available in both modes.
 
-Do not use coding CLI bare mode because it can bypass the custom CCR
-authentication path. Instead, pass an empty setting-source list, disable auto
-memory, use strict MCP configuration, replace the system prompt, and disable
-session persistence. This preserves filesystem-context isolation while retaining
-the proven `ANTHROPIC_BASE_URL` plus `ANTHROPIC_API_KEY` route.
+Do not use coding CLI bare mode or an empty setting-source list because current
+coding CLI builds can bypass the custom CCR authentication path before sending
+a request. Disable auto memory, use strict MCP configuration, replace the
+system prompt, and disable session persistence. This preserves the proven
+`ANTHROPIC_BASE_URL` plus `ANTHROPIC_API_KEY` route while the tool allowlist,
+secret-stripped environment, temporary CCR home, and isolated checkout enforce
+the execution boundary.
 
 Cap built-in reads at 1,800 output tokens, provider retries at two, read-only
 tool concurrency at three, and the complete session at twelve turns. When RTK
