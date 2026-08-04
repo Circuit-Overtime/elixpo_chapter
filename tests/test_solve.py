@@ -29,7 +29,7 @@ from agents.solve.harness import (
 )
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from agents.solve.verification_plan import complete_verification_plan
-from lib.solve_policy import solve_token_limit
+from lib.solve_policy import solve_hard_token_limit, solve_token_limit
 from lib.state.store import StateStore
 from rtk.shell import CmdResult
 
@@ -86,6 +86,8 @@ def test_vet_estimate_grants_bounded_solver_headroom():
     assert solve_token_limit(policy, {"suitable": True, "estimated_solve_tokens": 200_000}) == 250_000
     assert solve_token_limit(policy, {"suitable": True, "estimated_solve_tokens": 600_000}) == 750_000
     assert solve_token_limit(policy, {"suitable": True, "estimated_solve_tokens": 2_000_000}) == 750_000
+    assert solve_hard_token_limit(policy, None) == 240_000
+    assert solve_hard_token_limit(policy, {"suitable": True}) == 750_000
 
 
 def test_work_branch_uses_natural_feature_or_patch_prefix():

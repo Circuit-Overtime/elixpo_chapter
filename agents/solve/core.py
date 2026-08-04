@@ -389,6 +389,8 @@ async def solve(
             "source": "bounded_harness_self_review",
         },
         "token_spent": router.budget.spent,
+        "token_target": int(policy.get("token_target", router.budget.limit)),
+        "token_target_exceeded": router.budget.spent > int(policy.get("token_target", router.budget.limit)),
         "token_limit": router.budget.limit,
         "finished_at": datetime.now(timezone.utc).isoformat(),
     }

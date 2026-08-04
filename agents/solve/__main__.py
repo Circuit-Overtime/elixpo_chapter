@@ -22,7 +22,7 @@ log = structlog.get_logger()
 async def _run(issue_url: str | None, owned_test: bool) -> int:
     from lib.config import settings
     from lib.github.api import GitHubAPI
-    from lib.solve_policy import load_solve_policy, solve_token_limit
+    from lib.solve_policy import load_solve_policy, solve_hard_token_limit, solve_token_limit
     from lib.state.store import StateStore
     from rtk import Budget, BudgetExceeded, Router
 
@@ -67,7 +67,10 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         return 2
 
     vet = store.read_json("vet.json", {}) or {}
-    token_limit = solve_token_limit(policy, vet if vet.get("url") == target else None)
+    matching_vet = vet if vet.get("url") == target else None
+    token_target = solve_token_limit(policy, matching_vet)
+    token_limit = solve_hard_token_limit(policy, matching_vet)
+    policy = {**policy, "token_target": token_target}
 
     store.write_json(
         "solve.json",
@@ -76,6 +79,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
             "stage": "preflight",
             "issue_url": target,
             "test_mode": owned_test,
+            "token_target": token_target,
             "token_limit": token_limit,
             "started_at": datetime.now(timezone.utc).isoformat(),
         },

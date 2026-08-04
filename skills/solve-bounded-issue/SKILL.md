@@ -69,10 +69,12 @@ secret-stripped environment, temporary CCR home, and isolated checkout enforce
 the execution boundary.
 
 Cap built-in reads at 1,400 output tokens, provider retries at two, read-only
-tool concurrency at three, and the complete session at fourteen turns. Start
-with the configured 240,000-token allowance. Vet may grant estimate-based
-headroom for a context-heavy issue, but the configured 750,000-token absolute
-ceiling cannot be relaxed. Keep at most 28,000 characters of routed context,
+tool concurrency at three, and the complete session at fourteen turns. Treat
+the configured 240,000-token value and Vet's estimate-based headroom as a soft
+cost target. Record an overrun for Doctor, but never discard an otherwise valid
+completed edit merely for crossing that target. A Vet-approved run uses the
+configured 750,000-token absolute ceiling, which cannot be relaxed. Keep at most
+28,000 characters of routed context,
 3,200 characters per tool result, two recent full results, and 400 characters
 for stale results. These are deterministic compression limits, not model
 summaries.
@@ -180,11 +182,11 @@ install command, then the cheapest applicable typecheck, lint, test, or build
 command. Never invent a command absent from configured allowlists. Record
 whether inference was used.
 
-Treat the harness ceiling as cumulative usage across all tool turns, including
-input, cache creation, cache reads, and output. Keep the per-turn output and
-turn count bounded in configuration; never hide cache traffic to make a run
-appear smaller. Report the usage components separately so Doctor can distinguish
-large repeated context from excessive generation.
+Treat the harness target and ceiling as cumulative usage across all tool turns,
+including input, cache creation, cache reads, and output. Keep the per-turn
+output and turn count bounded in configuration; never hide cache traffic to make
+a run appear smaller. Report target overruns and usage components separately so
+Doctor can distinguish large repeated context from excessive generation.
 
 After the session, derive targets from Git rather than trusting its report.
 Reject no diff, deletions, symlinks, unsafe paths, more than five files, an

@@ -27,7 +27,7 @@ def is_test_repository(repo: str, policy: dict[str, Any] | None = None) -> bool:
 
 
 def solve_token_limit(policy: dict[str, Any], vet: dict[str, Any] | None) -> int:
-    """Turn Vet's estimate into bounded headroom; never trust state as a limit."""
+    """Turn Vet's estimate into a soft target; never trust state as a limit."""
     base = max(1, int(policy["token_budget"]))
     absolute = max(base, int(policy.get("max_token_budget", base)))
     if not vet or vet.get("suitable") is not True:
@@ -43,3 +43,11 @@ def solve_token_limit(policy: dict[str, Any], vet: dict[str, Any] | None) -> int
     # Stable 10k bands avoid false precision in a semantic estimate.
     rounded = ((recommended + 9_999) // 10_000) * 10_000
     return min(absolute, max(base, rounded))
+
+
+def solve_hard_token_limit(policy: dict[str, Any], vet: dict[str, Any] | None) -> int:
+    """Return the non-negotiable ceiling for a Vet-approved bounded solve."""
+    base = max(1, int(policy["token_budget"]))
+    if not vet or vet.get("suitable") is not True:
+        return base
+    return max(base, int(policy.get("max_token_budget", base)))
