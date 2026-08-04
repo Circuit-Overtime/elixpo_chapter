@@ -1,11 +1,6 @@
 {
-  "branch": "patch/bug-the-copy-for-llm-button-on-the-docs-page-9-3988",
-  "head_sha": "35615a0f654b0bfaa514f454caf92f2c06b6a04f",
-  "issue_url": "https://github.com/elixpo/lixrl.com/issues/9",
-  "key": "elixpo/lixrl.com#9",
-  "pr_number": 10,
-  "pr_url": "https://github.com/elixpo/lixrl.com/pull/10",
-  "status": "submitted",
-  "submitted_at": "2026-08-04T06:22:17.717009+00:00",
-  "test_mode": true
+  "error": "repository punch line and grounded fallback are invalid",
+  "failed_at": "2026-08-04T09:33:20.505235+00:00",
+  "key": "elixpo/lixrl.com#11",
+  "status": "failed"
 }
