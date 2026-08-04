@@ -1,6 +1,6 @@
 {
-  "error": "repository punch line and grounded fallback are invalid",
-  "failed_at": "2026-08-04T09:33:20.505235+00:00",
+  "error": "Solve has no attempted verification record",
+  "failed_at": "2026-08-04T11:28:02.209441+00:00",
   "key": "elixpo/lixrl.com#11",
   "status": "failed"
 }
