@@ -5,8 +5,32 @@ from __future__ import annotations
 from lib.scorer import THRESHOLD, IssueSignals, assess_solvability, qualifies, score
 from lib.state.ledger import DAILY_PR_CAP, Ledger, PRRecord
 from lib.state.store import StateStore
+from lib.workspace import Workspace
 
 # --- scorer ---
+
+
+def test_workspace_sets_local_elixpoo_commit_identity(tmp_path, monkeypatch):
+    workspace = Workspace("session", tmp_path)
+    calls = []
+
+    def fake_run(args, *, cwd=None, env=None, timeout=120):
+        calls.append((args, cwd))
+        if args[:2] == ["git", "clone"]:
+            workspace.root.mkdir()
+        return ""
+
+    monkeypatch.setattr(workspace, "_run", fake_run)
+    workspace.setup(
+        fork_url="https://github.com/elixpoo/example.git",
+        upstream_url="https://github.com/upstream/example.git",
+        base_branch="main",
+        work_branch="patch/example-1-a1b2",
+        token="secret",
+    )
+
+    assert (["git", "config", "user.name", "elixpoo"], workspace.root) in calls
+    assert (["git", "config", "user.email", "elixpoo@gmail.com"], workspace.root) in calls
 
 
 def test_github_settings_accepts_agentic_token_alias(monkeypatch):
@@ -15,6 +39,18 @@ def test_github_settings_accepts_agentic_token_alias(monkeypatch):
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.setenv("ELIXPOO_GITHUB_AGENTIC_TOKEN", "test-token")
     assert GitHubSettings().token == "test-token"
+
+
+def test_github_settings_keeps_solver_token_separate(monkeypatch):
+    from lib.config import GitHubSettings
+
+    monkeypatch.setenv("GITHUB_TOKEN", "workflow-token")
+    monkeypatch.setenv("ELIXPOO_GITHUB_AGENTIC_TOKEN", "agentic-token")
+    monkeypatch.setenv("AGENT_GITHUB_SOLVER_TOKEN", "solver-token")
+    configured = GitHubSettings()
+    assert configured.token == "workflow-token"
+    assert configured.solver_token == "solver-token"
+
 
 def test_scorer_good_first_issue_qualifies():
     s = IssueSignals(
@@ -126,6 +162,7 @@ def test_easy_issue_fails_closed_on_unknown_scope_and_access():
 
 # --- state store ---
 
+
 def test_state_store_json_roundtrip(tmp_path):
     store = StateStore(tmp_path)
     assert store.read_json("x.json", default={}) == {}
@@ -142,6 +179,7 @@ def test_state_store_jsonl(tmp_path):
 
 
 # --- ledger ---
+
 
 def test_ledger_blocklist_and_daily_cap(tmp_path):
     store = StateStore(tmp_path)

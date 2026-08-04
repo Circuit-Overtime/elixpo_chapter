@@ -1,18 +1,6 @@
 {
-  "activity_age_days": 19,
-  "complexity": "small",
-  "confidence": 0.85,
-  "easy": true,
-  "estimated_files": 1,
-  "issue_age_days": 26,
-  "justification": "horsicq/Detect-It-Easy#365 \u2014 score 10 (threshold 8); small scope, ~1 files, 85% confidence. The issue describes a localized change in the installation path, which can be fixed with a single edit and verified by checking the shortcut. Signals: acceptance_criterion +2, aged +1, no_assignee +2, no_maintainer_claim +2, reproducible_bug +3.",
-  "number": 365,
-  "picked": true,
-  "picked_at": "2026-08-03T18:06:38.573129+00:00",
-  "repo": "horsicq/Detect-It-Easy",
-  "score": 10,
-  "status": "picked",
-  "title": "Windows Install via Chocolatey results in unusable Shortcut",
-  "tractable": true,
-  "url": "https://github.com/horsicq/Detect-It-Easy/issues/365"
+  "evaluated_at": "2026-08-04T11:12:51.294388+00:00",
+  "picked": false,
+  "reason": "no candidate passed score, easy-work, and ledger policy",
+  "status": "no_pick"
 }

@@ -13,7 +13,7 @@
 
 ## Repository Structure
 
-- `agents/` — the squads (scout, triage, pick, comprehend, solve, submit, steward, discussions). **Independent: a squad never imports another squad.** They talk only via GitHub + `state/`. `comprehend/` is a library used by `solve/`.
+- `agents/` — the squads (scout, triage, pick, solve, submit, steward, discussions) plus reusable comprehension helpers. **Independent: a squad never imports another squad.** They talk only via GitHub + `state/`. Solve performs comprehension inside its bounded coding harness.
 - `rtk/` — the token economy over Pollinations: `router` (role→model), `budget`, `cache`, `count`, `compress`, `dedup`, `diff_context`, `retrieve`, `summarize`, `downshift`, `truncate`, `shell` (pipes runner output through the `rtk` CLI), `ledger`.
 - `lib/` — shared plumbing: `github/` (App auth + REST + `dispatch`), `tools/` (file/git/shell/grep/glob/web — publishable as our own MCP/connector later), `state/` (issues + board + json store), `scorer.py`, `config.py`.
 - `config/` — `models.yaml`, `languages.yaml`, `budgets.yaml`. `state/` — `ledger.json`, `candidates.json`, `blocklist.json`, `token_log.jsonl`. `prompts/` — squad prompt templates.
@@ -25,19 +25,27 @@
 
 - **Squad independence**: code in `agents/<x>/` may import `rtk` and `lib`, never `agents/<y>/`.
 - **No external DB**: never reach for D1/KV/Postgres. State is issues + board + `state/*.json`.
-- **Every model call goes through `rtk.Router`** — never call Pollinations directly (budget + ledger + caching depend on it).
+- **Every direct model call goes through `rtk.Router`.** The sole exception is Solve's Node coding harness, which must route through loopback CCR under Python supervision and report its returned usage into the Router budget and ledger. Never call Pollinations directly.
 - **Safety gate before any public post**: route through the `qwen-safety` role.
 - **Honest disclosure**: PRs/comments post as `elixpoo[bot]` and say they're from an autonomous contributor.
 - **Publishable design**: build tools/connectors so they can ship as a pypi/npm package later — keep modules dependency-light and interface-clean.
-- **Latest agentic techniques**: structured outputs (JSON schema tool calls), plan→implement→self-review loops, model escalation (qwen-coder-large → claude after 2 failures), retrieval over re-sending context.
+- **Latest agentic techniques**: structured outputs, bounded tool loops, repository-grounded reads before edits, deterministic post-run gates, and no whole-run retry.
+
+## Solve Safety
+
+- Vet must anticipate no more than 15 focused minutes and five files.
+- Solve uses one bounded CCR-routed `qwen-coder` tool loop followed by deterministic diff, verification, and commit gates.
+- Inject only `skills/solve-bounded-issue/SKILL.md` into the Solve harness session; never add it to the global prompt.
+- Target-repository commands use an allowlist, timeout, compressed output, and a minimal environment with no agent credentials.
+- Keep implementation commits local until checks and review pass. Submit alone pushes and opens the disclosed PR after `qwen-safety` approval.
 
 ## Git & PR Workflow
 
 - **Never commit to `main`.** It's branch-protected; use a feature branch.
-- Branch naming: `elixpo/<issue-n>-<hex>` for agent-driven changes; `feat/<slug>` / `fix/<slug>` for manual.
+- Branch naming: `feat/<issue-slug>-<n>-<hex>` for agent-driven features and `patch/<issue-slug>-<n>-<hex>` for other agent fixes; `feat/<slug>` / `fix/<slug>` for manual work.
 - Commit format: conventional — `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `ci:`.
 - PR title: `[ELIXPO] <short>` for agent PRs.
-- PR body ends with `Fixes #N` so GitHub auto-closes on merge.
+- PR body includes `Fixes #N` so GitHub auto-closes on merge, then ends with `<sub>@elixpoo</sub>`.
 
 ## Communication Style
 

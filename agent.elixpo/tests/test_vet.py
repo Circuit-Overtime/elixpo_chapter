@@ -6,9 +6,9 @@ import json
 from datetime import datetime, timezone
 
 import pytest
-from agents.vet.core import vet_issue
-from agents.vet.github import parse_issue_url, referenced_pull_requests
 from agents.vet.__main__ import _finalize_pick, _resolve_target
+from agents.vet.core import vet_issue
+from lib.github.issues import parse_issue_url, referenced_pull_requests
 from lib.state.ledger import Ledger
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
@@ -78,6 +78,8 @@ def _approved(**changes):
         "issue_kind": "standalone",
         "scope": "small",
         "estimated_files": 2,
+        "estimated_minutes": 10,
+        "estimated_solve_tokens": 200_000,
         "confidence": 0.9,
         "requirements_clear": True,
         "verification_clear": True,
@@ -225,8 +227,56 @@ async def test_sub_issue_can_pass_one_low_cost_structured_call(tmp_path):
     assert result["model_called"] is True
     assert router.calls == 1
     assert router.kwargs["effort"] == "low"
-    assert router.kwargs["max_tokens"] == 450
+    assert router.kwargs["max_tokens"] == 500
+    assert result["solve_token_budget"] == 250_000
     assert not RejectionLedger.load(store).issues
+
+
+@pytest.mark.asyncio
+async def test_vet_rejects_work_over_fifteen_minutes(tmp_path):
+    store = StateStore(tmp_path)
+    router = FakeRouter(_approved(estimated_minutes=16))
+    result = await vet_issue(router, store, "o", "r", 365, _evidence(), now=NOW)
+    assert result["suitable"] is False
+    assert "16 minutes" in " ".join(result["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_vet_rejects_multi_million_token_work(tmp_path):
+    store = StateStore(tmp_path)
+    router = FakeRouter(_approved(estimated_solve_tokens=2_000_000))
+    result = await vet_issue(router, store, "o", "r", 365, _evidence(), now=NOW)
+    assert result["suitable"] is False
+    assert "2000000 tokens" in " ".join(result["reasons"])
+    assert result["solve_token_budget"] == 0
+
+
+@pytest.mark.asyncio
+async def test_owned_test_mode_only_relaxes_assignment(tmp_path):
+    store = StateStore(tmp_path)
+    evidence = _evidence()
+    evidence["issue"]["assignees"] = [{"login": "owner"}]
+
+    blocked_router = FakeRouter(_approved())
+    blocked = await vet_issue(blocked_router, store, "o", "r", 365, evidence, now=NOW, force=True)
+    assert blocked["suitable"] is False
+    assert blocked_router.calls == 0
+
+    test_router = FakeRouter(_approved())
+    allowed = await vet_issue(
+        test_router,
+        store,
+        "o",
+        "r",
+        365,
+        evidence,
+        now=NOW,
+        force=True,
+        owned_test=True,
+    )
+    assert allowed["suitable"] is True
+    assert allowed["test_mode"] is True
+    assert test_router.calls == 1
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,4 @@
-"""Read-only GitHub evidence collection for the Vet squad."""
+"""Shared read-only GitHub issue evidence and exact-reference helpers."""
 
 from __future__ import annotations
 
@@ -31,7 +31,6 @@ async def fetch_issue_evidence(api: Fetcher, owner: str, repo: str, number: int)
         if exc.response.status_code != 404:
             raise
         parent = None
-
     search = await api._request(
         "GET",
         "/search/issues",
@@ -48,7 +47,6 @@ async def fetch_issue_evidence(api: Fetcher, owner: str, repo: str, number: int)
 
 
 def referenced_pull_requests(evidence: dict, number: int) -> list[dict]:
-    """Collect timeline PRs and exact issue references from repository PR search."""
     found: dict[str, dict] = {}
     for event in evidence.get("timeline", []):
         source = (event.get("source") or {}).get("issue") or {}
@@ -56,7 +54,6 @@ def referenced_pull_requests(evidence: dict, number: int) -> list[dict]:
             continue
         url = str(source.get("html_url") or source.get("url") or "")
         found[url or str(source.get("number"))] = source
-
     patterns = (rf"(?<!\w)#{number}(?!\d)", rf"/issues/{number}(?!\d)")
     for pull in evidence.get("pull_requests", []):
         text = f"{pull.get('title') or ''}\n{pull.get('body') or ''}"
@@ -64,3 +61,4 @@ def referenced_pull_requests(evidence: dict, number: int) -> list[dict]:
             url = str(pull.get("html_url") or pull.get("url") or "")
             found[url or str(pull.get("number"))] = pull
     return list(found.values())
+
