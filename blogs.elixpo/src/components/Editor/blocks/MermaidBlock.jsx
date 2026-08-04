@@ -6,7 +6,7 @@ import { useTheme } from '../../../context/ThemeContext';
 
 const darkConfig = {
   startOnLoad: false,
-  securityLevel: 'loose',
+  securityLevel: 'strict',
   theme: 'dark',
   themeVariables: {
     primaryColor: '#232d3f',
@@ -38,14 +38,14 @@ const darkConfig = {
     gitBranchLabel3: '#e4e4e7',
     gitInv0: '#141a26',
   },
-  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: true, useMaxWidth: false },
+  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: false, useMaxWidth: false },
   sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
   gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
 };
 
 const lightConfig = {
   startOnLoad: false,
-  securityLevel: 'loose',
+  securityLevel: 'strict',
   theme: 'default',
   themeVariables: {
     primaryColor: '#e8e0ff',
@@ -72,7 +72,7 @@ const lightConfig = {
     git6: '#db2777',
     git7: '#0d9488',
   },
-  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: true, useMaxWidth: false },
+  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: false, useMaxWidth: false },
   sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
   gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
 };
@@ -113,6 +113,7 @@ function MermaidPreview({ diagram, isDark, interactive }) {
   const containerRef = useRef(null);
   const [svgHTML, setSvgHTML] = useState('');
   const [error, setError] = useState('');
+  const [errorCopied, setErrorCopied] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const dragging = useRef(false);
@@ -231,7 +232,21 @@ function MermaidPreview({ diagram, isDark, interactive }) {
 
   if (error) {
     return (
-      <div className="mermaid-viewport mermaid-viewport--compact">
+      <div className="mermaid-viewport mermaid-viewport--compact mermaid-error-output">
+        <button
+          type="button"
+          className="mermaid-error-copy"
+          onClick={async (event) => {
+            event.stopPropagation();
+            await navigator.clipboard.writeText(error).catch(() => {});
+            setErrorCopied(true);
+            setTimeout(() => setErrorCopied(false), 1500);
+          }}
+          title="Copy Mermaid error"
+        >
+          <ion-icon name={errorCopied ? 'checkmark-outline' : 'copy-outline'} />
+          {errorCopied ? 'Copied' : 'Copy error'}
+        </button>
         <pre style={{ color: '#f87171', fontSize: '12px', whiteSpace: 'pre-wrap', padding: '16px', margin: 0 }}>{error}</pre>
       </div>
     );

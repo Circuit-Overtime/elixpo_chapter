@@ -6,6 +6,7 @@ import MarkdownPage from '../../src/components/MarkdownPage';
 export const metadata = {
   title: 'Privacy Policy',
   description: 'How LixBlogs collects, uses, and protects your data.',
+  alternates: { canonical: 'https://blogs.elixpo.com/privacy' },
 };
 
 export default function PrivacyPage() {

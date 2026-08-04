@@ -16,6 +16,7 @@ import FollowListModal from '../components/FollowListModal';
 import BlogInviteOverlay from '../components/BlogInviteOverlay';
 import { CreatorBadgeStrip } from '../components/CreatorBadge';
 import { STAFF_ORG_ID } from '../../lib/staff';
+import { normalizeImageUrl, normalizeUrl } from '../utils/linkHelper';
 import '../styles/editor/editor.css';
 import '../styles/katex-fonts.css';
 
@@ -26,6 +27,13 @@ const BlogPreview = dynamic(() => import('../components/Editor/BlogPreview'), { 
 function formatUtcDate(value, options = {}) {
   const date = value instanceof Date ? value : new Date(value * 1000);
   return new Intl.DateTimeFormat('en-US', { ...options, timeZone: 'UTC' }).format(date);
+}
+
+function publicBlogHref(blog, fallbackUsername = '') {
+  if (blog?.published_as?.startsWith('org:') && blog.org_slug) {
+    return `/${blog.org_slug}${blog.collection_slug ? `/${blog.collection_slug}` : ''}/${blog.slug}`;
+  }
+  return `/${blog?.author_username || fallbackUsername}/${blog?.slug}`;
 }
 
 function StaticInline({ content = [] }) {
@@ -40,7 +48,10 @@ function StaticInline({ content = [] }) {
     if (styles.underline) node = <u>{node}</u>;
     if (styles.strike) node = <s>{node}</s>;
     if (styles.code) node = <code>{node}</code>;
-    if (item?.type === 'link' && item.href) node = <a href={item.href} rel="nofollow ugc">{item.content ? <StaticInline content={item.content} /> : node}</a>;
+    if (item?.type === 'link' && item.href) {
+      const href = normalizeUrl(item.href);
+      if (href) node = <a href={href} rel="nofollow ugc noopener noreferrer">{item.content ? <StaticInline content={item.content} /> : node}</a>;
+    }
     return <span key={index}>{node}</span>;
   });
 }
@@ -61,7 +72,10 @@ function StaticBlocks({ blocks = [] }) {
       case 'checkListItem': return <p key={key}>□ {inline}{children}</p>;
       case 'quote': return <blockquote key={key}>{inline}{children}</blockquote>;
       case 'codeBlock': return <pre key={key}><code>{(block.content || []).map(item => item.text || '').join('')}</code></pre>;
-      case 'image': return block.props?.url ? <figure key={key}><img src={block.props.url} alt={block.props.caption || block.props.name || ''} loading="lazy" />{block.props.caption && <figcaption>{block.props.caption}</figcaption>}</figure> : null;
+      case 'image': {
+        const src = normalizeImageUrl(block.props?.url);
+        return src ? <figure key={key}><img src={src} alt={block.props.caption || block.props.name || ''} loading="lazy" />{block.props.caption && <figcaption>{block.props.caption}</figcaption>}</figure> : null;
+      }
       case 'mermaidBlock': return <pre key={key}><code>{block.props?.diagram || ''}</code></pre>;
       case 'blockEquation': return <p key={key}>{block.props?.latex || ''}</p>;
       default: return <p key={key}>{inline}{children}</p>;
@@ -80,7 +94,12 @@ function CrawlableArticle({ blog, blocks, owner }) {
         <h1 className="text-4xl sm:text-5xl font-bold leading-tight" itemProp="headline">{blog.title || 'Untitled'}</h1>
         {blog.subtitle && <p className="text-xl mt-4" style={{ color: 'var(--text-muted)' }} itemProp="description">{blog.subtitle}</p>}
         <p className="mt-5 text-sm" style={{ color: 'var(--text-faint)' }}>By <span itemProp="author">{author}</span>{blog.published_at ? ` · ${formatUtcDate(blog.published_at, { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}</p>
-        {!!blog.tags?.length && <p className="mt-3 text-sm" style={{ color: 'var(--text-faint)' }}>Topics: {blog.tags.join(', ')}</p>}
+        {!!blog.tags?.length && (
+          <p className="mt-3 flex flex-wrap items-center gap-2 text-sm" style={{ color: 'var(--text-faint)' }}>
+            <span>Topics:</span>
+            {blog.tags.map((tag) => <Link key={tag} href={`/tag/${encodeURIComponent(tag)}`} rel="tag" className="hover:text-[#9b7bf7]">#{tag}</Link>)}
+          </p>
+        )}
       </header>
       <div className="blog-preview-content max-w-none" itemProp="articleBody"><StaticBlocks blocks={blocks} /></div>
     </article>
@@ -358,7 +377,7 @@ function HandlePageInner({ path, initialData = null }) {
           {blogs.length > 0 ? (
             <div>
               {blogs.map(b => (
-                <Link key={b.id} href={`/${b.author_username}/${b.slug}`}>
+                <Link key={b.id} href={publicBlogHref(b)}>
                   <article className="group flex gap-5 py-6 cursor-pointer" style={{ borderBottom: '1px solid var(--divider)' }}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
@@ -591,7 +610,7 @@ function HandlePageInner({ path, initialData = null }) {
           {(data.blogs || []).length > 0 ? (
             <div className="space-y-2.5">
               {data.blogs.map(b => (
-                <Link key={b.id} href={`/${b.author_username || u.username}/${b.slug}`}
+                <Link key={b.id} href={publicBlogHref(b, u.username)}
                   className="block p-4 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl hover:border-[var(--border-default)] transition-colors group">
                   <div className="flex items-start gap-3">
                     {b.cover_image_r2_key && (
@@ -886,7 +905,7 @@ function HandlePageInner({ path, initialData = null }) {
                 {blogs.map(b => (
                   <Link
                     key={b.id}
-                    href={`/${org.slug}/${b.slug}`}
+                    href={`/${org.slug}${b.collection_slug ? `/${b.collection_slug}` : ''}/${b.slug}`}
                     className="block p-4 bg-[var(--card-bg)] border border-[var(--border-default)] rounded-xl hover:border-[var(--border-default)] transition-colors group"
                   >
                     <div className="flex items-start gap-3">
