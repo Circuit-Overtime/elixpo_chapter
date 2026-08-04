@@ -6,7 +6,7 @@ import { useTheme } from '../../../context/ThemeContext';
 
 const darkConfig = {
   startOnLoad: false,
-  securityLevel: 'loose',
+  securityLevel: 'strict',
   theme: 'dark',
   themeVariables: {
     primaryColor: '#232d3f',
@@ -38,14 +38,14 @@ const darkConfig = {
     gitBranchLabel3: '#e4e4e7',
     gitInv0: '#141a26',
   },
-  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: true, useMaxWidth: false },
+  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: false, useMaxWidth: false },
   sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
   gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
 };
 
 const lightConfig = {
   startOnLoad: false,
-  securityLevel: 'loose',
+  securityLevel: 'strict',
   theme: 'default',
   themeVariables: {
     primaryColor: '#e8e0ff',
@@ -72,7 +72,7 @@ const lightConfig = {
     git6: '#db2777',
     git7: '#0d9488',
   },
-  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: true, useMaxWidth: false },
+  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: false, useMaxWidth: false },
   sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
   gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
 };

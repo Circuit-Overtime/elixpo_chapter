@@ -1,5 +1,6 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
+import { safeRelativeRedirect } from '../../../../lib/safeRedirect';
 
 // Server-initiated OAuth login. Generates the CSRF `state`, sets it in an
 // httpOnly cookie (so client JS can't forge it), and redirects to the
@@ -10,8 +11,7 @@ export async function GET(request) {
   const origin = url.origin;
 
   // Post-login redirect target — only same-site relative paths allowed (no open redirect).
-  const next = url.searchParams.get('next') || '';
-  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '';
+  const safeNext = safeRelativeRedirect(url.searchParams.get('next'));
 
   const params = new URLSearchParams({
     response_type: 'code',

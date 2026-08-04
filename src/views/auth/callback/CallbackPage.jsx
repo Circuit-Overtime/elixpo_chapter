@@ -6,7 +6,7 @@ export default function CallbackPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('error')) {
-      window.location.href = '/sign-in?error=' + params.get('error');
+      window.location.href = '/auth-error?code=' + encodeURIComponent(params.get('error'));
     }
   }, []);
 
