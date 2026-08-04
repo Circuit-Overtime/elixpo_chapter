@@ -1,13 +1,13 @@
 {
   "base_branch": "main",
-  "branch": "patch/patch-in-the-pricing-route-show-the-copy-ema-11-89ff",
+  "branch": "patch/patch-in-the-pricing-route-show-the-copy-ema-11-5347",
   "cleanup": {
     "owner": "janitor",
     "resources": [
       {
         "disposition": "remove_after_terminal_decision",
         "kind": "workspace",
-        "locator": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-11-c69564",
+        "locator": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-11-a354cd",
         "safe_root": "/tmp/elixpoo-workspaces"
       },
       {
@@ -22,15 +22,15 @@
     "decision": null,
     "status": "pending"
   },
-  "elapsed_seconds": 26.406,
-  "error": "local CCR remained healthy, but its upstream model route refused 3 zero-token requests",
-  "failed_at": "2026-08-04T07:22:11.382839+00:00",
+  "elapsed_seconds": 132.146,
+  "error": "coding harness result was not structured JSON: Expecting value: line 1 column 1 (char 0)",
+  "failed_at": "2026-08-04T08:55:55.137221+00:00",
   "failure": {
-    "candidate_action": "retry_later",
-    "category": "provider_transient",
+    "candidate_action": "retry_once_with_stricter_output",
+    "category": "model_output",
     "exception_type": "HarnessError",
-    "message": "local CCR remained healthy, but its upstream model route refused 3 zero-token requests",
-    "occurred_at": "2026-08-04T07:22:11.382839+00:00",
+    "message": "coding harness result was not structured JSON: Expecting value: line 1 column 1 (char 0)",
+    "occurred_at": "2026-08-04T08:55:55.137221+00:00",
     "retryable": true,
     "schema_version": 1,
     "stage": "harness"
@@ -39,11 +39,11 @@
   "issue_url": "https://github.com/elixpo/lixrl.com/issues/11",
   "key": "elixpo/lixrl.com#11",
   "stage": "harness",
-  "started_at": "2026-08-04T07:21:50.860945+00:00",
+  "started_at": "2026-08-04T08:53:47.789880+00:00",
   "status": "doctor_pending",
   "test_mode": true,
   "token_limit": 750000,
-  "token_spent": 0,
+  "token_spent": 85072,
   "upstream_repo": "elixpo/lixrl.com",
-  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-11-c69564"
+  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-11-a354cd"
 }

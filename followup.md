@@ -11,3 +11,5 @@ make a detailed issue on this which we will handle after the solver is done
 
 
 the discussion agent shall also be looking at @elixpoo tags in the replies (check if this is wired up)
+
+also the agentic systems are hitting a hard wall of 32 turns we can fix that too https://github.com/elixpo/blogs.elixpo/actions/runs/30892976476/job/91939167118 
