@@ -46,11 +46,19 @@ usage through RTK, validate the diff, run checks, and commit. Local terminal and
 GitHub Actions runs must use this same path; Actions only supplies the runner.
 
 Route the session through CCR to `qwen-coder`. When the pinned RTK CLI is
-available, prefer its compact `ls`, `find`, `grep`, `read`, and `smart` commands
+available, prefer its compact `find`, `grep`, `read`, and `smart` commands
 for discovery, then use built-in `Read` only for exact edit context. Expose Bash
 only for those explicit `rtk` prefixes; never permit arbitrary `rtk *`, raw shell,
 git, network, test, or build commands. Without RTK, fall back to bounded built-in
 `Glob`, `Grep`, and `Read`. Keep `Edit` and `Write` available in both modes.
+
+Run the coding CLI in bare mode. Cap built-in reads at 1,800 output tokens,
+provider retries at two, read-only tool concurrency at three, and the complete
+session at twelve turns. When RTK is available, spend no more than six discovery
+calls: find guidance/manifests, grep for relevant symbols, and read only likely
+targets. Do not inventory the repository, repeat an unchanged query, or keep
+searching after the implementation path is known. Reserve the final turns for
+the edit, exact re-read, self-review, and structured outcome.
 
 Remove web, subagents, MCP,
 session persistence, user customizations, and nonessential traffic. Strip

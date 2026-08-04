@@ -17,8 +17,11 @@ command_timeout_seconds: 180
 
 # Python supervises these Node processes for both local and Actions runs.
 harness_model: qwen-coder
-harness_max_turns: 10
+harness_max_turns: 12
 harness_max_output_tokens: 1600
+harness_file_read_max_output_tokens: 1800
+harness_max_retries: 2
+harness_tool_use_concurrency: 3
 harness_context_max_chars: 48000
 harness_tool_result_max_chars: 6000
 harness_stale_tool_result_chars: 800

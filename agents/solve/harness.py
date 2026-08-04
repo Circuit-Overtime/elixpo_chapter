@@ -104,8 +104,9 @@ def _configure_ccr(policy: dict[str, Any]) -> dict[str, str]:
     return env
 
 
-def _harness_env(model: str) -> dict[str, str]:
+def _harness_env(model: str, policy: dict[str, Any] | None = None) -> dict[str, str]:
     """Expose only runtime basics and the local CCR credential to target code."""
+    policy = policy or {}
     keep = {
         "PATH",
         "HOME",
@@ -134,6 +135,13 @@ def _harness_env(model: str) -> dict[str, str]:
             "DISABLE_COST_WARNINGS": "1",
             "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
             "CLAUDE_CODE_SKIP_PROMPT_HISTORY": "1",
+            "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": str(
+                int(policy.get("harness_file_read_max_output_tokens", 1800))
+            ),
+            "CLAUDE_CODE_MAX_RETRIES": str(int(policy.get("harness_max_retries", 2))),
+            "CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY": str(
+                int(policy.get("harness_tool_use_concurrency", 3))
+            ),
             "RTK_TELEMETRY_DISABLED": "1",
         }
     )
@@ -185,7 +193,7 @@ def _render_harness_event(event: dict[str, Any]) -> None:
                 target = next(
                     (
                         str(tool_input[key])
-                        for key in ("file_path", "path", "pattern")
+                        for key in ("file_path", "path", "pattern", "command")
                         if tool_input.get(key)
                     ),
                     "",
@@ -305,9 +313,11 @@ def _stream_harness(
 
 def _prompt(issue: dict[str, Any], policy: dict[str, Any], *, rtk_available: bool) -> str:
     discovery = (
-        "RTK is available. For discovery, use Bash only as `rtk ls`, `rtk find`, `rtk grep`, "
-        "`rtk read`, or `rtk smart`; never run a raw shell command. Use built-in Read only for "
-        "the exact implementation area after RTK identifies the target."
+        "RTK is available. Spend at most six discovery calls total: locate guidance and manifests "
+        "with `rtk find`, locate symbols with `rtk grep`, and inspect only likely targets with "
+        "`rtk read` or `rtk smart`. Do not inventory the repository, repeat an unchanged call, or "
+        "continue searching after the implementation path is known. Never run a raw shell command. "
+        "Use built-in Read only for the exact implementation area immediately before editing."
         if rtk_available
         else "RTK is unavailable. Use targeted Glob, Grep, and Read calls and avoid repeated reads."
     )
@@ -364,8 +374,15 @@ def _parse_cli_result(stdout: str) -> tuple[HarnessOutcome, Usage, dict[str, Any
         "session_id": envelope.get("session_id"),
         "turns": int(envelope.get("num_turns") or 0),
         "duration_ms": int(envelope.get("duration_ms") or 0),
+        "terminal_subtype": envelope.get("subtype"),
     }
     if envelope.get("is_error") is True or envelope.get("subtype") in {"error", "error_max_turns"}:
+        if envelope.get("subtype") == "error_max_turns":
+            raise HarnessError(
+                f"coding harness reached its {metadata['turns']}-turn limit before self-review",
+                usage=usage,
+                metadata=metadata,
+            )
         message = str(envelope.get("result") or envelope.get("error") or "coding harness failed")[:1800]
         status = envelope.get("api_error_status")
         prefix = f"coding harness API error {status}: " if status else "coding harness failed: "
@@ -403,7 +420,7 @@ def _harness_command(
     schema = json.dumps(HarnessOutcome.model_json_schema(), separators=(",", ":"))
     tools = "Read,Edit,Write,Bash" if rtk_available else "Read,Glob,Grep,Edit,Write,Find"
     allowed = (
-        "Read,Edit,Write,Bash(rtk ls *),Bash(rtk find *),Bash(rtk grep *),"
+        "Read,Edit,Write,Bash(rtk find *),Bash(rtk grep *),"
         "Bash(rtk read *),Bash(rtk smart *)"
         if rtk_available
         else tools
@@ -416,6 +433,7 @@ def _harness_command(
         )
     return _node_command(
         _HARNESS_PACKAGE,
+        "--bare",
         "-p",
         "--output-format",
         "stream-json",
@@ -491,7 +509,7 @@ def run_harness(
         final_event, return_code, stderr = _stream_harness(
             command,
             workspace=workspace,
-            env=_harness_env(model),
+            env=_harness_env(model, policy),
             prompt=_prompt(issue, policy, rtk_available=rtk_available),
             timeout=timeout,
         )

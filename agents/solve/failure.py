@@ -9,12 +9,12 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from lib.workspace import WorkspaceError
+from rtk.budget import BudgetExceeded
 
 from agents.solve.edit import EditRejected
 from agents.solve.harness import HarnessError
 from agents.solve.verification_plan import VerificationPlanError
-from lib.workspace import WorkspaceError
-from rtk.budget import BudgetExceeded
 
 
 def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
@@ -25,7 +25,9 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
     retryable = False
     candidate_action = "inspect"
 
-    if (
+    if "turn limit before self-review" in lowered:
+        category, retryable, candidate_action = "turn_limit", True, "reduce_discovery_then_retry_once"
+    elif (
         isinstance(exc, (asyncio.TimeoutError, subprocess.TimeoutExpired, TimeoutError))
         or "wall-time limit" in lowered
         or "harness exceeded" in lowered

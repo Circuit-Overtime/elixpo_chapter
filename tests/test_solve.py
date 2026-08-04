@@ -177,6 +177,9 @@ def test_harness_environment_excludes_agent_credentials(monkeypatch):
     assert env["ANTHROPIC_API_KEY"] == "ccr-pollinations"
     assert "ANTHROPIC_AUTH_TOKEN" not in env
     assert env["RTK_TELEMETRY_DISABLED"] == "1"
+    assert env["CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS"] == "1800"
+    assert env["CLAUDE_CODE_MAX_RETRIES"] == "2"
+    assert env["CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY"] == "3"
 
 
 def test_harness_result_parses_structured_output_and_usage():
@@ -206,7 +209,12 @@ def test_harness_result_parses_structured_output_and_usage():
     assert outcome.solvable is True
     assert usage.total_tokens == 1600
     assert usage.cached_tokens == 400
-    assert metadata == {"session_id": "session-1", "turns": 6, "duration_ms": 12000}
+    assert metadata == {
+        "session_id": "session-1",
+        "turns": 6,
+        "duration_ms": 12000,
+        "terminal_subtype": "success",
+    }
 
 
 def test_harness_replaces_generic_system_prompt(monkeypatch):
@@ -223,6 +231,7 @@ def test_harness_replaces_generic_system_prompt(monkeypatch):
 
     assert "--system-prompt-file" in command
     assert "--append-system-prompt-file" not in command
+    assert "--bare" in command
     assert command[command.index("--max-turns") + 1] == "10"
 
 
@@ -241,6 +250,7 @@ def test_harness_confines_rtk_shell_discovery(monkeypatch):
     assert "Bash(rtk read *)" in allowed
     assert "Bash(rtk grep *)" in allowed
     assert "Bash(rtk *)" not in allowed
+    assert "Bash(rtk ls *)" not in allowed
     assert "Bash(curl *)" in denied
     assert "Bash(git *)" in denied
 
@@ -353,6 +363,28 @@ def test_harness_auth_error_is_concise_and_classified():
         assert classify_failure(exc, "harness")["category"] == "credentials"
     else:
         raise AssertionError("harness authentication error passed")
+
+
+def test_harness_turn_limit_is_actionable_and_preserves_usage():
+    envelope = {
+        "type": "result",
+        "subtype": "error_max_turns",
+        "is_error": True,
+        "result": "coding harness failed",
+        "num_turns": 13,
+        "usage": {"input_tokens": 1000, "output_tokens": 200},
+    }
+
+    with pytest.raises(HarnessError) as caught:
+        _parse_cli_result(json.dumps(envelope))
+
+    error = caught.value
+    assert str(error) == "coding harness reached its 13-turn limit before self-review"
+    assert error.usage is not None and error.usage.total_tokens == 1200
+    assert error.metadata["terminal_subtype"] == "error_max_turns"
+    failure = classify_failure(error, "harness")
+    assert failure["category"] == "turn_limit"
+    assert failure["candidate_action"] == "reduce_discovery_then_retry_once"
 
 
 def test_harness_events_render_progress_without_tool_output(capsys):
