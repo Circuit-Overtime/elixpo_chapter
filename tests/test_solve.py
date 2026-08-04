@@ -427,6 +427,9 @@ def test_prompt_keeps_ranked_candidates_advisory():
     assert "with file_path only and no pages argument" in rendered
     assert "Repository evidence" in rendered
     assert "do not decline merely because" in rendered
+    assert "Operate without progress narration" in rendered
+    assert "Edit immediately" in rendered
+    assert "finish by calling StructuredOutput" in rendered
     assert "next command must be exactly" not in rendered
 
 
@@ -621,6 +624,24 @@ def test_harness_turn_limit_is_actionable_and_preserves_usage():
     failure = classify_failure(error, "harness")
     assert failure["category"] == "turn_limit"
     assert failure["candidate_action"] == "reduce_discovery_then_retry_once"
+
+
+def test_unstructured_harness_result_preserves_usage_for_doctor():
+    envelope = {
+        "type": "result",
+        "subtype": "success",
+        "is_error": False,
+        "result": "Let me inspect another file.",
+        "num_turns": 10,
+        "usage": {"input_tokens": 73069, "output_tokens": 1918},
+    }
+
+    with pytest.raises(HarnessError) as caught:
+        _parse_cli_result(json.dumps(envelope))
+
+    error = caught.value
+    assert error.usage is not None and error.usage.total_tokens == 74987
+    assert error.metadata["turns"] == 10
 
 
 def test_exhausted_evidence_budget_requests_context_refresh():

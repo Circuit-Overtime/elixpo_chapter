@@ -119,7 +119,10 @@ but exposes one acceptance-criteria gap, permit one supporting `rtk read` instea
 Two source reads after the bundle is the complete pre-edit limit. Permit one
 candidate-directory grep only when every bundled excerpt lacks actionable
 evidence. Never use find, repository-wide grep, tool help, repeated queries, a
-third candidate read, or another model call for retrieval.
+third candidate read, or another model call for retrieval. Do not reread a
+supporting/reference component when its bundled excerpt already exposes the
+needed behavior. Once a built-in target Read confirms the implementation path,
+Edit immediately; a different offset does not make a repeated path read valid.
 
 Guidance files occupy guidance slots only and must never consume ranked source
 slots a second time. Resolve a uniquely named bare file from issue text to its
@@ -200,6 +203,11 @@ Require one validated structured outcome containing:
 - at most one allowlisted setup command;
 - allowlisted verification commands;
 - one conventional commit message.
+
+The harness must terminate through StructuredOutput, including when it declines
+the issue. It must never end on prose, a progress statement, a promise to inspect
+another file, or an empty response. If its evidence budget is exhausted, return
+`solvable=false` through StructuredOutput rather than spending more tool calls.
 
 Prefer a model-selected verification command, but do not discard a completed
 edit when that optional field is omitted. Infer a fallback deterministically
