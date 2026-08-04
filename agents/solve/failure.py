@@ -88,6 +88,7 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
         "unretrieved existing file" in lowered
         or "coding model declined" in lowered
         or "source-read budget" in lowered
+        or "insufficient evidence" in lowered
         or ("bounded evidence" in lowered and "ungrounded" in lowered)
         or ("permission restrictions" in lowered and "implementation files" in lowered)
         or ("cannot identify" in lowered and "files" in lowered)

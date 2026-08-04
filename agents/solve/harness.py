@@ -563,6 +563,7 @@ def _candidate_read_offsets(bundle_text: str, issue: dict[str, Any], candidates:
         if token.casefold() not in {"that", "this", "with", "from", "should", "route", "page"}
     }
     offsets: dict[str, int] = {}
+    action_terms = {"add", "change", "click", "copy", "create", "delete", "render", "submit", "update", "write"}
     for path in candidates:
         marker = f"CANDIDATE {path}:\n"
         start = bundle_text.find(marker)
@@ -582,6 +583,7 @@ def _candidate_read_offsets(bundle_text: str, issue: dict[str, Any], candidates:
             excerpts,
             key=lambda match: (
                 sum(term in match.group(2).casefold() for term in issue_terms),
+                sum(term in match.group(2).casefold() for term in issue_terms & action_terms),
                 -int(match.group(1)),
             ),
         )
@@ -688,11 +690,11 @@ If the issue cannot be solved safely within the limits, make no edits and return
 
 Operate without progress narration. Use this bounded sequence and then stop:
 1. Read `.elixpo-context/context.md` exactly once with `rtk read` when RTK is available.
-2. Read one printed relative candidate path with built-in Read. A bundled excerpt is sufficient evidence for a
-   supporting/reference component; do not open that component merely to copy its style.
+2. Read one printed relative candidate path for the implementation with built-in Read. If its edit requires an existing
+   behavior shown only partially in the bundle, permit one distinct supporting/reference candidate Read.
 3. If the target confirms the behavior, Edit immediately. Never Read the same path again before Edit,
-   including with a different offset or tool. Use the single fallback/supporting read only when the target
-   genuinely lacks one fact required for the edit.
+   including with a different offset or tool. When the target exposes the insertion point and the supporting
+   candidate exposes the equivalent behavior, that is sufficient evidence: implement instead of declining.
 4. Re-read only the changed area once, choose verification commands, and call StructuredOutput.
 You must finish by calling StructuredOutput. Never finish with prose, a plan, a promise to inspect another
 file, or an empty response. If the bounded evidence is insufficient, call StructuredOutput with

@@ -262,8 +262,16 @@ def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
     assert code == 2 and output is None
     assert "already read" in reason
 
+    footer = tmp_path / "app/components/Footer.tsx"
+    footer.parent.mkdir(parents=True, exist_ok=True)
+    footer.write_text("copy")
     second = {**event, "tool_input": {"file_path": "app/components/Footer.tsx"}}
     code, output, reason = _decision(second, state)
+    assert code == 0 and output is None and reason is None
+    third = {**event, "tool_input": {"file_path": "app/components/Navbar.tsx"}}
+    navbar = tmp_path / "app/components/Navbar.tsx"
+    navbar.write_text("nav")
+    code, output, reason = _decision(third, state)
     assert code == 2 and output is None
     assert "budget is exhausted" in reason
 
@@ -532,6 +540,26 @@ navigator.clipboard.writeText(EMAIL)
     )
 
     assert offsets == {"app/pricing/page.tsx": 287, "app/components/Footer.tsx": 70}
+
+
+def test_candidate_read_offset_prefers_action_excerpt_on_score_tie():
+    rendered = """CANDIDATE app/components/Footer.tsx:
+// lines 2-12
+const EMAIL = 'hello@example.com';
+
+// ...
+
+// lines 77-87
+function handleCopyEmail() { navigator.clipboard.writeText(EMAIL); }
+"""
+
+    offsets = _candidate_read_offsets(
+        rendered,
+        {"title": "Show copy email chip", "body": "hello@example.com"},
+        ["app/components/Footer.tsx"],
+    )
+
+    assert offsets["app/components/Footer.tsx"] == 77
 
 
 def test_deterministic_outcome_derives_bounded_metadata():

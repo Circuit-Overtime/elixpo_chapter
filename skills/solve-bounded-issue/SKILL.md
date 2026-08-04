@@ -120,12 +120,13 @@ and choose one candidate containing concrete implementation evidence; rank one
 and issue-mentioned paths are priors, never forced targets. Require one bounded
 built-in Read of the chosen edit target because the coding CLI will reject Edit
 without it. Strip the PDF-only `pages` property from Read's provider-facing tool
-schema so text reads cannot emit an invalid empty value. Freeze built-in source
-discovery after the first model-selected candidate Read; bundled excerpts remain
-available for comparison and one supporting `rtk read` may fill an
-acceptance-criteria gap. If that grounded target is disproved, decline cheaply
-rather than restarting discovery inside Solve. One source Read after the bundle
-is the complete pre-edit limit. Permit one
+schema so text reads cannot emit an invalid empty value. Permit the
+model-selected implementation candidate and at most one distinct supporting or
+fallback candidate. Deny every repeated path regardless of offset or tool. If
+the target exposes the insertion point and the supporting candidate exposes the
+equivalent behavior, treat that as sufficient evidence and implement rather
+than restarting discovery. Two distinct source Reads after the bundle are the
+complete pre-edit limit. Permit one
 candidate-directory grep only when every bundled excerpt lacks actionable
 evidence. Never use find, repository-wide grep, tool help, repeated queries, a
 third candidate read, or another model call for retrieval. Do not reread a

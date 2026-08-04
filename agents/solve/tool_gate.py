@@ -107,7 +107,7 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
             edited = set(state.get("edited_paths") or [])
             key = "review_reads" if relative in edited else "source_reads"
             reads = list(state.get(key) or [])
-            limit = len(edited) if key == "review_reads" else 1
+            limit = len(edited) if key == "review_reads" else 2
             if relative in reads:
                 return 2, None, "This path was already read. Do not continue it; Edit now or call StructuredOutput."
             if len(reads) >= max(1, limit):
