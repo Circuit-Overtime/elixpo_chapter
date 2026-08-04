@@ -241,17 +241,57 @@
 }
 .inline-button-chip:hover { background: #b69aff; }
 
-/* Cover gradient blur placeholder */
+/* Cover source chooser — themed, low-saturation surface */
 .cover-gradient-blur {
-  background: linear-gradient(
-    135deg,
-    rgba(155, 123, 247, 0.4) 0%,
-    rgba(96, 165, 250, 0.35) 25%,
-    rgba(244, 114, 182, 0.3) 50%,
-    rgba(52, 211, 153, 0.3) 75%,
-    rgba(251, 191, 36, 0.3) 100%
-  );
-  filter: blur(40px) saturate(1.5);
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 42%),
+    radial-gradient(circle at 82% 76%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 48%),
+    linear-gradient(135deg, var(--bg-elevated), var(--bg-surface));
+}
+
+.cover-source-option { color: var(--text-muted); }
+
+.cover-source-icon {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-default);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  color: var(--text-primary);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text-primary) 7%, transparent);
+  backdrop-filter: blur(12px);
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.cover-source-option:hover .cover-source-icon,
+.cover-source-option:focus-visible .cover-source-icon {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-default));
+  background: var(--bg-surface);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.cover-source-label {
+  color: var(--text-muted);
+  transition: color 0.18s ease;
+}
+
+.cover-source-option:hover .cover-source-label,
+.cover-source-option:focus-visible .cover-source-label { color: var(--text-primary); }
+
+.cover-source-close {
+  border: 1px solid var(--border-default);
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  color: var(--text-muted);
+  backdrop-filter: blur(12px);
+}
+
+.cover-source-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface);
 }
 
 /* Cover banner slide-in animation */

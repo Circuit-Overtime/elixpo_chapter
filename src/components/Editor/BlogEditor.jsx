@@ -35,6 +35,7 @@ import { OrgMentionInline } from './blocks/OrgMentionInline';
 import { InlineButton } from './blocks/InlineButton';
 import { normalizeUrl } from '../../utils/linkHelper';
 import { createMediaUploadId, enqueueMediaUpload } from '../../utils/mediaUploadQueue';
+import { extractMermaidFences } from '../../utils/markdownMermaid';
 
 // AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
 // are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
@@ -872,7 +873,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, []);
+  }, [editor]);
 
   const sanitizedContent = useMemo(() => sanitizeInitialContent(initialContent), [initialContent]);
 
@@ -1278,9 +1279,6 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       return false;
     }
 
-    // Track whether Ctrl+A just selected all text inside a code block
-    let codeBlockAllSelected = false;
-
     function handleKeyDown(e) {
       const isEditorFocused = editorEl.contains(document.activeElement) || editorEl === document.activeElement;
       if (!isEditorFocused) return;
@@ -1290,25 +1288,17 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
 
       // Ctrl+A inside a code block → select all text in that code block
       if (e.key === 'a' && (e.ctrlKey || e.metaKey) && block?.type === 'codeBlock') {
-        // Let the browser select all text inside the contenteditable code area
-        // Mark that next Backspace should delete the whole block
-        codeBlockAllSelected = true;
-        // Don't prevent — let browser select the text naturally
-        return;
-      }
-
-      // Backspace after Ctrl+A selected a code block → delete the entire block
-      if (e.key === 'Backspace' && codeBlockAllSelected && block?.type === 'codeBlock') {
+        const blockElement = wrapperRef.current?.querySelector(`[data-id="${CSS.escape(block.id)}"] [data-content-type="codeBlock"]`);
+        const editable = blockElement?.querySelector('[contenteditable="true"]');
+        if (!editable) return;
         e.preventDefault();
         e.stopPropagation();
-        codeBlockAllSelected = false;
-        try { editor.removeBlocks([block.id]); } catch {}
+        const range = document.createRange();
+        range.selectNodeContents(editable);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
         return;
-      }
-
-      // Any other key resets the flag
-      if (e.key !== 'a' && e.key !== 'Control' && e.key !== 'Meta' && e.key !== 'Shift') {
-        codeBlockAllSelected = false;
       }
 
       // Ctrl+Enter inside a code block → exit to a new paragraph below
@@ -1520,12 +1510,9 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
             try {
               // Pre-process: extract mermaid fenced blocks before BlockNote parses
               // Use placeholder format without double underscores (markdown interprets __ as bold)
-              const mermaidBlocks = [];
-              let processed = textData.replace(/```mermaid\n([\s\S]*?)```/g, (_, diagram) => {
-                const placeholder = `MERMAIDPLACEHOLDER${mermaidBlocks.length}END`;
-                mermaidBlocks.push(diagram.trim());
-                return placeholder;
-              });
+              const extractedMermaid = extractMermaidFences(textData);
+              const mermaidBlocks = extractedMermaid.diagrams;
+              let processed = extractedMermaid.content;
 
               // Pre-process: extract block LaTeX \[...\]
               const blockLatex = [];
@@ -1776,16 +1763,15 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
       }
       block.style.position = 'relative';
 
-      // Language label — clickable to change language
-      if (!block.querySelector('.code-lang-label')) {
-        const blockEl = block.closest('[data-id]');
-        const blockId = blockEl?.getAttribute('data-id');
-        const langEl = block.querySelector('[data-language]');
-        const lang = langEl?.getAttribute('data-language') || 'text';
+      // Language label — always visible and clickable in edit mode.
+      const blockEl = block.closest('[data-id]');
+      const blockId = blockEl?.getAttribute('data-id');
+      const lang = (blockId && editor.getBlock(blockId)?.props?.language) || 'text';
+      let label = block.querySelector('.code-lang-label');
+      if (!label) {
 
-        const label = document.createElement('button');
+        label = document.createElement('button');
         label.className = 'code-lang-label';
-        label.textContent = lang || 'text';
         label.title = 'Click to change language';
         label.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
         label.onclick = (e) => {
@@ -1830,6 +1816,7 @@ const BlogEditor = forwardRef(function BlogEditor({ onChange, initialContent, on
         };
         block.appendChild(label);
       }
+      label.textContent = lang || 'text';
 
       // Copy button
       if (!block.querySelector('.code-copy-btn')) {
