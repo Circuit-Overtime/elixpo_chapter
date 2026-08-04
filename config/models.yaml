@@ -32,8 +32,8 @@ roles:
   # self-review of diffs — sharp critic
   review:        { model: qwen-coder }                 # reuse coder context; one compact diff review
 
-  # natural prose: PR bodies, commit messages
-  prose:         { model: mistral }                    # free
+  # bounded natural prose: short PR footer/persona lines
+  prose:         { model: nova-fast }                  # cheapest general text route
 
   # steward replies — conversational follow-ups + tool use
   steward:       { model: kimi }                       # free
