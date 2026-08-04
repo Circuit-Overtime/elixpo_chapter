@@ -76,7 +76,7 @@ def build_pr_title(solve_state: dict) -> str:
     return f"[{tag}]:- {subject[0].upper()}{subject[1:]}"
 
 
-def build_pr_body(solve_state: dict, punch_line: str) -> str:
+def build_pr_body(solve_state: dict, punch_line: str | None) -> str:
     files = [str(path) for path in solve_state.get("target_files", [])]
     checks = solve_state.get("checks", [])
     file_list = ", ".join(f"`{path}`" for path in files)
@@ -93,13 +93,15 @@ def build_pr_body(solve_state: dict, punch_line: str) -> str:
     if check_list:
         details.append(f"Verified with {check_list}.")
     technical_line = " ".join(details)
-    return (
+    body = (
         f"{summary}\n\n"
         f"{technical_line}\n\n"
         "Opened by elixpoo, an autonomous contributor.\n\n"
-        f"Fixes #{number}\n\n"
-        f"<sub>“{punch_line}” — @elixpoo</sub>"
+        f"Fixes #{number}"
     )
+    if punch_line:
+        body += f"\n\n<sub>“{punch_line}” — @elixpoo</sub>"
+    return body
 
 
 def _clean_punch_line(raw: str) -> str:
@@ -112,57 +114,77 @@ def _clean_punch_line(raw: str) -> str:
     if any(marker in line for marker in ("<", ">", "`", "[", "]")):
         raise SubmitRejected("repository punch line contains unsupported Markdown")
     words = line.split()
-    line = " ".join(words[:14])[:140].rstrip(" ,;:-")
+    words = words[:14]
+    trailing_connectors = {"a", "an", "and", "at", "by", "for", "in", "of", "on", "or", "the", "to", "with"}
+    while len(words) > 1 and words[-1].casefold().strip(".,:;!?") in trailing_connectors:
+        words.pop()
+    line = " ".join(words)[:140].rstrip(" ,;:-")
     if not line:
         raise SubmitRejected("repository punch line is empty after normalization")
     return line
 
 
-def _grounded_punch_line(solve_state: dict) -> str:
+def _grounded_punch_line(solve_state: dict) -> str | None:
     """Use completed-work text when the optional prose response is malformed."""
-    for field in ("summary", "title"):
-        candidate = str(solve_state.get(field) or "")
+    harness = solve_state.get("harness") or {}
+    candidates = (
+        solve_state.get("summary"),
+        harness.get("commit_message"),
+        solve_state.get("title"),
+    )
+    for value in candidates:
+        candidate = str(value or "")
         candidate = re.sub(r"^\[[^]]+]\s*[:\-–—]*\s*", "", candidate).strip()
+        candidate = re.sub(
+            r"^(?:feat|fix|refactor|docs|test|chore|ci|perf|build)(?:\([^)]+\))?!?:\s*",
+            "",
+            candidate,
+            flags=re.IGNORECASE,
+        )
+        candidate = re.sub(r"\b[^\s@]+@[^\s@]+\b", "the contact address", candidate)
+        candidate = re.sub(r"https?://\S+", "the referenced page", candidate, flags=re.IGNORECASE)
+        candidate = re.sub(r"@[A-Za-z0-9_-]+", "the contributor", candidate)
+        candidate = candidate.translate(str.maketrans("", "", '<>`[]"“”'))
         try:
             return _clean_punch_line(candidate)
         except SubmitRejected:
             continue
-    raise SubmitRejected("repository punch line and grounded fallback are invalid")
+    return None
 
 
-async def write_punch_line(router, solve_state: dict) -> str:
+async def write_punch_line(router, solve_state: dict) -> str | None:
     """Write one cheap, grounded personality line for the PR footer only."""
     persona = PERSONA_PATH.read_text().split("---", 2)[-1].strip()
-    response = await router.call(
-        "prose",
-        [
-            Message(
-                role="system",
-                content=(
-                    persona + "\n\nWrite one natural punch line reacting to a completed patch. "
-                    "Use at most 14 words. Return only the line: no quotation marks, emoji, "
-                    "Markdown, links, handles, attribution, or unsupported claims. Vary the "
-                    "wording; avoid a reusable slogan."
-                ),
-            ),
-            Message(
-                role="user",
-                content=json.dumps(
-                    {
-                        "issue_title": str(solve_state.get("title") or "")[:180],
-                        "change_summary": str(solve_state.get("summary") or "")[:300],
-                        "files_changed": len(solve_state.get("target_files") or []),
-                    },
-                    separators=(",", ":"),
-                ),
-            ),
-        ],
-        effort="medium",
-        max_tokens=40,
-    )
     try:
+        response = await router.call(
+            "prose",
+            [
+                Message(
+                    role="system",
+                    content=(
+                        persona + "\n\nWrite one natural punch line reacting to a completed patch. "
+                        "Use at most 14 words. Return only the line: no quotation marks, emoji, "
+                        "Markdown, links, handles, attribution, or unsupported claims. Vary the "
+                        "wording; avoid a reusable slogan."
+                    ),
+                ),
+                Message(
+                    role="user",
+                    content=json.dumps(
+                        {
+                            "issue_title": str(solve_state.get("title") or "")[:180],
+                            "change_summary": str(solve_state.get("summary") or "")[:300],
+                            "files_changed": len(solve_state.get("target_files") or []),
+                        },
+                        separators=(",", ":"),
+                    ),
+                ),
+            ],
+            effort="low",
+            max_tokens=40,
+        )
         return _clean_punch_line(response.choices[0].message.content or "")
-    except SubmitRejected:
+    except Exception:
         # Personality copy must not strand an already reviewed implementation.
         # This fallback is issue-specific evidence, not a reusable slogan, and
         # the complete PR body still passes through the public safety gate.
@@ -198,6 +220,12 @@ def validate_solve_state(solve_state: dict, workspace_base: Path) -> Path:
     review = solve_state.get("review") or {}
     if review.get("approved") is not True or review.get("findings"):
         raise SubmitRejected("Solve has no clean approved review")
+    harness = solve_state.get("harness") or {}
+    if harness.get("structured_fallback"):
+        reviewed = set(harness.get("reviewed_paths") or [])
+        targets = set(solve_state.get("target_files") or [])
+        if not targets or not targets.issubset(reviewed):
+            raise SubmitRejected("Solve fallback has no post-edit review evidence; rerun Solve before submission")
     if not re.fullmatch(
         r"(?:feat|patch)/[a-z0-9]+(?:-[a-z0-9]+)*-\d+-[0-9a-f]{4}",
         str(solve_state.get("branch") or ""),

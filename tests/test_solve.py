@@ -374,7 +374,39 @@ def test_tool_gate_records_only_successful_edits_and_allows_stop(tmp_path):
     post = {**pre, "hook_event_name": "PostToolUse"}
     assert _decision(post, state)[0] == 0
     assert state["edited_paths"] == ["app/pricing/page.tsx"]
-    assert _decision({"hook_event_name": "Stop"}, state)[0] == 0
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
+    premature = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "StructuredOutput",
+        "tool_input": {"solvable": True},
+    }
+    assert _decision(premature, state)[0] == 2
+    review = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Read",
+        "cwd": str(tmp_path),
+        "tool_input": {"file_path": "app/pricing/page.tsx"},
+    }
+    assert _decision(review, state)[0] == 0
+    assert state["review_reads"] == ["app/pricing/page.tsx"]
+    assert _decision(premature, state)[0] == 0
+
+
+def test_successful_reedit_invalidates_prior_review(tmp_path):
+    target = tmp_path / "app/page.tsx"
+    target.parent.mkdir(parents=True)
+    target.write_text("changed")
+    state = {"edited_paths": ["app/page.tsx"], "review_reads": ["app/page.tsx"]}
+    event = {
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Edit",
+        "cwd": str(tmp_path),
+        "tool_input": {"file_path": "app/page.tsx", "old_string": "a", "new_string": "b"},
+    }
+
+    assert _decision(event, state)[0] == 0
+    assert state["review_reads"] == []
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
 
 
 def test_tool_gate_leaves_decline_judgment_to_model():

@@ -246,20 +246,23 @@ The harness must terminate through StructuredOutput, including when it declines
 the issue. It must never end on prose, a progress statement, a promise to inspect
 another file, or an empty response. If its evidence budget is exhausted, return
 `solvable=false` through StructuredOutput rather than spending more tool calls.
-Use PostToolUse to record only successful Edit/Write calls. Before any successful
-edit, a bounded Stop hook may reject at most two prose-only terminal responses
-and return the model to Edit or StructuredOutput. After a successful edit, allow
-the session to stop immediately so the deterministic metadata fallback can run
-without paying for schema-only turns. Never allow this guard to form an
-unbounded loop.
+Use PostToolUse to record only successful Edit/Write calls and invalidate any
+older review receipt for the changed path. Before any successful edit, a bounded
+Stop hook may reject at most two prose-only terminal responses and return the
+model to Edit or StructuredOutput. After editing, require a fresh Read of every
+changed path and compare exact visible values, labels, actions, and state changes
+with the issue; type checking alone is not acceptance review. Block
+StructuredOutput until that reread occurs. After one reviewed prose-only stop,
+allow the deterministic metadata fallback so the guard cannot form a loop.
 
-If a successful, usage-bearing harness envelope omits StructuredOutput but has
-already produced a non-empty Git worktree diff, derive only its orchestration
-metadata deterministically: bounded elapsed estimate, conventional commit
-subject, and the existing manifest-based verification plan. Continue through
-all normal diff, protected-path, file-count, verification, clean-tree, and
-commit gates. Never use this fallback for an error envelope, zero usage, or an
-empty worktree, and label the final review source accurately.
+If a successful, usage-bearing harness envelope omits StructuredOutput, require
+a non-empty Git worktree diff and hook evidence that every edited path was read
+after its latest edit. Only then derive its orchestration metadata
+deterministically: bounded elapsed estimate, conventional commit subject, and
+the existing manifest-based verification plan. Continue through all normal
+diff, protected-path, file-count, verification, clean-tree, and commit gates.
+Never use this fallback for an error envelope, zero usage, an empty worktree, or
+an unreviewed changed path, and label the final review source accurately.
 
 Prefer a model-selected verification command, but do not discard a completed
 edit when that optional field is omitted. Infer a fallback deterministically

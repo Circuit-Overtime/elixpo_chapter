@@ -7,7 +7,8 @@ description: Publish one clean, reviewed Solve branch as a disclosed GitHub pull
 
 Require `state/solve.json` status `ready_to_submit`, a present workspace, the
 recorded current branch and HEAD, a clean tree, at least one passing check, and a
-successful final review. Refuse partial or failed work.
+successful final review. A structured-metadata fallback must also record a
+post-edit review receipt for every target file. Refuse partial or failed work.
 
 Build the title as `[TYPE]:- <technical subject>`. Preserve a recognized issue
 type such as `BUG`, `PATCH`, or `FEAT`; otherwise derive the type deterministically
@@ -29,12 +30,16 @@ only in the issue title and completed change summary. Follow the living-reposito
 persona: sound like an observant builder, vary the wording, and avoid a reusable
 slogan. Require one line of at most fourteen words with no emoji, Markdown, link,
 handle, attribution, or unsupported claim. Normalize excess prose to the first
-fourteen safe words. If the optional prose response is empty or unsafe, fall back
-once to a cleaned, bounded line derived from the completed Solve summary or issue
-title. Never call the model again and never insert a reusable stock slogan. The
-full PR body still requires the safety gate.
+fourteen safe words. If the optional prose response is empty, unsafe, or the
+prose call fails, fall back once to a cleaned, bounded line derived from the
+completed Solve summary, commit subject, or issue title. Replace grounded email
+addresses, URLs, and mentions with neutral nouns before validation. Never call
+the model again and never insert a reusable stock slogan. If no grounded line
+survives, omit only the persona footer; optional prose must never strand a
+reviewed technical PR. The full PR body still requires the safety gate.
 
-Include `Fixes #N`, then end the PR description—and only the PR description—with
+Include `Fixes #N`, then, when a valid punch line exists, end the PR
+description—and only the PR description—with
 `<sub>“{punch line}” — @elixpoo</sub>`. Do not create a separate comment for the
 punch line.
 

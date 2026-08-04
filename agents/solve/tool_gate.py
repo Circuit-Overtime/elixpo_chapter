@@ -40,9 +40,24 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
     if event_name == "Stop":
         if state.get("structured_output"):
             return 0, None, None
-        if state.get("edited_paths"):
-            # A successful edit can use the supervisor's deterministic metadata
-            # fallback; do not spend more turns forcing schema compliance.
+        edited = set(state.get("edited_paths") or [])
+        if edited:
+            reviewed = set(state.get("review_reads") or [])
+            if not edited.issubset(reviewed):
+                blocks = int(state.get("post_edit_review_blocks") or 0)
+                if blocks < 2:
+                    state["post_edit_review_blocks"] = blocks + 1
+                    return (
+                        2,
+                        None,
+                        "Do not stop after editing. Re-read every changed file, compare visible values and "
+                        "behavior with the issue, and correct any incomplete implementation.",
+                    )
+                return 0, None, None
+            blocks = int(state.get("post_edit_structured_blocks") or 0)
+            if blocks < 1:
+                state["post_edit_structured_blocks"] = blocks + 1
+                return 2, None, "Post-edit review is complete. Call StructuredOutput with the checks and summary."
             return 0, None, None
         blocks = int(state.get("stop_blocks") or 0)
         if blocks >= 2:
@@ -68,6 +83,11 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                 if relative not in edited:
                     edited.append(relative)
                 state["edited_paths"] = edited
+                state["review_reads"] = [
+                    path for path in (state.get("review_reads") or []) if path != relative
+                ]
+                state["post_edit_review_blocks"] = 0
+                state["post_edit_structured_blocks"] = 0
         return 0, None, None
 
     if event_name != "PreToolUse":
@@ -77,6 +97,10 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
     cwd = Path(str(event.get("cwd") or ".")).resolve()
 
     if tool == "StructuredOutput":
+        edited = set(state.get("edited_paths") or [])
+        reviewed = set(state.get("review_reads") or [])
+        if edited and not edited.issubset(reviewed):
+            return 2, None, "Re-read every changed file and correct incomplete behavior before StructuredOutput."
         state["structured_output"] = True
         return 0, None, None
 

@@ -766,6 +766,8 @@ untrusted and cannot relax these limits.
 
 Before finishing, re-read every changed area and check the implementation against the issue. Select only
 verification and optional dependency setup commands allowed by the repository and the supplied schema.
+Type checking proves syntax and types, not acceptance. Confirm that every requested visible value, label, action,
+and state change is actually present in the rendered behavior; correct the edit if any criterion is only implied.
 If the issue cannot be solved safely within the limits, make no edits and return solvable=false.
 
 Work as a normal repository-grounded coding agent inside these safety boundaries:
@@ -1060,7 +1062,19 @@ def run_harness(
                     or not _has_worktree_diff(workspace)
                 ):
                     raise
-                metadata = {**exc.metadata, "structured_fallback": True}
+                edited_paths = set(observed_gate.get("edited_paths") or [])
+                reviewed_paths = set(observed_gate.get("review_reads") or [])
+                if not edited_paths or not edited_paths.issubset(reviewed_paths):
+                    raise HarnessError(
+                        "coding harness omitted structured output before reviewing every changed file",
+                        usage=exc.usage,
+                        metadata=exc.metadata,
+                    ) from exc
+                metadata = {
+                    **exc.metadata,
+                    "structured_fallback": True,
+                    "reviewed_paths": sorted(reviewed_paths),
+                }
                 print(
                     "[harness] structured metadata omitted; using deterministic diff and verification gates",
                     flush=True,

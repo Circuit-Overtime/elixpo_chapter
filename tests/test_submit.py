@@ -58,7 +58,7 @@ async def test_punch_line_uses_prose_role_and_removes_duplicate_attribution():
     class Router:
         async def call(self, role, messages, **kwargs):
             assert role == "prose"
-            assert kwargs == {"effort": "medium", "max_tokens": 40}
+            assert kwargs == {"effort": "low", "max_tokens": 40}
             assert "copy full llm text" in messages[1].content
             return SimpleNamespace(
                 choices=[SimpleNamespace(message=SimpleNamespace(content="Ship the whole signal — @elixpoo"))]
@@ -72,6 +72,30 @@ async def test_invalid_punch_line_falls_back_to_grounded_summary():
     class Router:
         async def call(self, role, messages, **kwargs):
             return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Thanks @maintainer"))])
+
+    assert await write_punch_line(Router(), _state()) == "Copy the complete documentation abstraction."
+
+
+@pytest.mark.asyncio
+async def test_grounded_fallback_sanitizes_email_without_blocking_submit():
+    class Router:
+        async def call(self, role, messages, **kwargs):
+            return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Thanks @maintainer"))])
+
+    state = {
+        **_state(),
+        "summary": "Show the copy chip with hello@elixpo.com in the enterprise card.",
+    }
+    assert await write_punch_line(Router(), state) == (
+        "Show the copy chip with the contact address in the enterprise card."
+    )
+
+
+@pytest.mark.asyncio
+async def test_optional_prose_failure_uses_grounded_fallback():
+    class Router:
+        async def call(self, role, messages, **kwargs):
+            raise RuntimeError("provider unavailable")
 
     assert await write_punch_line(Router(), _state()) == "Copy the complete documentation abstraction."
 
@@ -111,3 +135,26 @@ def test_submit_state_workspace_and_identity_must_match(tmp_path):
         pass
     else:
         raise AssertionError("unsafe branch passed")
+
+
+def test_submit_rejects_unreviewed_structured_fallback(tmp_path):
+    workspace_base = tmp_path / "workspaces"
+    workspace = workspace_base / "session"
+    workspace.mkdir(parents=True)
+    state = {
+        **_state(),
+        "workspace": str(workspace),
+        "harness": {**_state()["harness"], "structured_fallback": True},
+    }
+
+    with pytest.raises(SubmitRejected, match="post-edit review evidence"):
+        validate_solve_state(state, workspace_base)
+
+    state["harness"]["reviewed_paths"] = ["app/docs/api/page.tsx"]
+    assert validate_solve_state(state, workspace_base) == workspace.resolve()
+
+
+def test_pr_body_omits_only_missing_optional_footer():
+    body = build_pr_body(_state(), None)
+    assert body.endswith("Fixes #9")
+    assert "@elixpoo</sub>" not in body
