@@ -247,9 +247,11 @@ the issue. It must never end on prose, a progress statement, a promise to inspec
 another file, or an empty response. If its evidence budget is exhausted, return
 `solvable=false` through StructuredOutput rather than spending more tool calls.
 Use PostToolUse to record only successful Edit/Write calls and invalidate any
-older review receipt for the changed path. Before any successful edit, a bounded
-Stop hook may reject at most two prose-only terminal responses and return the
-model to Edit or StructuredOutput. After editing, require a fresh Read of every
+older review receipt for the changed path. Before any successful edit, reject
+every progress-only Stop and return the model to repository work or
+StructuredOutput. The coding client's twenty-four-turn limit, wall clock, and
+absolute token ceiling bound this enforcement without an arbitrary warning
+count. After editing, require a fresh Read of every
 changed path and compare exact visible values, labels, actions, and state changes
 with the issue; type checking alone is not acceptance review. Block
 StructuredOutput until that reread occurs. After one reviewed prose-only stop,

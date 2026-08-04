@@ -44,33 +44,23 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
         if edited:
             reviewed = set(state.get("review_reads") or [])
             if not edited.issubset(reviewed):
-                blocks = int(state.get("post_edit_review_blocks") or 0)
-                if blocks < 2:
-                    state["post_edit_review_blocks"] = blocks + 1
-                    return (
-                        2,
-                        None,
-                        "Do not stop after editing. Re-read every changed file, compare visible values and "
-                        "behavior with the issue, and correct any incomplete implementation.",
-                    )
-                return 0, None, None
+                return (
+                    2,
+                    None,
+                    "Do not stop after editing. Re-read every changed file, compare visible values and "
+                    "behavior with the issue, and correct any incomplete implementation.",
+                )
             blocks = int(state.get("post_edit_structured_blocks") or 0)
             if blocks < 1:
                 state["post_edit_structured_blocks"] = blocks + 1
                 return 2, None, "Post-edit review is complete. Call StructuredOutput with the checks and summary."
             return 0, None, None
-        blocks = int(state.get("stop_blocks") or 0)
-        if blocks >= 2:
-            return 0, None, None
-        state["stop_blocks"] = blocks + 1
-        if state.get("edited_paths"):
-            reason = "Do not stop with prose. Call StructuredOutput now with the completed edit and checks."
-        else:
-            reason = (
-                "Do not stop with prose. Edit the confirmed target now, or call StructuredOutput with "
-                "solvable=false if the bounded evidence is insufficient."
-            )
-        return 2, None, reason
+        return (
+            2,
+            None,
+            "Do not stop with progress prose. Continue repository work, or call StructuredOutput with "
+            "solvable=false and concrete evidence if the issue cannot be completed.",
+        )
 
     if event_name == "PostToolUse":
         tool = str(event.get("tool_name") or "")
@@ -86,7 +76,6 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                 state["review_reads"] = [
                     path for path in (state.get("review_reads") or []) if path != relative
                 ]
-                state["post_edit_review_blocks"] = 0
                 state["post_edit_structured_blocks"] = 0
         return 0, None, None
 

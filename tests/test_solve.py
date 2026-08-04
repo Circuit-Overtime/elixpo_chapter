@@ -315,7 +315,7 @@ def test_tool_gate_repairs_pathless_edit_from_single_grounded_read(tmp_path):
     assert output["hookSpecificOutput"]["updatedInput"]["file_path"] == "app/pricing/page.tsx"
 
 
-def test_tool_gate_blocks_raw_shell_and_bounds_prose_stops(tmp_path):
+def test_tool_gate_blocks_raw_shell_and_enforces_structured_completion(tmp_path):
     state = {}
     raw = {
         "hook_event_name": "PreToolUse",
@@ -352,7 +352,7 @@ def test_tool_gate_blocks_raw_shell_and_bounds_prose_stops(tmp_path):
     stop = {"hook_event_name": "Stop"}
     assert _decision(stop, state)[0] == 2
     assert _decision(stop, state)[0] == 2
-    assert _decision(stop, state)[0] == 0
+    assert _decision(stop, state)[0] == 2
     state["structured_output"] = True
     assert _decision(stop, state)[0] == 0
 
@@ -389,6 +389,8 @@ def test_tool_gate_records_only_successful_edits_and_allows_stop(tmp_path):
     }
     assert _decision(review, state)[0] == 0
     assert state["review_reads"] == ["app/pricing/page.tsx"]
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 0
     assert _decision(premature, state)[0] == 0
 
 
@@ -406,6 +408,7 @@ def test_successful_reedit_invalidates_prior_review(tmp_path):
 
     assert _decision(event, state)[0] == 0
     assert state["review_reads"] == []
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
     assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
 
 
