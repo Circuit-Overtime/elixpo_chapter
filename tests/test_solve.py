@@ -430,6 +430,9 @@ def test_prompt_keeps_ranked_candidates_advisory():
     assert "Operate without progress narration" in rendered
     assert "Edit immediately" in rendered
     assert "finish by calling StructuredOutput" in rendered
+    assert "repository root as its current directory (`.`)" in rendered
+    assert "Never invent or prepend `/workspace`, `/home/user`" in rendered
+    assert "printed relative candidate path" in rendered
     assert "next command must be exactly" not in rendered
 
 
@@ -652,6 +655,20 @@ def test_exhausted_evidence_budget_requests_context_refresh():
         ),
         "harness",
     )
+    assert failure["category"] == "insufficient_context"
+    assert failure["retryable"] is True
+    assert failure["candidate_action"] == "refresh_context_once"
+
+
+def test_hallucinated_workspace_decline_requests_context_retry():
+    failure = classify_failure(
+        SolveRejected(
+            "coding harness declined issue: permission restrictions prevent locating "
+            "the implementation files"
+        ),
+        "harness",
+    )
+
     assert failure["category"] == "insufficient_context"
     assert failure["retryable"] is True
     assert failure["candidate_action"] == "refresh_context_once"

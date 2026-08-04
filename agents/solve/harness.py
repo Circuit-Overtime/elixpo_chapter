@@ -560,6 +560,13 @@ Token-free tracked-file candidate ranking (behavioral hints, not mandatory targe
 Limits: at most {policy["max_minutes"]} minutes, {policy["max_files"]} changed files, one coherent commit,
 and {policy["max_test_commands"]} verification commands. Work only in this checkout.
 
+The coding process already runs with the repository root as its current directory (`.`). Every path in the
+tracked index and candidate ranking is real and relative to that directory. Pass those relative strings to
+Read, Edit, Write, and RTK exactly as printed. Never invent or prepend `/workspace`, `/home/user`, a repository
+name, or any other absolute root. An absolute-path failure says nothing about repository permissions or whether
+the relative file exists: correct the same call to its printed relative path immediately, without listing or
+searching the filesystem.
+
 Read the injected context bundle once; it already contains applicable guidance and manifest evidence.
 Use the available targeted discovery tools to understand the exact implementation path. Do not guess a file
 from its route or name. A path named by the issue and a deterministic rank are evidence, not mandates: choose
@@ -583,7 +590,7 @@ If the issue cannot be solved safely within the limits, make no edits and return
 
 Operate without progress narration. Use this bounded sequence and then stop:
 1. Read `.elixpo-context/context.md` exactly once with `rtk read` when RTK is available.
-2. Read one implementation target with built-in Read. A bundled excerpt is sufficient evidence for a
+2. Read one printed relative candidate path with built-in Read. A bundled excerpt is sufficient evidence for a
    supporting/reference component; do not open that component merely to copy its style.
 3. If the target confirms the behavior, Edit immediately. Never Read the same path again before Edit,
    including with a different offset or tool. Use the single fallback/supporting read only when the target

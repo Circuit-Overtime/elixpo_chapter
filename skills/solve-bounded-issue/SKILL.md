@@ -61,6 +61,13 @@ temporary HOME from an earlier Solve run by the same OS user. Never match or
 terminate an interactive/global CCR process. One sandbox may own only one
 isolated Solve CCR group at a time.
 
+The harness process working directory is the isolated repository root. All
+tracked-index, candidate, Read, Edit, Write, and RTK paths must remain relative
+to that root. Never invent or prepend `/workspace`, `/home/user`, a repository
+name, or another absolute prefix. If the model attempts an absolute path and the
+tool rejects it, retry that same path relative to `.` immediately; do not infer
+missing permissions and do not spend discovery calls listing other roots.
+
 Register the configured CCR model through the coding client's custom-model
 environment variables. A fresh client profile knows only built-in Anthropic
 aliases and otherwise rejects gateway model IDs before contacting CCR. The

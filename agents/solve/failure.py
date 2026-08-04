@@ -89,6 +89,8 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
         or "coding model declined" in lowered
         or "source-read budget" in lowered
         or ("bounded evidence" in lowered and "ungrounded" in lowered)
+        or ("permission restrictions" in lowered and "implementation files" in lowered)
+        or ("cannot identify" in lowered and "files" in lowered)
     ):
         category, retryable, candidate_action = "insufficient_context", True, "refresh_context_once"
     elif exc.__class__.__name__ in {"SolveRejected", "CommandRejected"}:
