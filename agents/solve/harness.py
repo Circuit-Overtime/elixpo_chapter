@@ -606,6 +606,16 @@ def run_harness(
     """Start an isolated CCR, run the Node harness, and return its validated result."""
     router_process: subprocess.Popen[str] | None = None
     router_thread: threading.Thread | None = None
+    # Retrieval can take several seconds on a large checkout. Finish it before
+    # allocating the Node router so CCR is neither idle nor exposed to a
+    # readiness-to-first-request race while the bundle is being assembled.
+    rtk_available = shutil.which("rtk") is not None
+    candidate_hints, _ = _prepare_context_bundle(workspace, issue, policy)
+    print(
+        f"[context] compressed_bundle candidates={len(candidate_hints)} "
+        f"max_tokens={int(policy.get('max_context_tokens', 3200))}",
+        flush=True,
+    )
     with tempfile.TemporaryDirectory(prefix="elixpoo-ccr-") as router_home_name:
         port = _loopback_port()
         router_url = f"http://{_CCR_HOST}:{port}"
@@ -641,7 +651,6 @@ def run_harness(
             print(f"[ccr] ready at {router_url}", flush=True)
 
             model = str(policy.get("harness_model", "qwen-coder"))
-            rtk_available = shutil.which("rtk") is not None
             print(
                 "[rtk] discovery compression enabled"
                 if rtk_available
@@ -649,12 +658,8 @@ def run_harness(
                 flush=True,
             )
             command = _harness_command(model, policy, rtk_available=rtk_available)
-            candidate_hints, _ = _prepare_context_bundle(workspace, issue, policy)
-            print(
-                f"[context] compressed_bundle candidates={len(candidate_hints)} "
-                f"max_tokens={int(policy.get('max_context_tokens', 3200))}",
-                flush=True,
-            )
+            if router_process.poll() is not None or not _router_ready(router_url):
+                raise HarnessError("CCR became unavailable before the coding harness request")
             final_event, return_code, stderr = _stream_harness(
                 command,
                 workspace=workspace,

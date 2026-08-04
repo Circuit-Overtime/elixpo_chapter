@@ -50,6 +50,12 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
     elif isinstance(exc, WorkspaceError) or isinstance(exc, FileNotFoundError):
         category, retryable, candidate_action = "workspace", True, "repair_environment_then_retry"
     elif isinstance(exc, HarnessError) and (
+        "connectionrefused" in lowered
+        or "unable to connect to api" in lowered
+        or "became unavailable" in lowered
+    ):
+        category, retryable, candidate_action = "provider_transient", True, "retry_later"
+    elif isinstance(exc, HarnessError) and (
         "unavailable" in lowered or "ccr did not become ready" in lowered or "ccr exited" in lowered
     ):
         category, retryable, candidate_action = "workspace", True, "repair_environment_then_retry"

@@ -456,6 +456,28 @@ def test_harness_auth_error_is_concise_and_classified():
         raise AssertionError("harness authentication error passed")
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        "coding harness failed: API Error: Unable to connect to API (ConnectionRefused)",
+        "CCR became unavailable before the coding harness request",
+    ],
+)
+def test_harness_loopback_failure_is_retryable(message):
+    failure = classify_failure(HarnessError(message), "harness")
+
+    assert failure["category"] == "provider_transient"
+    assert failure["retryable"] is True
+    assert failure["candidate_action"] == "retry_later"
+
+
+def test_missing_harness_runtime_remains_a_workspace_failure():
+    failure = classify_failure(HarnessError("Node coding harness unavailable"), "harness")
+
+    assert failure["category"] == "workspace"
+    assert failure["candidate_action"] == "repair_environment_then_retry"
+
+
 def test_harness_turn_limit_is_actionable_and_preserves_usage():
     envelope = {
         "type": "result",
