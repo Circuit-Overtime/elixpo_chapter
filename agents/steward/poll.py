@@ -12,6 +12,7 @@ from lib.state.followups import FollowupRecord
 
 from agents.steward.respond import (
     authored_by_bot,
+    completed_progress_body,
     contains_mention,
     draft_reply,
     marker,
@@ -108,6 +109,16 @@ async def reconcile(api, gist, router, *, bot_username: str, ttl_days: int, max_
         comments = list(await api.get_issue_comments(owner, repo, record.subject_number) or [])
         if record.subject_kind == "pull_request":
             comments.extend(await api.get_pull_comments(owner, repo, record.subject_number) or [])
+            comments.extend(await api.get_pull_reviews(owner, repo, record.subject_number) or [])
+        if contains_mention(str(subject.get("body") or "")):
+            comments.append(
+                {
+                    "id": int(subject.get("id") or record.subject_number),
+                    "body": subject.get("body") or "",
+                    "created_at": subject.get("created_at") or "",
+                    "user": subject.get("user") or {},
+                }
+            )
         comments.sort(key=lambda item: str(item.get("created_at") or ""))
         for comment in _eligible_comments(record, comments, bot_username):
             if replies >= max_replies:
@@ -118,14 +129,21 @@ async def reconcile(api, gist, router, *, bot_username: str, ttl_days: int, max_
                 record.remember_comment(source_id)
                 continue
             progress_marker = marker("progress", source_id)
-            if not any(progress_marker in str(item.get("body") or "") for item in comments):
+            progress_comment = next(
+                (item for item in comments if progress_marker in str(item.get("body") or "")),
+                None,
+            )
+            if progress_comment is None:
                 progress = progress_body(source_id)
                 await safety_check(router, progress)
-                await api.create_issue_comment(owner, repo, record.subject_number, progress)
+                progress_comment = await api.create_issue_comment(owner, repo, record.subject_number, progress)
             draft = await draft_reply(router, record, subject, comment, comments)
             reply = f"{draft}\n\n{final_marker}"
             await safety_check(router, reply)
             await api.create_issue_comment(owner, repo, record.subject_number, reply)
+            completed_progress = completed_progress_body(source_id)
+            await safety_check(router, completed_progress)
+            await api.update_issue_comment(owner, repo, int(progress_comment["id"]), completed_progress)
             record.remember_comment(source_id)
             replies += 1
             thread_id = notification_threads.get(key)

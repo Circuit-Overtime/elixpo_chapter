@@ -176,9 +176,16 @@ class FollowupAPI:
     async def get_pull_comments(self, owner, repo, number):
         return []
 
+    async def get_pull_reviews(self, owner, repo, number):
+        return []
+
     async def create_issue_comment(self, owner, repo, number, body):
         self.posts.append(body)
         return {"id": len(self.posts), "body": body}
+
+    async def update_issue_comment(self, owner, repo, comment_id, body):
+        self.posts[comment_id - 1] = body
+        return {"id": comment_id, "body": body}
 
 
 def _tracked_memory():
@@ -195,13 +202,19 @@ def _tracked_memory():
 async def test_reconcile_posts_progress_then_safe_reply_and_marks_source_handled():
     api = FollowupAPI()
     gist = MemoryGist(_tracked_memory())
-    router = FakeRouter("SAFE", "I’ve recorded the requested adjustment for the repository workflow.", "SAFE")
+    router = FakeRouter(
+        "SAFE",
+        "I’ve recorded the requested adjustment for the repository workflow.",
+        "SAFE",
+        "SAFE",
+    )
 
     result = await reconcile(api, gist, router, bot_username="elixpoo", ttl_days=360)
 
     assert result["replies"] == 1
-    assert router.roles == ["safety", "steward", "safety"]
+    assert router.roles == ["safety", "steward", "safety", "safety"]
     assert marker("progress", 91) in api.posts[0]
+    assert "[x] Response prepared" in api.posts[0]
     assert marker("reply", 91) in api.posts[1]
     assert gist.memory.active["elixpo/project#12"].handled_comment_ids == [91]
     assert gist.saves == 1

@@ -96,20 +96,12 @@ jobs:
             }
 
             const mention = /(^|[^A-Za-z0-9_.+-])@elixpoo([^A-Za-z0-9_.+-]|$)/.test(request);
-            const authorized = event === 'workflow_dispatch' || mention || (structured && allowed.has(actor));
+            const authorized = allowed.has(actor) && (structured || event === 'workflow_dispatch' || mention);
             core.setOutput('authorized', String(authorized));
             core.setOutput('scope', scope);
             core.setOutput('number', String(number));
             core.setOutput('request_b64', Buffer.from(request).toString('base64'));
 
-            if (!authorized && mention && number) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: number,
-                body: `Sorry @${actor}, only Elixpo org members can invoke @elixpoo.`
-              });
-            }
 
       - name: Checkout repository
         if: steps.gate.outputs.authorized == 'true'
@@ -248,8 +240,15 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/gists/$FOLLOWUP_GIST_ID" \
               | jq -r '.files["elixpoo-followups.json"].content // "{}"' \
-              | jq --arg key "$REPO#$TARGET_NUMBER" \
-                '{record: (.active[$key] // null), prior_completion: ([.completed[]? | select(.key == $key)] | last)}' \
+              | jq --arg key "$REPO#$TARGET_NUMBER" --arg issue_suffix "/issues/$TARGET_NUMBER" \
+                '{
+                  record: (
+                    .active[$key] //
+                    ([.active[]? | select(.issue_url | endswith($issue_suffix))] | last) //
+                    null
+                  ),
+                  prior_completion: ([.completed[]? | select(.key == $key)] | last)
+                }' \
               > .elixpo-context/followup.json
           fi
 

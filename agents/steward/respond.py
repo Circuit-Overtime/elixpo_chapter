@@ -39,6 +39,16 @@ def progress_body(source_id: int | str) -> str:
     )
 
 
+def completed_progress_body(source_id: int | str) -> str:
+    return (
+        "> Follow-up complete.\n\n"
+        "- [x] Request received\n"
+        "- [x] Repository context checked\n"
+        "- [x] Response prepared\n\n"
+        + marker("progress", source_id)
+    )
+
+
 async def draft_reply(router, record, subject: dict, trigger: dict, comments: list[dict]) -> str:
     skill = SKILL_PATH.read_text(encoding="utf-8").split("---", 2)[-1].strip()
     payload = {
