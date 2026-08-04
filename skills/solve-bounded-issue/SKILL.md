@@ -137,6 +137,10 @@ prompt compliance alone. The hook may normalize an absolute remembered checkout
 path only when exactly that suffix exists under the supervised cwd. It must deny
 raw shell discovery, repeated source reads, and reads beyond the bounded budget,
 returning a short instruction to Edit or emit StructuredOutput.
+Pass the generated isolated hook configuration explicitly through the coding
+CLI's `--settings` argument. `CLAUDE_CONFIG_DIR` isolates client state but is not
+by itself proof that print mode loaded user hooks. A run reporting zero gate
+activity despite tool calls is a configuration failure, not model compliance.
 Seed the first built-in candidate Read with the line offset of Comprehend's
 highest-scoring rendered excerpt when the model omitted an offset. This gives
 Edit exact context without a continuation read or another model call.

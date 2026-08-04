@@ -774,6 +774,7 @@ def _harness_command(
     policy: dict[str, Any],
     *,
     rtk_available: bool | None = None,
+    settings_file: Path | None = None,
 ) -> list[str]:
     if rtk_available is None:
         rtk_available = shutil.which("rtk") is not None
@@ -786,7 +787,7 @@ def _harness_command(
             ",Bash(cat *),Bash(head *),Bash(tail *),Bash(grep *),Bash(rg *),"
             "Bash(find *),Bash(ls *),Bash(git *),Bash(curl *),Bash(wget *)"
         )
-    return _node_command(
+    command = _node_command(
         _HARNESS_PACKAGE,
         "-p",
         "--output-format",
@@ -815,6 +816,9 @@ def _harness_command(
         "--safe-mode",
         "--no-session-persistence",
     )
+    if settings_file is not None:
+        command.extend(["--settings", str(settings_file)])
+    return command
 
 
 def run_harness(
@@ -886,7 +890,21 @@ def run_harness(
                 else "[rtk] CLI unavailable; CCR context governor remains enabled",
                 flush=True,
             )
-            command = _harness_command(client_model, policy, rtk_available=rtk_available)
+            client_config_dir = router_home / "claude-config"
+            harness_environment = _harness_env(
+                model,
+                policy,
+                router_url=router_url,
+                config_dir=client_config_dir,
+                client_model=client_model,
+                gate_state={"read_offsets": read_offsets},
+            )
+            command = _harness_command(
+                client_model,
+                policy,
+                rtk_available=rtk_available,
+                settings_file=client_config_dir / "settings.json",
+            )
             # `_wait_for_router` already authenticated the mounted Messages
             # route. A second one-second HTTP probe here is redundant and can
             # misclassify a brief event-loop pause as a dead router.
@@ -903,14 +921,7 @@ def run_harness(
                 final_event, return_code, stderr = _stream_harness(
                     command,
                     workspace=workspace,
-                    env=_harness_env(
-                        model,
-                        policy,
-                        router_url=router_url,
-                        config_dir=router_home / "claude-config",
-                        client_model=client_model,
-                        gate_state={"read_offsets": read_offsets},
-                    ),
+                    env=harness_environment,
                     prompt=prompt,
                     timeout=timeout,
                 )

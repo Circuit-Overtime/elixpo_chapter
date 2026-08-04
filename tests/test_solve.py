@@ -448,6 +448,7 @@ def test_harness_replaces_generic_system_prompt(monkeypatch):
         "qwen-coder",
         {"harness_max_turns": 10},
         rtk_available=False,
+        settings_file=Path("/tmp/isolated/settings.json"),
     )
 
     assert "--system-prompt-file" in command
@@ -457,6 +458,7 @@ def test_harness_replaces_generic_system_prompt(monkeypatch):
     assert "--bare" not in command
     assert "--setting-sources" not in command
     assert command[command.index("--max-turns") + 1] == "10"
+    assert command[command.index("--settings") + 1] == "/tmp/isolated/settings.json"
 
 
 def test_harness_confines_rtk_shell_discovery(monkeypatch):
