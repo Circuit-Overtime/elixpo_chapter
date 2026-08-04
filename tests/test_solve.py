@@ -24,6 +24,7 @@ from agents.solve.harness import (
     _HARNESS_PACKAGE,
     HarnessError,
     _candidate_read_offsets,
+    _candidate_read_windows,
     _compact_harness_context,
     _deterministic_outcome,
     _harness_command,
@@ -244,7 +245,13 @@ def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
     target = tmp_path / "app/pricing/page.tsx"
     target.parent.mkdir(parents=True)
     target.write_text("export default function Pricing() {}")
-    state = {"read_offsets": {"app/pricing/page.tsx": 287}}
+    state = {
+        "read_offsets": {"app/pricing/page.tsx": 287},
+        "read_windows": {
+            "app/pricing/page.tsx": [287, 338],
+            "app/components/Footer.tsx": [77, 146],
+        },
+    }
     event = {
         "hook_event_name": "PreToolUse",
         "tool_name": "Read",
@@ -260,21 +267,28 @@ def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
     assert state["source_reads"] == ["app/pricing/page.tsx"]
     repeated = {**event, "tool_input": {"file_path": "app/pricing/page.tsx"}}
     code, output, reason = _decision(repeated, state)
+    assert code == 0 and reason is None
+    assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 338
+    code, output, reason = _decision(repeated, state)
     assert code == 2 and output is None
-    assert "already read" in reason
+    assert "seeded windows" in reason
 
     footer = tmp_path / "app/components/Footer.tsx"
     footer.parent.mkdir(parents=True, exist_ok=True)
     footer.write_text("copy")
     second = {**event, "tool_input": {"file_path": "app/components/Footer.tsx"}}
     code, output, reason = _decision(second, state)
-    assert code == 0 and output is None and reason is None
+    assert code == 0 and reason is None
+    assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 77
+    code, output, reason = _decision(second, state)
+    assert code == 0 and reason is None
+    assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 146
     third = {**event, "tool_input": {"file_path": "app/components/Navbar.tsx"}}
     navbar = tmp_path / "app/components/Navbar.tsx"
     navbar.write_text("nav")
     code, output, reason = _decision(third, state)
     assert code == 2 and output is None
-    assert "budget is exhausted" in reason
+    assert "candidate files" in reason or "budget is exhausted" in reason
 
 
 def test_tool_gate_repairs_pathless_edit_from_single_grounded_read(tmp_path):
@@ -305,6 +319,15 @@ def test_tool_gate_blocks_raw_shell_and_bounds_prose_stops(tmp_path):
     }
     assert _decision(raw, state)[0] == 2
 
+    state["source_reads"] = ["app/page.tsx"]
+    scoped_grep = {
+        **raw,
+        "tool_input": {"command": "rtk grep 'copy|email' app -n -C 3"},
+    }
+    code, _, reason = _decision(scoped_grep, state)
+    assert code == 2
+    assert "already grounded" in reason
+
     stop = {"hook_event_name": "Stop"}
     assert _decision(stop, state)[0] == 2
     assert _decision(stop, state)[0] == 2
@@ -331,6 +354,21 @@ def test_tool_gate_records_only_successful_edits_and_allows_stop(tmp_path):
     assert _decision(post, state)[0] == 0
     assert state["edited_paths"] == ["app/pricing/page.tsx"]
     assert _decision({"hook_event_name": "Stop"}, state)[0] == 0
+
+
+def test_tool_gate_challenges_only_first_ambiguous_decline():
+    state = {"source_reads": ["app/page.tsx"]}
+    decline = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "StructuredOutput",
+        "tool_input": {"solvable": False, "rationale": "uncertain"},
+    }
+
+    code, _, reason = _decision(decline, state)
+    assert code == 2
+    assert "ambiguity alone" in reason
+    assert _decision(decline, state)[0] == 0
+    assert state["structured_output"] is True
 
 
 def test_ccr_setup_registers_custom_governor_options_once(tmp_path):
@@ -576,6 +614,11 @@ navigator.clipboard.writeText(EMAIL)
     )
 
     assert offsets == {"app/pricing/page.tsx": 287, "app/components/Footer.tsx": 70}
+    assert _candidate_read_windows(
+        rendered,
+        {"title": "Show copy email chip in enterprise pricing", "body": "Copy hello@elixpo.com"},
+        ["app/pricing/page.tsx", "app/components/Footer.tsx"],
+    ) == {"app/pricing/page.tsx": [287, 10], "app/components/Footer.tsx": [70]}
 
 
 def test_candidate_read_offset_prefers_action_excerpt_on_score_tie():
@@ -622,10 +665,10 @@ def test_prompt_keeps_ranked_candidates_advisory():
     assert "1. app/docs/layout.tsx" in rendered
     assert "2. app/page.tsx" in rendered
     assert "rank one or the issue-mentioned path" in rendered
-    assert "Two source reads are the total pre-edit limit" in rendered
+    assert "Four source reads are the total pre-edit limit" in rendered
     assert "<repository_evidence>" in rendered
     assert "&lt;/repository_evidence&gt;" in rendered
-    assert "Edit requires this exact pre-read" in rendered
+    assert "Edit requires this pre-read" in rendered
     assert "with file_path only and no pages argument" in rendered
     assert "Repository evidence" in rendered
     assert "do not decline merely because" in rendered

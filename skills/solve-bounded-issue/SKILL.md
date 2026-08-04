@@ -125,17 +125,17 @@ built-in Read of the chosen edit target because the coding CLI will reject Edit
 without it. Strip the PDF-only `pages` property from Read's provider-facing tool
 schema so text reads cannot emit an invalid empty value. Permit the
 model-selected implementation candidate and at most one distinct supporting or
-fallback candidate. Deny every repeated path regardless of offset or tool. If
+fallback candidate. Permit at most two Comprehend-seeded semantic windows per
+candidate and four source reads total; deny unseeded repetition. If
 the target exposes the insertion point and the supporting candidate exposes the
 equivalent behavior, treat that as sufficient evidence and implement rather
-than restarting discovery. Two distinct source Reads after the bundle are the
-complete pre-edit limit. Permit one
+than restarting discovery. Two candidate files and four seeded source windows
+are the complete pre-edit limit. Permit one
 candidate-directory grep only when every bundled excerpt lacks actionable
-evidence. Never use find, repository-wide grep, tool help, repeated queries, a
-third candidate read, or another model call for retrieval. Do not reread a
-supporting/reference component when its bundled excerpt already exposes the
-needed behavior. Once a built-in target Read confirms the implementation path,
-Edit immediately; a different offset does not make a repeated path read valid.
+evidence and before any source Read. Never use find, repository-wide grep, tool
+help, repeated queries, a third candidate file, or another model call for
+retrieval. Once the target and supporting windows confirm the insertion point
+and local behavior, Edit immediately.
 Enforce these limits with a credential-free local PreToolUse hook rather than
 prompt compliance alone. The hook may normalize an absolute remembered checkout
 path only when exactly that suffix exists under the supervised cwd. It must deny
@@ -150,9 +150,10 @@ troubleshooting flag disables hooks along with every other customization. Solve
 gets its safety from the isolated profile, strict MCP configuration, explicit
 tool allow/deny rules, secret-stripped environment, supervised processes, and
 the deterministic hooks themselves.
-Seed the first built-in candidate Read with the line offset of Comprehend's
-highest-scoring rendered excerpt when the model omitted an offset. This gives
-Edit exact context without a continuation read or another model call.
+Seed built-in candidate Reads with the line offsets of Comprehend's two
+highest-scoring rendered excerpts when the model omitted an offset. This gives
+Edit exact target and supporting context without arbitrary continuation reads
+or another model call.
 If Qwen emits an Edit with no `file_path`, the hook may supply the path only when
 exactly one grounded source path has been read. Preserve every other Edit field;
 never guess between multiple targets. Report compact gate counts after the
@@ -169,9 +170,16 @@ Split every issue into observable behavior and implementation hypotheses.
 Repository evidence overrides guessed paths, symbols, data flow, and proposed
 edits. An absent claimed symbol is not a reason to decline when the harness has
 located the real implementation of the behavior. Continue from that source and
-make the smallest behavior-level fix. Decline only when current code already
-satisfies the observable requirement or the bounded evidence cannot support a
-safe change.
+make the smallest behavior-level fix. For add, show, create, and render requests,
+absence of the requested behavior in a confirmed target is evidence of the edit
+to make rather than evidence of missing context. Exact existing duplicate code
+is not required; synthesize the smallest locally consistent implementation from
+the issue's observable behavior and repository patterns. Decline only when
+current code already satisfies the observable requirement or the bounded
+evidence cannot support a safe change. Before accepting the first unedited
+`solvable=false` result after grounded reads, require one bounded reconsideration
+that distinguishes genuine impossibility from mere ambiguity; accept the second
+decision to avoid a loop.
 
 Rank behavior using both document frequency and same-line term co-occurrence;
 repeated issue prose must not outweigh a source expression containing the action,

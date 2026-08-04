@@ -77,6 +77,20 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
     cwd = Path(str(event.get("cwd") or ".")).resolve()
 
     if tool == "StructuredOutput":
+        if (
+            tool_input.get("solvable") is False
+            and not state.get("edited_paths")
+            and state.get("source_reads")
+            and int(state.get("decline_blocks") or 0) < 1
+        ):
+            state["decline_blocks"] = 1
+            return (
+                2,
+                None,
+                "Re-evaluate once: ambiguity alone is not a rejection. If the behavior is already satisfied or "
+                "unsafe, return solvable=false again with concrete evidence; otherwise make the smallest "
+                "grounded Edit.",
+            )
         state["structured_output"] = True
         return 0, None, None
 
@@ -107,17 +121,40 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
             edited = set(state.get("edited_paths") or [])
             key = "review_reads" if relative in edited else "source_reads"
             reads = list(state.get(key) or [])
-            limit = len(edited) if key == "review_reads" else 2
-            if relative in reads:
-                return 2, None, "This path was already read. Do not continue it; Edit now or call StructuredOutput."
-            if len(reads) >= max(1, limit):
-                return 2, None, "The bounded source-read budget is exhausted. Edit now or call StructuredOutput."
-            reads.append(relative)
-            state[key] = reads
-            offset = int((state.get("read_offsets") or {}).get(relative) or 0)
-            if key == "source_reads" and offset > 0 and not tool_input.get("offset"):
-                tool_input["offset"] = offset
-                updated = tool_input
+            if key == "review_reads":
+                if relative in reads:
+                    return 2, None, "This changed path was already reviewed. Call StructuredOutput now."
+                if len(reads) >= max(1, len(edited)):
+                    return 2, None, "The bounded review-read budget is exhausted. Call StructuredOutput now."
+                reads.append(relative)
+                state[key] = reads
+            else:
+                counts = dict(state.get("source_read_counts") or {})
+                windows = list((state.get("read_windows") or {}).get(relative) or [])
+                count = int(counts.get(relative) or 0)
+                per_path_limit = min(2, max(1, len(windows)))
+                total_calls = sum(int(value or 0) for value in counts.values())
+                if relative not in reads and len(reads) >= 2:
+                    return 2, None, "Two candidate files are already grounded. Edit now or call StructuredOutput."
+                if count >= per_path_limit:
+                    return 2, None, "All seeded windows for this path were read. Edit now or call StructuredOutput."
+                if total_calls >= 4:
+                    return (
+                        2,
+                        None,
+                        "The four-window source-read budget is exhausted. Edit now or call StructuredOutput.",
+                    )
+                if relative not in reads:
+                    reads.append(relative)
+                counts[relative] = count + 1
+                state[key] = reads
+                state["source_read_counts"] = counts
+                offset = int(windows[count] if count < len(windows) else 0)
+                if offset <= 0 and count == 0:
+                    offset = int((state.get("read_offsets") or {}).get(relative) or 0)
+                if offset > 0 and not tool_input.get("offset"):
+                    tool_input["offset"] = offset
+                    updated = tool_input
         if updated is not None:
             return 0, {
                 "hookSpecificOutput": {
@@ -156,6 +193,12 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                     }
                 }, None
             return 0, None, None
+        if words[:2] == ["rtk", "grep"] and state.get("source_reads"):
+            return (
+                2,
+                None,
+                "Candidate reads already grounded the code. Do not search again; Edit or call StructuredOutput.",
+            )
         if words[:2] == ["rtk", "grep"] and not state.get("grep_used"):
             state["grep_used"] = True
             return 0, None, None
