@@ -476,6 +476,19 @@ def test_harness_turn_limit_is_actionable_and_preserves_usage():
     assert failure["candidate_action"] == "reduce_discovery_then_retry_once"
 
 
+def test_exhausted_evidence_budget_requests_context_refresh():
+    failure = classify_failure(
+        SolveRejected(
+            "coding harness declined issue: bounded evidence did not expose the target; "
+            "source-read budget is exhausted, so an edit would be ungrounded"
+        ),
+        "harness",
+    )
+    assert failure["category"] == "insufficient_context"
+    assert failure["retryable"] is True
+    assert failure["candidate_action"] == "refresh_context_once"
+
+
 def test_harness_events_render_progress_without_tool_output(capsys):
     _render_harness_event(
         {

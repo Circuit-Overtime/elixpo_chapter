@@ -74,7 +74,12 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
         category, candidate_action = "review_rejected", "terminate_or_replan"
     elif "issue changed after vet" in lowered:
         category, retryable, candidate_action = "stale_issue", True, "re_vet"
-    elif "unretrieved existing file" in lowered or "coding model declined" in lowered:
+    elif (
+        "unretrieved existing file" in lowered
+        or "coding model declined" in lowered
+        or "source-read budget" in lowered
+        or ("bounded evidence" in lowered and "ungrounded" in lowered)
+    ):
         category, retryable, candidate_action = "insufficient_context", True, "refresh_context_once"
     elif exc.__class__.__name__ in {"SolveRejected", "CommandRejected"}:
         category, candidate_action = "policy", "terminate"

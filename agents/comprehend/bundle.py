@@ -16,9 +16,8 @@ from mcp_server.tools._fs import safe_path
 from rtk.count import count_text
 from rtk.truncate import truncate_text
 
-_PATH_RE = re.compile(
-    r"(?<![\w.-])(?:[\w.@+-]+/)+[\w.@+-]+(?:\.[A-Za-z0-9][\w.-]*)?"
-)
+_PATH_RE = re.compile(r"(?<![\w.-])(?:[\w.@+-]+/)+[\w.@+-]+(?:\.[A-Za-z0-9][\w.-]*)?")
+_BARE_FILE_RE = re.compile(r"(?<![\w/.-])([\w@+-]+\.[A-Za-z0-9][\w.-]*)(?![\w/.-])")
 _CODE_TOKEN_RE = re.compile(r"`([A-Za-z_$][\w$.-]{2,80})`")
 _SEARCH_TOKEN_RE = re.compile(r"[A-Za-z_$][A-Za-z0-9_$.-]{2,80}")
 _SEARCH_STOPWORDS = {
@@ -120,6 +119,15 @@ def _mentioned_paths(text: str, tracked: set[str]) -> list[str]:
         candidate = raw.strip("`'\".,:;()[]{}")
         if candidate in tracked and candidate not in found:
             found.append(candidate)
+    # Issue authors commonly name `Footer.tsx` without its directory. Resolve
+    # only unique tracked basenames; ambiguous names remain search terms.
+    by_name: dict[str, list[str]] = {}
+    for rel in tracked:
+        by_name.setdefault(Path(rel).name.casefold(), []).append(rel)
+    for raw in _BARE_FILE_RE.findall(text):
+        matches = by_name.get(raw.casefold(), [])
+        if len(matches) == 1 and matches[0] not in found:
+            found.append(matches[0])
     return found
 
 
@@ -166,8 +174,7 @@ def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int
         matches = [
             raw.removeprefix("./")
             for raw in proc.stdout.splitlines()
-            if not raw.removeprefix("./").endswith(".lock")
-            and raw.removeprefix("./") in tracked
+            if not raw.removeprefix("./").endswith(".lock") and raw.removeprefix("./") in tracked
         ]
         # Rare terms carry more location information than ubiquitous UI words
         # such as "button" or CSS fragments such as "full".
@@ -269,10 +276,7 @@ def _read_relevant(workspace: Path, rel: str, terms: list[str], max_tokens: int)
             spans[-1] = (spans[-1][0], max(spans[-1][1], end))
         else:
             spans.append((start, end))
-    excerpts = [
-        f"// lines {start + 1}-{end}\n" + "\n".join(lines[start:end])
-        for start, end in spans
-    ]
+    excerpts = [f"// lines {start + 1}-{end}\n" + "\n".join(lines[start:end]) for start, end in spans]
     return truncate_text("\n\n// ...\n\n".join(excerpts), max_tokens=max_tokens)
 
 
@@ -310,14 +314,26 @@ def build_context_bundle(
     issue_text = f"{issue.get('title', '')}\n{issue.get('body') or ''}"
     search_terms, _ = _search_terms(issue_text)
     mentioned = _mentioned_paths(issue_text, tracked)
-    searched = rank_candidate_paths(workspace, issue, limit=10)
+    guidance_paths = _guidance_paths(files, set(guidance_names), mentioned)
+    guidance_set = set(guidance_paths)
+    searched = [rel for rel in rank_candidate_paths(workspace, issue, limit=10) if rel not in guidance_set]
     # Ranked behavioral matches lead. Explicitly mentioned paths remain useful
     # context, but a route/page named in a report is not necessarily where its
     # behavior is implemented.
-    candidates = list(dict.fromkeys([*searched, *mentioned, *[m for m in _MANIFESTS if m in tracked]]))
+    all_source_candidates = [
+        rel for rel in dict.fromkeys([*searched, *mentioned]) if rel not in guidance_set and rel not in _MANIFESTS
+    ]
+    mentioned_sources = [rel for rel in mentioned if rel in all_source_candidates][:2]
+    alternatives = [rel for rel in all_source_candidates if rel not in mentioned_sources]
+    source_candidates = [
+        *alternatives[: max(0, 3 - len(mentioned_sources))],
+        *mentioned_sources,
+    ]
+    manifests = [rel for rel in _MANIFESTS if rel in tracked]
+    candidates = [*source_candidates, *manifests[:1]]
+    omitted_candidates = [rel for rel in [*all_source_candidates, *manifests[1:]] if rel not in candidates]
 
     bundle = ContextBundle(tracked_files=files[:350])
-    guidance_paths = _guidance_paths(files, set(guidance_names), mentioned)
     guidance_remaining = min(1200, max_context_tokens // 3)
     for index, rel in enumerate(guidance_paths):
         slots = len(guidance_paths) - index
@@ -331,20 +347,23 @@ def build_context_bundle(
             guidance_remaining -= min(guidance_remaining, count_text(content))
 
     remaining = max_context_tokens - count_text(bundle.render(max_context_tokens))
-    for rel in candidates:
+    for index, rel in enumerate(candidates):
         if remaining <= 250:
             bundle.omitted.append(rel)
             continue
+        slots = len(candidates) - index
+        allocation = min(max_file_tokens, max(250, remaining // slots))
         content = _read_relevant(
             workspace,
             rel,
             search_terms,
-            min(max_file_tokens, remaining),
+            allocation,
         )
         if not content:
             continue
         bundle.candidates[rel] = content
         remaining -= count_text(content)
+    bundle.omitted.extend(rel for rel in omitted_candidates if rel not in bundle.omitted)
     return bundle
 
 

@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import subprocess
 
-from agents.comprehend.bundle import _read_relevant, _search_candidates, rank_candidate_paths
+from agents.comprehend.bundle import (
+    _mentioned_paths,
+    _read_relevant,
+    _search_candidates,
+    build_context_bundle,
+    rank_candidate_paths,
+)
 
 
 def test_candidate_search_uses_git_without_requiring_ripgrep(tmp_path, monkeypatch):
@@ -13,11 +19,7 @@ def test_candidate_search_uses_git_without_requiring_ripgrep(tmp_path, monkeypat
     def fake_run(args, **kwargs):
         calls.append(args)
         term = args[args.index("-e") + 1]
-        stdout = (
-            "src/copy.ts\npnpm.lock\n"
-            if term.casefold() in {"copycompletetext", "handler"}
-            else ""
-        )
+        stdout = "src/copy.ts\npnpm.lock\n" if term.casefold() in {"copycompletetext", "handler"} else ""
         return subprocess.CompletedProcess(
             args,
             0 if stdout else 1,
@@ -129,3 +131,43 @@ def test_relevant_read_keeps_middle_match_with_small_budget(tmp_path):
     assert "handleCopyForLlm" in excerpt
     assert "head0" not in excerpt
     assert "tail149" not in excerpt
+
+
+def test_bare_unique_filename_resolves_to_tracked_path():
+    tracked = {"app/components/Footer.tsx", "app/pricing/page.tsx"}
+    assert _mentioned_paths("Update `Footer.tsx` if needed.", tracked) == ["app/components/Footer.tsx"]
+    ambiguous = {"app/Footer.tsx", "components/Footer.tsx"}
+    assert _mentioned_paths("Update Footer.tsx.", ambiguous) == []
+
+
+def test_bundle_excludes_guidance_and_shares_candidate_budget(tmp_path, monkeypatch):
+    files = ["AGENTS.md", "app/pricing/page.tsx", "app/components/Footer.tsx", "package.json"]
+    (tmp_path / "app/pricing").mkdir(parents=True)
+    (tmp_path / "app/components").mkdir(parents=True)
+    (tmp_path / "AGENTS.md").write_text("pricing copy email guidance\n" * 100)
+    (tmp_path / "app/pricing/page.tsx").write_text("Enterprise hello@elixpo.com contact\n" * 100)
+    (tmp_path / "app/components/Footer.tsx").write_text("clipboard hello@elixpo.com\n" * 100)
+    (tmp_path / "package.json").write_text('{"scripts":{"typecheck":"tsc --noEmit"}}')
+    monkeypatch.setattr("agents.comprehend.bundle.tracked_files", lambda workspace: files)
+    monkeypatch.setattr(
+        "agents.comprehend.bundle.rank_candidate_paths",
+        lambda workspace, issue, limit: [
+            "AGENTS.md",
+            "app/pricing/page.tsx",
+            "app/components/Footer.tsx",
+        ],
+    )
+
+    bundle = build_context_bundle(
+        tmp_path,
+        {"title": "Add copy email to enterprise pricing", "body": "Use Footer.tsx behavior"},
+        guidance_names=["AGENTS.md"],
+        max_context_tokens=3200,
+        max_file_tokens=1400,
+    )
+
+    assert list(bundle.guidance) == ["AGENTS.md"]
+    assert "AGENTS.md" not in bundle.candidates
+    assert "app/pricing/page.tsx" in bundle.candidates
+    assert "app/components/Footer.tsx" in bundle.candidates
+    assert "package.json" in bundle.candidates

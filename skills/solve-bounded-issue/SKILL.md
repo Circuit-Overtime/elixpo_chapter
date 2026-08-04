@@ -93,6 +93,12 @@ candidate-directory grep only when every bundled excerpt lacks actionable
 evidence. Never use find, repository-wide grep, tool help, repeated queries, a
 third candidate read, or another model call for retrieval.
 
+Guidance files occupy guidance slots only and must never consume ranked source
+slots a second time. Resolve a uniquely named bare file from issue text to its
+tracked path, but leave ambiguous basenames to behavioral ranking. Divide the
+remaining bundle budget across the top source candidates and one manifest;
+never allow the first large file to starve every later candidate.
+
 Split every issue into observable behavior and implementation hypotheses.
 Repository evidence overrides guessed paths, symbols, data flow, and proposed
 edits. An absent claimed symbol is not a reason to decline when the harness has
