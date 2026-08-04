@@ -85,6 +85,12 @@ retrieval hints, not chosen targets. Treat paths named in issue prose as evidenc
 only: if a reported page lacks the handler, inspect the ranked shared layout,
 component, or handler rather than declining.
 
+Rank behavior using both document frequency and same-line term co-occurrence;
+repeated issue prose must not outweigh a source expression containing the action,
+label, and implementation primitive together. After reading the bundle, require
+the next command to read the supervisor-ranked primary candidate exactly. The
+model still decides whether and how to edit after inspecting that source.
+
 Pin the legacy JSON-config-compatible CCR runtime. Never use an unpinned latest
 CCR package: current control-plane releases can attach to a global profile and
 silently ignore Solve's Pollinations route. Print the pinned runtime at startup.

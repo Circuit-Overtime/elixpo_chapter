@@ -175,6 +175,27 @@ def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int
         for rel in matches:
             scores[rel] += weight + (1 if term in exact_terms else 0)
             first_seen.setdefault(rel, len(first_seen))
+
+    # Prefer files where multiple behavioral terms occur together. Independent
+    # document-frequency scores can tie a shared handler with prose-heavy route
+    # pages; local co-occurrence identifies the implementation expression
+    # without encoding framework- or issue-specific symbols.
+    normalized_terms = [term.casefold() for term in terms]
+    for rel in list(scores):
+        path = workspace / rel
+        try:
+            if not path.is_file() or path.is_symlink() or path.stat().st_size > 512_000:
+                continue
+            max_line_hits = max(
+                (
+                    sum(term in line.casefold() for term in normalized_terms)
+                    for line in path.read_text(errors="replace").splitlines()
+                ),
+                default=0,
+            )
+        except OSError:
+            continue
+        scores[rel] += max(0, max_line_hits - 1) * 4
     return sorted(scores, key=lambda rel: (-scores[rel], first_seen[rel], rel))[:limit]
 
 

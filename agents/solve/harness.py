@@ -376,10 +376,17 @@ def _prompt(
     rtk_available: bool,
     candidate_hints: list[str],
 ) -> str:
+    primary = candidate_hints[0] if candidate_hints else ""
+    primary_instruction = (
+        f"After the bundle, your next command must be exactly `rtk read {primary}`. "
+        "This is the supervisor-ranked behavioral candidate; inspect it before any issue-mentioned path. "
+        if primary
+        else "The supervisor found no primary candidate; use the one permitted scoped grep. "
+    )
     discovery = (
         "RTK is available. First run exactly `rtk read .elixpo-context/context.md`; do not run find, "
         "help, or a repository-wide grep. The bundle already contains guidance, a tracked index, and "
-        "ranked relevant excerpts. Then use one relative-path `rtk read` for the strongest candidate. "
+        f"ranked relevant excerpts. {primary_instruction}"
         "Only if the bundle has no actionable candidate may you run one candidate-directory-scoped "
         "`rtk grep 'term1|term2' PATH -n -C 3`. Never use built-in Read, repeat a query, or read the "
         "same file through another path. After Edit, permit exactly one `rtk read` of each changed "

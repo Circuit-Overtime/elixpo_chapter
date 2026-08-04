@@ -57,6 +57,29 @@ def test_candidate_search_ranks_files_matching_multiple_issue_terms(tmp_path, mo
     assert found[0] == "app/docs/layout.tsx"
 
 
+def test_candidate_search_prefers_behavioral_terms_on_one_line(tmp_path, monkeypatch):
+    (tmp_path / "shared.ts").write_text("const copyForLlmButton = () => clipboard.writeText(value);\n")
+    (tmp_path / "page.ts").write_text("// copy\n// llm\n// button\n// clipboard\n")
+
+    def fake_run(args, **kwargs):
+        return subprocess.CompletedProcess(
+            args,
+            0,
+            stdout="page.ts\nshared.ts\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    found = _search_candidates(
+        tmp_path,
+        "copy llm button clipboard",
+        {"page.ts", "shared.ts"},
+    )
+
+    assert found[0] == "shared.ts"
+
+
 def test_rank_candidate_paths_leads_with_behavior_over_mentioned_page(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "agents.comprehend.bundle.tracked_files",
