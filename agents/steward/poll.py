@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
 from urllib.parse import urlparse
 
 import structlog
+from lib.github.dispatch import repository_dispatch
 from lib.state.followups import FollowupRecord
 
 from agents.steward.respond import (
@@ -80,11 +82,21 @@ async def _discover_mentions(api, memory, *, ttl_days: int) -> dict[str, str]:
     return thread_ids
 
 
-async def reconcile(api, gist, router, *, bot_username: str, ttl_days: int, max_replies: int = 5) -> dict:
+async def reconcile(
+    api,
+    gist,
+    router,
+    *,
+    bot_username: str,
+    ttl_days: int,
+    max_replies: int = 2,
+    control_repo: str = "",
+) -> dict:
     memory = await gist.load()
     expired = memory.prune_expired()
     notification_threads = await _discover_mentions(api, memory, ttl_days=ttl_days)
     replies = 0
+    dispatched = 0
     terminal = 0
 
     for key, record in list(memory.active.items()):
@@ -138,7 +150,24 @@ async def reconcile(api, gist, router, *, bot_username: str, ttl_days: int, max_
                 await safety_check(router, progress)
                 progress_comment = await api.create_issue_comment(owner, repo, record.subject_number, progress)
             draft = await draft_reply(router, record, subject, comment, comments)
-            reply = f"{draft}\n\n{final_marker}"
+            if draft.action == "repository_work":
+                if not control_repo or "/" not in control_repo:
+                    raise RuntimeError("repository-work intake requires ELIXPO_GITHUB_CONTROL_REPO")
+                control_owner, control_name = control_repo.split("/", 1)
+                await repository_dispatch(
+                    api,
+                    control_owner,
+                    control_name,
+                    "steward_issue_intake",
+                    {
+                        "issue_url": record.subject_url,
+                        "source_comment_id": source_id,
+                        "memory_key": record.key,
+                    },
+                )
+                record.status = "intake_dispatched"
+                dispatched += 1
+            reply = f"{draft.body}\n\n{final_marker}"
             await safety_check(router, reply)
             await api.create_issue_comment(owner, repo, record.subject_number, reply)
             completed_progress = completed_progress_body(source_id)
@@ -155,6 +184,7 @@ async def reconcile(api, gist, router, *, bot_username: str, ttl_days: int, max_
         "active": len(memory.active),
         "completed": terminal,
         "expired": len(expired),
+        "dispatched": dispatched,
         "replies": replies,
     }
 
@@ -181,6 +211,7 @@ async def _run() -> int:
             router,
             bot_username=settings.github.bot_username,
             ttl_days=settings.followups.ttl_days,
+            control_repo=settings.github.control_repo or os.getenv("GITHUB_REPOSITORY", ""),
         )
     except Exception as exc:
         log.error("steward.poll_failed", error=str(exc))

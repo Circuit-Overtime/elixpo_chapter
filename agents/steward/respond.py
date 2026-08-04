@@ -5,8 +5,10 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from typing import Literal
 
-from rtk.models import Message
+from pydantic import BaseModel, ValidationError
+from rtk.models import FunctionDef, Message, ToolDef
 
 SKILL_PATH = Path(__file__).resolve().parents[2] / "skills" / "steward-followup-memory" / "SKILL.md"
 MENTION_RE = re.compile(r"(?<![A-Za-z0-9_.+\-])@elixpoo(?![A-Za-z0-9_.+\-])", re.IGNORECASE)
@@ -14,6 +16,11 @@ MENTION_RE = re.compile(r"(?<![A-Za-z0-9_.+\-])@elixpoo(?![A-Za-z0-9_.+\-])", re
 
 class UnsafeStewardReply(RuntimeError):
     pass
+
+
+class StewardReply(BaseModel):
+    body: str
+    action: Literal["reply_only", "repository_work"] = "reply_only"
 
 
 def contains_mention(body: str) -> bool:
@@ -49,7 +56,7 @@ def completed_progress_body(source_id: int | str) -> str:
     )
 
 
-async def draft_reply(router, record, subject: dict, trigger: dict, comments: list[dict]) -> str:
+async def draft_reply(router, record, subject: dict, trigger: dict, comments: list[dict]) -> StewardReply:
     skill = SKILL_PATH.read_text(encoding="utf-8").split("---", 2)[-1].strip()
     payload = {
         "memory": {
@@ -87,18 +94,39 @@ async def draft_reply(router, record, subject: dict, trigger: dict, comments: li
                     skill + "\n\nWrite one concise GitHub reply to the exact triggering request. "
                     "Use repository evidence only. Never claim a commit, test, push, or fix without a receipt. "
                     "If code work is requested but no receipt exists, say it has been recorded for the grounded "
-                    "repository workflow. Return only the reply body, with no identity disclaimer."
+                    "repository workflow. Select repository_work only when the trigger explicitly asks to "
+                    "implement or fix the open issue itself; questions, status requests, reviews, PR follow-ups, "
+                    "and ambiguous requests are reply_only. Record the concise reply and action with the tool."
                 ),
             ),
             Message(role="user", content=json.dumps(payload, separators=(",", ":"))),
         ],
+        tools=[
+            ToolDef(
+                function=FunctionDef(
+                    name="record_steward_reply",
+                    description="Record the grounded public reply and whether an issue enters repository work.",
+                    parameters=StewardReply.model_json_schema(),
+                )
+            )
+        ],
+        tool_choice={"type": "function", "function": {"name": "record_steward_reply"}},
         effort="low",
         max_tokens=500,
     )
-    body = (response.choices[0].message.content or "").strip()
-    if not body:
+    calls = response.choices[0].message.tool_calls or []
+    if not calls:
+        raise UnsafeStewardReply("Steward did not return its structured reply")
+    try:
+        decision = StewardReply.model_validate_json(calls[0].function.arguments)
+    except (ValidationError, json.JSONDecodeError) as exc:
+        raise UnsafeStewardReply(f"Steward returned an invalid structured reply: {exc}") from exc
+    decision.body = decision.body.strip()[:3000]
+    if not decision.body:
         raise UnsafeStewardReply("Steward produced an empty reply")
-    return body[:3000]
+    if record.subject_kind != "issue":
+        decision.action = "reply_only"
+    return decision
 
 
 async def safety_check(router, body: str) -> None:

@@ -45,6 +45,14 @@ create an intake record before responding. Repository-changing requests must
 enter the normal grounded repository workflow; a conversational responder must
 not edit code directly.
 
+Return a structured action with the reply. Choose `repository_work` only for an
+explicit request to implement or fix the open issue itself. Questions, status
+requests, reviews, pull-request follow-ups, and ambiguous requests are
+`reply_only`. Dispatch repository work to the control repository; never write
+Pick, Vet, or Solve state from the notification poller. The intake workflow must
+enforce the blocklist, daily cap, one-active-work-per-repository rule, and the
+single Pick/Vet slot before it records a `pending_vet` receipt.
+
 ## Preserve idempotency
 
 Use stable HTML markers derived from the source comment ID for acknowledgements

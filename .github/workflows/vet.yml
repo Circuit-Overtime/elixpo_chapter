@@ -4,6 +4,8 @@ name: vet
 # an optional diagnostic URL; normal runs consume state/pick.json.
 
 on:
+  repository_dispatch:
+    types: [steward_vet]
   workflow_run:
     workflows: [pick]
     types: [completed]
@@ -28,7 +30,7 @@ concurrency:
 jobs:
   vet:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

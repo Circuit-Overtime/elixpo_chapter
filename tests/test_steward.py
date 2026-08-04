@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from agents.steward.intake import IntakeRejected, seed_issue
 from agents.steward.poll import _subject_identity, reconcile
 from agents.steward.remember import register_submission
 from agents.steward.respond import authored_by_bot, contains_mention, marker
@@ -19,13 +21,19 @@ def _response(content: str):
 
 
 class FakeRouter:
-    def __init__(self, *contents: str):
-        self.responses = [_response(content) for content in contents]
+    def __init__(self, *contents):
+        self.responses = list(contents)
         self.roles = []
 
     async def call(self, role, messages, **kwargs):
         self.roles.append(role)
-        return self.responses.pop(0)
+        content = self.responses.pop(0)
+        if role != "steward":
+            return _response(str(content))
+        decision = content if isinstance(content, dict) else {"body": str(content), "action": "reply_only"}
+        call = SimpleNamespace(function=SimpleNamespace(arguments=json.dumps(decision)))
+        message = SimpleNamespace(content=None, tool_calls=[call])
+        return SimpleNamespace(choices=[SimpleNamespace(message=message)])
 
 
 class MemoryGist:
@@ -145,10 +153,43 @@ def test_mentions_and_notification_urls_are_exact():
     assert _subject_identity("https://api.github.com/repos/o/r/issues/8") == ("o", "r", "issue", 8)
 
 
+def test_workflows_wire_turn_headroom_and_discussion_mentions():
+    agent_workflow = Path(".github/workflows/elixpo-agent.yml").read_text(encoding="utf-8")
+    discussion_workflow = Path(".github/workflows/discussions.yml").read_text(encoding="utf-8")
+    steward_workflow = Path(".github/workflows/steward.yml").read_text(encoding="utf-8")
+    intake_workflow = Path(".github/workflows/steward-intake.yml").read_text(encoding="utf-8")
+
+    assert "ELIXPO_AGENT_MAX_TURNS || 64" in agent_workflow
+    assert "discussion_comment:" in discussion_workflow
+    assert "python -m agents.discussions respond" in discussion_workflow
+    assert 'cron: "*/10 * * * *"' in steward_workflow
+    assert "types: [steward_issue_intake]" in intake_workflow
+    assert "python -m agents.steward.intake" in intake_workflow
+
+
+def test_mention_intake_seeds_only_an_available_vet_slot(tmp_path):
+    from lib.state.store import StateStore
+
+    store = StateStore(tmp_path)
+    receipt = seed_issue(store, "https://github.com/o/r/issues/8", 91)
+
+    assert receipt["status"] == "pending_vet"
+    assert receipt["source"] == "steward_mention"
+    assert store.read_json("pick.json")["source_comment_id"] == 91
+
+    store.write_json(
+        "pick.json",
+        {"status": "pending_vet", "url": "https://github.com/another/repo/issues/3"},
+    )
+    with pytest.raises(IntakeRejected, match="another issue"):
+        seed_issue(store, "https://github.com/o/r/issues/8", 92)
+
+
 class FollowupAPI:
     def __init__(self, *, merged=False):
         self.merged = merged
         self.posts = []
+        self.dispatches = []
         self.comment = {
             "id": 91,
             "body": "@elixpoo can you check the requested adjustment?",
@@ -159,6 +200,9 @@ class FollowupAPI:
     async def _request(self, method, path, **kwargs):
         if method == "GET" and path == "/notifications":
             return []
+        if method == "POST" and path.endswith("/dispatches"):
+            self.dispatches.append((path, kwargs["json"]))
+            return None
         raise AssertionError((method, path, kwargs))
 
     async def get_pull(self, owner, repo, number):
@@ -168,6 +212,15 @@ class FollowupAPI:
             "body": "Small patch.",
             "state": "closed" if self.merged else "open",
             "merged_at": "2026-08-04T01:00:00Z" if self.merged else None,
+        }
+
+    async def get_issue(self, owner, repo, number):
+        return {
+            "id": number,
+            "title": "Fix the example",
+            "body": "Small patch.",
+            "state": "open",
+            "html_url": f"https://github.com/{owner}/{repo}/issues/{number}",
         }
 
     async def get_issue_comments(self, owner, repo, number):
@@ -232,3 +285,36 @@ async def test_reconcile_removes_merged_pr_without_model_calls():
     assert gist.memory.active == {}
     assert gist.memory.completed[-1].outcome == "merged"
     assert router.roles == []
+
+
+@pytest.mark.asyncio
+async def test_reconcile_dispatches_explicit_new_issue_work():
+    api = FollowupAPI()
+    record = FollowupRecord.create(
+        repository="elixpo/project",
+        subject_kind="issue",
+        subject_number=12,
+        subject_url="https://github.com/elixpo/project/issues/12",
+        ttl_days=360,
+    )
+    gist = MemoryGist(FollowupMemory(active={record.key: record}))
+    router = FakeRouter(
+        "SAFE",
+        {"body": "I’ve queued this for the repository workflow.", "action": "repository_work"},
+        "SAFE",
+        "SAFE",
+    )
+
+    result = await reconcile(
+        api,
+        gist,
+        router,
+        bot_username="elixpoo",
+        ttl_days=360,
+        control_repo="elixpoo/agent.elixpo",
+    )
+
+    assert result["dispatched"] == 1
+    assert api.dispatches[0][0] == "/repos/elixpoo/agent.elixpo/dispatches"
+    assert api.dispatches[0][1]["event_type"] == "steward_issue_intake"
+    assert gist.memory.active[record.key].status == "intake_dispatched"
