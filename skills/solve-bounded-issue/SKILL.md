@@ -120,10 +120,12 @@ and choose one candidate containing concrete implementation evidence; rank one
 and issue-mentioned paths are priors, never forced targets. Require one bounded
 built-in Read of the chosen edit target because the coding CLI will reject Edit
 without it. Strip the PDF-only `pages` property from Read's provider-facing tool
-schema so text reads cannot emit an invalid empty value. If the first target read
-disproves the choice, permit one built-in fallback read. If it confirms the target
-but exposes one acceptance-criteria gap, permit one supporting `rtk read` instead.
-Two source reads after the bundle is the complete pre-edit limit. Permit one
+schema so text reads cannot emit an invalid empty value. Freeze built-in source
+discovery after the first model-selected candidate Read; bundled excerpts remain
+available for comparison and one supporting `rtk read` may fill an
+acceptance-criteria gap. If that grounded target is disproved, decline cheaply
+rather than restarting discovery inside Solve. One source Read after the bundle
+is the complete pre-edit limit. Permit one
 candidate-directory grep only when every bundled excerpt lacks actionable
 evidence. Never use find, repository-wide grep, tool help, repeated queries, a
 third candidate read, or another model call for retrieval. Do not reread a
@@ -138,6 +140,11 @@ returning a short instruction to Edit or emit StructuredOutput.
 Seed the first built-in candidate Read with the line offset of Comprehend's
 highest-scoring rendered excerpt when the model omitted an offset. This gives
 Edit exact context without a continuation read or another model call.
+If Qwen emits an Edit with no `file_path`, the hook may supply the path only when
+exactly one grounded source path has been read. Preserve every other Edit field;
+never guess between multiple targets. Report compact gate counts after the
+session so denied calls and successful edits remain observable without exposing
+tool payloads.
 
 Guidance files occupy guidance slots only and must never consume ranked source
 slots a second time. Resolve a uniquely named bare file from issue text to its

@@ -374,6 +374,9 @@ def _render_harness_event(event: dict[str, Any]) -> None:
                     "",
                 )
                 suffix = f" target={_redact(target)}" if target else ""
+                if not target and tool_input:
+                    fields = ",".join(sorted(str(key) for key in tool_input)[:8])
+                    suffix = f" fields={fields}"
                 print(f"[harness] tool={block.get('name', 'unknown')}{suffix}", flush=True)
         return
     if event_type == "user":
@@ -910,6 +913,18 @@ def run_harness(
                     ),
                     prompt=prompt,
                     timeout=timeout,
+                )
+                gate_state_path = router_home / "claude-config/tmp/tool-gate.json"
+                try:
+                    observed_gate = json.loads(gate_state_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    observed_gate = {}
+                print(
+                    "[gate] "
+                    f"source_reads={len(observed_gate.get('source_reads') or [])} "
+                    f"edits={len(observed_gate.get('edited_paths') or [])} "
+                    f"denied={int(observed_gate.get('denied_calls') or 0)}",
+                    flush=True,
                 )
                 if not _is_empty_connection_failure(final_event):
                     break

@@ -82,6 +82,13 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
 
     if tool in {"Read", "Edit", "Write"}:
         raw = str(tool_input.get("file_path") or "")
+        repaired_path = False
+        if tool == "Edit" and not raw:
+            reads = list(state.get("source_reads") or [])
+            if len(reads) == 1:
+                raw = reads[0]
+                tool_input["file_path"] = raw
+                repaired_path = True
         relative = _relative_path(cwd, raw)
         if relative is None:
             return (
@@ -89,7 +96,7 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                 None,
                 "Use an existing repository-relative path from the context bundle; never use an absolute root.",
             )
-        updated = None
+        updated = tool_input if repaired_path else None
         if relative != raw:
             tool_input["file_path"] = relative
             updated = tool_input
@@ -100,7 +107,7 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
             edited = set(state.get("edited_paths") or [])
             key = "review_reads" if relative in edited else "source_reads"
             reads = list(state.get(key) or [])
-            limit = len(edited) if key == "review_reads" else 2
+            limit = len(edited) if key == "review_reads" else 1
             if relative in reads:
                 return 2, None, "This path was already read. Do not continue it; Edit now or call StructuredOutput."
             if len(reads) >= max(1, limit):
@@ -169,6 +176,10 @@ def main() -> int:
         except json.JSONDecodeError:
             state = {}
         code, output, reason = _decision(event, state)
+        if code == 2:
+            state["denied_calls"] = int(state.get("denied_calls") or 0) + 1
+            if reason:
+                state["last_denial"] = reason[:240]
         handle.seek(0)
         handle.truncate()
         json.dump(state, handle, separators=(",", ":"))

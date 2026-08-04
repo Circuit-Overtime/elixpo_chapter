@@ -262,6 +262,29 @@ def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
     assert code == 2 and output is None
     assert "already read" in reason
 
+    second = {**event, "tool_input": {"file_path": "app/components/Footer.tsx"}}
+    code, output, reason = _decision(second, state)
+    assert code == 2 and output is None
+    assert "budget is exhausted" in reason
+
+
+def test_tool_gate_repairs_pathless_edit_from_single_grounded_read(tmp_path):
+    target = tmp_path / "app/pricing/page.tsx"
+    target.parent.mkdir(parents=True)
+    target.write_text("old")
+    state = {"source_reads": ["app/pricing/page.tsx"]}
+    event = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Edit",
+        "cwd": str(tmp_path),
+        "tool_input": {"old_string": "old", "new_string": "new"},
+    }
+
+    code, output, reason = _decision(event, state)
+
+    assert code == 0 and reason is None
+    assert output["hookSpecificOutput"]["updatedInput"]["file_path"] == "app/pricing/page.tsx"
+
 
 def test_tool_gate_blocks_raw_shell_and_bounds_prose_stops(tmp_path):
     state = {}
