@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -138,9 +139,25 @@ def _node_command(package: str, *args: str) -> list[str]:
 
 
 def _router_ready(router_url: str) -> bool:
+    """Require CCR's authenticated Messages route without calling a model."""
+    request = urllib.request.Request(
+        f"{router_url}/v1/messages",
+        data=b"{}",
+        headers={
+            "x-api-key": "ccr-pollinations",
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
     try:
-        with urllib.request.urlopen(router_url, timeout=1) as response:  # noqa: S310 - loopback URL
+        with urllib.request.urlopen(request, timeout=1) as response:  # noqa: S310 - loopback URL
             return response.status < 500
+    except urllib.error.HTTPError as exc:
+        # CCR rejects this deliberately model-free request before routing it
+        # upstream. Matching the response also avoids mistaking a generic 400
+        # from the early control-plane server for API readiness.
+        body = exc.read().decode(errors="replace")
+        return exc.code == 400 and "Missing model" in body
     except OSError:
         return False
 
@@ -213,6 +230,7 @@ def _harness_env(
     *,
     router_url: str,
     config_dir: Path | None = None,
+    client_model: str | None = None,
 ) -> dict[str, str]:
     """Expose only runtime basics and the local CCR credential to target code."""
     policy = policy or {}
@@ -232,17 +250,18 @@ def _harness_env(
         for key, value in os.environ.items()
         if key in keep and not any(marker in key.upper() for marker in _SECRET_MARKERS)
     }
+    selected_model = client_model or model
     env.update(
         {
             "ANTHROPIC_BASE_URL": router_url,
             # CCR's APIKEY is validated through x-api-key. ANTHROPIC_AUTH_TOKEN
             # produces a bearer Authorization header and is rejected locally.
             "ANTHROPIC_API_KEY": "ccr-pollinations",
-            "ANTHROPIC_MODEL": model,
+            "ANTHROPIC_MODEL": selected_model,
             # A fresh client profile knows only Anthropic's built-in aliases.
             # Register CCR's selected provider model explicitly so the client
             # sends it to the gateway instead of rejecting it locally.
-            "ANTHROPIC_CUSTOM_MODEL_OPTION": model,
+            "ANTHROPIC_CUSTOM_MODEL_OPTION": selected_model,
             "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": model,
             "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION": "CCR-routed coding model",
             "NO_PROXY": "127.0.0.1,localhost",
@@ -736,13 +755,15 @@ def run_harness(
             print(f"[ccr] ready at {router_url}", flush=True)
 
             model = str(policy.get("harness_model", "qwen-coder"))
+            provider = str(policy.get("harness_provider", "pollinations-code"))
+            client_model = f"{provider},{model}"
             print(
                 "[rtk] discovery compression enabled"
                 if rtk_available
                 else "[rtk] CLI unavailable; CCR context governor remains enabled",
                 flush=True,
             )
-            command = _harness_command(model, policy, rtk_available=rtk_available)
+            command = _harness_command(client_model, policy, rtk_available=rtk_available)
             if router_process.poll() is not None or not _router_ready(router_url):
                 raise HarnessError("CCR became unavailable before the coding harness request")
             prompt = _prompt(
@@ -761,6 +782,7 @@ def run_harness(
                         policy,
                         router_url=router_url,
                         config_dir=router_home / "claude-config",
+                        client_model=client_model,
                     ),
                     prompt=prompt,
                     timeout=timeout,

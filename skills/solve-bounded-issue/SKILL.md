@@ -67,6 +67,15 @@ aliases and otherwise rejects gateway model IDs before contacting CCR. The
 custom entry changes local model validation only; CCR remains authoritative for
 the provider, model route, API credential, and usage accounting.
 
+Do not treat CCR's web root as readiness. Probe the authenticated Messages
+route with a deliberately model-free request and require CCR's `Missing model`
+response before starting the client. This readiness check consumes no model
+tokens.
+
+CCR 2.x expects the client model as `provider,model`. The Solve client must send
+`pollinations-code,qwen-coder`; sending bare `qwen-coder` makes CCR interpret the
+model name as a provider and reject the request locally with a misleading 404.
+
 Route the session through CCR to `qwen-coder`. When the pinned RTK CLI is
 available, prefer its compact `find`, `grep`, `read`, and `smart` commands
 for discovery, then use built-in `Read` only for exact edit context. Expose Bash

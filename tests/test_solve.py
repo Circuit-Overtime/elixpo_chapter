@@ -8,6 +8,8 @@ import os
 import shutil
 import subprocess
 import time
+import urllib.error
+from io import BytesIO
 from pathlib import Path
 
 import httpx
@@ -29,6 +31,7 @@ from agents.solve.harness import (
     _prompt,
     _redact,
     _render_harness_event,
+    _router_ready,
     _stop_stale_isolated_routers,
 )
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
@@ -201,6 +204,7 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
         "qwen-coder",
         router_url="http://127.0.0.1:4567",
         config_dir=config_dir,
+        client_model="pollinations-code,qwen-coder",
     )
 
     assert "GITHUB_TOKEN" not in env
@@ -208,7 +212,8 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
     assert "ELIXPO_POLLINATIONS_API_KEY" not in env
     assert env["ANTHROPIC_API_KEY"] == "ccr-pollinations"
     assert env["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:4567"
-    assert env["ANTHROPIC_CUSTOM_MODEL_OPTION"] == "qwen-coder"
+    assert env["ANTHROPIC_MODEL"] == "pollinations-code,qwen-coder"
+    assert env["ANTHROPIC_CUSTOM_MODEL_OPTION"] == "pollinations-code,qwen-coder"
     assert env["ANTHROPIC_CUSTOM_MODEL_OPTION_NAME"] == "qwen-coder"
     assert "ANTHROPIC_AUTH_TOKEN" not in env
     assert env["RTK_TELEMETRY_DISABLED"] == "1"
@@ -221,6 +226,64 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
     assert env["CLAUDE_CONFIG_DIR"] == str(config_dir)
     assert env["CLAUDE_CODE_TMPDIR"] == str(config_dir / "tmp")
     assert env["DISABLE_UPDATES"] == "1"
+
+
+def test_ccr_setup_registers_custom_governor_options_once(tmp_path):
+    env = os.environ.copy()
+    env.update(
+        {
+            "HOME": str(tmp_path),
+            "ELIXPO_POLLINATIONS_API_KEY": "test-key",
+            "ELIXPO_CCR_AGENT_MODEL": "nova-fast",
+            "ELIXPO_CCR_CODE_MODEL": "qwen-coder",
+            "ELIXPO_CCR_THINK_MODEL": "qwen-coder",
+            "ELIXPO_CCR_SEARCH_MODEL": "perplexity-fast",
+            "ELIXPO_CCR_AGENT_TOKENS": "10",
+            "ELIXPO_CCR_CODE_TOKENS": "20",
+            "ELIXPO_CCR_THINK_TOKENS": "30",
+            "ELIXPO_CCR_SEARCH_TOKENS": "40",
+        }
+    )
+    result = subprocess.run(
+        ["bash", str(Path(".github/scripts/setup_ccr.sh").resolve()), str(Path.cwd())],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    config = json.loads((tmp_path / ".claude-code-router/config.json").read_text())
+    governor = next(item for item in config["transformers"] if item["path"].endswith("rtk-context-governor.js"))
+    assert governor["options"]["max_context_chars"] == 48000
+    for provider in config["Providers"]:
+        assert "rtk-context-governor" in provider["transformer"]["use"]
+        assert not any(
+            isinstance(item, list) and item[0] == "rtk-context-governor"
+            for item in provider["transformer"]["use"]
+        )
+
+
+def test_router_readiness_waits_for_messages_route(monkeypatch):
+    seen = []
+
+    def fail_with(status, body):
+        def urlopen(request, timeout):
+            seen.append((request.full_url, request.get_method(), request.data, timeout))
+            response = BytesIO(body)
+            raise urllib.error.HTTPError(request.full_url, status, "probe", {}, response)
+
+        return urlopen
+
+    monkeypatch.setattr("agents.solve.harness.urllib.request.urlopen", fail_with(404, b"not found"))
+    assert _router_ready("http://127.0.0.1:4567") is False
+    monkeypatch.setattr(
+        "agents.solve.harness.urllib.request.urlopen",
+        fail_with(400, b'{"error":"Missing model in request body"}'),
+    )
+    assert _router_ready("http://127.0.0.1:4567") is True
+    assert seen[-1] == ("http://127.0.0.1:4567/v1/messages", "POST", b"{}", 1)
 
 
 def test_stale_router_cleanup_targets_only_isolated_ccr_groups(tmp_path, monkeypatch):
