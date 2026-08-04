@@ -47,6 +47,52 @@ def _is_checkout_absolute(cwd: Path, raw: str) -> bool:
     return True
 
 
+def _recover_unparsed_file_input(tool: str, value: Any) -> dict[str, Any] | None:
+    """Recover complete, schema-shaped Edit/Write JSON rejected by the client parser."""
+    if not isinstance(value, str) or not value.strip() or len(value) > 128_000:
+        return None
+    text = value.strip()
+    candidates = [text]
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if len(lines) >= 3 and lines[-1].strip() == "```":
+            candidates.append("\n".join(lines[1:-1]).strip())
+    start, end = text.find("{"), text.rfind("}")
+    if 0 <= start < end:
+        candidates.append(text[start : end + 1])
+
+    required = {
+        "Edit": ("file_path", "old_string", "new_string"),
+        "Write": ("file_path", "content"),
+    }[tool]
+    allowed = {*required, "replace_all"} if tool == "Edit" else set(required)
+    seen: set[str] = set()
+    for candidate in candidates:
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        decoded: Any = candidate
+        for _ in range(2):
+            if not isinstance(decoded, str):
+                break
+            try:
+                # Some compatible providers emit literal newlines inside Edit
+                # strings. They are unambiguous but rejected by strict JSON.
+                decoded = json.loads(decoded, strict=False)
+            except (json.JSONDecodeError, TypeError):
+                decoded = None
+                break
+        if not isinstance(decoded, dict):
+            continue
+        if not all(isinstance(decoded.get(key), str) for key in required):
+            continue
+        repaired = {key: decoded[key] for key in allowed if key in decoded}
+        if "replace_all" in repaired and not isinstance(repaired["replace_all"], bool):
+            repaired.pop("replace_all")
+        return repaired
+    return None
+
+
 def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[str, Any] | None, str | None]:
     event_name = str(event.get("hook_event_name") or "")
     if event_name == "Stop":
@@ -88,7 +134,10 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
         tool = str(event.get("tool_name") or "")
         if tool in {"Edit", "Write"}:
             cwd = Path(str(event.get("cwd") or ".")).resolve()
-            raw = str((event.get("tool_input") or {}).get("file_path") or "")
+            post_input = dict(event.get("tool_input") or {})
+            if "__unparsedToolInput" in post_input:
+                post_input = _recover_unparsed_file_input(tool, post_input.get("__unparsedToolInput")) or {}
+            raw = str(post_input.get("file_path") or "")
             relative = _relative_path(cwd, raw)
             if relative is not None:
                 edited = list(state.get("edited_paths") or [])
@@ -106,6 +155,21 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
     tool = str(event.get("tool_name") or "")
     tool_input = dict(event.get("tool_input") or {})
     cwd = Path(str(event.get("cwd") or ".")).resolve()
+    recovered_unparsed = False
+    if tool in {"Edit", "Write"} and "__unparsedToolInput" in tool_input:
+        state["unparsed_tool_inputs"] = int(state.get("unparsed_tool_inputs") or 0) + 1
+        repaired = _recover_unparsed_file_input(tool, tool_input.get("__unparsedToolInput"))
+        if repaired is None:
+            state["unparsed_repair_failures"] = int(state.get("unparsed_repair_failures") or 0) + 1
+            return (
+                2,
+                None,
+                f"The {tool} arguments were malformed. Retry {tool} with separate schema fields "
+                "instead of embedded JSON; keep the change smaller if a multiline value was truncated.",
+            )
+        tool_input = repaired
+        recovered_unparsed = True
+        state["unparsed_recoveries"] = int(state.get("unparsed_recoveries") or 0) + 1
 
     if tool == "StructuredOutput":
         edited = set(state.get("edited_paths") or [])
@@ -161,7 +225,7 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
             )
         if Path(raw).is_absolute() and not _is_checkout_absolute(cwd, raw):
             return 2, None, f"Retry the same {tool} now with repository-relative file_path `{relative}`."
-        updated = tool_input if repaired_path else None
+        updated = tool_input if repaired_path or recovered_unparsed else None
         if relative != raw:
             tool_input["file_path"] = relative
             updated = tool_input

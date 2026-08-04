@@ -973,7 +973,9 @@ def run_harness(
                     f"source_reads={len(observed_gate.get('source_reads') or [])} "
                     f"source_windows={source_windows} "
                     f"edits={len(observed_gate.get('edited_paths') or [])} "
-                    f"denied={int(observed_gate.get('denied_calls') or 0)}"
+                    f"denied={int(observed_gate.get('denied_calls') or 0)} "
+                    f"unparsed={int(observed_gate.get('unparsed_tool_inputs') or 0)} "
+                    f"recovered={int(observed_gate.get('unparsed_recoveries') or 0)}"
                     f"{denial_suffix}",
                     flush=True,
                 )

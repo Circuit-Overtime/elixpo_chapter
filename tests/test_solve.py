@@ -322,6 +322,56 @@ def test_tool_gate_repairs_pathless_edit_from_single_grounded_read(tmp_path):
     assert output["hookSpecificOutput"]["updatedInput"]["file_path"] == "app/pricing/page.tsx"
 
 
+def test_tool_gate_recovers_complete_unparsed_multiline_edit(tmp_path):
+    target = tmp_path / "app/pricing/page.tsx"
+    target.parent.mkdir(parents=True)
+    target.write_text("before\nafter")
+    raw = (
+        '{"file_path":"app/pricing/page.tsx","old_string":"before\nafter",'
+        '"new_string":"before\nchip\nafter","replace_all":false}'
+    )
+    state = {"source_reads": ["app/pricing/page.tsx", "app/components/Footer.tsx"]}
+    event = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Edit",
+        "cwd": str(tmp_path),
+        "tool_input": {"__unparsedToolInput": raw},
+    }
+
+    code, output, reason = _decision(event, state)
+
+    assert code == 0 and reason is None
+    repaired = output["hookSpecificOutput"]["updatedInput"]
+    assert repaired == {
+        "file_path": "app/pricing/page.tsx",
+        "old_string": "before\nafter",
+        "new_string": "before\nchip\nafter",
+        "replace_all": False,
+    }
+    assert state["unparsed_tool_inputs"] == 1
+    assert state["unparsed_recoveries"] == 1
+
+    post = {**event, "hook_event_name": "PostToolUse"}
+    assert _decision(post, state)[0] == 0
+    assert state["edited_paths"] == ["app/pricing/page.tsx"]
+
+
+def test_tool_gate_rejects_incomplete_unparsed_edit(tmp_path):
+    state = {"source_reads": ["app/pricing/page.tsx"]}
+    event = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Edit",
+        "cwd": str(tmp_path),
+        "tool_input": {"__unparsedToolInput": '{"file_path":"app/pricing/page.tsx"'},
+    }
+
+    code, output, reason = _decision(event, state)
+
+    assert code == 2 and output is None
+    assert "arguments were malformed" in reason
+    assert state["unparsed_repair_failures"] == 1
+
+
 def test_tool_gate_blocks_raw_shell_and_enforces_structured_completion(tmp_path):
     state = {}
     raw = {
