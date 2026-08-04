@@ -37,6 +37,10 @@ and derived from the issue title without another model call.
 Keep the commit local until implementation and final review pass.
 Submit owns the single push and pull-request mutation.
 
+Configure the isolated checkout—not the runner globally—with Git author
+`elixpoo <elixpoo@gmail.com>` before the implementation commit. This identity is
+part of the workspace boundary and must be present in local Git configuration.
+
 ## Run one harness in the isolated checkout
 
 Keep Python as the supervisor in every environment. Python must configure and

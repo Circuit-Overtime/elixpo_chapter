@@ -9,9 +9,16 @@ Require `state/solve.json` status `ready_to_submit`, a present workspace, the
 recorded current branch and HEAD, a clean tree, at least one passing check, and a
 successful final review. Refuse partial or failed work.
 
-Build the title as `[ELIXPO] <short issue title>`. Build concise Markdown with a
-summary, factual change steps, exact files, successful commands, and honest
-autonomous-contributor disclosure.
+Build the title as `[ELIXPO] <technical subject>`, preferring the reviewed
+conventional commit subject over the raw issue title. Strip the conventional
+prefix, capitalize the subject, bound it without cutting a word, and never copy
+issue-form boilerplate into the title.
+
+Build a compact technical body without headings, decorative sections,
+blockquotes, status emoji, or generic process claims. State the completed
+summary, exact files, and successful verification commands in plain sentences.
+Keep the honest autonomous-contributor disclosure, `Fixes #N`, and persona
+footer.
 
 Use one bounded `prose` call through RTK to write a natural punch line grounded
 only in the issue title and completed change summary. Follow the living-repository
@@ -35,6 +42,11 @@ Push the exact branch once using environment-based authentication. Never force
 push. Search for an existing PR from the same fork branch and reuse it instead
 of creating a duplicate. Otherwise open one PR against the recorded upstream
 base branch.
+
+Solve must configure each isolated target checkout locally as
+`user.name=elixpoo` and `user.email=elixpoo@gmail.com` before committing. Never
+change the runner's global Git configuration. GitHub avatar attribution requires
+that address to be verified on the elixpoo account.
 
 Only after GitHub returns the PR, update Submit state and the production ledger
 to `awaiting_review`. Owned-test submissions do not consume production ledger

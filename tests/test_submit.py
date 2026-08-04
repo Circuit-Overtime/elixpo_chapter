@@ -24,6 +24,7 @@ def _state():
         "review": {"approved": True, "findings": []},
         "head_sha": "a" * 40,
         "summary": "Copy the complete documentation abstraction.",
+        "harness": {"commit_message": "fix(docs): preserve leaf content in LLM copy payload"},
         "target_files": ["app/docs/api/page.tsx"],
         "checks": [{"kind": "verification", "command": "npm run lint", "exit_code": 0}],
         "plan": {"steps": [{"purpose": "Use the complete llm_text value."}]},
@@ -33,11 +34,13 @@ def _state():
 def test_pr_markdown_is_disclosed_verified_and_closing():
     title = build_pr_title(_state())
     body = build_pr_body(_state(), "Small patch, full signal")
-    assert title == "[ELIXPO] copy full llm text"
-    assert "`app/docs/api/page.tsx`" in body
-    assert "✅ `npm run lint`" in body
+    assert title == "[ELIXPO] Preserve leaf content in LLM copy payload"
+    assert "Changed `app/docs/api/page.tsx`." in body
+    assert "Verified with `npm run lint`." in body
     assert "autonomous contributor" in body
     assert "Fixes #9" in body
+    assert "##" not in body
+    assert "✅" not in body
     assert body.endswith("<sub>“Small patch, full signal” — @elixpoo</sub>")
 
 

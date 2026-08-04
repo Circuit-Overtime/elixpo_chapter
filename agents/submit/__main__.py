@@ -26,38 +26,42 @@ class SubmitRejected(RuntimeError):
 
 
 def build_pr_title(solve_state: dict) -> str:
+    harness = solve_state.get("harness") or {}
+    raw = str(harness.get("commit_message") or solve_state.get("title") or "Fix issue")
     raw = re.sub(
-        r"^\[[^]]+]\s*[:\-–—]*\s*",
+        r"^(?:feat|fix|refactor|docs|test|chore|ci|perf|build)(?:\([^)]+\))?!?:\s*",
         "",
-        str(solve_state.get("title") or "Fix issue"),
-    ).strip()
-    return f"[ELIXPO] {raw[:100]}"
+        raw,
+        flags=re.IGNORECASE,
+    )
+    raw = re.sub(r"^\[[^]]+]\s*[:\-–—]*\s*", "", raw).strip()
+    raw = re.sub(r"\s+", " ", raw)
+    subject = raw[:90].rsplit(" ", 1)[0] if len(raw) > 90 else raw
+    subject = subject.strip(" .,:;-") or "Implement the reviewed issue fix"
+    return f"[ELIXPO] {subject[0].upper()}{subject[1:]}"
 
 
 def build_pr_body(solve_state: dict, punch_line: str) -> str:
-    plan = solve_state.get("plan") or {}
-    steps = [str(step.get("purpose") or "").strip() for step in plan.get("steps", [])]
     files = [str(path) for path in solve_state.get("target_files", [])]
     checks = solve_state.get("checks", [])
-    step_lines = "\n".join(f"- {item}" for item in steps if item) or "- Implement the vetted issue scope."
-    file_lines = "\n".join(f"- `{path}`" for path in files)
-    check_lines = "\n".join(
-        f"- ✅ `{item.get('command')}`"
+    file_list = ", ".join(f"`{path}`" for path in files)
+    check_list = ", ".join(
+        f"`{item.get('command')}`"
         for item in checks
         if item.get("kind", "verification") == "verification" and item.get("exit_code") == 0
     )
     number = int(solve_state["issue_number"])
+    summary = str(solve_state.get("summary") or "Implemented the reviewed issue fix.").strip()
+    details = []
+    if file_list:
+        details.append(f"Changed {file_list}.")
+    if check_list:
+        details.append(f"Verified with {check_list}.")
+    technical_line = " ".join(details)
     return (
-        "## ✨ Summary\n\n"
-        f"{solve_state.get('summary') or 'Implemented the requested bounded change.'}\n\n"
-        "## Changes\n\n"
-        f"{step_lines}\n\n"
-        "## Files\n\n"
-        f"{file_lines}\n\n"
-        "## ✅ Verification\n\n"
-        f"{check_lines}\n\n"
-        "> Opened by **elixpoo**, an autonomous contributor. The implementation was "
-        "scoped, tested, and self-reviewed before submission.\n\n"
+        f"{summary}\n\n"
+        f"{technical_line}\n\n"
+        "Opened by elixpoo, an autonomous contributor.\n\n"
         f"Fixes #{number}\n\n"
         f"<sub>“{punch_line}” — @elixpoo</sub>"
     )

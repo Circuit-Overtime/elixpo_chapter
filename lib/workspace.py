@@ -32,7 +32,9 @@ def git_auth_env(token: str) -> dict[str, str]:
 
 class Workspace:
     def __init__(self, session_id: str, base_path: str | Path):
-        if not session_id or any(ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for ch in session_id):
+        if not session_id or any(
+            ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for ch in session_id
+        ):
             raise ValueError("workspace session_id contains unsafe characters")
         self.session_id = session_id
         self.base_path = Path(base_path).resolve()
@@ -76,8 +78,10 @@ class Workspace:
         self._run(["git", "remote", "add", "upstream", upstream_url], cwd=self.root)
         self._run(["git", "fetch", "--depth", "1", "upstream", base_branch], cwd=self.root, env=env)
         self._run(["git", "checkout", "-b", work_branch, "FETCH_HEAD"], cwd=self.root)
-        self._run(["git", "config", "user.name", "elixpoo[bot]"], cwd=self.root)
-        self._run(["git", "config", "user.email", "elixpoo[bot]@users.noreply.github.com"], cwd=self.root)
+        # Keep identity local to the isolated fork. GitHub links the commit and
+        # avatar when this verified email belongs to the elixpoo account.
+        self._run(["git", "config", "user.name", "elixpoo"], cwd=self.root)
+        self._run(["git", "config", "user.email", "elixpoo@gmail.com"], cwd=self.root)
         return self.root
 
     def cleanup(self) -> None:
@@ -86,4 +90,3 @@ class Workspace:
 
     def exists(self) -> bool:
         return self.root.is_dir()
-
