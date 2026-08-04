@@ -23,7 +23,23 @@ def load_solve_policy(path: str | Path | None = None) -> dict[str, Any]:
 
 def is_test_repository(repo: str, policy: dict[str, Any] | None = None) -> bool:
     policy = policy or load_solve_policy()
-    return repo.casefold() in {
-        str(item).casefold() for item in policy.get("test_repositories", [])
-    }
+    return repo.casefold() in {str(item).casefold() for item in policy.get("test_repositories", [])}
 
+
+def solve_token_limit(policy: dict[str, Any], vet: dict[str, Any] | None) -> int:
+    """Turn Vet's estimate into bounded headroom; never trust state as a limit."""
+    base = max(1, int(policy["token_budget"]))
+    absolute = max(base, int(policy.get("max_token_budget", base)))
+    if not vet or vet.get("suitable") is not True:
+        return base
+    try:
+        estimate = int(vet.get("estimated_solve_tokens") or 0)
+        ratio = float(policy.get("token_budget_headroom_ratio", 1.0))
+    except (TypeError, ValueError):
+        return base
+    if estimate <= 0 or ratio <= 0:
+        return base
+    recommended = int(estimate * ratio)
+    # Stable 10k bands avoid false precision in a semantic estimate.
+    rounded = ((recommended + 9_999) // 10_000) * 10_000
+    return min(absolute, max(base, rounded))

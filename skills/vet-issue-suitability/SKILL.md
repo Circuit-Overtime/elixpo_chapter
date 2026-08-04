@@ -61,6 +61,15 @@ Estimate focused implementation and local verification time as an integer number
 of minutes. Reject work estimated above fifteen minutes or whose duration cannot
 be bounded confidently. Do not reduce the estimate merely to make an issue pass.
 
+Also estimate cumulative Solve harness usage, including repeated tool-turn input,
+cached context, and output—not merely the number of code tokens. Use repository
+ambiguity, likely discovery depth, file count, cross-subsystem coordination, and
+verification complexity as evidence. Reject an estimate above the configured
+admission ceiling or one that cannot be bounded confidently. A projected
+multi-million-token solve is never suitable, even if its issue description is
+short. The estimate grants resource headroom only; it cannot relax time, file,
+clarity, hierarchy, ownership, or verification gates.
+
 ## Fail closed
 
 Require confidence of at least 0.75, clear requirements, a clear local verification

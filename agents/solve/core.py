@@ -389,6 +389,7 @@ async def solve(
             "source": "bounded_harness_self_review",
         },
         "token_spent": router.budget.spent,
+        "token_limit": router.budget.limit,
         "finished_at": datetime.now(timezone.utc).isoformat(),
     }
     store.write_json("solve.json", result)

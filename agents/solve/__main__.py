@@ -22,7 +22,7 @@ log = structlog.get_logger()
 async def _run(issue_url: str | None, owned_test: bool) -> int:
     from lib.config import settings
     from lib.github.api import GitHubAPI
-    from lib.solve_policy import load_solve_policy
+    from lib.solve_policy import load_solve_policy, solve_token_limit
     from lib.state.store import StateStore
     from rtk import Budget, BudgetExceeded, Router
 
@@ -31,11 +31,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     workspace_base = Path(os.getenv("ELIXPO_WORKSPACE_DIR", "/tmp/elixpoo-workspaces"))
     run_started = time.monotonic()
     if not settings.github.solver_token or not settings.pollinations.api_key:
-        missing = (
-            "AGENT_GITHUB_SOLVER_TOKEN"
-            if not settings.github.solver_token
-            else "ELIXPO_POLLINATIONS_API_KEY"
-        )
+        missing = "AGENT_GITHUB_SOLVER_TOKEN" if not settings.github.solver_token else "ELIXPO_POLLINATIONS_API_KEY"
         error = RuntimeError(f"missing credential: {missing}")
         store.write_json(
             "solve.json",
@@ -70,6 +66,9 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         log.error("solve.invalid_target", error=str(exc))
         return 2
 
+    vet = store.read_json("vet.json", {}) or {}
+    token_limit = solve_token_limit(policy, vet if vet.get("url") == target else None)
+
     store.write_json(
         "solve.json",
         {
@@ -77,6 +76,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
             "stage": "preflight",
             "issue_url": target,
             "test_mode": owned_test,
+            "token_limit": token_limit,
             "started_at": datetime.now(timezone.utc).isoformat(),
         },
     )
@@ -84,7 +84,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     api = GitHubAPI.from_token(settings.github.solver_token)
     router = Router.from_settings(
         "solve",
-        budget=Budget("solve", limit=int(policy["token_budget"]), kill_multiple=1.0),
+        budget=Budget("solve", limit=token_limit, kill_multiple=1.0),
     )
     try:
         result = await asyncio.wait_for(

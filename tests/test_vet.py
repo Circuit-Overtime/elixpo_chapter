@@ -6,9 +6,9 @@ import json
 from datetime import datetime, timezone
 
 import pytest
+from agents.vet.__main__ import _finalize_pick, _resolve_target
 from agents.vet.core import vet_issue
 from lib.github.issues import parse_issue_url, referenced_pull_requests
-from agents.vet.__main__ import _finalize_pick, _resolve_target
 from lib.state.ledger import Ledger
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
@@ -79,6 +79,7 @@ def _approved(**changes):
         "scope": "small",
         "estimated_files": 2,
         "estimated_minutes": 10,
+        "estimated_solve_tokens": 200_000,
         "confidence": 0.9,
         "requirements_clear": True,
         "verification_clear": True,
@@ -226,7 +227,8 @@ async def test_sub_issue_can_pass_one_low_cost_structured_call(tmp_path):
     assert result["model_called"] is True
     assert router.calls == 1
     assert router.kwargs["effort"] == "low"
-    assert router.kwargs["max_tokens"] == 450
+    assert router.kwargs["max_tokens"] == 500
+    assert result["solve_token_budget"] == 250_000
     assert not RejectionLedger.load(store).issues
 
 
@@ -237,6 +239,16 @@ async def test_vet_rejects_work_over_fifteen_minutes(tmp_path):
     result = await vet_issue(router, store, "o", "r", 365, _evidence(), now=NOW)
     assert result["suitable"] is False
     assert "16 minutes" in " ".join(result["reasons"])
+
+
+@pytest.mark.asyncio
+async def test_vet_rejects_multi_million_token_work(tmp_path):
+    store = StateStore(tmp_path)
+    router = FakeRouter(_approved(estimated_solve_tokens=2_000_000))
+    result = await vet_issue(router, store, "o", "r", 365, _evidence(), now=NOW)
+    assert result["suitable"] is False
+    assert "2000000 tokens" in " ".join(result["reasons"])
+    assert result["solve_token_budget"] == 0
 
 
 @pytest.mark.asyncio

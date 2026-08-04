@@ -51,6 +51,15 @@ _TOOL = ToolDef(
                     "minimum": 0,
                     "description": "focused implementation plus local verification time for a prepared contributor",
                 },
+                "estimated_solve_tokens": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": (
+                        "conservative cumulative CCR token estimate for repository discovery, "
+                        "editing, and self-review; "
+                        "account for ambiguity and repeated tool-turn context, not only generated code"
+                    ),
+                },
                 "confidence": {"type": "number", "minimum": 0, "maximum": 1},
                 "requirements_clear": {"type": "boolean"},
                 "verification_clear": {"type": "boolean"},
@@ -78,6 +87,7 @@ _TOOL = ToolDef(
                 "scope",
                 "estimated_files",
                 "estimated_minutes",
+                "estimated_solve_tokens",
                 "confidence",
                 "requirements_clear",
                 "verification_clear",
@@ -142,7 +152,7 @@ async def evaluate_with_rtk(router, evidence: dict) -> dict:
         tools=[_TOOL],
         tool_choice=_FORCE,
         effort="low",
-        max_tokens=450,
+        max_tokens=500,
     )
     message = response.choices[0].message
     if not message.tool_calls:

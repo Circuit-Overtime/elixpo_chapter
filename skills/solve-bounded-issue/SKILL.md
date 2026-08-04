@@ -65,12 +65,13 @@ secret-stripped environment, temporary CCR home, and isolated checkout enforce
 the execution boundary.
 
 Cap built-in reads at 1,400 output tokens, provider retries at two, read-only
-tool concurrency at three, and the complete session at fourteen turns. Keep a
-240,000-token absolute ceiling: a context-heavy successful run may cross 200,000
-but cannot grow without that backstop. Keep at most 28,000 characters of routed
-context, 3,200 characters per tool result, two recent full results, and 400
-characters for stale results. These are deterministic compression limits, not
-model summaries.
+tool concurrency at three, and the complete session at fourteen turns. Start
+with the configured 240,000-token allowance. Vet may grant estimate-based
+headroom for a context-heavy issue, but the configured 750,000-token absolute
+ceiling cannot be relaxed. Keep at most 28,000 characters of routed context,
+3,200 characters per tool result, two recent full results, and 400 characters
+for stale results. These are deterministic compression limits, not model
+summaries.
 
 Before the harness starts, use Comprehend's tracked-only retrieval to write one
 ignored `.elixpo-context/context.md` containing bounded guidance, a tracked-file

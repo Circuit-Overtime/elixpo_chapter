@@ -29,6 +29,7 @@ from agents.solve.harness import (
 )
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from agents.solve.verification_plan import complete_verification_plan
+from lib.solve_policy import solve_token_limit
 from lib.state.store import StateStore
 from rtk.shell import CmdResult
 
@@ -73,6 +74,18 @@ def test_plan_is_bounded_by_time_files_and_checks():
         assert "15 minutes" in str(exc)
     else:
         raise AssertionError("overlong plan passed")
+
+
+def test_vet_estimate_grants_bounded_solver_headroom():
+    policy = {
+        "token_budget": 240_000,
+        "max_token_budget": 750_000,
+        "token_budget_headroom_ratio": 1.25,
+    }
+    assert solve_token_limit(policy, None) == 240_000
+    assert solve_token_limit(policy, {"suitable": True, "estimated_solve_tokens": 200_000}) == 250_000
+    assert solve_token_limit(policy, {"suitable": True, "estimated_solve_tokens": 600_000}) == 750_000
+    assert solve_token_limit(policy, {"suitable": True, "estimated_solve_tokens": 2_000_000}) == 750_000
 
 
 def test_work_branch_uses_natural_feature_or_patch_prefix():
