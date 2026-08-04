@@ -456,6 +456,7 @@ def test_harness_replaces_generic_system_prompt(monkeypatch):
     assert _CCR_PACKAGE == "@musistudio/claude-code-router@2.0.0"
     assert "--append-system-prompt-file" not in command
     assert "--bare" not in command
+    assert "--safe-mode" not in command
     assert "--setting-sources" not in command
     assert command[command.index("--max-turns") + 1] == "10"
     assert command[command.index("--settings") + 1] == "/tmp/isolated/settings.json"

@@ -813,7 +813,6 @@ def _harness_command(
         "--disallowedTools",
         disallowed,
         "--strict-mcp-config",
-        "--safe-mode",
         "--no-session-persistence",
     )
     if settings_file is not None:
