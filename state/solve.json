@@ -1,13 +1,100 @@
 {
   "base_branch": "main",
   "branch": "patch/patch-in-the-pricing-route-show-the-copy-ema-11-6a13",
+  "checks": [
+    {
+      "command": "npm ci --ignore-scripts",
+      "exit_code": 1,
+      "kind": "setup",
+      "output": "[sandbox=bubblewrap]\n[FAIL] Command failed (exit code: 1)\n  bwrap: execvp npm: No such file or directory\n"
+    },
+    {
+      "command": "npm install --ignore-scripts --no-audit --no-fund",
+      "exit_code": 1,
+      "kind": "setup_fallback",
+      "output": "[sandbox=bubblewrap]\n[FAIL] Command failed (exit code: 1)\n  bwrap: execvp npm: No such file or directory\n"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "exit_code": 1,
+      "kind": "verification",
+      "output": "[sandbox=bubblewrap]\n[FAIL] Command failed (exit code: 1)\n  bwrap: execvp npx: No such file or directory\n"
+    }
+  ],
+  "commits": [
+    "a89a16b2422892274356bca7c30fd94bae78d37c"
+  ],
+  "finished_at": "2026-08-04T11:34:42.830882+00:00",
   "fork_repo": "elixpoo/lixrl.com",
+  "harness": {
+    "commit_message": "fix: In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card",
+    "duration_ms": 190853,
+    "estimated_minutes": 4,
+    "rationale": "The coding harness produced a non-empty diff; deterministic repository gates validate it.",
+    "reviewed_paths": [
+      "app/pricing/page.tsx"
+    ],
+    "session_id": "bb572e89-527e-4892-911c-76a4f343a7b3",
+    "setup_commands": [
+      "npm ci --ignore-scripts"
+    ],
+    "solvable": true,
+    "structured_fallback": true,
+    "structured_fallback_reason": "missing_structured_payload",
+    "summary": "In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card",
+    "terminal_subtype": "success",
+    "turns": 22,
+    "verification_commands": [
+      "npx tsc --noEmit"
+    ],
+    "verification_inferred": true
+  },
+  "head_sha": "a89a16b2422892274356bca7c30fd94bae78d37c",
+  "issue_number": 11,
   "issue_url": "https://github.com/elixpo/lixrl.com/issues/11",
   "key": "elixpo/lixrl.com#11",
-  "stage": "harness",
+  "pr_url": "https://github.com/elixpo/lixrl.com/pull/12",
+  "rationale": "The coding harness produced a non-empty diff; deterministic repository gates validate it.",
+  "review": {
+    "approved": true,
+    "findings": [],
+    "source": "deterministic_diff_review_with_reported_verification",
+    "summary": "In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card"
+  },
+  "stage": "complete",
   "started_at": "2026-08-04T11:31:16.024645+00:00",
-  "status": "running",
+  "status": "submitted",
+  "summary": "In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card",
+  "target_files": [
+    "app/pricing/page.tsx"
+  ],
   "test_mode": true,
+  "title": "[PATCH]:- In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card",
+  "token_limit": 750000,
+  "token_spent": 176099,
+  "token_target": 240000,
+  "token_target_exceeded": false,
   "upstream_repo": "elixpo/lixrl.com",
+  "verification_exceptions": [
+    {
+      "command": "npm ci --ignore-scripts",
+      "detail": "[sandbox=bubblewrap] [FAIL] Command failed (exit code: 1) bwrap: execvp npm: No such file or directory",
+      "exit_code": 1,
+      "kind": "setup"
+    },
+    {
+      "command": "npm install --ignore-scripts --no-audit --no-fund",
+      "detail": "[sandbox=bubblewrap] [FAIL] Command failed (exit code: 1) bwrap: execvp npm: No such file or directory",
+      "exit_code": 1,
+      "kind": "setup_fallback"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "detail": "[sandbox=bubblewrap] [FAIL] Command failed (exit code: 1) bwrap: execvp npx: No such file or directory",
+      "exit_code": 1,
+      "kind": "verification"
+    }
+  ],
+  "verification_status": "exceptions",
   "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-11-2a5210"
 }
