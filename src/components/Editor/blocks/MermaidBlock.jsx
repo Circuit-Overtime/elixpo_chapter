@@ -113,6 +113,7 @@ function MermaidPreview({ diagram, isDark, interactive }) {
   const containerRef = useRef(null);
   const [svgHTML, setSvgHTML] = useState('');
   const [error, setError] = useState('');
+  const [errorCopied, setErrorCopied] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const dragging = useRef(false);
@@ -231,7 +232,21 @@ function MermaidPreview({ diagram, isDark, interactive }) {
 
   if (error) {
     return (
-      <div className="mermaid-viewport mermaid-viewport--compact">
+      <div className="mermaid-viewport mermaid-viewport--compact mermaid-error-output">
+        <button
+          type="button"
+          className="mermaid-error-copy"
+          onClick={async (event) => {
+            event.stopPropagation();
+            await navigator.clipboard.writeText(error).catch(() => {});
+            setErrorCopied(true);
+            setTimeout(() => setErrorCopied(false), 1500);
+          }}
+          title="Copy Mermaid error"
+        >
+          <ion-icon name={errorCopied ? 'checkmark-outline' : 'copy-outline'} />
+          {errorCopied ? 'Copied' : 'Copy error'}
+        </button>
         <pre style={{ color: '#f87171', fontSize: '12px', whiteSpace: 'pre-wrap', padding: '16px', margin: 0 }}>{error}</pre>
       </div>
     );
