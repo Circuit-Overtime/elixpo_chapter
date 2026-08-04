@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import subprocess
 
-from agents.comprehend.bundle import _read_relevant, _search_candidates
+from agents.comprehend.bundle import _read_relevant, _search_candidates, rank_candidate_paths
 
 
 def test_candidate_search_uses_git_without_requiring_ripgrep(tmp_path, monkeypatch):
@@ -55,6 +55,38 @@ def test_candidate_search_ranks_files_matching_multiple_issue_terms(tmp_path, mo
     found = _search_candidates(tmp_path, "Copy the full LLM text from the button", tracked)
 
     assert found[0] == "app/docs/layout.tsx"
+
+
+def test_rank_candidate_paths_leads_with_behavior_over_mentioned_page(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "agents.comprehend.bundle.tracked_files",
+        lambda workspace: [
+            "app/LandingPageClient.tsx",
+            "app/docs/layout.tsx",
+            "app/docs/api/page.tsx",
+        ],
+    )
+    monkeypatch.setattr(
+        "agents.comprehend.bundle._search_candidates",
+        lambda workspace, text, tracked, limit: [
+            "app/LandingPageClient.tsx",
+            "app/docs/layout.tsx",
+        ],
+    )
+
+    ranked = rank_candidate_paths(
+        tmp_path,
+        {
+            "title": "Copy for LLM is incomplete",
+            "body": "Reported in app/docs/api/page.tsx",
+        },
+    )
+
+    assert ranked == [
+        "app/docs/layout.tsx",
+        "app/LandingPageClient.tsx",
+        "app/docs/api/page.tsx",
+    ]
 
 
 def test_relevant_read_keeps_middle_match_with_small_budget(tmp_path):

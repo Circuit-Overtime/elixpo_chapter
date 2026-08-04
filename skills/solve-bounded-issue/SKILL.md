@@ -75,6 +75,15 @@ repository, repeat an unchanged query, or read the same file through a different
 path or tool. After editing, allow one exact reread per changed area for review.
 Reserve the final turns for the edit, self-review, and structured outcome.
 
+Before the harness starts, use Comprehend's tracked-only lexical ranking to pass
+at most six candidate paths without file contents or another model call. These
+paths are retrieval hints, not chosen targets. Require the harness to prefer the
+candidate containing the reported behavior. Treat paths named in issue prose as
+evidence only: if a reported page lacks the handler, inspect the ranked shared
+layout/component/handler rather than declining. Build searches from the visible
+label, action verb, and relevant language/framework primitive, not only a
+conceptual variable name.
+
 Remove web, subagents, MCP,
 session persistence, user customizations, and nonessential traffic. Strip
 GitHub credentials, the Pollinations key, and all other secrets from the target

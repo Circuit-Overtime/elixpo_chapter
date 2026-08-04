@@ -28,17 +28,21 @@ _SEARCH_STOPWORDS = {
     "again",
     "also",
     "are",
+    "affected",
     "been",
     "before",
     "being",
     "bug",
     "does",
+    "file",
+    "files",
     "for",
     "from",
     "have",
     "into",
     "not",
     "must",
+    "path",
     "should",
     "that",
     "the",
@@ -120,10 +124,14 @@ def _mentioned_paths(text: str, tracked: set[str]) -> list[str]:
 
 
 def _search_terms(text: str, limit: int = 12) -> tuple[list[str], set[str]]:
-    exact_terms = _CODE_TOKEN_RE.findall(text)
+    # Mentioned paths are ranked separately. Searching their generic segments
+    # (such as app/docs/page) swamps behavioral terms and promotes route files
+    # over the shared component that actually implements the action.
+    searchable = _PATH_RE.sub(" ", text)
+    exact_terms = _CODE_TOKEN_RE.findall(searchable)
     terms: list[str] = []
     seen_terms: set[str] = set()
-    for term in [*exact_terms, *_SEARCH_TOKEN_RE.findall(text)]:
+    for term in [*exact_terms, *_SEARCH_TOKEN_RE.findall(searchable)]:
         normalized = term.casefold()
         if normalized in seen_terms or normalized in _SEARCH_STOPWORDS:
             continue
@@ -155,14 +163,48 @@ def _search_candidates(workspace: Path, text: str, tracked: set[str], limit: int
         )
         if proc.returncode not in (0, 1):
             continue
-        for raw in proc.stdout.splitlines():
-            rel = raw.removeprefix("./")
-            if rel.endswith(".lock"):
-                continue
-            if rel in tracked:
-                scores[rel] += 2 if term in exact_terms else 1
-                first_seen.setdefault(rel, len(first_seen))
+        matches = [
+            raw.removeprefix("./")
+            for raw in proc.stdout.splitlines()
+            if not raw.removeprefix("./").endswith(".lock")
+            and raw.removeprefix("./") in tracked
+        ]
+        # Rare terms carry more location information than ubiquitous UI words
+        # such as "button" or CSS fragments such as "full".
+        weight = 3 if len(matches) <= 3 else 2 if len(matches) <= 10 else 1
+        for rel in matches:
+            scores[rel] += weight + (1 if term in exact_terms else 0)
+            first_seen.setdefault(rel, len(first_seen))
     return sorted(scores, key=lambda rel: (-scores[rel], first_seen[rel], rel))[:limit]
+
+
+def rank_candidate_paths(workspace: Path, issue: dict, limit: int = 8) -> list[str]:
+    """Rank tracked behavioral matches without reading or sending file contents."""
+    files = tracked_files(workspace)
+    tracked = set(files)
+    issue_text = f"{issue.get('title', '')}\n{issue.get('body') or ''}"
+    searched = _search_candidates(workspace, issue_text, tracked, limit=limit)
+    mentioned = _mentioned_paths(issue_text, tracked)
+    if mentioned:
+        original_order = {rel: index for index, rel in enumerate(searched)}
+
+        def affinity(rel: str) -> int:
+            candidate_parts = Path(rel).parts
+            best = 0
+            for target in mentioned:
+                target_parts = Path(target).parent.parts
+                shared = 0
+                for left, right in zip(candidate_parts, target_parts, strict=False):
+                    if left != right:
+                        break
+                    shared += 1
+                best = max(best, shared)
+            return best
+
+        # Reorder only the behavior-ranked shortlist by path locality: shared
+        # layouts/components commonly sit above a reported route.
+        searched.sort(key=lambda rel: (-affinity(rel), original_order[rel]))
+    return list(dict.fromkeys([*searched, *mentioned]))[:limit]
 
 
 def _read_relevant(workspace: Path, rel: str, terms: list[str], max_tokens: int) -> str:
@@ -192,8 +234,12 @@ def _read_relevant(workspace: Path, rel: str, terms: list[str], max_tokens: int)
             break
 
     spans: list[tuple[int, int]] = []
+    # Size windows to the total budget before truncation. Fixed ±30-line
+    # windows could exceed a small bundle and head/tail truncation would then
+    # discard the match at the center—the exact evidence retrieval selected.
+    radius = max(4, min(30, max_tokens // (20 * max(1, len(anchors)))))
     for index in sorted(anchors):
-        start, end = max(0, index - 30), min(len(lines), index + 31)
+        start, end = max(0, index - radius), min(len(lines), index + radius + 1)
         if spans and start <= spans[-1][1]:
             spans[-1] = (spans[-1][0], max(spans[-1][1], end))
         else:
