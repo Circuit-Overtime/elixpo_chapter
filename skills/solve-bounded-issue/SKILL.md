@@ -70,7 +70,10 @@ the provider, model route, API credential, and usage accounting.
 Do not treat CCR's web root as readiness. Probe the authenticated Messages
 route with a deliberately model-free request and require CCR's `Missing model`
 response before starting the client. This readiness check consumes no model
-tokens.
+tokens. Perform this route probe once during startup. Immediately before the
+client request, check the supervised process status without imposing another
+one-second HTTP deadline. After a genuine empty connection failure, allow a
+short bounded readiness wait before retrying.
 
 CCR 2.x expects the client model as `provider,model`. The Solve client must send
 `pollinations-code,qwen-coder`; sending bare `qwen-coder` makes CCR interpret the

@@ -764,7 +764,10 @@ def run_harness(
                 flush=True,
             )
             command = _harness_command(client_model, policy, rtk_available=rtk_available)
-            if router_process.poll() is not None or not _router_ready(router_url):
+            # `_wait_for_router` already authenticated the mounted Messages
+            # route. A second one-second HTTP probe here is redundant and can
+            # misclassify a brief event-loop pause as a dead router.
+            if router_process.poll() is not None:
                 raise HarnessError("CCR became unavailable before the coding harness request")
             prompt = _prompt(
                 issue,
@@ -789,10 +792,20 @@ def run_harness(
                 )
                 if not _is_empty_connection_failure(final_event):
                     break
-                if router_process.poll() is not None or not _router_ready(router_url):
+                if router_process.poll() is not None:
                     raise HarnessError(
                         "coding harness could not reach CCR after an empty connection failure"
                     )
+                try:
+                    _wait_for_router(
+                        router_process,
+                        min(int(policy.get("ccr_start_timeout_seconds", 60)), 5),
+                        router_url,
+                    )
+                except HarnessError as exc:
+                    raise HarnessError(
+                        "coding harness could not reach CCR after an empty connection failure"
+                    ) from exc
                 if attempt >= retry_limit:
                     raise HarnessError(
                         "local CCR remained healthy, but its upstream model route refused "
