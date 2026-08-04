@@ -113,11 +113,14 @@ for stale results. These are deterministic compression limits, not model
 summaries.
 
 Before the harness starts, use Comprehend's tracked-only retrieval to write one
-ignored `.elixpo-context/context.md` containing bounded guidance, a tracked-file
-index, and ranked relevant excerpts without another model call. Require RTK to
-read that bundle exactly once. Let the coding model compare compressed excerpts
-and choose one candidate containing concrete implementation evidence; rank one
-and issue-mentioned paths are priors, never forced targets. Require one bounded
+ignored `.elixpo-context/context.md` containing a deterministic evidence brief
+without another model call. Bound the complete brief to CCR's recent-tool-result
+character cap, divide its space across every ranked candidate, and inject it
+directly into the initial task. Do not spend a tool turn rereading the brief;
+this also prevents a context read from being elided before the model sees it.
+Let the coding model compare compressed excerpts and choose one candidate
+containing concrete implementation evidence; rank one and issue-mentioned paths
+are priors, never forced targets. Require one bounded
 built-in Read of the chosen edit target because the coding CLI will reject Edit
 without it. Strip the PDF-only `pages` property from Read's provider-facing tool
 schema so text reads cannot emit an invalid empty value. Permit the
@@ -180,9 +183,10 @@ tracked files, compressed excerpts, and tool evidence.
 Pin the legacy JSON-config-compatible CCR runtime. Never use an unpinned latest
 CCR package: current control-plane releases can attach to a global profile and
 silently ignore Solve's Pollinations route. Print the pinned runtime at startup.
-When RTK is available, reserve built-in Read only for the exact pre-edit target
-that satisfies the coding CLI's edit guard. Use relative `rtk read` calls for
-compressed supporting context and post-edit review.
+When RTK is available, reserve built-in Read for the exact implementation target
+and at most one distinct supporting target that satisfy the coding CLI's edit
+guard. Use relative `rtk read` calls only for post-edit review; the evidence
+brief is already present in the initial task.
 
 Remove web, subagents, MCP,
 session persistence, user customizations, and nonessential traffic. Strip

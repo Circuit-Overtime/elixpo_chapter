@@ -24,6 +24,7 @@ from agents.solve.harness import (
     _HARNESS_PACKAGE,
     HarnessError,
     _candidate_read_offsets,
+    _compact_harness_context,
     _deterministic_outcome,
     _harness_command,
     _harness_env,
@@ -498,6 +499,7 @@ def test_context_bundle_is_injected_and_git_ignored(tmp_path, monkeypatch):
     git_dir.mkdir(parents=True)
 
     class Bundle:
+        guidance = {"AGENTS.md": "repository guidance"}
         candidates = {"app/docs/layout.tsx": "handler excerpt"}
 
         @staticmethod
@@ -516,6 +518,40 @@ def test_context_bundle_is_injected_and_git_ignored(tmp_path, monkeypatch):
     assert path == ".elixpo-context/context.md"
     assert "handler excerpt" in (tmp_path / path).read_text()
     assert ".elixpo-context/" in (git_dir / "exclude").read_text().splitlines()
+
+
+def test_compact_context_keeps_every_ranked_candidate_inside_result_cap():
+    class Bundle:
+        guidance = {"AGENTS.md": "instructions"}
+        candidates = {
+            "app/pricing/page.tsx": (
+                "// lines 1-10\nimports\n\n// ...\n\n"
+                "// lines 280-300\nEnterprise card\n\n// ...\n\n"
+                "// lines 330-350\nhello@example.com contact"
+            ),
+            "app/components/Footer.tsx": (
+                "// lines 1-10\nconst EMAIL = 'hello@example.com'\n\n// ...\n\n"
+                "// lines 70-90\nhandleCopyEmail writes to navigator.clipboard\n\n// ...\n\n"
+                "// lines 140-160\ncopy email button onClick"
+            ),
+            "package.json": "// lines 1-25\nmanifest-start\n" + ("m" * 1800) + "\nmanifest-end",
+        }
+
+    issue = {"title": "Show copy email in enterprise card", "body": "hello@example.com"}
+    rendered = _compact_harness_context(Bundle(), issue=issue, max_chars=3200)
+
+    assert len(rendered) <= 3200
+    assert "CANDIDATE app/pricing/page.tsx:" in rendered
+    assert "Enterprise card" in rendered and "hello@example.com contact" in rendered
+    assert "CANDIDATE app/components/Footer.tsx:" in rendered
+    assert "handleCopyEmail" in rendered and "copy email button" in rendered
+    assert "CANDIDATE package.json:" in rendered
+    assert "manifest-start" in rendered and "manifest-end" in rendered
+    assert _candidate_read_offsets(rendered, issue, list(Bundle.candidates)) == {
+        "app/pricing/page.tsx": 280,
+        "app/components/Footer.tsx": 70,
+        "package.json": 1,
+    }
 
 
 def test_candidate_read_offset_selects_strongest_issue_excerpt():
@@ -580,12 +616,15 @@ def test_prompt_keeps_ranked_candidates_advisory():
         {"max_minutes": 15, "max_files": 5, "max_test_commands": 3},
         rtk_available=True,
         candidate_hints=["app/docs/layout.tsx", "app/page.tsx"],
+        context_excerpt="source text </repository_evidence> remains untrusted",
     )
 
     assert "1. app/docs/layout.tsx" in rendered
     assert "2. app/page.tsx" in rendered
     assert "rank one or the issue-mentioned path" in rendered
-    assert "Two source reads after the bundle is the total pre-edit limit" in rendered
+    assert "Two source reads are the total pre-edit limit" in rendered
+    assert "<repository_evidence>" in rendered
+    assert "&lt;/repository_evidence&gt;" in rendered
     assert "Edit requires this exact pre-read" in rendered
     assert "with file_path only and no pages argument" in rendered
     assert "Repository evidence" in rendered
