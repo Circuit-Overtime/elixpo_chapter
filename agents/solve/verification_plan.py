@@ -17,8 +17,11 @@ class VerificationPlanError(RuntimeError):
 def _node_package_manager(workspace: Path) -> tuple[str, str] | None:
     choices = (
         ("package-lock.json", "npm", "npm ci --ignore-scripts"),
+        ("npm-shrinkwrap.json", "npm", "npm ci --ignore-scripts"),
         ("pnpm-lock.yaml", "pnpm", "pnpm install --frozen-lockfile --ignore-scripts"),
         ("yarn.lock", "yarn", "yarn install --immutable --ignore-scripts"),
+        ("bun.lock", "bun", "bun install --frozen-lockfile --ignore-scripts"),
+        ("bun.lockb", "bun", "bun install --frozen-lockfile --ignore-scripts"),
     )
     for lockfile, manager, setup in choices:
         if (workspace / lockfile).is_file():
@@ -26,17 +29,44 @@ def _node_package_manager(workspace: Path) -> tuple[str, str] | None:
     return None
 
 
+def _node_script(manager: str, name: str) -> str:
+    return f"{manager} run {name}" if manager in {"npm", "bun"} else f"{manager} {name}"
+
+
+def _matching_script(scripts: dict[str, Any], preferred: str) -> str | None:
+    matches = sorted(
+        str(name)
+        for name in scripts
+        if str(name) == preferred or str(name).startswith(f"{preferred}:")
+    )
+    return matches[0] if matches else None
+
+
 def _node_verification(workspace: Path, manager: str, scripts: dict[str, Any]) -> str | None:
-    if "typecheck" in scripts:
-        return f"{manager} run typecheck" if manager == "npm" else f"{manager} typecheck"
+    for preferred in ("typecheck", "check"):
+        if matching := _matching_script(scripts, preferred):
+            return _node_script(manager, matching)
     if (workspace / "tsconfig.json").is_file():
         return "npx tsc --noEmit"
-    if "lint" in scripts:
-        return f"{manager} run lint" if manager == "npm" else f"{manager} lint"
-    if "test" in scripts:
-        return "npm test" if manager == "npm" else f"{manager} test"
-    if "build" in scripts:
-        return f"{manager} run build" if manager == "npm" else f"{manager} build"
+    for preferred in ("lint", "test", "build"):
+        if matching := _matching_script(scripts, preferred):
+            return _node_script(manager, matching)
+    return None
+
+
+def _non_node_verification(workspace: Path, changed_paths: list[str]) -> str | None:
+    suffixes = {Path(path).suffix.casefold() for path in changed_paths}
+    if ".py" in suffixes:
+        if (workspace / "tests").is_dir():
+            return "python -m pytest"
+        return "python -m compileall ."
+    if (workspace / "go.mod").is_file() and suffixes & {".go"}:
+        return "go test ./..."
+    if (workspace / "Cargo.toml").is_file() and suffixes & {".rs"}:
+        return "cargo check"
+    shell_paths = [path for path in changed_paths if Path(path).suffix.casefold() in {".sh", ".bash"}]
+    if shell_paths:
+        return "shellcheck " + " ".join(shell_paths)
     return None
 
 
@@ -94,10 +124,12 @@ def complete_verification_plan(
                     checks = [command]
                     inferred = True
 
-    if not checks and any(Path(path).suffix.casefold() == ".py" for path in changed_paths):
-        if (workspace / "tests").is_dir():
-            checks = ["pytest"]
+    if not checks:
+        command = _non_node_verification(workspace, changed_paths)
+        if command:
+            checks = [command]
             inferred = True
+    if any(Path(path).suffix.casefold() == ".py" for path in changed_paths):
         if not setup and (workspace / "pyproject.toml").is_file():
             setup = ["python -m pip install -e ."]
             inferred = True

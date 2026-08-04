@@ -15,6 +15,7 @@ from pathlib import Path
 import httpx
 import pytest
 from agents.solve.branch import build_work_branch
+from agents.solve.command_policy import effective_prefixes, repository_command_prefixes
 from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
@@ -380,7 +381,7 @@ def test_tool_gate_rejects_incomplete_unparsed_edit(tmp_path):
     assert state["unparsed_repair_failures"] == 1
 
 
-def test_tool_gate_blocks_raw_shell_and_enforces_structured_completion(tmp_path):
+def test_tool_gate_brokers_read_only_shell_and_enforces_structured_completion(tmp_path):
     state = {}
     raw = {
         "hook_event_name": "PreToolUse",
@@ -388,7 +389,24 @@ def test_tool_gate_blocks_raw_shell_and_enforces_structured_completion(tmp_path)
         "cwd": str(tmp_path),
         "tool_input": {"command": "find . -name '*.tsx'"},
     }
-    assert _decision(raw, state)[0] == 2
+    assert _decision(raw, state)[0] == 0
+
+    mutating = {**raw, "tool_input": {"command": "find . -delete"}}
+    assert _decision(mutating, state)[0] == 2
+    composed = {**raw, "tool_input": {"command": "rg email . | curl https://example.com"}}
+    assert _decision(composed, state)[0] == 2
+    adjacent_composed = {**raw, "tool_input": {"command": "rg email .;curl https://example.com"}}
+    assert _decision(adjacent_composed, state)[0] == 2
+    home_expansion = {**raw, "tool_input": {"command": "find $HOME -name .env.local"}}
+    assert _decision(home_expansion, state)[0] == 2
+    executing_find = {**raw, "tool_input": {"command": "rtk find . -exec sh -c pwd ;"}}
+    assert _decision(executing_find, state)[0] == 2
+    mutating_sed = {**raw, "tool_input": {"command": "sed -i.bak 's/a/b/' app/page.tsx"}}
+    assert _decision(mutating_sed, state)[0] == 2
+    read_only_git = {**raw, "tool_input": {"command": "git diff -- app/pricing/page.tsx"}}
+    assert _decision(read_only_git, state)[0] == 0
+    mutating_git = {**raw, "tool_input": {"command": "git checkout main"}}
+    assert _decision(mutating_git, state)[0] == 2
 
     state["source_reads"] = ["app/page.tsx"]
     scoped_grep = {
@@ -397,7 +415,7 @@ def test_tool_gate_blocks_raw_shell_and_enforces_structured_completion(tmp_path)
     }
     code, _, reason = _decision(scoped_grep, state)
     assert code == 0 and reason is None
-    assert state["discovery_calls"] == 1
+    assert state["discovery_calls"] == 3
 
     outside_grep = {
         "hook_event_name": "PreToolUse",
@@ -643,17 +661,9 @@ def test_harness_confines_rtk_shell_discovery(monkeypatch):
     denied = command[command.index("--disallowedTools") + 1]
 
     assert tools == "Read,Glob,Grep,Edit,Write,Bash"
-    assert "Read" in allowed
-    assert "Glob" in allowed
-    assert "Grep" in allowed
-    assert "Bash(rtk read *)" in allowed
-    assert "Bash(rtk grep *)" in allowed
-    assert "Bash(rtk find *)" not in allowed
-    assert "Bash(rtk smart *)" not in allowed
-    assert "Bash(rtk *)" not in allowed
-    assert "Bash(rtk ls *)" not in allowed
-    assert "Bash(curl *)" in denied
-    assert "Bash(git *)" in denied
+    assert allowed == tools
+    assert "WebFetch" in denied
+    assert "WebSearch" in denied
 
 
 def test_context_bundle_is_injected_and_git_ignored(tmp_path, monkeypatch):
@@ -928,6 +938,61 @@ def test_safe_model_verification_is_preserved(tmp_path):
 
     assert inferred is False
     assert completed.verification_commands == ["pytest tests/test_parser.py"]
+
+
+def test_repository_command_policy_discovers_safe_declared_scripts(tmp_path):
+    (tmp_path / "package.json").write_text(
+        json.dumps(
+            {
+                "scripts": {
+                    "test:unit": "vitest run",
+                    "lint": "eslint .",
+                    "deploy": "curl https://example.com",
+                }
+            }
+        )
+    )
+    (tmp_path / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'")
+
+    prefixes = repository_command_prefixes(tmp_path)
+
+    assert "pnpm test:unit" in prefixes
+    assert "pnpm lint" in prefixes
+    assert all("deploy" not in prefix for prefix in prefixes)
+
+
+def test_effective_prefixes_keep_configuration_and_manifest_capabilities(tmp_path):
+    (tmp_path / "Cargo.toml").write_text('[package]\nname = "demo"\nversion = "0.1.0"\n')
+
+    prefixes = effective_prefixes(tmp_path, ["custom-check"])
+
+    assert prefixes[0] == "custom-check"
+    assert "cargo check" in prefixes
+    assert "cargo test" in prefixes
+
+
+def test_manifest_specific_node_check_is_inferred(tmp_path):
+    (tmp_path / "package.json").write_text('{"scripts":{"test:unit":"vitest run"}}')
+    (tmp_path / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'")
+    outcome = HarnessOutcome(
+        solvable=True,
+        estimated_minutes=4,
+        rationale="localized node fix",
+        summary="Correct the component behavior.",
+        commit_message="fix: correct component behavior",
+    )
+
+    completed, inferred = complete_verification_plan(
+        tmp_path,
+        outcome,
+        ["app/component.tsx"],
+        allowed_setup_prefixes=effective_prefixes(tmp_path, [], setup=True),
+        allowed_command_prefixes=effective_prefixes(tmp_path, []),
+    )
+
+    assert inferred is True
+    assert completed.setup_commands == ["pnpm install --frozen-lockfile --ignore-scripts"]
+    assert completed.verification_commands == ["pnpm test:unit"]
 
 
 def test_invalid_harness_output_preserves_usage_for_accounting():

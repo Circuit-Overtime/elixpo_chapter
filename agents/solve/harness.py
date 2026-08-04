@@ -811,13 +811,11 @@ def _harness_command(
         rtk_available = shutil.which("rtk") is not None
     schema = json.dumps(HarnessOutcome.model_json_schema(), separators=(",", ":"))
     tools = "Read,Glob,Grep,Edit,Write,Bash" if rtk_available else "Read,Glob,Grep,Edit,Write,Find"
-    allowed = "Read,Glob,Grep,Edit,Write,Bash(rtk grep *),Bash(rtk read *)" if rtk_available else tools
+    # The deterministic hook is the command broker. Claude's static Bash
+    # patterns are too narrow for repository-specific discovery commands and
+    # cannot express path validation, so authorize the tool and enforce below.
+    allowed = tools
     disallowed = "WebFetch,WebSearch,Task,mcp__*"
-    if rtk_available:
-        disallowed += (
-            ",Bash(cat *),Bash(head *),Bash(tail *),Bash(grep *),Bash(rg *),"
-            "Bash(find *),Bash(ls *),Bash(git *),Bash(curl *),Bash(wget *)"
-        )
     command = _node_command(
         _HARNESS_PACKAGE,
         "-p",

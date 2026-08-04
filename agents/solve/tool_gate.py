@@ -10,6 +10,21 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_SHELL_CONTROL = {";", "&&", "||", "|", ">", ">>", "<", "`"}
+_READ_ONLY_COMMANDS = {
+    "rg": set(),
+    "grep": set(),
+    "ls": set(),
+    "head": set(),
+    "tail": set(),
+    "wc": set(),
+    "sed": {"-i", "--in-place"},
+    "find": {"-delete", "-exec", "-execdir", "-ok", "-okdir"},
+}
+_READ_ONLY_GIT = {"diff", "status", "show", "grep", "ls-files"}
+_READ_ONLY_RTK = {"read", "grep", "find", "smart"}
+_GIT_DENIED = {"--output", "--ext-diff", "--textconv", "--open-files-in-pager"}
+
 
 def _deny(reason: str) -> int:
     print(reason, file=sys.stderr)
@@ -45,6 +60,45 @@ def _is_checkout_absolute(cwd: Path, raw: str) -> bool:
     except (OSError, RuntimeError, ValueError):
         return False
     return True
+
+
+def _shell_words(command: str) -> list[str]:
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|<>()`")
+    lexer.whitespace_split = True
+    return list(lexer)
+
+
+def _contains_denied(words: list[str], denied: set[str]) -> bool:
+    return any(
+        word in denied
+        or any(word.startswith(f"{flag}=") for flag in denied)
+        or any(flag.startswith("-") and not flag.startswith("--") and word.startswith(flag) for flag in denied)
+        for word in words
+    )
+
+
+def _read_only_shell(words: list[str]) -> bool:
+    """Recognize discovery commands that cannot intentionally modify the checkout."""
+    if not words or any(word in _SHELL_CONTROL for word in words):
+        return False
+    if any(
+        word.startswith(("/", "~")) or word == ".." or "../" in word or "$" in word
+        for word in words[1:]
+    ):
+        return False
+    command = words[0]
+    if command == "rtk":
+        if len(words) < 2 or words[1] not in _READ_ONLY_RTK:
+            return False
+        if words[1] == "find" and _contains_denied(words[2:], _READ_ONLY_COMMANDS["find"]):
+            return False
+        return words[1] != "smart" or "--force-download" not in words[2:]
+    if command == "git":
+        return len(words) >= 2 and words[1] in _READ_ONLY_GIT and not _contains_denied(words[2:], _GIT_DENIED)
+    denied = _READ_ONLY_COMMANDS.get(command)
+    if command == "rg" and any(word == "--pre" or word.startswith("--pre=") for word in words[1:]):
+        return False
+    return denied is not None and not _contains_denied(words[1:], denied)
 
 
 def _recover_unparsed_file_input(tool: str, value: Any) -> dict[str, Any] | None:
@@ -265,9 +319,9 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
     if tool == "Bash":
         command = str(tool_input.get("command") or "").strip()
         try:
-            words = shlex.split(command)
+            words = _shell_words(command)
         except ValueError:
-            return 2, None, "Only one simple `rtk read` or scoped `rtk grep` command is allowed."
+            return 2, None, "Use one parsed repository discovery command without shell composition."
         if words[:2] == ["rtk", "read"] and len(words) == 3:
             relative = _relative_path(cwd, words[2])
             if relative is None:
@@ -288,12 +342,16 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                     }
                 }, None
             return 0, None, None
-        if words[:2] == ["rtk", "grep"]:
-            if any(word.startswith("/") or word == ".." or "../" in word for word in words[2:]):
-                return 2, None, "Search only inside the current repository with relative RTK arguments."
+        if _read_only_shell(words):
             state["discovery_calls"] = int(state.get("discovery_calls") or 0) + 1
             return 0, None, None
-        return 2, None, "Raw shell commands are blocked. Use built-in tools or relative `rtk grep`/`rtk read`."
+        return (
+            2,
+            None,
+            "This coding session permits only repository-relative read-only discovery commands. "
+            "Use Read/Edit/Write for source changes and return setup or verification commands in StructuredOutput; "
+            "the supervisor runs them without a shell afterward.",
+        )
 
     return 0, None, None
 

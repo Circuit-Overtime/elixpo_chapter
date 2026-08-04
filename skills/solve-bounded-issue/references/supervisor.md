@@ -97,10 +97,12 @@ model name as a provider and reject the request locally with a misleading 404.
 
 Route the session through CCR to `qwen-coder`. When the pinned RTK CLI is
 available, prefer its compact `find`, `grep`, `read`, and `smart` commands
-for discovery, then use built-in `Read` only for exact edit context. Expose Bash
-only for those explicit `rtk` prefixes; never permit arbitrary `rtk *`, raw shell,
-git, network, test, or build commands. Without RTK, fall back to bounded built-in
-`Glob`, `Grep`, and `Read`. Keep `Edit` and `Write` available in both modes.
+for discovery, then use built-in `Read` for exact edit context. Expose Bash
+through a deterministic read-only broker: relative RTK discovery, native text
+search/listing, and read-only Git inspection are eligible; shell composition,
+network, tests, builds, installs, and Git mutation are not. Without RTK, use the
+same broker or bounded built-in `Glob`, `Grep`, and `Read`. Keep `Edit` and
+`Write` available in both modes.
 
 Do not use coding CLI bare mode or an empty setting-source list because current
 coding CLI builds can bypass the custom CCR authentication path before sending
@@ -146,8 +148,9 @@ path back to relative only when it resolves inside the actual supervised cwd.
 If an absolute path merely has a suffix found in the checkout but belongs to a
 different root, reject it once with the exact repository-relative path to retry.
 This keeps Read-before-Edit bookkeeping consistent without trusting invented
-roots. The hook must confine Read, Glob, Grep, Edit, Write, and RTK paths to the
-checkout and deny raw shell, git, network, test, and build commands. Record
+roots. The hook must confine Read, Glob, Grep, Edit, Write, and discovery-command
+paths to the checkout, admit only parsed read-only shell capabilities, and deny
+network, test, build, install, and Git mutation commands. Record
 read, search, edit, and denial counts for Doctor without rejecting safe repeated
 operations merely because a numeric micro-budget was reached.
 Pass the generated isolated hook configuration explicitly through the coding
@@ -299,9 +302,15 @@ A model cannot relax these gates.
 
 ## Verify and commit once
 
-Run only commands whose argument prefix appears in `config/solve.yaml`. Execute
-without a shell, through RTK output compression, with command and output limits.
-Stop on the first failed check; do not commit or push.
+Build command capabilities from `config/solve.yaml` plus tracked repository
+manifests. Package scripts are eligible only when their declared names describe
+tests, linting, type checks, builds, formatting checks, or validation. Execute
+parsed argv without a shell, through RTK output compression, with a stripped
+environment, time and output limits, and no verification network. Use a
+workspace-only bubblewrap boundary when the host supports user namespaces; keep
+the parsed capability broker as the portable fallback. Setup is a distinct
+one-command phase which may use network but never agent credentials. Stop on the
+first failed check; do not commit or push.
 
 After successful checks, require that verification introduced no additional
 tracked changes. Stage only the observed harness targets and create one

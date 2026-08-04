@@ -21,8 +21,9 @@ outside the coding session and must not be explored from the target repository.
 - Never use `/workspace`, `/tmp`, `/home`, another absolute path, `..`, or `.git`.
 - Never access credentials, the network, Git, workflows, or files outside the
   checkout.
-- Do not run raw shell, test, build, install, or publication commands. The
-  supervisor performs allowlisted verification and Git operations afterward.
+- Use shell only for one repository-relative, read-only discovery command at a
+  time. Prefer RTK compression. Do not run test, build, install, network, Git
+  mutation, or publication commands; return checks for the supervisor to run.
 
 ## Use evidence efficiently
 

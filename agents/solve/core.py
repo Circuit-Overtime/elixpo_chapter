@@ -18,6 +18,7 @@ from lib.state.store import StateStore
 from lib.workspace import Workspace
 
 from agents.solve.branch import build_work_branch
+from agents.solve.command_policy import effective_prefixes
 from agents.solve.git import (
     assert_workspace_identity,
     changed_files,
@@ -301,8 +302,8 @@ async def solve(
         root,
         outcome,
         targets,
-        allowed_setup_prefixes=list(policy["allowed_setup_prefixes"]),
-        allowed_command_prefixes=list(policy["allowed_command_prefixes"]),
+        allowed_setup_prefixes=effective_prefixes(root, list(policy["allowed_setup_prefixes"]), setup=True),
+        allowed_command_prefixes=effective_prefixes(root, list(policy["allowed_command_prefixes"])),
     )
 
     running.update(
@@ -319,13 +320,16 @@ async def solve(
     store.write_json("solve.json", running)
 
     checks: list[dict] = []
+    setup_prefixes = effective_prefixes(root, list(policy["allowed_setup_prefixes"]), setup=True)
+    verification_prefixes = effective_prefixes(root, list(policy["allowed_command_prefixes"]))
     for command in outcome.setup_commands[: int(policy["max_setup_commands"])]:
         result = run_verification(
             root,
             command,
-            allowed_prefixes=list(policy["allowed_setup_prefixes"]),
+            allowed_prefixes=setup_prefixes,
             timeout=int(policy["command_timeout_seconds"]),
             node_heap_mb=int(policy.get("verification_node_heap_mb", 512)),
+            network=bool(policy.get("setup_network_access", True)),
         )
         checks.append({"kind": "setup", "command": command, "exit_code": result.code, "output": result.output})
         if result.code != 0:
@@ -334,7 +338,7 @@ async def solve(
         result = run_verification(
             root,
             command,
-            allowed_prefixes=list(policy["allowed_command_prefixes"]),
+            allowed_prefixes=verification_prefixes,
             timeout=int(policy["command_timeout_seconds"]),
             node_heap_mb=int(policy.get("verification_node_heap_mb", 512)),
         )

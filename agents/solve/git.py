@@ -12,6 +12,8 @@ from rtk.shell import CmdResult
 from rtk.shell import run as rtk_run
 from rtk.truncate import truncate_text
 
+from agents.solve.sandbox import sandbox_command
+
 _CONVENTIONAL = re.compile(r"^(feat|fix|refactor|docs|test|chore|ci|perf|build)(\([^)]+\))?: .+")
 _CONTROL_TOKENS = {";", "&&", "||", "|", ">", ">>", "<", "`"}
 
@@ -90,6 +92,7 @@ def run_verification(
     allowed_prefixes: list[str],
     timeout: int,
     node_heap_mb: int = 512,
+    network: bool = False,
 ) -> CmdResult:
     args = validate_command(command, allowed_prefixes)
     inherited = ("PATH", "LANG", "LC_ALL", "TMPDIR", "VIRTUAL_ENV", "SYSTEMROOT", "COMSPEC", "PATHEXT")
@@ -104,9 +107,13 @@ def run_verification(
             "npm_config_maxsockets": "4",
             "npm_config_audit": "false",
             "npm_config_fund": "false",
+            "HOME": "/tmp",
+            "TMPDIR": "/tmp",
         }
     )
-    result = rtk_run(args, cwd=str(workspace), timeout=timeout, env=env)
+    supervised_args, backend = sandbox_command(workspace, args, network=network)
+    result = rtk_run(supervised_args, cwd=str(workspace), timeout=timeout, env=env)
+    result.output = f"[sandbox={backend}]\n{result.output}"
     result.output = truncate_text(result.output, max_tokens=1800)
     return result
 

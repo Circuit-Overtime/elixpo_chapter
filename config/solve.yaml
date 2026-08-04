@@ -17,6 +17,10 @@ max_file_tokens: 1400
 max_test_commands: 3
 max_setup_commands: 1
 command_timeout_seconds: 180
+# Mirrors the production two-phase model: dependency setup may use the network,
+# while coding and verification remain offline. All child environments exclude
+# agent credentials regardless of this setting.
+setup_network_access: true
 
 # Python supervises these Node processes for both local and Actions runs.
 harness_model: qwen-coder
