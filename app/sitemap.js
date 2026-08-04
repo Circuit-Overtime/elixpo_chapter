@@ -1,7 +1,6 @@
 export const runtime = 'edge';
 // Must run per-request: the URL list comes from D1, which is only bound at runtime.
 export const dynamic = 'force-dynamic';
-export const revalidate = 3600;
 
 import { docsNavFlat } from '../src/config/docsNav';
 
@@ -18,7 +17,9 @@ const SITE_URL = 'https://blogs.elixpo.com';
 //                     exact crawling we suppress everywhere else
 //   unlisted posts  — deliberately kept out of public discovery by their author
 //   drafts          — not public
-const ts = (sec) => (sec ? new Date(sec * 1000) : new Date());
+// Omit lastmod if the source has no timestamp. Claiming "now" on every request
+// makes the signal inaccurate and trains crawlers to ignore it.
+const ts = (sec) => (sec ? new Date(sec * 1000) : undefined);
 
 export default async function sitemap() {
   const staticPages = [
@@ -35,13 +36,13 @@ export default async function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.5,
     })),
-  ].map((p) => ({ ...p, lastModified: new Date() }));
+  ];
 
   try {
     const { getDB } = await import('../lib/cloudflare');
     const db = getDB();
 
-    const [blogs, users, orgs, collections] = await Promise.all([
+    const [blogs, users, orgs, collections, tags] = await Promise.all([
       db.prepare(`
         SELECT b.slug, b.updated_at, b.published_at, b.published_as,
                au.username AS author_username, o.slug AS org_slug, col.slug AS collection_slug
@@ -51,13 +52,35 @@ export default async function sitemap() {
         LEFT JOIN collections col ON col.id = b.collection_id
         WHERE b.status = 'published' AND b.secret = 0
         ORDER BY b.published_at DESC
-        LIMIT 40000
+        LIMIT 38000
       `).all(),
       // Keep the complete sitemap under the protocol's 50,000 URL ceiling while
       // making room for substantially more individually indexed posts.
-      db.prepare("SELECT username, updated_at FROM users WHERE username IS NOT NULL LIMIT 5000").all(),
-      db.prepare('SELECT slug, updated_at FROM orgs WHERE visibility != ? LIMIT 2000').bind('private').all(),
-      db.prepare('SELECT c.slug AS cslug, o.slug AS oslug, c.updated_at FROM collections c JOIN orgs o ON o.id = c.org_id WHERE o.visibility != ? LIMIT 2000').bind('private').all(),
+      db.prepare(`
+        SELECT u.username, u.updated_at FROM users u
+        WHERE u.username IS NOT NULL AND EXISTS (
+          SELECT 1 FROM blogs b WHERE b.author_id = u.id AND b.status = 'published' AND b.secret = 0
+        ) LIMIT 4000
+      `).all(),
+      db.prepare(`
+        SELECT o.slug, o.updated_at FROM orgs o
+        WHERE o.visibility != ? AND EXISTS (
+          SELECT 1 FROM blogs b WHERE b.published_as = ('org:' || o.id) AND b.status = 'published' AND b.secret = 0
+        ) LIMIT 2000
+      `).bind('private').all(),
+      db.prepare(`
+        SELECT c.slug AS cslug, o.slug AS oslug, MAX(b.updated_at) AS updated_at
+        FROM collections c JOIN orgs o ON o.id = c.org_id
+        JOIN blogs b ON b.collection_id = c.id AND b.status = 'published' AND b.secret = 0
+        WHERE o.visibility != ? GROUP BY c.id, c.slug, o.slug LIMIT 2000
+      `).bind('private').all(),
+      db.prepare(`
+        SELECT MIN(bt.tag) AS tag, MAX(b.updated_at) AS updated_at
+        FROM blog_tags bt JOIN blogs b ON b.id = bt.blog_id
+        WHERE b.status = 'published' AND b.secret = 0
+        GROUP BY LOWER(bt.tag)
+        ORDER BY COUNT(*) DESC LIMIT 2000
+      `).all(),
     ]);
 
     const blogUrls = (blogs?.results || []).map((b) => {
@@ -95,7 +118,14 @@ export default async function sitemap() {
       priority: 0.6,
     }));
 
-    return [...staticPages, ...blogUrls, ...userUrls, ...orgUrls, ...collectionUrls];
+    const tagUrls = (tags?.results || []).filter((row) => row.tag).map((row) => ({
+      url: `${SITE_URL}/tag/${encodeURIComponent(row.tag.toLowerCase())}`,
+      lastModified: ts(row.updated_at),
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    }));
+
+    return [...staticPages, ...blogUrls, ...userUrls, ...orgUrls, ...collectionUrls, ...tagUrls];
   } catch {
     // D1 unavailable (local dev, or a bad deploy): still serve the static pages
     // rather than a 500, which search engines treat as a broken sitemap.

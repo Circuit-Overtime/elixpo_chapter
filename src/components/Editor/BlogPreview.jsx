@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 import { readTimeFromWords } from '../../../lib/readTime';
-import { escapeHtmlAttribute, normalizeUrl } from '../../utils/linkHelper';
+import { escapeHtmlAttribute, normalizeCssColor, normalizeImageUrl, normalizeUrl } from '../../utils/linkHelper';
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -106,35 +106,38 @@ function renderBlocksToHTML(blocks) {
         let formatted;
         try { formatted = new Date(c.props.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
         catch { formatted = c.props.date; }
-        return `<span class="preview-date-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${formatted}</span>`;
+        return `<span class="preview-date-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${escapeHtmlAttribute(formatted)}</span>`;
       }
       if (c.type === 'mention' && c.props?.username) {
-        const name = c.props.displayName || c.props.username;
-        const avatar = c.props.avatarUrl
-          ? `<img src="${c.props.avatarUrl}" alt="" class="mention-chip-avatar">`
-          : `<span class="mention-chip-initial">${(name || '?')[0].toUpperCase()}</span>`;
-        return `<a href="/${c.props.username}" class="mention-chip" data-username="${c.props.username}" data-avatar="${c.props.avatarUrl || ''}" data-displayname="${name}">${avatar}@${c.props.username}</a>`;
+        const username = String(c.props.username).slice(0, 64);
+        const name = c.props.displayName || username;
+        const avatarUrl = normalizeImageUrl(c.props.avatarUrl || '');
+        const avatar = avatarUrl
+          ? `<img src="${escapeHtmlAttribute(avatarUrl)}" alt="" class="mention-chip-avatar">`
+          : `<span class="mention-chip-initial">${escapeHtmlAttribute((name || '?')[0].toUpperCase())}</span>`;
+        return `<a href="/${encodeURIComponent(username)}" class="mention-chip" data-username="${escapeHtmlAttribute(username)}" data-avatar="${escapeHtmlAttribute(avatarUrl)}" data-displayname="${escapeHtmlAttribute(name)}">${avatar}@${escapeHtmlAttribute(username)}</a>`;
       }
       if (c.type === 'blogMention' && (c.props?.slugid || c.props?.slug)) {
-        const blogHref = c.props.author && c.props.slug ? `/${c.props.author}/${c.props.slug}` : `/${c.props.slugid}`;
-        return `<a href="${blogHref}" class="mention-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>${c.props.title || 'Untitled blog'}</a>`;
+        const blogHref = c.props.author && c.props.slug ? `/${encodeURIComponent(c.props.author)}/${encodeURIComponent(c.props.slug)}` : `/${encodeURIComponent(c.props.slugid)}`;
+        return `<a href="${blogHref}" class="mention-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>${escapeHtmlAttribute(c.props.title || 'Untitled blog')}</a>`;
       }
       if (c.type === 'orgMention' && c.props?.slug) {
-        return `<a href="/${c.props.slug}" class="mention-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>@${c.props.slug}</a>`;
+        return `<a href="/${encodeURIComponent(c.props.slug)}" class="mention-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>@${escapeHtmlAttribute(c.props.slug)}</a>`;
       }
       if (c.type === 'inlineButton') {
         const label = (c.props?.label || 'Button').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const href = escapeHtmlAttribute(normalizeUrl(c.props?.href || ''));
         return href
-          ? `<a href="${href}" class="inline-button-chip" target="_blank" rel="noopener noreferrer">${label}</a>`
+          ? `<a href="${href}" class="inline-button-chip" target="_blank" rel="ugc nofollow noopener noreferrer">${label}</a>`
           : `<span class="inline-button-chip">${label}</span>`;
       }
       // Links wrap child content — recurse into c.content for the link text
       if (c.type === 'link' && c.href) {
         const normalizedHref = normalizeUrl(c.href);
         const linkText = c.content ? inlineToHTML(c.content) : (c.text || c.href).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const external = /^https?:\/\//i.test(normalizedHref);
         return normalizedHref
-          ? `<a href="${escapeHtmlAttribute(normalizedHref)}">${linkText || c.href}</a>`
+          ? `<a href="${escapeHtmlAttribute(normalizedHref)}"${external ? ' rel="ugc nofollow noopener noreferrer"' : ''}>${linkText || escapeHtmlAttribute(c.href)}</a>`
           : linkText;
       }
       let text = (c.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>');
@@ -145,8 +148,10 @@ function renderBlocksToHTML(blocks) {
       if (s.strike) text = `<del>${text}</del>`;
       if (s.code) text = `<code>${text}</code>`;
       if (s.underline) text = `<u>${text}</u>`;
-      if (s.textColor) text = `<span style="color:${s.textColor}">${text}</span>`;
-      if (s.backgroundColor) text = `<span style="background:${s.backgroundColor};border-radius:3px;padding:0 2px">${text}</span>`;
+      const textColor = normalizeCssColor(s.textColor);
+      const backgroundColor = normalizeCssColor(s.backgroundColor);
+      if (textColor) text = `<span style="color:${textColor}">${text}</span>`;
+      if (backgroundColor) text = `<span style="background:${backgroundColor};border-radius:3px;padding:0 2px">${text}</span>`;
       return text;
     }).join('');
   }
@@ -186,7 +191,7 @@ function renderBlocksToHTML(blocks) {
       case 'tableOfContents':
         return '__TOC_PLACEHOLDER__';
       case 'heading': {
-        const level = block.props?.level || 1;
+        const level = Math.max(1, Math.min(6, Number(block.props?.level) || 1));
         const text = (Array.isArray(block.content) ? block.content : []).map(c => c.text || '').join('');
         const id = `h-${text.trim().toLowerCase().replace(/[^\w]+/g, '-').slice(0, 40)}`;
         // Headings always render in the default color — ignore stray inline text
@@ -220,9 +225,9 @@ function renderBlocksToHTML(blocks) {
         try { subTabs = JSON.parse(block.props?.tabs || '[]'); } catch {}
         if (subTabs.length === 0) return childrenHTML;
         const tabItems = subTabs.map(t => {
-          const href = t.subpageId ? `/${t.subpageId}` : '#';
-          const id = `subpage-${(t.subpageId || t.title).slice(0, 20)}`;
-          return `<a id="${id}" href="${href}" class="subpage-item" target="_blank" rel="noopener"><div class="subpage-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></div><span class="subpage-title">${t.title}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="subpage-arrow"><polyline points="9 18 15 12 9 6"/></svg></a>`;
+          const href = t.subpageId ? `/${encodeURIComponent(t.subpageId)}` : '#';
+          const id = `subpage-${String(t.subpageId || t.title).replace(/[^a-z0-9_-]/gi, '-').slice(0, 20)}`;
+          return `<a id="${id}" href="${href}" class="subpage-item" target="_blank" rel="noopener"><div class="subpage-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></div><span class="subpage-title">${escapeHtmlAttribute(t.title || 'Untitled')}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="subpage-arrow"><polyline points="9 18 15 12 9 6"/></svg></a>`;
         }).join('');
         return `<div class="subpage-block">${tabItems}</div>${childrenHTML}`;
       }
@@ -231,13 +236,16 @@ function renderBlocksToHTML(blocks) {
       case 'divider':
         return `<hr class="preview-divider" />${childrenHTML}`;
       case 'codeBlock': {
-        const lang = block.props?.language || '';
+        const lang = String(block.props?.language || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30);
         const code = (Array.isArray(block.content) ? block.content : []).map((c) => c.text || '').join('');
         return `<pre><code class="language-${lang}">${code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>${childrenHTML}`;
       }
       case 'image':
         if (block.props?.url) {
-          return `<figure><img src="${block.props.url}" alt="${block.props?.caption || ''}" />${block.props?.caption ? `<figcaption>${block.props.caption}</figcaption>` : ''}</figure>${childrenHTML}`;
+          const imageUrl = normalizeImageUrl(block.props.url);
+          if (!imageUrl) return childrenHTML;
+          const caption = escapeHtmlAttribute(block.props?.caption || block.props?.name || '');
+          return `<figure><img src="${escapeHtmlAttribute(imageUrl)}" alt="${caption}" loading="lazy" />${caption ? `<figcaption>${caption}</figcaption>` : ''}</figure>${childrenHTML}`;
         }
         return childrenHTML;
       case 'table': {
@@ -323,7 +331,7 @@ function renderBlocksToHTML(blocks) {
     const tocItems = headings.map(h => {
       const indent = (h.level - 1) * 16;
       const icon = h.isSubpage ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;margin-right:4px;vertical-align:-1px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' : '';
-      return `<li><a href="#${h.id}" class="preview-toc-link${h.isSubpage ? ' toc-subpage-link' : ''}" style="padding-left:${indent}px">${icon}${h.text}</a></li>`;
+      return `<li><a href="#${escapeHtmlAttribute(h.id)}" class="preview-toc-link${h.isSubpage ? ' toc-subpage-link' : ''}" style="padding-left:${indent}px">${icon}${escapeHtmlAttribute(h.text)}</a></li>`;
     }).join('');
     tocHTML = `<div class="preview-toc-block"><p class="preview-toc-label">Table of Contents</p><ul class="preview-toc-list">${tocItems}</ul></div>`;
   }
@@ -401,6 +409,13 @@ export default function BlogPreview({
 
     // Check if this effect is still the current one
     function isStale() { return effectGenRef.current !== gen; }
+    function showRenderError(element, message, tag = 'span') {
+      const error = document.createElement(tag);
+      error.style.color = '#f87171';
+      if (tag === 'pre') error.style.fontSize = '12px';
+      error.textContent = String(message || 'Render error');
+      element.replaceChildren(error);
+    }
 
     // ── KaTeX: block + inline equations ──
     const eqEls = root.querySelectorAll('.preview-block-equation[data-latex]');
@@ -415,7 +430,7 @@ export default function BlogPreview({
             const latex = stripDelimiters(decodeURIComponent(el.dataset.latex));
             el.innerHTML = katex.renderToString(latex, { displayMode: true, throwOnError: false });
           } catch (err) {
-            el.innerHTML = `<span style="color:#f87171">${err.message}</span>`;
+            showRenderError(el, err?.message, 'span');
           }
         });
         inlineEls.forEach((el) => {
@@ -424,7 +439,7 @@ export default function BlogPreview({
             const latex = stripDelimiters(decodeURIComponent(el.dataset.latex));
             el.innerHTML = katex.renderToString(latex, { displayMode: false, throwOnError: false });
           } catch (err) {
-            el.innerHTML = `<span style="color:#f87171">${err.message}</span>`;
+            showRenderError(el, err?.message, 'span');
           }
         });
       }).catch(() => {});
@@ -438,7 +453,7 @@ export default function BlogPreview({
         const mermaid = mod.default || mod;
         mermaid.initialize({
           startOnLoad: false,
-          securityLevel: 'loose',
+          securityLevel: 'strict',
           theme: isDark ? 'dark' : 'default',
           themeVariables: isDark ? {
             primaryColor: '#232d3f',
@@ -480,7 +495,7 @@ export default function BlogPreview({
             git0: '#7c5cbf', git1: '#9b7bf7', git2: '#16a34a', git3: '#d97706',
             git4: '#dc2626', git5: '#2563eb', git6: '#db2777', git7: '#0d9488',
           },
-          flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: true, useMaxWidth: false },
+          flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: false, useMaxWidth: false },
           sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
           gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
         });
@@ -519,7 +534,7 @@ export default function BlogPreview({
               }
             } catch (err) {
               if (el.isConnected && !isStale()) {
-                el.innerHTML = `<pre style="color:#f87171;font-size:12px">${err.message || 'Diagram error'}</pre>`;
+                showRenderError(el, err?.message || 'Diagram error', 'pre');
               }
               try { document.getElementById(id)?.remove(); } catch {}
               try { document.getElementById('container-' + id)?.remove(); } catch {}

@@ -78,7 +78,7 @@ export const metadata = {
     },
   },
   alternates: {
-    canonical: SITE_URL,
+    types: { 'application/rss+xml': `${SITE_URL}/feed.xml` },
   },
 };
 
@@ -127,6 +127,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <link rel="alternate" type="application/rss+xml" title="LixBlogs recent stories" href="/feed.xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kanit:wght@500;600;700&family=Source+Serif+4:wght@400;600;700;800&display=swap" rel="stylesheet" />

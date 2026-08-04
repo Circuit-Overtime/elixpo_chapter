@@ -4,6 +4,7 @@ import { docsNav } from '../../src/config/docsNav';
 export const metadata = {
   title: 'Documentation',
   description: 'Guides for publishing, media, analytics, integrations, search, and the LixEditor API.',
+  alternates: { canonical: 'https://blogs.elixpo.com/docs' },
 };
 
 export default function DocsIndex() {

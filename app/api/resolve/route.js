@@ -76,7 +76,8 @@ function decompressBlog(blog) {
 }
 
 // Short link (/[slugid]) — the only route that can serve a secret blog, since it
-// names no author in the path. Works for normal blogs too.
+// names no author in the path. Public posts permanently redirect to their single
+// canonical owner URL so search engines never see two indexable copies.
 async function fetchBlogBySlugid(db, slugid) {
   const blog = await db.prepare(`
     SELECT b.*, u.username as author_username, u.display_name as author_name,
@@ -112,6 +113,21 @@ async function fetchBlogBySlugid(db, slugid) {
       'SELECT id, username, display_name, avatar_url, bio, tier FROM users WHERE id = ?'
     ).bind(full.author_id).first();
     if (u) owner = { type: 'user', ...u };
+  }
+
+  if (!full.secret && owner && full.slug) {
+    const parts = [owner.slug || owner.username];
+    if (full.collection_id && owner.type === 'org') {
+      const collection = await db.prepare(
+        'SELECT slug FROM collections WHERE id = ? AND org_id = ?'
+      ).bind(full.collection_id, owner.id).first();
+      if (collection?.slug) parts.push(collection.slug);
+    }
+    parts.push(full.slug);
+    return {
+      type: 'redirect',
+      location: `/${parts.map((part) => encodeURIComponent(part)).join('/')}`,
+    };
   }
 
   return { type: 'blog', owner, blog: await enforceMemberGating(db, stripSecretAuthor(full)) };
@@ -203,7 +219,7 @@ export async function GET(request) {
       // If slug requested, find the blog
       if (slug) {
         const blog = await db.prepare(`
-          SELECT b.id, b.slug, b.title, b.subtitle, b.content, b.cover_image_r2_key,
+          SELECT b.id, b.slug, b.title, b.subtitle, b.excerpt, b.content, b.cover_image_r2_key,
             b.cover_pos_x, b.cover_pos_y, b.cover_zoom, b.member_only,
             b.status, b.published_as, b.page_emoji, b.read_time_minutes,
             b.published_at, b.created_at, b.updated_at, b.author_id,
@@ -211,6 +227,7 @@ export async function GET(request) {
           FROM blogs b
           JOIN users u ON u.id = b.author_id
           WHERE LOWER(b.slug) = ? AND b.author_id = ? AND b.status IN ('published', 'unlisted')
+            AND (b.published_as = 'personal' OR b.published_as IS NULL)
             AND b.secret = 0
         `).bind(slug, ownerId).first();
 
@@ -234,11 +251,14 @@ export async function GET(request) {
       // so the blog still links to its canonical /owner/slug URL.
       const blogs = await db.prepare(`
         SELECT b.id, b.slug, b.title, b.subtitle, b.cover_image_r2_key, b.page_emoji,
-          b.read_time_minutes, b.published_at, b.status, b.author_id,
+          b.read_time_minutes, b.published_at, b.status, b.author_id, b.published_as,
           au.username AS author_username,
+          po.slug AS org_slug, pc.slug AS collection_slug,
           (b.author_id = ?) AS is_owner
         FROM blogs b
         JOIN users au ON au.id = b.author_id
+        LEFT JOIN orgs po ON ('org:' || po.id) = b.published_as
+        LEFT JOIN collections pc ON pc.id = b.collection_id
         WHERE (b.author_id = ? OR b.id IN (
                  SELECT blog_id FROM blog_co_authors WHERE user_id = ? AND status = 'accepted' AND show_on_profile = 1
                ))
@@ -395,8 +415,11 @@ export async function GET(request) {
         db.prepare('SELECT id, slug, name, description FROM collections WHERE org_id = ? ORDER BY created_at')
           .bind(ownerId).all(),
         db.prepare(`
-          SELECT id, slug, slugid, secret, title, subtitle, cover_image_r2_key, page_emoji, read_time_minutes, published_at
-          FROM blogs WHERE published_as = ? AND status IN ('published', 'unlisted')
+          SELECT b.id, b.slug, b.slugid, b.secret, b.title, b.subtitle, b.cover_image_r2_key,
+            b.page_emoji, b.read_time_minutes, b.published_at, b.published_as,
+            c.slug AS collection_slug
+          FROM blogs b LEFT JOIN collections c ON c.id = b.collection_id
+          WHERE b.published_as = ? AND b.status IN ('published', 'unlisted')
           ORDER BY published_at DESC LIMIT 20
         `).bind(`org:${ownerId}`).all(),
       ]);

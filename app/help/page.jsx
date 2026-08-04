@@ -3,6 +3,7 @@ import AppShell from '../../src/components/AppShell';
 export const metadata = {
   title: 'Help',
   description: 'Get help with LixBlogs — contact support or report an issue.',
+  alternates: { canonical: 'https://blogs.elixpo.com/help' },
 };
 
 export default function HelpPage() {
