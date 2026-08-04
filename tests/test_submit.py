@@ -34,7 +34,7 @@ def _state():
 def test_pr_markdown_is_disclosed_verified_and_closing():
     title = build_pr_title(_state())
     body = build_pr_body(_state(), "Small patch, full signal")
-    assert title == "[ELIXPO] Preserve leaf content in LLM copy payload"
+    assert title == "[BUG]:- Preserve leaf content in LLM copy payload"
     assert "Changed `app/docs/api/page.tsx`." in body
     assert "Verified with `npm run lint`." in body
     assert "autonomous contributor" in body
@@ -42,6 +42,15 @@ def test_pr_markdown_is_disclosed_verified_and_closing():
     assert "##" not in body
     assert "✅" not in body
     assert body.endswith("<sub>“Small patch, full signal” — @elixpoo</sub>")
+
+
+def test_pr_title_derives_type_from_commit_when_issue_has_no_tag():
+    state = {
+        **_state(),
+        "title": "Add an enterprise contact chip",
+        "harness": {"commit_message": "feat(pricing): add enterprise contact chip"},
+    }
+    assert build_pr_title(state) == "[FEAT]:- Add enterprise contact chip"
 
 
 @pytest.mark.asyncio

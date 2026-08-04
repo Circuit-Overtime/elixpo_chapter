@@ -25,9 +25,44 @@ class SubmitRejected(RuntimeError):
     pass
 
 
+_ISSUE_TITLE_TAGS = {
+    "BUG": "BUG",
+    "BUILD": "BUILD",
+    "CHORE": "CHORE",
+    "CI": "CI",
+    "DOCS": "DOCS",
+    "FEAT": "FEAT",
+    "FEATURE": "FEAT",
+    "FIX": "PATCH",
+    "PATCH": "PATCH",
+    "PERF": "PERF",
+    "REFACTOR": "REFACTOR",
+    "TEST": "TEST",
+}
+_COMMIT_TITLE_TAGS = {
+    "build": "BUILD",
+    "chore": "CHORE",
+    "ci": "CI",
+    "docs": "DOCS",
+    "feat": "FEAT",
+    "fix": "PATCH",
+    "perf": "PERF",
+    "refactor": "REFACTOR",
+    "test": "TEST",
+}
+
+
 def build_pr_title(solve_state: dict) -> str:
     harness = solve_state.get("harness") or {}
-    raw = str(harness.get("commit_message") or solve_state.get("title") or "Fix issue")
+    issue_title = str(solve_state.get("title") or "")
+    commit_message = str(harness.get("commit_message") or "")
+    issue_tag = re.match(r"^\[([A-Za-z]+)]\s*[:\-–—]*\s*", issue_title)
+    commit_tag = re.match(r"^([a-z]+)(?:\([^)]+\))?!?:\s*", commit_message, re.IGNORECASE)
+    tag = _ISSUE_TITLE_TAGS.get((issue_tag.group(1) if issue_tag else "").upper())
+    if tag is None:
+        tag = _COMMIT_TITLE_TAGS.get((commit_tag.group(1) if commit_tag else "").casefold(), "PATCH")
+
+    raw = commit_message or issue_title or "Implement the reviewed issue fix"
     raw = re.sub(
         r"^(?:feat|fix|refactor|docs|test|chore|ci|perf|build)(?:\([^)]+\))?!?:\s*",
         "",
@@ -38,7 +73,7 @@ def build_pr_title(solve_state: dict) -> str:
     raw = re.sub(r"\s+", " ", raw)
     subject = raw[:90].rsplit(" ", 1)[0] if len(raw) > 90 else raw
     subject = subject.strip(" .,:;-") or "Implement the reviewed issue fix"
-    return f"[ELIXPO] {subject[0].upper()}{subject[1:]}"
+    return f"[{tag}]:- {subject[0].upper()}{subject[1:]}"
 
 
 def build_pr_body(solve_state: dict, punch_line: str) -> str:

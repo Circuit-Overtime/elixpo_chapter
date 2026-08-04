@@ -9,10 +9,14 @@ Require `state/solve.json` status `ready_to_submit`, a present workspace, the
 recorded current branch and HEAD, a clean tree, at least one passing check, and a
 successful final review. Refuse partial or failed work.
 
-Build the title as `[ELIXPO] <technical subject>`, preferring the reviewed
-conventional commit subject over the raw issue title. Strip the conventional
-prefix, capitalize the subject, bound it without cutting a word, and never copy
-issue-form boilerplate into the title.
+Build the title as `[TYPE]:- <technical subject>`. Preserve a recognized issue
+type such as `BUG`, `PATCH`, or `FEAT`; otherwise derive the type deterministically
+from the reviewed conventional commit (`feat` to `FEAT`, `fix` to `PATCH`, and
+equivalent mappings for docs, refactor, performance, tests, CI, build, and
+chores). Never use a fixed repository-brand prefix. Prefer the reviewed commit
+subject over the raw issue title, strip its conventional prefix, capitalize it,
+bound it without cutting a word, and never copy issue-form boilerplate into the
+title.
 
 Build a compact technical body without headings, decorative sections,
 blockquotes, status emoji, or generic process claims. State the completed
