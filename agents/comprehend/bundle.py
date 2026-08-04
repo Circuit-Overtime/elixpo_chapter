@@ -204,7 +204,11 @@ def rank_candidate_paths(workspace: Path, issue: dict, limit: int = 8) -> list[s
         # Reorder only the behavior-ranked shortlist by path locality: shared
         # layouts/components commonly sit above a reported route.
         searched.sort(key=lambda rel: (-affinity(rel), original_order[rel]))
-    return list(dict.fromkeys([*searched, *mentioned]))[:limit]
+    # The issue already supplies mentioned paths to the model. Lead the hint
+    # list with independently discovered alternatives so an incorrect report
+    # location cannot crowd out the shared implementation file.
+    alternatives = [rel for rel in searched if rel not in mentioned]
+    return list(dict.fromkeys([*alternatives, *mentioned]))[:limit]
 
 
 def _read_relevant(workspace: Path, rel: str, terms: list[str], max_tokens: int) -> str:
@@ -285,7 +289,7 @@ def build_context_bundle(
     issue_text = f"{issue.get('title', '')}\n{issue.get('body') or ''}"
     search_terms, _ = _search_terms(issue_text)
     mentioned = _mentioned_paths(issue_text, tracked)
-    searched = _search_candidates(workspace, issue_text, tracked)
+    searched = rank_candidate_paths(workspace, issue, limit=10)
     # Ranked behavioral matches lead. Explicitly mentioned paths remain useful
     # context, but a route/page named in a report is not necessarily where its
     # behavior is implemented.

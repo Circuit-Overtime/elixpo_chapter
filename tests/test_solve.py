@@ -16,10 +16,13 @@ from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, assert_workspace_identity, run_verification, validate_command
 from agents.solve.harness import (
+    _CCR_PACKAGE,
+    _HARNESS_PACKAGE,
     HarnessError,
     _harness_command,
     _harness_env,
     _parse_cli_result,
+    _prepare_context_bundle,
     _redact,
     _render_harness_event,
 )
@@ -232,6 +235,8 @@ def test_harness_replaces_generic_system_prompt(monkeypatch):
     )
 
     assert "--system-prompt-file" in command
+    assert command[0] == _HARNESS_PACKAGE
+    assert _CCR_PACKAGE == "@musistudio/claude-code-router@2.0.0"
     assert "--append-system-prompt-file" not in command
     assert "--bare" not in command
     assert "--setting-sources" not in command
@@ -249,13 +254,40 @@ def test_harness_confines_rtk_shell_discovery(monkeypatch):
     allowed = command[command.index("--allowedTools") + 1]
     denied = command[command.index("--disallowedTools") + 1]
 
-    assert tools == "Read,Edit,Write,Bash"
+    assert tools == "Edit,Write,Bash"
     assert "Bash(rtk read *)" in allowed
     assert "Bash(rtk grep *)" in allowed
+    assert "Bash(rtk find *)" not in allowed
+    assert "Bash(rtk smart *)" not in allowed
     assert "Bash(rtk *)" not in allowed
     assert "Bash(rtk ls *)" not in allowed
     assert "Bash(curl *)" in denied
     assert "Bash(git *)" in denied
+
+
+def test_context_bundle_is_injected_and_git_ignored(tmp_path, monkeypatch):
+    git_dir = tmp_path / ".git" / "info"
+    git_dir.mkdir(parents=True)
+
+    class Bundle:
+        candidates = {"app/docs/layout.tsx": "handler excerpt"}
+
+        @staticmethod
+        def render(max_tokens):
+            return "CANDIDATE app/docs/layout.tsx:\nhandler excerpt"
+
+    monkeypatch.setattr("agents.solve.harness.build_context_bundle", lambda *args, **kwargs: Bundle())
+
+    hints, path = _prepare_context_bundle(
+        tmp_path,
+        {"title": "copy behavior", "body": ""},
+        {"guidance_names": ["AGENTS.md"], "max_context_tokens": 1000, "max_file_tokens": 500},
+    )
+
+    assert hints == ["app/docs/layout.tsx"]
+    assert path == ".elixpo-context/context.md"
+    assert "handler excerpt" in (tmp_path / path).read_text()
+    assert ".elixpo-context/" in (git_dir / "exclude").read_text().splitlines()
 
 
 def test_ccr_rtk_context_governor_when_js_runtime_is_available():

@@ -75,14 +75,22 @@ repository, repeat an unchanged query, or read the same file through a different
 path or tool. After editing, allow one exact reread per changed area for review.
 Reserve the final turns for the edit, self-review, and structured outcome.
 
-Before the harness starts, use Comprehend's tracked-only lexical ranking to pass
-at most six candidate paths without file contents or another model call. These
-paths are retrieval hints, not chosen targets. Require the harness to prefer the
-candidate containing the reported behavior. Treat paths named in issue prose as
-evidence only: if a reported page lacks the handler, inspect the ranked shared
-layout/component/handler rather than declining. Build searches from the visible
-label, action verb, and relevant language/framework primitive, not only a
-conceptual variable name.
+Before the harness starts, use Comprehend's tracked-only retrieval to write one
+ignored `.elixpo-context/context.md` containing bounded guidance, a tracked-file
+index, and ranked relevant excerpts without another model call. Require RTK to
+read that bundle exactly once, followed by one exact candidate read. Do not use
+find or repository-wide grep after injection. Permit one candidate-directory
+grep only when the bundle contains no actionable target. These paths remain
+retrieval hints, not chosen targets. Treat paths named in issue prose as evidence
+only: if a reported page lacks the handler, inspect the ranked shared layout,
+component, or handler rather than declining.
+
+Pin the legacy JSON-config-compatible CCR runtime. Never use an unpinned latest
+CCR package: current control-plane releases can attach to a global profile and
+silently ignore Solve's Pollinations route. Print the pinned runtime at startup.
+When RTK is available, remove built-in Read from the tool set; current coding
+CLI builds can emit an empty `pages` value and return no source. Use relative
+`rtk read` calls for both exact edit context and post-edit review.
 
 Remove web, subagents, MCP,
 session persistence, user customizations, and nonessential traffic. Strip
