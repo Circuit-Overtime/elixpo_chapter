@@ -6,10 +6,12 @@ import json
 import os
 import queue
 import re
+import shlex
 import shutil
 import signal
 import socket
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -29,6 +31,7 @@ _CCR_PACKAGE = "@musistudio/claude-code-router@2.0.0"
 _HARNESS_PACKAGE = "@anthropic-ai/claude-code@2.1.220"
 _CCR_HOST = "127.0.0.1"
 _SOLVE_SKILL = _CONTROL_ROOT / "skills/solve-bounded-issue/SKILL.md"
+_TOOL_GATE = Path(__file__).with_name("tool_gate.py")
 _SECRET_MARKERS = ("TOKEN", "SECRET", "PASSWORD", "PRIVATE_KEY", "API_KEY")
 _CCR_WEB_TOKEN = re.compile(r"(?i)(ccr_web_token=)[^&\s]+")
 
@@ -287,8 +290,26 @@ def _harness_env(
         config_dir.mkdir(parents=True, exist_ok=True)
         cli_tmp = config_dir / "tmp"
         cli_tmp.mkdir(exist_ok=True)
+        hook_command = f"{shlex.quote(sys.executable)} {shlex.quote(str(_TOOL_GATE))}"
+        settings = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Read|Edit|Write|Bash|StructuredOutput",
+                        "hooks": [{"type": "command", "command": hook_command, "timeout": 5}],
+                    }
+                ],
+                "Stop": [
+                    {
+                        "hooks": [{"type": "command", "command": hook_command, "timeout": 5}],
+                    }
+                ],
+            }
+        }
+        (config_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
         env["CLAUDE_CONFIG_DIR"] = str(config_dir)
         env["CLAUDE_CODE_TMPDIR"] = str(cli_tmp)
+        env["ELIXPO_TOOL_GATE_STATE"] = str(cli_tmp / "tool-gate.json")
     return env
 
 

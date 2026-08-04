@@ -130,6 +130,11 @@ third candidate read, or another model call for retrieval. Do not reread a
 supporting/reference component when its bundled excerpt already exposes the
 needed behavior. Once a built-in target Read confirms the implementation path,
 Edit immediately; a different offset does not make a repeated path read valid.
+Enforce these limits with a credential-free local PreToolUse hook rather than
+prompt compliance alone. The hook may normalize an absolute remembered checkout
+path only when exactly that suffix exists under the supervised cwd. It must deny
+raw shell discovery, repeated source reads, and reads beyond the bounded budget,
+returning a short instruction to Edit or emit StructuredOutput.
 
 Guidance files occupy guidance slots only and must never consume ranked source
 slots a second time. Resolve a uniquely named bare file from issue text to its
@@ -215,6 +220,9 @@ The harness must terminate through StructuredOutput, including when it declines
 the issue. It must never end on prose, a progress statement, a promise to inspect
 another file, or an empty response. If its evidence budget is exhausted, return
 `solvable=false` through StructuredOutput rather than spending more tool calls.
+Use a bounded Stop hook to reject at most two prose-only terminal responses and
+return the model to Edit or StructuredOutput. Never allow this guard to form an
+unbounded loop.
 
 Prefer a model-selected verification command, but do not discard a completed
 edit when that optional field is omitted. Infer a fallback deterministically

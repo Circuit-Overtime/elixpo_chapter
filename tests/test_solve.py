@@ -35,6 +35,7 @@ from agents.solve.harness import (
     _stop_stale_isolated_routers,
 )
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
+from agents.solve.tool_gate import _decision
 from agents.solve.verification_plan import complete_verification_plan
 from lib.solve_policy import solve_hard_token_limit, solve_token_limit
 from lib.state.store import StateStore
@@ -225,7 +226,52 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
     assert env["ELIXPO_HARNESS_STREAM_QUEUE_LINES"] == "32"
     assert env["CLAUDE_CONFIG_DIR"] == str(config_dir)
     assert env["CLAUDE_CODE_TMPDIR"] == str(config_dir / "tmp")
+    assert env["ELIXPO_TOOL_GATE_STATE"] == str(config_dir / "tmp/tool-gate.json")
     assert env["DISABLE_UPDATES"] == "1"
+    hook_settings = json.loads((config_dir / "settings.json").read_text())
+    assert hook_settings["hooks"]["PreToolUse"][0]["matcher"] == "Read|Edit|Write|Bash|StructuredOutput"
+    assert hook_settings["hooks"]["Stop"]
+
+
+def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
+    target = tmp_path / "app/pricing/page.tsx"
+    target.parent.mkdir(parents=True)
+    target.write_text("export default function Pricing() {}")
+    state = {}
+    event = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Read",
+        "cwd": str(tmp_path),
+        "tool_input": {"file_path": "/home/user/elixpourl/app/pricing/page.tsx"},
+    }
+
+    code, output, reason = _decision(event, state)
+
+    assert code == 0 and reason is None
+    assert output["hookSpecificOutput"]["updatedInput"]["file_path"] == "app/pricing/page.tsx"
+    assert state["source_reads"] == ["app/pricing/page.tsx"]
+    repeated = {**event, "tool_input": {"file_path": "app/pricing/page.tsx"}}
+    code, output, reason = _decision(repeated, state)
+    assert code == 2 and output is None
+    assert "already read" in reason
+
+
+def test_tool_gate_blocks_raw_shell_and_bounds_prose_stops(tmp_path):
+    state = {}
+    raw = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Bash",
+        "cwd": str(tmp_path),
+        "tool_input": {"command": "find . -name '*.tsx'"},
+    }
+    assert _decision(raw, state)[0] == 2
+
+    stop = {"hook_event_name": "Stop"}
+    assert _decision(stop, state)[0] == 2
+    assert _decision(stop, state)[0] == 2
+    assert _decision(stop, state)[0] == 0
+    state["structured_output"] = True
+    assert _decision(stop, state)[0] == 0
 
 
 def test_ccr_setup_registers_custom_governor_options_once(tmp_path):
