@@ -43,11 +43,15 @@ class GitHubSettings(BaseSettings):
     bot_username: str = Field(default="elixpoo", validation_alias="ELIXPO_GITHUB_BOT_USERNAME")
     # Control repo holding state/, candidate issues, the Project board (owner/name).
     control_repo: str = Field(default="", validation_alias="ELIXPO_GITHUB_CONTROL_REPO")
+    fork_owner: str = Field(default="", validation_alias="ELIXPO_GITHUB_FORK_OWNER")
     # Plain token for REST/search; Actions sets GITHUB_TOKEN. For local runs, a PAT.
     token: str = Field(
         default="",
         validation_alias=AliasChoices("GITHUB_TOKEN", "ELIXPOO_GITHUB_AGENTIC_TOKEN"),
     )
+    # Dedicated cross-owner credential for fork, push, and pull-request work.
+    # Keep this separate from the narrower token used by read-oriented squads.
+    solver_token: str = Field(default="", validation_alias="AGENT_GITHUB_SOLVER_TOKEN")
     # OAuth App (BYOP / login flows) — not needed by squads, kept for completeness.
     client_id: str = Field(default="", validation_alias="ELIXPO_GITHUB_CLIENT_ID")
     client_secret: str = Field(default="", validation_alias="ELIXPO_GITHUB_CLIENT_SECRET")

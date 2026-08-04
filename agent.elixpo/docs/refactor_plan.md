@@ -64,36 +64,38 @@ Six squads, each one or more GitHub Actions workflows, chained via `workflow_run
 - **Skill:** `skills/pick-safe-issue/SKILL.md`
 
 ### Vet — Final issue suitability
-- **Trigger:** manual prototype; later consumes a provisional Pick before any claim or clone.
+- **Trigger:** consumes a provisional Pick before any claim or clone; manual mode supports configured owned-repository tests.
 - **Budget:** 12k tokens maximum, normally zero or one `nova-fast` call.
-- **Job:** Read the complete issue conversation, parent/sub-issue relationships, and linked PR evidence. Reject tracking parents, occupied work, unresolved decisions, and unbounded tasks.
+- **Job:** Read the complete issue conversation, parent/sub-issue relationships, and linked PR evidence. Reject tracking parents, occupied work, unresolved decisions, unbounded tasks, and work anticipated to exceed 15 focused minutes.
 - **Output:** `state/vet.json` plus revision-aware rejected issue memory in `state/rejected_issues.json`.
 - **Skill:** `skills/vet-issue-suitability/SKILL.md`
-- **Prototype target:** `https://github.com/horsicq/Detect-It-Easy/issues/365`; `python -m agents.vet [ISSUE_URL]` accepts an override.
 
 Rejected issues are stored in a dictionary keyed by `owner/repo#number`, making
 lookup constant-time. Each record stores the issue's `updated_at` revision.
 Triage and Pick skip an unchanged rejected revision, while new conversation
 activity permits one fresh evaluation.
 
-### Comprehend — Context loading
-*(Runs as the first step of Solve, not a separate workflow.)*
-- **Job:** Build a tight context bundle for the coding squad
-- **Agents:** repo-mapper (AST/symbol index), relevance-pruner (only files touched by stack trace or referenced symbols), history-miner (related closed PRs/issues), test-locator
-- **Target:** context bundle under 30k tokens
+### Comprehend — Harness tool phase
+*(Runs inside Solve, not as a separate workflow.)*
+- **Job:** Use bounded Glob/Grep/Read calls to locate scoped guidance, manifests, and exact implementation files before editing.
+- **Target:** repository-grounded context discovered on demand; no bulk snapshot or guessed target path.
+- **Skill:** included in `skills/solve-bounded-issue/SKILL.md`
 
 ### Solve — Coding
-- **Trigger:** on `claimed` label
-- **Budget:** up to 60 min per task, matrix-parallelized across the 4–5 picks
-- **Agents:** claimer (forks repo), planner, implementer, self-reviewer, test-runner, iterator
-- **Sandbox:** GitHub Actions runner is the sandbox. One matrix job per task = full isolation.
-- **Escalation rule:** qwen-coder-large first. If tests fail or self-review flags issues, escalate to claude. If still failing after 2 attempts, abort and trigger graceful unclaim.
+- **Trigger:** successful Vet workflow with an approved Pick, or explicit allowlisted owned-test mode.
+- **Budget:** 15 minutes and 24k tokens; no whole-pipeline retry.
+- **Agents:** Python workspace supervisor, CCR-routed Node coding harness, deterministic verifier.
+- **Model:** `qwen-coder` runs through the CCR Node coding harness. Python supervises the same bounded session locally and in Actions, then owns verification and commit gates.
+- **Sandbox:** one isolated temporary Git workspace cloned from the authenticated fork.
+- **Output:** one local reviewed commit and `state/solve.json`; no push until every gate passes.
+- **Skill:** `skills/solve-bounded-issue/SKILL.md`.
 
 ### Submit — PR creation
-- **Trigger:** on Solve success
+- **Trigger:** `state/solve.json` reaches `ready_to_submit` in the same runner.
 - **Budget:** 5 min
 - **Agents:** branch-namer, commit-message-writer (conventional commits), pr-body-writer (links issue, lists tests, includes bot disclosure), label-applier
-- **Output:** PR opened upstream, tracking issue opened in control repo, ledger updated
+- **Output:** exact fork branch pushed once, disclosed PR opened upstream, ledger updated.
+- **Skill:** `skills/submit-autonomous-pr/SKILL.md`
 
 ### Steward — Follow-through
 Three workflows triggered by webhooks (via the Cloudflare Worker forwarding to `repository_dispatch`):
@@ -152,7 +154,7 @@ records the ledger claim after approving the exact pending URL.
 
 ### Local dry run
 
-The three stages only read public GitHub data and write local `state/*.json`;
+The four stages only read public GitHub data and write local `state/*.json`;
 they do not comment, fork, or open a pull request:
 
 ```bash
@@ -167,6 +169,31 @@ or `ELIXPOO_GITHUB_AGENTIC_TOKEN`; triage also requires
 `ELIXPO_POLLINATIONS_API_KEY`. Inspect `state/candidates.json`,
 `state/triaged.json`, and `state/pick.json` after each stage.
 
+Solve and Submit are mutating stages and are intentionally separate from this
+read-only dry run. For the owned test target:
+
+Set `AGENT_GITHUB_SOLVER_TOKEN` to the fork owner's dedicated classic PAT
+with `public_repo`; Solve and Submit do not fall back to the general agentic
+token or the workflow-provided `GITHUB_TOKEN`.
+
+```bash
+python -m agents.vet https://github.com/elixpo/lixrl.com/issues/9 --owned-test --force
+python -m agents.solve --issue-url https://github.com/elixpo/lixrl.com/issues/9 --owned-test
+python -m json.tool state/solve.json
+python -m agents.submit
+```
+
+Do not run Submit until `state/solve.json` is `ready_to_submit` and its recorded
+checks, files, commits, branch, and token spend are acceptable.
+
+Every configuration, provider, workspace, context, structured-output, timeout,
+token-budget, verification, policy, and review failure becomes
+`doctor_pending`. The versioned failure record includes its stage, retryability
+signal, candidate action, elapsed time, token spend/limit, and exception type.
+Solve does not retry itself. It preserves the isolated workspace and emits a
+Janitor cleanup manifest; Doctor must record a retry or terminal decision before
+Janitor removes the named workspace. Shared forks are always preserved.
+
 ---
 
 ## 5. Model routing (Pollinations)
@@ -178,18 +205,15 @@ Roles map to models, not the other way around. Agents request `model: "code"`, t
 | Repo crawling, label classification | `nova-fast` | Cheapest tool-capable model |
 | Issue scoring, triage reasoning | `nova-fast` | Lowest explicitly priced general tool-calling model |
 | Final issue suitability verification | `nova-fast` | One compact structured call after zero-cost gates |
-| Repo mapping & summarization | `gemini-flash-lite-3.1` | 1M context fits whole small repos |
-| Planning (what to change) | `kimi` | Strong agentic reasoning, mid-cost |
-| **Code generation — primary** | `qwen-coder-large` | First attempt always |
-| **Code generation — escalation** | `claude` (Sonnet 4.6) | Only after qwen self-review fails twice |
-| Self-review of diffs | `claude-fast` (Haiku) | Cheap, sharp critic |
+| Repository comprehension | deterministic retrieval | No model; bounded tracked-file context |
+| **Comprehend + implement** | `qwen-coder` | One CCR-routed Node harness, at most 14 turns |
+| Deterministic review | Python | File, diff, command, test, time, and token gates |
 | PR body, commit messages | `mistral` | Natural prose, cheap |
 | Steward replies | `kimi` | Good at conversational follow-ups + tool use |
-| Web search (when needed) | `gemini-search` | Built-in grounding |
 | Safety gate before posting | `qwen-safety` | Costs ~nothing, blocks problematic outputs |
 | Celebration image | `gptimage` | On merge only |
 
-Rough budget per PR: 50k–150k tokens. Well under $1 in pollen per PR even with Claude escalation.
+Solve has a hard 24k-token ceiling; the other squads keep their own independent budgets.
 
 ---
 
@@ -234,7 +258,7 @@ Everything that would normally go in Postgres lives in the control repo.
       "opened_at": "2026-06-20T10:30:00Z",
       "last_event": "2026-06-21T14:12:00Z",
       "token_spend": 47213,
-      "model_cascade": ["qwen-coder-large", "claude"],
+      "model_cascade": ["qwen-coder"],
       "fork_url": "https://github.com/elixpoo/repo"
     }
   },

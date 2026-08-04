@@ -25,18 +25,15 @@ roles:
   summarize:     { model: nova }                       # free, 1M ctx; paid: gemini-flash-lite-3.1
 
   # planning — strong agentic reasoning
-  plan:          { model: kimi }                       # free
+  plan:          { model: qwen-coder }                 # same cheap coder; stable prefix reuse
 
   # code generation — primary, always tried first
-  code:          { model: kimi-code }                  # free agentic coder; paid: qwen-coder-large
-  # code generation — escalation, only after self-review fails twice
-  code_escalate: { model: deepseek-pro }               # free; paid: claude (Sonnet 4.6)
-
+  code:          { model: qwen-coder }                 # cheapest Qwen coder; bounded structured edits
   # self-review of diffs — sharp critic
-  review:        { model: gpt-5.4-mini }               # free; paid: claude-fast (Haiku)
+  review:        { model: qwen-coder }                 # reuse coder context; one compact diff review
 
-  # natural prose: PR bodies, commit messages
-  prose:         { model: mistral }                    # free
+  # bounded natural prose: short PR footer/persona lines
+  prose:         { model: nova-fast }                  # cheapest general text route
 
   # steward replies — conversational follow-ups + tool use
   steward:       { model: kimi }                       # free

@@ -1,0 +1,126 @@
+name: solve
+
+# Vet-approved production targets flow through Solve and Submit in one isolated
+# runner so the local fork workspace never becomes cross-workflow state.
+
+on:
+  workflow_run:
+    workflows: [vet]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      issue_url:
+        description: Writable allowlisted issue URL for owned test mode
+        required: false
+      owned_test:
+        description: Use the explicit configured test repository
+        type: boolean
+        required: false
+        default: false
+      submit:
+        description: Push the reviewed branch and open the PR
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: state-write
+  cancel-in-progress: false
+
+jobs:
+  solve:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Decide whether a target is ready
+        id: gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ISSUE_URL: ${{ inputs.issue_url }}
+          OWNED_TEST: ${{ inputs.owned_test }}
+          WANT_SUBMIT: ${{ inputs.submit }}
+        run: |
+          run=false
+          submit=true
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            if [[ "$OWNED_TEST" == "true" && -n "$ISSUE_URL" ]]; then
+              run=true
+            fi
+            submit="${WANT_SUBMIT:-true}"
+          elif jq -e '.status == "picked" and .picked == true' state/pick.json >/dev/null \
+            && jq -e '.status == "approved" and .suitable == true and .test_mode != true' state/vet.json >/dev/null; then
+            run=true
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "submit=$submit" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: "3.11"
+      - name: Setup Node harness runtime
+        if: steps.gate.outputs.run == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache RTK
+        if: steps.gate.outputs.run == 'true'
+        id: rtk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/bin/rtk
+          key: rtk-${{ runner.os }}-${{ runner.arch }}-v0.42.0
+      - name: Install pinned RTK
+        if: steps.gate.outputs.run == 'true'
+        env:
+          RTK_TELEMETRY_DISABLED: "1"
+        run: |
+          if [ "${{ steps.rtk-cache.outputs.cache-hit }}" != "true" ]; then
+            curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/v0.42.0/install.sh | sh
+          fi
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          rtk --version
+      - name: Install
+        if: steps.gate.outputs.run == 'true'
+        run: pip install -e .
+      - name: Solve
+        if: steps.gate.outputs.run == 'true'
+        env:
+          AGENT_GITHUB_SOLVER_TOKEN: ${{ secrets.AGENT_GITHUB_SOLVER_TOKEN }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPO_GITHUB_FORK_OWNER: ${{ vars.ELIXPO_GITHUB_FORK_OWNER }}
+          ISSUE_URL: ${{ inputs.issue_url }}
+          OWNED_TEST: ${{ inputs.owned_test }}
+        run: |
+          # Python starts CCR and invokes the same bounded Node harness used by
+          # local `python -m agents.solve` runs inside the fork workspace.
+          args=()
+          if [[ "$OWNED_TEST" == "true" ]]; then
+            args+=(--issue-url "$ISSUE_URL" --owned-test)
+          fi
+          python -m agents.solve "${args[@]}"
+      - name: Submit
+        if: steps.gate.outputs.run == 'true' && steps.gate.outputs.submit == 'true'
+        env:
+          AGENT_GITHUB_SOLVER_TOKEN: ${{ secrets.AGENT_GITHUB_SOLVER_TOKEN }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+        run: python -m agents.submit
+      - name: Commit state
+        if: always() && steps.gate.outputs.run == 'true'
+        env:
+          CONTROL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "elixpoo[bot]"
+          git config user.email "elixpoo[bot]@users.noreply.github.com"
+          git add state/solve.json state/ledger.json
+          if [[ -f state/submit.json ]]; then git add state/submit.json; fi
+          git diff --cached --quiet || git commit -m "chore(solve): record implementation run"
+          auth=$(printf 'x-access-token:%s' "$CONTROL_TOKEN" | base64 -w 0)
+          git -c http.extraheader="AUTHORIZATION: basic $auth" push
