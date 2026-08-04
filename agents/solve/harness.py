@@ -298,7 +298,7 @@ def _harness_env(
             "hooks": {
                 "PreToolUse": [
                     {
-                        "matcher": "Read|Edit|Write|Bash|StructuredOutput",
+                        "matcher": "Read|Glob|Grep|Edit|Write|Bash|StructuredOutput",
                         "hooks": [{"type": "command", "command": hook_command, "timeout": 5}],
                     }
                 ],
@@ -706,20 +706,13 @@ def _prompt(
 ) -> str:
     context_excerpt = context_excerpt.replace("</repository_evidence>", "&lt;/repository_evidence&gt;")
     discovery = (
-        "RTK is available for one scoped fallback or post-edit review; do not run find, "
-        "help, or a repository-wide grep. The injected evidence already contains guidance filenames and "
-        "ranked relevant excerpts. Compare the excerpts and choose the candidate with concrete implementation "
-        "evidence, not simply rank one or the issue-mentioned path. Use built-in Read once on the chosen edit "
-        "target, with file_path only and no pages argument; Edit requires this pre-read. Each of at most two "
-        "candidate files may expose one additional seeded evidence window when needed. Four source reads are "
-        "the total pre-edit limit. Only when every injected excerpt lacks actionable evidence may "
-        "you use one "
-        "candidate-directory-scoped `rtk grep 'term1|term2' PATH -n -C 3`. A successful built-in Read is final "
-        "for that path: never Read that path again or repeat it through RTK before editing. Never use built-in "
-        "Read for broad discovery, repeat a query, or inspect a third candidate. After Edit, permit exactly "
-        "one `rtk read` of "
-        "each changed area "
-        "for self-review. Never run a raw shell command."
+        "RTK is available for compact reads and searches. Prefer relative `rtk grep` and `rtk read` for "
+        "discovery, then use built-in Read for exact edit context. Built-in Glob and Grep are also available "
+        "when they are more precise. The injected evidence contains guidance filenames and ranked excerpts; "
+        "treat them as a starting point, not a restriction. If Edit reports an exact-context mismatch, re-read "
+        "the affected region and retry with the actual text. Avoid repeating an unchanged query that already "
+        "succeeded, but continue gathering evidence when a tool failed or its output was truncated. Never run "
+        "raw shell, git, network, test, or build commands inside the coding session."
         if rtk_available
         else "RTK is unavailable. Use targeted Glob, Grep, and Read calls and avoid repeated reads."
     )
@@ -775,16 +768,13 @@ Before finishing, re-read every changed area and check the implementation agains
 verification and optional dependency setup commands allowed by the repository and the supplied schema.
 If the issue cannot be solved safely within the limits, make no edits and return solvable=false.
 
-Operate without progress narration. Use this bounded sequence and then stop:
-1. Compare the injected candidate excerpts and choose the concrete implementation path.
-2. Read one printed relative candidate path for the implementation with built-in Read. If needed, read its second
-   seeded window, then do the same for at most one distinct supporting/reference candidate.
-3. When the target exposes the insertion point and the supporting candidate exposes equivalent behavior, that is
-   sufficient evidence. Edit immediately instead of searching for an identical pre-existing implementation.
-4. Re-read only the changed area once, choose verification commands, and call StructuredOutput.
+Work as a normal repository-grounded coding agent inside these safety boundaries:
+1. Use the injected evidence and targeted tools to understand the implementation.
+2. Read exact edit context, make the smallest complete edit, and recover naturally from tool mismatches.
+3. Review the resulting changed areas, choose verification commands, and call StructuredOutput.
 You must finish by calling StructuredOutput. Never finish with prose, a plan, a promise to inspect another
-file, or an empty response. If the bounded evidence is insufficient, call StructuredOutput with
-solvable=false instead of spending more tool calls.
+file, or an empty response. Return solvable=false only when repository evidence shows that the issue is already
+satisfied, unsafe, or cannot be implemented within the file, time, and token limits.
 """
 
 
@@ -867,8 +857,8 @@ def _harness_command(
     if rtk_available is None:
         rtk_available = shutil.which("rtk") is not None
     schema = json.dumps(HarnessOutcome.model_json_schema(), separators=(",", ":"))
-    tools = "Read,Edit,Write,Bash" if rtk_available else "Read,Glob,Grep,Edit,Write,Find"
-    allowed = "Read,Edit,Write,Bash(rtk grep *),Bash(rtk read *)" if rtk_available else tools
+    tools = "Read,Glob,Grep,Edit,Write,Bash" if rtk_available else "Read,Glob,Grep,Edit,Write,Find"
+    allowed = "Read,Glob,Grep,Edit,Write,Bash(rtk grep *),Bash(rtk read *)" if rtk_available else tools
     disallowed = "WebFetch,WebSearch,Task,mcp__*"
     if rtk_available:
         disallowed += (

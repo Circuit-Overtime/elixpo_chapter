@@ -77,21 +77,33 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
     cwd = Path(str(event.get("cwd") or ".")).resolve()
 
     if tool == "StructuredOutput":
-        if (
-            tool_input.get("solvable") is False
-            and not state.get("edited_paths")
-            and state.get("source_reads")
-            and int(state.get("decline_blocks") or 0) < 1
-        ):
-            state["decline_blocks"] = 1
-            return (
-                2,
-                None,
-                "Re-evaluate once: ambiguity alone is not a rejection. If the behavior is already satisfied or "
-                "unsafe, return solvable=false again with concrete evidence; otherwise make the smallest "
-                "grounded Edit.",
-            )
         state["structured_output"] = True
+        return 0, None, None
+
+    if tool in {"Glob", "Grep"}:
+        if tool == "Glob":
+            pattern = str(tool_input.get("pattern") or "")
+            pattern_path = Path(pattern)
+            if pattern_path.is_absolute() or ".." in pattern_path.parts:
+                return 2, None, "Glob only inside the current repository with a relative pattern."
+        raw_path = str(tool_input.get("path") or ".")
+        if raw_path == ".":
+            relative = "."
+        else:
+            relative = _relative_path(cwd, raw_path)
+            if relative is None:
+                return 2, None, "Search only inside the current repository with a relative path."
+        state["discovery_calls"] = int(state.get("discovery_calls") or 0) + 1
+        if relative != raw_path:
+            tool_input["path"] = relative
+            return 0, {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "allow",
+                    "permissionDecisionReason": "Normalized to the supervised repository root.",
+                    "updatedInput": tool_input,
+                }
+            }, None
         return 0, None, None
 
     if tool in {"Read", "Edit", "Write"}:
@@ -117,39 +129,20 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
 
         if tool == "Read":
             if relative == ".elixpo-context/context.md":
-                return 2, None, "The context bundle must be read once through `rtk read`, not built-in Read."
+                return 2, None, "The evidence brief is already present in the task; inspect source files instead."
             edited = set(state.get("edited_paths") or [])
             key = "review_reads" if relative in edited else "source_reads"
             reads = list(state.get(key) or [])
-            if key == "review_reads":
-                if relative in reads:
-                    return 2, None, "This changed path was already reviewed. Call StructuredOutput now."
-                if len(reads) >= max(1, len(edited)):
-                    return 2, None, "The bounded review-read budget is exhausted. Call StructuredOutput now."
+            if relative not in reads:
                 reads.append(relative)
-                state[key] = reads
-            else:
+            state[key] = reads
+            if key == "source_reads":
                 counts = dict(state.get("source_read_counts") or {})
                 windows = list((state.get("read_windows") or {}).get(relative) or [])
                 count = int(counts.get(relative) or 0)
-                per_path_limit = min(2, max(1, len(windows)))
-                total_calls = sum(int(value or 0) for value in counts.values())
-                if relative not in reads and len(reads) >= 2:
-                    return 2, None, "Two candidate files are already grounded. Edit now or call StructuredOutput."
-                if count >= per_path_limit:
-                    return 2, None, "All seeded windows for this path were read. Edit now or call StructuredOutput."
-                if total_calls >= 4:
-                    return (
-                        2,
-                        None,
-                        "The four-window source-read budget is exhausted. Edit now or call StructuredOutput.",
-                    )
-                if relative not in reads:
-                    reads.append(relative)
                 counts[relative] = count + 1
-                state[key] = reads
                 state["source_read_counts"] = counts
-                offset = int(windows[count] if count < len(windows) else 0)
+                offset = int(windows[count % len(windows)] if windows else 0)
                 if offset <= 0 and count == 0:
                     offset = int((state.get("read_offsets") or {}).get(relative) or 0)
                 if offset > 0 and not tool_input.get("offset"):
@@ -177,11 +170,8 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
             if relative is None:
                 return 2, None, "Use `rtk read` with one repository-relative tracked path."
             reads = list(state.get("rtk_reads") or [])
-            if relative in reads:
-                return 2, None, "That RTK path was already read. Edit now or call StructuredOutput."
-            if len(reads) >= 2:
-                return 2, None, "The RTK read budget is exhausted. Edit now or call StructuredOutput."
-            reads.append(relative)
+            if relative not in reads:
+                reads.append(relative)
             state["rtk_reads"] = reads
             if relative != words[2]:
                 tool_input["command"] = f"rtk read {shlex.quote(relative)}"
@@ -193,16 +183,12 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                     }
                 }, None
             return 0, None, None
-        if words[:2] == ["rtk", "grep"] and state.get("source_reads"):
-            return (
-                2,
-                None,
-                "Candidate reads already grounded the code. Do not search again; Edit or call StructuredOutput.",
-            )
-        if words[:2] == ["rtk", "grep"] and not state.get("grep_used"):
-            state["grep_used"] = True
+        if words[:2] == ["rtk", "grep"]:
+            if any(word.startswith("/") or word == ".." or "../" in word for word in words[2:]):
+                return 2, None, "Search only inside the current repository with relative RTK arguments."
+            state["discovery_calls"] = int(state.get("discovery_calls") or 0) + 1
             return 0, None, None
-        return 2, None, "Raw shell discovery is blocked. Use only one scoped `rtk grep` or a relative `rtk read`."
+        return 2, None, "Raw shell commands are blocked. Use built-in tools or relative `rtk grep`/`rtk read`."
 
     return 0, None, None
 

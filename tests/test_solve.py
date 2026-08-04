@@ -236,12 +236,14 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
     gate_state = json.loads((config_dir / "tmp/tool-gate.json").read_text())
     assert gate_state["read_offsets"]["app/pricing/page.tsx"] == 287
     hook_settings = json.loads((config_dir / "settings.json").read_text())
-    assert hook_settings["hooks"]["PreToolUse"][0]["matcher"] == "Read|Edit|Write|Bash|StructuredOutput"
+    assert hook_settings["hooks"]["PreToolUse"][0]["matcher"] == (
+        "Read|Glob|Grep|Edit|Write|Bash|StructuredOutput"
+    )
     assert hook_settings["hooks"]["PostToolUse"][0]["matcher"] == "Edit|Write"
     assert hook_settings["hooks"]["Stop"]
 
 
-def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
+def test_tool_gate_normalizes_paths_and_allows_recovery_reads(tmp_path):
     target = tmp_path / "app/pricing/page.tsx"
     target.parent.mkdir(parents=True)
     target.write_text("export default function Pricing() {}")
@@ -270,8 +272,8 @@ def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
     assert code == 0 and reason is None
     assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 338
     code, output, reason = _decision(repeated, state)
-    assert code == 2 and output is None
-    assert "seeded windows" in reason
+    assert code == 0 and reason is None
+    assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 287
 
     footer = tmp_path / "app/components/Footer.tsx"
     footer.parent.mkdir(parents=True, exist_ok=True)
@@ -287,8 +289,12 @@ def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
     navbar = tmp_path / "app/components/Navbar.tsx"
     navbar.write_text("nav")
     code, output, reason = _decision(third, state)
-    assert code == 2 and output is None
-    assert "candidate files" in reason or "budget is exhausted" in reason
+    assert code == 0 and output is None and reason is None
+    assert state["source_reads"] == [
+        "app/pricing/page.tsx",
+        "app/components/Footer.tsx",
+        "app/components/Navbar.tsx",
+    ]
 
 
 def test_tool_gate_repairs_pathless_edit_from_single_grounded_read(tmp_path):
@@ -325,8 +331,23 @@ def test_tool_gate_blocks_raw_shell_and_bounds_prose_stops(tmp_path):
         "tool_input": {"command": "rtk grep 'copy|email' app -n -C 3"},
     }
     code, _, reason = _decision(scoped_grep, state)
-    assert code == 2
-    assert "already grounded" in reason
+    assert code == 0 and reason is None
+    assert state["discovery_calls"] == 1
+
+    outside_grep = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Grep",
+        "cwd": str(tmp_path),
+        "tool_input": {"pattern": "secret", "path": "/etc"},
+    }
+    assert _decision(outside_grep, state)[0] == 2
+    outside_glob = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Glob",
+        "cwd": str(tmp_path),
+        "tool_input": {"pattern": "/etc/*"},
+    }
+    assert _decision(outside_glob, state)[0] == 2
 
     stop = {"hook_event_name": "Stop"}
     assert _decision(stop, state)[0] == 2
@@ -356,7 +377,7 @@ def test_tool_gate_records_only_successful_edits_and_allows_stop(tmp_path):
     assert _decision({"hook_event_name": "Stop"}, state)[0] == 0
 
 
-def test_tool_gate_challenges_only_first_ambiguous_decline():
+def test_tool_gate_leaves_decline_judgment_to_model():
     state = {"source_reads": ["app/page.tsx"]}
     decline = {
         "hook_event_name": "PreToolUse",
@@ -365,9 +386,7 @@ def test_tool_gate_challenges_only_first_ambiguous_decline():
     }
 
     code, _, reason = _decision(decline, state)
-    assert code == 2
-    assert "ambiguity alone" in reason
-    assert _decision(decline, state)[0] == 0
+    assert code == 0 and reason is None
     assert state["structured_output"] is True
 
 
@@ -520,8 +539,10 @@ def test_harness_confines_rtk_shell_discovery(monkeypatch):
     allowed = command[command.index("--allowedTools") + 1]
     denied = command[command.index("--disallowedTools") + 1]
 
-    assert tools == "Read,Edit,Write,Bash"
+    assert tools == "Read,Glob,Grep,Edit,Write,Bash"
     assert "Read" in allowed
+    assert "Glob" in allowed
+    assert "Grep" in allowed
     assert "Bash(rtk read *)" in allowed
     assert "Bash(rtk grep *)" in allowed
     assert "Bash(rtk find *)" not in allowed
@@ -664,20 +685,18 @@ def test_prompt_keeps_ranked_candidates_advisory():
 
     assert "1. app/docs/layout.tsx" in rendered
     assert "2. app/page.tsx" in rendered
-    assert "rank one or the issue-mentioned path" in rendered
-    assert "Four source reads are the total pre-edit limit" in rendered
+    assert "starting point, not a restriction" in rendered
+    assert "Four source reads" not in rendered
     assert "<repository_evidence>" in rendered
     assert "&lt;/repository_evidence&gt;" in rendered
-    assert "Edit requires this pre-read" in rendered
-    assert "with file_path only and no pages argument" in rendered
+    assert "exact-context mismatch" in rendered
     assert "Repository evidence" in rendered
     assert "do not decline merely because" in rendered
-    assert "Operate without progress narration" in rendered
-    assert "Edit immediately" in rendered
+    assert "normal repository-grounded coding agent" in rendered
+    assert "recover naturally from tool mismatches" in rendered
     assert "finish by calling StructuredOutput" in rendered
     assert "repository root as its current directory (`.`)" in rendered
     assert "Never invent or prepend `/workspace`, `/home/user`" in rendered
-    assert "printed relative candidate path" in rendered
     assert "next command must be exactly" not in rendered
 
 

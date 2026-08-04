@@ -102,7 +102,7 @@ secret-stripped environment, temporary CCR home, and isolated checkout enforce
 the execution boundary.
 
 Cap built-in reads at 1,400 output tokens, provider retries at two, read-only
-tool concurrency at three, and the complete session at fourteen turns. Treat
+tool concurrency at three, and the complete session at twenty-four turns. Treat
 the configured 240,000-token value and Vet's estimate-based headroom as a soft
 cost target. Record an overrun for Doctor, but never discard an otherwise valid
 completed edit merely for crossing that target. A Vet-approved run uses the
@@ -121,26 +121,22 @@ this also prevents a context read from being elided before the model sees it.
 Let the coding model compare compressed excerpts and choose one candidate
 containing concrete implementation evidence; rank one and issue-mentioned paths
 are priors, never forced targets. Require one bounded
-built-in Read of the chosen edit target because the coding CLI will reject Edit
-without it. Strip the PDF-only `pages` property from Read's provider-facing tool
-schema so text reads cannot emit an invalid empty value. Permit the
-model-selected implementation candidate and at most one distinct supporting or
-fallback candidate. Permit at most two Comprehend-seeded semantic windows per
-candidate and four source reads total; deny unseeded repetition. If
-the target exposes the insertion point and the supporting candidate exposes the
-equivalent behavior, treat that as sufficient evidence and implement rather
-than restarting discovery. Two candidate files and four seeded source windows
-are the complete pre-edit limit. Permit one
-candidate-directory grep only when every bundled excerpt lacks actionable
-evidence and before any source Read. Never use find, repository-wide grep, tool
-help, repeated queries, a third candidate file, or another model call for
-retrieval. Once the target and supporting windows confirm the insertion point
-and local behavior, Edit immediately.
-Enforce these limits with a credential-free local PreToolUse hook rather than
-prompt compliance alone. The hook may normalize an absolute remembered checkout
-path only when exactly that suffix exists under the supervised cwd. It must deny
-raw shell discovery, repeated source reads, and reads beyond the bounded budget,
-returning a short instruction to Edit or emit StructuredOutput.
+built-in Read of an edit target because the coding CLI rejects Edit without
+grounded context. Strip the PDF-only `pages` property from Read's provider-facing
+tool schema so text reads cannot emit an invalid empty value. Seed early reads
+with Comprehend's strongest semantic windows as an efficiency hint, then let the
+coding model use repository-relative Read, Glob, Grep, Edit, Write, and RTK calls
+as needed. Do not encode fixed read counts, candidate counts, grep counts, or a
+mandatory tool sequence. A failed exact-context Edit explicitly authorizes a
+fresh targeted read and retry.
+
+Enforce security boundaries with a credential-free local PreToolUse hook rather
+than micromanaging implementation strategy. The hook may normalize an absolute
+remembered checkout path only when exactly that suffix exists under the
+supervised cwd. It must confine Read, Glob, Grep, Edit, Write, and RTK paths to
+the checkout and deny raw shell, git, network, test, and build commands. Record
+read, search, edit, and denial counts for Doctor without rejecting safe repeated
+operations merely because a numeric micro-budget was reached.
 Pass the generated isolated hook configuration explicitly through the coding
 CLI's `--settings` argument. `CLAUDE_CONFIG_DIR` isolates client state but is not
 by itself proof that print mode loaded user hooks. A run reporting zero gate
@@ -150,10 +146,11 @@ troubleshooting flag disables hooks along with every other customization. Solve
 gets its safety from the isolated profile, strict MCP configuration, explicit
 tool allow/deny rules, secret-stripped environment, supervised processes, and
 the deterministic hooks themselves.
-Seed built-in candidate Reads with the line offsets of Comprehend's two
-highest-scoring rendered excerpts when the model omitted an offset. This gives
-Edit exact target and supporting context without arbitrary continuation reads
-or another model call.
+Seed early built-in candidate Reads with the line offsets of Comprehend's two
+highest-scoring rendered excerpts when the model omitted an offset. Cycle these
+offsets as hints on later offset-free reads, while accepting model-selected
+offsets and additional repository-grounded reads. This supports exact target
+and reference context without turning retrieval hints into hard restrictions.
 If Qwen emits an Edit with no `file_path`, the hook may supply the path only when
 exactly one grounded source path has been read. Preserve every other Edit field;
 never guess between multiple targets. Report compact gate counts after the
@@ -175,11 +172,9 @@ absence of the requested behavior in a confirmed target is evidence of the edit
 to make rather than evidence of missing context. Exact existing duplicate code
 is not required; synthesize the smallest locally consistent implementation from
 the issue's observable behavior and repository patterns. Decline only when
-current code already satisfies the observable requirement or the bounded
-evidence cannot support a safe change. Before accepting the first unedited
-`solvable=false` result after grounded reads, require one bounded reconsideration
-that distinguishes genuine impossibility from mere ambiguity; accept the second
-decision to avoid a loop.
+current code already satisfies the observable requirement or the issue cannot
+be implemented safely within the outer file, time, and token limits. The model
+owns that judgment; hooks must not force or veto a decline.
 
 Rank behavior using both document frequency and same-line term co-occurrence;
 repeated issue prose must not outweigh a source expression containing the action,
@@ -191,10 +186,9 @@ tracked files, compressed excerpts, and tool evidence.
 Pin the legacy JSON-config-compatible CCR runtime. Never use an unpinned latest
 CCR package: current control-plane releases can attach to a global profile and
 silently ignore Solve's Pollinations route. Print the pinned runtime at startup.
-When RTK is available, reserve built-in Read for the exact implementation target
-and at most one distinct supporting target that satisfy the coding CLI's edit
-guard. Use relative `rtk read` calls only for post-edit review; the evidence
-brief is already present in the initial task.
+When RTK is available, prefer its compact relative reads and searches for
+discovery. Use built-in Read for exact edit context and post-edit inspection as
+needed; the evidence brief is already present in the initial task.
 
 Remove web, subagents, MCP,
 session persistence, user customizations, and nonessential traffic. Strip

@@ -22,7 +22,7 @@ command_timeout_seconds: 180
 harness_model: qwen-coder
 # CCR 2.x requires provider-qualified client model IDs (`provider,model`).
 harness_provider: pollinations-code
-harness_max_turns: 14
+harness_max_turns: 24
 harness_max_output_tokens: 1400
 harness_file_read_max_output_tokens: 1400
 harness_max_retries: 2
