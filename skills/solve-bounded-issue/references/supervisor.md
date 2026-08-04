@@ -159,11 +159,11 @@ troubleshooting flag disables hooks along with every other customization. Solve
 gets its safety from the isolated profile, strict MCP configuration, explicit
 tool allow/deny rules, secret-stripped environment, supervised processes, and
 the deterministic hooks themselves.
-Seed early built-in candidate Reads with the line offsets of Comprehend's two
-highest-scoring rendered excerpts when the model omitted an offset. Cycle these
-offsets as hints on later offset-free reads, while accepting model-selected
-offsets and additional repository-grounded reads. This supports exact target
-and reference context without turning retrieval hints into hard restrictions.
+Seed the first built-in Read of each candidate with Comprehend's strongest
+rendered-excerpt offset when the model omitted one. Treat it as a one-time hint:
+later offset-free Reads must keep their normal beginning-of-file semantics, and
+model-selected offsets must pass through. This supports exact target context
+without trapping repeated reads in semantic windows.
 If Qwen emits an Edit with no `file_path`, the hook may supply the path only when
 exactly one grounded source path has been read. Preserve every other Edit field;
 never guess between multiple targets. Report compact gate counts after the

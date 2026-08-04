@@ -67,11 +67,21 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                 state["post_edit_structured_blocks"] = blocks + 1
                 return 2, None, "Post-edit review is complete. Call StructuredOutput with the checks and summary."
             return 0, None, None
+        grounded = list(state.get("source_reads") or [])
+        if grounded:
+            paths = ", ".join(f"`{path}`" for path in grounded[:5])
+            return (
+                2,
+                None,
+                f"Repository reads already succeeded for {paths}. Do not answer with another plan. "
+                "Use that evidence to call Edit/Write now, make one genuinely different targeted tool call, "
+                "or call StructuredOutput with concrete evidence.",
+            )
         return (
             2,
             None,
-            "Do not stop with progress prose. Continue repository work, or call StructuredOutput with "
-            "solvable=false and concrete evidence if the issue cannot be completed.",
+            "Do not stop with progress prose. Call a repository tool directly, or call StructuredOutput "
+            "with concrete evidence if the issue cannot be completed.",
         )
 
     if event_name == "PostToolUse":
@@ -171,10 +181,10 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                 count = int(counts.get(relative) or 0)
                 counts[relative] = count + 1
                 state["source_read_counts"] = counts
-                offset = int(windows[count % len(windows)] if windows else 0)
-                if offset <= 0 and count == 0:
+                offset = int(windows[0] if windows else 0)
+                if offset <= 0:
                     offset = int((state.get("read_offsets") or {}).get(relative) or 0)
-                if offset > 0 and not tool_input.get("offset"):
+                if count == 0 and offset > 0 and not tool_input.get("offset"):
                     tool_input["offset"] = offset
                     updated = tool_input
         if updated is not None:

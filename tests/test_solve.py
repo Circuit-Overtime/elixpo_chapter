@@ -277,10 +277,10 @@ def test_tool_gate_rejects_absolute_paths_and_allows_relative_recovery_reads(tmp
     repeated = {**event, "tool_input": {"file_path": "app/pricing/page.tsx"}}
     code, output, reason = _decision(repeated, state)
     assert code == 0 and reason is None
-    assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 338
+    assert output is None
     code, output, reason = _decision(repeated, state)
     assert code == 0 and reason is None
-    assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 287
+    assert output is None
 
     footer = tmp_path / "app/components/Footer.tsx"
     footer.parent.mkdir(parents=True, exist_ok=True)
@@ -291,7 +291,7 @@ def test_tool_gate_rejects_absolute_paths_and_allows_relative_recovery_reads(tmp
     assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 77
     code, output, reason = _decision(second, state)
     assert code == 0 and reason is None
-    assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 146
+    assert output is None
     third = {**event, "tool_input": {"file_path": "app/components/Navbar.tsx"}}
     navbar = tmp_path / "app/components/Navbar.tsx"
     navbar.write_text("nav")
@@ -357,7 +357,10 @@ def test_tool_gate_blocks_raw_shell_and_enforces_structured_completion(tmp_path)
     assert _decision(outside_glob, state)[0] == 2
 
     stop = {"hook_event_name": "Stop"}
-    assert _decision(stop, state)[0] == 2
+    code, _, reason = _decision(stop, state)
+    assert code == 2
+    assert "Repository reads already succeeded for `app/page.tsx`" in reason
+    assert "Edit/Write now" in reason
     assert _decision(stop, state)[0] == 2
     assert _decision(stop, state)[0] == 2
     state["structured_output"] = True
