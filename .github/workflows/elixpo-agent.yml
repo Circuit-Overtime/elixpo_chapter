@@ -96,7 +96,7 @@ jobs:
             }
 
             const mention = /(^|[^A-Za-z0-9_.+-])@elixpoo([^A-Za-z0-9_.+-]|$)/.test(request);
-            const authorized = allowed.has(actor) && (structured || event === 'workflow_dispatch' || mention);
+            const authorized = event === 'workflow_dispatch' || mention || (structured && allowed.has(actor));
             core.setOutput('authorized', String(authorized));
             core.setOutput('scope', scope);
             core.setOutput('number', String(number));
@@ -199,6 +199,8 @@ jobs:
           TARGET_SCOPE: ${{ steps.gate.outputs.scope }}
           REQUEST_B64: ${{ steps.gate.outputs.request_b64 }}
           GIST_ID: ${{ vars.CI_GIST_ID }}
+          FOLLOWUP_GIST_ID: ${{ vars.ELIXPOO_FOLLOWUP_GIST_ID }}
+          FOLLOWUP_GIST_TOKEN: ${{ secrets.ELIXPOO_GIST_AGENTIC_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p .elixpo-context
@@ -240,6 +242,17 @@ jobs:
             '{scope:$scope, number:$number, repository:$repo, write_allowed:$write_allowed}' \
             > .elixpo-context/task.json
 
+          if [ -n "$FOLLOWUP_GIST_ID" ] && [ -n "$FOLLOWUP_GIST_TOKEN" ]; then
+            curl -fsSL \
+              -H "Authorization: Bearer $FOLLOWUP_GIST_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/gists/$FOLLOWUP_GIST_ID" \
+              | jq -r '.files["elixpoo-followups.json"].content // "{}"' \
+              | jq --arg key "$REPO#$TARGET_NUMBER" \
+                '{record: (.active[$key] // null), prior_completion: ([.completed[]? | select(.key == $key)] | last)}' \
+              > .elixpo-context/followup.json
+          fi
+
           git diff --stat origin/main...HEAD > .elixpo-context/diff-stat.txt || true
           git diff --name-only origin/main...HEAD > .elixpo-context/changed-files.txt || true
 
@@ -264,7 +277,7 @@ jobs:
             echo 'body<<ELIXPO_PROMPT'
             echo "You are @elixpoo, the repository agent for ${{ github.repository }}. Work only on $TARGET_SCOPE #$TARGET_NUMBER and this repository."
             echo
-            echo "Read .elixpo-context/task.json, request.txt, thread.json, and context.md once if present. Read changelog.md once if present. For a pull request also read pull-request.json, diff-stat.txt, and changed-files.txt, then inspect only targeted per-file diffs with git diff origin/main...HEAD -- <path>. Never dump the entire PR diff. For an issue, inspect linked-pull-requests.json before deciding where code belongs."
+            echo "Read .elixpo-context/task.json, request.txt, thread.json, context.md, and followup.json once if present. Read changelog.md once if present. For a pull request also read pull-request.json, diff-stat.txt, and changed-files.txt, then inspect only targeted per-file diffs with git diff origin/main...HEAD -- <path>. Never dump the entire PR diff. For an issue, inspect linked-pull-requests.json before deciding where code belongs."
             echo
             echo "Infer intent and finish the smallest complete path: answer a question; triage or clarify; update issue/PR title or description; inspect/review a PR; or implement requested repository changes. If an issue has a linked writable PR, update that branch. Otherwise implementation from an issue uses elixpo/issue-$TARGET_NUMBER-<hex>, pushes it, and opens one PR whose body ends with Fixes #$TARGET_NUMBER."
             echo
@@ -292,7 +305,7 @@ jobs:
           show_full_output: false
           trigger_phrase: "@elixpoo"
           prompt: ${{ steps.prompt.outputs.body }}
-          claude_args: --permission-mode bypassPermissions --max-turns 32
+          claude_args: --permission-mode bypassPermissions --max-turns ${{ vars.ELIXPO_AGENT_MAX_TURNS || 64 }}
           additional_permissions: |
             actions: read
 
