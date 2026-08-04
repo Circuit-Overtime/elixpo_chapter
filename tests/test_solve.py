@@ -255,7 +255,8 @@ def test_harness_confines_rtk_shell_discovery(monkeypatch):
     allowed = command[command.index("--allowedTools") + 1]
     denied = command[command.index("--disallowedTools") + 1]
 
-    assert tools == "Edit,Write,Bash"
+    assert tools == "Read,Edit,Write,Bash"
+    assert "Read" in allowed
     assert "Bash(rtk read *)" in allowed
     assert "Bash(rtk grep *)" in allowed
     assert "Bash(rtk find *)" not in allowed
@@ -302,7 +303,9 @@ def test_prompt_keeps_ranked_candidates_advisory():
     assert "1. app/docs/layout.tsx" in rendered
     assert "2. app/page.tsx" in rendered
     assert "rank one or the issue-mentioned path" in rendered
-    assert "Two exact source reads is the total pre-edit limit" in rendered
+    assert "Two source reads after the bundle is the total pre-edit limit" in rendered
+    assert "Edit requires this exact pre-read" in rendered
+    assert "with file_path only and no pages argument" in rendered
     assert "Repository evidence" in rendered
     assert "do not decline merely because" in rendered
     assert "next command must be exactly" not in rendered
@@ -324,6 +327,22 @@ def test_ccr_rtk_context_governor_when_js_runtime_is_available():
 
     assert result.returncode == 0, result.stderr
     assert "rtk-context-governor: ok" in result.stdout
+
+
+def test_ccr_tool_schema_patcher_when_js_runtime_is_available():
+    runtime = shutil.which("node") or shutil.which("bun")
+    if runtime is None:
+        pytest.skip("Node/Bun runtime is unavailable")
+    script = Path(__file__).parent / "js" / "tool_schema_patcher.test.js"
+    result = subprocess.run(
+        [runtime, str(script)],
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr or result.stdout
+    assert "tool-schema-patcher: ok" in result.stdout
 
 
 def test_harness_result_reports_usage_components(capsys):

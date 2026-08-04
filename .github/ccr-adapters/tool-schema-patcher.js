@@ -14,6 +14,13 @@
  * (losing the cost split), this transformer injects a minimum valid schema:
  *   { "type": "object", "properties": {} }
  *
+ * The coding CLI also exposes a PDF-only `pages` argument on its general Read
+ * tool. Text-file edits require a prior built-in Read, but compatible models
+ * sometimes emit `pages: ""`, which the CLI rejects before reading anything.
+ * Solve does not inspect PDFs, so remove that property (and its required entry)
+ * from Read's provider-facing schema. The runtime then receives only file_path,
+ * offset, and limit.
+ *
  * Runs AFTER the `openai` transformer in the chain so we're always working
  * with OpenAI-format `tools[].function.parameters` rather than Anthropic's
  * `input_schema`. Registered at top-level `transformers` and referenced by
@@ -59,6 +66,14 @@ class ToolSchemaPatcher {
             const hasNoProperties = fn.parameters.properties == null;
             if (isObjectSchema && hasNoProperties) {
                 fn.parameters.properties = {};
+            }
+            if (fn.name === "Read" && fn.parameters.properties?.pages) {
+                delete fn.parameters.properties.pages;
+                if (Array.isArray(fn.parameters.required)) {
+                    fn.parameters.required = fn.parameters.required.filter(
+                        (name) => name !== "pages",
+                    );
+                }
             }
         }
         return request;

@@ -77,10 +77,13 @@ ignored `.elixpo-context/context.md` containing bounded guidance, a tracked-file
 index, and ranked relevant excerpts without another model call. Require RTK to
 read that bundle exactly once. Let the coding model compare compressed excerpts
 and choose one candidate containing concrete implementation evidence; rank one
-and issue-mentioned paths are priors, never forced targets. Permit one fallback
-candidate read when the first exact read disproves the choice, or one supporting
-read when it resolves a concrete acceptance-criteria gap. Two exact source reads
-is the complete pre-edit limit. Permit one
+and issue-mentioned paths are priors, never forced targets. Require one bounded
+built-in Read of the chosen edit target because the coding CLI will reject Edit
+without it. Strip the PDF-only `pages` property from Read's provider-facing tool
+schema so text reads cannot emit an invalid empty value. If the first target read
+disproves the choice, permit one built-in fallback read. If it confirms the target
+but exposes one acceptance-criteria gap, permit one supporting `rtk read` instead.
+Two source reads after the bundle is the complete pre-edit limit. Permit one
 candidate-directory grep only when every bundled excerpt lacks actionable
 evidence. Never use find, repository-wide grep, tool help, repeated queries, a
 third candidate read, or another model call for retrieval.
@@ -103,9 +106,9 @@ tracked files, compressed excerpts, and tool evidence.
 Pin the legacy JSON-config-compatible CCR runtime. Never use an unpinned latest
 CCR package: current control-plane releases can attach to a global profile and
 silently ignore Solve's Pollinations route. Print the pinned runtime at startup.
-When RTK is available, remove built-in Read from the tool set; current coding
-CLI builds can emit an empty `pages` value and return no source. Use relative
-`rtk read` calls for both exact edit context and post-edit review.
+When RTK is available, reserve built-in Read only for the exact pre-edit target
+that satisfies the coding CLI's edit guard. Use relative `rtk read` calls for
+compressed supporting context and post-edit review.
 
 Remove web, subagents, MCP,
 session persistence, user customizations, and nonessential traffic. Strip

@@ -380,12 +380,15 @@ def _prompt(
         "RTK is available. First run exactly `rtk read .elixpo-context/context.md`; do not run find, "
         "help, or a repository-wide grep. The bundle already contains guidance, a tracked index, and "
         "ranked relevant excerpts. Compare the excerpts and choose the candidate with concrete implementation "
-        "evidence, not simply rank one or the issue-mentioned path. Use one relative-path `rtk read` for your "
-        "chosen candidate. Permit one additional `rtk read` either to replace a disproven target or to resolve "
-        "one concrete acceptance-criteria gap in a related tracked file. Two exact source reads is the total "
-        "pre-edit limit. Only when every bundled excerpt lacks actionable evidence may you use one "
-        "candidate-directory-scoped `rtk grep 'term1|term2' PATH -n -C 3`. Never use built-in Read, repeat a "
-        "query, or inspect a third candidate. After Edit, permit exactly one `rtk read` of each changed area "
+        "evidence, not simply rank one or the issue-mentioned path. Use built-in Read once on the chosen edit "
+        "target, with file_path only and no pages argument; Edit requires this exact pre-read. If it disproves "
+        "the target, use built-in Read once on one fallback target. If it confirms the target but leaves one "
+        "acceptance-criteria gap, use one `rtk read` on the related tracked file instead. Two source reads after "
+        "the bundle is the total pre-edit limit. Only when every bundled excerpt lacks actionable evidence may "
+        "you use one "
+        "candidate-directory-scoped `rtk grep 'term1|term2' PATH -n -C 3`. Never use built-in Read for broad "
+        "discovery, repeat a query, or inspect a third candidate. After Edit, permit exactly one `rtk read` of "
+        "each changed area "
         "for self-review. Never run a raw shell command."
         if rtk_available
         else "RTK is unavailable. Use targeted Glob, Grep, and Read calls and avoid repeated reads."
@@ -503,9 +506,9 @@ def _harness_command(
     if rtk_available is None:
         rtk_available = shutil.which("rtk") is not None
     schema = json.dumps(HarnessOutcome.model_json_schema(), separators=(",", ":"))
-    tools = "Edit,Write,Bash" if rtk_available else "Read,Glob,Grep,Edit,Write,Find"
+    tools = "Read,Edit,Write,Bash" if rtk_available else "Read,Glob,Grep,Edit,Write,Find"
     allowed = (
-        "Edit,Write,Bash(rtk grep *),Bash(rtk read *)"
+        "Read,Edit,Write,Bash(rtk grep *),Bash(rtk read *)"
         if rtk_available
         else tools
     )
