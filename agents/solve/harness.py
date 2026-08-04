@@ -135,6 +135,7 @@ def _harness_env(model: str, policy: dict[str, Any] | None = None) -> dict[str, 
             "DISABLE_COST_WARNINGS": "1",
             "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
             "CLAUDE_CODE_SKIP_PROMPT_HISTORY": "1",
+            "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
             "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": str(
                 int(policy.get("harness_file_read_max_output_tokens", 1800))
             ),
@@ -433,7 +434,6 @@ def _harness_command(
         )
     return _node_command(
         _HARNESS_PACKAGE,
-        "--bare",
         "-p",
         "--output-format",
         "stream-json",
@@ -449,6 +449,11 @@ def _harness_command(
         # one-file solve into hundreds of thousands of input tokens.
         "--system-prompt-file",
         str(_SOLVE_SKILL),
+        # Bare mode bypasses the proven CCR auth path in current coding CLI
+        # builds. Empty setting sources provide the same filesystem isolation
+        # while preserving ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY routing.
+        "--setting-sources",
+        "",
         "--permission-mode",
         "dontAsk",
         "--tools",

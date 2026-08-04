@@ -177,6 +177,7 @@ def test_harness_environment_excludes_agent_credentials(monkeypatch):
     assert env["ANTHROPIC_API_KEY"] == "ccr-pollinations"
     assert "ANTHROPIC_AUTH_TOKEN" not in env
     assert env["RTK_TELEMETRY_DISABLED"] == "1"
+    assert env["CLAUDE_CODE_DISABLE_AUTO_MEMORY"] == "1"
     assert env["CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS"] == "1800"
     assert env["CLAUDE_CODE_MAX_RETRIES"] == "2"
     assert env["CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY"] == "3"
@@ -231,7 +232,8 @@ def test_harness_replaces_generic_system_prompt(monkeypatch):
 
     assert "--system-prompt-file" in command
     assert "--append-system-prompt-file" not in command
-    assert "--bare" in command
+    assert "--bare" not in command
+    assert command[command.index("--setting-sources") + 1] == ""
     assert command[command.index("--max-turns") + 1] == "10"
 
 
