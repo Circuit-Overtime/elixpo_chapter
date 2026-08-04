@@ -23,6 +23,8 @@ from agents.solve.harness import (
     _CCR_PACKAGE,
     _HARNESS_PACKAGE,
     HarnessError,
+    _candidate_read_offsets,
+    _deterministic_outcome,
     _harness_command,
     _harness_env,
     _is_empty_connection_failure,
@@ -206,6 +208,7 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
         router_url="http://127.0.0.1:4567",
         config_dir=config_dir,
         client_model="pollinations-code,qwen-coder",
+        gate_state={"read_offsets": {"app/pricing/page.tsx": 287}},
     )
 
     assert "GITHUB_TOKEN" not in env
@@ -228,8 +231,11 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
     assert env["CLAUDE_CODE_TMPDIR"] == str(config_dir / "tmp")
     assert env["ELIXPO_TOOL_GATE_STATE"] == str(config_dir / "tmp/tool-gate.json")
     assert env["DISABLE_UPDATES"] == "1"
+    gate_state = json.loads((config_dir / "tmp/tool-gate.json").read_text())
+    assert gate_state["read_offsets"]["app/pricing/page.tsx"] == 287
     hook_settings = json.loads((config_dir / "settings.json").read_text())
     assert hook_settings["hooks"]["PreToolUse"][0]["matcher"] == "Read|Edit|Write|Bash|StructuredOutput"
+    assert hook_settings["hooks"]["PostToolUse"][0]["matcher"] == "Edit|Write"
     assert hook_settings["hooks"]["Stop"]
 
 
@@ -237,7 +243,7 @@ def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
     target = tmp_path / "app/pricing/page.tsx"
     target.parent.mkdir(parents=True)
     target.write_text("export default function Pricing() {}")
-    state = {}
+    state = {"read_offsets": {"app/pricing/page.tsx": 287}}
     event = {
         "hook_event_name": "PreToolUse",
         "tool_name": "Read",
@@ -249,6 +255,7 @@ def test_tool_gate_normalizes_absolute_read_and_blocks_repeat(tmp_path):
 
     assert code == 0 and reason is None
     assert output["hookSpecificOutput"]["updatedInput"]["file_path"] == "app/pricing/page.tsx"
+    assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 287
     assert state["source_reads"] == ["app/pricing/page.tsx"]
     repeated = {**event, "tool_input": {"file_path": "app/pricing/page.tsx"}}
     code, output, reason = _decision(repeated, state)
@@ -272,6 +279,26 @@ def test_tool_gate_blocks_raw_shell_and_bounds_prose_stops(tmp_path):
     assert _decision(stop, state)[0] == 0
     state["structured_output"] = True
     assert _decision(stop, state)[0] == 0
+
+
+def test_tool_gate_records_only_successful_edits_and_allows_stop(tmp_path):
+    target = tmp_path / "app/pricing/page.tsx"
+    target.parent.mkdir(parents=True)
+    target.write_text("changed")
+    state = {}
+    pre = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Edit",
+        "cwd": str(tmp_path),
+        "tool_input": {"file_path": "app/pricing/page.tsx", "old_string": "a", "new_string": "b"},
+    }
+    assert _decision(pre, state)[0] == 0
+    assert "edited_paths" not in state
+
+    post = {**pre, "hook_event_name": "PostToolUse"}
+    assert _decision(post, state)[0] == 0
+    assert state["edited_paths"] == ["app/pricing/page.tsx"]
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 0
 
 
 def test_ccr_setup_registers_custom_governor_options_once(tmp_path):
@@ -455,6 +482,42 @@ def test_context_bundle_is_injected_and_git_ignored(tmp_path, monkeypatch):
     assert path == ".elixpo-context/context.md"
     assert "handler excerpt" in (tmp_path / path).read_text()
     assert ".elixpo-context/" in (git_dir / "exclude").read_text().splitlines()
+
+
+def test_candidate_read_offset_selects_strongest_issue_excerpt():
+    rendered = """CANDIDATE app/pricing/page.tsx:
+// lines 10-20
+import type SellableTier from './types';
+
+// ...
+
+// lines 287-350
+Enterprise contact button copies hello@elixpo.com to the clipboard.
+
+CANDIDATE app/components/Footer.tsx:
+// lines 70-90
+navigator.clipboard.writeText(EMAIL)
+"""
+
+    offsets = _candidate_read_offsets(
+        rendered,
+        {"title": "Show copy email chip in enterprise pricing", "body": "Copy hello@elixpo.com"},
+        ["app/pricing/page.tsx", "app/components/Footer.tsx"],
+    )
+
+    assert offsets == {"app/pricing/page.tsx": 287, "app/components/Footer.tsx": 70}
+
+
+def test_deterministic_outcome_derives_bounded_metadata():
+    outcome = _deterministic_outcome(
+        {"title": "[PATCH]: Show copy email chip in enterprise pricing"},
+        95,
+    )
+
+    assert outcome.solvable is True
+    assert outcome.estimated_minutes == 2
+    assert outcome.commit_message == "fix: Show copy email chip in enterprise pricing"
+    assert outcome.verification_commands == []
 
 
 def test_prompt_keeps_ranked_candidates_advisory():

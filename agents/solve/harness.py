@@ -17,6 +17,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from math import ceil
 from pathlib import Path
 from typing import Any
 
@@ -234,6 +235,7 @@ def _harness_env(
     router_url: str,
     config_dir: Path | None = None,
     client_model: str | None = None,
+    gate_state: dict[str, Any] | None = None,
 ) -> dict[str, str]:
     """Expose only runtime basics and the local CCR credential to target code."""
     policy = policy or {}
@@ -299,6 +301,12 @@ def _harness_env(
                         "hooks": [{"type": "command", "command": hook_command, "timeout": 5}],
                     }
                 ],
+                "PostToolUse": [
+                    {
+                        "matcher": "Edit|Write",
+                        "hooks": [{"type": "command", "command": hook_command, "timeout": 5}],
+                    }
+                ],
                 "Stop": [
                     {
                         "hooks": [{"type": "command", "command": hook_command, "timeout": 5}],
@@ -307,9 +315,11 @@ def _harness_env(
             }
         }
         (config_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+        gate_state_path = cli_tmp / "tool-gate.json"
+        gate_state_path.write_text(json.dumps(gate_state or {}, separators=(",", ":")), encoding="utf-8")
         env["CLAUDE_CONFIG_DIR"] = str(config_dir)
         env["CLAUDE_CODE_TMPDIR"] = str(cli_tmp)
-        env["ELIXPO_TOOL_GATE_STATE"] = str(cli_tmp / "tool-gate.json")
+        env["ELIXPO_TOOL_GATE_STATE"] = str(gate_state_path)
     return env
 
 
@@ -542,6 +552,70 @@ def _prepare_context_bundle(
     return hints, ".elixpo-context/context.md"
 
 
+def _candidate_read_offsets(bundle_text: str, issue: dict[str, Any], candidates: list[str]) -> dict[str, int]:
+    """Choose each candidate's strongest rendered excerpt without another repository read."""
+    issue_terms = {
+        token.casefold()
+        for token in re.findall(r"[A-Za-z0-9@._-]{4,}", f"{issue.get('title', '')} {issue.get('body', '')}")
+        if token.casefold() not in {"that", "this", "with", "from", "should", "route", "page"}
+    }
+    offsets: dict[str, int] = {}
+    for path in candidates:
+        marker = f"CANDIDATE {path}:\n"
+        start = bundle_text.find(marker)
+        if start < 0:
+            continue
+        start += len(marker)
+        end_positions = [
+            position
+            for label in ("\n\nCANDIDATE ", "\n\nOMITTED CANDIDATES:")
+            if (position := bundle_text.find(label, start)) >= 0
+        ]
+        section = bundle_text[start : min(end_positions) if end_positions else len(bundle_text)]
+        excerpts = list(re.finditer(r"// lines (\d+)-\d+\n([\s\S]*?)(?=\n\n// \.\.\.|\Z)", section))
+        if not excerpts:
+            continue
+        best = max(
+            excerpts,
+            key=lambda match: (
+                sum(term in match.group(2).casefold() for term in issue_terms),
+                -int(match.group(1)),
+            ),
+        )
+        offsets[path] = int(best.group(1))
+    return offsets
+
+
+def _deterministic_outcome(issue: dict[str, Any], elapsed_seconds: float) -> HarnessOutcome:
+    """Derive orchestration metadata only after the harness produced a real diff."""
+    title = str(issue.get("title") or "implement scoped issue").strip()
+    subject = re.sub(r"^\[[^]]+\]\s*[:\-]*\s*", "", title).strip().rstrip(".")
+    lowered = title.casefold()
+    kind = "fix" if any(word in lowered for word in ("bug", "fix", "patch", "correct", "broken")) else "feat"
+    commit_message = f"{kind}: {subject[: max(1, 118 - len(kind))]}"
+    return HarnessOutcome(
+        solvable=True,
+        estimated_minutes=min(15, max(1, ceil(elapsed_seconds / 60))),
+        rationale="The coding harness produced a non-empty diff; deterministic repository gates validate it.",
+        summary=subject[:1000],
+        setup_commands=[],
+        verification_commands=[],
+        commit_message=commit_message[:120],
+    )
+
+
+def _has_worktree_diff(workspace: Path) -> bool:
+    result = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=workspace,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
 def _prompt(
     issue: dict[str, Any],
     policy: dict[str, Any],
@@ -755,6 +829,8 @@ def run_harness(
     # readiness-to-first-request race while the bundle is being assembled.
     rtk_available = shutil.which("rtk") is not None
     candidate_hints, _ = _prepare_context_bundle(workspace, issue, policy)
+    bundle_text = (workspace / ".elixpo-context/context.md").read_text(encoding="utf-8")
+    read_offsets = _candidate_read_offsets(bundle_text, issue, candidate_hints)
     print(
         f"[context] compressed_bundle candidates={len(candidate_hints)} "
         f"max_tokens={int(policy.get('max_context_tokens', 3200))}",
@@ -830,6 +906,7 @@ def run_harness(
                         router_url=router_url,
                         config_dir=router_home / "claude-config",
                         client_model=client_model,
+                        gate_state={"read_offsets": read_offsets},
                     ),
                     prompt=prompt,
                     timeout=timeout,
@@ -863,7 +940,26 @@ def run_harness(
                 time.sleep(0.5 * (attempt + 1))
             if final_event is None:
                 raise HarnessError((stderr or f"coding harness exited {return_code} without a result")[:3000])
-            parsed = _parse_cli_result(json.dumps(final_event))
+            try:
+                parsed = _parse_cli_result(json.dumps(final_event))
+            except HarnessError as exc:
+                if (
+                    "result was not structured JSON" not in str(exc)
+                    or exc.usage is None
+                    or exc.usage.total_tokens <= 0
+                    or not _has_worktree_diff(workspace)
+                ):
+                    raise
+                metadata = {**exc.metadata, "structured_fallback": True}
+                print(
+                    "[harness] structured metadata omitted; using deterministic diff and verification gates",
+                    flush=True,
+                )
+                parsed = (
+                    _deterministic_outcome(issue, float(metadata.get("duration_ms") or 0) / 1000),
+                    exc.usage,
+                    metadata,
+                )
             if return_code != 0:
                 raise HarnessError((stderr or f"coding harness exited with status {return_code}")[:3000])
             return parsed

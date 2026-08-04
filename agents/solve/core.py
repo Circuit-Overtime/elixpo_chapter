@@ -386,7 +386,11 @@ async def solve(
             "approved": True,
             "findings": [],
             "summary": outcome.summary,
-            "source": "bounded_harness_self_review",
+            "source": (
+                "deterministic_diff_and_verification"
+                if harness_metadata.get("structured_fallback")
+                else "bounded_harness_self_review"
+            ),
         },
         "token_spent": router.budget.spent,
         "token_target": int(policy.get("token_target", router.budget.limit)),

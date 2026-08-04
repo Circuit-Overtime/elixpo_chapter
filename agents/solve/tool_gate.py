@@ -40,6 +40,10 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
     if event_name == "Stop":
         if state.get("structured_output"):
             return 0, None, None
+        if state.get("edited_paths"):
+            # A successful edit can use the supervisor's deterministic metadata
+            # fallback; do not spend more turns forcing schema compliance.
+            return 0, None, None
         blocks = int(state.get("stop_blocks") or 0)
         if blocks >= 2:
             return 0, None, None
@@ -52,6 +56,19 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                 "solvable=false if the bounded evidence is insufficient."
             )
         return 2, None, reason
+
+    if event_name == "PostToolUse":
+        tool = str(event.get("tool_name") or "")
+        if tool in {"Edit", "Write"}:
+            cwd = Path(str(event.get("cwd") or ".")).resolve()
+            raw = str((event.get("tool_input") or {}).get("file_path") or "")
+            relative = _relative_path(cwd, raw)
+            if relative is not None:
+                edited = list(state.get("edited_paths") or [])
+                if relative not in edited:
+                    edited.append(relative)
+                state["edited_paths"] = edited
+        return 0, None, None
 
     if event_name != "PreToolUse":
         return 0, None, None
@@ -90,11 +107,10 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                 return 2, None, "The bounded source-read budget is exhausted. Edit now or call StructuredOutput."
             reads.append(relative)
             state[key] = reads
-        else:
-            edited = list(state.get("edited_paths") or [])
-            if relative not in edited:
-                edited.append(relative)
-            state["edited_paths"] = edited
+            offset = int((state.get("read_offsets") or {}).get(relative) or 0)
+            if key == "source_reads" and offset > 0 and not tool_input.get("offset"):
+                tool_input["offset"] = offset
+                updated = tool_input
         if updated is not None:
             return 0, {
                 "hookSpecificOutput": {

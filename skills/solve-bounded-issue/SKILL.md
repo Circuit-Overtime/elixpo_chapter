@@ -135,6 +135,9 @@ prompt compliance alone. The hook may normalize an absolute remembered checkout
 path only when exactly that suffix exists under the supervised cwd. It must deny
 raw shell discovery, repeated source reads, and reads beyond the bounded budget,
 returning a short instruction to Edit or emit StructuredOutput.
+Seed the first built-in candidate Read with the line offset of Comprehend's
+highest-scoring rendered excerpt when the model omitted an offset. This gives
+Edit exact context without a continuation read or another model call.
 
 Guidance files occupy guidance slots only and must never consume ranked source
 slots a second time. Resolve a uniquely named bare file from issue text to its
@@ -220,9 +223,20 @@ The harness must terminate through StructuredOutput, including when it declines
 the issue. It must never end on prose, a progress statement, a promise to inspect
 another file, or an empty response. If its evidence budget is exhausted, return
 `solvable=false` through StructuredOutput rather than spending more tool calls.
-Use a bounded Stop hook to reject at most two prose-only terminal responses and
-return the model to Edit or StructuredOutput. Never allow this guard to form an
+Use PostToolUse to record only successful Edit/Write calls. Before any successful
+edit, a bounded Stop hook may reject at most two prose-only terminal responses
+and return the model to Edit or StructuredOutput. After a successful edit, allow
+the session to stop immediately so the deterministic metadata fallback can run
+without paying for schema-only turns. Never allow this guard to form an
 unbounded loop.
+
+If a successful, usage-bearing harness envelope omits StructuredOutput but has
+already produced a non-empty Git worktree diff, derive only its orchestration
+metadata deterministically: bounded elapsed estimate, conventional commit
+subject, and the existing manifest-based verification plan. Continue through
+all normal diff, protected-path, file-count, verification, clean-tree, and
+commit gates. Never use this fallback for an error envelope, zero usage, or an
+empty worktree, and label the final review source accurately.
 
 Prefer a model-selected verification command, but do not discard a completed
 edit when that optional field is omitted. Infer a fallback deterministically
