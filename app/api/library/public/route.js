@@ -23,11 +23,15 @@ export async function GET(request) {
       SELECT b.id, b.slug, b.title, b.subtitle, b.excerpt, b.cover_image_r2_key, b.published_as,
         b.read_time_minutes, b.published_at, b.author_id,
         u.username AS author_username, u.display_name AS author_name, u.avatar_url AS author_avatar,
+        o.slug AS org_slug, c.slug AS collection_slug,
         bk.created_at AS saved_at
       FROM bookmarks bk
       JOIN blogs b ON b.id = bk.blog_id AND b.status = 'published'
       JOIN users u ON u.id = b.author_id
+      LEFT JOIN orgs o ON ('org:' || o.id) = b.published_as
+      LEFT JOIN collections c ON c.id = b.collection_id
       WHERE bk.user_id = ? AND bk.collection_id = ?
+        AND b.secret = 0
       ORDER BY bk.created_at DESC
     `).bind(owner.id, list.id).all();
 

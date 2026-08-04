@@ -6,6 +6,7 @@ import MarkdownPage from '../../src/components/MarkdownPage';
 export const metadata = {
   title: 'Terms of Service',
   description: 'The terms governing your use of LixBlogs.',
+  alternates: { canonical: 'https://blogs.elixpo.com/terms' },
 };
 
 export default function TermsPage() {

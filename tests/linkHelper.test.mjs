@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { escapeHtmlAttribute, normalizeUrl } from '../src/utils/linkHelper.js';
+import { escapeHtmlAttribute, normalizeCssColor, normalizeImageUrl, normalizeUrl } from '../src/utils/linkHelper.js';
 
 test('normalizeUrl preserves absolute HTTP/HTTPS URLs', () => {
   assert.strictEqual(normalizeUrl('https://example.com/path'), 'https://example.com/path');
@@ -38,4 +38,18 @@ test('escapeHtmlAttribute escapes link attribute delimiters', () => {
     escapeHtmlAttribute('https://example.com/?a="b"&c=<d>'),
     'https://example.com/?a=&quot;b&quot;&amp;c=&lt;d&gt;'
   );
+});
+
+test('normalizeImageUrl accepts only HTTP image sources', () => {
+  assert.strictEqual(normalizeImageUrl('https://cdn.example.com/image.webp'), 'https://cdn.example.com/image.webp');
+  assert.strictEqual(normalizeImageUrl('//cdn.example.com/image.webp'), 'https://cdn.example.com/image.webp');
+  assert.strictEqual(normalizeImageUrl('data:image/svg+xml,<svg/>'), '');
+  assert.strictEqual(normalizeImageUrl('javascript:alert(1)'), '');
+});
+
+test('normalizeCssColor rejects declarations that escape the color property', () => {
+  assert.strictEqual(normalizeCssColor('#9b7bf7'), '#9b7bf7');
+  assert.strictEqual(normalizeCssColor('rgba(12, 34, 56, .5)'), 'rgba(12, 34, 56, .5)');
+  assert.strictEqual(normalizeCssColor('red;position:fixed;inset:0'), '');
+  assert.strictEqual(normalizeCssColor('url(https://example.com/track)'), '');
 });

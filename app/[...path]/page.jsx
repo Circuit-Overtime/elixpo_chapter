@@ -1,9 +1,10 @@
 export const runtime = 'edge';
 
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { cache } from 'react';
 import CatchAllClient from './client';
+import { articleImageVariants, blogExcerpt, safeJsonLd } from '../../src/utils/seoContent';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -23,7 +24,9 @@ const resolvePublicPage = cache(async (origin, name, slug = '', collection = '')
     cache: 'no-store',
     headers: { 'user-agent': 'lixblogs-ssr' },
   });
-  return response.ok ? response.json() : null;
+  if (response.status === 404) return { type: 'notFound' };
+  if (!response.ok) throw new Error(`Public page resolution failed (${response.status})`);
+  return response.json();
 });
 
 // `title.absolute` opts out of the root layout's "%s | LixBlogs" template. These
@@ -90,8 +93,9 @@ export async function generateMetadata({ params, searchParams }) {
       // who wrote it, how long it takes, what it covers.
       const byline = secret ? 'Published anonymously on LixBlogs.' : (primary ? `By ${primary} on LixBlogs.` : 'Published on LixBlogs.');
       const tagLine = (b.tags || []).length ? `Topics: ${b.tags.slice(0, 4).join(', ')}.` : '';
+      const excerpt = blogExcerpt(b, 180);
       const description = describe([
-        b.subtitle || b.excerpt || '',
+        excerpt,
         byline,
         readTime ? `${readTime}.` : '',
         tagLine,
@@ -107,6 +111,13 @@ export async function generateMetadata({ params, searchParams }) {
       return {
         title,
         description,
+        authors: secret ? undefined : [
+          ...(b.author_username ? [{ name: primary, url: `${url.split('/').slice(0, 3).join('/')}/${b.author_username}` }] : []),
+          ...((b.co_authors || []).filter((author) => author.username).map((author) => ({
+            name: author.display_name || author.username,
+            url: `${url.split('/').slice(0, 3).join('/')}/${author.username}`,
+          }))),
+        ],
         alternates: { canonical: url },
         // Keep secret blogs out of search engines: an indexed anonymous post is a
         // permanent, crawlable artifact its author can never fully retract.
@@ -114,7 +125,9 @@ export async function generateMetadata({ params, searchParams }) {
         openGraph: {
           type: 'article', title, description, url, siteName: 'LixBlogs',
           publishedTime: b.published_at ? new Date(b.published_at * 1000).toISOString() : undefined,
+          modifiedTime: b.updated_at ? new Date(b.updated_at * 1000).toISOString() : undefined,
           authors: authorList.length ? authorList : undefined,
+          tags: (b.tags || []).length ? b.tags : undefined,
           images: [{ url: og, secureUrl: og, type: 'image/png', width: 1200, height: 630, alt: title }],
         },
         twitter: { card: 'summary_large_image', title, description, images: [og] },
@@ -292,24 +305,30 @@ async function buildJsonLd(path, origin) {
       if (b.secret) return null; // never describe the authorship of an anonymous post
       const url = `${origin}/${path.join('/')}`;
       const authors = [
-        b.author_name || b.author_username,
-        ...(b.co_authors || []).map((c) => c.display_name || c.username),
-      ].filter(Boolean);
+        { name: b.author_name || b.author_username, username: b.author_username },
+        ...(b.co_authors || []).map((c) => ({ name: c.display_name || c.username, username: c.username })),
+      ].filter((author) => author.name);
       const orgOwner = data.owner?.type === 'org' ? data.owner : null;
+      const fallbackImage = `${origin}/api/og?${new URLSearchParams({ type: 'blog', title: b.title || 'Untitled', seed: b.id || b.slugid || b.slug || url })}`;
+      const images = articleImageVariants(img(b.cover_image_r2_key) || fallbackImage);
       return {
         '@context': 'https://schema.org',
         '@graph': [
           {
             '@type': 'BlogPosting',
             '@id': `${url}#post`,
-            headline: (b.title || 'Untitled').slice(0, 110), // schema.org caps headline at 110
-            description: b.subtitle || b.excerpt || undefined,
+            headline: b.title || 'Untitled',
+            description: blogExcerpt(b) || undefined,
             // The generated OG card is also the stable default image when a post
             // has no uploaded cover, so every indexed post has an image.
-            image: img(b.cover_image_r2_key) || `${origin}/api/og?${new URLSearchParams({ type: 'blog', title: b.title || 'Untitled', seed: b.id || b.slugid || b.slug || url })}`,
+            image: images,
             datePublished: b.published_at ? new Date(b.published_at * 1000).toISOString() : undefined,
             dateModified: b.updated_at ? new Date(b.updated_at * 1000).toISOString() : undefined,
-            author: authors.map((n) => ({ '@type': 'Person', name: n })),
+            author: authors.map((author) => ({
+              '@type': 'Person',
+              name: author.name,
+              url: author.username ? `${origin}/${author.username}` : undefined,
+            })),
             publisher: orgOwner
               ? { '@type': 'Organization', name: orgOwner.name, logo: img(orgOwner.logo_url || orgOwner.logo_r2_key) }
               : { '@id': `${origin}/#organization` },
@@ -318,6 +337,14 @@ async function buildJsonLd(path, origin) {
             inLanguage: 'en',
             mainEntityOfPage: { '@type': 'WebPage', '@id': url },
             isPartOf: { '@id': `${origin}/#website` },
+            isAccessibleForFree: !b.member_only,
+            ...(b.member_only ? {
+              hasPart: {
+                '@type': 'WebPageElement',
+                isAccessibleForFree: false,
+                cssSelector: '.blog-preview-content',
+              },
+            } : {}),
           },
           crumb([
             { name: 'LixBlogs', url: origin },
@@ -353,11 +380,16 @@ export default async function CatchAllHandle({ params }) {
   const rawName = path?.[0] || '';
   const slug = path?.length === 2 ? (path[1] || '').toLowerCase() : path?.length === 3 ? (path[2] || '').toLowerCase() : '';
   const collection = path?.length === 3 ? (path[1] || '').toLowerCase() : '';
-  const initialData = await resolvePublicPage(origin, rawName.toLowerCase(), slug, collection).catch(() => null);
-  const jsonLd = initialData ? await buildJsonLd(path, origin) : null;
+  const isReadingList = path?.length === 3 && (path[1] || '').toLowerCase() === 'reads';
+  const resolvedData = await resolvePublicPage(origin, rawName.toLowerCase(), slug, collection).catch(() => null);
+  // Reading lists have their own API and are hydrated by the reader client.
+  // A 404 from the general resolver must not suppress that dedicated lookup.
+  const initialData = isReadingList && resolvedData?.type === 'notFound' ? null : resolvedData;
+  if (initialData?.type === 'notFound' && !isReadingList) notFound();
+  const jsonLd = initialData && initialData.type !== 'notFound' ? await buildJsonLd(path, origin) : null;
 
   if (initialData?.type === 'redirect' && initialData.location) {
-    redirect(initialData.location);
+    permanentRedirect(initialData.location);
   }
 
   return (
@@ -365,7 +397,7 @@ export default async function CatchAllHandle({ params }) {
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
         />
       )}
       <CatchAllClient params={params} initialData={initialData} />

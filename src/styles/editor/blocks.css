@@ -12,7 +12,15 @@
 .blog-editor-wrapper [data-content-type="codeBlock"] *::selection,
 .blog-editor-wrapper [data-content-type="blockEquation"] *::selection,
 .blog-editor-wrapper [data-content-type="mermaidBlock"] *::selection {
-  background: transparent;
+  color: inherit;
+  background: rgba(139, 92, 246, 0.48);
+}
+
+.blog-editor-wrapper [data-content-type="codeBlock"] *::-moz-selection,
+.blog-editor-wrapper [data-content-type="blockEquation"] *::-moz-selection,
+.blog-editor-wrapper [data-content-type="mermaidBlock"] *::-moz-selection {
+  color: inherit;
+  background: rgba(139, 92, 246, 0.48);
 }
 
 .blog-editor-wrapper .bn-block-outer[data-node-type="blockContainer"]:has([data-content-type="codeBlock"]) > .bn-block,
@@ -63,8 +71,9 @@
 }
 
 .blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
-  padding: 8px 16px !important;
+  padding: 30px 16px 10px !important;
   -webkit-text-decorations-in-effect: none;
+  font-weight: 500;
 }
 
 /* Kill spellcheck red squiggles inside code blocks */
@@ -820,6 +829,45 @@
 
 .mermaid-block-textarea::placeholder {
   color: var(--text-faint);
+}
+
+.mermaid-block-textarea::selection,
+.mermaid-block-textarea *::selection {
+  color: inherit;
+  background: rgba(139, 92, 246, 0.55);
+}
+
+.mermaid-error-output {
+  position: relative;
+  overflow: auto;
+  background: color-mix(in srgb, #ef4444 5%, var(--bg-app));
+}
+
+.mermaid-error-output pre {
+  padding-top: 46px !important;
+}
+
+.mermaid-error-copy {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid color-mix(in srgb, #ef4444 30%, var(--border-default));
+  border-radius: 7px;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mermaid-error-copy:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
 }
 
 /* Live preview panel inside edit mode */
