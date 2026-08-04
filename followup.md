@@ -8,3 +8,6 @@ if @elixpoo is done on a new PR or issue of any public repo, then elixpoo will f
 on @elixpoo tag of PR / issue convesations - elixpo must give a status message to it kinda in the mid way that it's doing something and ccr streaming will happen as a to do list 
 
 make a detailed issue on this which we will handle after the solver is done
+
+
+the discussion agent shall also be looking at @elixpoo tags in the replies (check if this is wired up)
