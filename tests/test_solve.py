@@ -166,6 +166,10 @@ def test_target_command_environment_excludes_agent_credentials(tmp_path, monkeyp
     run_verification(tmp_path, "pytest", allowed_prefixes=["pytest"], timeout=10)
     assert "GITHUB_TOKEN" not in captured
     assert "ELIXPO_POLLINATIONS_API_KEY" not in captured
+    assert captured["NODE_OPTIONS"] == "--max-old-space-size=512"
+    assert captured["npm_config_maxsockets"] == "4"
+    assert captured["npm_config_audit"] == "false"
+    assert captured["npm_config_fund"] == "false"
 
 
 def test_harness_environment_excludes_agent_credentials(monkeypatch):
@@ -186,6 +190,8 @@ def test_harness_environment_excludes_agent_credentials(monkeypatch):
     assert env["CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS"] == "1800"
     assert env["CLAUDE_CODE_MAX_RETRIES"] == "2"
     assert env["CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY"] == "3"
+    assert env["NODE_OPTIONS"] == "--max-old-space-size=512"
+    assert env["ELIXPO_HARNESS_STREAM_QUEUE_LINES"] == "32"
 
 
 def test_harness_result_parses_structured_output_and_usage():
@@ -429,9 +435,7 @@ def test_harness_auth_error_is_concise_and_classified():
     try:
         _parse_cli_result(json.dumps(envelope))
     except HarnessError as exc:
-        assert str(exc) == (
-            "coding harness API error 401: Failed to authenticate. API Error: 401 Invalid API key."
-        )
+        assert str(exc) == ("coding harness API error 401: Failed to authenticate. API Error: 401 Invalid API key.")
         assert classify_failure(exc, "harness")["category"] == "credentials"
     else:
         raise AssertionError("harness authentication error passed")
@@ -477,11 +481,7 @@ def test_harness_events_render_progress_without_tool_output(capsys):
     _render_harness_event(
         {
             "type": "user",
-            "message": {
-                "content": [
-                    {"type": "tool_result", "content": "sensitive source contents"}
-                ]
-            },
+            "message": {"content": [{"type": "tool_result", "content": "sensitive source contents"}]},
         }
     )
 

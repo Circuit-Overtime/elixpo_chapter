@@ -26,6 +26,9 @@ harness_context_max_chars: 28000
 harness_tool_result_max_chars: 3200
 harness_stale_tool_result_chars: 400
 harness_recent_tool_results: 2
+harness_node_heap_mb: 512
+harness_stream_queue_max_lines: 32
+verification_node_heap_mb: 512
 ccr_start_timeout_seconds: 60
 blocked_change_prefixes:
   - .github/workflows/

@@ -11,9 +11,13 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from lib.github.issues import fetch_issue_evidence, parse_issue_url, referenced_pull_requests
+from lib.solve_policy import is_test_repository
+from lib.state.ledger import Ledger
+from lib.state.store import StateStore
+from lib.workspace import Workspace
 
 from agents.solve.branch import build_work_branch
-from agents.solve.harness import run_harness
 from agents.solve.git import (
     assert_workspace_identity,
     changed_files,
@@ -22,13 +26,9 @@ from agents.solve.git import (
     run_verification,
     validate_command,
 )
+from agents.solve.harness import run_harness
 from agents.solve.models import SolvePlan
 from agents.solve.verification_plan import complete_verification_plan
-from lib.github.issues import fetch_issue_evidence, parse_issue_url, referenced_pull_requests
-from lib.solve_policy import is_test_repository
-from lib.state.ledger import Ledger
-from lib.state.store import StateStore
-from lib.workspace import Workspace
 
 
 class SolveRejected(RuntimeError):
@@ -120,8 +120,7 @@ async def ensure_fork(api, owner: str, repo: str, fork_owner: str) -> dict:
         parent = str((existing.get("parent") or {}).get("full_name") or "")
         source = str((existing.get("source") or {}).get("full_name") or "")
         if f"{fork_owner}/{repo}".casefold() != f"{owner}/{repo}".casefold() and not (
-            parent.casefold() == f"{owner}/{repo}".casefold()
-            or source.casefold() == f"{owner}/{repo}".casefold()
+            parent.casefold() == f"{owner}/{repo}".casefold() or source.casefold() == f"{owner}/{repo}".casefold()
         ):
             raise SolveRejected(f"{fork_owner}/{repo} exists but is not a fork of {owner}/{repo}")
         return existing
@@ -320,10 +319,9 @@ async def solve(
             command,
             allowed_prefixes=list(policy["allowed_setup_prefixes"]),
             timeout=int(policy["command_timeout_seconds"]),
+            node_heap_mb=int(policy.get("verification_node_heap_mb", 512)),
         )
-        checks.append(
-            {"kind": "setup", "command": command, "exit_code": result.code, "output": result.output}
-        )
+        checks.append({"kind": "setup", "command": command, "exit_code": result.code, "output": result.output})
         if result.code != 0:
             raise SolveRejected(f"dependency setup failed: {command}")
     for command in outcome.verification_commands[: int(policy["max_test_commands"])]:
@@ -332,10 +330,9 @@ async def solve(
             command,
             allowed_prefixes=list(policy["allowed_command_prefixes"]),
             timeout=int(policy["command_timeout_seconds"]),
+            node_heap_mb=int(policy.get("verification_node_heap_mb", 512)),
         )
-        checks.append(
-            {"kind": "verification", "command": command, "exit_code": result.code, "output": result.output}
-        )
+        checks.append({"kind": "verification", "command": command, "exit_code": result.code, "output": result.output})
         if result.code != 0:
             raise SolveRejected(f"verification failed: {command}")
 
@@ -351,9 +348,7 @@ async def solve(
         upstream_repo=f"{owner}/{repo}",
         branch=work_branch,
     )
-    committed_targets = set(
-        git(root, "diff-tree", "--no-commit-id", "--name-only", "-r", commit_sha).splitlines()
-    )
+    committed_targets = set(git(root, "diff-tree", "--no-commit-id", "--name-only", "-r", commit_sha).splitlines())
     if committed_targets != set(targets):
         raise SolveRejected(
             f"implementation commit files differ from reviewed targets: {sorted(committed_targets ^ set(targets))}"

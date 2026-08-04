@@ -7,6 +7,7 @@ import os
 import queue
 import re
 import shutil
+import signal
 import socket
 import subprocess
 import tempfile
@@ -44,6 +45,46 @@ class HarnessError(RuntimeError):
         self.metadata = metadata or {}
 
 
+def _node_heap_option(policy: dict[str, Any], key: str, fallback: int) -> str:
+    """Return a conservative Node heap cap, bounded against bad configuration."""
+    heap_mb = max(256, min(int(policy.get(key, fallback)), 2048))
+    return f"--max-old-space-size={heap_mb}"
+
+
+def _stop_process(process: subprocess.Popen[str], *, timeout: float = 5) -> None:
+    """Stop a supervised process and its descendants without touching our group."""
+    parent_running = process.poll() is None
+    try:
+        if os.name == "posix":
+            os.killpg(process.pid, signal.SIGTERM)
+        elif parent_running:  # pragma: no cover - supported Solve runners are POSIX
+            process.terminate()
+        if parent_running:
+            process.wait(timeout=timeout)
+    except (ProcessLookupError, subprocess.TimeoutExpired):
+        if os.name == "posix":
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        elif process.poll() is None:  # pragma: no cover
+            process.kill()
+        if process.poll() is None:
+            try:
+                process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:  # pragma: no cover
+                process.kill()
+    finally:
+        if os.name == "posix":
+            # The package-runner parent may exit before a detached Node child.
+            # A final group probe closes that orphan window deterministically.
+            try:
+                os.killpg(process.pid, 0)
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+
 def _node_command(package: str, *args: str) -> list[str]:
     """Resolve a package runner available in both local and Actions environments."""
     if shutil.which("bunx"):
@@ -51,8 +92,7 @@ def _node_command(package: str, *args: str) -> list[str]:
     if shutil.which("npx"):
         return ["npx", "--yes", package, *args]
     raise HarnessError(
-        "Node coding harness unavailable: install Node.js 22+ with npm, or Bun, "
-        "then rerun python -m agents.solve"
+        "Node coding harness unavailable: install Node.js 22+ with npm, or Bun, then rerun python -m agents.solve"
     )
 
 
@@ -99,6 +139,8 @@ def _configure_ccr(policy: dict[str, Any], *, router_home: Path, port: int) -> d
             "ELIXPO_CCR_STALE_CHARS": str(int(policy.get("harness_stale_tool_result_chars", 800))),
             "ELIXPO_CCR_RECENT_RESULTS": str(int(policy.get("harness_recent_tool_results", 3))),
             "ELIXPO_CCR_PORT": str(port),
+            # Bound the package runner and CCR server on small CI sandboxes.
+            "NODE_OPTIONS": _node_heap_option(policy, "harness_node_heap_mb", 512),
             # Keep Solve independent from a user's interactive CCR profile and
             # service registry. Otherwise `start` may attach to an unrelated
             # provider already listening on the default port.
@@ -165,10 +207,10 @@ def _harness_env(
                 int(policy.get("harness_file_read_max_output_tokens", 1800))
             ),
             "CLAUDE_CODE_MAX_RETRIES": str(int(policy.get("harness_max_retries", 2))),
-            "CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY": str(
-                int(policy.get("harness_tool_use_concurrency", 3))
-            ),
+            "CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY": str(int(policy.get("harness_tool_use_concurrency", 3))),
             "RTK_TELEMETRY_DISABLED": "1",
+            "NODE_OPTIONS": _node_heap_option(policy, "harness_node_heap_mb", 512),
+            "ELIXPO_HARNESS_STREAM_QUEUE_LINES": str(max(8, int(policy.get("harness_stream_queue_max_lines", 32)))),
         }
     )
     return env
@@ -232,9 +274,7 @@ def _render_harness_event(event: dict[str, Any]) -> None:
         blocks = message.get("content") or []
         if not isinstance(blocks, list):
             return
-        completed = sum(
-            1 for block in blocks if isinstance(block, dict) and block.get("type") == "tool_result"
-        )
+        completed = sum(1 for block in blocks if isinstance(block, dict) and block.get("type") == "tool_result")
         if completed:
             print(f"[harness] tool_result count={completed}", flush=True)
         return
@@ -271,6 +311,7 @@ def _stream_harness(
         stderr=subprocess.PIPE,
         text=True,
         bufsize=1,
+        start_new_session=os.name == "posix",
     )
     assert process.stdin is not None
     assert process.stdout is not None
@@ -278,13 +319,28 @@ def _stream_harness(
     process.stdin.write(prompt)
     process.stdin.close()
 
-    events: queue.Queue[tuple[str, str | None]] = queue.Queue()
+    # stream-json lines can carry tool payloads. Backpressure prevents a fast
+    # child from accumulating an unbounded transcript in Python memory.
+    events: queue.Queue[tuple[str, str | None]] = queue.Queue(
+        maxsize=max(8, int(env.get("ELIXPO_HARNESS_STREAM_QUEUE_LINES", "32")))
+    )
+    stopping = threading.Event()
 
     def pump(name: str, stream) -> None:
         for line in iter(stream.readline, ""):
-            events.put((name, line))
+            while not stopping.is_set():
+                try:
+                    events.put((name, line), timeout=0.25)
+                    break
+                except queue.Full:
+                    continue
         stream.close()
-        events.put((name, None))
+        while not stopping.is_set():
+            try:
+                events.put((name, None), timeout=0.25)
+                break
+            except queue.Full:
+                continue
 
     threads = [
         threading.Thread(target=pump, args=("stdout", process.stdout), daemon=True),
@@ -329,12 +385,8 @@ def _stream_harness(
                     final_event = event
         return final_event, process.wait(timeout=5), "\n".join(stderr_lines)
     finally:
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
+        stopping.set()
+        _stop_process(process)
 
 
 def _prepare_context_bundle(
@@ -386,28 +438,27 @@ def _prompt(
         "acceptance-criteria gap, use one `rtk read` on the related tracked file instead. Two source reads after "
         "the bundle is the total pre-edit limit. Only when every bundled excerpt lacks actionable evidence may "
         "you use one "
-        "candidate-directory-scoped `rtk grep 'term1|term2' PATH -n -C 3`. Never use built-in Read for broad "
-        "discovery, repeat a query, or inspect a third candidate. After Edit, permit exactly one `rtk read` of "
+        "candidate-directory-scoped `rtk grep 'term1|term2' PATH -n -C 3`. A successful built-in Read is final "
+        "for that path: never Read that path again or repeat it through RTK before editing. Never use built-in "
+        "Read for broad discovery, repeat a query, or inspect a third candidate. After Edit, permit exactly "
+        "one `rtk read` of "
         "each changed area "
         "for self-review. Never run a raw shell command."
         if rtk_available
         else "RTK is unavailable. Use targeted Glob, Grep, and Read calls and avoid repeated reads."
     )
-    hints = (
-        "\n".join(f"{rank}. {path}" for rank, path in enumerate(candidate_hints, start=1))
-        or "- none"
-    )
+    hints = "\n".join(f"{rank}. {path}" for rank, path in enumerate(candidate_hints, start=1)) or "- none"
     return f"""Implement this already-vetted GitHub issue in the current isolated checkout.
 
-Issue title: {issue.get('title', '')}
+Issue title: {issue.get("title", "")}
 Issue body:
-{issue.get('body', '')}
+{issue.get("body", "")}
 
 Token-free tracked-file candidate ranking (behavioral hints, not mandatory targets):
 {hints}
 
-Limits: at most {policy['max_minutes']} minutes, {policy['max_files']} changed files, one coherent commit,
-and {policy['max_test_commands']} verification commands. Work only in this checkout.
+Limits: at most {policy["max_minutes"]} minutes, {policy["max_files"]} changed files, one coherent commit,
+and {policy["max_test_commands"]} verification commands. Work only in this checkout.
 
 Read the injected context bundle once; it already contains applicable guidance and manifest evidence.
 Use the available targeted discovery tools to understand the exact implementation path. Do not guess a file
@@ -507,11 +558,7 @@ def _harness_command(
         rtk_available = shutil.which("rtk") is not None
     schema = json.dumps(HarnessOutcome.model_json_schema(), separators=(",", ":"))
     tools = "Read,Edit,Write,Bash" if rtk_available else "Read,Glob,Grep,Edit,Write,Find"
-    allowed = (
-        "Read,Edit,Write,Bash(rtk grep *),Bash(rtk read *)"
-        if rtk_available
-        else tools
-    )
+    allowed = "Read,Edit,Write,Bash(rtk grep *),Bash(rtk read *)" if rtk_available else tools
     disallowed = "WebFetch,WebSearch,Task,mcp__*"
     if rtk_available:
         disallowed += (
@@ -577,6 +624,7 @@ def run_harness(
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
+                start_new_session=os.name == "posix",
             )
             assert router_process.stdout is not None
             router_thread = threading.Thread(
@@ -620,23 +668,15 @@ def run_harness(
                 timeout=timeout,
             )
             if final_event is None:
-                raise HarnessError(
-                    (stderr or f"coding harness exited {return_code} without a result")[:3000]
-                )
+                raise HarnessError((stderr or f"coding harness exited {return_code} without a result")[:3000])
             parsed = _parse_cli_result(json.dumps(final_event))
             if return_code != 0:
-                raise HarnessError(
-                    (stderr or f"coding harness exited with status {return_code}")[:3000]
-                )
+                raise HarnessError((stderr or f"coding harness exited with status {return_code}")[:3000])
             return parsed
         except subprocess.TimeoutExpired as exc:
             raise HarnessError(f"coding harness exceeded its {timeout}-second timeout") from exc
         finally:
-            if router_process is not None and router_process.poll() is None:
-                router_process.terminate()
-                try:
-                    router_process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    router_process.kill()
+            if router_process is not None:
+                _stop_process(router_process)
             if router_thread is not None:
                 router_thread.join(timeout=1)

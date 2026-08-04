@@ -116,6 +116,14 @@ GitHub credentials, the Pollinations key, and all other secrets from the target
 harness environment; only the local CCR URL and its non-secret client token may
 cross the boundary.
 
+Bound the coding CLI and CCR Node heaps independently, keep the stream-event
+queue finite, and launch each supervised Node process in its own process group.
+On completion, timeout, or failure, terminate the complete group so package
+runners cannot leave router or harness descendants consuming sandbox memory.
+Apply a separate Node heap cap and a small npm socket pool to dependency setup
+and verification. Disable npm audit and funding requests during verification;
+they do not contribute evidence. Never overlap CCR with setup or checks.
+
 Run the deterministic `rtk-context-governor` in every CCR provider chain before
 the OpenAI conversion. Preserve the newest tool evidence, collapse superseded
 reads of the same input, keep only head-and-tail excerpts for stale results,
