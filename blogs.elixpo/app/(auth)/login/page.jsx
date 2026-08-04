@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function Login() {
-  redirect('/sign-in');
+  redirect('/api/auth/login');
 }

@@ -15,7 +15,11 @@ export async function generateMetadata({ params }) {
   const { slug }=await params;
   const item = docsNavFlat.find((i) => i.slug === slug);
   if (!item) return {};
-  return { title: `${item.title} — Docs`, description: item.description };
+  return {
+    title: `${item.title} — Docs`,
+    description: item.description,
+    alternates: { canonical: `https://blogs.elixpo.com/docs/${encodeURIComponent(slug)}` },
+  };
 }
 
 export default async function DocsPage({ params }) {

@@ -17,6 +17,7 @@ import { generateBlogBanner, generatePixelAvatar } from '../utils/pixelAvatar';
 import { useCollaboration } from '../hooks/useCollaboration';
 import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload, MEDIA_UPLOAD_EVENT } from '../utils/mediaUploadQueue';
 import MediaStorageChip from '../components/Editor/MediaStorageChip';
+import { extractMermaidFences } from '../utils/markdownMermaid';
 
 function AvatarImg({ src, name, size = 32 }) {
   const [failed, setFailed] = useState(false);
@@ -29,6 +30,57 @@ function AvatarImg({ src, name, size = 32 }) {
       style={{ width: size, height: size, backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)', fontSize: Math.round(size * 0.38) }}>
       {initial}
     </div>
+  );
+}
+
+function BufferedSlugInput({ value, disabled, onCommit }) {
+  const [draft, setDraft] = useState(value || '');
+  const timerRef = useRef(null);
+
+  useEffect(() => setDraft(value || ''), [value]);
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  const normalize = (next) => next.toLowerCase().replace(/[^\w-]+/g, '-').replace(/-+/g, '-').slice(0, 60);
+  const commit = (next) => {
+    clearTimeout(timerRef.current);
+    onCommit(normalize(next));
+  };
+
+  return (
+    <input
+      type="text"
+      value={draft}
+      disabled={disabled}
+      onChange={(event) => {
+        const next = normalize(event.target.value);
+        setDraft(next);
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => onCommit(next), 250);
+      }}
+      onBlur={() => commit(draft)}
+      className="flex-1 min-w-0 bg-transparent outline-none disabled:cursor-not-allowed"
+      style={{ color: 'var(--text-primary)' }}
+      placeholder="my-post"
+    />
+  );
+}
+
+function BufferedTagInput({ onAdd }) {
+  const [value, setValue] = useState('');
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        if (onAdd(value)) setValue('');
+      }}
+      placeholder="Add a tag, press Enter..."
+      className="w-full rounded-lg px-3 py-2 outline-none text-[13px] transition-colors"
+      style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)' }}
+    />
   );
 }
 
@@ -454,7 +506,6 @@ export default function WritePage({ slugid }) {
   // than hitting a server rejection later.
   const [secretBlockers, setSecretBlockers] = useState([]);
   const [tags, setTags] = useState([]);
-  const [tagInput, setTagInput] = useState('');
   const [showPublishPanel, setShowPublishPanel] = useState(() => {
     if (typeof window !== 'undefined') {
       return new URLSearchParams(window.location.search).get('panel') === 'settings';
@@ -517,6 +568,7 @@ export default function WritePage({ slugid }) {
   const [slugLockHint, setSlugLockHint] = useState(null);
   const [ownerInfo, setOwnerInfo] = useState(null); // real author {username, display_name, avatar_url} — shown to collaborators
   const [publishing, setPublishing] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
   const [inviteUsername, setInviteUsername] = useState('');
   const [inviteRole, setInviteRole] = useState('editor');
@@ -800,6 +852,31 @@ export default function WritePage({ slugid }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [syncToCloud]);
 
+  // Escape consistently returns focus to the document by closing editor chrome.
+  useEffect(() => {
+    const closeEditorPanels = (event) => {
+      if (event.key !== 'Escape') return;
+      setShowPublishPanel(false);
+      setShowPublishMenu(false);
+      setShowOwnerDropdown(false);
+      setShowHistory(false);
+      setShowEmojiPicker(false);
+      setShowShortcuts(false);
+      setShowCollabPanel(false);
+      setShowColorPanel(false);
+      setShowCoverModal(false);
+      setCoverUrlMode(false);
+      setCoverCropSrc(null);
+      setSlugLockHint(null);
+      document.querySelectorAll('.code-lang-picker').forEach((element) => element.remove());
+      requestAnimationFrame(() => {
+        try { editorRef.current?.getEditor?.()?.focus?.(); } catch {}
+      });
+    };
+    window.addEventListener('keydown', closeEditorPanels);
+    return () => window.removeEventListener('keydown', closeEditorPanels);
+  }, []);
+
   // Intercept in-app link clicks to show custom unsaved changes modal
   const handleNavigation = useCallback((url) => {
     if (hasUnsavedEdits) {
@@ -995,19 +1072,14 @@ export default function WritePage({ slugid }) {
     setCoverPreview(null);
   };
 
-  const addTag = () => {
-    const trimmed = tagInput.trim().toLowerCase();
-    if (trimmed && !tags.includes(trimmed) && tags.length < 5) {
-      setTags([...tags, trimmed]);
-      setTagInput('');
-    }
-  };
+  const addTag = useCallback((rawTag) => {
+    const trimmed = rawTag.trim().toLowerCase();
+    if (!trimmed || tags.includes(trimmed) || tags.length >= 5) return false;
+    setTags([...tags, trimmed]);
+    return true;
+  }, [tags]);
 
-  const removeTag = (tag) => setTags(tags.filter((t) => t !== tag));
-
-  const handleTagKeyDown = (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); addTag(); }
-  };
+  const removeTag = useCallback((tag) => setTags((current) => current.filter((item) => item !== tag)), []);
 
   // Count words from blocks (handles both array and JSON string)
   const computeWordCount = useCallback((content) => {
@@ -1222,12 +1294,18 @@ export default function WritePage({ slugid }) {
   }, [uploadCover]);
 
   const handleSaveDraft = async () => {
-    try { await coverUploadRef.current; } catch {}
-    const latestCover = persistableCover(draftDataRef.current.coverPreview);
-    saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview: latestCover, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly });
-    setLastSaved(Date.now());
-    setShowPublishMenu(false);
-    await syncToCloud({ showToast: true });
+    if (savingDraft) return;
+    setSavingDraft(true);
+    try {
+      try { await coverUploadRef.current; } catch {}
+      const latestCover = persistableCover(draftDataRef.current.coverPreview);
+      saveDraft(blogId, { title, subtitle, tags, publishAs, collectionId, coverPreview: latestCover, editorContent, pageEmoji, coverPos, coverZoom, secret, member_only: memberOnly });
+      setLastSaved(Date.now());
+      await syncToCloud({ showToast: true });
+      setShowPublishMenu(false);
+    } finally {
+      setSavingDraft(false);
+    }
   };
 
   // Handle .md file upload — check for existing content first
@@ -1272,12 +1350,9 @@ export default function WritePage({ slugid }) {
         try {
           // Pre-process: extract mermaid fenced blocks
           // Use placeholder format without double underscores (markdown interprets __ as bold)
-          const mermaidBlocks = [];
-          let processed = mdContent.replace(/```mermaid\n([\s\S]*?)```/g, (_, diagram) => {
-            const ph = `MERMAIDPLACEHOLDER${mermaidBlocks.length}END`;
-            mermaidBlocks.push(diagram.trim());
-            return ph;
-          });
+          const extractedMermaid = extractMermaidFences(mdContent);
+          const mermaidBlocks = extractedMermaid.diagrams;
+          let processed = extractedMermaid.content;
 
           // Pre-process: extract block LaTeX \[...\]
           const blockLatex = [];
@@ -1793,9 +1868,9 @@ export default function WritePage({ slugid }) {
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setShowPublishMenu(false)} />
                       <div className="absolute right-0 top-full mt-2 w-48 rounded-xl shadow-2xl z-50 overflow-hidden py-1" style={{ backgroundColor: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
-                        <button onClick={handleSaveDraft} className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-[var(--bg-hover)] flex items-center gap-2.5 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-                          <ion-icon name="save-outline" style={{ fontSize: '15px', color: 'var(--text-faint)' }} />
-                          Save Draft
+                        <button disabled={savingDraft} onClick={handleSaveDraft} className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-[var(--bg-hover)] flex items-center gap-2.5 transition-colors disabled:opacity-60" style={{ color: 'var(--text-secondary)' }}>
+                          {savingDraft ? <span className="h-[15px] w-[15px] rounded-full border-2 border-[#9b7bf7]/30 border-t-[#9b7bf7] animate-spin" /> : <ion-icon name="save-outline" style={{ fontSize: '15px', color: 'var(--text-faint)' }} />}
+                          {savingDraft ? 'Syncing draft…' : 'Save Draft'}
                         </button>
                         {isPublished ? (
                           <button onClick={handlePublish} className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-[var(--bg-hover)] flex items-center gap-2.5 transition-colors" style={{ color: 'var(--text-secondary)' }}>
@@ -2051,15 +2126,15 @@ export default function WritePage({ slugid }) {
                       <div className="relative rounded-xl overflow-hidden cover-banner-enter" style={{ height: '220px' }}>
                         <div className="absolute inset-0 cover-gradient-blur" />
                         <div className="absolute inset-0 flex items-center justify-center gap-6 z-10">
-                          <label className="flex flex-col items-center gap-2 cursor-pointer group/upload">
-                            <div className="w-12 h-12 rounded-full bg-black/10 backdrop-blur-md border border-black/20 flex items-center justify-center group-hover/upload:bg-black/20 transition-colors">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <label className="cover-source-option flex flex-col items-center gap-2 cursor-pointer">
+                            <div className="cover-source-icon">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                                 <polyline points="17 8 12 3 7 8" />
                                 <line x1="12" y1="3" x2="12" y2="15" />
                               </svg>
                             </div>
-                            <span className="text-xs text-black/70 font-medium">From device</span>
+                            <span className="cover-source-label text-xs font-medium">From device</span>
                             <input
                               type="file"
                               accept={IMAGE_ACCEPT_ATTR}
@@ -2069,15 +2144,15 @@ export default function WritePage({ slugid }) {
                           </label>
                           <button
                             onClick={() => setCoverUrlMode(true)}
-                            className="flex flex-col items-center gap-2 group/url"
+                            className="cover-source-option flex flex-col items-center gap-2"
                           >
-                            <div className="w-12 h-12 rounded-full bg-black/10 backdrop-blur-md border border-black/20 flex items-center justify-center group-hover/url:bg-black/20 transition-colors">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <div className="cover-source-icon">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
                                 <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
                               </svg>
                             </div>
-                            <span className="text-xs text-black/70 font-medium">From URL</span>
+                            <span className="cover-source-label text-xs font-medium">From URL</span>
                           </button>
                           <button
                             onClick={() => {
@@ -2091,14 +2166,14 @@ export default function WritePage({ slugid }) {
                               setCoverPreview(defaultCover);
                               setShowCoverModal(false);
                             }}
-                            className="flex flex-col items-center gap-2 group/gen"
+                            className="cover-source-option flex flex-col items-center gap-2"
                           >
-                            <div className="w-12 h-12 rounded-full bg-black/10 backdrop-blur-md border border-black/20 flex items-center justify-center group-hover/gen:bg-black/20 transition-colors">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <div className="cover-source-icon">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
                               </svg>
                             </div>
-                            <span className="text-xs text-black/70 font-medium">Use default</span>
+                            <span className="cover-source-label text-xs font-medium">Use default</span>
                           </button>
                         </div>
                         {/* Inline URL input — slides up from bottom */}
@@ -2147,7 +2222,8 @@ export default function WritePage({ slugid }) {
                         )}
                         <button
                           onClick={() => setShowCoverModal(false)}
-                          className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-black/30 backdrop-blur flex items-center justify-center text-[var(--text-primary)]/60 hover:text-[var(--text-primary)] transition-colors"
+                          className="cover-source-close absolute top-3 right-3 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+                          aria-label="Close cover options"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -2558,14 +2634,10 @@ export default function WritePage({ slugid }) {
               <span className="shrink-0" style={{ color: 'var(--text-faint)' }}>
                 /{ownerSlug}/
               </span>
-              <input
-                type="text"
+              <BufferedSlugInput
                 value={slug}
                 disabled={slugLocked}
-                onChange={(e) => { setSlugManual(true); setSlug(e.target.value.toLowerCase().replace(/[^\w-]+/g, '-').replace(/-+/g, '-').slice(0, 60)); }}
-                className="flex-1 min-w-0 bg-transparent outline-none disabled:cursor-not-allowed"
-                style={{ color: 'var(--text-primary)' }}
-                placeholder="my-post"
+                onCommit={(nextSlug) => { setSlugManual(true); setSlug(nextSlug); }}
               />
               {slugLocked && <ion-icon name="lock-closed" style={{ fontSize: '12px', color: 'var(--text-faint)' }} />}
             </div>
@@ -2627,15 +2699,7 @@ export default function WritePage({ slugid }) {
               ))}
             </div>
             {tags.length < 5 && (
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={handleTagKeyDown}
-                placeholder="Add a tag, press Enter..."
-                className="w-full rounded-lg px-3 py-2 outline-none text-[13px] transition-colors"
-                style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', border: '1px solid var(--input-border)' }}
-              />
+              <BufferedTagInput onAdd={addTag} />
             )}
           </div>
 
@@ -2762,11 +2826,12 @@ export default function WritePage({ slugid }) {
           </button>
           <button
             onClick={handleSaveDraft}
-            disabled={publishing || hasNoChanges()}
-            className="w-full py-2 font-medium rounded-xl text-[12px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={publishing || savingDraft || hasNoChanges()}
+            className="w-full py-2 font-medium rounded-xl text-[12px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}
           >
-            Save Draft
+            {savingDraft && <span className="h-3.5 w-3.5 rounded-full border-2 border-[#9b7bf7]/30 border-t-[#9b7bf7] animate-spin" />}
+            {savingDraft ? 'Syncing to cloud…' : 'Save Draft'}
           </button>
           {hasNoChanges() && (
             <p className="text-center text-[11px]" style={{ color: 'var(--text-faint)' }}>No changes to save</p>

@@ -2,8 +2,15 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getOAuthConfig, signSession } from '../../../../lib/auth';
 import { normalizeAccountUsername } from '../../../../lib/accountProfileSync';
+import { safeRelativeRedirect } from '../../../../lib/safeRedirect';
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 15; // 15 days
+
+function redirectAuthError(request, code) {
+  const target = new URL('/auth-error', request.url);
+  target.searchParams.set('code', code);
+  return NextResponse.redirect(target);
+}
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -12,18 +19,18 @@ export async function GET(request) {
   const error = searchParams.get('error');
 
   if (error) {
-    return NextResponse.redirect(new URL('/sign-in?error=' + error, request.url));
+    return redirectAuthError(request, error);
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL('/sign-in?error=missing_code', request.url));
+    return redirectAuthError(request, 'missing_code');
   }
 
   // Validate CSRF state
   const cookieStore = request.cookies;
   const savedState = cookieStore.get('oauth_state')?.value;
   if (!savedState || savedState !== state) {
-    return NextResponse.redirect(new URL('/sign-in?error=invalid_state', request.url));
+    return redirectAuthError(request, 'invalid_state');
   }
 
   const config = getOAuthConfig();
@@ -46,7 +53,7 @@ export async function GET(request) {
   if (!tokenRes.ok) {
     const errorBody = await tokenRes.text();
     console.error('Token exchange failed:', tokenRes.status, errorBody);
-    return NextResponse.redirect(new URL('/sign-in?error=token_exchange_failed', request.url));
+    return redirectAuthError(request, 'token_exchange_failed');
   }
 
   const tokenData = await tokenRes.json();
@@ -57,7 +64,7 @@ export async function GET(request) {
   });
 
   if (!userInfoRes.ok) {
-    return NextResponse.redirect(new URL('/sign-in?error=user_info_failed', request.url));
+    return redirectAuthError(request, 'user_info_failed');
   }
 
   const rawUserInfo = await userInfoRes.json();
@@ -85,7 +92,7 @@ export async function GET(request) {
 
     // Block permanently deleted accounts
     if (existingUser?.account_status === 'removed') {
-      return NextResponse.redirect(new URL('/sign-in?error=account_deleted', redirectBase));
+      return redirectAuthError(request, 'account_deleted');
     }
     const now = Math.floor(Date.now() / 1000);
 
@@ -202,12 +209,11 @@ export async function GET(request) {
     });
   } catch (e) {
     console.error('Session signing failed — is SESSION_SECRET set in this environment?', e?.message || e);
-    return NextResponse.redirect(new URL('/sign-in?error=server', request.url));
+    return redirectAuthError(request, 'server');
   }
 
   // Honor a post-login redirect set by /api/auth/login (same-site relative paths only).
-  const nextCookie = request.cookies.get('oauth_next')?.value || '';
-  const redirectTo = nextCookie.startsWith('/') && !nextCookie.startsWith('//') ? nextCookie : '/';
+  const redirectTo = safeRelativeRedirect(request.cookies.get('oauth_next')?.value) || '/';
   const response = NextResponse.redirect(new URL(redirectTo, request.url));
   response.cookies.set('lixblogs_session', session, {
     httpOnly: true,
