@@ -21,6 +21,7 @@ from agents.solve.harness import (
     HarnessError,
     _harness_command,
     _harness_env,
+    _is_empty_connection_failure,
     _parse_cli_result,
     _prepare_context_bundle,
     _prompt,
@@ -469,6 +470,25 @@ def test_harness_loopback_failure_is_retryable(message):
     assert failure["category"] == "provider_transient"
     assert failure["retryable"] is True
     assert failure["candidate_action"] == "retry_later"
+
+
+def test_only_empty_first_turn_connection_failure_can_retry():
+    empty_failure = {
+        "type": "result",
+        "is_error": True,
+        "result": "API Error: Unable to connect to API (ConnectionRefused)",
+        "num_turns": 1,
+        "usage": {"input_tokens": 0, "output_tokens": 0},
+    }
+
+    assert _is_empty_connection_failure(empty_failure) is True
+    assert _is_empty_connection_failure({**empty_failure, "num_turns": 2}) is False
+    assert _is_empty_connection_failure(
+        {**empty_failure, "usage": {"input_tokens": 1, "output_tokens": 0}}
+    ) is False
+    assert _is_empty_connection_failure(
+        {**empty_failure, "result": "Failed to authenticate. API Error: 401"}
+    ) is False
 
 
 def test_missing_harness_runtime_remains_a_workspace_failure():

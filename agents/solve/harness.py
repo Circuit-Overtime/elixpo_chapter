@@ -294,6 +294,30 @@ def _render_harness_event(event: dict[str, Any]) -> None:
         )
 
 
+def _is_empty_connection_failure(event: dict[str, Any] | None) -> bool:
+    """Return true only for a provider refusal before any model work occurred."""
+    if not event or event.get("type") != "result" or event.get("is_error") is not True:
+        return False
+    message = str(event.get("result") or event.get("error") or "").casefold()
+    usage = event.get("usage") or {}
+    tokens = sum(
+        int(usage.get(key) or 0)
+        for key in (
+            "input_tokens",
+            "cache_creation_input_tokens",
+            "cache_read_input_tokens",
+            "output_tokens",
+            "total_tokens",
+        )
+    )
+    return (
+        int(event.get("num_turns") or 0) <= 1
+        and tokens == 0
+        and "unable to connect to api" in message
+        and "connectionrefused" in message
+    )
+
+
 def _stream_harness(
     command: list[str],
     *,
@@ -660,18 +684,31 @@ def run_harness(
             command = _harness_command(model, policy, rtk_available=rtk_available)
             if router_process.poll() is not None or not _router_ready(router_url):
                 raise HarnessError("CCR became unavailable before the coding harness request")
-            final_event, return_code, stderr = _stream_harness(
-                command,
-                workspace=workspace,
-                env=_harness_env(model, policy, router_url=router_url),
-                prompt=_prompt(
-                    issue,
-                    policy,
-                    rtk_available=rtk_available,
-                    candidate_hints=candidate_hints,
-                ),
-                timeout=timeout,
+            prompt = _prompt(
+                issue,
+                policy,
+                rtk_available=rtk_available,
+                candidate_hints=candidate_hints,
             )
+            retry_limit = max(0, min(int(policy.get("harness_max_retries", 2)), 2))
+            for attempt in range(retry_limit + 1):
+                final_event, return_code, stderr = _stream_harness(
+                    command,
+                    workspace=workspace,
+                    env=_harness_env(model, policy, router_url=router_url),
+                    prompt=prompt,
+                    timeout=timeout,
+                )
+                if not _is_empty_connection_failure(final_event) or attempt >= retry_limit:
+                    break
+                if router_process.poll() is not None or not _router_ready(router_url):
+                    raise HarnessError("CCR became unavailable after an empty connection failure")
+                print(
+                    f"[harness] transient connection refusal; retrying request "
+                    f"attempt={attempt + 2}/{retry_limit + 1}",
+                    flush=True,
+                )
+                time.sleep(0.5 * (attempt + 1))
             if final_event is None:
                 raise HarnessError((stderr or f"coding harness exited {return_code} without a result")[:3000])
             parsed = _parse_cli_result(json.dumps(final_event))
