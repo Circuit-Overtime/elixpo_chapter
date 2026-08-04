@@ -53,6 +53,14 @@ an interactive user's CCR profile or service registry. Never reuse a process
 merely because it answers on the default CCR port. Remove the temporary router
 configuration after the supervised process stops.
 
+Give the coding client a separate temporary configuration and temp directory
+inside the same supervised root. It must not read persistent login, transport,
+plugin, session, or gateway state from the runner's user profile. Before
+starting, terminate only orphaned process groups carrying an `elixpoo-ccr-*`
+temporary HOME from an earlier Solve run by the same OS user. Never match or
+terminate an interactive/global CCR process. One sandbox may own only one
+isolated Solve CCR group at a time.
+
 Route the session through CCR to `qwen-coder`. When the pinned RTK CLI is
 available, prefer its compact `find`, `grep`, `read`, and `smart` commands
 for discovery, then use built-in `Read` only for exact edit context. Expose Bash

@@ -85,6 +85,47 @@ def _stop_process(process: subprocess.Popen[str], *, timeout: float = 5) -> None
                 pass
 
 
+def _stop_stale_isolated_routers(proc_root: Path = Path("/proc")) -> int:
+    """Terminate orphaned CCR groups created by earlier isolated Solve runs."""
+    if os.name != "posix" or not proc_root.is_dir():
+        return 0
+    groups: set[int] = set()
+    own_group = os.getpgrp()
+    for entry in proc_root.iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            if entry.stat().st_uid != os.getuid():
+                continue
+            command = (entry / "cmdline").read_bytes().replace(b"\0", b" ").decode(errors="replace")
+            if "claude-code-router" not in command:
+                continue
+            environment = (entry / "environ").read_bytes().split(b"\0")
+            home = next((item[5:] for item in environment if item.startswith(b"HOME=")), b"")
+            if not Path(home.decode(errors="replace")).name.startswith("elixpoo-ccr-"):
+                continue
+            fields = (entry / "stat").read_text(encoding="utf-8").split()
+            process_group = int(fields[4])
+            if process_group > 1 and process_group != own_group:
+                groups.add(process_group)
+        except (FileNotFoundError, PermissionError, ProcessLookupError, ValueError):
+            continue
+    for process_group in groups:
+        try:
+            os.killpg(process_group, signal.SIGTERM)
+        except ProcessLookupError:
+            continue
+    if groups:
+        time.sleep(0.25)
+    for process_group in groups:
+        try:
+            os.killpg(process_group, 0)
+            os.killpg(process_group, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    return len(groups)
+
+
 def _node_command(package: str, *args: str) -> list[str]:
     """Resolve a package runner available in both local and Actions environments."""
     if shutil.which("bunx"):
@@ -171,6 +212,7 @@ def _harness_env(
     policy: dict[str, Any] | None = None,
     *,
     router_url: str,
+    config_dir: Path | None = None,
 ) -> dict[str, str]:
     """Expose only runtime basics and the local CCR credential to target code."""
     policy = policy or {}
@@ -203,6 +245,9 @@ def _harness_env(
             "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
             "CLAUDE_CODE_SKIP_PROMPT_HISTORY": "1",
             "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+            "DISABLE_UPDATES": "1",
+            "DISABLE_ERROR_REPORTING": "1",
+            "DISABLE_GROWTHBOOK": "1",
             "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": str(
                 int(policy.get("harness_file_read_max_output_tokens", 1800))
             ),
@@ -213,6 +258,12 @@ def _harness_env(
             "ELIXPO_HARNESS_STREAM_QUEUE_LINES": str(max(8, int(policy.get("harness_stream_queue_max_lines", 32)))),
         }
     )
+    if config_dir is not None:
+        config_dir.mkdir(parents=True, exist_ok=True)
+        cli_tmp = config_dir / "tmp"
+        cli_tmp.mkdir(exist_ok=True)
+        env["CLAUDE_CONFIG_DIR"] = str(config_dir)
+        env["CLAUDE_CODE_TMPDIR"] = str(cli_tmp)
     return env
 
 
@@ -640,12 +691,16 @@ def run_harness(
         f"max_tokens={int(policy.get('max_context_tokens', 3200))}",
         flush=True,
     )
+    stale_groups = _stop_stale_isolated_routers()
+    if stale_groups:
+        print(f"[ccr] terminated stale isolated groups={stale_groups}", flush=True)
     with tempfile.TemporaryDirectory(prefix="elixpoo-ccr-") as router_home_name:
+        router_home = Path(router_home_name)
         port = _loopback_port()
         router_url = f"http://{_CCR_HOST}:{port}"
         ccr_env = _configure_ccr(
             policy,
-            router_home=Path(router_home_name),
+            router_home=router_home,
             port=port,
         )
         try:
@@ -695,7 +750,12 @@ def run_harness(
                 final_event, return_code, stderr = _stream_harness(
                     command,
                     workspace=workspace,
-                    env=_harness_env(model, policy, router_url=router_url),
+                    env=_harness_env(
+                        model,
+                        policy,
+                        router_url=router_url,
+                        config_dir=router_home / "claude-config",
+                    ),
                     prompt=prompt,
                     timeout=timeout,
                 )

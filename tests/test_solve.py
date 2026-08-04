@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 import httpx
@@ -27,6 +29,7 @@ from agents.solve.harness import (
     _prompt,
     _redact,
     _render_harness_event,
+    _stop_stale_isolated_routers,
 )
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from agents.solve.verification_plan import complete_verification_plan
@@ -188,12 +191,17 @@ def test_target_command_environment_excludes_agent_credentials(tmp_path, monkeyp
     assert captured["npm_config_fund"] == "false"
 
 
-def test_harness_environment_excludes_agent_credentials(monkeypatch):
+def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
     monkeypatch.setenv("GITHUB_TOKEN", "must-not-leak")
     monkeypatch.setenv("AGENT_GITHUB_SOLVER_TOKEN", "must-not-leak")
     monkeypatch.setenv("ELIXPO_POLLINATIONS_API_KEY", "must-not-leak")
 
-    env = _harness_env("qwen-coder", router_url="http://127.0.0.1:4567")
+    config_dir = tmp_path / "claude-config"
+    env = _harness_env(
+        "qwen-coder",
+        router_url="http://127.0.0.1:4567",
+        config_dir=config_dir,
+    )
 
     assert "GITHUB_TOKEN" not in env
     assert "AGENT_GITHUB_SOLVER_TOKEN" not in env
@@ -208,6 +216,30 @@ def test_harness_environment_excludes_agent_credentials(monkeypatch):
     assert env["CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY"] == "3"
     assert env["NODE_OPTIONS"] == "--max-old-space-size=512"
     assert env["ELIXPO_HARNESS_STREAM_QUEUE_LINES"] == "32"
+    assert env["CLAUDE_CONFIG_DIR"] == str(config_dir)
+    assert env["CLAUDE_CODE_TMPDIR"] == str(config_dir / "tmp")
+    assert env["DISABLE_UPDATES"] == "1"
+
+
+def test_stale_router_cleanup_targets_only_isolated_ccr_groups(tmp_path, monkeypatch):
+    proc = tmp_path / "123"
+    proc.mkdir()
+    (proc / "cmdline").write_bytes(b"node\0claude-code-router\0start\0")
+    (proc / "environ").write_bytes(b"HOME=/tmp/elixpoo-ccr-old\0")
+    (proc / "stat").write_text("123 (node) S 1 456 456 0", encoding="utf-8")
+    regular = tmp_path / "124"
+    regular.mkdir()
+    (regular / "cmdline").write_bytes(b"node\0claude-code-router\0start\0")
+    (regular / "environ").write_bytes(b"HOME=/home/user\0")
+    (regular / "stat").write_text("124 (node) S 1 789 789 0", encoding="utf-8")
+    signals = []
+    monkeypatch.setattr(os, "getuid", lambda: proc.stat().st_uid)
+    monkeypatch.setattr(os, "getpgrp", lambda: 999)
+    monkeypatch.setattr(os, "killpg", lambda group, sig: signals.append((group, sig)))
+    monkeypatch.setattr(time, "sleep", lambda _: None)
+
+    assert _stop_stale_isolated_routers(tmp_path) == 1
+    assert [group for group, _ in signals] == [456, 456, 456]
 
 
 def test_harness_result_parses_structured_output_and_usage():
