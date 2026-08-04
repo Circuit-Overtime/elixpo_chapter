@@ -61,6 +61,12 @@ temporary HOME from an earlier Solve run by the same OS user. Never match or
 terminate an interactive/global CCR process. One sandbox may own only one
 isolated Solve CCR group at a time.
 
+Register the configured CCR model through the coding client's custom-model
+environment variables. A fresh client profile knows only built-in Anthropic
+aliases and otherwise rejects gateway model IDs before contacting CCR. The
+custom entry changes local model validation only; CCR remains authoritative for
+the provider, model route, API credential, and usage accounting.
+
 Route the session through CCR to `qwen-coder`. When the pinned RTK CLI is
 available, prefer its compact `find`, `grep`, `read`, and `smart` commands
 for discovery, then use built-in `Read` only for exact edit context. Expose Bash

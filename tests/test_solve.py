@@ -208,6 +208,8 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
     assert "ELIXPO_POLLINATIONS_API_KEY" not in env
     assert env["ANTHROPIC_API_KEY"] == "ccr-pollinations"
     assert env["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:4567"
+    assert env["ANTHROPIC_CUSTOM_MODEL_OPTION"] == "qwen-coder"
+    assert env["ANTHROPIC_CUSTOM_MODEL_OPTION_NAME"] == "qwen-coder"
     assert "ANTHROPIC_AUTH_TOKEN" not in env
     assert env["RTK_TELEMETRY_DISABLED"] == "1"
     assert env["CLAUDE_CODE_DISABLE_AUTO_MEMORY"] == "1"

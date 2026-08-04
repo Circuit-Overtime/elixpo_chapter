@@ -239,6 +239,12 @@ def _harness_env(
             # produces a bearer Authorization header and is rejected locally.
             "ANTHROPIC_API_KEY": "ccr-pollinations",
             "ANTHROPIC_MODEL": model,
+            # A fresh client profile knows only Anthropic's built-in aliases.
+            # Register CCR's selected provider model explicitly so the client
+            # sends it to the gateway instead of rejecting it locally.
+            "ANTHROPIC_CUSTOM_MODEL_OPTION": model,
+            "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": model,
+            "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION": "CCR-routed coding model",
             "NO_PROXY": "127.0.0.1,localhost",
             "DISABLE_TELEMETRY": "1",
             "DISABLE_COST_WARNINGS": "1",
