@@ -111,7 +111,7 @@ secret-stripped environment, temporary CCR home, and isolated checkout enforce
 the execution boundary.
 
 Cap built-in reads at 1,400 output tokens, provider retries at two, read-only
-tool concurrency at three, and the complete session at twenty-four turns. Treat
+tool concurrency at three, and the complete session at forty turns. Treat
 the configured 240,000-token value and Vet's estimate-based headroom as a soft
 cost target. Record an overrun for Doctor, but never discard an otherwise valid
 completed edit merely for crossing that target. A Vet-approved run uses the
@@ -262,7 +262,7 @@ another file, or an empty response. If its evidence budget is exhausted, return
 Use PostToolUse to record only successful Edit/Write calls and invalidate any
 older review receipt for the changed path. Before any successful edit, reject
 every progress-only Stop and return the model to repository work or
-StructuredOutput. The coding client's twenty-four-turn limit, wall clock, and
+StructuredOutput. The coding client's forty-turn limit, wall clock, and
 absolute token ceiling bound this enforcement without an arbitrary warning
 count. After editing, require a fresh Read of every
 changed path and compare exact visible values, labels, actions, and state changes
