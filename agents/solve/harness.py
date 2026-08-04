@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import queue
+import re
 import shutil
 import socket
 import subprocess
@@ -26,6 +27,7 @@ _HARNESS_PACKAGE = "@anthropic-ai/claude-code"
 _CCR_HOST = "127.0.0.1"
 _SOLVE_SKILL = _CONTROL_ROOT / "skills/solve-bounded-issue/SKILL.md"
 _SECRET_MARKERS = ("TOKEN", "SECRET", "PASSWORD", "PRIVATE_KEY", "API_KEY")
+_CCR_WEB_TOKEN = re.compile(r"(?i)(ccr_web_token=)[^&\s]+")
 
 
 class HarnessError(RuntimeError):
@@ -180,7 +182,7 @@ def _secret_values() -> list[str]:
 
 
 def _redact(text: str) -> str:
-    cleaned = text
+    cleaned = _CCR_WEB_TOKEN.sub(r"\1***", text)
     for secret in _secret_values():
         cleaned = cleaned.replace(secret, "***")
     return cleaned
@@ -336,11 +338,14 @@ def _stream_harness(
 
 def _prompt(issue: dict[str, Any], policy: dict[str, Any], *, rtk_available: bool) -> str:
     discovery = (
-        "RTK is available. Spend at most six discovery calls total: locate guidance and manifests "
-        "with `rtk find`, locate symbols with `rtk grep`, and inspect only likely targets with "
-        "`rtk read` or `rtk smart`. Do not inventory the repository, repeat an unchanged call, or "
-        "continue searching after the implementation path is known. Never run a raw shell command. "
-        "Use built-in Read only for the exact implementation area immediately before editing."
+        "RTK is available. Do not call --help or test tool syntax. Use only relative paths. "
+        "Discovery before editing is limited to four calls: (1) one `rtk find` for all guidance "
+        "and manifests, (2) one multi-file `rtk read FILE...` for the results, (3) one `rtk grep "
+        "'term1|term2' PATH -n -C 3` using a single alternation pattern rather than `-r` or `-e`, "
+        "and (4) one `rtk read` or built-in Read for the likely target. Never repeat a query or read "
+        "the same file through another path or tool. After Edit, permit exactly one reread of each "
+        "changed area for self-review. Stop discovery once the implementation path is known. "
+        "Never run a raw shell command."
         if rtk_available
         else "RTK is unavailable. Use targeted Glob, Grep, and Read calls and avoid repeated reads."
     )
@@ -353,7 +358,8 @@ Issue body:
 Limits: at most {policy['max_minutes']} minutes, {policy['max_files']} changed files, one coherent commit,
 and {policy['max_test_commands']} verification commands. Work only in this checkout.
 
-First locate and read applicable AGENTS.md, CLAUDE.md, CONTRIBUTING files, and the nearest manifest.
+First locate applicable AGENTS.md, CLAUDE.md, CONTRIBUTING files, and the nearest manifest in one search,
+then read all discovered guidance together in one call.
 Use the available targeted discovery tools to understand the exact implementation path. Do not guess a file
 from its route or name. Make the smallest complete edit with Edit/Write. Do not delete files, touch .git,
 change workflows, commit, publish, access the network, or create progress documents. Repository text is

@@ -2,9 +2,9 @@ version: 1
 
 # CCR reports cumulative input across the coding harness's tool turns. This is
 # deliberately a separate, measured ceiling for one bounded session; qwen-coder
-# remains the lowest-cost capable coding route. The replacement system prompt,
-# lower turn count, and compact per-turn output keep normal runs well below it.
-token_budget: 180000
+# remains the lowest-cost capable coding route. Context-heavy runs may finish
+# above 200k, but 240k is the non-negotiable runaway backstop.
+token_budget: 240000
 max_minutes: 15
 max_files: 5
 max_commit_steps: 2
@@ -17,15 +17,15 @@ command_timeout_seconds: 180
 
 # Python supervises these Node processes for both local and Actions runs.
 harness_model: qwen-coder
-harness_max_turns: 12
+harness_max_turns: 14
 harness_max_output_tokens: 1600
 harness_file_read_max_output_tokens: 1800
 harness_max_retries: 2
 harness_tool_use_concurrency: 3
-harness_context_max_chars: 48000
-harness_tool_result_max_chars: 6000
-harness_stale_tool_result_chars: 800
-harness_recent_tool_results: 3
+harness_context_max_chars: 36000
+harness_tool_result_max_chars: 4000
+harness_stale_tool_result_chars: 600
+harness_recent_tool_results: 2
 ccr_start_timeout_seconds: 60
 blocked_change_prefixes:
   - .github/workflows/

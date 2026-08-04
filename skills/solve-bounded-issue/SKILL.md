@@ -65,12 +65,15 @@ secret-stripped environment, temporary CCR home, and isolated checkout enforce
 the execution boundary.
 
 Cap built-in reads at 1,800 output tokens, provider retries at two, read-only
-tool concurrency at three, and the complete session at twelve turns. When RTK
-is available, spend no more than six discovery calls: find guidance/manifests,
-grep for relevant symbols, and read only likely targets. Do not inventory the
-repository, repeat an unchanged query, or keep searching after the implementation
-path is known. Reserve the final turns for the edit, exact re-read, self-review,
-and structured outcome.
+tool concurrency at three, and the complete session at fourteen turns. Keep a
+240,000-token absolute ceiling: a context-heavy successful run may cross 200,000
+but cannot grow without that backstop. When RTK is available, use at most four
+discovery calls before editing: one combined find for guidance/manifests, one
+multi-file guidance read, one valid single-pattern grep, and one likely-target
+read. Never call tool help, probe syntax, use `grep -r/-e`, inventory the
+repository, repeat an unchanged query, or read the same file through a different
+path or tool. After editing, allow one exact reread per changed area for review.
+Reserve the final turns for the edit, self-review, and structured outcome.
 
 Remove web, subagents, MCP,
 session persistence, user customizations, and nonessential traffic. Strip

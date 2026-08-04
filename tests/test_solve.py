@@ -20,6 +20,7 @@ from agents.solve.harness import (
     _harness_command,
     _harness_env,
     _parse_cli_result,
+    _redact,
     _render_harness_event,
 )
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
@@ -419,6 +420,15 @@ def test_harness_events_render_progress_without_tool_output(capsys):
     assert "tool=Read target=app/page.tsx" in output
     assert "tool_result count=1" in output
     assert "sensitive source contents" not in output
+
+
+def test_ccr_web_token_is_redacted():
+    line = "CCR service at http://127.0.0.1:3459/?ccr_web_token=temporary-secret (pid 42)"
+
+    cleaned = _redact(line)
+
+    assert "temporary-secret" not in cleaned
+    assert "ccr_web_token=***" in cleaned
 
 
 def test_edit_batch_is_exact_and_plan_confined(tmp_path):

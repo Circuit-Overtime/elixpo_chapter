@@ -4,5 +4,5 @@ per_task:
   scout: 50000
   triage: 80000
   vet: 12000
-  solve: 180000
+  solve: 240000
   discussions: 12000
