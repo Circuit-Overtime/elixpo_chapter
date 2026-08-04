@@ -1,65 +1,49 @@
 {
   "base_branch": "main",
-  "branch": "patch/bug-the-copy-for-llm-button-on-the-docs-page-9-3988",
-  "checks": [
-    {
-      "command": "npm ci --ignore-scripts",
-      "exit_code": 0,
-      "kind": "setup",
-      "output": "added 386 packages, and audited 387 packages in 44s\n57 packages are looking for funding\n  run `npm fund` for details\n29 vulnerabilities (2 low, 11 moderate, 15 high, 1 critical)\nTo address issues that do not require attention, run:\n  npm audit fix\nSome issues need review, and may require choosing\na different dependency.\nRun `npm audit` for details.\nnpm warn deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions\nnpm warn deprecated tar@6.2.1: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me\nnpm warn deprecated @cloudflare/next-on-pages@1.13.16: Please use the OpenNext adapter instead: https://opennext.js.org/cloudflare\nnpm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me\n"
-    },
-    {
-      "command": "npx tsc --noEmit",
-      "exit_code": 0,
-      "kind": "verification",
-      "output": "TypeScript: No errors found\n"
-    }
-  ],
-  "commits": [
-    "35615a0f654b0bfaa514f454caf92f2c06b6a04f"
-  ],
-  "finished_at": "2026-08-04T06:03:20.532831+00:00",
+  "branch": "patch/patch-in-the-pricing-route-show-the-copy-ema-11-bffe",
+  "cleanup": {
+    "owner": "janitor",
+    "resources": [
+      {
+        "disposition": "remove_after_terminal_decision",
+        "kind": "workspace",
+        "locator": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-11-b10429",
+        "safe_root": "/tmp/elixpoo-workspaces"
+      },
+      {
+        "disposition": "preserve_shared_resource",
+        "kind": "fork",
+        "locator": "elixpoo/lixrl.com"
+      }
+    ],
+    "status": "blocked_on_doctor"
+  },
+  "doctor": {
+    "decision": null,
+    "status": "pending"
+  },
+  "elapsed_seconds": 21.743,
+  "error": "local CCR remained healthy, but its upstream model route refused 3 zero-token requests",
+  "failed_at": "2026-08-04T07:17:09.693871+00:00",
+  "failure": {
+    "candidate_action": "retry_later",
+    "category": "provider_transient",
+    "exception_type": "HarnessError",
+    "message": "local CCR remained healthy, but its upstream model route refused 3 zero-token requests",
+    "occurred_at": "2026-08-04T07:17:09.693871+00:00",
+    "retryable": true,
+    "schema_version": 1,
+    "stage": "harness"
+  },
   "fork_repo": "elixpoo/lixrl.com",
-  "harness": {
-    "commit_message": "fix(docs): preserve leaf content in LLM copy payload",
-    "duration_ms": 58189,
-    "estimated_minutes": 5,
-    "rationale": "The observable copy behavior is implemented in app/docs/layout.tsx, not the issue-named API page. Its DOM walker discarded text in leaf elements nested within styled documentation divs, including endpoint paths and callout content. The edit preserves that leaf text while retaining existing specialized handling for headings, paragraphs, lists, code blocks, and tables.",
-    "session_id": "30236620-7b6a-467f-8286-095942e356f0",
-    "setup_commands": [
-      "npm ci --ignore-scripts"
-    ],
-    "solvable": true,
-    "summary": "Updated the documentation LLM-copy payload builder to include text from leaf elements nested in styled containers. API documentation endpoint paths, callouts, labels, and other rendered leaf content now remain in the copied abstract alongside the existing structured markdown output.",
-    "terminal_subtype": "success",
-    "turns": 12,
-    "verification_commands": [
-      "npx tsc --noEmit"
-    ],
-    "verification_inferred": true
-  },
-  "head_sha": "35615a0f654b0bfaa514f454caf92f2c06b6a04f",
-  "issue_number": 9,
-  "issue_url": "https://github.com/elixpo/lixrl.com/issues/9",
-  "key": "elixpo/lixrl.com#9",
-  "pr_url": "https://github.com/elixpo/lixrl.com/pull/10",
-  "rationale": "The observable copy behavior is implemented in app/docs/layout.tsx, not the issue-named API page. Its DOM walker discarded text in leaf elements nested within styled documentation divs, including endpoint paths and callout content. The edit preserves that leaf text while retaining existing specialized handling for headings, paragraphs, lists, code blocks, and tables.",
-  "review": {
-    "approved": true,
-    "findings": [],
-    "source": "bounded_harness_self_review",
-    "summary": "Updated the documentation LLM-copy payload builder to include text from leaf elements nested in styled containers. API documentation endpoint paths, callouts, labels, and other rendered leaf content now remain in the copied abstract alongside the existing structured markdown output."
-  },
-  "stage": "complete",
-  "started_at": "2026-08-04T06:01:00.581825+00:00",
-  "status": "submitted",
-  "summary": "Updated the documentation LLM-copy payload builder to include text from leaf elements nested in styled containers. API documentation endpoint paths, callouts, labels, and other rendered leaf content now remain in the copied abstract alongside the existing structured markdown output.",
-  "target_files": [
-    "app/docs/layout.tsx"
-  ],
+  "issue_url": "https://github.com/elixpo/lixrl.com/issues/11",
+  "key": "elixpo/lixrl.com#11",
+  "stage": "harness",
+  "started_at": "2026-08-04T07:16:53.690727+00:00",
+  "status": "doctor_pending",
   "test_mode": true,
-  "title": "[BUG]:- the copy for llm button on the docs page must copy a full abstract version of the llm_text of the lixrl",
-  "token_spent": 234285,
+  "token_limit": 750000,
+  "token_spent": 0,
   "upstream_repo": "elixpo/lixrl.com",
-  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-9-d8b5f6"
+  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-11-b10429"
 }
