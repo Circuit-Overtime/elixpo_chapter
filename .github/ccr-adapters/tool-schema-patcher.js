@@ -75,6 +75,19 @@ class ToolSchemaPatcher {
                     );
                 }
             }
+            const pathField = {
+                Read: "file_path",
+                Edit: "file_path",
+                Write: "file_path",
+                Grep: "path",
+                Glob: "path",
+            }[fn.name];
+            const pathSchema = pathField && fn.parameters.properties?.[pathField];
+            if (pathSchema && typeof pathSchema === "object") {
+                pathSchema.description =
+                    "Repository-relative path from the current checkout, for example app/file.tsx. " +
+                    "Absolute paths such as /workspace or /tmp and parent traversal are invalid.";
+            }
         }
         return request;
     }

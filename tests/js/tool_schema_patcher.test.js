@@ -30,6 +30,17 @@ const request = {
             {
                 type: "function",
                 function: {
+                    name: "Edit",
+                    parameters: {
+                        type: "object",
+                        properties: { file_path: { type: "string" } },
+                        required: ["file_path"],
+                    },
+                },
+            },
+            {
+                type: "function",
+                function: {
                     name: "OtherTool",
                     parameters: {
                         type: "object",
@@ -47,5 +58,7 @@ patcher.transformRequestOut(request).then((patched) => {
     assert.equal(read.properties.pages, undefined);
     assert.deepEqual(read.required, ["file_path"]);
     assert.deepEqual(other.properties.pages, { type: "string" });
+    assert.match(read.properties.file_path.description, /Repository-relative path/);
+    assert.match(patched.body.tools[2].function.parameters.properties.file_path.description, /Absolute paths/);
     console.log("tool-schema-patcher: ok");
 });

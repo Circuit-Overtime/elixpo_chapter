@@ -106,6 +106,8 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
             relative = _relative_path(cwd, raw_path)
             if relative is None:
                 return 2, None, "Search only inside the current repository with a relative path."
+            if Path(raw_path).is_absolute():
+                return 2, None, f"Retry this search with the repository-relative path `{relative}`."
         state["discovery_calls"] = int(state.get("discovery_calls") or 0) + 1
         if relative != raw_path:
             tool_input["path"] = relative
@@ -135,6 +137,8 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                 None,
                 "Use an existing repository-relative path from the context bundle; never use an absolute root.",
             )
+        if Path(raw).is_absolute():
+            return 2, None, f"Retry the same {tool} now with repository-relative file_path `{relative}`."
         updated = tool_input if repaired_path else None
         if relative != raw:
             tool_input["file_path"] = relative
@@ -182,6 +186,8 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
             relative = _relative_path(cwd, words[2])
             if relative is None:
                 return 2, None, "Use `rtk read` with one repository-relative tracked path."
+            if Path(words[2]).is_absolute():
+                return 2, None, f"Retry with `rtk read {shlex.quote(relative)}`."
             reads = list(state.get("rtk_reads") or [])
             if relative not in reads:
                 reads.append(relative)

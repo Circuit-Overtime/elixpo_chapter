@@ -243,7 +243,7 @@ def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
     assert hook_settings["hooks"]["Stop"]
 
 
-def test_tool_gate_normalizes_paths_and_allows_recovery_reads(tmp_path):
+def test_tool_gate_rejects_absolute_paths_and_allows_relative_recovery_reads(tmp_path):
     target = tmp_path / "app/pricing/page.tsx"
     target.parent.mkdir(parents=True)
     target.write_text("export default function Pricing() {}")
@@ -263,11 +263,14 @@ def test_tool_gate_normalizes_paths_and_allows_recovery_reads(tmp_path):
 
     code, output, reason = _decision(event, state)
 
+    assert code == 2 and output is None
+    assert "repository-relative file_path `app/pricing/page.tsx`" in reason
+    assert "source_reads" not in state
+    repeated = {**event, "tool_input": {"file_path": "app/pricing/page.tsx"}}
+    code, output, reason = _decision(repeated, state)
     assert code == 0 and reason is None
-    assert output["hookSpecificOutput"]["updatedInput"]["file_path"] == "app/pricing/page.tsx"
     assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 287
     assert state["source_reads"] == ["app/pricing/page.tsx"]
-    repeated = {**event, "tool_input": {"file_path": "app/pricing/page.tsx"}}
     code, output, reason = _decision(repeated, state)
     assert code == 0 and reason is None
     assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 338
@@ -724,14 +727,11 @@ def test_prompt_keeps_ranked_candidates_advisory():
     assert "Four source reads" not in rendered
     assert "<repository_evidence>" in rendered
     assert "&lt;/repository_evidence&gt;" in rendered
-    assert "exact-context mismatch" in rendered
+    assert "repository root is the current directory" in rendered
+    assert "Use only the relative paths" in rendered
+    assert "finish\nwith StructuredOutput" in rendered
     assert "Repository evidence" in rendered
-    assert "do not decline merely because" in rendered
-    assert "normal repository-grounded coding agent" in rendered
-    assert "recover naturally from tool mismatches" in rendered
-    assert "finish by calling StructuredOutput" in rendered
-    assert "repository root as its current directory (`.`)" in rendered
-    assert "Never invent or prepend `/workspace`, `/home/user`" in rendered
+    assert len(rendered) < 1_500
     assert "next command must be exactly" not in rendered
 
 
