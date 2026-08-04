@@ -4,14 +4,16 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from lib.github.issues import referenced_pull_requests
+from lib.solve_policy import load_solve_policy, solve_token_limit
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
 
 from agents.vet.evaluate import evaluate_with_rtk
-from agents.vet.github import referenced_pull_requests
 
 MIN_CONFIDENCE = 0.75
 MAX_FILES = 5
+MAX_MINUTES = 15
 
 
 def issue_key(owner: str, repo: str, number: int) -> str:
@@ -32,7 +34,13 @@ def _as_float(value: object, default: float = 0.0) -> float:
         return default
 
 
-def deterministic_blockers(evidence: dict, number: int, _now: datetime) -> list[str]:
+def deterministic_blockers(
+    evidence: dict,
+    number: int,
+    _now: datetime,
+    *,
+    allow_assigned: bool = False,
+) -> list[str]:
     issue = evidence["issue"]
     blockers: list[str] = []
     if issue.get("pull_request"):
@@ -41,7 +49,7 @@ def deterministic_blockers(evidence: dict, number: int, _now: datetime) -> list[
         blockers.append("issue is not open")
     if issue.get("locked"):
         blockers.append("issue conversation is locked")
-    if issue.get("assignee") or issue.get("assignees"):
+    if not allow_assigned and (issue.get("assignee") or issue.get("assignees")):
         blockers.append("issue is already assigned")
     if evidence.get("sub_issues"):
         blockers.append("issue is a tracking parent with sub-issues")
@@ -50,7 +58,7 @@ def deterministic_blockers(evidence: dict, number: int, _now: datetime) -> list[
     return blockers
 
 
-def _model_blockers(verdict: dict) -> list[str]:
+def _model_blockers(verdict: dict, policy: dict) -> list[str]:
     blockers = [str(reason) for reason in verdict.get("reasons", []) if str(reason).strip()]
     scope = str(verdict.get("scope", "unknown")).casefold()
     if scope not in {"trivial", "small"}:
@@ -58,6 +66,13 @@ def _model_blockers(verdict: dict) -> list[str]:
     files = _as_int(verdict.get("estimated_files", 0))
     if not 1 <= files <= MAX_FILES:
         blockers.append(f"estimated file count {files} is outside 1-{MAX_FILES}")
+    minutes = _as_int(verdict.get("estimated_minutes", 0))
+    if not 1 <= minutes <= MAX_MINUTES:
+        blockers.append(f"estimated work time {minutes} minutes is outside 1-{MAX_MINUTES}")
+    estimated_tokens = _as_int(verdict.get("estimated_solve_tokens", 0))
+    max_estimate = int(policy.get("max_vetted_token_estimate", policy["token_budget"]))
+    if not 1 <= estimated_tokens <= max_estimate:
+        blockers.append(f"estimated solve cost {estimated_tokens} tokens is outside 1-{max_estimate}")
     confidence = _as_float(verdict.get("confidence", 0.0))
     if confidence < MIN_CONFIDENCE:
         blockers.append(f"confidence {confidence:.2f} is below {MIN_CONFIDENCE:.2f}")
@@ -90,12 +105,15 @@ async def vet_issue(
     *,
     now: datetime | None = None,
     force: bool = False,
+    owned_test: bool = False,
+    policy: dict | None = None,
 ) -> dict:
     now = now or datetime.now(timezone.utc)
     issue = evidence["issue"]
     key = issue_key(owner, repo, number)
     updated_at = str(issue.get("updated_at") or "")
     rejections = RejectionLedger.load(store)
+    policy = policy or load_solve_policy()
 
     if not force and rejections.rejects_unchanged(key, updated_at):
         record = rejections.issues[key]
@@ -115,9 +133,9 @@ async def vet_issue(
         store.write_json("vet.json", result)
         return result
 
-    hard_blockers = deterministic_blockers(evidence, number, now)
+    hard_blockers = deterministic_blockers(evidence, number, now, allow_assigned=owned_test)
     model_verdict = {} if hard_blockers else await evaluate_with_rtk(router, evidence)
-    model_blockers = [] if hard_blockers else _model_blockers(model_verdict)
+    model_blockers = [] if hard_blockers else _model_blockers(model_verdict, policy)
     blockers = [*hard_blockers, *model_blockers]
     suitable = not blockers
     issue_kind = (
@@ -128,6 +146,7 @@ async def vet_issue(
         else str(model_verdict.get("issue_kind", "unknown"))
     )
     confidence = _as_float(model_verdict.get("confidence", 1.0 if hard_blockers else 0.0))
+    estimated_solve_tokens = _as_int(model_verdict.get("estimated_solve_tokens", 0))
     result = {
         "status": "approved" if suitable else "rejected",
         "suitable": suitable,
@@ -137,13 +156,17 @@ async def vet_issue(
         "issue_kind": issue_kind,
         "scope": str(model_verdict.get("scope", "unknown")),
         "estimated_files": _as_int(model_verdict.get("estimated_files", 0)),
+        "estimated_minutes": _as_int(model_verdict.get("estimated_minutes", 0)),
+        "estimated_solve_tokens": estimated_solve_tokens,
         "confidence": confidence,
         "summary": str(model_verdict.get("summary", "")),
         "reasons": blockers,
         "issue_updated_at": updated_at,
         "checked_at": now.isoformat(),
         "model_called": not hard_blockers,
+        "test_mode": owned_test,
     }
+    result["solve_token_budget"] = solve_token_limit(policy, result) if suitable else 0
     if suitable:
         rejections.clear(key)
     else:

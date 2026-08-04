@@ -136,6 +136,18 @@ async def test_router_writes_ledger(tmp_path):
     assert rows[0]["total_tokens"] == 120
 
 
+def test_router_accounts_for_ccr_harness_usage(tmp_path):
+    router, _ = make_router(tmp_path)
+    usage = Usage(prompt_tokens=70, completion_tokens=20, total_tokens=90)
+
+    assert router.record_external_usage("code", usage, source="ccr-node-harness", extra={"turns": 4}) == 90
+
+    row = json.loads((tmp_path / "token_log.jsonl").read_text().splitlines()[0])
+    assert row["source"] == "ccr-node-harness"
+    assert row["turns"] == 4
+    assert row["total_tokens"] == 90
+
+
 # --- savers: truncate / diff / cache backends ---
 
 def test_truncate_preserves_head_and_tail():

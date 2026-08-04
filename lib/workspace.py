@@ -1,50 +1,92 @@
-"""Workspace manager — isolated directory per session."""
+"""Isolated Git workspace operations with no shell interpolation."""
 
 from __future__ import annotations
 
-import asyncio
+import base64
 import os
 import shutil
+import subprocess
+from pathlib import Path
 
-import structlog
 
-log = structlog.get_logger()
+class WorkspaceError(RuntimeError):
+    pass
+
+
+def git_auth_env(token: str) -> dict[str, str]:
+    """Pass GitHub auth through process environment, never command arguments."""
+    env = os.environ.copy()
+    if not token:
+        return env
+    encoded = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+    env.update(
+        {
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "http.https://github.com/.extraheader",
+            "GIT_CONFIG_VALUE_0": f"AUTHORIZATION: basic {encoded}",
+            "GIT_TERMINAL_PROMPT": "0",
+        }
+    )
+    return env
 
 
 class Workspace:
-    """Manages an isolated workspace directory for a session."""
-
-    def __init__(self, session_id: str, base_path: str):
+    def __init__(self, session_id: str, base_path: str | Path):
+        if not session_id or any(
+            ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for ch in session_id
+        ):
+            raise ValueError("workspace session_id contains unsafe characters")
         self.session_id = session_id
-        self.base_path = base_path
-        self.root = os.path.join(base_path, session_id)
+        self.base_path = Path(base_path).resolve()
+        self.root = self.base_path / session_id
 
-    async def setup(self, clone_url: str | None = None, branch: str | None = None) -> str:
-        """Create workspace dir, optionally clone a repo into it."""
-        os.makedirs(self.root, exist_ok=True)
+    def _run(
+        self,
+        args: list[str],
+        *,
+        cwd: Path | None = None,
+        env: dict[str, str] | None = None,
+        timeout: int = 120,
+    ) -> str:
+        proc = subprocess.run(
+            args,
+            cwd=cwd,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise WorkspaceError((proc.stderr or proc.stdout).strip()[:2000])
+        return proc.stdout.strip()
 
-        if clone_url:
-            cmd = "git clone --depth 1"
-            if branch:
-                cmd += f" --branch {branch}"
-            cmd += f" {clone_url} {self.root}"
-            proc = await asyncio.create_subprocess_shell(
-                cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            _, stderr = await proc.communicate()
-            if proc.returncode != 0:
-                log.error("workspace.clone_failed", error=stderr.decode())
-
-        log.info("workspace.setup", path=self.root)
+    def setup(
+        self,
+        *,
+        fork_url: str,
+        upstream_url: str,
+        base_branch: str,
+        work_branch: str,
+        token: str,
+    ) -> Path:
+        self.base_path.mkdir(parents=True, exist_ok=True)
+        if self.root.exists():
+            raise WorkspaceError(f"workspace already exists: {self.root}")
+        env = git_auth_env(token)
+        self._run(["git", "clone", "--filter=blob:none", "--no-tags", fork_url, str(self.root)], env=env)
+        self._run(["git", "remote", "add", "upstream", upstream_url], cwd=self.root)
+        self._run(["git", "fetch", "--depth", "1", "upstream", base_branch], cwd=self.root, env=env)
+        self._run(["git", "checkout", "-b", work_branch, "FETCH_HEAD"], cwd=self.root)
+        # Keep identity local to the isolated fork. GitHub links the commit and
+        # avatar when this verified email belongs to the elixpoo account.
+        self._run(["git", "config", "user.name", "elixpoo"], cwd=self.root)
+        self._run(["git", "config", "user.email", "elixpoo@gmail.com"], cwd=self.root)
         return self.root
 
-    async def cleanup(self) -> None:
-        """Remove the workspace directory."""
-        if os.path.isdir(self.root):
-            shutil.rmtree(self.root, ignore_errors=True)
-            log.info("workspace.cleanup", path=self.root)
+    def cleanup(self) -> None:
+        if self.root.is_dir() and self.root.parent == self.base_path:
+            shutil.rmtree(self.root)
 
     def exists(self) -> bool:
-        return os.path.isdir(self.root)
+        return self.root.is_dir()

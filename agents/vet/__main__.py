@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import structlog
 
 from agents.vet.core import vet_issue
-from agents.vet.github import fetch_issue_evidence, parse_issue_url
+from lib.github.issues import fetch_issue_evidence, parse_issue_url
 
 log = structlog.get_logger()
 
@@ -55,7 +55,7 @@ def _finalize_pick(store, result: dict, now: datetime) -> None:
     store.write_json("pick.json", pick)
 
 
-async def _run(issue_url: str | None, force: bool = False) -> int:
+async def _run(issue_url: str | None, force: bool = False, owned_test: bool = False) -> int:
     from lib.config import settings
     from lib.github.api import GitHubAPI
     from lib.state.store import StateStore
@@ -79,12 +79,34 @@ async def _run(issue_url: str | None, force: bool = False) -> int:
     except ValueError as exc:
         log.error("vet.invalid_url", error=str(exc))
         return 2
+    if owned_test:
+        from lib.solve_policy import is_test_repository
+
+        if from_pick or not is_test_repository(f"{owner}/{repo}"):
+            log.error("vet.invalid_test_target", repo=f"{owner}/{repo}")
+            return 2
     api = GitHubAPI.from_token(settings.github.token)
     router = Router.from_settings("vet", budget=Budget("vet", limit=12_000))
     try:
+        if owned_test:
+            repository = await api.get_repo(owner, repo)
+            permissions = repository.get("permissions") or {}
+            if not (permissions.get("push") or permissions.get("admin")):
+                log.error("vet.test_target_not_writable", repo=f"{owner}/{repo}")
+                return 2
         evidence = await fetch_issue_evidence(api, owner, repo, number)
         now = datetime.now(timezone.utc)
-        result = await vet_issue(router, store, owner, repo, number, evidence, now=now, force=force)
+        result = await vet_issue(
+            router,
+            store,
+            owner,
+            repo,
+            number,
+            evidence,
+            now=now,
+            force=force,
+            owned_test=owned_test,
+        )
         if from_pick:
             _finalize_pick(store, result, now)
     finally:
@@ -106,8 +128,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Verify one GitHub issue before implementation")
     parser.add_argument("issue_url", nargs="?", help="manual override; defaults to state/pick.json")
     parser.add_argument("--force", action="store_true", help="recheck an unchanged rejected revision")
+    parser.add_argument(
+        "--owned-test",
+        action="store_true",
+        help="allow assignment only for a configured writable test repository",
+    )
     args = parser.parse_args()
-    raise SystemExit(asyncio.run(_run(args.issue_url, args.force)))
+    raise SystemExit(asyncio.run(_run(args.issue_url, args.force, args.owned_test)))
 
 
 if __name__ == "__main__":
