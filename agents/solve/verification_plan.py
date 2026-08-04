@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from agents.solve.git import CommandRejected, validate_command
 from agents.solve.models import HarnessOutcome
 
 
@@ -43,14 +44,37 @@ def complete_verification_plan(
     workspace: Path,
     outcome: HarnessOutcome,
     changed_paths: list[str],
+    *,
+    allowed_setup_prefixes: list[str] | None = None,
+    allowed_command_prefixes: list[str] | None = None,
 ) -> tuple[HarnessOutcome, bool]:
-    """Fill only omitted setup/check fields; never replace a model-selected command."""
+    """Keep safe model commands and deterministically replace omitted or unsafe ones."""
     if not outcome.solvable:
         return outcome, False
 
     setup = list(outcome.setup_commands)
     checks = list(outcome.verification_commands)
     inferred = False
+    if allowed_setup_prefixes is not None:
+        filtered_setup = []
+        for command in setup:
+            try:
+                validate_command(command, allowed_setup_prefixes)
+            except CommandRejected:
+                inferred = True
+            else:
+                filtered_setup.append(command)
+        setup = filtered_setup
+    if allowed_command_prefixes is not None:
+        filtered_checks = []
+        for command in checks:
+            try:
+                validate_command(command, allowed_command_prefixes)
+            except CommandRejected:
+                inferred = True
+            else:
+                filtered_checks.append(command)
+        checks = filtered_checks
     package_file = workspace / "package.json"
     node_change = any(Path(path).suffix.casefold() in {".js", ".jsx", ".ts", ".tsx"} for path in changed_paths)
     if package_file.is_file() and node_change:
@@ -80,6 +104,4 @@ def complete_verification_plan(
 
     if not checks:
         raise VerificationPlanError("no safe verification command was returned or inferred")
-    return outcome.model_copy(
-        update={"setup_commands": setup, "verification_commands": checks}
-    ), inferred
+    return outcome.model_copy(update={"setup_commands": setup, "verification_commands": checks}), inferred

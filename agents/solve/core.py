@@ -297,7 +297,13 @@ async def solve(
         if resolved.is_symlink():
             raise SolveRejected(f"coding harness created or changed a symlink: {path}")
 
-    outcome, verification_inferred = complete_verification_plan(root, outcome, targets)
+    outcome, verification_inferred = complete_verification_plan(
+        root,
+        outcome,
+        targets,
+        allowed_setup_prefixes=list(policy["allowed_setup_prefixes"]),
+        allowed_command_prefixes=list(policy["allowed_command_prefixes"]),
+    )
 
     running.update(
         {

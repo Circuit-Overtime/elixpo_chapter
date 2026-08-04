@@ -882,6 +882,54 @@ def test_node_verification_is_inferred_from_lockfile_and_tsconfig(tmp_path):
     assert completed.verification_commands == ["npx tsc --noEmit"]
 
 
+def test_unsafe_model_verification_is_replaced_by_manifest_plan(tmp_path):
+    (tmp_path / "package.json").write_text('{"scripts":{"build":"next build"}}')
+    (tmp_path / "package-lock.json").write_text("{}")
+    (tmp_path / "tsconfig.json").write_text("{}")
+    outcome = HarnessOutcome(
+        solvable=True,
+        estimated_minutes=8,
+        rationale="localized pricing fix",
+        summary="Show a copyable enterprise contact address.",
+        verification_commands=['grep -n "hello@example.com" app/pricing/page.tsx'],
+        commit_message="fix: show enterprise contact email",
+    )
+
+    completed, inferred = complete_verification_plan(
+        tmp_path,
+        outcome,
+        ["app/pricing/page.tsx"],
+        allowed_setup_prefixes=["npm ci --ignore-scripts"],
+        allowed_command_prefixes=["npx tsc"],
+    )
+
+    assert inferred is True
+    assert completed.setup_commands == ["npm ci --ignore-scripts"]
+    assert completed.verification_commands == ["npx tsc --noEmit"]
+
+
+def test_safe_model_verification_is_preserved(tmp_path):
+    outcome = HarnessOutcome(
+        solvable=True,
+        estimated_minutes=4,
+        rationale="localized Python fix",
+        summary="Correct the parser.",
+        verification_commands=["pytest tests/test_parser.py"],
+        commit_message="fix: correct parser",
+    )
+
+    completed, inferred = complete_verification_plan(
+        tmp_path,
+        outcome,
+        ["parser.py"],
+        allowed_setup_prefixes=[],
+        allowed_command_prefixes=["pytest"],
+    )
+
+    assert inferred is False
+    assert completed.verification_commands == ["pytest tests/test_parser.py"]
+
+
 def test_invalid_harness_output_preserves_usage_for_accounting():
     envelope = {
         "type": "result",
