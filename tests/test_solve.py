@@ -553,8 +553,7 @@ def test_ccr_setup_registers_custom_governor_options_once(tmp_path):
     for provider in config["Providers"]:
         assert "rtk-context-governor" in provider["transformer"]["use"]
         assert not any(
-            isinstance(item, list) and item[0] == "rtk-context-governor"
-            for item in provider["transformer"]["use"]
+            isinstance(item, list) and item[0] == "rtk-context-governor" for item in provider["transformer"]["use"]
         )
 
 
@@ -903,6 +902,31 @@ def test_node_verification_is_inferred_from_lockfile_and_tsconfig(tmp_path):
     assert completed.verification_commands == ["npx tsc --noEmit"]
 
 
+def test_biome_is_discovered_and_preferred_for_node_verification(tmp_path):
+    (tmp_path / "package.json").write_text('{"devDependencies":{"@biomejs/biome":"1.9.4"}}')
+    (tmp_path / "package-lock.json").write_text("{}")
+    outcome = HarnessOutcome(
+        solvable=True,
+        estimated_minutes=4,
+        rationale="localized frontend fix",
+        summary="Correct the component behavior.",
+        commit_message="fix: correct component behavior",
+    )
+
+    prefixes = repository_command_prefixes(tmp_path)
+    completed, inferred = complete_verification_plan(
+        tmp_path,
+        outcome,
+        ["app/component.tsx"],
+        allowed_setup_prefixes=effective_prefixes(tmp_path, [], setup=True),
+        allowed_command_prefixes=effective_prefixes(tmp_path, []),
+    )
+
+    assert "npx biome" in prefixes
+    assert inferred is True
+    assert completed.verification_commands == ["npx biome check ."]
+
+
 def test_unsafe_model_verification_is_replaced_by_manifest_plan(tmp_path):
     (tmp_path / "package.json").write_text('{"scripts":{"build":"next build"}}')
     (tmp_path / "package-lock.json").write_text("{}")
@@ -1075,12 +1099,8 @@ def test_only_empty_first_turn_connection_failure_can_retry():
 
     assert _is_empty_connection_failure(empty_failure) is True
     assert _is_empty_connection_failure({**empty_failure, "num_turns": 2}) is False
-    assert _is_empty_connection_failure(
-        {**empty_failure, "usage": {"input_tokens": 1, "output_tokens": 0}}
-    ) is False
-    assert _is_empty_connection_failure(
-        {**empty_failure, "result": "Failed to authenticate. API Error: 401"}
-    ) is False
+    assert _is_empty_connection_failure({**empty_failure, "usage": {"input_tokens": 1, "output_tokens": 0}}) is False
+    assert _is_empty_connection_failure({**empty_failure, "result": "Failed to authenticate. API Error: 401"}) is False
 
 
 def test_missing_harness_runtime_remains_a_workspace_failure():
@@ -1151,8 +1171,7 @@ def test_exhausted_evidence_budget_requests_context_refresh():
 def test_hallucinated_workspace_decline_requests_context_retry():
     failure = classify_failure(
         SolveRejected(
-            "coding harness declined issue: permission restrictions prevent locating "
-            "the implementation files"
+            "coding harness declined issue: permission restrictions prevent locating the implementation files"
         ),
         "harness",
     )

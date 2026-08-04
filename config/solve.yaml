@@ -71,6 +71,7 @@ allowed_command_prefixes:
   - npm run typecheck
   - npm run build
   - npx eslint
+  - npx biome
   - npx tsc
   - pnpm test
   - pnpm lint

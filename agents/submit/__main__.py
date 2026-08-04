@@ -92,16 +92,49 @@ def build_pr_body(solve_state: dict, punch_line: str | None) -> str:
         details.append(f"Changed {file_list}.")
     if check_list:
         details.append(f"Verified with {check_list}.")
+    exceptions = solve_state.get("verification_exceptions") or []
+    if exceptions:
+        exception_list = "; ".join(f"`{item.get('command')}` exited {item.get('exit_code')}" for item in exceptions[:3])
+        if len(exceptions) > 3:
+            exception_list += f"; {len(exceptions) - 3} additional recorded failure(s)"
+        details.append(f"Verification exceptions: {exception_list}.")
     technical_line = " ".join(details)
-    body = (
-        f"{summary}\n\n"
-        f"{technical_line}\n\n"
-        "Opened by elixpoo, an autonomous contributor.\n\n"
-        f"Fixes #{number}"
-    )
+    body = f"{summary}\n\n{technical_line}\n\nOpened by elixpoo, an autonomous contributor.\n\nFixes #{number}"
     if punch_line:
         body += f"\n\n<sub>“{punch_line}” — @elixpoo</sub>"
     return body
+
+
+def validate_verification_record(solve_state: dict) -> None:
+    checks = list(solve_state.get("checks") or [])
+    verification = [item for item in checks if item.get("kind", "verification") == "verification"]
+    if not verification:
+        raise SubmitRejected("Solve has no attempted verification record")
+
+    setup_passed = any(
+        item.get("kind") in {"setup", "setup_fallback"} and item.get("exit_code") == 0 for item in checks
+    )
+    unresolved = [
+        item
+        for item in checks
+        if item.get("exit_code") != 0 and (item.get("kind") == "verification" or not setup_passed)
+    ]
+    recorded = {
+        (str(item.get("kind") or ""), str(item.get("command") or ""), int(item.get("exit_code") or 1))
+        for item in solve_state.get("verification_exceptions") or []
+    }
+    missing = [
+        item
+        for item in unresolved
+        if (
+            str(item.get("kind") or ""),
+            str(item.get("command") or ""),
+            int(item.get("exit_code") or 1),
+        )
+        not in recorded
+    ]
+    if missing:
+        raise SubmitRejected("Solve has an undisclosed verification failure")
 
 
 def _clean_punch_line(raw: str) -> str:
@@ -309,11 +342,7 @@ def push_branch(
 
 
 async def submit(api, router, store, solve_state: dict, workspace_base: Path) -> dict:
-    verification = [
-        item for item in solve_state.get("checks", []) if item.get("kind", "verification") == "verification"
-    ]
-    if not verification or any(item.get("exit_code") != 0 for item in solve_state["checks"]):
-        raise SubmitRejected("Solve has no complete passing verification record")
+    validate_verification_record(solve_state)
     workspace = validate_solve_state(solve_state, workspace_base)
 
     title = build_pr_title(solve_state)

@@ -34,18 +34,30 @@ def _node_script(manager: str, name: str) -> str:
 
 
 def _matching_script(scripts: dict[str, Any], preferred: str) -> str | None:
-    matches = sorted(
-        str(name)
-        for name in scripts
-        if str(name) == preferred or str(name).startswith(f"{preferred}:")
-    )
+    matches = sorted(str(name) for name in scripts if str(name) == preferred or str(name).startswith(f"{preferred}:"))
     return matches[0] if matches else None
 
 
-def _node_verification(workspace: Path, manager: str, scripts: dict[str, Any]) -> str | None:
+def _uses_biome(workspace: Path, package: dict[str, Any]) -> bool:
+    dependencies: dict[str, Any] = {}
+    for field in ("dependencies", "devDependencies"):
+        declared = package.get(field)
+        if isinstance(declared, dict):
+            dependencies.update(declared)
+    return (
+        "@biomejs/biome" in dependencies
+        or (workspace / "biome.json").is_file()
+        or (workspace / "biome.jsonc").is_file()
+    )
+
+
+def _node_verification(workspace: Path, manager: str, package: dict[str, Any]) -> str | None:
+    scripts = package.get("scripts") or {}
     for preferred in ("typecheck", "check"):
         if matching := _matching_script(scripts, preferred):
             return _node_script(manager, matching)
+    if _uses_biome(workspace, package):
+        return "npx biome check ."
     if (workspace / "tsconfig.json").is_file():
         return "npx tsc --noEmit"
     for preferred in ("lint", "test", "build"):
@@ -119,7 +131,7 @@ def complete_verification_plan(
                 setup = [setup_command]
                 inferred = True
             if not checks:
-                command = _node_verification(workspace, manager, package.get("scripts") or {})
+                command = _node_verification(workspace, manager, package)
                 if command:
                     checks = [command]
                     inferred = True

@@ -8,6 +8,7 @@ from agents.submit.__main__ import (
     build_pr_body,
     build_pr_title,
     validate_solve_state,
+    validate_verification_record,
     write_punch_line,
 )
 
@@ -42,6 +43,45 @@ def test_pr_markdown_is_disclosed_verified_and_closing():
     assert "##" not in body
     assert "✅" not in body
     assert body.endswith("<sub>“Small patch, full signal” — @elixpoo</sub>")
+
+
+def test_pr_body_discloses_bounded_verification_exceptions():
+    state = {
+        **_state(),
+        "checks": [{"kind": "verification", "command": "npx biome check .", "exit_code": 1}],
+        "verification_exceptions": [
+            {"kind": "verification", "command": "npx biome check .", "exit_code": 1, "detail": "ignored"}
+        ],
+    }
+
+    body = build_pr_body(state, None)
+
+    assert "Verification exceptions: `npx biome check .` exited 1." in body
+    assert "ignored" not in body
+    validate_verification_record(state)
+
+
+def test_submit_rejects_undisclosed_verification_failure():
+    state = {
+        **_state(),
+        "checks": [{"kind": "verification", "command": "npm run lint", "exit_code": 1}],
+    }
+
+    with pytest.raises(SubmitRejected, match="undisclosed"):
+        validate_verification_record(state)
+
+
+def test_successful_setup_fallback_resolves_initial_setup_failure():
+    state = {
+        **_state(),
+        "checks": [
+            {"kind": "setup", "command": "npm ci --ignore-scripts", "exit_code": 1},
+            {"kind": "setup_fallback", "command": "npm install --ignore-scripts", "exit_code": 0},
+            {"kind": "verification", "command": "npm run lint", "exit_code": 0},
+        ],
+    }
+
+    validate_verification_record(state)
 
 
 def test_pr_title_derives_type_from_commit_when_issue_has_no_tag():

@@ -6,9 +6,10 @@ description: Publish one clean, reviewed Solve branch as a disclosed GitHub pull
 # Submit Autonomous PR
 
 Require `state/solve.json` status `ready_to_submit`, a present workspace, the
-recorded current branch and HEAD, a clean tree, at least one passing check, and a
-successful final review. A structured-metadata fallback must also record a
-post-edit review receipt for every target file. Refuse partial or failed work.
+recorded current branch and HEAD, a clean tree, at least one attempted check, and
+a successful final review. A structured-metadata fallback must also record a
+post-edit review receipt for every target file. Permit documented setup or
+verification exceptions; refuse incomplete work and undisclosed failures.
 
 Build the title as `[TYPE]:- <technical subject>`. Preserve a recognized issue
 type such as `BUG`, `PATCH`, or `FEAT`; otherwise derive the type deterministically
@@ -21,7 +22,9 @@ title.
 
 Build a compact technical body without headings, decorative sections,
 blockquotes, status emoji, or generic process claims. State the completed
-summary, exact files, and successful verification commands in plain sentences.
+summary, exact files, successful verification commands, and each bounded
+verification exception in plain sentences. Include only the failed command and
+exit code; never copy untrusted raw check output into the public body.
 Keep the honest autonomous-contributor disclosure, `Fixes #N`, and persona
 footer.
 

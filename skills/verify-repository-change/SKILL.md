@@ -19,10 +19,13 @@ every target-repository subprocess. Permit at most one configured dependency
 setup command. Treat setup as untrusted code in the disposable sandbox and never
 record its output as a successful behavioral check.
 
-Stop on the first non-zero exit. Do not retry automatically, alter the command,
-weaken configuration, or commit a failed step. Preserve compact failure output
-in state for diagnosis.
+Continue through the bounded command plan after a non-zero exit. Do not retry
+automatically, alter the command, or weaken configuration. Preserve compact
+failure output as a verification exception for diagnosis and PR disclosure.
+Treat failed checks as advisory only after the requested implementation is
+complete and self-reviewed.
 
-After all step checks pass, stage only declared files. Require a conventional
+After all checks are attempted, verify they introduced no tracked changes, then
+stage only declared files. Require a conventional
 commit message and a non-empty staged diff, then create exactly one local commit.
 Require a clean working tree after the final step. Do not push.

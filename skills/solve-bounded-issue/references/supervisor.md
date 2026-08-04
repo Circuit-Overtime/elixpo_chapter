@@ -317,15 +317,18 @@ parsed argv without a shell, through RTK output compression, with a stripped
 environment, time and output limits, and no verification network. Use a
 workspace-only bubblewrap boundary when the host supports user namespaces; keep
 the parsed capability broker as the portable fallback. Setup is a distinct
-one-command phase which may use network but never agent credentials. Stop on the
-first failed check; do not commit or push. Route each command through its actual
+one-command phase which may use network but never agent credentials. Continue
+through the bounded check plan after a non-zero exit. Route each command through its actual
 RTK adapter, using the generic error filter for unsupported executables. If RTK
 itself fails before launching the child, retry that same argv once without RTK.
 After a failed `npm ci --ignore-scripts`, permit one deterministic
 `npm install --ignore-scripts --no-audit --no-fund` compatibility fallback.
 Persist every attempt and its compressed output before making a failure decision.
 
-After successful checks, require that verification introduced no additional
+Record unresolved setup and verification failures as bounded exceptions. They
+are advisory after the implementation is complete and self-reviewed; never
+discard a safe diff solely because Biome, lint, typecheck, tests, build, or
+dependency setup failed. Require that verification introduced no additional
 tracked changes. Stage only the observed harness targets and create one
 conventional commit. Refuse an empty commit or staged scope expansion.
 
@@ -338,7 +341,8 @@ duration, token spend, branch, workspace, and status. Never push a failed run.
 
 Submit must verify the clean recorded branch, run the mandatory `qwen-safety`
 gate over the deterministic PR title/body, push once, and create or reuse one PR.
-The body lists changes, files, checks, autonomous-contributor disclosure, and
+The body lists changes, files, successful checks, verification exceptions,
+autonomous-contributor disclosure, and
 ends with `Fixes #N`. Update the production ledger only after the PR exists.
 
 ## Fail without loops

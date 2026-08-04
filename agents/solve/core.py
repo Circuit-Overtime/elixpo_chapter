@@ -320,6 +320,7 @@ async def solve(
     store.write_json("solve.json", running)
 
     checks: list[dict] = []
+    verification_exceptions: list[dict] = []
     setup_prefixes = effective_prefixes(root, list(policy["allowed_setup_prefixes"]), setup=True)
     verification_prefixes = effective_prefixes(root, list(policy["allowed_command_prefixes"]))
 
@@ -328,7 +329,21 @@ async def solve(
         running["checks"] = checks
         store.write_json("solve.json", running)
 
+    def record_exception(check: dict) -> None:
+        detail = re.sub(r"\s+", " ", str(check.get("output") or "")).strip()[-600:]
+        verification_exceptions.append(
+            {
+                "kind": str(check.get("kind") or "verification"),
+                "command": str(check.get("command") or ""),
+                "exit_code": int(check.get("exit_code") or 1),
+                "detail": detail,
+            }
+        )
+        running["verification_exceptions"] = verification_exceptions
+        store.write_json("solve.json", running)
+
     for command in outcome.setup_commands[: int(policy["max_setup_commands"])]:
+        attempt_start = len(checks)
         result = run_verification(
             root,
             command,
@@ -351,8 +366,9 @@ async def solve(
                 )
                 record_check("setup_fallback", fallback, result)
             if result.code != 0:
-                detail = result.output.strip().replace("\n", " ")[-600:]
-                raise SolveRejected(f"dependency setup failed: {command}: {detail}")
+                for failed in checks[attempt_start:]:
+                    if failed["exit_code"] != 0:
+                        record_exception(failed)
     for command in outcome.verification_commands[: int(policy["max_test_commands"])]:
         result = run_verification(
             root,
@@ -363,8 +379,7 @@ async def solve(
         )
         record_check("verification", command, result)
         if result.code != 0:
-            detail = result.output.strip().replace("\n", " ")[-600:]
-            raise SolveRejected(f"verification failed: {command}: {detail}")
+            record_exception(checks[-1])
 
     observed = set(changed_files(root))
     if observed != set(targets):
@@ -405,6 +420,8 @@ async def solve(
         "rationale": outcome.rationale,
         "target_files": sorted(targets),
         "checks": checks,
+        "verification_exceptions": verification_exceptions,
+        "verification_status": "exceptions" if verification_exceptions else "passed",
         "commits": commits,
         "head_sha": git(root, "rev-parse", "HEAD"),
         "harness": {
@@ -417,9 +434,9 @@ async def solve(
             "findings": [],
             "summary": outcome.summary,
             "source": (
-                "deterministic_diff_and_verification"
+                "deterministic_diff_review_with_reported_verification"
                 if harness_metadata.get("structured_fallback")
-                else "bounded_harness_self_review"
+                else "bounded_harness_self_review_with_reported_verification"
             ),
         },
         "token_spent": router.budget.spent,

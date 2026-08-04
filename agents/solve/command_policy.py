@@ -33,6 +33,19 @@ def _node_managers(workspace: Path) -> list[str]:
     return managers
 
 
+def _uses_biome(workspace: Path, package: dict[str, Any]) -> bool:
+    dependencies: dict[str, Any] = {}
+    for field in ("dependencies", "devDependencies"):
+        declared = package.get(field)
+        if isinstance(declared, dict):
+            dependencies.update(declared)
+    return (
+        "@biomejs/biome" in dependencies
+        or (workspace / "biome.json").is_file()
+        or (workspace / "biome.jsonc").is_file()
+    )
+
+
 def repository_command_prefixes(workspace: Path) -> list[str]:
     """Return exact, evidence-backed verification prefixes for this checkout."""
     prefixes: list[str] = []
@@ -44,6 +57,8 @@ def repository_command_prefixes(workspace: Path) -> list[str]:
                 prefixes.append(f"{manager} run {name}" if manager in {"npm", "bun"} else f"{manager} {name}")
         if (workspace / "tsconfig.json").is_file():
             prefixes.append("npx tsc")
+        if _uses_biome(workspace, package):
+            prefixes.append("npx biome")
 
     if (workspace / "pyproject.toml").is_file() or (workspace / "setup.py").is_file():
         prefixes.extend(
