@@ -9,8 +9,8 @@ max_minutes: 15
 max_files: 5
 max_commit_steps: 2
 max_search_calls: 1
-max_context_tokens: 4500
-max_file_tokens: 2500
+max_context_tokens: 3200
+max_file_tokens: 1400
 max_test_commands: 3
 max_setup_commands: 1
 command_timeout_seconds: 180
@@ -18,13 +18,13 @@ command_timeout_seconds: 180
 # Python supervises these Node processes for both local and Actions runs.
 harness_model: qwen-coder
 harness_max_turns: 14
-harness_max_output_tokens: 1600
-harness_file_read_max_output_tokens: 1800
+harness_max_output_tokens: 1400
+harness_file_read_max_output_tokens: 1400
 harness_max_retries: 2
 harness_tool_use_concurrency: 3
-harness_context_max_chars: 36000
-harness_tool_result_max_chars: 4000
-harness_stale_tool_result_chars: 600
+harness_context_max_chars: 28000
+harness_tool_result_max_chars: 3200
+harness_stale_tool_result_chars: 400
 harness_recent_tool_results: 2
 ccr_start_timeout_seconds: 60
 blocked_change_prefixes:

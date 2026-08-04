@@ -64,32 +64,31 @@ system prompt, and disable session persistence. This preserves the proven
 secret-stripped environment, temporary CCR home, and isolated checkout enforce
 the execution boundary.
 
-Cap built-in reads at 1,800 output tokens, provider retries at two, read-only
+Cap built-in reads at 1,400 output tokens, provider retries at two, read-only
 tool concurrency at three, and the complete session at fourteen turns. Keep a
 240,000-token absolute ceiling: a context-heavy successful run may cross 200,000
-but cannot grow without that backstop. When RTK is available, use at most four
-discovery calls before editing: one combined find for guidance/manifests, one
-multi-file guidance read, one valid single-pattern grep, and one likely-target
-read. Never call tool help, probe syntax, use `grep -r/-e`, inventory the
-repository, repeat an unchanged query, or read the same file through a different
-path or tool. After editing, allow one exact reread per changed area for review.
-Reserve the final turns for the edit, self-review, and structured outcome.
+but cannot grow without that backstop. Keep at most 28,000 characters of routed
+context, 3,200 characters per tool result, two recent full results, and 400
+characters for stale results. These are deterministic compression limits, not
+model summaries.
 
 Before the harness starts, use Comprehend's tracked-only retrieval to write one
 ignored `.elixpo-context/context.md` containing bounded guidance, a tracked-file
 index, and ranked relevant excerpts without another model call. Require RTK to
-read that bundle exactly once, followed by one exact candidate read. Do not use
-find or repository-wide grep after injection. Permit one candidate-directory
-grep only when the bundle contains no actionable target. These paths remain
-retrieval hints, not chosen targets. Treat paths named in issue prose as evidence
-only: if a reported page lacks the handler, inspect the ranked shared layout,
-component, or handler rather than declining.
+read that bundle exactly once. Let the coding model compare compressed excerpts
+and choose one candidate containing concrete implementation evidence; rank one
+and issue-mentioned paths are priors, never forced targets. Permit one fallback
+candidate read only when the first exact read disproves the choice. Permit one
+candidate-directory grep only when every bundled excerpt lacks actionable
+evidence. Never use find, repository-wide grep, tool help, repeated queries, a
+third candidate read, or another model call for retrieval.
 
 Rank behavior using both document frequency and same-line term co-occurrence;
 repeated issue prose must not outweigh a source expression containing the action,
-label, and implementation primitive together. After reading the bundle, require
-the next command to read the supervisor-ranked primary candidate exactly. The
-model still decides whether and how to edit after inspecting that source.
+label, and implementation primitive together. Do not encode repository names,
+frameworks, issue numbers, symbols, or file paths in production policy. Tests may
+use concrete fixtures, but runtime choices must derive from the current issue,
+tracked files, compressed excerpts, and tool evidence.
 
 Pin the legacy JSON-config-compatible CCR runtime. Never use an unpinned latest
 CCR package: current control-plane releases can attach to a global profile and

@@ -291,7 +291,7 @@ def test_context_bundle_is_injected_and_git_ignored(tmp_path, monkeypatch):
     assert ".elixpo-context/" in (git_dir / "exclude").read_text().splitlines()
 
 
-def test_prompt_requires_the_supervisor_ranked_candidate_next():
+def test_prompt_keeps_ranked_candidates_advisory():
     rendered = _prompt(
         {"title": "copy behavior", "body": "reported in app/page.tsx"},
         {"max_minutes": 15, "max_files": 5, "max_test_commands": 3},
@@ -299,7 +299,11 @@ def test_prompt_requires_the_supervisor_ranked_candidate_next():
         candidate_hints=["app/docs/layout.tsx", "app/page.tsx"],
     )
 
-    assert "next command must be exactly `rtk read app/docs/layout.tsx`" in rendered
+    assert "1. app/docs/layout.tsx" in rendered
+    assert "2. app/page.tsx" in rendered
+    assert "rank one or the issue-mentioned path" in rendered
+    assert "one fallback `rtk read`" in rendered
+    assert "next command must be exactly" not in rendered
 
 
 def test_ccr_rtk_context_governor_when_js_runtime_is_available():

@@ -376,25 +376,23 @@ def _prompt(
     rtk_available: bool,
     candidate_hints: list[str],
 ) -> str:
-    primary = candidate_hints[0] if candidate_hints else ""
-    primary_instruction = (
-        f"After the bundle, your next command must be exactly `rtk read {primary}`. "
-        "This is the supervisor-ranked behavioral candidate; inspect it before any issue-mentioned path. "
-        if primary
-        else "The supervisor found no primary candidate; use the one permitted scoped grep. "
-    )
     discovery = (
         "RTK is available. First run exactly `rtk read .elixpo-context/context.md`; do not run find, "
         "help, or a repository-wide grep. The bundle already contains guidance, a tracked index, and "
-        f"ranked relevant excerpts. {primary_instruction}"
-        "Only if the bundle has no actionable candidate may you run one candidate-directory-scoped "
-        "`rtk grep 'term1|term2' PATH -n -C 3`. Never use built-in Read, repeat a query, or read the "
-        "same file through another path. After Edit, permit exactly one `rtk read` of each changed "
-        "area for self-review. Never run a raw shell command."
+        "ranked relevant excerpts. Compare the excerpts and choose the candidate with concrete implementation "
+        "evidence, not simply rank one or the issue-mentioned path. Use one relative-path `rtk read` for your "
+        "chosen candidate. If that exact read disproves the choice, permit one fallback `rtk read` from the "
+        "ranked shortlist. Only when every bundled excerpt lacks actionable evidence may you use one "
+        "candidate-directory-scoped `rtk grep 'term1|term2' PATH -n -C 3`. Never use built-in Read, repeat a "
+        "query, or inspect a third candidate. After Edit, permit exactly one `rtk read` of each changed area "
+        "for self-review. Never run a raw shell command."
         if rtk_available
         else "RTK is unavailable. Use targeted Glob, Grep, and Read calls and avoid repeated reads."
     )
-    hints = "\n".join(f"- {path}" for path in candidate_hints) or "- none"
+    hints = (
+        "\n".join(f"{rank}. {path}" for rank, path in enumerate(candidate_hints, start=1))
+        or "- none"
+    )
     return f"""Implement this already-vetted GitHub issue in the current isolated checkout.
 
 Issue title: {issue.get('title', '')}
@@ -409,8 +407,8 @@ and {policy['max_test_commands']} verification commands. Work only in this check
 
 Read the injected context bundle once; it already contains applicable guidance and manifest evidence.
 Use the available targeted discovery tools to understand the exact implementation path. Do not guess a file
-from its route or name. A path named by the issue is evidence, not a mandate: when it lacks the behavior,
-inspect the highest-ranked shared layout/component/handler match instead of declining. Build the grep pattern
+from its route or name. A path named by the issue and a deterministic rank are evidence, not mandates: choose
+the candidate whose excerpt contains the implementation behavior. Build any fallback grep pattern
 from the visible label, action verb, and language/framework primitive that performs the action; do not search
 only a conceptual variable name. Read the grep result containing the behavior, not merely the reported page.
 Make the smallest complete edit with Edit/Write. Do not delete files, touch .git,
@@ -595,6 +593,11 @@ def run_harness(
             )
             command = _harness_command(model, policy, rtk_available=rtk_available)
             candidate_hints, _ = _prepare_context_bundle(workspace, issue, policy)
+            print(
+                f"[context] compressed_bundle candidates={len(candidate_hints)} "
+                f"max_tokens={int(policy.get('max_context_tokens', 3200))}",
+                flush=True,
+            )
             final_event, return_code, stderr = _stream_harness(
                 command,
                 workspace=workspace,
