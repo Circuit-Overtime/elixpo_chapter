@@ -74,7 +74,7 @@ def repository_setup_prefixes(workspace: Path) -> list[str]:
     """Return dependency setup commands justified by tracked manifests."""
     prefixes: list[str] = []
     if (workspace / "package-lock.json").is_file() or (workspace / "npm-shrinkwrap.json").is_file():
-        prefixes.append("npm ci --ignore-scripts")
+        prefixes.extend(["npm ci --ignore-scripts", "npm install --ignore-scripts --no-audit --no-fund"])
     if (workspace / "pnpm-lock.yaml").is_file():
         prefixes.append("pnpm install --frozen-lockfile --ignore-scripts")
     if (workspace / "yarn.lock").is_file():
@@ -89,3 +89,10 @@ def repository_setup_prefixes(workspace: Path) -> list[str]:
 def effective_prefixes(workspace: Path, configured: list[str], *, setup: bool = False) -> list[str]:
     discovered = repository_setup_prefixes(workspace) if setup else repository_command_prefixes(workspace)
     return list(dict.fromkeys([*configured, *discovered]))
+
+
+def setup_fallback_command(command: str) -> str | None:
+    """Return one bounded compatibility fallback for a failed clean npm install."""
+    if command == "npm ci --ignore-scripts":
+        return "npm install --ignore-scripts --no-audit --no-fund"
+    return None

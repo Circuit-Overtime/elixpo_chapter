@@ -88,6 +88,7 @@ allowed_command_prefixes:
 
 allowed_setup_prefixes:
   - npm ci --ignore-scripts
+  - npm install --ignore-scripts --no-audit --no-fund
   - pnpm install --frozen-lockfile --ignore-scripts
   - yarn install --immutable --ignore-scripts
   - python -m pip install -e .

@@ -18,7 +18,7 @@ from lib.state.store import StateStore
 from lib.workspace import Workspace
 
 from agents.solve.branch import build_work_branch
-from agents.solve.command_policy import effective_prefixes
+from agents.solve.command_policy import effective_prefixes, setup_fallback_command
 from agents.solve.git import (
     assert_workspace_identity,
     changed_files,
@@ -322,6 +322,12 @@ async def solve(
     checks: list[dict] = []
     setup_prefixes = effective_prefixes(root, list(policy["allowed_setup_prefixes"]), setup=True)
     verification_prefixes = effective_prefixes(root, list(policy["allowed_command_prefixes"]))
+
+    def record_check(kind: str, command: str, result) -> None:
+        checks.append({"kind": kind, "command": command, "exit_code": result.code, "output": result.output})
+        running["checks"] = checks
+        store.write_json("solve.json", running)
+
     for command in outcome.setup_commands[: int(policy["max_setup_commands"])]:
         result = run_verification(
             root,
@@ -331,9 +337,22 @@ async def solve(
             node_heap_mb=int(policy.get("verification_node_heap_mb", 512)),
             network=bool(policy.get("setup_network_access", True)),
         )
-        checks.append({"kind": "setup", "command": command, "exit_code": result.code, "output": result.output})
+        record_check("setup", command, result)
         if result.code != 0:
-            raise SolveRejected(f"dependency setup failed: {command}")
+            fallback = setup_fallback_command(command)
+            if fallback:
+                result = run_verification(
+                    root,
+                    fallback,
+                    allowed_prefixes=setup_prefixes,
+                    timeout=int(policy["command_timeout_seconds"]),
+                    node_heap_mb=int(policy.get("verification_node_heap_mb", 512)),
+                    network=bool(policy.get("setup_network_access", True)),
+                )
+                record_check("setup_fallback", fallback, result)
+            if result.code != 0:
+                detail = result.output.strip().replace("\n", " ")[-600:]
+                raise SolveRejected(f"dependency setup failed: {command}: {detail}")
     for command in outcome.verification_commands[: int(policy["max_test_commands"])]:
         result = run_verification(
             root,
@@ -342,9 +361,10 @@ async def solve(
             timeout=int(policy["command_timeout_seconds"]),
             node_heap_mb=int(policy.get("verification_node_heap_mb", 512)),
         )
-        checks.append({"kind": "verification", "command": command, "exit_code": result.code, "output": result.output})
+        record_check("verification", command, result)
         if result.code != 0:
-            raise SolveRejected(f"verification failed: {command}")
+            detail = result.output.strip().replace("\n", " ")[-600:]
+            raise SolveRejected(f"verification failed: {command}: {detail}")
 
     observed = set(changed_files(root))
     if observed != set(targets):

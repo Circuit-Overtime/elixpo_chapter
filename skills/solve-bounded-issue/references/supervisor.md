@@ -318,7 +318,12 @@ environment, time and output limits, and no verification network. Use a
 workspace-only bubblewrap boundary when the host supports user namespaces; keep
 the parsed capability broker as the portable fallback. Setup is a distinct
 one-command phase which may use network but never agent credentials. Stop on the
-first failed check; do not commit or push.
+first failed check; do not commit or push. Route each command through its actual
+RTK adapter, using the generic error filter for unsupported executables. If RTK
+itself fails before launching the child, retry that same argv once without RTK.
+After a failed `npm ci --ignore-scripts`, permit one deterministic
+`npm install --ignore-scripts --no-audit --no-fund` compatibility fallback.
+Persist every attempt and its compressed output before making a failure decision.
 
 After successful checks, require that verification introduced no additional
 tracked changes. Stage only the observed harness targets and create one
