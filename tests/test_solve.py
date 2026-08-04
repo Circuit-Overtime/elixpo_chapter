@@ -462,6 +462,7 @@ def test_harness_auth_error_is_concise_and_classified():
     [
         "coding harness failed: API Error: Unable to connect to API (ConnectionRefused)",
         "CCR became unavailable before the coding harness request",
+        "local CCR remained healthy, but its upstream model route refused 3 zero-token requests",
     ],
 )
 def test_harness_loopback_failure_is_retryable(message):
@@ -492,10 +493,15 @@ def test_only_empty_first_turn_connection_failure_can_retry():
 
 
 def test_missing_harness_runtime_remains_a_workspace_failure():
-    failure = classify_failure(HarnessError("Node coding harness unavailable"), "harness")
+    missing = classify_failure(HarnessError("Node coding harness unavailable"), "harness")
+    unreachable = classify_failure(
+        HarnessError("coding harness could not reach CCR after an empty connection failure"),
+        "harness",
+    )
 
-    assert failure["category"] == "workspace"
-    assert failure["candidate_action"] == "repair_environment_then_retry"
+    assert missing["category"] == "workspace"
+    assert missing["candidate_action"] == "repair_environment_then_retry"
+    assert unreachable["category"] == "workspace"
 
 
 def test_harness_turn_limit_is_actionable_and_preserves_usage():

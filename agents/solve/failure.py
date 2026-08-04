@@ -53,10 +53,14 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
         "connectionrefused" in lowered
         or "unable to connect to api" in lowered
         or "became unavailable" in lowered
+        or "upstream model route refused" in lowered
     ):
         category, retryable, candidate_action = "provider_transient", True, "retry_later"
     elif isinstance(exc, HarnessError) and (
-        "unavailable" in lowered or "ccr did not become ready" in lowered or "ccr exited" in lowered
+        "unavailable" in lowered
+        or "ccr did not become ready" in lowered
+        or "ccr exited" in lowered
+        or "could not reach ccr" in lowered
     ):
         category, retryable, candidate_action = "workspace", True, "repair_environment_then_retry"
     elif isinstance(exc, HarnessError) and (

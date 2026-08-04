@@ -699,12 +699,19 @@ def run_harness(
                     prompt=prompt,
                     timeout=timeout,
                 )
-                if not _is_empty_connection_failure(final_event) or attempt >= retry_limit:
+                if not _is_empty_connection_failure(final_event):
                     break
                 if router_process.poll() is not None or not _router_ready(router_url):
-                    raise HarnessError("CCR became unavailable after an empty connection failure")
+                    raise HarnessError(
+                        "coding harness could not reach CCR after an empty connection failure"
+                    )
+                if attempt >= retry_limit:
+                    raise HarnessError(
+                        "local CCR remained healthy, but its upstream model route refused "
+                        f"{retry_limit + 1} zero-token requests"
+                    )
                 print(
-                    f"[harness] transient connection refusal; retrying request "
+                    f"[ccr] local router healthy; upstream refused request, retrying "
                     f"attempt={attempt + 2}/{retry_limit + 1}",
                     flush=True,
                 )
