@@ -266,11 +266,15 @@ def test_tool_gate_rejects_absolute_paths_and_allows_relative_recovery_reads(tmp
     assert code == 2 and output is None
     assert "repository-relative file_path `app/pricing/page.tsx`" in reason
     assert "source_reads" not in state
-    repeated = {**event, "tool_input": {"file_path": "app/pricing/page.tsx"}}
-    code, output, reason = _decision(repeated, state)
+
+    canonical = {**event, "tool_input": {"file_path": str(target)}}
+    code, output, reason = _decision(canonical, state)
     assert code == 0 and reason is None
+    assert output["hookSpecificOutput"]["updatedInput"]["file_path"] == "app/pricing/page.tsx"
     assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 287
     assert state["source_reads"] == ["app/pricing/page.tsx"]
+
+    repeated = {**event, "tool_input": {"file_path": "app/pricing/page.tsx"}}
     code, output, reason = _decision(repeated, state)
     assert code == 0 and reason is None
     assert output["hookSpecificOutput"]["updatedInput"]["offset"] == 338

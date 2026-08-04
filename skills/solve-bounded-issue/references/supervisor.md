@@ -140,11 +140,13 @@ mandatory tool sequence. A failed exact-context Edit explicitly authorizes a
 fresh targeted read and retry.
 
 Enforce security boundaries with a credential-free local PreToolUse hook rather
-than micromanaging implementation strategy. If a tool supplies an absolute path
-whose suffix resolves uniquely inside the checkout, reject it once with the
-exact repository-relative path to retry. This keeps the coding client's
-Read-before-Edit bookkeeping consistent instead of silently rewriting paths.
-The hook must confine Read, Glob, Grep, Edit, Write, and RTK paths to the
+than micromanaging implementation strategy. The coding client may canonicalize
+a valid model-supplied relative path before invoking the hook; normalize that
+path back to relative only when it resolves inside the actual supervised cwd.
+If an absolute path merely has a suffix found in the checkout but belongs to a
+different root, reject it once with the exact repository-relative path to retry.
+This keeps Read-before-Edit bookkeeping consistent without trusting invented
+roots. The hook must confine Read, Glob, Grep, Edit, Write, and RTK paths to the
 checkout and deny raw shell, git, network, test, and build commands. Record
 read, search, edit, and denial counts for Doctor without rejecting safe repeated
 operations merely because a numeric micro-budget was reached.

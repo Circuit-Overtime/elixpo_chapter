@@ -966,12 +966,15 @@ def run_harness(
                     int(value or 0)
                     for value in (observed_gate.get("source_read_counts") or {}).values()
                 )
+                last_denial = str(observed_gate.get("last_denial") or "").strip()
+                denial_suffix = f" last_denial={_redact(last_denial)!r}" if last_denial else ""
                 print(
                     "[gate] "
                     f"source_reads={len(observed_gate.get('source_reads') or [])} "
                     f"source_windows={source_windows} "
                     f"edits={len(observed_gate.get('edited_paths') or [])} "
-                    f"denied={int(observed_gate.get('denied_calls') or 0)}",
+                    f"denied={int(observed_gate.get('denied_calls') or 0)}"
+                    f"{denial_suffix}",
                     flush=True,
                 )
                 if not _is_empty_connection_failure(final_event):

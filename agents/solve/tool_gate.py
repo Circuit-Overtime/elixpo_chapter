@@ -35,6 +35,18 @@ def _relative_path(cwd: Path, raw: str) -> str | None:
     return min(matches, key=lambda value: len(Path(value).parts)) if matches else None
 
 
+def _is_checkout_absolute(cwd: Path, raw: str) -> bool:
+    """Return whether an absolute tool path is the client's canonical cwd path."""
+    candidate = Path(raw)
+    if not candidate.is_absolute():
+        return False
+    try:
+        candidate.resolve().relative_to(cwd.resolve())
+    except (OSError, RuntimeError, ValueError):
+        return False
+    return True
+
+
 def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[str, Any] | None, str | None]:
     event_name = str(event.get("hook_event_name") or "")
     if event_name == "Stop":
@@ -106,7 +118,7 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
             relative = _relative_path(cwd, raw_path)
             if relative is None:
                 return 2, None, "Search only inside the current repository with a relative path."
-            if Path(raw_path).is_absolute():
+            if Path(raw_path).is_absolute() and not _is_checkout_absolute(cwd, raw_path):
                 return 2, None, f"Retry this search with the repository-relative path `{relative}`."
         state["discovery_calls"] = int(state.get("discovery_calls") or 0) + 1
         if relative != raw_path:
@@ -137,7 +149,7 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                 None,
                 "Use an existing repository-relative path from the context bundle; never use an absolute root.",
             )
-        if Path(raw).is_absolute():
+        if Path(raw).is_absolute() and not _is_checkout_absolute(cwd, raw):
             return 2, None, f"Retry the same {tool} now with repository-relative file_path `{relative}`."
         updated = tool_input if repaired_path else None
         if relative != raw:
@@ -186,7 +198,7 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
             relative = _relative_path(cwd, words[2])
             if relative is None:
                 return 2, None, "Use `rtk read` with one repository-relative tracked path."
-            if Path(words[2]).is_absolute():
+            if Path(words[2]).is_absolute() and not _is_checkout_absolute(cwd, words[2]):
                 return 2, None, f"Retry with `rtk read {shlex.quote(relative)}`."
             reads = list(state.get("rtk_reads") or [])
             if relative not in reads:
