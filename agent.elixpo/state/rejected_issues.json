@@ -1,5 +1,65 @@
 {
   "issues": {
+    "Alexey-T/CudaText#6328": {
+      "confidence": 0.7,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-14T03:56:07Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "needs a maintainer decision",
+        "needs external access or credentials",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "[Feature request] replace polling loop with ReadDirectoryChangesW",
+      "url": "https://github.com/Alexey-T/CudaText/issues/6328"
+    },
+    "Alexey-T/CudaText#6329": {
+      "confidence": 0.6,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-25T21:22:31Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.60 is below 0.70",
+        "needs a maintainer decision"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "hover in LSP doesn't work correctly",
+      "url": "https://github.com/Alexey-T/CudaText/issues/6329"
+    },
+    "Alexey-T/CudaText#6330": {
+      "confidence": 0.8,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-29T13:10:40Z",
+      "reasons": [
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "Search needs some improvements.",
+      "url": "https://github.com/Alexey-T/CudaText/issues/6330"
+    },
+    "Alexey-T/CudaText#6355": {
+      "confidence": 0.75,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-22T03:52:47Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "needs external access or credentials",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "Qt6/Wayland: CudaText crashes (SIGABRT) when copying large text (~5000 lines)",
+      "url": "https://github.com/Alexey-T/CudaText/issues/6355"
+    },
     "MicroPythonOS/MicroPythonOS#172": {
       "confidence": 0.5,
       "issue_kind": "unknown",
@@ -88,6 +148,21 @@
       "title": "Add simple way to force DeviceInfo.hardware_id, skip board detection, and customize hardware board initialization",
       "url": "https://github.com/MicroPythonOS/MicroPythonOS/issues/215"
     },
+    "czl0325/coin11-tb#68": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-13T04:23:26Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "install AdbKeyboard ime failed",
+      "url": "https://github.com/czl0325/coin11-tb/issues/68"
+    },
     "horsicq/Detect-It-Easy#365": {
       "confidence": 1.0,
       "issue_kind": "standalone",
@@ -98,6 +173,90 @@
       "rejected_at": "2026-08-03T18:59:37.038880+00:00",
       "title": "Windows Install via Chocolatey results in unusable Shortcut",
       "url": "https://github.com/horsicq/Detect-It-Easy/issues/365"
+    },
+    "horsicq/Detect-It-Easy#367": {
+      "confidence": 0.7,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-15T17:41:40Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "needs a maintainer decision"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "Installation from Microsoft Store cannot switch off Spanish",
+      "url": "https://github.com/horsicq/Detect-It-Easy/issues/367"
+    },
+    "juewuy/ShellCrash#1292": {
+      "confidence": 0.7,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-13T08:28:15Z",
+      "reasons": [
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "[Bug] 1.9.4release mihomo\u5185\u6838\u4f7f\u7528\u751f\u6210\u914d\u7f6e\u6587\u4ef6(\u57fa\u4e8e\u5185\u6838providers)\u65e0\u6cd5\u6b63\u786e\u5408\u5e76\u81ea\u5b9a\u4e49\u89c4\u5219",
+      "url": "https://github.com/juewuy/ShellCrash/issues/1292"
+    },
+    "juewuy/ShellCrash#1308": {
+      "confidence": 0.75,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-19T11:37:38Z",
+      "reasons": [
+        "complexity is medium",
+        "needs external access or credentials",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "[Bug] \u534e\u7855\u56fa\u4ef6\u4e0b\u70ed\u66f4\u65b0\u8ba2\u9605\u4f7f\u7528 /tmp/mnt \u8def\u5f84\u5bfc\u81f4 Mihomo \u62d2\u7edd\u52a0\u8f7d\u4f46\u4efb\u52a1\u4ecd\u63d0\u793a\u6210\u529f",
+      "url": "https://github.com/juewuy/ShellCrash/issues/1308"
+    },
+    "juewuy/ShellCrash#1312": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-26T15:58:30Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "[Feature] \u652f\u6301\u6307\u5b9a\u7f51\u6bb5DNS\u52ab\u6301",
+      "url": "https://github.com/juewuy/ShellCrash/issues/1312"
+    },
+    "juewuy/ShellCrash#1313": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-28T03:55:24Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "[Bug] \u8ba2\u9605\u8282\u70b9\u53d8\u66f4IP\u540e\uff0c\u65e0\u6cd5\u81ea\u52a8\u66f4\u65b0\uff0c\u624b\u52a8\u91cd\u65b0\u751f\u6210\u914d\u7f6e\u6587\u4ef6\u540e\u4e5f\u4e0d\u751f\u6548",
+      "url": "https://github.com/juewuy/ShellCrash/issues/1313"
+    },
+    "juewuy/ShellCrash#1314": {
+      "confidence": 0.85,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-30T06:46:23Z",
+      "reasons": [
+        "needs a maintainer decision",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "[Bug] \u8f93\u5165\u6570\u5b57\u8d85\u8fc79\u5c31\u4f1a\u62a5\u9519\u201c\u8bf7\u8f93\u5165\u6b63\u786e\u7684\u6570\u5b57\uff01\u201d",
+      "url": "https://github.com/juewuy/ShellCrash/issues/1314"
     },
     "middleapi/orpc#1725": {
       "confidence": 0.5,
@@ -130,6 +289,21 @@
       "rejected_at": "2026-08-04T08:38:10.439912+00:00",
       "title": "rspamd training from and by Modoboa",
       "url": "https://github.com/modoboa/modoboa/issues/4114"
+    },
+    "software-mansion/react-native-gesture-handler#4241": {
+      "confidence": 0.75,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-30T06:41:08Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "needs external access or credentials",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-05T08:37:23.420231+00:00",
+      "title": "[v3] SIGABRT crash: Yoga layout assertion failure when dynamically adding ReanimatedSwipeable rows alongside BottomSheet (Fabric)",
+      "url": "https://github.com/software-mansion/react-native-gesture-handler/issues/4241"
     },
     "stella/stella#1334": {
       "confidence": 0.5,
