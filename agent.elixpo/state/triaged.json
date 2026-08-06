@@ -1,64 +1,64 @@
 [
   {
-    "activity_age_days": 21,
+    "activity_age_days": 13,
     "blockers": [
       "not confirmed tractable",
       "complexity is medium",
       "estimated file count 0 is outside 1-5",
-      "needs a maintainer decision"
+      "needs external access or credentials",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug"
     ],
     "breakdown": {
-      "acceptance_criterion": 2,
       "aged": 1,
+      "good_first/help_wanted": 5,
       "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
+      "no_maintainer_claim": 2
     },
     "complexity": "medium",
     "confidence": 0.7,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 21,
-    "issue_updated_at": "2026-07-15T17:41:40Z",
-    "number": 367,
-    "rationale": "The issue involves a known limitation in the sandboxed environment of the Microsoft Store app, which requires a maintainer decision to resolve.",
-    "repo": "horsicq/Detect-It-Easy",
+    "issue_age_days": 17,
+    "issue_updated_at": "2026-07-24T23:21:59Z",
+    "number": 11986,
+    "rationale": "The issue involves adding a comprehensive documentation recipe for cloud store backends, which requires multiple interacting components and substantial fixture/integration work.",
+    "repo": "fivetran/great_expectations",
     "score": 10,
-    "title": "Installation from Microsoft Store cannot switch off Spanish",
+    "title": "Cloud Store Backend docs recipe",
     "tractable": false,
-    "url": "https://github.com/horsicq/Detect-It-Easy/issues/367"
+    "url": "https://github.com/fivetran/great_expectations/issues/11986"
   },
   {
-    "activity_age_days": 23,
+    "activity_age_days": 15,
     "blockers": [
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5"
+      "needs external access or credentials",
+      "needs specialized hardware"
     ],
     "breakdown": {
-      "acceptance_criterion": 2,
       "aged": 1,
       "no_assignee": 2,
       "no_maintainer_claim": 2,
       "reproducible_bug": 3
     },
-    "complexity": "medium",
-    "confidence": 0.7,
+    "complexity": "small",
+    "confidence": 0.95,
     "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 42,
-    "issue_updated_at": "2026-07-13T08:28:15Z",
-    "number": 1292,
-    "rationale": "The issue describes a bug with merging custom rules when using a local configuration file generator based on kernel providers. The steps to reproduce are provided, but the scope is not trivial and involves understanding and potentially modifying code.",
-    "repo": "juewuy/ShellCrash",
-    "score": 10,
-    "title": "[Bug] 1.9.4release mihomo\u5185\u6838\u4f7f\u7528\u751f\u6210\u914d\u7f6e\u6587\u4ef6(\u57fa\u4e8e\u5185\u6838providers)\u65e0\u6cd5\u6b63\u786e\u5408\u5e76\u81ea\u5b9a\u4e49\u89c4\u5219",
+    "estimated_files": 1,
+    "issue_age_days": 57,
+    "issue_updated_at": "2026-07-22T12:58:36Z",
+    "number": 1334,
+    "rationale": "The issue is a bounded change in one file with a clear reproduction and fix.",
+    "repo": "atrocore/atrocore",
+    "score": 8,
+    "title": "Incorrect use of `ltrim()` in `LocalStorage::scanFiles()` corrupts file paths",
     "tractable": true,
-    "url": "https://github.com/juewuy/ShellCrash/issues/1292"
+    "url": "https://github.com/atrocore/atrocore/issues/1334"
   },
   {
-    "activity_age_days": 6,
+    "activity_age_days": 28,
     "blockers": [
-      "needs a maintainer decision",
+      "needs external access or credentials",
       "needs specialized hardware"
     ],
     "breakdown": {
@@ -70,133 +70,19 @@
     "complexity": "small",
     "confidence": 0.85,
     "easy": false,
-    "estimated_files": 1,
-    "issue_age_days": 7,
-    "issue_updated_at": "2026-07-30T06:46:23Z",
-    "number": 1314,
-    "rationale": "The issue describes a bounded change likely affecting one file, with clear reproduction steps and no external access needed.",
-    "repo": "juewuy/ShellCrash",
-    "score": 8,
-    "title": "[Bug] \u8f93\u5165\u6570\u5b57\u8d85\u8fc79\u5c31\u4f1a\u62a5\u9519\u201c\u8bf7\u8f93\u5165\u6b63\u786e\u7684\u6570\u5b57\uff01\u201d",
-    "tractable": true,
-    "url": "https://github.com/juewuy/ShellCrash/issues/1314"
-  },
-  {
-    "activity_age_days": 14,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5",
-      "needs external access or credentials",
-      "needs specialized hardware"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
-    },
-    "complexity": "medium",
-    "confidence": 0.75,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 15,
-    "issue_updated_at": "2026-07-22T03:52:47Z",
-    "number": 6355,
-    "rationale": "The issue involves a crash in Qt6/Wayland clipboard handling, which is a medium-sized change likely affecting multiple components and subsystems.",
-    "repo": "Alexey-T/CudaText",
-    "score": 8,
-    "title": "Qt6/Wayland: CudaText crashes (SIGABRT) when copying large text (~5000 lines)",
-    "tractable": false,
-    "url": "https://github.com/Alexey-T/CudaText/issues/6355"
-  },
-  {
-    "activity_age_days": 6,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5",
-      "needs external access or credentials",
-      "needs specialized hardware"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
-    },
-    "complexity": "medium",
-    "confidence": 0.75,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 58,
-    "issue_updated_at": "2026-07-30T06:41:08Z",
-    "number": 4241,
-    "rationale": "The issue involves a complex interaction between multiple libraries and components, which suggests a medium scope.",
-    "repo": "software-mansion/react-native-gesture-handler",
-    "score": 8,
-    "title": "[v3] SIGABRT crash: Yoga layout assertion failure when dynamically adding ReanimatedSwipeable rows alongside BottomSheet (Fabric)",
-    "tractable": false,
-    "url": "https://github.com/software-mansion/react-native-gesture-handler/issues/4241"
-  },
-  {
-    "activity_age_days": 17,
-    "blockers": [
-      "complexity is medium",
-      "needs external access or credentials",
-      "needs specialized hardware"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
-    },
-    "complexity": "medium",
-    "confidence": 0.75,
-    "easy": false,
     "estimated_files": 2,
-    "issue_age_days": 17,
-    "issue_updated_at": "2026-07-19T11:37:38Z",
-    "number": 1308,
-    "rationale": "The issue describes a clear bug with reproducible steps and a potential fix, but the scope involves multiple files and components.",
-    "repo": "juewuy/ShellCrash",
+    "issue_age_days": 28,
+    "issue_updated_at": "2026-07-09T15:56:16Z",
+    "number": 3177,
+    "rationale": "The feature request is small and localized to the Schedule page, likely affecting two files: one for the UI and one for the logic to handle the color change.",
+    "repo": "Screenly/Anthias",
     "score": 8,
-    "title": "[Bug] \u534e\u7855\u56fa\u4ef6\u4e0b\u70ed\u66f4\u65b0\u8ba2\u9605\u4f7f\u7528 /tmp/mnt \u8def\u5f84\u5bfc\u81f4 Mihomo \u62d2\u7edd\u52a0\u8f7d\u4f46\u4efb\u52a1\u4ecd\u63d0\u793a\u6210\u529f",
+    "title": "[FEATURE] Anthias Webpage - requesting highlighting the actual asset being played",
     "tractable": true,
-    "url": "https://github.com/juewuy/ShellCrash/issues/1308"
+    "url": "https://github.com/Screenly/Anthias/issues/3177"
   },
   {
-    "activity_age_days": 11,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.60 is below 0.70",
-      "needs a maintainer decision"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
-    },
-    "complexity": "medium",
-    "confidence": 0.6,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 24,
-    "issue_updated_at": "2026-07-25T21:22:31Z",
-    "number": 6329,
-    "rationale": "The issue involves multiple aspects of the hover functionality, including delays and incorrect behavior, which suggests a medium scope change. The need for a maintainer decision indicates that the API or UX is ambiguous.",
-    "repo": "Alexey-T/CudaText",
-    "score": 8,
-    "title": "hover in LSP doesn't work correctly",
-    "tractable": false,
-    "url": "https://github.com/Alexey-T/CudaText/issues/6329"
-  },
-  {
-    "activity_age_days": 8,
+    "activity_age_days": 16,
     "blockers": [
       "not confirmed tractable",
       "complexity is unknown",
@@ -215,50 +101,23 @@
     "confidence": 0.5,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 8,
-    "issue_updated_at": "2026-07-28T03:55:24Z",
-    "number": 1313,
-    "rationale": "The issue lacks enough evidence to bound the work and the scope is unknown.",
-    "repo": "juewuy/ShellCrash",
+    "issue_age_days": 16,
+    "issue_updated_at": "2026-07-21T03:52:19Z",
+    "number": 3473,
+    "rationale": "The issue lacks enough evidence to determine the scope and complexity of the work required to resolve it.",
+    "repo": "langgenius/dify-official-plugins",
     "score": 8,
-    "title": "[Bug] \u8ba2\u9605\u8282\u70b9\u53d8\u66f4IP\u540e\uff0c\u65e0\u6cd5\u81ea\u52a8\u66f4\u65b0\uff0c\u624b\u52a8\u91cd\u65b0\u751f\u6210\u914d\u7f6e\u6587\u4ef6\u540e\u4e5f\u4e0d\u751f\u6548",
+    "title": "InvokeError: [models] Error: 'type' (agent_run_id=01dfb40f-40c7-4026-a3bb-8dab201df32c)",
     "tractable": false,
-    "url": "https://github.com/juewuy/ShellCrash/issues/1313"
+    "url": "https://github.com/langgenius/dify-official-plugins/issues/3473"
   },
   {
-    "activity_age_days": 7,
-    "blockers": [
-      "needs a maintainer decision",
-      "needs specialized hardware",
-      "no acceptance criterion or reproducible bug"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "small",
-    "confidence": 0.8,
-    "easy": false,
-    "estimated_files": 1,
-    "issue_age_days": 24,
-    "issue_updated_at": "2026-07-29T13:10:40Z",
-    "number": 6330,
-    "rationale": "The issue describes a few small, bounded changes related to search functionality, but lacks clear acceptance criteria and reproducible steps.",
-    "repo": "Alexey-T/CudaText",
-    "score": 5,
-    "title": "Search needs some improvements.",
-    "tractable": true,
-    "url": "https://github.com/Alexey-T/CudaText/issues/6330"
-  },
-  {
-    "activity_age_days": 22,
+    "activity_age_days": 9,
     "blockers": [
       "not confirmed tractable",
       "complexity is medium",
       "estimated file count 0 is outside 1-5",
       "needs a maintainer decision",
-      "needs external access or credentials",
       "needs specialized hardware",
       "no acceptance criterion or reproducible bug"
     ],
@@ -271,18 +130,47 @@
     "confidence": 0.7,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 25,
-    "issue_updated_at": "2026-07-14T03:56:07Z",
-    "number": 6328,
-    "rationale": "The issue requires a maintainer decision on the API and architecture to replace the current polling loop with ReadDirectoryChangesW.",
-    "repo": "Alexey-T/CudaText",
+    "issue_age_days": 9,
+    "issue_updated_at": "2026-07-28T03:09:20Z",
+    "number": 3518,
+    "rationale": "The issue requests a new provider plugin with dynamic model discovery, which involves several interacting components and cross-subsystem behavior. The scope is not trivial or small, and the complexity of implementing and verifying the dynamic model catalog is not fully clear.",
+    "repo": "langgenius/dify-official-plugins",
     "score": 5,
-    "title": "[Feature request] replace polling loop with ReadDirectoryChangesW",
+    "title": "[Modelsell] Add a named provider with dynamic model discovery",
     "tractable": false,
-    "url": "https://github.com/Alexey-T/CudaText/issues/6328"
+    "url": "https://github.com/langgenius/dify-official-plugins/issues/3518"
   },
   {
-    "activity_age_days": 10,
+    "activity_age_days": 27,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 27,
+    "issue_updated_at": "2026-07-10T16:54:48Z",
+    "number": 149,
+    "rationale": "The issue lacks enough evidence to determine the scope and completion, and the API or UX behavior remains open to interpretation.",
+    "repo": "earthtojake/text-to-cad",
+    "score": 5,
+    "title": "Add proper GLB video support",
+    "tractable": false,
+    "url": "https://github.com/earthtojake/text-to-cad/issues/149"
+  },
+  {
+    "activity_age_days": 14,
     "blockers": [
       "not confirmed tractable",
       "complexity is unknown",
@@ -301,27 +189,93 @@
     "confidence": 0.5,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 10,
-    "issue_updated_at": "2026-07-26T15:58:30Z",
-    "number": 1312,
-    "rationale": "The issue lacks enough evidence to bound the work and does not provide clear acceptance criteria or reproducible steps.",
-    "repo": "juewuy/ShellCrash",
+    "issue_age_days": 37,
+    "issue_updated_at": "2026-07-23T00:36:53Z",
+    "number": 960,
+    "rationale": "The issue lacks enough evidence to determine the scope and complexity of the work required.",
+    "repo": "ClickHouse/ClickBench",
     "score": 5,
-    "title": "[Feature] \u652f\u6301\u6307\u5b9a\u7f51\u6bb5DNS\u52ab\u6301",
+    "title": "Add SynnoDB",
     "tractable": false,
-    "url": "https://github.com/juewuy/ShellCrash/issues/1312"
+    "url": "https://github.com/ClickHouse/ClickBench/issues/960"
   },
   {
-    "activity_age_days": 23,
+    "activity_age_days": 7,
     "blockers": [
       "not confirmed tractable",
       "complexity is unknown",
       "estimated file count 0 is outside 1-5",
       "solvability confidence 0.50 is below 0.70",
-      "no acceptance criterion or reproducible bug"
+      "needs a maintainer decision",
+      "no acceptance criterion or reproducible bug",
+      "issue is already assigned or claimed"
     ],
     "breakdown": {
       "aged": 1,
+      "no_assignee": 2
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 7,
+    "issue_updated_at": "2026-07-30T06:34:08Z",
+    "number": 1315,
+    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work. The maintainer needs to decide on the behavior.",
+    "repo": "juewuy/ShellCrash",
+    "score": 3,
+    "title": "\u66f4\u65b0\u8ba2\u9605\u540e\uff0c\u8282\u70b9\u7ec4\u7684selector\u9009\u4e2d\u72b6\u6001\u4f1a\u4e22\u5931\u662f\u7279\u6027\u5417",
+    "tractable": false,
+    "url": "https://github.com/juewuy/ShellCrash/issues/1315"
+  },
+  {
+    "activity_age_days": 9,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is medium",
+      "estimated file count 0 is outside 1-5",
+      "needs a maintainer decision",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug",
+      "issue is already assigned or claimed"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "medium",
+    "confidence": 0.7,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 14,
+    "issue_updated_at": "2026-07-28T03:38:02Z",
+    "number": 466,
+    "rationale": "The issue involves a significant change to the user interface and functionality, which requires careful consideration to ensure it doesn't disrupt existing features.",
+    "repo": "webbrain-one/webbrain",
+    "score": 0,
+    "title": "Expand button at the top of the sidepanel",
+    "tractable": false,
+    "url": "https://github.com/webbrain-one/webbrain/issues/466"
+  },
+  {
+    "activity_age_days": 6,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware",
+      "no acceptance criterion or reproducible bug",
+      "issue is already assigned or claimed"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "already_claimed": -10,
+      "good_first/help_wanted": 5,
       "no_assignee": 2,
       "no_maintainer_claim": 2
     },
@@ -329,14 +283,76 @@
     "confidence": 0.5,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 23,
-    "issue_updated_at": "2026-07-13T04:23:26Z",
-    "number": 68,
-    "rationale": "The issue lacks enough evidence to determine the scope of the work.",
-    "repo": "czl0325/coin11-tb",
-    "score": 5,
-    "title": "install AdbKeyboard ime failed",
+    "issue_age_days": 16,
+    "issue_updated_at": "2026-07-31T18:50:49Z",
+    "number": 432,
+    "rationale": "The latest comment indicates a contributor has claimed the work, but the scope and complexity are not clear.",
+    "repo": "webbrain-one/webbrain",
+    "score": 0,
+    "title": "Discord Server to discuss everything WebBrain",
     "tractable": false,
-    "url": "https://github.com/czl0325/coin11-tb/issues/68"
+    "url": "https://github.com/webbrain-one/webbrain/issues/432"
+  },
+  {
+    "activity_age_days": 12,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "op_is_maintainer": -5
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 12,
+    "issue_updated_at": "2026-07-25T16:27:48Z",
+    "number": 488,
+    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work.",
+    "repo": "webbrain-one/webbrain",
+    "score": 0,
+    "title": "capsolver as a skill?",
+    "tractable": false,
+    "url": "https://github.com/webbrain-one/webbrain/issues/488"
+  },
+  {
+    "activity_age_days": 9,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs external access or credentials",
+      "needs specialized hardware",
+      "conversation indicates the repository change is already resolved"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "already_resolved": -10,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "reproducible_bug": 3
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 25,
+    "issue_updated_at": "2026-07-28T03:35:22Z",
+    "number": 3428,
+    "rationale": "The issue was closed as already resolved due to the implementation of _oauth_refresh_credentials in PR #3408.",
+    "repo": "langgenius/dify-official-plugins",
+    "score": -2,
+    "title": "Outlook Trigger authentication expires after 2\u20133 days and requires manual reauthorization",
+    "tractable": false,
+    "url": "https://github.com/langgenius/dify-official-plugins/issues/3428"
   }
 ]

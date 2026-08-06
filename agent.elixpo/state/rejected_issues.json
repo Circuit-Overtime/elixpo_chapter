@@ -60,6 +60,23 @@
       "title": "Qt6/Wayland: CudaText crashes (SIGABRT) when copying large text (~5000 lines)",
       "url": "https://github.com/Alexey-T/CudaText/issues/6355"
     },
+    "ClickHouse/ClickBench#960": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-23T00:36:53Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "Add SynnoDB",
+      "url": "https://github.com/ClickHouse/ClickBench/issues/960"
+    },
     "MicroPythonOS/MicroPythonOS#172": {
       "confidence": 0.5,
       "issue_kind": "unknown",
@@ -148,6 +165,30 @@
       "title": "Add simple way to force DeviceInfo.hardware_id, skip board detection, and customize hardware board initialization",
       "url": "https://github.com/MicroPythonOS/MicroPythonOS/issues/215"
     },
+    "Screenly/Anthias#3177": {
+      "confidence": 0.85,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-09T15:56:16Z",
+      "reasons": [
+        "needs external access or credentials",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "[FEATURE] Anthias Webpage - requesting highlighting the actual asset being played",
+      "url": "https://github.com/Screenly/Anthias/issues/3177"
+    },
+    "atrocore/atrocore#1334": {
+      "confidence": 0.95,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-22T12:58:36Z",
+      "reasons": [
+        "needs external access or credentials",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "Incorrect use of `ltrim()` in `LocalStorage::scanFiles()` corrupts file paths",
+      "url": "https://github.com/atrocore/atrocore/issues/1334"
+    },
     "czl0325/coin11-tb#68": {
       "confidence": 0.5,
       "issue_kind": "unknown",
@@ -162,6 +203,38 @@
       "rejected_at": "2026-08-05T08:37:23.420231+00:00",
       "title": "install AdbKeyboard ime failed",
       "url": "https://github.com/czl0325/coin11-tb/issues/68"
+    },
+    "earthtojake/text-to-cad#149": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-10T16:54:48Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "Add proper GLB video support",
+      "url": "https://github.com/earthtojake/text-to-cad/issues/149"
+    },
+    "fivetran/great_expectations#11986": {
+      "confidence": 0.7,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-24T23:21:59Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "needs external access or credentials",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "Cloud Store Backend docs recipe",
+      "url": "https://github.com/fivetran/great_expectations/issues/11986"
     },
     "horsicq/Detect-It-Easy#365": {
       "confidence": 1.0,
@@ -257,6 +330,72 @@
       "rejected_at": "2026-08-05T08:37:23.420231+00:00",
       "title": "[Bug] \u8f93\u5165\u6570\u5b57\u8d85\u8fc79\u5c31\u4f1a\u62a5\u9519\u201c\u8bf7\u8f93\u5165\u6b63\u786e\u7684\u6570\u5b57\uff01\u201d",
       "url": "https://github.com/juewuy/ShellCrash/issues/1314"
+    },
+    "juewuy/ShellCrash#1315": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-30T06:34:08Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "no acceptance criterion or reproducible bug",
+        "issue is already assigned or claimed"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "\u66f4\u65b0\u8ba2\u9605\u540e\uff0c\u8282\u70b9\u7ec4\u7684selector\u9009\u4e2d\u72b6\u6001\u4f1a\u4e22\u5931\u662f\u7279\u6027\u5417",
+      "url": "https://github.com/juewuy/ShellCrash/issues/1315"
+    },
+    "langgenius/dify-official-plugins#3428": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-28T03:35:22Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs external access or credentials",
+        "needs specialized hardware",
+        "conversation indicates the repository change is already resolved"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "Outlook Trigger authentication expires after 2\u20133 days and requires manual reauthorization",
+      "url": "https://github.com/langgenius/dify-official-plugins/issues/3428"
+    },
+    "langgenius/dify-official-plugins#3473": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-21T03:52:19Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "InvokeError: [models] Error: 'type' (agent_run_id=01dfb40f-40c7-4026-a3bb-8dab201df32c)",
+      "url": "https://github.com/langgenius/dify-official-plugins/issues/3473"
+    },
+    "langgenius/dify-official-plugins#3518": {
+      "confidence": 0.7,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-28T03:09:20Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "[Modelsell] Add a named provider with dynamic model discovery",
+      "url": "https://github.com/langgenius/dify-official-plugins/issues/3518"
     },
     "middleapi/orpc#1725": {
       "confidence": 0.5,
@@ -384,6 +523,57 @@
       "rejected_at": "2026-08-04T08:38:10.439912+00:00",
       "title": "feat(workflows): routines - scheduled and event-driven triggers",
       "url": "https://github.com/stella/stella/issues/1378"
+    },
+    "webbrain-one/webbrain#432": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-31T18:50:49Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug",
+        "issue is already assigned or claimed"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "Discord Server to discuss everything WebBrain",
+      "url": "https://github.com/webbrain-one/webbrain/issues/432"
+    },
+    "webbrain-one/webbrain#466": {
+      "confidence": 0.7,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-28T03:38:02Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug",
+        "issue is already assigned or claimed"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "Expand button at the top of the sidepanel",
+      "url": "https://github.com/webbrain-one/webbrain/issues/466"
+    },
+    "webbrain-one/webbrain#488": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-25T16:27:48Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-06T08:37:42.198956+00:00",
+      "title": "capsolver as a skill?",
+      "url": "https://github.com/webbrain-one/webbrain/issues/488"
     }
   }
 }

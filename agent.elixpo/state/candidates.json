@@ -2,295 +2,305 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "youknowone/pyre",
+    "full_name": "iteratec/kcwarden",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 49,
-    "pushed_at": "2026-08-05T08:35:21Z",
+    "open_issues": 39,
+    "pushed_at": "2026-08-06T08:35:58Z",
     "reasons": [
-      "103\u2605 python active",
+      "130\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 103,
-    "topics": [],
-    "url": "https://github.com/youknowone/pyre"
+    "stars": 130,
+    "topics": [
+      "blue-team",
+      "keycloak",
+      "oauth2",
+      "oidc",
+      "red-team",
+      "security-scanner"
+    ],
+    "url": "https://github.com/iteratec/kcwarden"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "genspark-ai/genoffice",
+    "full_name": "ddcat-ai/open-ai-canvas",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 17,
-    "pushed_at": "2026-08-05T08:35:17Z",
-    "reasons": [
-      "1527\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 52,
-    "stars": 1527,
-    "topics": [
-      "ai",
-      "docx",
-      "electron",
-      "office-suite",
-      "pdf",
-      "pptx",
-      "xlsx"
-    ],
-    "url": "https://github.com/genspark-ai/genoffice"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "agentrhq/webcmd",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 36,
-    "pushed_at": "2026-08-05T08:36:00Z",
-    "reasons": [
-      "201\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 201,
-    "topics": [
-      "ai-agents",
-      "browser-automation",
-      "browser-use",
-      "cli",
-      "developer-tools",
-      "playwright",
-      "self-learning-ai"
-    ],
-    "url": "https://github.com/agentrhq/webcmd"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "egregore-labs/egregore",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 11,
-    "pushed_at": "2026-08-05T08:32:39Z",
-    "reasons": [
-      "274\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 274,
-    "topics": [
-      "ai",
-      "claude",
-      "claude-code",
-      "cli",
-      "collaboration",
-      "developer-tools",
-      "memory",
-      "multiplayer",
-      "shared-memory",
-      "team"
-    ],
-    "url": "https://github.com/egregore-labs/egregore"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "Alexey-T/CudaText",
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 44,
-    "pushed_at": "2026-08-05T08:32:28Z",
-    "reasons": [
-      "3142\u2605 python active",
-      "has open issues"
-    ],
-    "score": 38,
-    "stars": 3142,
-    "topics": [
-      "cross-platform",
-      "lazarus",
-      "pascal",
-      "text-editor"
-    ],
-    "url": "https://github.com/Alexey-T/CudaText"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "software-mansion/react-native-gesture-handler",
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 32,
-    "pushed_at": "2026-08-05T08:26:37Z",
-    "reasons": [
-      "6775\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 40,
-    "stars": 6775,
-    "topics": [
-      "gesture",
-      "javascript",
-      "react-native"
-    ],
-    "url": "https://github.com/software-mansion/react-native-gesture-handler"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "pshenok/server-survival",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 14,
-    "pushed_at": "2026-08-05T07:24:54Z",
-    "reasons": [
-      "6326\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 55,
-    "stars": 6326,
-    "topics": [
-      "aws",
-      "cloud",
-      "devops",
-      "education",
-      "game",
-      "javascript",
-      "learning",
-      "open-source",
-      "simulation",
-      "threejs",
-      "tower-defense"
-    ],
-    "url": "https://github.com/pshenok/server-survival"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "bitnami/containers",
-    "has_contributing": true,
-    "language": "Shell",
     "open_issues": 3,
-    "pushed_at": "2026-08-05T07:38:09Z",
+    "pushed_at": "2026-08-06T08:37:03Z",
     "reasons": [
-      "4446\u2605 shell active",
+      "470\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 470,
+    "topics": [],
+    "url": "https://github.com/ddcat-ai/open-ai-canvas"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "webbrain-one/webbrain",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 18,
+    "pushed_at": "2026-08-06T08:33:27Z",
+    "reasons": [
+      "634\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 634,
+    "topics": [
+      "ai-agent",
+      "ai-agents",
+      "ai-tools",
+      "browser-ai",
+      "browser-automation",
+      "browser-extension",
+      "chrome-ai",
+      "chrome-devtools",
+      "chrome-extension",
+      "chrome-extensions",
+      "firefox-addon",
+      "firefox-addons",
+      "firefox-extension",
+      "firefox-extensions",
+      "gemma",
+      "gemma4",
+      "minimax",
+      "offline-ai",
+      "offline-llm",
+      "qwen"
+    ],
+    "url": "https://github.com/webbrain-one/webbrain"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "altstackHQ/altstack-data",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 6,
+    "pushed_at": "2026-08-06T08:29:30Z",
+    "reasons": [
+      "319\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 319,
+    "topics": [
+      "awesome",
+      "awesome-list",
+      "devops",
+      "docker",
+      "open-source",
+      "productivity",
+      "saas-alternatives",
+      "self-hosted"
+    ],
+    "url": "https://github.com/altstackHQ/altstack-data"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "Screenly/Anthias",
+    "has_contributing": true,
+    "language": "Python",
+    "open_issues": 20,
+    "pushed_at": "2026-08-06T08:35:40Z",
+    "reasons": [
+      "3639\u2605 python active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 4446,
+    "stars": 3639,
     "topics": [
-      "bitnami",
-      "containers",
-      "docker",
-      "docker-image",
-      "non-root",
-      "vmware"
-    ],
-    "url": "https://github.com/bitnami/containers"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "tobymao/sqlglot",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 6,
-    "pushed_at": "2026-08-05T08:34:23Z",
-    "reasons": [
-      "9496\u2605 python active",
-      "has open issues"
-    ],
-    "score": 57,
-    "stars": 9496,
-    "topics": [
-      "bigquery",
-      "clickhouse",
-      "databricks",
-      "duckdb",
-      "hive",
-      "mysql",
-      "optimizer",
-      "parser",
-      "postgres",
-      "presto",
+      "digital-signage",
+      "iot",
       "python",
-      "redshift",
-      "snowflake",
-      "spark",
-      "sql",
-      "sqlite",
-      "sqlparser",
-      "transpiler",
-      "trino",
-      "tsql"
+      "raspberry-pi"
     ],
-    "url": "https://github.com/tobymao/sqlglot"
+    "url": "https://github.com/Screenly/Anthias"
   },
   {
     "archived": false,
-    "band": "large",
-    "full_name": "presenton/presenton",
+    "band": "mid",
+    "full_name": "Icalingua-plus-plus/Icalingua-plus-plus",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 34,
-    "pushed_at": "2026-08-05T08:24:03Z",
+    "open_issues": 52,
+    "pushed_at": "2026-08-06T08:33:03Z",
     "reasons": [
-      "9346\u2605 typescript active",
+      "3369\u2605 typescript active",
       "has open issues"
     ],
-    "score": 57,
-    "stars": 9346,
-    "topics": [
-      "ai-agent",
-      "ai-presentation",
-      "api",
-      "gamma",
-      "powerpoint-automation",
-      "powerpoint-free",
-      "powerpoint-generation",
-      "presentation"
+    "score": 53,
+    "stars": 3369,
+    "topics": [],
+    "url": "https://github.com/Icalingua-plus-plus/Icalingua-plus-plus"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "melonjs/melonJS",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 23,
+    "pushed_at": "2026-08-06T07:32:05Z",
+    "reasons": [
+      "6349\u2605 javascript active",
+      "has open issues"
     ],
-    "url": "https://github.com/presenton/presenton"
+    "score": 55,
+    "stars": 6349,
+    "topics": [
+      "2d-game-engine",
+      "canvas2d",
+      "contributions-welcome",
+      "es6",
+      "game-development",
+      "game-engine",
+      "gamedev",
+      "hacktoberfest",
+      "html5",
+      "html5-canvas",
+      "javascript",
+      "melonjs",
+      "tiled",
+      "typescript",
+      "web3",
+      "webaudio",
+      "webgl",
+      "webgpu"
+    ],
+    "url": "https://github.com/melonjs/melonJS"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "ZeroLu/awesome-seedance",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 3,
+    "pushed_at": "2026-08-06T02:38:45Z",
+    "reasons": [
+      "2255\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 2255,
+    "topics": [
+      "ai",
+      "how-to-use",
+      "prompt-engineering",
+      "prompts",
+      "seedance",
+      "seedance-2",
+      "seedance-2-api",
+      "seedance-api",
+      "seedance2",
+      "video"
+    ],
+    "url": "https://github.com/ZeroLu/awesome-seedance"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "horsicq/Detect-It-Easy",
+    "full_name": "fivetran/great_expectations",
     "has_contributing": true,
-    "language": "JavaScript",
+    "language": "Python",
     "open_issues": 36,
-    "pushed_at": "2026-08-05T07:44:55Z",
+    "pushed_at": "2026-08-06T08:29:30Z",
     "reasons": [
-      "11279\u2605 javascript active",
+      "11696\u2605 python active",
       "has open issues"
     ],
     "score": 58,
-    "stars": 11279,
+    "stars": 11696,
     "topics": [
-      "binary-analysis",
-      "debugger",
-      "detect",
-      "detector",
-      "disassembler",
-      "elf",
-      "entropy",
-      "hacktoberfest",
-      "hacktoberfest2023",
-      "mach-o",
-      "macho",
-      "malware-analysis",
-      "malware-research",
-      "packer",
-      "pentest",
-      "program-analysis",
-      "reverse-engineering",
-      "scanner",
-      "static-analysis",
-      "unpacker"
+      "cleandata",
+      "data-engineering",
+      "data-profilers",
+      "data-profiling",
+      "data-quality",
+      "data-science",
+      "data-unit-tests",
+      "datacleaner",
+      "datacleaning",
+      "dataquality",
+      "dataunittest",
+      "eda",
+      "exploratory-analysis",
+      "exploratory-data-analysis",
+      "exploratorydataanalysis",
+      "mlops",
+      "pipeline",
+      "pipeline-debt",
+      "pipeline-testing",
+      "pipeline-tests"
     ],
-    "url": "https://github.com/horsicq/Detect-It-Easy"
+    "url": "https://github.com/fivetran/great_expectations"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "rmyndharis/OpenWA",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 9,
+    "pushed_at": "2026-08-06T08:35:10Z",
+    "reasons": [
+      "12465\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 59,
+    "stars": 12465,
+    "topics": [
+      "api",
+      "bot",
+      "gateway",
+      "self-hosted",
+      "whatsapp",
+      "whatsapp-api",
+      "whatsapp-automation",
+      "whatsapp-bot",
+      "whatsapp-gateway",
+      "whatsapp-gateway-api",
+      "whatsapp-web",
+      "whatsapp-web-api"
+    ],
+    "url": "https://github.com/rmyndharis/OpenWA"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "earthtojake/text-to-cad",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 14,
+    "pushed_at": "2026-08-06T05:01:14Z",
+    "reasons": [
+      "12930\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 59,
+    "stars": 12930,
+    "topics": [
+      "agents",
+      "ai-agents",
+      "cad",
+      "mechanical-engineering",
+      "robotics",
+      "step",
+      "stl",
+      "stp",
+      "text-to-cad"
+    ],
+    "url": "https://github.com/earthtojake/text-to-cad"
   },
   {
     "archived": false,
@@ -298,189 +308,223 @@
     "full_name": "juewuy/ShellCrash",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 26,
-    "pushed_at": "2026-08-04T19:16:59Z",
+    "open_issues": 27,
+    "pushed_at": "2026-08-05T18:59:43Z",
     "reasons": [
-      "13134\u2605 shell active",
+      "13138\u2605 shell active",
       "has open issues"
     ],
     "score": 44,
-    "stars": 13134,
+    "stars": 13138,
     "topics": [],
     "url": "https://github.com/juewuy/ShellCrash"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "czl0325/coin11-tb",
+    "full_name": "langgenius/dify-official-plugins",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 22,
-    "pushed_at": "2026-08-05T08:35:19Z",
+    "open_issues": 41,
+    "pushed_at": "2026-08-06T08:36:05Z",
     "reasons": [
-      "557\u2605 python active",
+      "612\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 557,
-    "topics": [
-      "uiautomator2"
-    ],
-    "url": "https://github.com/czl0325/coin11-tb"
+    "stars": 612,
+    "topics": [],
+    "url": "https://github.com/langgenius/dify-official-plugins"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "MichelFR/MqDockerUp",
+    "full_name": "BennyKok/omg.dev",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 20,
-    "pushed_at": "2026-08-05T08:36:21Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-06T08:36:43Z",
     "reasons": [
-      "117\u2605 typescript active",
+      "362\u2605 typescript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 117,
+    "stars": 362,
     "topics": [],
-    "url": "https://github.com/MichelFR/MqDockerUp"
+    "url": "https://github.com/BennyKok/omg.dev"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "CennoxX/spotify-ai-blocker",
+    "full_name": "atrocore/atrocore",
     "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 55,
-    "pushed_at": "2026-08-05T08:34:51Z",
+    "open_issues": 10,
+    "pushed_at": "2026-08-06T08:33:24Z",
     "reasons": [
-      "128\u2605 javascript active",
+      "228\u2605 javascript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 128,
+    "stars": 228,
     "topics": [
-      "ai",
-      "ai-blocker",
-      "spotify",
-      "spotify-hack"
+      "api-first",
+      "application-development",
+      "b2b",
+      "business-process-management",
+      "dam",
+      "data-governance",
+      "data-management-system",
+      "data-quality",
+      "digital-asset-management",
+      "file-management",
+      "headless",
+      "integration-platform",
+      "ipaas",
+      "master-data-management",
+      "mdm",
+      "php",
+      "reference-data",
+      "software-integration",
+      "svelte",
+      "system-integration"
     ],
-    "url": "https://github.com/CennoxX/spotify-ai-blocker"
+    "url": "https://github.com/atrocore/atrocore"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "schnatterer/rooted-graphene",
+    "full_name": "ClickHouse/ClickBench",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 7,
-    "pushed_at": "2026-08-05T08:36:22Z",
+    "open_issues": 33,
+    "pushed_at": "2026-08-06T08:29:32Z",
     "reasons": [
-      "221\u2605 shell active",
+      "1064\u2605 shell active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 221,
+    "stars": 1064,
     "topics": [
-      "grapheneos",
-      "magisk",
-      "root",
-      "su"
+      "analytics",
+      "aws",
+      "benchmark",
+      "big-data",
+      "bigquery",
+      "chdb",
+      "clickhouse",
+      "databases",
+      "datafusion",
+      "datalake",
+      "doris",
+      "duckdb",
+      "iceberg",
+      "lakehouse",
+      "olap",
+      "parquet",
+      "rust",
+      "snowflake",
+      "sql"
     ],
-    "url": "https://github.com/schnatterer/rooted-graphene"
+    "url": "https://github.com/ClickHouse/ClickBench"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "unfoldadmin/django-unfold",
+    "full_name": "Imbad0202/academic-research-skills-codex",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 24,
-    "pushed_at": "2026-08-05T08:28:33Z",
+    "open_issues": 4,
+    "pushed_at": "2026-08-06T08:36:20Z",
     "reasons": [
-      "3606\u2605 python active",
+      "7939\u2605 python active",
       "has open issues"
     ],
-    "score": 38,
-    "stars": 3606,
+    "score": 41,
+    "stars": 7939,
     "topics": [
-      "admin",
-      "alpinejs",
-      "darkmode",
-      "dashboard",
-      "django",
-      "filters",
-      "htmx",
-      "python",
-      "responsive",
-      "tailwindcss",
-      "theme",
-      "ui",
-      "wysiwyg"
+      "academic-pipeline",
+      "academic-research",
+      "academic-writing",
+      "ai-research",
+      "codex",
+      "literature-review",
+      "openai-codex",
+      "peer-review",
+      "prompt-engineering",
+      "research-assistant"
     ],
-    "url": "https://github.com/unfoldadmin/django-unfold"
+    "url": "https://github.com/Imbad0202/academic-research-skills-codex"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "SSShooter/mind-elixir-core",
-    "has_contributing": false,
+    "full_name": "chrisvel/tududi",
+    "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 11,
-    "pushed_at": "2026-08-05T08:25:02Z",
+    "open_issues": 12,
+    "pushed_at": "2026-08-06T08:30:59Z",
     "reasons": [
-      "3108\u2605 typescript active",
+      "3209\u2605 typescript active",
       "has open issues"
     ],
-    "score": 38,
-    "stars": 3108,
+    "score": 53,
+    "stars": 3209,
     "topics": [
-      "graph",
-      "mind-map",
-      "mind-mapping",
-      "mindmap",
-      "tool",
-      "visualization"
+      "expressjs",
+      "get-things-done",
+      "gtd",
+      "gtd-applications",
+      "gtd-management",
+      "nodejs",
+      "project-management",
+      "react",
+      "reactjs",
+      "task-management",
+      "todo"
     ],
-    "url": "https://github.com/SSShooter/mind-elixir-core"
+    "url": "https://github.com/chrisvel/tududi"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "IsmaelMartinez/teams-for-linux",
+    "full_name": "open-gsd/gsd-core",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 30,
-    "pushed_at": "2026-08-05T07:27:07Z",
+    "open_issues": 128,
+    "pushed_at": "2026-08-06T08:27:02Z",
     "reasons": [
-      "4912\u2605 javascript active",
+      "7796\u2605 javascript active",
       "has open issues"
     ],
-    "score": 54,
-    "stars": 4912,
+    "score": 48,
+    "stars": 7796,
     "topics": [
-      "electron",
-      "linux",
-      "microsoft",
-      "teams"
+      "claude-code",
+      "context-engineering",
+      "meta-prompting",
+      "spec-driven-development"
     ],
-    "url": "https://github.com/IsmaelMartinez/teams-for-linux"
+    "url": "https://github.com/open-gsd/gsd-core"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "deusyu/harness-engineering",
+    "full_name": "ONLYOFFICE/Docker-DocumentServer",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 3,
-    "pushed_at": "2026-08-05T07:34:48Z",
+    "open_issues": 27,
+    "pushed_at": "2026-08-06T01:54:28Z",
     "reasons": [
-      "5243\u2605 shell active",
+      "2356\u2605 shell active",
       "has open issues"
     ],
-    "score": 39,
-    "stars": 5243,
-    "topics": [],
-    "url": "https://github.com/deusyu/harness-engineering"
+    "score": 37,
+    "stars": 2356,
+    "topics": [
+      "docker-image",
+      "onlyoffice"
+    ],
+    "url": "https://github.com/ONLYOFFICE/Docker-DocumentServer"
   }
 ]
