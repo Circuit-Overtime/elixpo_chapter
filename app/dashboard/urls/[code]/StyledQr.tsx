@@ -87,7 +87,7 @@ const StyledQr = forwardRef<StyledQrHandle, Props>(function StyledQr(
   return (
     <div
       ref={containerRef}
-      className={className}
+      className={`[&>svg]:w-full [&>svg]:h-full [&>svg]:block [&>canvas]:w-full [&>canvas]:h-full [&>canvas]:block ${className || ''}`}
       style={{ width: display, height: display, ...style }}
     />
   );
