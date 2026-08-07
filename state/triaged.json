@@ -1,17 +1,187 @@
 [
   {
-    "activity_age_days": 13,
+    "activity_age_days": 8,
+    "blockers": [
+      "complexity is medium",
+      "estimated file count 10 is outside 1-5",
+      "needs external access or credentials",
+      "needs specialized hardware"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "reproducible_bug": 3
+    },
+    "complexity": "medium",
+    "confidence": 0.85,
+    "easy": false,
+    "estimated_files": 10,
+    "issue_age_days": 8,
+    "issue_updated_at": "2026-07-30T04:36:48Z",
+    "number": 15,
+    "rationale": "The issue involves multiple components and integration work, but no major blockers are present.",
+    "repo": "0xsline/OpenChatCut",
+    "score": 8,
+    "title": "feat: \u7ba1\u7406\u5458\u7edf\u4e00 AI \u914d\u7f6e\u4e0e\u6309\u7528\u6237\u7528\u91cf\u8ba1\u91cf\uff08SaaS MVP\uff09",
+    "tractable": true,
+    "url": "https://github.com/0xsline/OpenChatCut/issues/15"
+  },
+  {
+    "activity_age_days": 10,
     "blockers": [
       "not confirmed tractable",
       "complexity is medium",
       "estimated file count 0 is outside 1-5",
+      "needs a maintainer decision",
       "needs external access or credentials",
-      "needs specialized hardware",
+      "needs specialized hardware"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "reproducible_bug": 3
+    },
+    "complexity": "medium",
+    "confidence": 0.7,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 10,
+    "issue_updated_at": "2026-07-28T15:05:16Z",
+    "number": 6777,
+    "rationale": "The issue requires a maintainer decision on the architecture and behavior of the TPESampler, as well as the memory management strategy.",
+    "repo": "optuna/optuna",
+    "score": 8,
+    "title": "TPESampler RSS grows unbounded with trial count in long-running studies (follow-up to #3050)",
+    "tractable": false,
+    "url": "https://github.com/optuna/optuna/issues/6777"
+  },
+  {
+    "activity_age_days": 11,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is medium",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.60 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "reproducible_bug": 3
+    },
+    "complexity": "medium",
+    "confidence": 0.6,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 14,
+    "issue_updated_at": "2026-07-27T15:07:49Z",
+    "number": 87,
+    "rationale": "The issue involves complex formatting errors related to mathematical formulas, which suggests a medium scope change. The problem is reproducible when copying content with matrix information, but the root cause seems to be tied to specific AI tools, indicating a non-trivial fix.",
+    "repo": "RICHQAQ/PasteMD",
+    "score": 8,
+    "title": "There are a large number of formatting errors when pasting mathematical formulas in WPS Word",
+    "tractable": false,
+    "url": "https://github.com/RICHQAQ/PasteMD/issues/87"
+  },
+  {
+    "activity_age_days": 7,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.60 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "reproducible_bug": 3
+    },
+    "complexity": "unknown",
+    "confidence": 0.6,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 8,
+    "issue_updated_at": "2026-07-31T09:29:52Z",
+    "number": 2068,
+    "rationale": "The issue lacks enough evidence to bound the work and has no clear acceptance criterion.",
+    "repo": "ThinkInAIXYZ/deepchat",
+    "score": 8,
+    "title": "[BUG]",
+    "tractable": false,
+    "url": "https://github.com/ThinkInAIXYZ/deepchat/issues/2068"
+  },
+  {
+    "activity_age_days": 22,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
+      "needs specialized hardware"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2,
+      "reproducible_bug": 3
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 23,
+    "issue_updated_at": "2026-07-16T13:27:15Z",
+    "number": 84,
+    "rationale": "The issue lacks enough evidence to determine the scope of the work and whether it can be completed by one external contributor in one pull request.",
+    "repo": "RICHQAQ/PasteMD",
+    "score": 8,
+    "title": "\u7c98\u8d34\u65f6\u5019\u5f02\u5e38\u7684\u65b9\u6846\u663e\u793a",
+    "tractable": false,
+    "url": "https://github.com/RICHQAQ/PasteMD/issues/84"
+  },
+  {
+    "activity_age_days": 28,
+    "blockers": [
+      "complexity is medium",
+      "estimated file count 10 is outside 1-5"
+    ],
+    "breakdown": {
+      "acceptance_criterion": 2,
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "medium",
+    "confidence": 0.75,
+    "easy": false,
+    "estimated_files": 10,
+    "issue_age_days": 28,
+    "issue_updated_at": "2026-07-10T14:28:28Z",
+    "number": 5303,
+    "rationale": "The issue involves multiple changes across several files and components, but no clear blockers are evident from the description.",
+    "repo": "luigi-project/luigi",
+    "score": 7,
+    "title": "Migration guide: legacy auth-oidc \u2192 auth-oidc-pkce",
+    "tractable": true,
+    "url": "https://github.com/luigi-project/luigi/issues/5303"
+  },
+  {
+    "activity_age_days": 28,
+    "blockers": [
+      "complexity is medium",
+      "estimated file count 0 is outside 1-5",
       "no acceptance criterion or reproducible bug"
     ],
     "breakdown": {
       "aged": 1,
-      "good_first/help_wanted": 5,
       "no_assignee": 2,
       "no_maintainer_claim": 2
     },
@@ -19,67 +189,15 @@
     "confidence": 0.7,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 17,
-    "issue_updated_at": "2026-07-24T23:21:59Z",
-    "number": 11986,
-    "rationale": "The issue involves adding a comprehensive documentation recipe for cloud store backends, which requires multiple interacting components and substantial fixture/integration work.",
-    "repo": "fivetran/great_expectations",
-    "score": 10,
-    "title": "Cloud Store Backend docs recipe",
-    "tractable": false,
-    "url": "https://github.com/fivetran/great_expectations/issues/11986"
-  },
-  {
-    "activity_age_days": 15,
-    "blockers": [
-      "needs external access or credentials",
-      "needs specialized hardware"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
-    },
-    "complexity": "small",
-    "confidence": 0.95,
-    "easy": false,
-    "estimated_files": 1,
-    "issue_age_days": 57,
-    "issue_updated_at": "2026-07-22T12:58:36Z",
-    "number": 1334,
-    "rationale": "The issue is a bounded change in one file with a clear reproduction and fix.",
-    "repo": "atrocore/atrocore",
-    "score": 8,
-    "title": "Incorrect use of `ltrim()` in `LocalStorage::scanFiles()` corrupts file paths",
-    "tractable": true,
-    "url": "https://github.com/atrocore/atrocore/issues/1334"
-  },
-  {
-    "activity_age_days": 28,
-    "blockers": [
-      "needs external access or credentials",
-      "needs specialized hardware"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
-    },
-    "complexity": "small",
-    "confidence": 0.85,
-    "easy": false,
-    "estimated_files": 2,
     "issue_age_days": 28,
-    "issue_updated_at": "2026-07-09T15:56:16Z",
-    "number": 3177,
-    "rationale": "The feature request is small and localized to the Schedule page, likely affecting two files: one for the UI and one for the logic to handle the color change.",
-    "repo": "Screenly/Anthias",
-    "score": 8,
-    "title": "[FEATURE] Anthias Webpage - requesting highlighting the actual asset being played",
+    "issue_updated_at": "2026-07-10T14:27:25Z",
+    "number": 5302,
+    "rationale": "The issue requests expanding test coverage for a specific file and describes a detailed plan for unit and e2e tests, but lacks clear acceptance criteria and reproducible steps.",
+    "repo": "luigi-project/luigi",
+    "score": 5,
+    "title": "Expand auth-oidc-pkce test coverage (unit + e2e)",
     "tractable": true,
-    "url": "https://github.com/Screenly/Anthias/issues/3177"
+    "url": "https://github.com/luigi-project/luigi/issues/5302"
   },
   {
     "activity_age_days": 16,
@@ -88,95 +206,63 @@
       "complexity is unknown",
       "estimated file count 0 is outside 1-5",
       "solvability confidence 0.50 is below 0.70",
-      "needs a maintainer decision",
-      "needs specialized hardware"
+      "no acceptance criterion or reproducible bug"
     ],
     "breakdown": {
       "aged": 1,
       "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
+      "no_maintainer_claim": 2
     },
     "complexity": "unknown",
     "confidence": 0.5,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 16,
-    "issue_updated_at": "2026-07-21T03:52:19Z",
-    "number": 3473,
-    "rationale": "The issue lacks enough evidence to determine the scope and complexity of the work required to resolve it.",
-    "repo": "langgenius/dify-official-plugins",
-    "score": 8,
-    "title": "InvokeError: [models] Error: 'type' (agent_run_id=01dfb40f-40c7-4026-a3bb-8dab201df32c)",
+    "issue_age_days": 19,
+    "issue_updated_at": "2026-07-22T06:35:50Z",
+    "number": 85,
+    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work.",
+    "repo": "RICHQAQ/PasteMD",
+    "score": 5,
+    "title": "MacOS\u4f7f\u7528\u70ed\u952e\u65e0\u53cd\u5e94",
     "tractable": false,
-    "url": "https://github.com/langgenius/dify-official-plugins/issues/3473"
+    "url": "https://github.com/RICHQAQ/PasteMD/issues/85"
+  },
+  {
+    "activity_age_days": 25,
+    "blockers": [
+      "not confirmed tractable",
+      "complexity is unknown",
+      "estimated file count 0 is outside 1-5",
+      "solvability confidence 0.50 is below 0.70",
+      "no acceptance criterion or reproducible bug"
+    ],
+    "breakdown": {
+      "aged": 1,
+      "no_assignee": 2,
+      "no_maintainer_claim": 2
+    },
+    "complexity": "unknown",
+    "confidence": 0.5,
+    "easy": false,
+    "estimated_files": 0,
+    "issue_age_days": 25,
+    "issue_updated_at": "2026-07-13T16:00:35Z",
+    "number": 82,
+    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work.",
+    "repo": "RICHQAQ/PasteMD",
+    "score": 5,
+    "title": "\u5bf9\u4e8echatgpt\u7f51\u9875\u7248\u590d\u5236\u65f6\u7684\u95ee\u9898",
+    "tractable": false,
+    "url": "https://github.com/RICHQAQ/PasteMD/issues/82"
   },
   {
     "activity_age_days": 9,
     "blockers": [
       "not confirmed tractable",
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5",
-      "needs a maintainer decision",
-      "needs specialized hardware",
-      "no acceptance criterion or reproducible bug"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "medium",
-    "confidence": 0.7,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 9,
-    "issue_updated_at": "2026-07-28T03:09:20Z",
-    "number": 3518,
-    "rationale": "The issue requests a new provider plugin with dynamic model discovery, which involves several interacting components and cross-subsystem behavior. The scope is not trivial or small, and the complexity of implementing and verifying the dynamic model catalog is not fully clear.",
-    "repo": "langgenius/dify-official-plugins",
-    "score": 5,
-    "title": "[Modelsell] Add a named provider with dynamic model discovery",
-    "tractable": false,
-    "url": "https://github.com/langgenius/dify-official-plugins/issues/3518"
-  },
-  {
-    "activity_age_days": 27,
-    "blockers": [
-      "not confirmed tractable",
       "complexity is unknown",
       "estimated file count 0 is outside 1-5",
       "solvability confidence 0.50 is below 0.70",
-      "needs a maintainer decision",
-      "no acceptance criterion or reproducible bug"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "unknown",
-    "confidence": 0.5,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 27,
-    "issue_updated_at": "2026-07-10T16:54:48Z",
-    "number": 149,
-    "rationale": "The issue lacks enough evidence to determine the scope and completion, and the API or UX behavior remains open to interpretation.",
-    "repo": "earthtojake/text-to-cad",
-    "score": 5,
-    "title": "Add proper GLB video support",
-    "tractable": false,
-    "url": "https://github.com/earthtojake/text-to-cad/issues/149"
-  },
-  {
-    "activity_age_days": 14,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is unknown",
-      "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.50 is below 0.70",
-      "needs a maintainer decision",
+      "needs external access or credentials",
       "needs specialized hardware",
       "no acceptance criterion or reproducible bug"
     ],
@@ -189,118 +275,26 @@
     "confidence": 0.5,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 37,
-    "issue_updated_at": "2026-07-23T00:36:53Z",
-    "number": 960,
-    "rationale": "The issue lacks enough evidence to determine the scope and complexity of the work required.",
-    "repo": "ClickHouse/ClickBench",
+    "issue_age_days": 12,
+    "issue_updated_at": "2026-07-29T17:33:26Z",
+    "number": 11,
+    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work.",
+    "repo": "0xsline/OpenChatCut",
     "score": 5,
-    "title": "Add SynnoDB",
+    "title": "\u975e\u5e38\u4e0d\u9519\uff0c  \u521a\u597d\u9700\u8981\u5f00\u53d1\u65c5\u6e38AI\u526a\u8f91\uff0c\u505a\u5e95\u5ea7",
     "tractable": false,
-    "url": "https://github.com/ClickHouse/ClickBench/issues/960"
+    "url": "https://github.com/0xsline/OpenChatCut/issues/11"
   },
   {
-    "activity_age_days": 7,
+    "activity_age_days": 2,
     "blockers": [
       "not confirmed tractable",
       "complexity is unknown",
       "estimated file count 0 is outside 1-5",
       "solvability confidence 0.50 is below 0.70",
       "needs a maintainer decision",
-      "no acceptance criterion or reproducible bug",
-      "issue is already assigned or claimed"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "no_assignee": 2
-    },
-    "complexity": "unknown",
-    "confidence": 0.5,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 7,
-    "issue_updated_at": "2026-07-30T06:34:08Z",
-    "number": 1315,
-    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work. The maintainer needs to decide on the behavior.",
-    "repo": "juewuy/ShellCrash",
-    "score": 3,
-    "title": "\u66f4\u65b0\u8ba2\u9605\u540e\uff0c\u8282\u70b9\u7ec4\u7684selector\u9009\u4e2d\u72b6\u6001\u4f1a\u4e22\u5931\u662f\u7279\u6027\u5417",
-    "tractable": false,
-    "url": "https://github.com/juewuy/ShellCrash/issues/1315"
-  },
-  {
-    "activity_age_days": 9,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is medium",
-      "estimated file count 0 is outside 1-5",
-      "needs a maintainer decision",
+      "needs external access or credentials",
       "needs specialized hardware",
-      "no acceptance criterion or reproducible bug",
-      "issue is already assigned or claimed"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "already_claimed": -10,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "medium",
-    "confidence": 0.7,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 14,
-    "issue_updated_at": "2026-07-28T03:38:02Z",
-    "number": 466,
-    "rationale": "The issue involves a significant change to the user interface and functionality, which requires careful consideration to ensure it doesn't disrupt existing features.",
-    "repo": "webbrain-one/webbrain",
-    "score": 0,
-    "title": "Expand button at the top of the sidepanel",
-    "tractable": false,
-    "url": "https://github.com/webbrain-one/webbrain/issues/466"
-  },
-  {
-    "activity_age_days": 6,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is unknown",
-      "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.50 is below 0.70",
-      "needs a maintainer decision",
-      "needs specialized hardware",
-      "no acceptance criterion or reproducible bug",
-      "issue is already assigned or claimed"
-    ],
-    "breakdown": {
-      "aged": 1,
-      "already_claimed": -10,
-      "good_first/help_wanted": 5,
-      "no_assignee": 2,
-      "no_maintainer_claim": 2
-    },
-    "complexity": "unknown",
-    "confidence": 0.5,
-    "easy": false,
-    "estimated_files": 0,
-    "issue_age_days": 16,
-    "issue_updated_at": "2026-07-31T18:50:49Z",
-    "number": 432,
-    "rationale": "The latest comment indicates a contributor has claimed the work, but the scope and complexity are not clear.",
-    "repo": "webbrain-one/webbrain",
-    "score": 0,
-    "title": "Discord Server to discuss everything WebBrain",
-    "tractable": false,
-    "url": "https://github.com/webbrain-one/webbrain/issues/432"
-  },
-  {
-    "activity_age_days": 12,
-    "blockers": [
-      "not confirmed tractable",
-      "complexity is unknown",
-      "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.50 is below 0.70",
-      "needs a maintainer decision",
       "no acceptance criterion or reproducible bug"
     ],
     "breakdown": {
@@ -313,46 +307,46 @@
     "confidence": 0.5,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 12,
-    "issue_updated_at": "2026-07-25T16:27:48Z",
-    "number": 488,
-    "rationale": "The issue lacks enough evidence to determine the scope and completion of the work.",
-    "repo": "webbrain-one/webbrain",
+    "issue_age_days": 8,
+    "issue_updated_at": "2026-08-05T08:39:34Z",
+    "number": 11556,
+    "rationale": "The issue lacks enough evidence to determine the scope and completion, and requires a maintainer decision on compatibility and maintenance strategy.",
+    "repo": "gentoo-zh/overlay",
     "score": 0,
-    "title": "capsolver as a skill?",
+    "title": "Maintainer Needed \u5c0b\u627e\u7dad\u8b77\u8005  :sys-kernel/cachyos-sources",
     "tractable": false,
-    "url": "https://github.com/webbrain-one/webbrain/issues/488"
+    "url": "https://github.com/gentoo-zh/overlay/issues/11556"
   },
   {
-    "activity_age_days": 9,
+    "activity_age_days": 5,
     "blockers": [
       "not confirmed tractable",
-      "complexity is unknown",
+      "complexity is medium",
       "estimated file count 0 is outside 1-5",
-      "solvability confidence 0.50 is below 0.70",
+      "needs a maintainer decision",
       "needs external access or credentials",
       "needs specialized hardware",
-      "conversation indicates the repository change is already resolved"
+      "no acceptance criterion or reproducible bug",
+      "issue is already assigned or claimed"
     ],
     "breakdown": {
       "aged": 1,
-      "already_resolved": -10,
+      "already_claimed": -10,
       "no_assignee": 2,
-      "no_maintainer_claim": 2,
-      "reproducible_bug": 3
+      "no_maintainer_claim": 2
     },
-    "complexity": "unknown",
-    "confidence": 0.5,
+    "complexity": "medium",
+    "confidence": 0.7,
     "easy": false,
     "estimated_files": 0,
-    "issue_age_days": 25,
-    "issue_updated_at": "2026-07-28T03:35:22Z",
-    "number": 3428,
-    "rationale": "The issue was closed as already resolved due to the implementation of _oauth_refresh_credentials in PR #3408.",
-    "repo": "langgenius/dify-official-plugins",
-    "score": -2,
-    "title": "Outlook Trigger authentication expires after 2\u20133 days and requires manual reauthorization",
+    "issue_age_days": 8,
+    "issue_updated_at": "2026-08-02T03:11:22Z",
+    "number": 6780,
+    "rationale": "The contributor claims to work on it but needs maintainer decision on API design.",
+    "repo": "optuna/optuna",
+    "score": -5,
+    "title": "Add boolean column for `best_trials` in `optuna.Study.trials_dataframe`",
     "tractable": false,
-    "url": "https://github.com/langgenius/dify-official-plugins/issues/3428"
+    "url": "https://github.com/optuna/optuna/issues/6780"
   }
 ]
