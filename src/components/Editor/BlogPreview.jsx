@@ -522,7 +522,7 @@ export default function BlogPreview({
           zoomInBtn.className = 'mermaid-fullscreen-btn zoom-in';
           zoomInBtn.title = 'Zoom in';
           zoomInBtn.setAttribute('aria-label', 'Zoom in');
-          zoomInBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>\`;
+          zoomInBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
 
           const zoomLabel = document.createElement('span');
           zoomLabel.className = 'mermaid-fullscreen-zoom-label';
@@ -532,19 +532,19 @@ export default function BlogPreview({
           zoomOutBtn.className = 'mermaid-fullscreen-btn zoom-out';
           zoomOutBtn.title = 'Zoom out';
           zoomOutBtn.setAttribute('aria-label', 'Zoom out');
-          zoomOutBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>\`;
+          zoomOutBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
 
           const resetBtn = document.createElement('button');
           resetBtn.className = 'mermaid-fullscreen-btn zoom-reset';
           resetBtn.title = 'Reset view';
           resetBtn.setAttribute('aria-label', 'Reset view');
-          resetBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><polyline points="1 4 1 10 7 10"/></svg>\`;
+          resetBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><polyline points="1 4 1 10 7 10"/></svg>`;
 
           const closeBtn = document.createElement('button');
           closeBtn.className = 'mermaid-fullscreen-btn close-btn';
           closeBtn.title = 'Close fullscreen';
           closeBtn.setAttribute('aria-label', 'Close fullscreen');
-          closeBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>\`;
+          closeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
           controls.appendChild(zoomInBtn);
           controls.appendChild(zoomLabel);
@@ -588,8 +588,8 @@ export default function BlogPreview({
           let panStart = { ...pan };
 
           const updateTransform = () => {
-            svgContainer.style.transform = \`translate(\${pan.x}px, \${pan.y}px) scale(\${zoom})\`;
-            zoomLabel.textContent = \`\${Math.round(zoom * 100)}%\`;
+            svgContainer.style.transform = `translate(\${pan.x}px, \${pan.y}px) scale(\${zoom})`;
+            zoomLabel.textContent = `\${Math.round(zoom * 100)}%`;
           };
 
           contentEl.addEventListener('wheel', (e) => {
@@ -656,7 +656,7 @@ export default function BlogPreview({
             updateTransform();
           });
 
-          const overlayId = \`fullscreen-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}\`;
+          const overlayId = `fullscreen-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}`;
           const tempOverlayDiv = document.createElement('div');
           tempOverlayDiv.id = 'container-' + overlayId;
           tempOverlayDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
@@ -685,7 +685,7 @@ export default function BlogPreview({
 
         (async () => {
           for (const el of mermaidEls) {
-            const id = \`preview-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}\`;
+            const id = `preview-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}`;
             try {
               let diagram = decodeURIComponent(el.dataset.diagram).trim();
               diagram = diagram.replace(/^s*gitgraph/i, 'gitGraph');
@@ -726,7 +726,7 @@ export default function BlogPreview({
                 fsBtn.className = 'preview-mermaid-fullscreen-btn';
                 fsBtn.title = 'Open fullscreen';
                 fsBtn.setAttribute('aria-label', 'Open fullscreen');
-                fsBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>\`;
+                fsBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>`;
 
                 fsBtn.addEventListener('click', (e) => {
                   e.preventDefault();
