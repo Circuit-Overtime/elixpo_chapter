@@ -339,16 +339,19 @@ export default function PricingPage() {
                 ))}
               </div>
 
-              <a
-                href="mailto:hello@elixpo.com?subject=ElixpoURL%20Enterprise"
-                className="mt-1 inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-[12px] font-semibold text-sm text-white no-underline transition-all"
-                style={{
-                  background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
-                  boxShadow: '0 8px 24px rgba(229,57,53,0.35)',
-                }}
-              >
-                Contact team
-              </a>
+              <div className="flex flex-col sm:flex-row items-center gap-3 mt-1">
+                <a
+                  href="mailto:hello@elixpo.com?subject=ElixpoURL%20Enterprise"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-[12px] font-semibold text-sm text-white no-underline transition-all"
+                  style={{
+                    background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+                    boxShadow: '0 8px 24px rgba(229,57,53,0.35)',
+                  }}
+                >
+                  Contact team
+                </a>
+                <EmailChip />
+              </div>
             </div>
           </div>
         </section>
@@ -462,6 +465,77 @@ function CtaButton({
         />
       )}
       {label}
+    </button>
+  );
+}
+
+function EmailChip() {
+  const [copied, setCopied] = useState(false);
+  const email = 'hello@elixpo.com';
+
+  const handleCopyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = email;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2200);
+      } catch {
+        window.location.href = `mailto:${email}`;
+      }
+      document.body.removeChild(ta);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopyEmail}
+      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-sm transition-all"
+      style={{
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        background: 'transparent',
+        color: 'rgba(255, 255, 255, 0.85)',
+        fontFamily: 'var(--font-geist-mono), monospace',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.color = '#fff';
+        e.currentTarget.style.borderColor = 'rgba(229, 57, 53, 0.5)';
+        e.currentTarget.style.background = 'rgba(229, 57, 53, 0.08)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.85)';
+        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        e.currentTarget.style.background = 'transparent';
+      }}
+      title={copied ? 'Copied!' : 'Click to copy'}
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+        <polyline points="22,6 12,13 2,6" />
+      </svg>
+      <span>{email}</span>
+      {copied ? (
+        <span className="flex items-center gap-1 text-xs font-semibold text-[#86efac] transition-all animate-pulse">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#86efac" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20,6 9,17 4,12" />
+          </svg>
+          <span>Copied!</span>
+        </span>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.4">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+        </svg>
+      )}
     </button>
   );
 }
