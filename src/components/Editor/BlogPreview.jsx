@@ -500,17 +500,200 @@ export default function BlogPreview({
           gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
         });
         // Render all diagrams — don't bail early on stale, just skip applying to unmounted elements
+        async function openFullscreenMermaid(diagramText, isDark) {
+          const overlay = document.createElement('div');
+          overlay.className = 'mermaid-fullscreen-overlay';
+          overlay.setAttribute('role', 'dialog');
+          overlay.setAttribute('aria-modal', 'true');
+          overlay.setAttribute('aria-label', 'Fullscreen Mermaid Diagram');
+
+          const header = document.createElement('div');
+          header.className = 'mermaid-fullscreen-header';
+
+          const title = document.createElement('span');
+          title.className = 'mermaid-fullscreen-title';
+          title.textContent = 'Mermaid Diagram';
+          header.appendChild(title);
+
+          const controls = document.createElement('div');
+          controls.className = 'mermaid-fullscreen-controls';
+
+          const zoomInBtn = document.createElement('button');
+          zoomInBtn.className = 'mermaid-fullscreen-btn zoom-in';
+          zoomInBtn.title = 'Zoom in';
+          zoomInBtn.setAttribute('aria-label', 'Zoom in');
+          zoomInBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>\`;
+
+          const zoomLabel = document.createElement('span');
+          zoomLabel.className = 'mermaid-fullscreen-zoom-label';
+          zoomLabel.textContent = '100%';
+
+          const zoomOutBtn = document.createElement('button');
+          zoomOutBtn.className = 'mermaid-fullscreen-btn zoom-out';
+          zoomOutBtn.title = 'Zoom out';
+          zoomOutBtn.setAttribute('aria-label', 'Zoom out');
+          zoomOutBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>\`;
+
+          const resetBtn = document.createElement('button');
+          resetBtn.className = 'mermaid-fullscreen-btn zoom-reset';
+          resetBtn.title = 'Reset view';
+          resetBtn.setAttribute('aria-label', 'Reset view');
+          resetBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><polyline points="1 4 1 10 7 10"/></svg>\`;
+
+          const closeBtn = document.createElement('button');
+          closeBtn.className = 'mermaid-fullscreen-btn close-btn';
+          closeBtn.title = 'Close fullscreen';
+          closeBtn.setAttribute('aria-label', 'Close fullscreen');
+          closeBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>\`;
+
+          controls.appendChild(zoomInBtn);
+          controls.appendChild(zoomLabel);
+          controls.appendChild(zoomOutBtn);
+          controls.appendChild(resetBtn);
+          controls.appendChild(closeBtn);
+          header.appendChild(controls);
+          overlay.appendChild(header);
+
+          const contentEl = document.createElement('div');
+          contentEl.className = 'mermaid-fullscreen-content';
+
+          const svgContainer = document.createElement('div');
+          svgContainer.className = 'mermaid-fullscreen-svg-container';
+          contentEl.appendChild(svgContainer);
+          overlay.appendChild(contentEl);
+
+          document.body.appendChild(overlay);
+          closeBtn.focus();
+          document.body.style.overflow = 'hidden';
+
+          const closeFullscreen = () => {
+            overlay.remove();
+            document.body.style.overflow = '';
+            window.removeEventListener('keydown', handleKeyDown);
+          };
+
+          const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+              closeFullscreen();
+            }
+          };
+          window.addEventListener('keydown', handleKeyDown);
+
+          closeBtn.addEventListener('click', closeFullscreen);
+
+          let zoom = 1;
+          let pan = { x: 0, y: 0 };
+          let isDragging = false;
+          let dragStart = { x: 0, y: 0 };
+          let panStart = { ...pan };
+
+          const updateTransform = () => {
+            svgContainer.style.transform = \`translate(\${pan.x}px, \${pan.y}px) scale(\${zoom})\`;
+            zoomLabel.textContent = \`\${Math.round(zoom * 100)}%\`;
+          };
+
+          contentEl.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            zoom = Math.min(5, Math.max(0.2, zoom + delta));
+            updateTransform();
+          }, { passive: false });
+
+          contentEl.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            isDragging = true;
+            dragStart = { x: e.clientX, y: e.clientY };
+            panStart = { ...pan };
+            contentEl.style.cursor = 'grabbing';
+          });
+
+          const handleMouseMove = (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - dragStart.x;
+            const dy = e.clientY - dragStart.y;
+            pan = { x: panStart.x + dx, y: panStart.y + dy };
+            updateTransform();
+          };
+
+          const handleMouseUp = () => {
+            if (isDragging) {
+              isDragging = false;
+              contentEl.style.cursor = '';
+            }
+          };
+
+          window.addEventListener('mousemove', handleMouseMove);
+          window.addEventListener('mouseup', handleMouseUp);
+
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              mutation.removedNodes.forEach((node) => {
+                if (node === overlay) {
+                  window.removeEventListener('mousemove', handleMouseMove);
+                  window.removeEventListener('mouseup', handleMouseUp);
+                  observer.disconnect();
+                }
+              });
+            });
+          });
+          observer.observe(document.body, { childList: true });
+
+          zoomInBtn.addEventListener('click', () => {
+            zoom = Math.min(5, zoom + 0.2);
+            updateTransform();
+          });
+
+          zoomOutBtn.addEventListener('click', () => {
+            zoom = Math.max(0.2, zoom - 0.2);
+            updateTransform();
+          });
+
+          resetBtn.addEventListener('click', () => {
+            zoom = 1;
+            pan = { x: 0, y: 0 };
+            updateTransform();
+          });
+
+          const overlayId = \`fullscreen-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}\`;
+          const tempOverlayDiv = document.createElement('div');
+          tempOverlayDiv.id = 'container-' + overlayId;
+          tempOverlayDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
+          document.body.appendChild(tempOverlayDiv);
+
+          try {
+            const { svg } = await mermaid.render(overlayId, diagramText, tempOverlayDiv);
+            tempOverlayDiv.remove();
+
+            svgContainer.innerHTML = svg;
+            const svgEl = svgContainer.querySelector('svg');
+            if (svgEl) {
+              svgEl.removeAttribute('width');
+              svgEl.removeAttribute('height');
+              svgEl.style.width = '100%';
+              svgEl.style.height = '100%';
+              svgEl.style.maxWidth = 'none';
+              svgEl.style.maxHeight = 'none';
+            }
+          } catch (err) {
+            showRenderError(svgContainer, err?.message || 'Diagram error', 'pre');
+            tempOverlayDiv.remove();
+            try { document.getElementById(overlayId)?.remove(); } catch {}
+          }
+        }
+
         (async () => {
           for (const el of mermaidEls) {
-            const id = `preview-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            const id = \`preview-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}\`;
             try {
               let diagram = decodeURIComponent(el.dataset.diagram).trim();
-              diagram = diagram.replace(/^\s*gitgraph/i, 'gitGraph');
-              diagram = diagram.replace(/^\s*sequencediagram/i, 'sequenceDiagram');
-              diagram = diagram.replace(/^\s*classDiagram/i, 'classDiagram');
-              diagram = diagram.replace(/^\s*stateDiagram/i, 'stateDiagram');
-              diagram = diagram.replace(/^\s*erDiagram/i, 'erDiagram');
-              diagram = diagram.replace(/^\s*gantt/i, 'gantt');
+              diagram = diagram.replace(/^s*gitgraph/i, 'gitGraph');
+              diagram = diagram.replace(/^s*sequencediagram/i, 'sequenceDiagram');
+              diagram = diagram.replace(/^s*classDiagram/i, 'classDiagram');
+              diagram = diagram.replace(/^s*stateDiagram/i, 'stateDiagram');
+              diagram = diagram.replace(/^s*erDiagram/i, 'erDiagram');
+              diagram = diagram.replace(/^s*gantt/i, 'gantt');
 
               const tempDiv = document.createElement('div');
               tempDiv.id = 'container-' + id;
@@ -522,8 +705,15 @@ export default function BlogPreview({
 
               // Only apply if element is still in the DOM and this is the current effect
               if (el.isConnected && !isStale()) {
-                el.innerHTML = svg;
-                const svgEl = el.querySelector('svg');
+                el.innerHTML = '';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'preview-mermaid-wrapper';
+
+                const svgContainer = document.createElement('div');
+                svgContainer.className = 'preview-mermaid-svg-container';
+                svgContainer.innerHTML = svg;
+                const svgEl = svgContainer.querySelector('svg');
                 if (svgEl) {
                   svgEl.removeAttribute('width');
                   svgEl.style.width = '100%';
@@ -531,6 +721,22 @@ export default function BlogPreview({
                   svgEl.style.height = 'auto';
                   svgEl.style.minHeight = '180px';
                 }
+
+                const fsBtn = document.createElement('button');
+                fsBtn.className = 'preview-mermaid-fullscreen-btn';
+                fsBtn.title = 'Open fullscreen';
+                fsBtn.setAttribute('aria-label', 'Open fullscreen');
+                fsBtn.innerHTML = \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>\`;
+
+                fsBtn.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openFullscreenMermaid(diagram, isDark);
+                });
+
+                wrapper.appendChild(svgContainer);
+                wrapper.appendChild(fsBtn);
+                el.appendChild(wrapper);
               }
             } catch (err) {
               if (el.isConnected && !isStale()) {
