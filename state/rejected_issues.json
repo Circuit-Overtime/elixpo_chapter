@@ -286,6 +286,52 @@
       "title": "[BUG]",
       "url": "https://github.com/ThinkInAIXYZ/deepchat/issues/2068"
     },
+    "aipoch/open-science#340": {
+      "confidence": 0.75,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-29T09:25:13Z",
+      "reasons": [
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "RFC: Provenance as a derived view over existing stores (Roadmap Phase 2 \u2014 artifact lineage without a parallel capture log)",
+      "url": "https://github.com/aipoch/open-science/issues/340"
+    },
+    "aipoch/open-science#474": {
+      "confidence": 0.6,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-28T07:46:46Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.60 is below 0.70"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "[Bug]: Remote SSH connection fails in Open Science although direct SSH works",
+      "url": "https://github.com/aipoch/open-science/issues/474"
+    },
+    "aipoch/open-science#475": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-28T07:51:12Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "[Feature]: Add claim-level citation tracing and source preview",
+      "url": "https://github.com/aipoch/open-science/issues/475"
+    },
     "atrocore/atrocore#1334": {
       "confidence": 0.95,
       "issue_kind": "unknown",
@@ -297,6 +343,67 @@
       "rejected_at": "2026-08-06T08:37:42.198956+00:00",
       "title": "Incorrect use of `ltrim()` in `LocalStorage::scanFiles()` corrupts file paths",
       "url": "https://github.com/atrocore/atrocore/issues/1334"
+    },
+    "bramstroker/homeassistant-powercalc#4196": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-10T08:04:28Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "Support Signify white ceiling spot",
+      "url": "https://github.com/bramstroker/homeassistant-powercalc/issues/4196"
+    },
+    "bramstroker/homeassistant-powercalc#4394": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-26T18:32:39Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "Music is not available as a music provider",
+      "url": "https://github.com/bramstroker/homeassistant-powercalc/issues/4394"
+    },
+    "bramstroker/homeassistant-powercalc#4395": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-26T18:32:27Z",
+      "reasons": [
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "issue is already assigned or claimed"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "Vacuum Robots with battery_level sensors",
+      "url": "https://github.com/bramstroker/homeassistant-powercalc/issues/4395"
+    },
+    "bramstroker/homeassistant-powercalc#4398": {
+      "confidence": 0.9,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-03T17:28:54Z",
+      "reasons": [
+        "needs external access or credentials",
+        "needs specialized hardware",
+        "conversation indicates the repository change is already resolved"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "Support password authentication for shelly integration",
+      "url": "https://github.com/bramstroker/homeassistant-powercalc/issues/4398"
     },
     "czl0325/coin11-tb#68": {
       "confidence": 0.5,
@@ -328,6 +435,38 @@
       "rejected_at": "2026-08-06T08:37:42.198956+00:00",
       "title": "Add proper GLB video support",
       "url": "https://github.com/earthtojake/text-to-cad/issues/149"
+    },
+    "felixmosh/bull-board#1276": {
+      "confidence": 0.75,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-23T12:08:07Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "needs a maintainer decision",
+        "needs external access or credentials",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "feat(ui): support custom icon for miscLinks in setUIConfig",
+      "url": "https://github.com/felixmosh/bull-board/issues/1276"
+    },
+    "felixmosh/bull-board#1291": {
+      "confidence": 0.7,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-28T02:18:08Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "Feature: group failed jobs by error for easier triage",
+      "url": "https://github.com/felixmosh/bull-board/issues/1291"
     },
     "fivetran/great_expectations#11986": {
       "confidence": 0.7,
@@ -387,6 +526,52 @@
       "rejected_at": "2026-08-05T08:37:23.420231+00:00",
       "title": "Installation from Microsoft Store cannot switch off Spanish",
       "url": "https://github.com/horsicq/Detect-It-Easy/issues/367"
+    },
+    "jnMetaCode/superpowers-zh#107": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-07T22:17:13Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "qoder-CN\u7684\u7248\u672c\u80fd\u5426\u652f\u6301",
+      "url": "https://github.com/jnMetaCode/superpowers-zh/issues/107"
+    },
+    "jnMetaCode/superpowers-zh#48": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-07T14:15:40Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "\u672a\u68c0\u6d4b\u5230\u4efb\u4f55\u5df2\u77e5\u7684 AI \u7f16\u7a0b\u5de5\u5177",
+      "url": "https://github.com/jnMetaCode/superpowers-zh/issues/48"
+    },
+    "jnMetaCode/superpowers-zh#95": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-07T22:17:12Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-08T06:54:22.905303+00:00",
+      "title": "\u5efa\u8bae\u652f\u6301 Zcode",
+      "url": "https://github.com/jnMetaCode/superpowers-zh/issues/95"
     },
     "juewuy/ShellCrash#1292": {
       "confidence": 0.7,
