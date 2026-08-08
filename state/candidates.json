@@ -2,191 +2,189 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "teorth/erdosproblems",
-    "has_contributing": true,
+    "full_name": "bramstroker/homeassistant-powercalc",
+    "has_contributing": false,
     "language": "Python",
-    "open_issues": 32,
-    "pushed_at": "2026-08-07T07:15:58Z",
+    "open_issues": 13,
+    "pushed_at": "2026-08-08T06:52:26Z",
     "reasons": [
-      "821\u2605 python active",
+      "1554\u2605 python active",
       "has open issues"
     ],
-    "score": 51,
-    "stars": 821,
-    "topics": [],
-    "url": "https://github.com/teorth/erdosproblems"
+    "score": 37,
+    "stars": 1554,
+    "topics": [
+      "consumption",
+      "energy-consumption",
+      "energy-monitor",
+      "energy-monitoring",
+      "hacktoberfest",
+      "hacs",
+      "home-assistant",
+      "home-assistant-hacs",
+      "homeassistant",
+      "iot",
+      "metering",
+      "power",
+      "smart-home",
+      "sustainability",
+      "virtual-sensors"
+    ],
+    "url": "https://github.com/bramstroker/homeassistant-powercalc"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "eser/stack",
+    "full_name": "aipoch/open-science",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 6,
-    "pushed_at": "2026-08-07T07:16:04Z",
+    "open_issues": 37,
+    "pushed_at": "2026-08-08T06:53:41Z",
     "reasons": [
-      "128\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 128,
-    "topics": [
-      "acikkaynak",
-      "bot",
-      "cool",
-      "deno",
-      "eser-live",
-      "faas",
-      "function",
-      "javascript",
-      "platform",
-      "portability",
-      "runtime",
-      "toolkit",
-      "tools",
-      "typescript"
-    ],
-    "url": "https://github.com/eser/stack"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "luigi-project/luigi",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 38,
-    "pushed_at": "2026-08-07T07:12:29Z",
-    "reasons": [
-      "920\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 920,
-    "topics": [
-      "microfrontends",
-      "microui",
-      "open-source"
-    ],
-    "url": "https://github.com/luigi-project/luigi"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "grafana/docker-otel-lgtm",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 14,
-    "pushed_at": "2026-08-07T07:08:20Z",
-    "reasons": [
-      "1979\u2605 shell active",
+      "1741\u2605 typescript active",
       "has open issues"
     ],
     "score": 52,
-    "stars": 1979,
+    "stars": 1741,
     "topics": [
-      "grafana",
-      "loki",
-      "opentelemetry",
-      "opentelemetry-collector",
-      "prometheus",
-      "pyroscope",
-      "tempo"
-    ],
-    "url": "https://github.com/grafana/docker-otel-lgtm"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "RICHQAQ/PasteMD",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 28,
-    "pushed_at": "2026-08-07T07:10:59Z",
-    "reasons": [
-      "5183\u2605 python active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 5183,
-    "topics": [
-      "ai",
-      "chatgpt",
-      "clipboard",
-      "converter",
-      "deepseek",
-      "excel",
-      "latex",
-      "markdown",
-      "pandoc",
-      "productivity",
-      "python",
-      "word",
-      "wps"
-    ],
-    "url": "https://github.com/RICHQAQ/PasteMD"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "ThinkInAIXYZ/deepchat",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 6,
-    "pushed_at": "2026-08-07T07:13:48Z",
-    "reasons": [
-      "6203\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 55,
-    "stars": 6203,
-    "topics": [
-      "agent",
-      "agent-skills",
-      "ai",
-      "ai-assistant",
-      "ai-sdk",
-      "chatgpt",
-      "claude",
-      "cross-platform",
-      "deepseek",
+      "ai-agent",
+      "ai-for-science",
+      "bioinformatics",
+      "biology",
+      "data-analysis",
+      "desktop-app",
       "electron",
-      "gemini",
-      "harness-design",
-      "hermes-agent",
-      "llm-client",
+      "llm",
+      "local-first",
+      "macos",
       "mcp",
-      "mcp-client",
-      "openai-client",
-      "openclaw"
+      "medical-research",
+      "model-agnostic",
+      "open-science",
+      "python",
+      "reproducible-research",
+      "research-tools",
+      "scientific-research",
+      "typescript",
+      "windows"
     ],
-    "url": "https://github.com/ThinkInAIXYZ/deepchat"
+    "url": "https://github.com/aipoch/open-science"
   },
   {
     "archived": false,
-    "band": "mid",
-    "full_name": "GladysAssistant/Gladys",
+    "band": "small",
+    "full_name": "fossasia/scrum_helper",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 45,
-    "pushed_at": "2026-08-07T07:08:40Z",
+    "open_issues": 47,
+    "pushed_at": "2026-08-08T06:50:43Z",
     "reasons": [
-      "3097\u2605 javascript active",
+      "1306\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 1306,
+    "topics": [],
+    "url": "https://github.com/fossasia/scrum_helper"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "MiSTer-devel/Distribution_MiSTer",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 3,
+    "pushed_at": "2026-08-08T06:53:26Z",
+    "reasons": [
+      "141\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 141,
+    "topics": [],
+    "url": "https://github.com/MiSTer-devel/Distribution_MiSTer"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "huangruiteng/loopx",
+    "has_contributing": true,
+    "language": "Python",
+    "open_issues": 31,
+    "pushed_at": "2026-08-08T06:46:42Z",
+    "reasons": [
+      "3458\u2605 python active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 3097,
+    "stars": 3458,
     "topics": [
-      "assistant",
-      "automation",
-      "gladys",
-      "home",
-      "home-automation",
-      "iot",
-      "nodejs",
-      "raspberry-pi",
-      "smarthome"
+      "agent-control-plane",
+      "agent-ops",
+      "ai-agents",
+      "codex",
+      "long-running-agents",
+      "loop-engineering",
+      "loopx",
+      "workflow-automation"
     ],
-    "url": "https://github.com/GladysAssistant/Gladys"
+    "url": "https://github.com/huangruiteng/loopx"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "felixmosh/bull-board",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 18,
+    "pushed_at": "2026-08-08T06:45:26Z",
+    "reasons": [
+      "3434\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 53,
+    "stars": 3434,
+    "topics": [
+      "bull",
+      "bullmq",
+      "bullmq-pro",
+      "redis"
+    ],
+    "url": "https://github.com/felixmosh/bull-board"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "jnMetaCode/superpowers-zh",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 13,
+    "pushed_at": "2026-08-08T06:30:11Z",
+    "reasons": [
+      "7545\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 41,
+    "stars": 7545,
+    "topics": [
+      "agent-skills",
+      "agentic-coding",
+      "ai-coding",
+      "chinese",
+      "claude-code",
+      "code-review",
+      "cursor",
+      "gemini-cli",
+      "kiro",
+      "mcp",
+      "npm-package",
+      "prompt-engineering",
+      "skills",
+      "superpowers",
+      "tdd",
+      "trae"
+    ],
+    "url": "https://github.com/jnMetaCode/superpowers-zh"
   },
   {
     "archived": false,
@@ -195,7 +193,7 @@
     "has_contributing": true,
     "language": "Shell",
     "open_issues": 14,
-    "pushed_at": "2026-08-07T07:13:34Z",
+    "pushed_at": "2026-08-08T04:20:47Z",
     "reasons": [
       "4448\u2605 shell active",
       "has open issues"
@@ -215,62 +213,48 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "optuna/optuna",
+    "full_name": "zubair-trabzada/geo-seo-claude",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 16,
-    "pushed_at": "2026-08-07T07:15:10Z",
+    "open_issues": 20,
+    "pushed_at": "2026-08-08T06:29:02Z",
     "reasons": [
-      "14619\u2605 python active",
+      "9272\u2605 python active",
       "has open issues"
     ],
-    "score": 60,
-    "stars": 14619,
-    "topics": [
-      "distributed",
-      "hyperparameter-optimization",
-      "machine-learning",
-      "parallel",
-      "python"
-    ],
-    "url": "https://github.com/optuna/optuna"
+    "score": 57,
+    "stars": 9272,
+    "topics": [],
+    "url": "https://github.com/zubair-trabzada/geo-seo-claude"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "Unleash/unleash",
-    "has_contributing": false,
+    "full_name": "Termix-SSH/Termix",
+    "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 61,
-    "pushed_at": "2026-08-07T07:13:24Z",
+    "open_issues": 7,
+    "pushed_at": "2026-08-08T06:19:48Z",
     "reasons": [
-      "13720\u2605 typescript active",
+      "14651\u2605 typescript active",
       "has open issues"
     ],
-    "score": 37,
-    "stars": 13720,
+    "score": 60,
+    "stars": 14651,
     "topics": [
-      "activation-strategies",
-      "collaboration",
-      "continuous-delivery",
-      "continuous-deployment",
-      "devops",
-      "devtool",
-      "experiments",
-      "feature",
-      "feature-flags",
-      "feature-toggle",
-      "feature-toggles",
-      "feature-toggling",
-      "hacktoberfest",
-      "integration",
-      "platform-engineering",
-      "sdk",
-      "toggles",
-      "unleash",
-      "variants"
+      "docker",
+      "file-management",
+      "rdp",
+      "self-hosted",
+      "server-stats",
+      "ssh",
+      "ssh-tunnel",
+      "telnet",
+      "terminal",
+      "termix",
+      "vnc"
     ],
-    "url": "https://github.com/Unleash/unleash"
+    "url": "https://github.com/Termix-SSH/Termix"
   },
   {
     "archived": false,
@@ -278,14 +262,14 @@
     "full_name": "marko-js/marko",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 29,
-    "pushed_at": "2026-08-07T04:58:44Z",
+    "open_issues": 30,
+    "pushed_at": "2026-08-08T05:13:50Z",
     "reasons": [
-      "14396\u2605 javascript active",
+      "14395\u2605 javascript active",
       "has open issues"
     ],
     "score": 60,
-    "stars": 14396,
+    "stars": 14395,
     "topics": [
       "client-side-rendering",
       "dom",
@@ -305,14 +289,14 @@
     "full_name": "DaoCloud/public-image-mirror",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 7,
+    "open_issues": 8,
     "pushed_at": "2026-08-07T06:25:57Z",
     "reasons": [
-      "14787\u2605 shell active",
+      "14794\u2605 shell active",
       "has open issues"
     ],
     "score": 45,
-    "stars": 14787,
+    "stars": 14794,
     "topics": [
       "mirror",
       "speedup"
@@ -322,225 +306,213 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "jvxiao/speed-github",
+    "full_name": "kort0881/vpn-vless-configs-russia",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 3,
-    "pushed_at": "2026-08-07T07:16:14Z",
+    "open_issues": 6,
+    "pushed_at": "2026-08-08T06:53:49Z",
     "reasons": [
-      "348\u2605 python active",
+      "554\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 348,
-    "topics": [],
-    "url": "https://github.com/jvxiao/speed-github"
+    "stars": 554,
+    "topics": [
+      "clash",
+      "free-vpn",
+      "free-vpn-key",
+      "free-vpn-keys",
+      "hiddify",
+      "proxy",
+      "shadowrocket",
+      "telegram-channel",
+      "v2ray",
+      "vless",
+      "vless-telegram-bot",
+      "vmess",
+      "vpn",
+      "vpn-auto-poster",
+      "vpn-for-russia"
+    ],
+    "url": "https://github.com/kort0881/vpn-vless-configs-russia"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "0xsline/OpenChatCut",
-    "has_contributing": false,
+    "full_name": "receptron/mulmoterminal",
+    "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 13,
-    "pushed_at": "2026-08-07T07:15:41Z",
+    "open_issues": 25,
+    "pushed_at": "2026-08-08T06:53:58Z",
     "reasons": [
-      "856\u2605 typescript active",
+      "105\u2605 typescript active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 856,
+    "score": 51,
+    "stars": 105,
     "topics": [
-      "agent-skills",
-      "agentic-ai",
-      "ai-agent",
-      "ai-video-editor",
-      "capcut",
-      "chatcut",
+      "agentic-coding",
+      "ai-agents",
       "claude-code",
       "codex",
-      "desktop-app",
-      "electron",
-      "ffmpeg",
-      "local-first",
-      "mcp",
-      "open-source",
-      "openchatcut",
-      "remotion",
-      "text-based-video-editing",
-      "timeline-editor",
-      "video-editing",
-      "video-editor"
+      "developer-tools",
+      "git-worktree",
+      "parallel-agents",
+      "terminal",
+      "tmux",
+      "typescript",
+      "vibe-coding",
+      "xterm-js"
     ],
-    "url": "https://github.com/0xsline/OpenChatCut"
+    "url": "https://github.com/receptron/mulmoterminal"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "debs-obrien/playwright-movies-app",
+    "full_name": "oirge/Mineradio",
     "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 8,
-    "pushed_at": "2026-08-07T07:11:46Z",
+    "open_issues": 15,
+    "pushed_at": "2026-08-08T06:53:11Z",
     "reasons": [
-      "100\u2605 javascript active",
+      "236\u2605 javascript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 100,
-    "topics": [
-      "playwright",
-      "tests"
-    ],
-    "url": "https://github.com/debs-obrien/playwright-movies-app"
+    "stars": 236,
+    "topics": [],
+    "url": "https://github.com/oirge/Mineradio"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "gentoo-zh/overlay",
+    "full_name": "PokeAPI/api-data",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 13,
-    "pushed_at": "2026-08-07T07:14:18Z",
+    "open_issues": 9,
+    "pushed_at": "2026-08-08T06:49:31Z",
     "reasons": [
-      "424\u2605 shell active",
+      "188\u2605 shell active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 424,
+    "stars": 188,
     "topics": [
-      "ebuild",
-      "gentoo",
-      "gentoo-overlay",
-      "overlay"
+      "hacktoberfest",
+      "json-data",
+      "json-schema",
+      "pokeapi"
     ],
-    "url": "https://github.com/gentoo-zh/overlay"
+    "url": "https://github.com/PokeAPI/api-data"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "gptme/gptme",
-    "has_contributing": false,
+    "full_name": "Abdess/retrobios",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 15,
-    "pushed_at": "2026-08-07T07:15:01Z",
+    "open_issues": 1,
+    "pushed_at": "2026-08-08T06:50:18Z",
     "reasons": [
-      "4377\u2605 python active",
+      "6715\u2605 python active",
+      "has open issues"
+    ],
+    "score": 47,
+    "stars": 6715,
+    "topics": [
+      "batocera",
+      "bios",
+      "emudeck",
+      "emulator",
+      "emulatorjs",
+      "firmware",
+      "lakka",
+      "libretro",
+      "mame",
+      "nintendo",
+      "playstation",
+      "preservation",
+      "recalbox",
+      "retroarch",
+      "retrobat",
+      "retrodeck",
+      "retrogaming",
+      "retropie",
+      "romm",
+      "sega"
+    ],
+    "url": "https://github.com/Abdess/retrobios"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "ineo6/hosts",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 12,
+    "pushed_at": "2026-08-08T06:44:12Z",
+    "reasons": [
+      "5352\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 39,
+    "stars": 5352,
+    "topics": [
+      "github",
+      "hosts",
+      "hosts-file"
+    ],
+    "url": "https://github.com/ineo6/hosts"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "GargantuaX/gemini-watermark-remover",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 11,
+    "pushed_at": "2026-08-08T06:36:05Z",
+    "reasons": [
+      "5221\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 39,
+    "stars": 5221,
+    "topics": [
+      "chrome-extension",
+      "gemini",
+      "gemini-video-watermark-remover",
+      "gemini-watermark-remover",
+      "skills",
+      "userscript",
+      "watermark-remover"
+    ],
+    "url": "https://github.com/GargantuaX/gemini-watermark-remover"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "mvscode/frps-onekey",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 11,
+    "pushed_at": "2026-08-08T03:16:51Z",
+    "reasons": [
+      "3502\u2605 shell active",
       "has open issues"
     ],
     "score": 38,
-    "stars": 4377,
+    "stars": 3502,
     "topics": [
-      "agent",
-      "agents",
-      "ai-agents",
-      "ai-assistant",
-      "anthropic",
-      "chatbot",
-      "chatgpt",
-      "cli",
-      "code-generation",
-      "llamacpp",
-      "llm",
-      "llm-agent",
-      "llm-apps",
-      "openai",
-      "openrouter",
-      "rag"
-    ],
-    "url": "https://github.com/gptme/gptme"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "cloudflare/cloudflare-os",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 36,
-    "pushed_at": "2026-08-07T07:15:27Z",
-    "reasons": [
-      "5587\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 5587,
-    "topics": [],
-    "url": "https://github.com/cloudflare/cloudflare-os"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "ilysenko/codex-desktop-linux",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 14,
-    "pushed_at": "2026-08-07T07:07:54Z",
-    "reasons": [
-      "3460\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 53,
-    "stars": 3460,
-    "topics": [
-      "ai-coding",
-      "appimage",
-      "archlinux",
-      "chatgpt",
-      "chatgpt-desktop",
-      "codex",
-      "codex-desktop",
       "debian",
-      "desktop-app",
-      "electron",
-      "fedora",
+      "frp",
+      "frps",
       "linux",
-      "nix",
-      "nixos",
-      "openai",
-      "opensuse",
-      "rpm",
-      "ubuntu",
-      "wayland",
-      "x11"
+      "nat",
+      "remote-control",
+      "shell",
+      "ubuntu"
     ],
-    "url": "https://github.com/ilysenko/codex-desktop-linux"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "jkroepke/helm-secrets",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 3,
-    "pushed_at": "2026-08-07T05:13:51Z",
-    "reasons": [
-      "2022\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 52,
-    "stars": 2022,
-    "topics": [
-      "argocd",
-      "decryption",
-      "encryption",
-      "encryption-tool",
-      "gpg",
-      "helm",
-      "helm-chart",
-      "helm-charts",
-      "helm-plugin",
-      "helm-plugins",
-      "k8s",
-      "kms",
-      "kubernetes",
-      "kubernetes-secrets",
-      "secret-management",
-      "secrets",
-      "secrets-management",
-      "secrets-stored",
-      "sops",
-      "vault"
-    ],
-    "url": "https://github.com/jkroepke/helm-secrets"
+    "url": "https://github.com/mvscode/frps-onekey"
   }
 ]
