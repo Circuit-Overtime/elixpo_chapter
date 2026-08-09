@@ -43,3 +43,10 @@ class DiscussionMemory(BaseModel):
 
     def touch(self) -> None:
         self.updated_at = datetime.now(timezone.utc).isoformat()
+
+    def compact(self) -> int:
+        before = len(self.handled_source_ids) + len(self.comment_cursors)
+        self.handled_source_ids = list(dict.fromkeys(self.handled_source_ids))[-HANDLED_SOURCE_LIMIT:]
+        if len(self.comment_cursors) > COMMENT_CURSOR_LIMIT:
+            self.comment_cursors = dict(list(self.comment_cursors.items())[-COMMENT_CURSOR_LIMIT:])
+        return before - len(self.handled_source_ids) - len(self.comment_cursors)

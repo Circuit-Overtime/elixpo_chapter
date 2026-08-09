@@ -366,7 +366,14 @@ async def _poll_mentions(discussions, router, bot_username: str, memory=None) ->
     handled = 0
     failures = 0
     capped = False
-    page = await discussions.recent_thread_page(cursor=memory.thread_cursor)
+    try:
+        page = await discussions.recent_thread_page(cursor=memory.thread_cursor)
+    except Exception:
+        if not memory.thread_cursor:
+            raise
+        log.warning("discussions.thread_cursor_reset", reason="saved cursor was no longer valid")
+        memory.set_thread_cursor(None)
+        page = await discussions.recent_thread_page(cursor=None)
     for raw_discussion in page.nodes:
         discussion = {
             "node_id": raw_discussion["id"],

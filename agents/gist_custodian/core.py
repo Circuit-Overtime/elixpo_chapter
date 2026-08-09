@@ -26,6 +26,8 @@ def _digest(content: str) -> str:
 
 
 def _validated(filename: str, payload: object):
+    if isinstance(payload, dict) and int(payload.get("schema_version", 1)) > 1:
+        raise ValueError(f"Gist file {filename!r} uses an unsupported future schema")
     if filename == FOLLOWUP_FILENAME:
         return FollowupMemory.model_validate(payload)
     if filename == MERGE_SUMMARIES_FILENAME:
@@ -60,6 +62,8 @@ def _maintain(document, *, now: datetime) -> dict:
         result["compacted"] = document.compact()
     elif isinstance(document, ModelCacheMemory):
         result["pruned"] = document.prune(now=now)
+    elif isinstance(document, DiscussionMemory):
+        result["compacted"] = document.compact()
     document.schema_version = 1
     document.updated_at = now.isoformat()
     return result

@@ -88,25 +88,25 @@ Items are ordered by dependency, not by issue number.
 
 ## 4. Gist memory and cache custodian
 
-- [ ] Create a small Gist custodian squad and skill; it must not import other squads.
-- [ ] Own schema migrations, TTL pruning, compaction, and corrupted-file recovery.
-- [ ] Keep follow-up memory, merge summaries, and model cache in separate Gist files.
-- [ ] Use conditional updates or revision checks to prevent concurrent lost writes.
-- [ ] Bound completed receipts and handled-comment IDs.
-- [ ] Never store credentials, repository source, hidden prompts, or raw model context.
-- [ ] Add a manual repair command and a scheduled low-frequency purge workflow.
+- [x] Create a small Gist custodian squad and skill; it must not import other squads.
+- [x] Own schema migrations, TTL pruning, compaction, and corrupted-file recovery.
+- [x] Keep follow-up memory, merge summaries, and model cache in separate Gist files.
+- [x] Use conditional updates or revision checks to prevent concurrent lost writes.
+- [x] Bound completed receipts and handled-comment IDs.
+- [x] Never store credentials, repository source, hidden prompts, or raw model context.
+- [x] Add a manual repair command and a scheduled low-frequency purge workflow.
 
 ## 5. Discussion reliability pass
 
 - [ ] Test a real top-level and nested `@elixpoo` reply in `elixpo/elixpo`.
-- [ ] Confirm the ten-minute poll is the authoritative cross-repository fallback.
-- [ ] Add pagination and per-run cursors so active threads cannot starve older mentions.
-- [ ] Record handled source IDs durably instead of depending only on HTML markers.
-- [ ] Isolate one failed Discussion so the remainder of the poll still completes.
+- [x] Confirm the ten-minute poll is the authoritative cross-repository fallback.
+- [x] Add pagination and per-run cursors so active threads cannot starve older mentions.
+- [x] Record handled source IDs durably instead of depending only on HTML markers.
+- [x] Isolate one failed Discussion so the remainder of the poll still completes.
 - [ ] Verify Announcement, Q&A, and Poll category aliases in production.
 - [ ] Verify label creation permissions and graceful behavior when labels are blocked.
-- [ ] Add dry-run/preview modes for Q&A, pulse, and merge-generated posts.
-- [ ] Document the mood cadence, cooldowns, and deterministic safety constraints.
+- [x] Add dry-run/preview modes for Q&A, pulse, and merge-generated posts.
+- [x] Document the mood cadence, cooldowns, and deterministic safety constraints.
 
 ## 6. End-to-end orchestration
 

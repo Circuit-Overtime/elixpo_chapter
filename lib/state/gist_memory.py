@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -20,8 +19,8 @@ class MergeSummary(BaseModel):
     repository: str
     pull_number: int
     pull_url: str
-    title: str = ""
-    summary: str = ""
+    title: str = Field(default="", max_length=300)
+    summary: str = Field(default="", max_length=4000)
     merged_at: str
 
 
@@ -40,7 +39,7 @@ class MergeSummaryMemory(BaseModel):
 class ModelCacheEntry(BaseModel):
     namespace: str
     source_hash: str
-    value: Any
+    value: str = Field(max_length=16_000)
     created_at: str
     expires_at: str
 

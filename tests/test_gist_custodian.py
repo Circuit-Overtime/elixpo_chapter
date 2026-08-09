@@ -118,3 +118,11 @@ async def test_revisioned_gist_rejects_concurrent_write():
     snapshot = await gist.snapshot()
     with pytest.raises(GistConflictError):
         await gist.save_files({"file.json": "{}\n"}, expected=snapshot)
+
+
+@pytest.mark.asyncio
+async def test_future_schema_fails_closed_instead_of_downgrading():
+    gist = MemoryGist({FOLLOWUP_FILENAME: json.dumps({"schema_version": 99})})
+    receipt = await maintain_gist(gist)
+    assert receipt["status"] == "repair_required"
+    assert "future schema" in receipt["files"][0]["error"]

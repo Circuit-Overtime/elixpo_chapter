@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 from agents.discussions.__main__ import (
@@ -74,6 +75,25 @@ def test_target_repository_and_labels_are_deterministic(monkeypatch):
     assert _source_repo_name({"repository": {"full_name": "elixpo/agent.elixpo"}}) == "elixpo/agent.elixpo"
     assert list(_labels_for("qna", "kubernetes")) == ["qna", "kubernetes", "elixpoo-generated"]
     assert list(_labels_for("announcement", "general")) == ["announcement", "elixpoo-generated"]
+
+
+def test_discussion_memory_bounds_handled_ids_and_comment_cursors():
+    memory = DiscussionMemory(
+        handled_source_ids=[str(index) for index in range(2100)],
+        comment_cursors={str(index): f"cursor-{index}" for index in range(110)},
+    )
+    removed = memory.compact()
+    assert removed == 110
+    assert len(memory.handled_source_ids) == 2000
+    assert memory.handled_source_ids[0] == "100"
+    assert len(memory.comment_cursors) == 100
+
+
+def test_discussion_workflow_keeps_ten_minute_authoritative_poll():
+    workflow = Path(".github/workflows/discussions.yml").read_text()
+    assert 'cron: "*/10 * * * *"' in workflow
+    assert "python -m agents.discussions poll-mentions" in workflow
+    assert "ELIXPOO_GIST_AGENTIC_TOKEN" in workflow
 
 
 def test_mood_heuristics_select_genres_without_model_calls():
