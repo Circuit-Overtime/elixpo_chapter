@@ -112,6 +112,13 @@ jobs:
           AGENT_GITHUB_SOLVER_TOKEN: ${{ secrets.AGENT_GITHUB_SOLVER_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
         run: python -m agents.submit
+      - name: Register PR follow-up memory
+        if: steps.gate.outputs.run == 'true' && steps.gate.outputs.submit == 'true'
+        env:
+          ELIXPOO_GIST_AGENTIC_TOKEN: ${{ secrets.ELIXPOO_GIST_AGENTIC_TOKEN }}
+          ELIXPOO_FOLLOWUP_GIST_ID: ${{ vars.ELIXPOO_FOLLOWUP_GIST_ID }}
+          ELIXPO_FOLLOWUP_TTL_DAYS: ${{ vars.ELIXPO_FOLLOWUP_TTL_DAYS || 360 }}
+        run: python -m agents.steward.remember
       - name: Commit state
         if: always() && steps.gate.outputs.run == 'true'
         env:

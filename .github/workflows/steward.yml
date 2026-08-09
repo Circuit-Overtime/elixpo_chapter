@@ -1,0 +1,34 @@
+name: steward follow-ups
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: elixpoo-followup-memory
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Reconcile tracked work and answer mentions
+        env:
+          ELIXPOO_GITHUB_AGENTIC_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
+          ELIXPOO_GIST_AGENTIC_TOKEN: ${{ secrets.ELIXPOO_GIST_AGENTIC_TOKEN }}
+          ELIXPOO_FOLLOWUP_GIST_ID: ${{ vars.ELIXPOO_FOLLOWUP_GIST_ID }}
+          ELIXPO_FOLLOWUP_TTL_DAYS: ${{ vars.ELIXPO_FOLLOWUP_TTL_DAYS || 360 }}
+          ELIXPO_GITHUB_CONTROL_REPO: ${{ vars.ELIXPO_GITHUB_CONTROL_REPO || github.repository }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+        run: python -m agents.steward.poll

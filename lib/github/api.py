@@ -138,6 +138,13 @@ class GitHubAPI:
             json={"body": body},
         )
 
+    async def update_issue_comment(self, owner: str, repo: str, comment_id: int, body: str) -> dict:
+        return await self._request(
+            "PATCH",
+            f"/repos/{owner}/{repo}/issues/comments/{comment_id}",
+            json={"body": body},
+        )
+
     # --- Pull Requests ---
 
     async def get_pull(self, owner: str, repo: str, pr_number: int) -> dict:
@@ -181,6 +188,9 @@ class GitHubAPI:
 
     async def get_pull_comments(self, owner: str, repo: str, pr_number: int) -> list:
         return await self._request("GET", f"/repos/{owner}/{repo}/pulls/{pr_number}/comments")
+
+    async def get_pull_reviews(self, owner: str, repo: str, pr_number: int) -> list:
+        return await self._request("GET", f"/repos/{owner}/{repo}/pulls/{pr_number}/reviews")
 
     async def create_pull(
         self,

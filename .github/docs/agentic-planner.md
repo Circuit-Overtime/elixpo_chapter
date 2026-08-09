@@ -19,7 +19,7 @@ repository that installs the agent workflows:
 | `ELIXPO_POLLINATIONS_API_KEY` | Every model request: agent, triage, PR metadata, and changelog summaries | Pollinations text API; this is the only model credential |
 | `ELIXPOO_GITHUB_AGENTIC_TOKEN` | Repository reads/writes, issue and PR metadata, branches, failed-run retries, repository variables, and Project V2 fields | See the token profiles below |
 | `AGENT_GITHUB_SOLVER_TOKEN` | Solve/Submit fork creation, fork branch pushes, and pull-request creation | Classic PAT from the fork owner with `public_repo` for public targets |
-| `ELIXPOO_GIST_AGENTIC_TOKEN` | Shared reusable `merge-gist.yml` workflow in `agent.elixpo` | Gist read/write |
+| `ELIXPOO_GIST_AGENTIC_TOKEN` | Merge changelog and Steward follow-up memory | Gist read/write |
 
 `GITHUB_TOKEN` is created automatically for each workflow run. It is not an
 organization secret and must not be copied into organization settings.
@@ -39,6 +39,8 @@ Recommended `ELIXPOO_GITHUB_AGENTIC_TOKEN` fine-grained PAT:
   read/write, Pull requests read/write, Variables read/write, Workflows
   read/write, and Metadata read.
 - Organization permissions: Projects read/write.
+- The account must also be able to read its participating GitHub notifications
+  so Steward can discover mentions outside installed repositories.
 Classic PAT fallback for `ELIXPOO_GITHUB_AGENTIC_TOKEN`: `repo`, `workflow`, and `project`.
 Add `read:org` only if the organization restricts project access in a
 way that requires membership lookup. This is broader than the fine-grained
@@ -46,6 +48,14 @@ profile.
 
 `ELIXPOO_GIST_AGENTIC_TOKEN` needs only classic PAT scope `gist`. It does not need `repo`,
 `workflow`, or organization administration scopes.
+
+Set the organization variable `ELIXPOO_FOLLOWUP_GIST_ID` to one private Gist
+owned by `elixpoo`. Steward stores `elixpoo-followups.json` beside any other
+Gist files; it never overwrites the merge changelog. Optionally set
+`ELIXPO_FOLLOWUP_TTL_DAYS` from 60 through 360 (default 360) and
+`ELIXPO_AGENT_MAX_TURNS` (default 64). Set `ELIXPO_GITHUB_CONTROL_REPO` to the
+`owner/repository` containing the squad workflows when Steward runs anywhere
+other than that control repository; Actions otherwise uses `GITHUB_REPOSITORY`.
 
 `AGENT_GITHUB_SOLVER_TOKEN` is deliberately separate from the general
 agentic token. Mint it from the account that owns the forks. Use classic scope
@@ -108,7 +118,29 @@ These are not part of the organization agent bundle:
 
 Token ceilings are centralized in `.github/ci_config.py`. The prompt directs the agent to read the prepared context once, use targeted repository reads, and avoid search unless local context is insufficient. RTK compresses supported shell output before it reaches the model.
 
-PR context is bounded to metadata, diff statistics, and changed-file names. The agent requests per-file diffs only when needed; the workflow never injects the full patch. Agent execution is capped at 32 turns and 12 minutes, with prompt-level budgets of 12 tool calls for questions/reviews and 30 for implementation.
+PR context is bounded to metadata, diff statistics, changed-file names, and the
+single matching follow-up-memory record. The agent requests per-file diffs only
+when needed; the workflow never injects the full patch or shared memory. Agent
+execution defaults to 64 turns and 12 minutes, with prompt-level budgets of 12
+tool calls for questions/reviews and 30 for implementation. Repositories may
+lower or raise the turn ceiling with `ELIXPO_AGENT_MAX_TURNS`; time, tool, and
+context limits remain authoritative.
+
+Steward polls the elixpoo account's participating mention notifications every
+ten minutes. This catches public issue and PR mentions outside repositories that
+host the portable workflow. A new thread receives a Gist intake record and a
+safety-gated response; repository-changing work still enters the normal
+grounded repository workflow. A structured Steward decision dispatches only an
+explicit issue implementation request. The serialized intake workflow checks
+the blocklist, daily cap, active repository work, and Pick/Vet slot, then sends
+the issue through Vet before Solve can fork or edit anything. Submitted PRs are
+registered from the Solve and Submit state receipts, then removed from active
+memory immediately on merge or close, or on TTL expiry. A bounded completion
+tracker retains the outcome.
+
+GitHub Discussion mentions are handled both by direct `discussion` and
+`discussion_comment` events and by the existing ten-minute target-repository
+poll, which covers webhook gaps and nested replies.
 
 The setup script also maps the harness's Sonnet, Opus, and Haiku aliases to these configured free models. This prevents the upstream API from receiving an unavailable Anthropic model name after CCR has selected a Pollinations provider.
 
