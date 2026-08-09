@@ -2,549 +2,563 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "MicroPythonOS/MicroPythonOS",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 34,
-    "pushed_at": "2026-08-04T08:36:01Z",
-    "reasons": [
-      "743\u2605 python active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 743,
-    "topics": [
-      "micropython",
-      "micropython-esp32",
-      "operating-system"
-    ],
-    "url": "https://github.com/MicroPythonOS/MicroPythonOS"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "stella/stella",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 37,
-    "pushed_at": "2026-08-04T08:36:45Z",
-    "reasons": [
-      "161\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 161,
-    "topics": [
-      "law",
-      "law-firms",
-      "legal",
-      "legal-workspace",
-      "legaltech",
-      "open-source",
-      "stella"
-    ],
-    "url": "https://github.com/stella/stella"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "fastify/aws-lambda-fastify",
+    "full_name": "jvxiao/speed-github",
     "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 5,
-    "pushed_at": "2026-08-04T08:35:32Z",
+    "language": "Python",
+    "open_issues": 3,
+    "pushed_at": "2026-08-09T06:57:08Z",
     "reasons": [
-      "560\u2605 javascript active",
+      "348\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 560,
-    "topics": [
-      "amazon",
-      "api",
-      "api-gateway",
-      "aws",
-      "cloud",
-      "fastify",
-      "fastify-library",
-      "javascript",
-      "lambda",
-      "node",
-      "nodejs",
-      "proxy",
-      "serverless",
-      "web"
-    ],
-    "url": "https://github.com/fastify/aws-lambda-fastify"
+    "stars": 348,
+    "topics": [],
+    "url": "https://github.com/jvxiao/speed-github"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "altstackHQ/altstack-data",
+    "full_name": "kizuna-ai-lab/sokuji",
     "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 6,
-    "pushed_at": "2026-08-04T08:32:11Z",
+    "language": "TypeScript",
+    "open_issues": 34,
+    "pushed_at": "2026-08-09T06:57:14Z",
     "reasons": [
-      "320\u2605 shell active",
+      "1053\u2605 typescript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 320,
+    "stars": 1053,
     "topics": [
-      "awesome",
-      "awesome-list",
-      "devops",
-      "docker",
-      "open-source",
-      "productivity",
-      "saas-alternatives",
-      "self-hosted"
+      "ai",
+      "bilingual",
+      "chrome-extension",
+      "electron",
+      "linux-app",
+      "live-translation",
+      "llm",
+      "meeting",
+      "openai",
+      "real-time",
+      "simultaneous-interpretation",
+      "soniox",
+      "speech-translation",
+      "stt",
+      "translation",
+      "translator",
+      "tts",
+      "two-way-translation"
     ],
-    "url": "https://github.com/altstackHQ/altstack-data"
+    "url": "https://github.com/kizuna-ai-lab/sokuji"
   },
   {
     "archived": false,
-    "band": "mid",
-    "full_name": "modoboa/modoboa",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 48,
-    "pushed_at": "2026-08-04T08:34:43Z",
-    "reasons": [
-      "3528\u2605 python active",
-      "has open issues"
-    ],
-    "score": 53,
-    "stars": 3528,
-    "topics": [
-      "django",
-      "dovecot",
-      "email",
-      "hosting",
-      "javascript",
-      "mailserver",
-      "modoboa",
-      "postfix",
-      "python3",
-      "rspamd",
-      "vuejs",
-      "vuejs3",
-      "vuetify"
-    ],
-    "url": "https://github.com/modoboa/modoboa"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "middleapi/orpc",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 37,
-    "pushed_at": "2026-08-04T08:33:36Z",
-    "reasons": [
-      "5437\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 5437,
-    "topics": [
-      "api",
-      "bunjs",
-      "cloudflare-worker",
-      "contract-first",
-      "denojs",
-      "next-js",
-      "nodejs",
-      "openapi",
-      "pinia-vuejs",
-      "react",
-      "rpc-api",
-      "solidjs",
-      "svelte",
-      "tanstack",
-      "typesafe",
-      "typescript",
-      "vue"
-    ],
-    "url": "https://github.com/middleapi/orpc"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "ilysenko/codex-desktop-linux",
+    "band": "small",
+    "full_name": "BlackMixture/Mix-Studio",
     "has_contributing": true,
     "language": "JavaScript",
     "open_issues": 14,
-    "pushed_at": "2026-08-04T08:19:14Z",
+    "pushed_at": "2026-08-09T06:56:38Z",
     "reasons": [
-      "3324\u2605 javascript active",
+      "238\u2605 javascript active",
       "has open issues"
     ],
-    "score": 53,
-    "stars": 3324,
+    "score": 51,
+    "stars": 238,
     "topics": [
-      "ai-coding",
-      "appimage",
-      "archlinux",
-      "chatgpt",
-      "chatgpt-desktop",
-      "codex",
-      "codex-desktop",
-      "debian",
-      "desktop-app",
-      "electron",
-      "fedora",
-      "linux",
-      "nix",
-      "nixos",
-      "openai",
-      "opensuse",
-      "rpm",
-      "ubuntu",
-      "wayland",
-      "x11"
+      "ai-art",
+      "comfyui",
+      "image-generation",
+      "lora",
+      "mixstudio",
+      "mobile-first",
+      "self-hosted",
+      "stable-diffusion",
+      "video-generation"
     ],
-    "url": "https://github.com/ilysenko/codex-desktop-linux"
+    "url": "https://github.com/BlackMixture/Mix-Studio"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "syncliteio/SyncLite",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 9,
+    "pushed_at": "2026-08-09T06:56:15Z",
+    "reasons": [
+      "163\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 163,
+    "topics": [],
+    "url": "https://github.com/syncliteio/SyncLite"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "marlonrichert/zsh-autocomplete",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 28,
-    "pushed_at": "2026-08-04T07:18:12Z",
-    "reasons": [
-      "6677\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 40,
-    "stars": 6677,
-    "topics": [
-      "asynchronous",
-      "autocomplete",
-      "autocompletion",
-      "completion",
-      "non-blocking",
-      "typeahead",
-      "typeahead-completions",
-      "zsh",
-      "zsh-autocomplete",
-      "zsh-completion",
-      "zsh-plugin",
-      "zsh-plugins"
-    ],
-    "url": "https://github.com/marlonrichert/zsh-autocomplete"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "debpalash/OmniVoice-Studio",
+    "full_name": "vitali87/code-graph-rag",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 28,
-    "pushed_at": "2026-08-04T08:22:21Z",
+    "open_issues": 26,
+    "pushed_at": "2026-08-09T06:56:45Z",
     "reasons": [
-      "9502\u2605 python active",
+      "2632\u2605 python active",
       "has open issues"
     ],
-    "score": 57,
-    "stars": 9502,
+    "score": 52,
+    "stars": 2632,
     "topics": [
       "ai",
-      "cuda",
-      "dubbing-voice",
-      "mlx",
-      "tts",
-      "voice-ai",
-      "voice-cloning",
-      "voice-generation"
-    ],
-    "url": "https://github.com/debpalash/OmniVoice-Studio"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "InsForge/InsForge",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 104,
-    "pushed_at": "2026-08-04T08:34:08Z",
-    "reasons": [
-      "12642\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 12642,
-    "topics": [
-      "ai",
-      "ai-agents",
-      "coding",
-      "deno",
-      "embeddings",
-      "insforge",
-      "nextjs",
-      "oauth2",
-      "pgvector",
-      "postgresql",
-      "realtime",
-      "vectors",
-      "websockets"
-    ],
-    "url": "https://github.com/InsForge/InsForge"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "GoogleChromeLabs/quicklink",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 35,
-    "pushed_at": "2026-08-04T06:26:40Z",
-    "reasons": [
-      "11265\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 58,
-    "stars": 11265,
-    "topics": [
-      "performance",
-      "prefetch",
-      "prefetcher",
-      "speed",
-      "web-performance"
-    ],
-    "url": "https://github.com/GoogleChromeLabs/quicklink"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "DaoCloud/public-image-mirror",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 10,
-    "pushed_at": "2026-08-04T01:28:44Z",
-    "reasons": [
-      "14760\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 45,
-    "stars": 14760,
-    "topics": [
-      "mirror",
-      "speedup"
-    ],
-    "url": "https://github.com/DaoCloud/public-image-mirror"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "realiti4/claude-swap",
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 44,
-    "pushed_at": "2026-08-04T08:36:40Z",
-    "reasons": [
-      "1516\u2605 python active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1516,
-    "topics": [
-      "account-manager",
-      "account-switcher",
-      "anthropic",
-      "claude",
+      "ast",
       "claude-code",
-      "cli",
-      "multi-account",
-      "tui"
-    ],
-    "url": "https://github.com/realiti4/claude-swap"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "melandlabs/openloomi",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 29,
-    "pushed_at": "2026-08-04T08:36:23Z",
-    "reasons": [
-      "759\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 759,
-    "topics": [
-      "agent",
-      "ai",
-      "attention-agent",
-      "claw",
-      "context-engineering",
-      "gmail",
-      "graph",
-      "harness-engineering",
+      "code-analysis",
+      "code-understanding",
+      "codebase-search",
+      "developer-tools",
+      "graph-database",
+      "knowledge-graph",
       "llm",
-      "llm-model",
-      "loop-engineering",
       "mcp",
-      "memory",
-      "message",
-      "promt-engineering",
-      "security",
-      "skills",
-      "slack",
-      "telegram",
-      "whatsapp"
-    ],
-    "url": "https://github.com/melandlabs/openloomi"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "reliefeai/browser-relay",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 3,
-    "pushed_at": "2026-08-04T08:34:05Z",
-    "reasons": [
-      "117\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 117,
-    "topics": [
-      "agent-skill",
-      "ai-agent",
-      "browser-automation",
-      "chrome-extension",
-      "claude-code",
-      "cli",
-      "codex",
-      "gemini-cli-extension",
-      "remote-browser"
-    ],
-    "url": "https://github.com/reliefeai/browser-relay"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "ttionya/vaultwarden-backup",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 7,
-    "pushed_at": "2026-08-04T08:31:52Z",
-    "reasons": [
-      "1854\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1854,
-    "topics": [
-      "bitwarden-rs",
-      "bitwardenrs-backup",
-      "vaultwarden",
-      "vaultwarden-backup"
-    ],
-    "url": "https://github.com/ttionya/vaultwarden-backup"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "piskvorky/smart_open",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 3,
-    "pushed_at": "2026-08-04T08:34:12Z",
-    "reasons": [
-      "3455\u2605 python active",
-      "has open issues"
-    ],
-    "score": 53,
-    "stars": 3455,
-    "topics": [
-      "boto",
-      "bz2",
-      "file",
-      "gzip-stream",
-      "hacktoberfest",
-      "hdfs",
+      "mcp-server",
+      "memgraph",
+      "monorepo",
+      "multi-language",
       "python",
-      "s3",
-      "streaming",
-      "streaming-data",
-      "webhdfs"
+      "rag",
+      "retrieval-augmented-generation",
+      "semantic-search",
+      "tree-sitter"
     ],
-    "url": "https://github.com/piskvorky/smart_open"
+    "url": "https://github.com/vitali87/code-graph-rag"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "useplunk/plunk",
+    "full_name": "tinyplex/tinybase",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 46,
-    "pushed_at": "2026-08-04T08:37:25Z",
+    "open_issues": 18,
+    "pushed_at": "2026-08-09T06:45:08Z",
     "reasons": [
-      "5336\u2605 typescript active",
+      "5137\u2605 typescript active",
       "has open issues"
     ],
     "score": 54,
-    "stars": 5336,
-    "topics": [],
-    "url": "https://github.com/useplunk/plunk"
+    "stars": 5137,
+    "topics": [
+      "agent-skills",
+      "crdt",
+      "data",
+      "javascript",
+      "local-first",
+      "react",
+      "reactive",
+      "solid",
+      "state",
+      "svelte",
+      "sync-engine",
+      "tiny",
+      "typescript"
+    ],
+    "url": "https://github.com/tinyplex/tinybase"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "jaywcjlove/free-font",
-    "has_contributing": false,
+    "full_name": "melonjs/melonJS",
+    "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 6,
-    "pushed_at": "2026-08-04T08:09:49Z",
+    "open_issues": 21,
+    "pushed_at": "2026-08-09T05:36:38Z",
     "reasons": [
-      "3971\u2605 javascript active",
+      "6351\u2605 javascript active",
       "has open issues"
     ],
-    "score": 38,
-    "stars": 3971,
+    "score": 55,
+    "stars": 6351,
     "topics": [
-      "chinese",
-      "chinese-font",
-      "chinese-fonts",
-      "english-font",
-      "font",
-      "font-awesome",
-      "fonts",
-      "free-font",
-      "free-fonts",
-      "open-source-font",
-      "typeface",
-      "typeface-font"
+      "2d-game-engine",
+      "canvas2d",
+      "contributions-welcome",
+      "es6",
+      "game-development",
+      "game-engine",
+      "gamedev",
+      "hacktoberfest",
+      "html5",
+      "html5-canvas",
+      "javascript",
+      "melonjs",
+      "tiled",
+      "typescript",
+      "web3",
+      "webaudio",
+      "webgl",
+      "webgpu"
     ],
-    "url": "https://github.com/jaywcjlove/free-font"
+    "url": "https://github.com/melonjs/melonJS"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "czlonkowski/n8n-skills",
-    "has_contributing": false,
+    "full_name": "hykilpikonna/hyfetch",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 8,
+    "pushed_at": "2026-08-09T05:50:51Z",
+    "reasons": [
+      "2083\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 2083,
+    "topics": [
+      "hyfetch",
+      "neofetch",
+      "neowofetch",
+      "screenfetch"
+    ],
+    "url": "https://github.com/hykilpikonna/hyfetch"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "wanshuiyin/Auto-claude-code-research-in-sleep",
+    "has_contributing": true,
+    "language": "Python",
+    "open_issues": 58,
+    "pushed_at": "2026-08-09T06:01:54Z",
+    "reasons": [
+      "14420\u2605 python active",
+      "has open issues"
+    ],
+    "score": 60,
+    "stars": 14420,
+    "topics": [
+      "ai-research",
+      "ai-tools",
+      "aris",
+      "autonomous-agent",
+      "claude",
+      "claude-code",
+      "claude-code-skills",
+      "codex",
+      "deep-learning",
+      "gpt",
+      "idea-generation",
+      "llm",
+      "machine-learning",
+      "mcp",
+      "mcp-server",
+      "ml-research",
+      "openai",
+      "paper-review",
+      "paper-writing",
+      "research-automation"
+    ],
+    "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "rmyndharis/OpenWA",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 8,
+    "pushed_at": "2026-08-09T06:53:24Z",
+    "reasons": [
+      "12572\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 59,
+    "stars": 12572,
+    "topics": [
+      "api",
+      "bot",
+      "gateway",
+      "self-hosted",
+      "whatsapp",
+      "whatsapp-api",
+      "whatsapp-automation",
+      "whatsapp-bot",
+      "whatsapp-gateway",
+      "whatsapp-gateway-api",
+      "whatsapp-web",
+      "whatsapp-web-api"
+    ],
+    "url": "https://github.com/rmyndharis/OpenWA"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "marko-js/marko",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 30,
+    "pushed_at": "2026-08-09T04:49:48Z",
+    "reasons": [
+      "14396\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 60,
+    "stars": 14396,
+    "topics": [
+      "client-side-rendering",
+      "dom",
+      "frontend",
+      "isomorphic",
+      "javascript",
+      "nodejs",
+      "server-side-rendering",
+      "ui-components",
+      "vdom"
+    ],
+    "url": "https://github.com/marko-js/marko"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "pystardust/ani-cli",
+    "has_contributing": true,
     "language": "Shell",
     "open_issues": 7,
-    "pushed_at": "2026-08-04T07:34:57Z",
+    "pushed_at": "2026-08-08T10:08:36Z",
     "reasons": [
-      "5973\u2605 shell active",
+      "13461\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 59,
+    "stars": 13461,
+    "topics": [
+      "anime",
+      "cli",
+      "fzf",
+      "linux",
+      "mac",
+      "posix",
+      "rofi",
+      "shell",
+      "steamdeck",
+      "syncplay",
+      "terminal",
+      "termux",
+      "webscraping",
+      "windows"
+    ],
+    "url": "https://github.com/pystardust/ani-cli"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "whoahaow/rjsxrd",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 4,
+    "pushed_at": "2026-08-09T06:56:53Z",
+    "reasons": [
+      "769\u2605 python active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 769,
+    "topics": [
+      "hy2",
+      "hysteria",
+      "hysteria2",
+      "shadowsocks",
+      "shadowsocksr",
+      "trojan",
+      "tuic",
+      "v2ray",
+      "vless",
+      "vless-reality",
+      "vmess",
+      "xray"
+    ],
+    "url": "https://github.com/whoahaow/rjsxrd"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "chthollyphile/folia-major",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 11,
+    "pushed_at": "2026-08-09T06:56:51Z",
+    "reasons": [
+      "1673\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 1673,
+    "topics": [
+      "ai",
+      "music",
+      "music-player",
+      "navidrome-client",
+      "netease-music",
+      "player",
+      "pwa",
+      "react",
+      "typescript",
+      "vercel-deployment"
+    ],
+    "url": "https://github.com/chthollyphile/folia-major"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "scribeocr/scribe.js",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 24,
+    "pushed_at": "2026-08-09T06:56:31Z",
+    "reasons": [
+      "310\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 310,
+    "topics": [
+      "javascript",
+      "mcp",
+      "ocr",
+      "tesseract",
+      "webassembly"
+    ],
+    "url": "https://github.com/scribeocr/scribe.js"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "The01Geek/prflow",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 55,
+    "pushed_at": "2026-08-09T06:50:37Z",
+    "reasons": [
+      "113\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 113,
+    "topics": [
+      "agentic-ai",
+      "ai-agents",
+      "ai-coding-assistant",
+      "automation",
+      "claude-code",
+      "code-review",
+      "code-review-automation",
+      "developer-productivity",
+      "developer-tools",
+      "documentation",
+      "github-actions",
+      "plugin",
+      "pull-request",
+      "software-development"
+    ],
+    "url": "https://github.com/The01Geek/prflow"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "piccolomo/plotext",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 58,
+    "pushed_at": "2026-08-09T06:48:30Z",
+    "reasons": [
+      "2172\u2605 python active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 2172,
+    "topics": [],
+    "url": "https://github.com/piccolomo/plotext"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "ineo6/hosts",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 12,
+    "pushed_at": "2026-08-09T06:49:03Z",
+    "reasons": [
+      "5353\u2605 typescript active",
       "has open issues"
     ],
     "score": 39,
-    "stars": 5973,
+    "stars": 5353,
+    "topics": [
+      "github",
+      "hosts",
+      "hosts-file"
+    ],
+    "url": "https://github.com/ineo6/hosts"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "frejs/fre",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 10,
+    "pushed_at": "2026-08-09T06:37:11Z",
+    "reasons": [
+      "3767\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 38,
+    "stars": 3767,
+    "topics": [
+      "fiber",
+      "fre",
+      "hook",
+      "hooks",
+      "jsx",
+      "keyed-reconcilation-algorithm",
+      "react-hooks",
+      "react-like",
+      "reconcilation",
+      "reconciliation-algorithm",
+      "vdom",
+      "vdom-library"
+    ],
+    "url": "https://github.com/frejs/fre"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "nyldn/claude-octopus",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 6,
+    "pushed_at": "2026-08-09T06:54:59Z",
+    "reasons": [
+      "3946\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 38,
+    "stars": 3946,
     "topics": [
       "ai-agents",
-      "n8n",
-      "workflow-automation"
+      "ai-orchestration",
+      "claude-code",
+      "claude-code-plugin",
+      "codex",
+      "copilot",
+      "developer-tools",
+      "double-diamond",
+      "gemini",
+      "multi-ai",
+      "multi-llm",
+      "ollama"
     ],
-    "url": "https://github.com/czlonkowski/n8n-skills"
+    "url": "https://github.com/nyldn/claude-octopus"
   }
 ]
