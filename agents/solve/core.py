@@ -23,6 +23,8 @@ from agents.solve.command_policy import (
     setup_failure_is_infrastructure,
     setup_fallback_command,
 )
+from agents.solve.correction import CorrectionRejected, apply_review_correction, correction_targets
+from agents.solve.edit import EditRejected
 from agents.solve.failure import cleanup_manifest
 from agents.solve.git import (
     assert_workspace_identity,
@@ -182,6 +184,24 @@ def _budget_guard(router) -> None:
         raise SolveRejected(f"Solve exceeded its {router.budget.limit}-token budget")
 
 
+def _validate_changed_targets(root: Path, targets: list[str], policy: dict[str, Any]) -> None:
+    if not targets:
+        raise SolveRejected("coding harness produced no diff")
+    if len(targets) > int(policy["max_files"]):
+        raise SolveRejected(f"coding harness changed {len(targets)} files; maximum is {policy['max_files']}")
+    blocked = [str(item).casefold() for item in policy.get("blocked_change_prefixes", [])]
+    for path in targets:
+        _validate_path(path)
+        lowered_path = path.casefold()
+        if any(lowered_path == item.rstrip("/") or lowered_path.startswith(item) for item in blocked):
+            raise SolveRejected(f"coding harness changed a protected path: {path}")
+        resolved = root / path
+        if not resolved.exists():
+            raise SolveRejected(f"coding harness deleted a file: {path}")
+        if resolved.is_symlink():
+            raise SolveRejected(f"coding harness created or changed a symlink: {path}")
+
+
 async def solve(
     *,
     api,
@@ -306,21 +326,7 @@ async def solve(
         raise SolveRejected(f"harness estimate exceeds {policy['max_minutes']} minutes")
 
     targets = changed_files(root)
-    if not targets:
-        raise SolveRejected("coding harness produced no diff")
-    if len(targets) > int(policy["max_files"]):
-        raise SolveRejected(f"coding harness changed {len(targets)} files; maximum is {policy['max_files']}")
-    for path in targets:
-        _validate_path(path)
-        lowered_path = path.casefold()
-        blocked = [str(item).casefold() for item in policy.get("blocked_change_prefixes", [])]
-        if any(lowered_path == item.rstrip("/") or lowered_path.startswith(item) for item in blocked):
-            raise SolveRejected(f"coding harness changed a protected path: {path}")
-        resolved = root / path
-        if not resolved.exists():
-            raise SolveRejected(f"coding harness deleted a file: {path}")
-        if resolved.is_symlink():
-            raise SolveRejected(f"coding harness created or changed a symlink: {path}")
+    _validate_changed_targets(root, targets, policy)
 
     running.update({"stage": "semantic_review", "target_files": sorted(targets)})
     store.write_json("solve.json", running)
@@ -337,9 +343,109 @@ async def solve(
         [],
     )
     _budget_guard(router)
+    review_attempts = [
+        {
+            "attempt": 0,
+            "approved": review_verdict.approved,
+            "summary": review_verdict.summary,
+            "findings": review_verdict.findings,
+        }
+    ]
     if not review_verdict.approved or review_verdict.findings:
-        findings = "; ".join(review_verdict.findings[:3]) or review_verdict.summary
-        raise SolveRejected(f"semantic self-review rejected implementation: {findings}")
+        correction_passes = min(1, max(0, int(policy.get("semantic_correction_passes", 0))))
+        if correction_passes < 1:
+            findings = "; ".join(review_verdict.findings[:3]) or review_verdict.summary
+            raise SolveRejected(f"semantic self-review rejected implementation: {findings}")
+        if time.monotonic() - started >= int(policy["max_minutes"]) * 60:
+            raise SolveRejected("semantic correction has no remaining wall-clock budget")
+        allowed_correction_paths = correction_targets(
+            root,
+            targets,
+            list(harness_metadata.get("grounded_paths") or []),
+            max_files=int(policy["max_files"]),
+            blocked_prefixes=list(policy.get("blocked_change_prefixes", [])),
+        )
+        running.update(
+            {
+                "stage": "semantic_correction",
+                "semantic_correction": {
+                    "attempt": 1,
+                    "status": "running",
+                    "findings": review_verdict.findings,
+                    "allowed_paths": allowed_correction_paths,
+                },
+            }
+        )
+        store.write_json("solve.json", running)
+        try:
+            corrected_paths, correction_summary = await apply_review_correction(
+                router,
+                workspace=root,
+                issue=issue,
+                findings=review_verdict.findings or [review_verdict.summary],
+                diff=review_diff_text,
+                allowed_paths=allowed_correction_paths,
+                max_context_tokens=max(
+                    1000,
+                    min(int(policy.get("semantic_correction_max_context_tokens", 6000)), 10_000),
+                ),
+                max_output_tokens=max(
+                    800,
+                    min(int(policy.get("semantic_correction_max_output_tokens", 3200)), 6000),
+                ),
+            )
+        except (CorrectionRejected, EditRejected, ValueError) as exc:
+            raise SolveRejected(f"semantic correction failed: {exc}") from exc
+        _budget_guard(router)
+        targets = changed_files(root)
+        _validate_changed_targets(root, targets, policy)
+        corrected_diff = git(root, "diff", "--unified=40", "--", *targets, timeout=60)
+        if corrected_diff == review_diff_text:
+            raise SolveRejected("semantic correction produced no new diff")
+        harness_metadata = {
+            **harness_metadata,
+            "reviewed_paths": sorted(set(harness_metadata.get("reviewed_paths") or []) | set(targets)),
+            "semantic_correction": {
+                "attempts": 1,
+                "allowed_paths": allowed_correction_paths,
+                "edited_paths": corrected_paths,
+                "summary": correction_summary,
+            },
+        }
+        running["semantic_correction"] = {
+            **harness_metadata["semantic_correction"],
+            "status": "reviewing",
+        }
+        running["target_files"] = sorted(targets)
+        running["stage"] = "semantic_re_review"
+        store.write_json("solve.json", running)
+        review_verdict = await review_diff(
+            router,
+            issue,
+            {
+                "source": "bounded_semantic_correction",
+                "target_files": sorted(targets),
+                "review_stage": "pre_verification",
+                "prior_findings": review_attempts[0]["findings"],
+            },
+            corrected_diff,
+            [],
+        )
+        _budget_guard(router)
+        review_attempts.append(
+            {
+                "attempt": 1,
+                "approved": review_verdict.approved,
+                "summary": review_verdict.summary,
+                "findings": review_verdict.findings,
+            }
+        )
+        if not review_verdict.approved or review_verdict.findings:
+            findings = "; ".join(review_verdict.findings[:3]) or review_verdict.summary
+            raise SolveRejected(f"semantic correction remained incomplete: {findings}")
+        running["semantic_correction"]["status"] = "approved"
+        if time.monotonic() - started >= int(policy["max_minutes"]) * 60:
+            raise SolveRejected("semantic correction exhausted the wall-clock budget")
 
     outcome, verification_inferred = complete_verification_plan(
         root,
@@ -495,6 +601,7 @@ async def solve(
             "findings": review_verdict.findings,
             "summary": review_verdict.summary,
             "source": "independent_semantic_diff_review",
+            "attempts": review_attempts,
         },
         "token_spent": router.budget.spent,
         "token_target": int(policy.get("token_target", router.budget.limit)),
