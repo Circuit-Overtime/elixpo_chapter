@@ -113,14 +113,14 @@ export default {
     const event = request.headers.get("x-github-event") || "";
     const delivery = request.headers.get("x-github-delivery") || "";
     const signature = request.headers.get("x-hub-signature-256") || "";
-    if (!event || !delivery || !ALLOWED_ACTIONS[event]) {
-      return response(400, { error: "unsupported_event" });
-    }
+    if (!event || !delivery) return response(400, { error: "missing_delivery_metadata" });
     const body = await request.arrayBuffer();
     if (body.byteLength > MAX_BODY_BYTES) return response(413, { error: "payload_too_large" });
     if (!(await validSignature(env.GITHUB_WEBHOOK_SECRET, body, signature))) {
       return response(401, { error: "invalid_signature" });
     }
+    if (event === "ping") return response(200, { status: "pong" });
+    if (!ALLOWED_ACTIONS[event]) return response(202, { status: "ignored_event" });
     if (replayed(delivery)) return response(202, { status: "duplicate" });
     let payload: Record<string, any>;
     try {
