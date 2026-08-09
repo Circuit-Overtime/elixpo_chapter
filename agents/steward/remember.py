@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import timedelta
 
 import structlog
 from lib.state.followups import FollowupRecord
@@ -48,10 +49,24 @@ async def _run() -> int:
     store = StateStore(settings.state_dir)
     api = GitHubAPI.from_token(settings.followups.gist_token)
     try:
+        submit_state = store.read_state(
+            "submit.json",
+            {},
+            expected_producer="submit",
+            max_age=timedelta(days=7),
+        ) or {}
+        solve_state = store.read_state(
+            "solve.json",
+            {},
+            expected_producer="submit",
+            expected_run_id=str(submit_state.get("run_id") or ""),
+            expected_key=str(submit_state.get("key") or ""),
+            max_age=timedelta(days=7),
+        ) or {}
         record = await register_submission(
             FollowupGist(api, settings.followups.gist_id),
-            store.read_json("submit.json", {}) or {},
-            store.read_json("solve.json", {}) or {},
+            submit_state,
+            solve_state,
             ttl_days=settings.followups.ttl_days,
         )
     except Exception as exc:

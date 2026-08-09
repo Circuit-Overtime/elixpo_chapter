@@ -54,7 +54,7 @@ jobs:
           if [[ ! -f state/project.json ]]; then exit 0; fi
           git config user.name "elixpoo"
           git config user.email "elixpoo@gmail.com"
-          git add state/project.json
+          git add state/project.json state/contracts.json
           git diff --cached --quiet || git commit -m "chore(project): reconcile operations view"
           auth=$(printf 'x-access-token:%s' "$CONTROL_TOKEN" | base64 -w 0)
           git -c http.extraheader="AUTHORIZATION: basic $auth" push
