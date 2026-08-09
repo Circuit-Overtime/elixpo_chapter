@@ -150,6 +150,34 @@ class GitHubAPI:
             json={"body": body},
         )
 
+    async def create_issue(
+        self, owner: str, repo: str, title: str, body: str, *, labels: list[str] | None = None
+    ) -> dict:
+        return await self._request(
+            "POST",
+            f"/repos/{owner}/{repo}/issues",
+            json={"title": title, "body": body, "labels": labels or []},
+        )
+
+    async def update_issue(self, owner: str, repo: str, issue_number: int, **fields) -> dict:
+        return await self._request(
+            "PATCH", f"/repos/{owner}/{repo}/issues/{issue_number}", json=fields
+        )
+
+    async def ensure_label(
+        self, owner: str, repo: str, name: str, color: str, description: str = ""
+    ) -> None:
+        try:
+            await self._request("GET", f"/repos/{owner}/{repo}/labels/{name}")
+        except Exception as exc:
+            if getattr(getattr(exc, "response", None), "status_code", None) != 404:
+                raise
+            await self._request(
+                "POST",
+                f"/repos/{owner}/{repo}/labels",
+                json={"name": name, "color": color, "description": description},
+            )
+
     # --- Pull Requests ---
 
     async def get_pull(self, owner: str, repo: str, pr_number: int) -> dict:

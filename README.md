@@ -26,9 +26,10 @@
 
 ## About
 
-**elixpoo** (`@elixpoo`) is an autonomous GitHub-contributor agent. It picks up
+**elixpoo** (`@elixpoo`) is an autonomous GitHub-contributor agent. Its complete
+Scout → merge contribution lifecycle is named **OreoFlow**. OreoFlow picks up
 community issues, forks, solves them, opens PRs, and shepherds those PRs to
-merge — built as **independent squads**, each a standalone Python module run as
+merge. It is built as **independent squads**, each a standalone Python module run as
 a GitHub Actions workflow (runtime-agnostic: liftable to Cloudflare compute).
 There is no server and no database — state lives in GitHub issues, a Project
 board, and `state/*.json`. It runs in CI, not as a hosted website.

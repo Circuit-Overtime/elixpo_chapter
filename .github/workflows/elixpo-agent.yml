@@ -35,6 +35,7 @@ jobs:
   agent:
     if: |
       github.event_name == 'workflow_dispatch' || (
+        github.repository_owner == 'elixpo' &&
         github.actor != 'elixpoo' && (
         (github.event_name == 'issues' && contains(format('{0} {1}', github.event.issue.title, github.event.issue.body), '@elixpoo')) ||
         (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@elixpoo') && !contains(github.event.comment.body, '@elixpoo retry')) ||
@@ -66,10 +67,11 @@ jobs:
           INPUT_SCOPE: ${{ inputs.scope }}
           INPUT_NUMBER: ${{ inputs.number }}
           INPUT_REQUEST: ${{ inputs.request }}
+          TRUSTED_USERS: ${{ vars.ELIXPO_MENTION_TRUSTED_USERS || 'Circuit-Overtime,anwe-ch,elixpoo,ez-vivek' }}
         with:
           github-token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           script: |
-            const allowed = new Set(['Circuit-Overtime', 'anwe-ch', 'elixpoo', 'ez-vivek']);
+            const allowed = new Set((process.env.TRUSTED_USERS || '').split(',').map(v => v.trim()).filter(Boolean));
             const actor = context.actor;
             const event = context.eventName;
             const payload = context.payload;
