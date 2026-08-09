@@ -147,7 +147,9 @@ def test_run_writes_provisional_pick_without_claiming(tmp_path):
     from agents.pick.__main__ import run
 
     store = StateStore(tmp_path)
-    store.write_json("triaged.json", [_t("o/b", 2, 15), _t("o/a", 1, 12)])
+    store.write_state(
+        "triaged.json", [_t("o/b", 2, 15), _t("o/a", 1, 12)], producer="triage", now=NOW
+    )
 
     first = run(store, NOW)
     assert first["repo"] == "o/b" and first["number"] == 2
@@ -163,7 +165,7 @@ def test_run_writes_provisional_pick_without_claiming(tmp_path):
     assert contract.status == "pending_vet"
     assert not Ledger.load(store).prs
 
-    store.write_json("triaged.json", [_t("o/a", 1, 99)])
+    store.write_state("triaged.json", [_t("o/a", 1, 99)], producer="triage", now=NOW)
     second = run(store, NOW)
     assert second == first
     assert not Ledger.load(store).prs
@@ -173,7 +175,9 @@ def test_no_pick_overwrites_stale_pick_output(tmp_path):
     from agents.pick.__main__ import run
 
     store = StateStore(tmp_path)
-    store.write_json("triaged.json", [_t("o/blocked", 1, 20, easy=False)])
+    store.write_state(
+        "triaged.json", [_t("o/blocked", 1, 20, easy=False)], producer="triage", now=NOW
+    )
     store.write_json("pick.json", {"status": "picked", "repo": "old/repo", "number": 99})
 
     assert run(store, NOW) is None

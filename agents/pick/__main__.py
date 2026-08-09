@@ -42,7 +42,13 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
         log.info("pick.awaiting_vet", key=f"{pending.get('repo')}#{pending.get('number')}")
         return pending
 
-    triaged = store.read_json("triaged.json", [])
+    triaged = store.read_state(
+        "triaged.json",
+        [],
+        expected_producer="triage",
+        max_age=timedelta(hours=24),
+        now=now,
+    )
     if not triaged:
         log.warning("pick.no_triaged", hint="run agents.triage first")
         store.write_state(
