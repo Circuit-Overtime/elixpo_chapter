@@ -54,12 +54,12 @@ or copy it as an organization secret.
 
 ## Required Actions variables
 
-- [ ] `ELIXPOO_FOLLOWUP_GIST_ID=<private-gist-id>`
-- [ ] `ELIXPO_GITHUB_CONTROL_REPO=elixpo/agent.elixpo`
-- [ ] `ELIXPO_GITHUB_PROJECT_OWNER=<project-owner-login>`
+- [x] `ELIXPOO_FOLLOWUP_GIST_ID=<private-gist-id>`
+- [x] `ELIXPO_GITHUB_CONTROL_REPO=elixpo/agent.elixpo`
+- [x] `ELIXPO_GITHUB_PROJECT_OWNER=<project-owner-login>`
 - [ ] `ELIXPO_GITHUB_PROJECT_NUMBER=<project-number>`
-- [ ] `ELIXPO_MENTION_TRUSTED_USERS=<comma-separated-logins>`
-- [ ] `ELIXPO_MENTION_TRUSTED_ORGS=elixpo`
+- [x] `ELIXPO_MENTION_TRUSTED_USERS=<comma-separated-logins>`
+- [x] `ELIXPO_MENTION_TRUSTED_ORGS=elixpo`
 - [ ] `ELIXPO_MENTION_WATCHED_REPOS=<comma-separated-owner/repository-names>`
 - [ ] `OREOFLOW_RUNTIME_REF=<reviewed-release-tag>`
 
