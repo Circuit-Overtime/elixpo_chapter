@@ -5,9 +5,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from rtk.truncate import truncate_text
+
 from agents.solve.edit import apply_edit_batch
 from agents.solve.model import implement_review_correction
-from rtk.truncate import truncate_text
 
 _CODE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".sh", ".bash", ".yaml", ".yml"}
 _SAFE_RELATIVE = re.compile(r"[A-Za-z0-9_./@+\-]+")

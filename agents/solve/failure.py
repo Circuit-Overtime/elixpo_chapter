@@ -86,7 +86,7 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
         category, candidate_action = "verification", "inspect_checks_or_terminate"
     elif isinstance(exc, VerificationPlanError):
         category, candidate_action = "verification", "inspect_checks_or_terminate"
-    elif "self-review rejected" in lowered:
+    elif "self-review rejected" in lowered or "semantic correction" in lowered:
         category, candidate_action = "review_rejected", "terminate_or_replan"
     elif "issue changed after vet" in lowered:
         category, retryable, candidate_action = "stale_issue", True, "re_vet"

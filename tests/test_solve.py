@@ -23,6 +23,7 @@ from agents.solve.command_policy import (
     setup_fallback_command,
 )
 from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
+from agents.solve.correction import apply_review_correction, correction_context, correction_targets
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, assert_workspace_identity, run_verification, validate_command
@@ -143,6 +144,8 @@ def test_solve_policy_leaves_turn_headroom_for_post_edit_review():
     assert policy["live_abnormal_token_ratio"] == 2.0
     assert "./node_modules/.bin/tsc" in policy["allowed_command_prefixes"]
     assert all(not command.startswith("npx ") for command in policy["allowed_command_prefixes"])
+    assert policy["semantic_correction_passes"] == 1
+    assert policy["semantic_correction_max_context_tokens"] == 6000
 
 
 def test_work_branch_uses_natural_feature_or_patch_prefix():
@@ -1290,6 +1293,162 @@ async def test_semantic_review_receives_observable_rules_diff_and_checks():
     assert captured["kwargs"]["max_tokens"] == 650
     assert captured["payload"]["issue"]["body"] == "Tooltip and grid must be readable."
     assert any("must be used" in rule for rule in captured["payload"]["approval_rules"])
+
+
+def test_semantic_correction_targets_only_grounded_code_and_current_diff(tmp_path):
+    for path in (
+        "app/components/Chart.tsx",
+        "app/dashboard/page.tsx",
+        "package.json",
+        "AGENTS.md",
+    ):
+        target = tmp_path / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("content\n")
+
+    selected = correction_targets(
+        tmp_path,
+        ["app/components/Chart.tsx"],
+        ["package.json", "app/dashboard/page.tsx", "AGENTS.md"],
+        max_files=3,
+        blocked_prefixes=[".github/actions/"],
+    )
+
+    assert selected == ["app/components/Chart.tsx", "app/dashboard/page.tsx"]
+
+
+def test_semantic_correction_context_is_bounded_and_labels_files(tmp_path):
+    first = tmp_path / "app/one.ts"
+    second = tmp_path / "app/two.ts"
+    first.parent.mkdir(parents=True)
+    first.write_text("const one = 1;\n" * 500)
+    second.write_text("const two = 2;\n" * 500)
+
+    context = correction_context(tmp_path, ["app/one.ts", "app/two.ts"], max_tokens=600)
+
+    assert "// FILE: app/one.ts" in context
+    assert "// FILE: app/two.ts" in context
+    assert len(context) < 5000
+
+
+@pytest.mark.asyncio
+async def test_semantic_correction_applies_one_structured_grounded_batch(tmp_path):
+    component = tmp_path / "app/components/Chart.tsx"
+    page = tmp_path / "app/dashboard/page.tsx"
+    component.parent.mkdir(parents=True)
+    page.parent.mkdir(parents=True)
+    component.write_text("export function Chart() { return 'dark'; }\n")
+    page.write_text("const chart = <Chart />;\n")
+    captured = {}
+
+    class Router:
+        async def call(self, role, messages, **kwargs):
+            captured["role"] = role
+            captured["payload"] = json.loads(messages[1].content)
+            captured["max_tokens"] = kwargs["max_tokens"]
+            arguments = {
+                "summary": "Wire the light chart variant through the page.",
+                "edits": [
+                    {
+                        "path": "app/components/Chart.tsx",
+                        "operation": "replace",
+                        "replacements": [{"old": "return 'dark'", "new": "return 'light-red'"}],
+                    },
+                    {
+                        "path": "app/dashboard/page.tsx",
+                        "operation": "replace",
+                        "replacements": [{"old": "<Chart />", "new": "<Chart theme=\"light\" />"}],
+                    },
+                ],
+            }
+            return SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(
+                            tool_calls=[
+                                SimpleNamespace(function=SimpleNamespace(arguments=json.dumps(arguments)))
+                            ]
+                        )
+                    )
+                ]
+            )
+
+    changed, summary = await apply_review_correction(
+        Router(),
+        workspace=tmp_path,
+        issue={"title": "Use light chart", "body": "Use the light theme on this page."},
+        findings=["The theme declaration is unused."],
+        diff="+ theme?: 'dark' | 'light'",
+        allowed_paths=["app/components/Chart.tsx", "app/dashboard/page.tsx"],
+        max_context_tokens=1200,
+        max_output_tokens=2400,
+    )
+
+    assert changed == ["app/components/Chart.tsx", "app/dashboard/page.tsx"]
+    assert summary == "Wire the light chart variant through the page."
+    assert "light-red" in component.read_text()
+    assert 'theme="light"' in page.read_text()
+    assert captured["role"] == "code"
+    assert captured["max_tokens"] == 2400
+    assert captured["payload"]["review_findings"] == ["The theme declaration is unused."]
+
+
+@pytest.mark.asyncio
+async def test_semantic_correction_rejects_model_edits_outside_grounded_paths(tmp_path):
+    component = tmp_path / "app/components/Chart.tsx"
+    component.parent.mkdir(parents=True)
+    component.write_text("export const theme = 'dark';\n")
+    manifest = tmp_path / "package.json"
+    manifest.write_text('{"name": "example"}\n')
+
+    class Router:
+        async def call(self, role, messages, **kwargs):
+            arguments = {
+                "summary": "Change an unrelated manifest.",
+                "edits": [
+                    {
+                        "path": "package.json",
+                        "operation": "replace",
+                        "replacements": [{"old": "example", "new": "changed"}],
+                    }
+                ],
+            }
+            return SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(
+                            tool_calls=[
+                                SimpleNamespace(function=SimpleNamespace(arguments=json.dumps(arguments)))
+                            ]
+                        )
+                    )
+                ]
+            )
+
+    with pytest.raises(EditRejected, match="unplanned file"):
+        await apply_review_correction(
+            Router(),
+            workspace=tmp_path,
+            issue={"title": "Use light chart", "body": "Update only the chart."},
+            findings=["The requested chart behavior is missing."],
+            diff="+ export const theme = 'light';",
+            allowed_paths=["app/components/Chart.tsx"],
+            max_context_tokens=1200,
+            max_output_tokens=2400,
+        )
+
+    assert manifest.read_text() == '{"name": "example"}\n'
+
+
+def test_semantic_correction_failure_is_a_terminal_review_rejection():
+    failure = classify_failure(
+        SolveRejected("semantic correction remained incomplete: theme is still unused"),
+        "semantic_review",
+    )
+
+    assert failure["category"] == "review_rejected"
+    assert failure["retryable"] is False
+    assert failure["candidate_action"] == "terminate_or_replan"
 
 
 def test_invalid_harness_output_preserves_usage_for_accounting():

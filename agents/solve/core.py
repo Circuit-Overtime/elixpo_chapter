@@ -23,9 +23,9 @@ from agents.solve.command_policy import (
     setup_failure_is_infrastructure,
     setup_fallback_command,
 )
-from agents.solve.failure import cleanup_manifest
 from agents.solve.correction import CorrectionRejected, apply_review_correction, correction_targets
 from agents.solve.edit import EditRejected
+from agents.solve.failure import cleanup_manifest
 from agents.solve.git import (
     assert_workspace_identity,
     changed_files,
