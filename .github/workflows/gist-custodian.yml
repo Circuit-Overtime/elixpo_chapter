@@ -1,0 +1,48 @@
+name: Gist memory custodian
+
+on:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Inspect without writing
+        type: boolean
+        default: true
+      repair:
+        description: Reset corrupted managed files
+        type: boolean
+        default: false
+      confirm_reset:
+        description: Confirm corrupted-file reset
+        type: boolean
+        default: false
+
+concurrency:
+  group: elixpoo-gist-memory
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Prune and compact shared Gist memory
+        env:
+          ELIXPOO_GIST_AGENTIC_TOKEN: ${{ secrets.ELIXPOO_GIST_AGENTIC_TOKEN }}
+          ELIXPOO_FOLLOWUP_GIST_ID: ${{ vars.ELIXPOO_FOLLOWUP_GIST_ID }}
+        run: |
+          args=()
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then args+=(--dry-run); fi
+          if [[ "${{ inputs.repair }}" == "true" ]]; then args+=(--repair); fi
+          if [[ "${{ inputs.confirm_reset }}" == "true" ]]; then args+=(--confirm-reset); fi
+          python -m agents.gist_custodian "${args[@]}"

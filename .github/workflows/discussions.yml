@@ -19,7 +19,12 @@ on:
         required: true
         default: qna
         type: choice
-        options: [qna, poll-mentions, pulse]
+        options: [qna, poll-mentions, pulse, verify-config]
+      dry_run:
+        description: Generate and safety-check without publishing
+        required: false
+        default: true
+        type: boolean
 
 concurrency:
   group: elixpoo-discussions-elixpo-elixpo
@@ -47,6 +52,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPOO_GIST_AGENTIC_TOKEN: ${{ secrets.ELIXPOO_GIST_AGENTIC_TOKEN }}
+          ELIXPOO_FOLLOWUP_GIST_ID: ${{ vars.ELIXPOO_FOLLOWUP_GIST_ID }}
           ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
         run: python -m agents.discussions respond
 
@@ -84,7 +91,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
-        run: python -m agents.discussions qna
+        run: |
+          args=()
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then args+=(--dry-run); fi
+          python -m agents.discussions qna "${args[@]}"
 
   poll-mentions:
     if: (github.event_name == 'workflow_dispatch' && inputs.mode == 'poll-mentions') || (github.event_name == 'schedule' && github.event.schedule == '*/10 * * * *')
@@ -101,6 +111,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPOO_GIST_AGENTIC_TOKEN: ${{ secrets.ELIXPOO_GIST_AGENTIC_TOKEN }}
+          ELIXPOO_FOLLOWUP_GIST_ID: ${{ vars.ELIXPOO_FOLLOWUP_GIST_ID }}
           ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
         run: python -m agents.discussions poll-mentions
 
@@ -120,4 +132,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
           ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
-        run: python -m agents.discussions pulse
+        run: |
+          args=()
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then args+=(--dry-run); fi
+          python -m agents.discussions pulse "${args[@]}"
+
+  verify-config:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'verify-config'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Verify production category aliases and inspect labels
+        env:
+          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
+        run: python -m agents.discussions verify-config
