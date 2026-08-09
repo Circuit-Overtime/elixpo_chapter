@@ -14,11 +14,14 @@ deployment workflows, or repository-specific configuration.
 1. Enumerate non-archived, non-fork repositories under the configured owner.
 2. Exclude the control repository and every explicit manifest exclusion.
 3. Compare every canonical file byte-for-byte through the Contents API.
-4. Default to a read-only drift report.
-5. On explicit `--apply`, create one Git tree and one commit on a digest-derived
+4. Scan repositories with bounded concurrency. Emit each repository's progress
+   to stderr and reserve stdout for the final deterministic JSON receipt.
+5. Default to a read-only drift report.
+6. On explicit `--apply`, create one Git tree and one commit on a digest-derived
    branch, then open one PR. Never push a target default branch.
-6. Reuse an already-open digest branch instead of opening duplicates.
-7. Keep repository-specific application code and CI commands untouched.
+   Keep publication serial even though comparison is parallel.
+7. Reuse an already-open digest branch instead of opening duplicates.
+8. Keep repository-specific application code and CI commands untouched.
 
 Use the dedicated organization token. Do not pass it into copied workflows,
 model prompts, target commands, logs, or generated files.

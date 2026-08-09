@@ -168,14 +168,16 @@ async def test_explicit_project_setup_creates_public_project_and_fields():
 
         async def graphql(self, query, variables):
             self.calls.append((query, variables))
-            if "organization(login" in query:
-                return {"organization": {"id": "OWNER"}, "user": None}
-            if "createProjectV2(input" in query:
+            if "repositoryOwner(login" in query:
                 return {
-                    "createProjectV2": {
-                        "projectV2": {"id": "PROJECT", "number": 7, "title": "Elixpoo Operations"}
+                    "repositoryOwner": {
+                        "__typename": "Organization",
+                        "id": "OWNER",
+                        "projectsV2": {"nodes": []},
                     }
                 }
+            if "createProjectV2(input" in query:
+                return {"createProjectV2": {"projectV2": {"id": "PROJECT", "number": 7, "title": "Elixpoo Operations"}}}
             if "updateProjectV2(input" in query:
                 return {"updateProjectV2": {"projectV2": {"id": "PROJECT"}}}
             if "createProjectV2Field" in query:
@@ -188,8 +190,7 @@ async def test_explicit_project_setup_creates_public_project_and_fields():
                 }
                 if data_type == "SINGLE_SELECT":
                     field["options"] = [
-                        {"id": f"OPTION-{index}", "name": option["name"]}
-                        for index, option in enumerate(options)
+                        {"id": f"OPTION-{index}", "name": option["name"]} for index, option in enumerate(options)
                     ]
                 return {"createProjectV2Field": {"projectV2Field": field}}
             if "createProjectV2View" in query:
@@ -217,11 +218,83 @@ async def test_explicit_project_setup_creates_public_project_and_fields():
     views = await board.ensure_views(configured, fields)
 
     assert board.number == 7
+    assert all("user(login" not in query for query, _ in api.calls)
     assert set(fields) >= {"Agent Status", "Run ID", "Token Spend"}
     assert any("public:true" in query for query, _ in api.calls)
+    assert any("layout:TABLE_LAYOUT" in query for query, _ in api.calls)
     assert [option["name"] for option in fields["Agent Status"]["options"]] == list(AGENT_STATUSES)
     assert {view["name"] for view in views} == set(OPERATIONS_VIEWS)
     assert all(view["created"] for view in views)
+
+
+@pytest.mark.asyncio
+async def test_explicit_project_setup_reuses_matching_open_project():
+    class API:
+        def __init__(self):
+            self.calls = []
+
+        async def graphql(self, query, variables):
+            self.calls.append(query)
+            if "projectV2(number" in query:
+                return {
+                    "repositoryOwner": {
+                        "__typename": "Organization",
+                        "projectV2": {
+                            "id": "PROJECT",
+                            "number": 7,
+                            "title": "Elixpoo Operations",
+                            "fields": {"nodes": []},
+                            "views": {"nodes": []},
+                        },
+                    }
+                }
+            if "repositoryOwner(login" in query:
+                return {
+                    "repositoryOwner": {
+                        "__typename": "Organization",
+                        "id": "OWNER",
+                        "projectsV2": {
+                            "nodes": [
+                                {
+                                    "id": "PROJECT",
+                                    "number": 7,
+                                    "title": "Elixpoo Operations",
+                                    "closed": False,
+                                }
+                            ]
+                        },
+                    }
+                }
+            if "updateProjectV2(input" in query:
+                return {"updateProjectV2": {"projectV2": {"id": "PROJECT"}}}
+            raise AssertionError(query)
+
+    api = API()
+    board, project = await Board.create(api, "elixpo")
+
+    assert board.number == 7
+    assert project["id"] == "PROJECT"
+    assert project["fields"] == {"nodes": []}
+    assert not any("createProjectV2(input" in query for query in api.calls)
+
+
+@pytest.mark.asyncio
+async def test_project_lookup_resolves_organization_without_querying_user():
+    class API:
+        async def graphql(self, query, variables):
+            assert "repositoryOwner(login" in query
+            assert "user(login" not in query
+            assert variables == {"login": "elixpo", "number": 7}
+            return {
+                "repositoryOwner": {
+                    "__typename": "Organization",
+                    "projectV2": {"id": "PROJECT", "number": 7, "title": "Elixpoo Operations"},
+                }
+            }
+
+    project = await Board(API(), "elixpo", 7).project()
+
+    assert project["id"] == "PROJECT"
 
 
 def test_snapshot_prefers_live_solve_and_doctor_evidence():

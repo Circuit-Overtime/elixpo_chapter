@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 
 from agents.standard_sync.core import (
@@ -7,6 +8,7 @@ from agents.standard_sync.core import (
     StandardConfig,
     plan_repository,
     publish_repository_update,
+    scan_repositories,
     standard_digest,
 )
 
@@ -89,3 +91,46 @@ async def test_standard_publish_creates_one_tree_commit_branch_and_pr(tmp_path):
     assert result["status"] == "opened"
     assert api.refs == [("refs/heads/chore/oreoflow-standard-aaaaaaaaaa", "commit-new")]
     assert duplicate["status"] == "already_open"
+
+
+async def test_standard_scan_has_bounded_concurrency_and_stable_results(tmp_path):
+    (tmp_path / "one.yml").write_text("wanted\n")
+    config = StandardConfig(
+        name="test",
+        target_owner="elixpo",
+        exclude_repositories=frozenset(),
+        files=("one.yml",),
+    )
+
+    class ConcurrentAPI:
+        def __init__(self):
+            self.active = 0
+            self.maximum_active = 0
+
+        async def get_repo_contents(self, owner, repo, path):
+            self.active += 1
+            self.maximum_active = max(self.maximum_active, self.active)
+            try:
+                await asyncio.sleep(0.01)
+                return {
+                    "type": "file",
+                    "content": base64.b64encode(repo.encode()).decode(),
+                }
+            finally:
+                self.active -= 1
+
+    api = ConcurrentAPI()
+    progress = []
+    plans = await scan_repositories(
+        api,
+        tmp_path,
+        config,
+        ["zeta", "alpha", "beta", "gamma"],
+        concurrency=2,
+        on_progress=lambda completed, total, plan: progress.append((completed, total, plan.repository)),
+    )
+
+    assert api.maximum_active == 2
+    assert [plan.repository for plan in plans] == ["alpha", "beta", "gamma", "zeta"]
+    assert [item[0] for item in progress] == [1, 2, 3, 4]
+    assert all(item[1] == 4 for item in progress)
