@@ -81,15 +81,23 @@ def decide(
     fingerprint = failure_fingerprint(failure)
     previous = _existing_state(previous_state)
     history = list(previous.history if previous else [])
-    retries = sum(
+    fingerprint_retries = sum(
         1
         for item in history
         if item.failure_fingerprint == fingerprint and item.action == "retry"
     )
+    chain_retries = sum(
+        1
+        for item in history
+        if item.key == str(solve_state.get("key") or "") and item.action == "retry"
+    )
 
-    if retries:
+    if fingerprint_retries:
         action = "terminate"
         reason = "The same failure fingerprint already consumed its single retry; stopping the loop."
+    elif chain_retries:
+        action = "terminate"
+        reason = "This issue already consumed its single Doctor-authorized retry; stopping the recovery chain."
     elif failure.category in _RETRYABLE and failure.retryable:
         action = "retry"
         reason = "Recorded evidence permits one fresh-run retry after current-run cleanup."
@@ -108,7 +116,7 @@ def decide(
         stage=failure.stage,
         action=action,
         reason=reason,
-        retry_count=1 if action == "retry" else min(retries, 1),
+        retry_count=1 if action == "retry" else min(chain_retries, 1),
         retry_after_seconds=_RETRY_DELAY.get(failure.category, 0) if action == "retry" else 0,
         cleanup_authorized=action in {"retry", "terminate"},
         token_spent=max(0, int(solve_state.get("token_spent") or 0)),

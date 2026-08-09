@@ -12,7 +12,7 @@ from typing import Any, Callable
 
 from pydantic import ValidationError
 
-from agents.janitor.models import CleanupResult, JanitorReceipt
+from agents.janitor.models import CleanupResult, DoctorAuthorization, JanitorReceipt
 
 
 class JanitorRejected(RuntimeError):
@@ -109,21 +109,32 @@ def clean_and_record(
 ) -> JanitorReceipt:
     solve = store.read_json("solve.json", {}) or {}
     doctor = store.read_json("doctor.json", {}) or {}
-    current = doctor.get("current") or {}
-    fingerprint = str(current.get("failure_fingerprint") or "")
+    try:
+        current = DoctorAuthorization.model_validate(doctor.get("current"))
+    except ValidationError as exc:
+        raise JanitorRejected(f"Doctor authorization violates schema: {exc}") from exc
+    fingerprint = current.failure_fingerprint
     solve_doctor = solve.get("doctor") or {}
     cleanup = solve.get("cleanup") or {}
     if not fingerprint or solve_doctor.get("fingerprint") != fingerprint:
         raise JanitorRejected("Doctor and Solve receipts do not identify the same failure")
+    if cleanup.get("schema_version") != 1 or cleanup.get("owner") != "janitor":
+        raise JanitorRejected("Solve cleanup manifest violates its ownership or schema contract")
+    if str(cleanup.get("run_id") or "") != current.run_id or str(solve.get("run_id") or "") != current.run_id:
+        raise JanitorRejected("Doctor and cleanup receipts do not identify the same run")
 
     existing = store.read_json("janitor.json", {}) or {}
-    if existing.get("doctor_fingerprint") == fingerprint and existing.get("status") in {"complete", "preserved"}:
+    if (
+        existing.get("doctor_fingerprint") == fingerprint
+        and existing.get("run_id") == current.run_id
+        and existing.get("status") in {"complete", "preserved"}
+    ):
         try:
             return JanitorReceipt.model_validate(existing)
         except ValidationError as exc:
             raise JanitorRejected(f"state/janitor.json violates schema: {exc}") from exc
 
-    action = str(current.get("action") or "")
+    action = current.action
     if action == "preserve" and cleanup.get("status") == "preserved_for_inspection":
         receipt = JanitorReceipt(
             status="preserved",
@@ -135,7 +146,7 @@ def clean_and_record(
         )
         store.write_json("janitor.json", receipt.model_dump(mode="json"))
         return receipt
-    if not bool(current.get("cleanup_authorized")) or cleanup.get("status") != "authorized":
+    if not current.cleanup_authorized or cleanup.get("status") != "authorized":
         raise JanitorRejected("Doctor has not authorized cleanup")
 
     planned = _validate_resources(list(cleanup.get("resources") or []), workspace_root)
@@ -147,13 +158,19 @@ def clean_and_record(
             if kind == "fork":
                 results.append(CleanupResult(kind=kind, locator=locator, outcome="preserved"))
             elif kind == "workspace":
-                path = Path(target)
+                path = _validated_child(
+                    locator,
+                    str(raw.get("safe_root") or ""),
+                    workspace_root,
+                )
                 if not path.exists():
                     results.append(CleanupResult(kind=kind, locator=locator, outcome="missing"))
                 else:
                     remove_tree(path)
                     results.append(CleanupResult(kind=kind, locator=locator, outcome="removed"))
             elif kind == "process_group":
+                if not _group_is_isolated_ccr(int(target)):
+                    raise JanitorRejected(f"process group identity changed before termination: {target}")
                 terminate_group(int(target))
                 results.append(CleanupResult(kind=kind, locator=locator, outcome="terminated"))
         except Exception as exc:  # deterministic receipt boundary; continue remaining validated resources

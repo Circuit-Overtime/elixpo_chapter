@@ -65,6 +65,18 @@ def test_doctor_stops_a_repeated_failure_fingerprint():
     assert len(updated.history) == 2
 
 
+def test_doctor_stops_retry_chain_when_the_second_failure_changes():
+    _, state = decide(_solve_failure("timeout", message="first failure"), now=NOW)
+    second, _ = decide(
+        _solve_failure("provider_transient", message="different second failure"),
+        state.model_dump(mode="json"),
+        now=NOW,
+    )
+
+    assert second.action == "terminate"
+    assert "recovery chain" in second.reason
+
+
 @pytest.mark.parametrize(
     "category",
     ["credentials", "provider_budget", "policy", "token_budget", "verification", "stale_issue"],
