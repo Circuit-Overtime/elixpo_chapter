@@ -29,9 +29,12 @@ class DoctorAuthorization(StrictModel):
     reason: str
     retry_count: int = Field(ge=0, le=1)
     retry_after_seconds: int = Field(ge=0, le=300)
+    retry_stage: str
     cleanup_authorized: bool
+    model_route: str
     token_spent: int = Field(ge=0)
     token_limit: int = Field(ge=0)
+    token_overage: int = Field(ge=0)
     elapsed_seconds: float = Field(ge=0)
     decided_at: str
 

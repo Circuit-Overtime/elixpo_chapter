@@ -92,6 +92,9 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         "solve",
         budget=Budget("solve", limit=token_limit, kill_multiple=1.0),
     )
+    starting = store.read_json("solve.json", {}) or {}
+    starting["model_route"] = str(router.resolve("code").get("model") or "")
+    store.write_json("solve.json", starting)
     try:
         result = await asyncio.wait_for(
             solve(

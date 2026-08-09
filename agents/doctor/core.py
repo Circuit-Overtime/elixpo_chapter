@@ -118,9 +118,12 @@ def decide(
         reason=reason,
         retry_count=1 if action == "retry" else min(chain_retries, 1),
         retry_after_seconds=_RETRY_DELAY.get(failure.category, 0) if action == "retry" else 0,
+        retry_stage=failure.stage if action == "retry" else "",
         cleanup_authorized=action in {"retry", "terminate"},
+        model_route=failure.model_route,
         token_spent=max(0, int(solve_state.get("token_spent") or 0)),
         token_limit=max(0, int(solve_state.get("token_limit") or 0)),
+        token_overage=max(0, failure.token_overage),
         elapsed_seconds=max(0.0, float(solve_state.get("elapsed_seconds") or 0)),
         decided_at=_stamp(now),
     )

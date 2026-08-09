@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import pytest
 from agents.janitor import core
-from agents.janitor.core import JanitorRejected, clean_and_record
+from agents.janitor.core import JanitorRejected, audit_partial_cleanup, clean_and_record
 from lib.state.store import StateStore
 
 NOW = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
@@ -31,9 +31,12 @@ def _seed(store: StateStore, resources: list[dict], *, action: str = "terminate"
                 "reason": "bounded test decision",
                 "retry_count": 1 if action == "retry" else 0,
                 "retry_after_seconds": 0,
+                "retry_stage": "harness" if action == "retry" else "",
                 "cleanup_authorized": authorized,
+                "model_route": "qwen-coder",
                 "token_spent": 10,
                 "token_limit": 100,
+                "token_overage": 0,
                 "elapsed_seconds": 1.0,
                 "decided_at": NOW.isoformat(),
             },
@@ -103,6 +106,36 @@ def test_janitor_missing_workspace_is_idempotent(tmp_path):
     assert first.results[0].outcome == "missing"
 
 
+def test_janitor_removes_only_prefixed_recorded_ccr_directory(tmp_path):
+    state = StateStore(tmp_path / "state")
+    workspace_root = tmp_path / "workspaces"
+    temporary_root = tmp_path / "tmp"
+    workspace_root.mkdir()
+    router_home = temporary_root / "elixpoo-ccr-run-1"
+    router_home.mkdir(parents=True)
+    _seed(
+        state,
+        [
+            {
+                "kind": "temporary_directory",
+                "locator": str(router_home),
+                "safe_root": str(temporary_root),
+                "disposition": "remove_after_terminal_decision",
+            }
+        ],
+    )
+
+    receipt = clean_and_record(
+        state,
+        workspace_root=workspace_root,
+        temporary_root=temporary_root,
+        now=NOW,
+    )
+
+    assert receipt.results[0].outcome == "removed"
+    assert not router_home.exists()
+
+
 @pytest.mark.parametrize("locator", ["ROOT", "SIBLING", "TRAVERSAL"])
 def test_janitor_rejects_unsafe_workspace_without_touching_valid_one(tmp_path, locator):
     state = StateStore(tmp_path / "state")
@@ -148,6 +181,23 @@ def test_janitor_records_partial_execution_failure(tmp_path):
     assert receipt.status == "partial"
     assert receipt.results[0].outcome == "failed"
     assert workspace.exists()
+
+    before_ttl = audit_partial_cleanup(
+        state,
+        workspace_root=root,
+        ttl_hours=24,
+        now=NOW,
+    )
+    assert before_ttl is None
+
+    recovered = audit_partial_cleanup(
+        state,
+        workspace_root=root,
+        ttl_hours=24,
+        now=NOW.replace(day=10, hour=13),
+    )
+    assert recovered is not None and recovered.status == "complete"
+    assert not workspace.exists()
 
 
 def test_janitor_terminates_only_a_prevalidated_process_group(tmp_path, monkeypatch):

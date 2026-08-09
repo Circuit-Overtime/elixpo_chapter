@@ -6,7 +6,7 @@ import os
 import shutil
 import signal
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -74,7 +74,11 @@ def _terminate_group(process_group: int) -> None:
         pass
 
 
-def _validate_resources(resources: list[dict[str, Any]], workspace_root: Path) -> list[tuple[str, Any, dict]]:
+def _validate_resources(
+    resources: list[dict[str, Any]],
+    workspace_root: Path,
+    temporary_root: Path,
+) -> list[tuple[str, Any, dict]]:
     if len(resources) > 20:
         raise JanitorRejected("cleanup manifest exceeds 20 resources")
     planned: list[tuple[str, Any, dict]] = []
@@ -86,6 +90,19 @@ def _validate_resources(resources: list[dict[str, Any]], workspace_root: Path) -
             planned.append((kind, locator, raw))
         elif kind == "workspace" and disposition == "remove_after_terminal_decision":
             planned.append((kind, _validated_child(locator, str(raw.get("safe_root") or ""), workspace_root), raw))
+        elif kind == "temporary_directory" and disposition == "remove_after_terminal_decision":
+            planned.append(
+                (
+                    kind,
+                    _validated_child(
+                        locator,
+                        str(raw.get("safe_root") or ""),
+                        temporary_root,
+                        prefix="elixpoo-ccr-",
+                    ),
+                    raw,
+                )
+            )
         elif kind == "process_group" and disposition == "terminate_after_terminal_decision":
             try:
                 process_group = int(locator)
@@ -103,9 +120,11 @@ def clean_and_record(
     store,
     *,
     workspace_root: Path,
+    temporary_root: Path = Path("/tmp"),
     now: datetime | None = None,
     remove_tree: Callable[[Path], None] = shutil.rmtree,
     terminate_group: Callable[[int], None] = _terminate_group,
+    allow_partial: bool = False,
 ) -> JanitorReceipt:
     solve = store.read_json("solve.json", {}) or {}
     doctor = store.read_json("doctor.json", {}) or {}
@@ -146,10 +165,11 @@ def clean_and_record(
         )
         store.write_json("janitor.json", receipt.model_dump(mode="json"))
         return receipt
-    if not current.cleanup_authorized or cleanup.get("status") != "authorized":
+    allowed_statuses = {"authorized", "partial"} if allow_partial else {"authorized"}
+    if not current.cleanup_authorized or cleanup.get("status") not in allowed_statuses:
         raise JanitorRejected("Doctor has not authorized cleanup")
 
-    planned = _validate_resources(list(cleanup.get("resources") or []), workspace_root)
+    planned = _validate_resources(list(cleanup.get("resources") or []), workspace_root, temporary_root)
     results: list[CleanupResult] = []
     failed = False
     for kind, target, raw in planned:
@@ -157,11 +177,12 @@ def clean_and_record(
         try:
             if kind == "fork":
                 results.append(CleanupResult(kind=kind, locator=locator, outcome="preserved"))
-            elif kind == "workspace":
+            elif kind in {"workspace", "temporary_directory"}:
                 path = _validated_child(
                     locator,
                     str(raw.get("safe_root") or ""),
-                    workspace_root,
+                    workspace_root if kind == "workspace" else temporary_root,
+                    prefix="" if kind == "workspace" else "elixpoo-ccr-",
                 )
                 if not path.exists():
                     results.append(CleanupResult(kind=kind, locator=locator, outcome="missing"))
@@ -191,3 +212,32 @@ def clean_and_record(
     store.write_json("janitor.json", receipt.model_dump(mode="json"))
     store.write_json("solve.json", solve)
     return receipt
+
+
+def audit_partial_cleanup(
+    store,
+    *,
+    workspace_root: Path,
+    ttl_hours: int = 24,
+    now: datetime | None = None,
+    remove_tree: Callable[[Path], None] = shutil.rmtree,
+) -> JanitorReceipt | None:
+    """Retry only an expired, previously authorized partial cleanup receipt."""
+    current_time = now or datetime.now(timezone.utc)
+    previous = store.read_json("janitor.json", {}) or {}
+    if previous.get("status") != "partial":
+        return None
+    try:
+        cleaned_at = datetime.fromisoformat(str(previous.get("cleaned_at") or "").replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise JanitorRejected("partial Janitor receipt has an invalid timestamp") from exc
+    bounded_ttl = max(1, min(int(ttl_hours), 168))
+    if cleaned_at > current_time - timedelta(hours=bounded_ttl):
+        return None
+    return clean_and_record(
+        store,
+        workspace_root=workspace_root,
+        now=current_time,
+        remove_tree=remove_tree,
+        allow_partial=True,
+    )

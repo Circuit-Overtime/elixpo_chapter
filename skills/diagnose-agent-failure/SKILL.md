@@ -42,7 +42,8 @@ tool call or Solve directly; it records authorization for the orchestrator.
 Write a strict current decision and append it to a bounded history. Include the
 run ID, issue key, fingerprint, category, stage, action, reason, retry count,
 bounded delay, cleanup authorization, token evidence, elapsed time, and decision
-timestamp. Mirror only the decision identity into Solve state.
+timestamp. Carry the recorded model route and token overage without inventing
+missing telemetry. Mirror only the decision identity into Solve state.
 
 Authorize cleanup for `retry` and `terminate`. Mark `preserve` evidence as
 inspection-required. Never delete files, terminate processes, adjust budgets,

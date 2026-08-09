@@ -151,6 +151,8 @@ def failure_handoff(
     """Build the complete state contract consumed by future Doctor/Janitor squads."""
     failed = dict(state)
     failure = classify_failure(exc, str(failed.get("stage") or "starting"))
+    failure["model_route"] = str(failed.get("model_route") or "")
+    failure["token_overage"] = max(0, int(token_spent) - int(token_limit))
     failed.update(
         {
             "status": "doctor_pending",

@@ -97,6 +97,29 @@ activity permits one fresh evaluation.
 - **Output:** exact fork branch pushed once, disclosed PR opened upstream, ledger updated.
 - **Skill:** `skills/submit-autonomous-pr/SKILL.md`
 
+### Doctor — Failure decisions
+
+- **Trigger:** a Solve step records `doctor_pending`; runs on the same runner.
+- **Job:** validate versioned evidence, fingerprint the failure, and choose one
+  deterministic `retry`, `terminate`, or `preserve` outcome.
+- **Retry policy:** at most one retry across an issue's recovery chain. A repeated
+  fingerprint or a second changed failure terminates the loop.
+- **Output:** `state/doctor.json` plus a mirrored decision in `state/solve.json`.
+- **Skill:** `skills/diagnose-agent-failure/SKILL.md`.
+- **Model cost:** zero; unknown failures are preserved rather than guessed.
+
+### Janitor — Resource cleanup
+
+- **Trigger:** a Doctor decision on the same Solve runner, or a daily partial-cleanup audit.
+- **Job:** preflight every resource, remove exact authorized workspaces and isolated
+  CCR temporary directories, terminate only verified recorded process groups, and
+  preserve shared forks.
+- **Output:** idempotent `state/janitor.json` per-resource receipts and cleanup status
+  in `state/solve.json`.
+- **Skill:** `skills/clean-agent-resources/SKILL.md`.
+- **Safety:** no globbing, symlink following, inferred targets, broad process killing,
+  or cleanup before Doctor authorization.
+
 ### Steward — Follow-through
 Three workflows triggered by webhooks (via the Cloudflare Worker forwarding to `repository_dispatch`):
 
@@ -190,9 +213,11 @@ Every configuration, provider, workspace, context, structured-output, timeout,
 token-budget, verification, policy, and review failure becomes
 `doctor_pending`. The versioned failure record includes its stage, retryability
 signal, candidate action, elapsed time, token spend/limit, and exception type.
-Solve does not retry itself. It preserves the isolated workspace and emits a
-Janitor cleanup manifest; Doctor must record a retry or terminal decision before
-Janitor removes the named workspace. Shared forks are always preserved.
+Solve does not retry itself. It emits a Janitor cleanup manifest and invokes
+Doctor on the same runner. Doctor authorizes at most one fresh-run retry or a
+terminal/preservation outcome. Janitor then cleans the exact current-run resources
+before the runner exits; shared forks are always preserved. A daily audit retries
+only expired partial cleanup receipts.
 
 ---
 

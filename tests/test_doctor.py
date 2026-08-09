@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 from agents.doctor.core import DoctorRejected, decide, decide_and_record
@@ -93,6 +94,16 @@ def test_doctor_preserves_unknown_failure_without_cleanup():
     assert decision.cleanup_authorized is False
 
 
+def test_doctor_carries_model_and_token_anomaly_evidence():
+    failure = _solve_failure("token_budget", retryable=False)
+    failure["failure"].update({"model_route": "qwen-coder", "token_overage": 73981})
+    decision, _ = decide(failure, now=NOW)
+
+    assert decision.model_route == "qwen-coder"
+    assert decision.token_overage == 73981
+    assert decision.action == "terminate"
+
+
 def test_doctor_rejects_unversioned_or_unready_state():
     failure = _solve_failure("timeout")
     failure["failure"].pop("schema_version")
@@ -119,3 +130,15 @@ def test_doctor_records_idempotent_state_and_authorizes_janitor(tmp_path):
     assert solve["cleanup"]["status"] == "authorized"
     assert solve["cleanup"]["doctor_fingerprint"] == first.failure_fingerprint
     assert len(doctor["history"]) == 1
+
+
+def test_solve_workflow_runs_recovery_on_the_same_runner_and_bounds_retry():
+    workflow = Path(".github/workflows/solve.yml").read_text(encoding="utf-8")
+
+    assert "types: [doctor_retry]" in workflow
+    assert "python -m agents.doctor" in workflow
+    assert "python -m agents.janitor" in workflow
+    assert "steps.solve.outcome == 'failure'" in workflow
+    assert "steps.doctor.outputs.action == 'retry'" in workflow
+    assert "state/doctor.json" in workflow
+    assert "state/janitor.json" in workflow
