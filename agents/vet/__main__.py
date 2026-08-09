@@ -8,9 +8,9 @@ import json
 from datetime import datetime, timezone
 
 import structlog
+from lib.github.issues import fetch_issue_evidence, parse_issue_url
 
 from agents.vet.core import vet_issue
-from lib.github.issues import fetch_issue_evidence, parse_issue_url
 
 log = structlog.get_logger()
 
@@ -55,7 +55,18 @@ def _finalize_pick(store, result: dict, now: datetime) -> None:
     store.write_json("pick.json", pick)
 
 
-async def _run(issue_url: str | None, force: bool = False, owned_test: bool = False) -> int:
+def _result_exit_code(result: dict, *, require_suitable: bool) -> int:
+    if require_suitable and result.get("suitable") is not True:
+        return 3
+    return 0
+
+
+async def _run(
+    issue_url: str | None,
+    force: bool = False,
+    owned_test: bool = False,
+    require_suitable: bool = False,
+) -> int:
     from lib.config import settings
     from lib.github.api import GitHubAPI
     from lib.state.store import StateStore
@@ -121,7 +132,7 @@ async def _run(issue_url: str | None, force: bool = False, owned_test: bool = Fa
         spent=router.budget.spent,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
-    return 0
+    return _result_exit_code(result, require_suitable=require_suitable)
 
 
 def main() -> None:
@@ -133,8 +144,13 @@ def main() -> None:
         action="store_true",
         help="allow assignment only for a configured writable test repository",
     )
+    parser.add_argument(
+        "--require-suitable",
+        action="store_true",
+        help="exit 3 when Vet records a rejection; useful for terminal pipeline chaining",
+    )
     args = parser.parse_args()
-    raise SystemExit(asyncio.run(_run(args.issue_url, args.force, args.owned_test)))
+    raise SystemExit(asyncio.run(_run(args.issue_url, args.force, args.owned_test, args.require_suitable)))
 
 
 if __name__ == "__main__":

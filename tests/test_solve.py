@@ -91,6 +91,23 @@ def test_plan_is_bounded_by_time_files_and_checks():
         raise AssertionError("overlong plan passed")
 
 
+def test_explicit_solve_reports_the_recorded_vet_rejection(tmp_path):
+    store = StateStore(tmp_path)
+    url = "https://github.com/elixpo/lixrl.com/issues/18"
+    store.write_json(
+        "vet.json",
+        {
+            "url": url,
+            "suitable": False,
+            "test_mode": True,
+            "reasons": ["estimated work time 20 minutes is outside 1-15"],
+        },
+    )
+
+    with pytest.raises(SolveRejected, match="Vet rejected this target"):
+        resolve_target(store, url, True)
+
+
 def test_vet_estimate_grants_bounded_solver_headroom():
     policy = {
         "token_budget": 240_000,

@@ -46,7 +46,11 @@ def resolve_target(store: StateStore, explicit_url: str | None, owned_test: bool
     if explicit_url:
         if not owned_test or not is_test_repository(_repo_from_url(explicit_url)):
             raise SolveRejected("explicit targets require --owned-test and a configured test repository")
-        if vet.get("url") != explicit_url or vet.get("suitable") is not True or vet.get("test_mode") is not True:
+        if vet.get("url") == explicit_url and vet.get("suitable") is not True:
+            reasons = "; ".join(str(item) for item in (vet.get("reasons") or [])[:3])
+            suffix = f": {reasons}" if reasons else ""
+            raise SolveRejected(f"Vet rejected this target{suffix}")
+        if vet.get("url") != explicit_url or vet.get("test_mode") is not True:
             raise SolveRejected("run Vet with the same URL, --owned-test, and --force before Solve")
         return explicit_url
 

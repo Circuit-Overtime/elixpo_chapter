@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 
 import pytest
-from agents.vet.__main__ import _finalize_pick, _resolve_target
+from agents.vet.__main__ import _finalize_pick, _resolve_target, _result_exit_code
 from agents.vet.core import vet_issue
 from lib.github.issues import parse_issue_url, referenced_pull_requests
 from lib.state.ledger import Ledger
@@ -112,6 +112,12 @@ def test_automatic_target_requires_pending_pick(tmp_path):
         "https://github.com/x/y/issues/9",
         False,
     )
+
+
+def test_terminal_pipeline_can_require_an_approved_vet_result():
+    assert _result_exit_code({"suitable": True}, require_suitable=True) == 0
+    assert _result_exit_code({"suitable": False}, require_suitable=True) == 3
+    assert _result_exit_code({"suitable": False}, require_suitable=False) == 0
 
 
 def test_vet_approval_is_the_only_point_that_claims_pick(tmp_path):
