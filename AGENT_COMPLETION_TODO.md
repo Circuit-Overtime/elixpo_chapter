@@ -186,3 +186,8 @@ Items are ordered by dependency, not by issue number.
 4. Security and public-action controls (section 7).
 5. Cost, observability, frontend status, and anomaly controls (sections 8–9).
 6. Validation, documentation, and controlled release (section 10).
+
+## Next architecture generation
+
+- [ ] Build the multi-floor, multi-room agent ecosystem described in
+      [`AGENT_ECOSYSTEM_FRAMEWORK_TODO.md`](AGENT_ECOSYSTEM_FRAMEWORK_TODO.md).
