@@ -12,8 +12,10 @@ import structlog
 from lib.github.dispatch import repository_dispatch
 from lib.state.followups import FollowupRecord
 
+from agents.steward.approval import approval_body, approval_fingerprint, create_approval
 from agents.steward.celebrate import build_terminal_action
 from agents.steward.fix import build_fix_action
+from agents.steward.mention_policy import MentionPolicy, MentionRoute, rejection_body
 from agents.steward.respond import (
     authored_by_bot,
     completed_progress_body,
@@ -93,7 +95,9 @@ async def reconcile(
     ttl_days: int,
     max_replies: int = 2,
     control_repo: str = "",
+    mention_policy: MentionPolicy | None = None,
 ) -> dict:
+    mention_policy = mention_policy or MentionPolicy.from_env()
     memory = await gist.load()
     expired = memory.prune_expired()
     notification_threads = await _discover_mentions(api, memory, ttl_days=ttl_days)
@@ -101,6 +105,8 @@ async def reconcile(
     dispatched = 0
     terminal = 0
     fixes = 0
+    approvals = 0
+    rejected = 0
 
     for key, record in list(memory.active.items()):
         owner, repo = record.repository.split("/", 1)
@@ -166,9 +172,78 @@ async def reconcile(
             if replies >= max_replies:
                 break
             source_id = int(comment["id"])
+            author = str((comment.get("user") or {}).get("login") or "")
+            route = mention_policy.route(
+                author,
+                record.repository,
+                tracked=record.status != "mention_received" or bool(record.issue_url or record.branch),
+            )
             final_marker = marker("reply", source_id)
             if any(final_marker in str(item.get("body") or "") for item in comments):
                 record.remember_comment(source_id)
+                continue
+
+            if route == MentionRoute.REJECT:
+                reply = rejection_body(source_id)
+                await safety_check(router, reply)
+                await api.create_issue_comment(owner, repo, record.subject_number, reply)
+                record.remember_comment(source_id)
+                rejected += 1
+                replies += 1
+                continue
+
+            if route == MentionRoute.APPROVAL or (
+                route == MentionRoute.VET and record.subject_kind != "issue"
+            ):
+                if not control_repo or "/" not in control_repo:
+                    raise RuntimeError("mention approval requires ELIXPO_GITHUB_CONTROL_REPO")
+                fingerprint = approval_fingerprint(record.repository, record.subject_number, source_id)
+                action = {"type": "mention_approval", "fingerprint": fingerprint}
+                if record.queue_action(action):
+                    approval_payload = {
+                        "repository": record.repository,
+                        "subject_kind": record.subject_kind,
+                        "subject_number": record.subject_number,
+                        "subject_url": record.subject_url,
+                        "source_id": source_id,
+                        "author": author,
+                        "body": str(comment.get("body") or "")[:3000],
+                        "fingerprint": fingerprint,
+                    }
+                    await safety_check(router, approval_body(approval_payload))
+                    approval = await create_approval(api, control_repo, approval_payload)
+                    record.pending_action["approval_url"] = str(approval.get("html_url") or "")
+                    record.status = "approval_required"
+                    approvals += 1
+                record.remember_comment(source_id)
+                continue
+
+            if route == MentionRoute.VET:
+                if not control_repo or "/" not in control_repo:
+                    raise RuntimeError("external mention intake requires ELIXPO_GITHUB_CONTROL_REPO")
+                control_owner, control_name = control_repo.split("/", 1)
+                await repository_dispatch(
+                    api,
+                    control_owner,
+                    control_name,
+                    "steward_issue_intake",
+                    {
+                        "issue_url": record.subject_url,
+                        "source_comment_id": source_id,
+                        "memory_key": record.key,
+                    },
+                )
+                reply = (
+                    "> Request accepted from an approved contributor. The issue has entered "
+                    "the bounded Vet queue; no repository work starts unless Vet approves it.\n\n"
+                    + final_marker
+                )
+                await safety_check(router, reply)
+                await api.create_issue_comment(owner, repo, record.subject_number, reply)
+                record.status = "intake_dispatched"
+                record.remember_comment(source_id)
+                dispatched += 1
+                replies += 1
                 continue
             progress_marker = marker("progress", source_id)
             progress_comment = next(
@@ -217,6 +292,8 @@ async def reconcile(
         "dispatched": dispatched,
         "replies": replies,
         "fixes": fixes,
+        "approvals": approvals,
+        "rejected": rejected,
     }
 
 

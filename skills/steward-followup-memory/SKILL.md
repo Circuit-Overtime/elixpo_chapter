@@ -34,7 +34,21 @@ Require an exact, case-insensitive `@elixpoo` token. Ignore bot-authored text,
 email-like strings, near matches, disclosure text, and comments already marked
 handled.
 
-Post one idempotent progress acknowledgement before model work. Draft from the
+Apply authorization before any progress comment or model call:
+
+- trusted user + `elixpo/*`: respond directly;
+- trusted user + external issue: dispatch the issue to Vet;
+- untrusted user in `elixpo/*`, or in an explicitly watched/tracked repository:
+  create one `elixpoo/approval-required` issue in the control repository and do
+  not reply until a maintainer adds `elixpoo/approved`;
+- untrusted user outside those scopes: post one deterministic polite rejection;
+- external pull-request work cannot enter issue Vet, so require manual approval.
+
+An approval authorizes exactly one source-comment fingerprint. Never treat an
+approval label on an unrelated issue, a copied metadata block, or a mismatched
+Gist record as authorization. Closing an unapproved request is a denial.
+
+For directly authorized work, post one idempotent progress acknowledgement before model work. Draft from the
 current subject, triggering comment, recent bounded conversation, and stored
 metadata. Route generation through the `steward` role and every public response
 through `qwen-safety`. Do not expose memory internals or claim code was changed
