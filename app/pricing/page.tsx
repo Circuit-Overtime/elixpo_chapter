@@ -274,6 +274,7 @@ export default function PricingPage() {
                   submitting={submitting}
                   popular={isPopular}
                   onSelect={select}
+                  currentTier={me.currentTier}
                 />
 
                 <ul className="space-y-2 list-none p-0 mt-6">
@@ -407,6 +408,7 @@ function CtaButton({
   submitting,
   popular,
   onSelect,
+  currentTier,
 }: {
   tier: SellableTier;
   loaded: boolean;
@@ -415,6 +417,7 @@ function CtaButton({
   submitting: SellableTier | null;
   popular: boolean;
   onSelect: (t: SellableTier) => void;
+  currentTier: string | null;
 }) {
   const thisSubmitting = submitting === tier;
   // Disabled while: page not yet loaded (idempotency guard — no clicks
@@ -423,11 +426,18 @@ function CtaButton({
   const isCurrentPlanCta = isCurrent || (tier === 'free' && loggedIn);
   const disabled = !loaded || submitting !== null || isCurrentPlanCta;
 
+  const currentTierIndex = currentTier === 'enterprise' ? 3 : SELLABLE_TIER_ORDER.indexOf(currentTier as SellableTier);
+  const cardTierIndex = SELLABLE_TIER_ORDER.indexOf(tier);
+  const isDowngrade = loggedIn && currentTierIndex > cardTierIndex;
+
   let label: string;
   if (!loaded) label = 'Loading…';
   else if (thisSubmitting) label = 'Starting checkout…';
   else if (isCurrent) label = 'Current plan';
-  else if (tier === 'free') label = loggedIn ? 'Included' : 'Start for free';
+  else if (isDowngrade) {
+    const tierNames: Record<SellableTier, string> = { free: 'Free', pro: 'Pro', business: 'Business' };
+    label = `Downgrade to ${tierNames[tier]}`;
+  } else if (tier === 'free') label = loggedIn ? 'Included' : 'Start for free';
   else if (!loggedIn) label = `Sign in to get ${tier === 'pro' ? 'Pro' : 'Business'}`;
   else label = `Upgrade to ${tier === 'pro' ? 'Pro' : 'Business'}`;
 
