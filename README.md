@@ -33,7 +33,7 @@ real-time collaboration, and organizations — all on the edge.
 <br />
 
 <div align="center">
-<img src="public/Elixpo Banner.png" alt="LixBlogs Banner" width="100%" style="border-radius: 12px;" />
+<img src="public/banner.png" alt="LixBlogs Banner" width="100%" style="border-radius: 12px;" />
 </div>
 
 <br />
