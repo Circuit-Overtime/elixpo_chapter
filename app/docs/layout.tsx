@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { LLM_TEXT } from './llm_text';
 
 export const runtime = 'edge';
 
@@ -38,90 +39,9 @@ export default function DocsLayout({
   const [activeHeadingId, setActiveHeadingId] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Walk the rendered docs content and emit markdown-ish text. Same idea as
-  // accounts.elixpo's docs Copy-for-LLM button — friendly for pasting into a
-  // chat without losing structure.
+  // Return the full abstract API reference text directly.
   const buildLlmPayload = (): string => {
-    const root = document.getElementById('docs-content');
-    if (!root) return '';
-
-    const lines: string[] = [];
-    const walk = (node: Node) => {
-      if (node.nodeType !== Node.ELEMENT_NODE) return;
-      const el = node as HTMLElement;
-      const tag = el.tagName.toLowerCase();
-      const text = (el.textContent || '').trim();
-
-      switch (tag) {
-        case 'h1':
-          lines.push(`# ${text}`, '');
-          return;
-        case 'h2':
-          lines.push('', `## ${text}`, '');
-          return;
-        case 'h3':
-          lines.push('', `### ${text}`, '');
-          return;
-        case 'h4':
-          lines.push('', `#### ${text}`, '');
-          return;
-        case 'li':
-          lines.push(`- ${text}`);
-          return;
-        case 'pre':
-          lines.push('', '```', (el.textContent || '').trim(), '```', '');
-          return;
-        case 'table': {
-          const rows = Array.from(el.querySelectorAll('tr')).map((row) =>
-            Array.from(row.querySelectorAll('th, td')).map((cell) =>
-              (cell.textContent || '').trim().replace(/\|/g, '\\|'),
-            ),
-          );
-          if (rows.length > 0) {
-            lines.push('', `| ${rows[0].join(' | ')} |`);
-            lines.push(`| ${rows[0].map(() => '---').join(' | ')} |`);
-            rows.slice(1).forEach((row) =>
-              lines.push(`| ${row.join(' | ')} |`),
-            );
-            lines.push('');
-          }
-          return;
-        }
-        case 'p':
-          if (text) lines.push(text, '');
-          return;
-        default:
-          el.childNodes.forEach(walk);
-      }
-    };
-    root.childNodes.forEach(walk);
-
-    const pageTitle =
-      DOCS_NAV.find((n) => n.href === pathname)?.label || 'Overview';
-    const url =
-      typeof window !== 'undefined'
-        ? `${window.location.origin}${pathname}`
-        : pathname;
-
-    const header = [
-      `# ElixpoURL Docs — ${pageTitle}`,
-      '',
-      `Source: ${url}`,
-      '',
-      "This is one section of the ElixpoURL developer documentation. ElixpoURL is an open URL shortener built on Cloudflare's edge — short links, click analytics, and a REST API.",
-      '',
-      '---',
-      '',
-    ].join('\n');
-
-    return (
-      header +
-      lines
-        .join('\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim() +
-      '\n'
-    );
+    return LLM_TEXT;
   };
 
   const handleCopyForLlm = async () => {
@@ -272,16 +192,16 @@ export default function DocsLayout({
                   onMouseEnter={(e) => {
                     if (!active) {
                       e.currentTarget.style.background =
-                        'rgba(0,0,0,0.05)';
+                          'rgba(0,0,0,0.05)';
                       e.currentTarget.style.color =
-                        'rgba(0,0,0,0.9)';
+                          'rgba(0,0,0,0.9)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!active) {
                       e.currentTarget.style.background = 'transparent';
                       e.currentTarget.style.color =
-                        'rgba(0,0,0,0.65)';
+                          'rgba(0,0,0,0.65)';
                     }
                   }}
                 >
@@ -356,9 +276,9 @@ export default function DocsLayout({
                 if (!copied) {
                   e.currentTarget.style.color = ACCENT;
                   e.currentTarget.style.background =
-                    'rgba(229,57,53,0.08)';
+                      'rgba(229,57,53,0.08)';
                   e.currentTarget.style.borderColor =
-                    'rgba(229,57,53,0.4)';
+                      'rgba(229,57,53,0.4)';
                 }
               }}
               onMouseLeave={(e) => {
@@ -366,7 +286,7 @@ export default function DocsLayout({
                   e.currentTarget.style.color = 'rgba(0,0,0,0.75)';
                   e.currentTarget.style.background = 'transparent';
                   e.currentTarget.style.borderColor =
-                    'rgba(0,0,0,0.12)';
+                      'rgba(0,0,0,0.12)';
                 }
               }}
             >
