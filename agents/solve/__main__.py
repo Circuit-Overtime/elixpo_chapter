@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 import os
+import secrets
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -75,6 +76,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     store.write_json(
         "solve.json",
         {
+            "run_id": secrets.token_hex(8),
             "status": "starting",
             "stage": "preflight",
             "issue_url": target,

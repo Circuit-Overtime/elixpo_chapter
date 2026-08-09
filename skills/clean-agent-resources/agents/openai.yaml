@@ -1,0 +1,4 @@
+interface:
+  display_name: "Janitor Resource Cleanup"
+  short_description: "Clean recorded agent resources safely"
+  default_prompt: "Use $clean-agent-resources to validate and clean only resources authorized by a Doctor receipt."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Doctor Failure Diagnosis"
+  short_description: "Decide safe recovery from agent failures"
+  default_prompt: "Use $diagnose-agent-failure to classify a recorded agent failure and authorize one bounded recovery outcome."

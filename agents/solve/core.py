@@ -237,6 +237,7 @@ async def solve(
     session_id = re.sub(r"[^A-Za-z0-9_-]", "-", f"{owner}-{repo}-{number}-{secrets.token_hex(3)}")
     workspace = Workspace(session_id, workspace_base)
     running = {
+        "run_id": str(preparing.get("run_id") or ""),
         "status": "running",
         "stage": "workspace_setup",
         "issue_url": issue_url,

@@ -131,6 +131,8 @@ def cleanup_manifest(state: dict[str, Any], workspace_base: Path) -> dict[str, A
             }
         )
     return {
+        "schema_version": 1,
+        "run_id": str(state.get("run_id") or ""),
         "owner": "janitor",
         "status": "blocked_on_doctor",
         "resources": resources,

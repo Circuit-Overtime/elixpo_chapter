@@ -7,3 +7,5 @@ per_task:
   solve: 240000
   discussions: 12000
   steward: 12000
+  doctor: 0
+  janitor: 0
