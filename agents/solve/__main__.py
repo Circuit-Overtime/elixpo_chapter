@@ -13,7 +13,7 @@ from pathlib import Path
 
 import structlog
 
-from agents.solve.core import SolveRejected, resolve_target, solve
+from agents.solve.core import SolveRejected, resolve_target, solve, write_solve_state
 from agents.solve.failure import failure_handoff
 from agents.solve.harness import HarnessError
 
@@ -34,8 +34,8 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     if not settings.github.solver_token or not settings.pollinations.api_key:
         missing = "AGENT_GITHUB_SOLVER_TOKEN" if not settings.github.solver_token else "ELIXPO_POLLINATIONS_API_KEY"
         error = RuntimeError(f"missing credential: {missing}")
-        store.write_json(
-            "solve.json",
+        write_solve_state(
+            store,
             failure_handoff(
                 {"stage": "configuration", "issue_url": issue_url, "test_mode": owned_test},
                 error,
@@ -53,8 +53,8 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     try:
         target = resolve_target(store, issue_url, owned_test)
     except (SolveRejected, ValueError) as exc:
-        store.write_json(
-            "solve.json",
+        write_solve_state(
+            store,
             failure_handoff(
                 {"stage": "target_validation", "issue_url": issue_url, "test_mode": owned_test},
                 exc,
@@ -67,7 +67,13 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         log.error("solve.invalid_target", error=str(exc))
         return 2
 
-    vet = store.read_json("vet.json", {}) or {}
+    vet = store.read_state(
+        "vet.json",
+        {},
+        expected_producer="vet",
+        expected_key=(store.read_json("vet.json", {}) or {}).get("key") or None,
+        allow_legacy=True,
+    ) or {}
     matching_vet = vet if vet.get("url") == target else None
     token_target = solve_token_limit(policy, matching_vet)
     token_limit = solve_hard_token_limit(policy, matching_vet)
@@ -79,8 +85,8 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         "token_limit": token_limit,
     }
 
-    store.write_json(
-        "solve.json",
+    write_solve_state(
+        store,
         {
             "run_id": run_id,
             "status": "starting",
@@ -100,7 +106,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     )
     starting = store.read_json("solve.json", {}) or {}
     starting["model_route"] = str(router.resolve("code").get("model") or "")
-    store.write_json("solve.json", starting)
+    write_solve_state(store, starting)
     try:
         result = await asyncio.wait_for(
             solve(
@@ -137,7 +143,7 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
             token_limit=router.budget.limit,
             elapsed_seconds=time.monotonic() - run_started,
         )
-        store.write_json("solve.json", failed)
+        write_solve_state(store, failed)
         log.error("solve.failed", error=str(exc), spent=router.budget.spent)
         return 1
     finally:

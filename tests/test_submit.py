@@ -12,6 +12,7 @@ from agents.submit.__main__ import (
     validate_verification_record,
     write_punch_line,
 )
+from lib.state.contracts import StateContractRegistry
 from lib.state.store import StateStore
 
 
@@ -286,3 +287,7 @@ async def test_successful_submit_authorizes_exact_workspace_cleanup(tmp_path, mo
     assert solved["status"] == "submitted"
     assert solved["cleanup"]["status"] == "authorized_after_submit"
     assert solved["cleanup"]["submission_head_sha"] == state["head_sha"]
+    registry = StateContractRegistry.model_validate(store.read_json("contracts.json"))
+    assert registry.contracts["submit.json"].producer == "submit"
+    assert registry.contracts["submit.json"].run_id == "run-1"
+    assert registry.contracts["solve.json"].producer == "submit"

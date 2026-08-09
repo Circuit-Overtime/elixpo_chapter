@@ -8,7 +8,7 @@ import json
 import os
 import re
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import structlog
@@ -393,6 +393,7 @@ async def submit(api, router, store, solve_state: dict, workspace_base: Path) ->
         )
 
     result = {
+        "run_id": str(solve_state.get("run_id") or ""),
         "status": "submitted",
         "key": solve_state["key"],
         "issue_url": solve_state["issue_url"],
@@ -416,7 +417,14 @@ async def submit(api, router, store, solve_state: dict, workspace_base: Path) ->
         record.token_spend = int(solve_state.get("token_spent", 0)) + router.budget.spent
         record.fork_url = f"https://github.com/{fork_owner}/{repo}"
         ledger.save(store)
-    store.write_json("submit.json", result)
+    store.write_state(
+        "submit.json",
+        result,
+        producer="submit",
+        run_id=result["run_id"],
+        key=str(result["key"]),
+        ttl=timedelta(days=7),
+    )
     cleanup = dict(solve_state.get("cleanup") or {})
     if cleanup.get("schema_version") == 1 and cleanup.get("owner") == "janitor":
         cleanup.update(
@@ -427,7 +435,14 @@ async def submit(api, router, store, solve_state: dict, workspace_base: Path) ->
             }
         )
     solve_state.update({"status": "submitted", "pr_url": result["pr_url"], "cleanup": cleanup})
-    store.write_json("solve.json", solve_state)
+    store.write_state(
+        "solve.json",
+        solve_state,
+        producer="submit",
+        run_id=str(solve_state.get("run_id") or ""),
+        key=str(solve_state.get("key") or ""),
+        ttl=timedelta(days=7),
+    )
     return result
 
 
@@ -446,14 +461,20 @@ async def _run() -> int:
         )
         return 1
     store = StateStore(settings.state_dir)
-    solve_state = store.read_json("solve.json", {}) or {}
+    solve_state = store.read_state(
+        "solve.json",
+        {},
+        expected_producer="solve",
+        max_age=timedelta(hours=24),
+        allow_legacy=True,
+    ) or {}
     api = GitHubAPI.from_token(settings.github.solver_token)
     router = Router.from_settings("submit", budget=Budget("submit", limit=2500, kill_multiple=1.0))
     try:
         workspace_base = Path(os.getenv("ELIXPO_WORKSPACE_DIR", "/tmp/elixpoo-workspaces"))
         result = await submit(api, router, store, solve_state, workspace_base)
     except Exception as exc:
-        store.write_json(
+        store.write_state(
             "submit.json",
             {
                 "status": "failed",
@@ -461,6 +482,10 @@ async def _run() -> int:
                 "error": str(exc)[:1000],
                 "failed_at": datetime.now(timezone.utc).isoformat(),
             },
+            producer="submit",
+            run_id=str(solve_state.get("run_id") or ""),
+            key=str(solve_state.get("key") or ""),
+            ttl=timedelta(days=7),
         )
         log.error("submit.failed", error=str(exc))
         return 1
