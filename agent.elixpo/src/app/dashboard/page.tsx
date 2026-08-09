@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchSessions, deleteSession } from "@/lib/api";
+import Link from "next/link";
+import { fetchSessions } from "@/lib/api";
 import type { SessionMeta } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,11 +73,11 @@ export default function DashboardPage() {
             Monitor and manage your Elixpo Agent sessions
           </p>
         </div>
-        <a href="/dashboard/new">
+        <Link href="/dashboard/new">
           <Button className="bg-[#a3e635] text-[#0c0f0a] hover:bg-[#bef264] font-semibold rounded-xl shadow-[0_0_15px_rgba(163,230,53,0.2)]">
             New Session
           </Button>
-        </a>
+        </Link>
       </div>
 
       {/* Search */}

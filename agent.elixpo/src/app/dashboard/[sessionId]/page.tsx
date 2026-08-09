@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { fetchSession } from "@/lib/api";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import type { SessionDetail, AgentEvent } from "@/types";
@@ -38,8 +39,7 @@ export default function SessionDetailPage() {
   const [followUp, setFollowUp] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { events, connected, startSession, resumeSession } =
-    useAgentStream(sessionId);
+  const { events, connected, resumeSession } = useAgentStream(sessionId);
 
   useEffect(() => {
     fetchSession(sessionId)
@@ -84,7 +84,7 @@ export default function SessionDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <a
+          <Link
             href="/dashboard"
             className="flex items-center gap-1 text-sm text-[rgba(245,245,244,0.4)] hover:text-[#f5f5f4] transition-colors"
           >
@@ -92,7 +92,7 @@ export default function SessionDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
             </svg>
             Back
-          </a>
+          </Link>
           <h1
             className="text-xl font-bold font-mono text-[#f5f5f4]"
             style={{ fontFamily: "var(--font-display)" }}
