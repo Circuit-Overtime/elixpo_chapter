@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { createOAuthClient, getOAuthClientById, getUserById } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
+import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
 import { sendMail } from "@/lib/mails";
 import { SUPPORTED_OAUTH_SCOPES } from "@/lib/oauth-scopes";
 import { generateRandomString, hashString } from "@/lib/webcrypto";
@@ -34,6 +35,7 @@ async function getAuth(request: NextRequest) {
  *   "redirect_uris": ["https://myservice.com/auth/callback"],
  *   "logo_uri": "https://myservice.com/logo.png", (optional)
  *   "description": "Brief description of your service", (optional)
+ *   "client_type": "confidential" | "public", (optional; defaults to confidential)
  *   "scopes": ["openid", "profile", "email"]
  * }
  *
@@ -156,6 +158,7 @@ export async function POST(request: NextRequest) {
             description,
             homepage_url,
             scopes,
+            client_type = "confidential",
         } = body;
         // Webhooks are no longer set at registration time. Use
         // POST /api/auth/oauth-clients/:client_id/webhooks to add one or
@@ -163,16 +166,22 @@ export async function POST(request: NextRequest) {
         // multiple endpoints (e.g. localhost + production), each with its
         // own secret and event subscription.
 
-        // Validate required fields
+        if (client_type !== "confidential" && client_type !== "public") {
+            return NextResponse.json(
+                { error: "client_type must be confidential or public" },
+                { status: 400 },
+            );
+        }
+
+        // Device-only public clients do not require browser redirect URIs.
         if (
             !name ||
-            !redirect_uris ||
             !Array.isArray(redirect_uris) ||
-            redirect_uris.length === 0
+            (client_type === "confidential" && redirect_uris.length === 0)
         ) {
             return NextResponse.json(
                 {
-                    error: "name and redirect_uris (non-empty array) are required",
+                    error: "name and redirect_uris are required; confidential clients need at least one redirect URI",
                 },
                 { status: 400 },
             );
@@ -211,10 +220,20 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate scopes if provided
-        const validScopes = [...SUPPORTED_OAUTH_SCOPES];
-        if (scopes && Array.isArray(scopes)) {
+        const validScopes: string[] =
+            client_type === "public"
+                ? [...SUPPORTED_OAUTH_SCOPES, ...SUPPORTED_LIXBLOGS_SCOPES]
+                : [...SUPPORTED_OAUTH_SCOPES];
+        const registeredScopes = scopes || [...SUPPORTED_OAUTH_SCOPES];
+        if (scopes !== undefined && !Array.isArray(scopes)) {
+            return NextResponse.json(
+                { error: "scopes must be an array" },
+                { status: 400 },
+            );
+        }
+        if (Array.isArray(scopes)) {
             for (const scope of scopes) {
-                if (!validScopes.includes(scope)) {
+                if (typeof scope !== "string" || !validScopes.includes(scope)) {
                     return NextResponse.json(
                         {
                             error: `Invalid scope: ${scope}. Valid scopes: ${validScopes.join(", ")}`,
@@ -227,8 +246,15 @@ export async function POST(request: NextRequest) {
 
         // Generate secure credentials
         const clientId = `cli_${generateRandomString(32)}`;
-        const clientSecret = `secret_${generateRandomString(64)}`;
-        const clientSecretHash = await hashString(clientSecret);
+        const clientSecret =
+            client_type === "confidential"
+                ? `secret_${generateRandomString(64)}`
+                : null;
+        // The legacy schema keeps this column NOT NULL. Public clients receive
+        // no secret; an unexposed random value prevents an empty/shared hash.
+        const clientSecretHash = await hashString(
+            clientSecret || generateRandomString(64),
+        );
 
         const now = new Date().toISOString();
 
@@ -238,13 +264,14 @@ export async function POST(request: NextRequest) {
                 clientSecretHash,
                 name,
                 redirectUris: JSON.stringify(validUris),
-                scopes: JSON.stringify(scopes || validScopes),
+                scopes: JSON.stringify(registeredScopes),
                 ownerId: auth.sub,
                 description,
                 homepageUrl: homepage_url,
                 webhookUrl: null,
                 webhookSecretHash: null,
                 webhookEvents: null,
+                clientType: client_type,
             });
             console.log("[OAuth Client] Registered: %s (%s)", name, clientId);
 
@@ -282,13 +309,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
             {
                 client_id: clientId,
-                client_secret: clientSecret,
+                ...(clientSecret && { client_secret: clientSecret }),
+                client_type,
                 name,
                 redirect_uris: validUris,
                 homepage_url,
                 logo_uri,
                 description,
-                scopes: scopes || validScopes,
+                scopes: registeredScopes,
                 created_at: now,
                 _notice:
                     "Store client_secret securely. It will NOT be retrievable. To register webhook endpoints, POST to /api/auth/oauth-clients/" +
@@ -344,6 +372,7 @@ export async function GET(request: NextRequest) {
             scopes: JSON.parse((client as any).scopes || "[]"),
             created_at: (client as any).created_at,
             is_active: (client as any).is_active,
+            client_type: (client as any).client_type || "confidential",
         });
     } catch (error) {
         console.error("[OAuth Client] Get error:", error);
