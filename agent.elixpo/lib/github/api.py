@@ -65,7 +65,8 @@ class GitHubAPI:
         )
         return self._client
 
-    async def _request(self, method: str, path: str, **kwargs) -> Any:
+    async def request_json_with_headers(self, method: str, path: str, **kwargs) -> tuple[Any, dict[str, str]]:
+        """Return decoded JSON plus response headers for revision-sensitive APIs."""
         client = await self._get_client()
         last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES):
@@ -76,8 +77,8 @@ class GitHubAPI:
                     continue
                 resp.raise_for_status()
                 if resp.status_code == 204:
-                    return None
-                return resp.json()
+                    return None, dict(resp.headers)
+                return resp.json(), dict(resp.headers)
             except (httpx.TransportError, httpx.TimeoutException) as e:
                 last_exc = e
                 if attempt < _MAX_RETRIES - 1:
@@ -86,6 +87,10 @@ class GitHubAPI:
                 raise
         if last_exc:
             raise last_exc
+
+    async def _request(self, method: str, path: str, **kwargs) -> Any:
+        data, _headers = await self.request_json_with_headers(method, path, **kwargs)
+        return data
 
     async def close(self):
         if self._client:
@@ -191,6 +196,14 @@ class GitHubAPI:
 
     async def get_pull_reviews(self, owner: str, repo: str, pr_number: int) -> list:
         return await self._request("GET", f"/repos/{owner}/{repo}/pulls/{pr_number}/reviews")
+
+    async def get_check_runs(self, owner: str, repo: str, ref: str) -> list:
+        result = await self._request(
+            "GET",
+            f"/repos/{owner}/{repo}/commits/{ref}/check-runs",
+            params={"per_page": 100},
+        )
+        return list((result or {}).get("check_runs") or [])
 
     async def create_pull(
         self,

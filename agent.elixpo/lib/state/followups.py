@@ -39,6 +39,11 @@ class FollowupRecord(BaseModel):
     updated_at: str
     expires_at: str
     handled_comment_ids: list[int] = Field(default_factory=list)
+    head_sha: str = ""
+    pending_action: dict = Field(default_factory=dict)
+    last_fix_fingerprint: str = ""
+    fix_attempts: dict[str, int] = Field(default_factory=dict)
+    last_error: str = ""
 
     @classmethod
     def create(
@@ -76,6 +81,22 @@ class FollowupRecord(BaseModel):
         if comment_id not in self.handled_comment_ids:
             self.handled_comment_ids.append(comment_id)
             self.handled_comment_ids = self.handled_comment_ids[-200:]
+        self.updated_at = (now or utc_now()).isoformat()
+
+    def queue_action(self, action: dict, *, now: datetime | None = None) -> bool:
+        """Record a new action once; return false for an identical pending receipt."""
+        fingerprint = str(action.get("fingerprint") or "")
+        if not fingerprint:
+            raise ValueError("follow-up action fingerprint is required")
+        if str(self.pending_action.get("fingerprint") or "") == fingerprint:
+            return False
+        self.pending_action = dict(action)
+        self.updated_at = (now or utc_now()).isoformat()
+        return True
+
+    def clear_action(self, *, now: datetime | None = None) -> None:
+        self.pending_action = {}
+        self.last_error = ""
         self.updated_at = (now or utc_now()).isoformat()
 
 

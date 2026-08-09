@@ -52,7 +52,6 @@ from agents.solve.harness import (
 )
 from agents.solve.model import review_diff
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
-from agents.solve.sandbox import language_toolchain_roots, sandbox_command
 from agents.solve.tool_gate import _decision
 from agents.solve.verification_plan import complete_verification_plan
 from lib.solve_policy import load_solve_policy, solve_hard_token_limit, solve_token_limit
@@ -246,18 +245,18 @@ def test_target_command_environment_excludes_agent_credentials(tmp_path, monkeyp
 
 
 def test_bubblewrap_mounts_only_the_required_external_node_toolchain(tmp_path, monkeypatch):
-    from agents.solve import sandbox as solve_sandbox
+    from lib import sandbox as shared_sandbox
 
     tools = {
         "bwrap": "/usr/bin/bwrap",
         "npm": "/home/test/.nvm/versions/node/v22/bin/npm",
         "node": "/home/test/.nvm/versions/node/v22/bin/node",
     }
-    monkeypatch.setattr(solve_sandbox.shutil, "which", lambda name: tools.get(name))
-    monkeypatch.setattr(solve_sandbox, "bubblewrap_available", lambda: True)
+    monkeypatch.setattr(shared_sandbox.shutil, "which", lambda name: tools.get(name))
+    monkeypatch.setattr(shared_sandbox, "bubblewrap_available", lambda: True)
 
-    roots = language_toolchain_roots(["npm", "run", "typecheck"])
-    command, backend = sandbox_command(tmp_path, ["npm", "run", "typecheck"], network=False)
+    roots = shared_sandbox.language_toolchain_roots(["npm", "run", "typecheck"])
+    command, backend = shared_sandbox.sandbox_command(tmp_path, ["npm", "run", "typecheck"], network=False)
 
     assert roots == [Path("/home/test/.nvm/versions/node/v22")]
     assert backend == "bubblewrap"
