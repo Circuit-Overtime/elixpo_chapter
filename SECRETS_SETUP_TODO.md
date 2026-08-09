@@ -7,12 +7,12 @@ Solve target sandbox.
 
 ## Required Actions secrets
 
-- [ ] `ELIXPO_POLLINATIONS_API_KEY`
+- [x] `ELIXPO_POLLINATIONS_API_KEY`
   - Pollinations text API key used by every RTK and CCR model route.
   - This is the only model-provider credential; do not create model-specific
     secrets.
 
-- [ ] `ELIXPOO_GITHUB_AGENTIC_TOKEN`
+- [x] `ELIXPOO_GITHUB_AGENTIC_TOKEN`
   - Owner: the `elixpoo` user account.
   - Recommended type: fine-grained PAT.
   - Resource owner: `elixpo`.
@@ -25,19 +25,19 @@ Solve target sandbox.
   - Classic fallback scopes: `repo`, `workflow`, and `project`; add `read:org`
     only when organization policy requires it.
 
-- [ ] `AGENT_GITHUB_SOLVER_TOKEN`
+- [x] `AGENT_GITHUB_SOLVER_TOKEN`
   - Owner: the account that owns contribution forks, normally `elixpoo`.
   - Recommended type for public targets: classic PAT with `public_repo`.
   - Used only for fork creation, Solve branches, pushes, and PR submission.
   - Add private repository access only if private targets are intentionally
     enabled.
 
-- [ ] `ELIXPOO_GIST_AGENTIC_TOKEN`
+- [x] `ELIXPOO_GIST_AGENTIC_TOKEN`
   - Owner: `elixpoo`.
   - Classic PAT scope: `gist` only.
   - Used for follow-up memory, cursors, caches, and merge changelogs.
 
-- [ ] `ELIXPOO_GITHUB_DISCUSSIONS_TOKEN`
+- [x] `ELIXPOO_GITHUB_DISCUSSIONS_TOKEN`
   - Give access to `elixpo/agent.elixpo` and `elixpo/elixpo`.
   - Repository permissions: Discussions read/write, Issues read/write, Pull
     requests read, Contents read, and Metadata read.
@@ -72,12 +72,12 @@ python -m json.tool state/project_setup.json
 
 ## Optional Actions variables
 
-- [ ] `ELIXPO_GITHUB_FORK_OWNER=elixpoo`
+- [x] `ELIXPO_GITHUB_FORK_OWNER=elixpoo`
 - [ ] `ELIXPO_FOLLOWUP_TTL_DAYS=360`
 - [ ] `ELIXPO_JANITOR_ORPHAN_TTL_HOURS=24`
 - [ ] `OREOFLOW_SYNC_CONCURRENCY=4`
 - [ ] `ELIXPO_STEWARD_CELEBRATE=false`
-- [ ] `CI_GIST_ID=<merge-changelog-gist-id>`
+- [x] `CI_GIST_ID=<merge-changelog-gist-id>`
   - May remain unset initially; `on-merge.yml` creates and persists it.
 
 ## Optional webhook Worker secrets
@@ -136,4 +136,3 @@ configuration files.
 - [ ] Do not create per-model API keys.
 - [ ] Do not expose deployment, package-publishing, payment, moderation, SOPS,
   or age credentials to agent workflows.
-
