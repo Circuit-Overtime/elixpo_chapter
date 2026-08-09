@@ -1,6 +1,10 @@
 name: Elixpoo Discussions
 
 on:
+  discussion:
+    types: [created, edited]
+  discussion_comment:
+    types: [created, edited]
   pull_request:
     types: [closed]
     branches: [main]
@@ -28,6 +32,24 @@ permissions:
   pull-requests: read
 
 jobs:
+  respond:
+    if: github.event_name == 'discussion' || github.event_name == 'discussion_comment'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Reply to an exact @elixpoo mention
+        env:
+          GITHUB_TOKEN: ${{ secrets.ELIXPOO_GITHUB_DISCUSSIONS_TOKEN }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
+          ELIXPO_DISCUSSIONS_REPOSITORY: elixpo/elixpo
+        run: python -m agents.discussions respond
+
   merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     runs-on: ubuntu-latest

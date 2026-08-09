@@ -78,12 +78,23 @@ class UpstashSettings(BaseSettings):
     token: str = Field(default="", validation_alias="ELIXPO_UPSTASH_TOKEN")
 
 
+class FollowupSettings(BaseSettings):
+    """Shared GitHub follow-up memory; no database is involved."""
+
+    model_config = SettingsConfigDict(extra="ignore")
+
+    gist_token: str = Field(default="", validation_alias="ELIXPOO_GIST_AGENTIC_TOKEN")
+    gist_id: str = Field(default="", validation_alias="ELIXPOO_FOLLOWUP_GIST_ID")
+    ttl_days: int = Field(default=360, ge=60, le=360, validation_alias="ELIXPO_FOLLOWUP_TTL_DAYS")
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
 
     pollinations: PollinationsSettings = PollinationsSettings()
     github: GitHubSettings = GitHubSettings()
     upstash: UpstashSettings = UpstashSettings()
+    followups: FollowupSettings = FollowupSettings()
 
     root: Path = ROOT
     config_dir: Path = ROOT / "config"

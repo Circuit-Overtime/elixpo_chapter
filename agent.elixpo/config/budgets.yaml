@@ -6,3 +6,4 @@ per_task:
   vet: 12000
   solve: 240000
   discussions: 12000
+  steward: 12000
