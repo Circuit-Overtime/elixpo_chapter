@@ -6,7 +6,6 @@ name: Elixpo PR Description Fill
 on:
   pull_request:
     types: [opened, edited]
-    branches: [main]
 
 concurrency:
   group: elixpo-pr-fill-${{ github.event.pull_request.number }}
