@@ -1,0 +1,11 @@
+{
+  "authorization_id": "e3b0b7d1b252f3d46da2",
+  "authorization_source": "doctor",
+  "cleaned_at": "2026-08-09T09:27:35.835446+00:00",
+  "doctor_fingerprint": "e3b0b7d1b252f3d46da2",
+  "key": "",
+  "results": [],
+  "run_id": "",
+  "schema_version": 1,
+  "status": "complete"
+}

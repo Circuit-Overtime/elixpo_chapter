@@ -519,6 +519,20 @@
       "title": "Add proper GLB video support",
       "url": "https://github.com/earthtojake/text-to-cad/issues/149"
     },
+    "elixpo/lixrl.com#18": {
+      "confidence": 0.8,
+      "issue_kind": "standalone",
+      "issue_updated_at": "2026-08-09T09:00:34Z",
+      "reasons": [
+        "Estimated time exceeds fifteen minutes",
+        "scope is medium",
+        "estimated work time 20 minutes is outside 1-15",
+        "verifier did not approve the issue"
+      ],
+      "rejected_at": "2026-08-09T09:27:25.280404+00:00",
+      "title": "[BUG] The graph of the tracker of clicks is discoloured on the page of a particular link settings",
+      "url": "https://github.com/elixpo/lixrl.com/issues/18"
+    },
     "felixmosh/bull-board#1276": {
       "confidence": 0.75,
       "issue_kind": "unknown",

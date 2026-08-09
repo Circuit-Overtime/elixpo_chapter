@@ -1,0 +1,46 @@
+{
+  "current": {
+    "action": "terminate",
+    "category": "policy",
+    "cleanup_authorized": true,
+    "decided_at": "2026-08-09T09:27:35.711397+00:00",
+    "elapsed_seconds": 0.0,
+    "failure_fingerprint": "e3b0b7d1b252f3d46da2",
+    "key": "",
+    "model_route": "",
+    "reason": "This failure needs configuration, issue, or implementation changes rather than an automatic retry.",
+    "retry_after_seconds": 0,
+    "retry_count": 0,
+    "retry_stage": "",
+    "run_id": "",
+    "schema_version": 1,
+    "stage": "target_validation",
+    "token_limit": 240000,
+    "token_overage": 0,
+    "token_spent": 0
+  },
+  "history": [
+    {
+      "action": "terminate",
+      "category": "policy",
+      "cleanup_authorized": true,
+      "decided_at": "2026-08-09T09:27:35.711397+00:00",
+      "elapsed_seconds": 0.0,
+      "failure_fingerprint": "e3b0b7d1b252f3d46da2",
+      "key": "",
+      "model_route": "",
+      "reason": "This failure needs configuration, issue, or implementation changes rather than an automatic retry.",
+      "retry_after_seconds": 0,
+      "retry_count": 0,
+      "retry_stage": "",
+      "run_id": "",
+      "schema_version": 1,
+      "stage": "target_validation",
+      "token_limit": 240000,
+      "token_overage": 0,
+      "token_spent": 0
+    }
+  ],
+  "schema_version": 1,
+  "status": "decided"
+}
