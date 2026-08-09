@@ -5,7 +5,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-from datetime import datetime, timezone
+import secrets
+from datetime import datetime, timedelta, timezone
 
 import structlog
 from lib.github.issues import fetch_issue_evidence, parse_issue_url
@@ -21,13 +22,27 @@ def _resolve_target(store, explicit_url: str | None) -> tuple[str, bool]:
     pick = store.read_json("pick.json", {}) or {}
     if pick.get("status") != "pending_vet" or not pick.get("url"):
         raise ValueError("state/pick.json has no pending_vet target; run agents.pick first")
+    pick = store.read_state(
+        "pick.json",
+        {},
+        expected_producer={"pick", "steward-intake"},
+        max_age=timedelta(hours=24),
+        allow_legacy=True,
+    ) or {}
     return str(pick["url"]), True
 
 
 def _finalize_pick(store, result: dict, now: datetime) -> None:
     from lib.state.ledger import Ledger, PRRecord
 
-    pick = store.read_json("pick.json", {}) or {}
+    pick = store.read_state(
+        "pick.json",
+        {},
+        expected_producer={"pick", "steward-intake"},
+        max_age=timedelta(hours=24),
+        now=now,
+        allow_legacy=True,
+    ) or {}
     if pick.get("status") != "pending_vet" or pick.get("url") != result.get("url"):
         raise RuntimeError("Vet result does not match the pending Pick target")
     if result["suitable"]:
@@ -52,7 +67,15 @@ def _finalize_pick(store, result: dict, now: datetime) -> None:
                 "vetted_at": now.isoformat(),
             }
         )
-    store.write_json("pick.json", pick)
+    store.write_state(
+        "pick.json",
+        pick,
+        producer="vet",
+        run_id=str(pick.get("run_id") or result.get("run_id") or ""),
+        key=str(result.get("key") or ""),
+        ttl=timedelta(hours=24),
+        now=now,
+    )
 
 
 def _result_exit_code(result: dict, *, require_suitable: bool) -> int:
@@ -117,6 +140,11 @@ async def _run(
             now=now,
             force=force,
             owned_test=owned_test,
+            run_id=(
+                str((store.read_json("pick.json", {}) or {}).get("run_id") or "")
+                if from_pick
+                else secrets.token_hex(8)
+            ),
         )
         if from_pick:
             _finalize_pick(store, result, now)

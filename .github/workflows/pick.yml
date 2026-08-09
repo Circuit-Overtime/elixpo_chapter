@@ -33,6 +33,6 @@ jobs:
         run: |
           git config user.name "elixpoo"
           git config user.email "elixpoo@gmail.com"
-          git add state/pick.json
+          git add state/pick.json state/contracts.json
           git diff --cached --quiet || git commit -m "chore(pick): propose next target"
           git push

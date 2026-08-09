@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from agents.pick.select import is_eligible, justify, select_top
+from lib.state.contracts import StateContractRegistry
 from lib.state.ledger import DAILY_PR_CAP, Ledger, PRRecord
 from lib.state.store import StateStore
 
@@ -154,6 +155,12 @@ def test_run_writes_provisional_pick_without_claiming(tmp_path):
     assert store.read_json("pick.json")["repo"] == "o/b"
     assert store.read_json("pick.json")["status"] == "pending_vet"
     assert store.read_json("pick.json")["picked"] is True
+    contracts = StateContractRegistry.model_validate(store.read_json("contracts.json"))
+    contract = contracts.contracts["pick.json"]
+    assert contract.producer == "pick"
+    assert contract.run_id == first["run_id"]
+    assert contract.key == "o/b#2"
+    assert contract.status == "pending_vet"
     assert not Ledger.load(store).prs
 
     store.write_json("triaged.json", [_t("o/a", 1, 99)])
