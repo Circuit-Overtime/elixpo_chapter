@@ -8,7 +8,7 @@ shortlist only, to save tokens), and writes a ranked queue to state/triaged.json
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import structlog
 from lib.aio import gather_safe
@@ -264,7 +264,12 @@ async def _run() -> int:
         return 1
 
     store = StateStore(settings.state_dir)
-    candidates = store.read_json("candidates.json", [])
+    candidates = store.read_state(
+        "candidates.json",
+        [],
+        expected_producer="scout",
+        max_age=timedelta(hours=24),
+    )
     if not candidates:
         log.warning("triage.no_candidates", hint="run agents.scout first")
         return 1
@@ -287,7 +292,13 @@ async def _run() -> int:
 
     remember_triage_verdicts(triaged, rejections, now)
     rejections.save(store)
-    store.write_json("triaged.json", [t.model_dump() for t in triaged])
+    store.write_state(
+        "triaged.json",
+        [t.model_dump() for t in triaged],
+        producer="triage",
+        ttl=timedelta(hours=24),
+        now=now,
+    )
     log.info("triage.done", scored=len(triaged), spent=router.budget.spent)
     return 0
 

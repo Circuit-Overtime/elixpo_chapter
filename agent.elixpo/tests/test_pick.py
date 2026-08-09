@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from agents.pick.select import is_eligible, justify, select_top
+from lib.state.contracts import StateContractRegistry
 from lib.state.ledger import DAILY_PR_CAP, Ledger, PRRecord
 from lib.state.store import StateStore
 
@@ -146,7 +147,9 @@ def test_run_writes_provisional_pick_without_claiming(tmp_path):
     from agents.pick.__main__ import run
 
     store = StateStore(tmp_path)
-    store.write_json("triaged.json", [_t("o/b", 2, 15), _t("o/a", 1, 12)])
+    store.write_state(
+        "triaged.json", [_t("o/b", 2, 15), _t("o/a", 1, 12)], producer="triage", now=NOW
+    )
 
     first = run(store, NOW)
     assert first["repo"] == "o/b" and first["number"] == 2
@@ -154,9 +157,15 @@ def test_run_writes_provisional_pick_without_claiming(tmp_path):
     assert store.read_json("pick.json")["repo"] == "o/b"
     assert store.read_json("pick.json")["status"] == "pending_vet"
     assert store.read_json("pick.json")["picked"] is True
+    contracts = StateContractRegistry.model_validate(store.read_json("contracts.json"))
+    contract = contracts.contracts["pick.json"]
+    assert contract.producer == "pick"
+    assert contract.run_id == first["run_id"]
+    assert contract.key == "o/b#2"
+    assert contract.status == "pending_vet"
     assert not Ledger.load(store).prs
 
-    store.write_json("triaged.json", [_t("o/a", 1, 99)])
+    store.write_state("triaged.json", [_t("o/a", 1, 99)], producer="triage", now=NOW)
     second = run(store, NOW)
     assert second == first
     assert not Ledger.load(store).prs
@@ -166,7 +175,9 @@ def test_no_pick_overwrites_stale_pick_output(tmp_path):
     from agents.pick.__main__ import run
 
     store = StateStore(tmp_path)
-    store.write_json("triaged.json", [_t("o/blocked", 1, 20, easy=False)])
+    store.write_state(
+        "triaged.json", [_t("o/blocked", 1, 20, easy=False)], producer="triage", now=NOW
+    )
     store.write_json("pick.json", {"status": "picked", "repo": "old/repo", "number": 99})
 
     assert run(store, NOW) is None

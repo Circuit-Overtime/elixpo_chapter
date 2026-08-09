@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+import secrets
+from datetime import datetime, timedelta, timezone
 
 import structlog
 from lib.github.issues import parse_issue_url
@@ -39,6 +40,8 @@ def seed_issue(store: StateStore, issue_url: str, source_comment_id: int | str) 
         raise IntakeRejected("another issue already owns the Pick/Vet slot")
 
     receipt = {
+        "run_id": secrets.token_hex(8),
+        "key": key,
         "status": "pending_vet",
         "picked": True,
         "repo": repository,
@@ -49,7 +52,13 @@ def seed_issue(store: StateStore, issue_url: str, source_comment_id: int | str) 
         "justification": "Explicit public @elixpoo implementation request; pending independent Vet approval.",
         "picked_at": now.isoformat(),
     }
-    store.write_json("pick.json", receipt)
+    store.write_state(
+        "pick.json",
+        receipt,
+        producer="steward-intake",
+        ttl=timedelta(hours=24),
+        now=now,
+    )
     return receipt
 
 

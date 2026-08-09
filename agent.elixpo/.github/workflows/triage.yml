@@ -38,6 +38,6 @@ jobs:
         run: |
           git config user.name "elixpoo"
           git config user.email "elixpoo@gmail.com"
-          git add state/triaged.json state/rejected_issues.json
+          git add state/triaged.json state/rejected_issues.json state/contracts.json
           git diff --cached --quiet || git commit -m "chore(triage): refresh issue queue"
           git push

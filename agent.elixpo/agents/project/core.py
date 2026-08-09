@@ -164,7 +164,20 @@ async def build_snapshots(api, ledger: Ledger, states: dict[str, dict]) -> tuple
 
 
 def current_states(store) -> dict[str, dict]:
-    return {
-        name: store.read_json(f"{name}.json", {}) or {}
-        for name in ("pick", "vet", "solve", "submit", "doctor", "janitor", "steward_fix")
+    producers = {
+        "pick": {"pick", "steward-intake", "vet", "migration"},
+        "vet": {"vet", "migration"},
+        "solve": {"solve", "doctor", "submit", "janitor", "migration"},
+        "submit": {"submit", "migration"},
+        "doctor": {"doctor", "migration"},
+        "janitor": {"janitor", "migration"},
+        "steward_fix": {"steward-fix", "migration"},
     }
+    states: dict[str, dict] = {}
+    for name, expected in producers.items():
+        filename = f"{name}.json"
+        if store.read_json(filename, None) is None:
+            states[name] = {}
+            continue
+        states[name] = store.read_state(filename, {}, expected_producer=expected) or {}
+    return states

@@ -15,6 +15,7 @@ from agents.steward.poll import _subject_identity, reconcile
 from agents.steward.remember import register_submission
 from agents.steward.respond import authored_by_bot, contains_mention, marker
 from lib.github.gists import FollowupGist
+from lib.state.contracts import StateContractRegistry
 from lib.state.followups import FollowupMemory, FollowupRecord, bounded_ttl_days
 from lib.state.ledger import Ledger, PRRecord
 from lib.state.store import StateStore
@@ -448,6 +449,11 @@ async def test_terminal_reconciliation_updates_issue_ledger_and_completes_memory
     assert Ledger.load(store).prs["elixpo/project#9"].status == "merged"
     assert record.key not in gist.memory.active
     assert gist.memory.completed[-1].outcome == "merged"
+    registry = StateContractRegistry.model_validate(store.read_json("contracts.json"))
+    contract = registry.contracts["steward_celebrate.json"]
+    assert contract.producer == "steward-celebrate"
+    assert contract.run_id == action["fingerprint"]
+    assert contract.key == record.key
 
 
 @pytest.mark.asyncio

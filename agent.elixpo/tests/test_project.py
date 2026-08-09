@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 from agents.project.__main__ import reconcile
-from agents.project.core import build_snapshots, snapshot_for_record
+from agents.project.core import build_snapshots, current_states, snapshot_for_record
 from lib.state.board import AGENT_STATUSES, OPERATIONS_VIEWS, Board, BoardRejected, ProjectSnapshot
+from lib.state.contracts import StateBoundaryError
 from lib.state.ledger import Ledger, PRRecord
 from lib.state.store import StateStore
 
@@ -255,6 +256,17 @@ def test_snapshot_prefers_live_solve_and_doctor_evidence():
     assert snapshot.doctor_warning == "provider unavailable"
     assert snapshot.token_target == 1000
     assert snapshot.cleanup_status == "blocked_on_doctor"
+
+
+def test_project_reads_only_contracted_operational_state(tmp_path):
+    store = StateStore(tmp_path)
+    store.write_json("solve.json", {"status": "running", "run_id": "untrusted"})
+    with pytest.raises(StateBoundaryError, match="no versioned contract"):
+        current_states(store)
+
+    solve = {"status": "running", "run_id": "run-1", "key": "elixpo/project#9"}
+    store.write_state("solve.json", solve, producer="solve")
+    assert current_states(store)["solve"] == solve
 
 
 @pytest.mark.asyncio

@@ -9,6 +9,7 @@ import pytest
 from agents.vet.__main__ import _finalize_pick, _resolve_target, _result_exit_code
 from agents.vet.core import vet_issue
 from lib.github.issues import parse_issue_url, referenced_pull_requests
+from lib.state.contracts import StateContractRegistry
 from lib.state.ledger import Ledger
 from lib.state.rejections import RejectionLedger
 from lib.state.store import StateStore
@@ -106,7 +107,9 @@ def test_automatic_target_requires_pending_pick(tmp_path):
         _resolve_target(store, None)
 
     url = "https://github.com/o/r/issues/12"
-    store.write_json("pick.json", {"status": "pending_vet", "url": url})
+    store.write_state(
+        "pick.json", {"status": "pending_vet", "url": url}, producer="pick"
+    )
     assert _resolve_target(store, None) == (url, True)
     assert _resolve_target(store, "https://github.com/x/y/issues/9") == (
         "https://github.com/x/y/issues/9",
@@ -123,9 +126,11 @@ def test_terminal_pipeline_can_require_an_approved_vet_result():
 def test_vet_approval_is_the_only_point_that_claims_pick(tmp_path):
     store = StateStore(tmp_path)
     url = "https://github.com/o/r/issues/12"
-    store.write_json(
+    store.write_state(
         "pick.json",
         {"status": "pending_vet", "picked": True, "url": url, "repo": "o/r", "number": 12},
+        producer="pick",
+        now=NOW,
     )
     _finalize_pick(
         store,
@@ -138,10 +143,36 @@ def test_vet_approval_is_the_only_point_that_claims_pick(tmp_path):
     assert ledger.count_today(NOW.date().isoformat()) == 1
 
 
+def test_vet_preserves_pick_run_identity_in_contract(tmp_path):
+    store = StateStore(tmp_path)
+    url = "https://github.com/o/r/issues/12"
+    pick = {
+        "run_id": "pick-run",
+        "status": "pending_vet",
+        "picked": True,
+        "url": url,
+        "repo": "o/r",
+        "number": 12,
+    }
+    store.write_state("pick.json", pick, producer="pick", now=NOW)
+    _finalize_pick(
+        store,
+        {"run_id": "pick-run", "suitable": True, "key": "o/r#12", "url": url, "reasons": []},
+        NOW,
+    )
+    registry = StateContractRegistry.model_validate(store.read_json("contracts.json"))
+    contract = registry.contracts["pick.json"]
+    assert contract.producer == "vet"
+    assert contract.run_id == "pick-run"
+    assert contract.key == "o/r#12"
+
+
 def test_vet_rejection_does_not_consume_ledger_and_mismatch_fails(tmp_path):
     store = StateStore(tmp_path)
     url = "https://github.com/o/r/issues/12"
-    store.write_json("pick.json", {"status": "pending_vet", "url": url})
+    store.write_state(
+        "pick.json", {"status": "pending_vet", "url": url}, producer="pick", now=NOW
+    )
     with pytest.raises(RuntimeError):
         _finalize_pick(
             store,

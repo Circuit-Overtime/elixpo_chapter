@@ -11,7 +11,8 @@ Operating contract: skills/pick-safe-issue/SKILL.md.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import secrets
+from datetime import datetime, timedelta, timezone
 
 import structlog
 from lib.state.ledger import Ledger
@@ -30,13 +31,26 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
 
     pending = store.read_json("pick.json", {}) or {}
     if pending.get("status") == "pending_vet" and pending.get("url"):
+        pending = store.read_state(
+            "pick.json",
+            {},
+            expected_producer={"pick", "steward-intake"},
+            max_age=timedelta(hours=24),
+            now=now,
+        ) or {}
         log.info("pick.awaiting_vet", key=f"{pending.get('repo')}#{pending.get('number')}")
         return pending
 
-    triaged = store.read_json("triaged.json", [])
+    triaged = store.read_state(
+        "triaged.json",
+        [],
+        expected_producer="triage",
+        max_age=timedelta(hours=24),
+        now=now,
+    )
     if not triaged:
         log.warning("pick.no_triaged", hint="run agents.triage first")
-        store.write_json(
+        store.write_state(
             "pick.json",
             {
                 "status": "no_pick",
@@ -44,6 +58,10 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
                 "reason": "triaged queue is empty",
                 "evaluated_at": now.isoformat(),
             },
+            producer="pick",
+            run_id=secrets.token_hex(8),
+            ttl=timedelta(hours=24),
+            now=now,
         )
         return None
 
@@ -55,7 +73,7 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
             if not ledger.can_open_today(day)
             else "no candidate passed score, easy-work, and ledger policy"
         )
-        store.write_json(
+        store.write_state(
             "pick.json",
             {
                 "status": "no_pick",
@@ -63,6 +81,10 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
                 "reason": reason,
                 "evaluated_at": now.isoformat(),
             },
+            producer="pick",
+            run_id=secrets.token_hex(8),
+            ttl=timedelta(hours=24),
+            now=now,
         )
         log.info("pick.nothing_eligible", reason=reason)
         return None
@@ -70,6 +92,8 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
     reason = justify(pick)
 
     choice = {
+        "run_id": secrets.token_hex(8),
+        "key": issue_key(pick["repo"], pick["number"]),
         "status": "pending_vet",
         "picked": True,
         "repo": pick["repo"],
@@ -88,7 +112,13 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
         "justification": reason,
         "picked_at": now.isoformat(),
     }
-    store.write_json("pick.json", choice)
+    store.write_state(
+        "pick.json",
+        choice,
+        producer="pick",
+        ttl=timedelta(hours=24),
+        now=now,
+    )
     log.info("pick.provisional", key=issue_key(pick["repo"], pick["number"]), score=pick.get("score", 0))
     return choice
 
