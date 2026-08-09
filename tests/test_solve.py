@@ -16,7 +16,12 @@ from types import SimpleNamespace
 import httpx
 import pytest
 from agents.solve.branch import build_work_branch
-from agents.solve.command_policy import effective_prefixes, repository_command_prefixes
+from agents.solve.command_policy import (
+    effective_prefixes,
+    repository_command_prefixes,
+    setup_failure_is_infrastructure,
+    setup_fallback_command,
+)
 from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
@@ -136,6 +141,8 @@ def test_solve_policy_leaves_turn_headroom_for_post_edit_review():
     assert policy["max_token_budget"] == 750_000
     assert policy["live_repeat_exact_calls"] == 3
     assert policy["live_abnormal_token_ratio"] == 2.0
+    assert "./node_modules/.bin/tsc" in policy["allowed_command_prefixes"]
+    assert all(not command.startswith("npx ") for command in policy["allowed_command_prefixes"])
 
 
 def test_work_branch_uses_natural_feature_or_patch_prefix():
@@ -1057,7 +1064,7 @@ def test_node_verification_is_inferred_from_lockfile_and_tsconfig(tmp_path):
 
     assert inferred is True
     assert completed.setup_commands == ["npm ci --ignore-scripts"]
-    assert completed.verification_commands == ["npx tsc --noEmit"]
+    assert completed.verification_commands == ["./node_modules/.bin/tsc --noEmit"]
 
 
 def test_biome_is_discovered_and_preferred_for_node_verification(tmp_path):
@@ -1080,9 +1087,9 @@ def test_biome_is_discovered_and_preferred_for_node_verification(tmp_path):
         allowed_command_prefixes=effective_prefixes(tmp_path, []),
     )
 
-    assert "npx biome" in prefixes
+    assert "./node_modules/.bin/biome" in prefixes
     assert inferred is True
-    assert completed.verification_commands == ["npx biome check ."]
+    assert completed.verification_commands == ["./node_modules/.bin/biome check ."]
 
 
 def test_unsafe_model_verification_is_replaced_by_manifest_plan(tmp_path):
@@ -1103,12 +1110,23 @@ def test_unsafe_model_verification_is_replaced_by_manifest_plan(tmp_path):
         outcome,
         ["app/pricing/page.tsx"],
         allowed_setup_prefixes=["npm ci --ignore-scripts"],
-        allowed_command_prefixes=["npx tsc"],
+        allowed_command_prefixes=["./node_modules/.bin/tsc"],
     )
 
     assert inferred is True
     assert completed.setup_commands == ["npm ci --ignore-scripts"]
-    assert completed.verification_commands == ["npx tsc --noEmit"]
+    assert completed.verification_commands == ["./node_modules/.bin/tsc --noEmit"]
+
+
+def test_setup_infrastructure_failure_suppresses_equivalent_fallback():
+    output = "npm error code EAI_AGAIN\nnpm error getaddrinfo registry.npmjs.org"
+
+    assert setup_failure_is_infrastructure(output) is True
+    assert setup_fallback_command("npm ci --ignore-scripts", output) is None
+    assert setup_fallback_command("npm ci --ignore-scripts", "npm error lockfile mismatch") == (
+        "npm install --ignore-scripts --no-audit --no-fund"
+    )
+    assert setup_failure_is_infrastructure("npm error Exit handler never called!") is True
 
 
 def test_safe_model_verification_is_preserved(tmp_path):

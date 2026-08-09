@@ -57,9 +57,9 @@ def _node_verification(workspace: Path, manager: str, package: dict[str, Any]) -
         if matching := _matching_script(scripts, preferred):
             return _node_script(manager, matching)
     if _uses_biome(workspace, package):
-        return "npx biome check ."
+        return "./node_modules/.bin/biome check ."
     if (workspace / "tsconfig.json").is_file():
-        return "npx tsc --noEmit"
+        return "./node_modules/.bin/tsc --noEmit"
     for preferred in ("lint", "test", "build"):
         if matching := _matching_script(scripts, preferred):
             return _node_script(manager, matching)
@@ -92,7 +92,8 @@ def _non_node_verifications(workspace: Path, changed_paths: list[str]) -> list[s
 
 def _command_lane(command: str) -> str:
     executable = command.split(maxsplit=1)[0]
-    if executable in {"npm", "npx", "pnpm", "yarn", "bun"}:
+    executable_name = Path(executable).name
+    if executable_name in {"npm", "npx", "pnpm", "yarn", "bun", "tsc", "biome", "eslint"}:
         return "node"
     if executable in {"python", "pytest", "ruff", "mypy", "pyright"}:
         return "python"

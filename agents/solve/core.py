@@ -18,7 +18,11 @@ from lib.state.store import StateStore
 from lib.workspace import Workspace
 
 from agents.solve.branch import build_work_branch
-from agents.solve.command_policy import effective_prefixes, setup_fallback_command
+from agents.solve.command_policy import (
+    effective_prefixes,
+    setup_failure_is_infrastructure,
+    setup_fallback_command,
+)
 from agents.solve.failure import cleanup_manifest
 from agents.solve.git import (
     assert_workspace_identity,
@@ -318,6 +322,25 @@ async def solve(
         if resolved.is_symlink():
             raise SolveRejected(f"coding harness created or changed a symlink: {path}")
 
+    running.update({"stage": "semantic_review", "target_files": sorted(targets)})
+    store.write_json("solve.json", running)
+    review_diff_text = git(root, "diff", "--unified=40", "--", *targets, timeout=60)
+    review_verdict = await review_diff(
+        router,
+        issue,
+        {
+            "source": "bounded_coding_harness",
+            "target_files": sorted(targets),
+            "review_stage": "pre_verification",
+        },
+        review_diff_text,
+        [],
+    )
+    _budget_guard(router)
+    if not review_verdict.approved or review_verdict.findings:
+        findings = "; ".join(review_verdict.findings[:3]) or review_verdict.summary
+        raise SolveRejected(f"semantic self-review rejected implementation: {findings}")
+
     outcome, verification_inferred = complete_verification_plan(
         root,
         outcome,
@@ -374,7 +397,10 @@ async def solve(
         )
         record_check("setup", command, result)
         if result.code != 0:
-            fallback = setup_fallback_command(command)
+            if setup_failure_is_infrastructure(result.output):
+                record_exception(checks[-1])
+                raise SolveRejected(f"dependency setup failed due to infrastructure: {command}")
+            fallback = setup_fallback_command(command, result.output)
             if fallback:
                 result = run_verification(
                     root,
@@ -418,25 +444,6 @@ async def solve(
     if unavailable:
         commands = ", ".join(str(check.get("command") or "") for check in unavailable)
         raise SolveRejected(f"required verification tool unavailable: {commands}")
-
-    running["stage"] = "semantic_review"
-    store.write_json("solve.json", running)
-    review_diff_text = git(root, "diff", "--unified=40", "--", *targets, timeout=60)
-    review_verdict = await review_diff(
-        router,
-        issue,
-        {
-            "source": "bounded_coding_harness",
-            "target_files": sorted(targets),
-            "verification_exceptions": verification_exceptions,
-        },
-        review_diff_text,
-        checks,
-    )
-    _budget_guard(router)
-    if not review_verdict.approved or review_verdict.findings:
-        findings = "; ".join(review_verdict.findings[:3]) or review_verdict.summary
-        raise SolveRejected(f"semantic self-review rejected implementation: {findings}")
 
     running["stage"] = "committing"
     store.write_json("solve.json", running)

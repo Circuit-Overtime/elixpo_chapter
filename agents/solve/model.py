@@ -169,7 +169,7 @@ async def review_diff(
             "Every observable requirement in the issue must be implemented by the diff.",
             "Added props, flags, functions, or constants must be used by the behavior that needs them.",
             "Reject placeholders, partial wiring, unrelated scope, and claims unsupported by additions.",
-            "A required language check that could not execute is not successful verification.",
+            "Review implementation semantics only; the supervisor evaluates language checks afterward.",
             "Workflow changes must not broaden permissions, expose secrets, or add untrusted code execution.",
         ],
     }
@@ -181,8 +181,8 @@ async def review_diff(
                 content=(
                     "Review one small implementation against every observable issue requirement. "
                     "Trace each requirement to concrete added or changed behavior in the diff. Fail closed "
-                    "for unused wiring, scope creep, incomplete behavior, unsafe changes, or a required "
-                    "verification command that did not execute.\n\n"
+                    "for unused wiring, scope creep, incomplete behavior, or unsafe changes. Verification "
+                    "runs separately after this semantic decision.\n\n"
                     + _skill_body("review-bounded-diff")
                 ),
             ),
