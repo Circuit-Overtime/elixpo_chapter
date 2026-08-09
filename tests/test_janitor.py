@@ -15,7 +15,7 @@ FINGERPRINT = "abc123"
 
 def _seed(store: StateStore, resources: list[dict], *, action: str = "terminate") -> None:
     authorized = action in {"retry", "terminate"}
-    store.write_json(
+    store.write_state(
         "doctor.json",
         {
             "schema_version": 1,
@@ -42,8 +42,12 @@ def _seed(store: StateStore, resources: list[dict], *, action: str = "terminate"
             },
             "history": [],
         },
+        producer="doctor",
+        run_id="run-1",
+        key="owner/repo#7",
+        now=NOW,
     )
-    store.write_json(
+    store.write_state(
         "solve.json",
         {
             "run_id": "run-1",
@@ -59,6 +63,10 @@ def _seed(store: StateStore, resources: list[dict], *, action: str = "terminate"
                 "resources": resources,
             },
         },
+        producer="doctor",
+        run_id="run-1",
+        key="owner/repo#7",
+        now=NOW,
     )
 
 
@@ -73,7 +81,7 @@ def _workspace(path, root) -> dict:
 
 def _seed_submitted(store: StateStore, resources: list[dict]) -> None:
     head_sha = "a" * 40
-    store.write_json(
+    store.write_state(
         "solve.json",
         {
             "run_id": "run-submitted",
@@ -90,15 +98,24 @@ def _seed_submitted(store: StateStore, resources: list[dict]) -> None:
                 "resources": resources,
             },
         },
+        producer="submit",
+        run_id="run-submitted",
+        key="owner/repo#8",
+        now=NOW,
     )
-    store.write_json(
+    store.write_state(
         "submit.json",
         {
+            "run_id": "run-submitted",
             "status": "submitted",
             "key": "owner/repo#8",
             "head_sha": head_sha,
             "pr_url": "https://github.com/owner/repo/pull/9",
         },
+        producer="submit",
+        run_id="run-submitted",
+        key="owner/repo#8",
+        now=NOW,
     )
 
 
@@ -161,9 +178,16 @@ def test_janitor_rejects_mismatched_successful_submit(tmp_path):
     _seed_submitted(state, [_workspace(workspace, root)])
     submit = state.read_json("submit.json")
     submit["head_sha"] = "b" * 40
-    state.write_json("submit.json", submit)
+    state.write_state(
+        "submit.json",
+        submit,
+        producer="submit",
+        run_id="run-submitted",
+        key="owner/repo#8",
+        now=NOW,
+    )
 
-    with pytest.raises(JanitorRejected, match="Doctor authorization"):
+    with pytest.raises(JanitorRejected, match="Submit authorization"):
         clean_and_record(state, workspace_root=root, now=NOW)
     assert workspace.exists()
 
@@ -293,7 +317,9 @@ def test_janitor_rejects_mismatched_doctor_receipt(tmp_path):
     _seed(state, [])
     solve = state.read_json("solve.json")
     solve["doctor"]["fingerprint"] = "different"
-    state.write_json("solve.json", solve)
+    state.write_state(
+        "solve.json", solve, producer="doctor", run_id="run-1", key="owner/repo#7", now=NOW
+    )
 
     with pytest.raises(JanitorRejected, match="same failure"):
         clean_and_record(state, workspace_root=root, now=NOW)

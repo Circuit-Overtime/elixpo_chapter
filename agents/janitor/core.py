@@ -126,13 +126,32 @@ def clean_and_record(
     terminate_group: Callable[[int], None] = _terminate_group,
     allow_partial: bool = False,
 ) -> JanitorReceipt:
-    solve = store.read_json("solve.json", {}) or {}
-    doctor = store.read_json("doctor.json", {}) or {}
+    solve = store.read_state(
+        "solve.json",
+        {},
+        expected_producer={"doctor", "submit", "janitor"},
+        max_age=timedelta(days=7),
+        now=now,
+    ) or {}
+    doctor = {}
     cleanup = solve.get("cleanup") or {}
     if cleanup.get("schema_version") != 1 or cleanup.get("owner") != "janitor":
         raise JanitorRejected("Solve cleanup manifest violates its ownership or schema contract")
 
-    submit = store.read_json("submit.json", {}) or {}
+    submit_raw = store.read_json("submit.json", {}) or {}
+    submit = (
+        store.read_state(
+            "submit.json",
+            {},
+            expected_producer="submit",
+            expected_run_id=str(solve.get("run_id") or ""),
+            expected_key=str(solve.get("key") or ""),
+            max_age=timedelta(days=7),
+            now=now,
+        )
+        if submit_raw and solve.get("status") == "submitted"
+        else {}
+    ) or {}
     submitted_head = str(solve.get("head_sha") or "")
     submitted = (
         solve.get("status") == "submitted"
@@ -144,12 +163,23 @@ def clean_and_record(
         and str(submit.get("head_sha") or "") == submitted_head
         and str(cleanup.get("submission_head_sha") or "") == submitted_head
     )
+    if solve.get("status") == "submitted" and not submitted:
+        raise JanitorRejected("Submit authorization does not match the terminal Solve receipt")
     current: DoctorAuthorization | None = None
     if submitted:
         fingerprint = f"submit:{str(solve.get('head_sha') or '')[:20]}"
         run_id = str(solve.get("run_id") or "")
         authorization_source = "submit"
     else:
+        doctor = store.read_state(
+            "doctor.json",
+            {},
+            expected_producer="doctor",
+            expected_run_id=str(solve.get("run_id") or ""),
+            expected_key=str(solve.get("key") or ""),
+            max_age=timedelta(days=7),
+            now=now,
+        ) or {}
         try:
             current = DoctorAuthorization.model_validate(doctor.get("current"))
         except ValidationError as exc:
@@ -164,7 +194,20 @@ def clean_and_record(
     if str(cleanup.get("run_id") or "") != run_id or str(solve.get("run_id") or "") != run_id:
         raise JanitorRejected("authorization and cleanup receipts do not identify the same run")
 
-    existing = store.read_json("janitor.json", {}) or {}
+    existing_raw = store.read_json("janitor.json", {}) or {}
+    existing = (
+        store.read_state(
+            "janitor.json",
+            {},
+            expected_producer="janitor",
+            expected_run_id=run_id,
+            expected_key=str(solve.get("key") or ""),
+            max_age=timedelta(days=7),
+            now=now,
+        )
+        if existing_raw
+        else {}
+    ) or {}
     existing_authorization = existing.get("authorization_id") or existing.get("doctor_fingerprint")
     if (
         existing_authorization == fingerprint
@@ -188,7 +231,15 @@ def clean_and_record(
             results=[],
             cleaned_at=_stamp(now),
         )
-        store.write_json("janitor.json", receipt.model_dump(mode="json"))
+        store.write_state(
+            "janitor.json",
+            receipt.model_dump(mode="json"),
+            producer="janitor",
+            run_id=receipt.run_id,
+            key=receipt.key,
+            ttl=timedelta(days=7),
+            now=now,
+        )
         return receipt
     if submitted:
         allowed_statuses = {"authorized_after_submit", "partial"} if allow_partial else {"authorized_after_submit"}
@@ -241,8 +292,24 @@ def clean_and_record(
     cleanup["status"] = "partial" if failed else "complete"
     cleanup["cleaned_at"] = receipt.cleaned_at
     solve["cleanup"] = cleanup
-    store.write_json("janitor.json", receipt.model_dump(mode="json"))
-    store.write_json("solve.json", solve)
+    store.write_state(
+        "janitor.json",
+        receipt.model_dump(mode="json"),
+        producer="janitor",
+        run_id=receipt.run_id,
+        key=receipt.key,
+        ttl=timedelta(days=7),
+        now=now,
+    )
+    store.write_state(
+        "solve.json",
+        solve,
+        producer="janitor",
+        run_id=receipt.run_id,
+        key=receipt.key,
+        ttl=timedelta(days=7),
+        now=now,
+    )
     return receipt
 
 
@@ -256,7 +323,18 @@ def audit_partial_cleanup(
 ) -> JanitorReceipt | None:
     """Retry only an expired, previously authorized partial cleanup receipt."""
     current_time = now or datetime.now(timezone.utc)
-    previous = store.read_json("janitor.json", {}) or {}
+    previous_raw = store.read_json("janitor.json", {}) or {}
+    previous = (
+        store.read_state(
+            "janitor.json",
+            {},
+            expected_producer="janitor",
+            max_age=timedelta(days=7),
+            now=current_time,
+        )
+        if previous_raw
+        else {}
+    ) or {}
     if previous.get("status") != "partial":
         return None
     try:

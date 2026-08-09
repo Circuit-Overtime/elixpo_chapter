@@ -118,7 +118,7 @@ def test_doctor_rejects_unversioned_or_unready_state():
 
 def test_doctor_records_idempotent_state_and_authorizes_janitor(tmp_path):
     store = StateStore(tmp_path)
-    store.write_json("solve.json", _solve_failure("timeout"))
+    store.write_state("solve.json", _solve_failure("timeout"), producer="solve", now=NOW)
 
     first = decide_and_record(store, now=NOW)
     second = decide_and_record(store, now=NOW)
