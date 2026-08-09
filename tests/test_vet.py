@@ -168,6 +168,31 @@ def test_pr_references_are_exact_and_deduplicated():
     assert [pull["number"] for pull in referenced_pull_requests(evidence, 365)] == [8]
 
 
+def test_closed_unmerged_pr_does_not_block_a_fresh_attempt():
+    evidence = _evidence(
+        pull_requests=[
+            {
+                "number": 19,
+                "state": "closed",
+                "title": "Fixes #18",
+                "body": "Fixes #18",
+                "html_url": "https://github.com/o/r/pull/19",
+                "pull_request": {"merged_at": None},
+            },
+            {
+                "number": 20,
+                "state": "closed",
+                "title": "Fixes #18",
+                "body": "Fixes #18",
+                "html_url": "https://github.com/o/r/pull/20",
+                "pull_request": {"merged_at": "2026-08-09T00:00:00Z"},
+            },
+        ]
+    )
+
+    assert [pull["number"] for pull in referenced_pull_requests(evidence, 18)] == [20]
+
+
 @pytest.mark.asyncio
 async def test_tracking_issue_rejected_without_model_and_cached(tmp_path):
     store = StateStore(tmp_path)
