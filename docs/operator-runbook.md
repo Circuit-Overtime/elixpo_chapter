@@ -18,7 +18,7 @@ Discussions, Project, or Gist credential with an unrelated workflow. Configure:
 
 - `ELIXPO_MENTION_TRUSTED_USERS`
 - `ELIXPO_MENTION_TRUSTED_ORGS=elixpo`
-- `ELIXPO_MENTION_WATCHED_REPOS`
+- `.github/elixpoo-whitelist.yml` with reviewed external repositories
 - `ELIXPO_GITHUB_CONTROL_REPO=elixpo/agent.elixpo`
 - `ELIXPOO_FOLLOWUP_GIST_ID`
 - `OREOFLOW_RUNTIME_REF` after creating a reviewed release tag.
