@@ -24,23 +24,19 @@ any known run ID, issue key, maximum age, or expiry. A missing contract, unknown
 future schema, altered payload, stale receipt, expired receipt, or identity
 mismatch raises `StateBoundaryError` before the next squad performs work.
 
-`allow_legacy=True` is a temporary migration control. Use it only while a named
-upstream producer has not yet been converted, and remove it after all committed
-state has passed through the new writer.
-
 Producers use `StateStore.write_state()`. Do not edit `contracts.json` directly,
 contract it recursively, or copy a contract between payloads.
 
 ## Current migration
 
-- Pick and Steward Intake produce a 24-hour `pick.json` contract.
-- Vet consumes that contract, preserves its run/key identity, and produces a
-  24-hour `vet.json` contract.
-- Solve validates the matching Pick/Vet handoff, then contracts every live and
-  terminal `solve.json` receipt under its execution run ID.
-- Submit consumes a fresh Solve receipt and contracts `submit.json` plus the
-  terminal Submit-owned `solve.json` handoff for Steward and Janitor.
-
-Remaining producers and consumers must be migrated before legacy compatibility
-is removed globally: Scout, Triage, Doctor, Janitor, Steward, Project, and the
-auxiliary ledger/rejection receipts.
+- Scout, Triage, Pick, Vet, Solve, Submit, Doctor, Janitor, Steward, Project, and
+  Gist Custodian contract their squad outputs.
+- Every cross-squad read declares an expected producer and, when available, a
+  run ID, issue key, age limit, or expiry.
+- Ledger and rejection receipts accept the checked-in `migration` snapshot once;
+  their next normal write replaces it with the owning producer.
+- Historical queue and execution snapshots are also hash-bound as `migration`,
+  but active squads reject them as inputs. A fresh Scout/Vet run is required to
+  begin new work.
+- There is no uncontracted compatibility path: missing sidecars always fail
+  closed.
