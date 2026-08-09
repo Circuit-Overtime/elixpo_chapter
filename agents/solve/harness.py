@@ -1152,7 +1152,8 @@ def run_harness(
                     f"edits={len(observed_gate.get('edited_paths') or [])} "
                     f"denied={int(observed_gate.get('denied_calls') or 0)} "
                     f"unparsed={int(observed_gate.get('unparsed_tool_inputs') or 0)} "
-                    f"recovered={int(observed_gate.get('unparsed_recoveries') or 0)}"
+                    f"recovered={int(observed_gate.get('unparsed_recoveries') or 0)} "
+                    f"terminal_recoverable={len(recoverable_file_calls)}"
                     f"{denial_suffix}",
                     flush=True,
                 )
