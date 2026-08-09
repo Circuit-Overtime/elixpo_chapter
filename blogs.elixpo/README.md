@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/base-logo.png" alt="LixBlogs Logo" width="80" />
+<img src="public/logo.png" alt="LixBlogs Logo" width="80" />
 
 # LixBlogs
 
@@ -33,7 +33,7 @@ real-time collaboration, and organizations — all on the edge.
 <br />
 
 <div align="center">
-<img src="public/og-image.jpg" alt="LixBlogs Banner" width="100%" style="border-radius: 12px;" />
+<img src="public/Elixpo Banner.png" alt="LixBlogs Banner" width="100%" style="border-radius: 12px;" />
 </div>
 
 <br />
