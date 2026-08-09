@@ -22,6 +22,13 @@ class DiscussionLabel:
     name: str
 
 
+@dataclass(frozen=True)
+class DiscussionPage:
+    nodes: list[dict]
+    end_cursor: str | None
+    has_next_page: bool
+
+
 class GitHubDiscussions:
     def __init__(self, api, owner: str, repo: str):
         self.api = api
@@ -79,29 +86,73 @@ class GitHubDiscussions:
         )
         return data["repository"]["discussions"]["nodes"]
 
-    async def recent_threads(self, limit: int = 20) -> list[dict]:
-        """Fetch recently active Discussions and bounded comment context for mention polling."""
+    async def recent_thread_page(self, limit: int = 20, cursor: str | None = None) -> DiscussionPage:
+        """Fetch one updated-order Discussion page for round-robin mention polling."""
         data = await self.api.graphql(
             """
-            query($owner: String!, $repo: String!, $limit: Int!) {
+            query($owner: String!, $repo: String!, $limit: Int!, $cursor: String) {
               repository(owner: $owner, name: $repo) {
-                discussions(first: $limit, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                discussions(first: $limit, after: $cursor, orderBy: {field: UPDATED_AT, direction: DESC}) {
                   nodes {
                     id number title body url createdAt author { login }
-                    comments(last: 20) {
-                      nodes {
-                        id body createdAt author { login }
-                        replies(last: 20) { nodes { id body createdAt author { login } } }
-                      }
+                  }
+                  pageInfo { hasNextPage endCursor }
+                }
+              }
+            }
+            """,
+            {"owner": self.owner, "repo": self.repo, "limit": limit, "cursor": cursor},
+        )
+        connection = data["repository"]["discussions"]
+        page = connection["pageInfo"]
+        return DiscussionPage(
+            nodes=connection["nodes"],
+            end_cursor=page.get("endCursor"),
+            has_next_page=bool(page.get("hasNextPage")),
+        )
+
+    async def recent_threads(self, limit: int = 20) -> list[dict]:
+        """Compatibility helper returning only the first thread page."""
+        return (await self.recent_thread_page(limit=limit)).nodes
+
+    async def comment_page(
+        self, discussion_number: int, limit: int = 30, cursor: str | None = None
+    ) -> DiscussionPage:
+        """Fetch one oldest-first comment page, including bounded nested replies."""
+        data = await self.api.graphql(
+            """
+            query($owner: String!, $repo: String!, $number: Int!, $limit: Int!, $cursor: String) {
+              repository(owner: $owner, name: $repo) {
+                discussion(number: $number) {
+                  comments(first: $limit, after: $cursor) {
+                    nodes {
+                      id body createdAt author { login }
+                      replies(first: 50) { nodes { id body createdAt author { login } } }
                     }
+                    pageInfo { hasNextPage endCursor }
                   }
                 }
               }
             }
             """,
-            {"owner": self.owner, "repo": self.repo, "limit": limit},
+            {
+                "owner": self.owner,
+                "repo": self.repo,
+                "number": discussion_number,
+                "limit": limit,
+                "cursor": cursor,
+            },
         )
-        return data["repository"]["discussions"]["nodes"]
+        discussion = data["repository"].get("discussion")
+        if not discussion:
+            raise RuntimeError(f"discussion #{discussion_number} was not found")
+        connection = discussion["comments"]
+        page = connection["pageInfo"]
+        return DiscussionPage(
+            nodes=connection["nodes"],
+            end_cursor=page.get("endCursor"),
+            has_next_page=bool(page.get("hasNextPage")),
+        )
 
     async def create(self, category_id: str, title: str, body: str) -> dict:
         repository = await self.repository()

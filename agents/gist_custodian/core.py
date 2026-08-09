@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from lib.github.gists import (
     FOLLOWUP_FILENAME,
+    DISCUSSIONS_FILENAME,
     MERGE_SUMMARIES_FILENAME,
     MODEL_CACHE_FILENAME,
     RevisionedGist,
@@ -15,8 +16,9 @@ from lib.github.gists import (
 )
 from lib.state.followups import FOLLOWUP_COMPLETION_LIMIT, FollowupMemory
 from lib.state.gist_memory import MergeSummaryMemory, ModelCacheMemory
+from lib.state.discussions import DiscussionMemory
 
-FILES = (FOLLOWUP_FILENAME, MERGE_SUMMARIES_FILENAME, MODEL_CACHE_FILENAME)
+FILES = (FOLLOWUP_FILENAME, MERGE_SUMMARIES_FILENAME, MODEL_CACHE_FILENAME, DISCUSSIONS_FILENAME)
 
 
 def _digest(content: str) -> str:
@@ -30,6 +32,8 @@ def _validated(filename: str, payload: object):
         return MergeSummaryMemory.model_validate(payload)
     if filename == MODEL_CACHE_FILENAME:
         return ModelCacheMemory.model_validate(payload)
+    if filename == DISCUSSIONS_FILENAME:
+        return DiscussionMemory.model_validate(payload)
     raise ValueError(f"unsupported managed Gist file: {filename}")
 
 
@@ -40,6 +44,8 @@ def _empty(filename: str):
         return MergeSummaryMemory()
     if filename == MODEL_CACHE_FILENAME:
         return ModelCacheMemory()
+    if filename == DISCUSSIONS_FILENAME:
+        return DiscussionMemory()
     raise ValueError(f"unsupported managed Gist file: {filename}")
 
 

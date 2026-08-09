@@ -11,6 +11,7 @@ from lib.state.followups import FollowupMemory
 FOLLOWUP_FILENAME = "elixpoo-followups.json"
 MERGE_SUMMARIES_FILENAME = "elixpoo-merge-summaries.json"
 MODEL_CACHE_FILENAME = "elixpoo-model-cache.json"
+DISCUSSIONS_FILENAME = "elixpoo-discussions.json"
 
 
 class GistConflictError(RuntimeError):
@@ -109,4 +110,26 @@ class FollowupGist:
         self._snapshot = await self.store.save_files(
             {self.filename: render_json(memory.model_dump(mode="json"))},
             expected=self._snapshot,
+        )
+
+
+class DiscussionGist:
+    """Revision-checked durable cursors and handled IDs for Discussion polling."""
+
+    def __init__(self, api, gist_id: str, filename: str = DISCUSSIONS_FILENAME):
+        self.store = RevisionedGist(api, gist_id)
+        self.filename = filename
+        self._snapshot: GistSnapshot | None = None
+
+    async def load(self):
+        from lib.state.discussions import DiscussionMemory
+
+        self._snapshot = await self.store.snapshot()
+        return DiscussionMemory.model_validate(parse_json_file(self._snapshot, self.filename, {}))
+
+    async def save(self, memory) -> None:
+        if self._snapshot is None:
+            raise RuntimeError("load Discussion memory before saving it")
+        self._snapshot = await self.store.save_files(
+            {self.filename: render_json(memory.model_dump(mode="json"))}, expected=self._snapshot
         )

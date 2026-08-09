@@ -9,6 +9,7 @@ import pytest
 from agents.gist_custodian.core import maintain_gist
 from lib.github.gists import (
     FOLLOWUP_FILENAME,
+    DISCUSSIONS_FILENAME,
     MERGE_SUMMARIES_FILENAME,
     MODEL_CACHE_FILENAME,
     GistConflictError,
@@ -69,7 +70,12 @@ async def test_custodian_creates_separate_files_and_prunes_expired_items():
     receipt = await maintain_gist(gist, now=now)
 
     assert receipt["status"] == "complete"
-    assert set(gist.saved) == {FOLLOWUP_FILENAME, MERGE_SUMMARIES_FILENAME, MODEL_CACHE_FILENAME}
+    assert set(gist.saved) == {
+        FOLLOWUP_FILENAME,
+        MERGE_SUMMARIES_FILENAME,
+        MODEL_CACHE_FILENAME,
+        DISCUSSIONS_FILENAME,
+    }
     assert json.loads(gist.files[FOLLOWUP_FILENAME])["active"] == {}
     assert json.loads(gist.files[MODEL_CACHE_FILENAME])["entries"] == {}
 
@@ -80,7 +86,7 @@ async def test_custodian_dry_run_does_not_write():
     receipt = await maintain_gist(gist, dry_run=True)
     assert receipt["status"] == "preview"
     assert gist.saved is None
-    assert len(receipt["changed_files"]) == 3
+    assert len(receipt["changed_files"]) == 4
 
 
 @pytest.mark.asyncio

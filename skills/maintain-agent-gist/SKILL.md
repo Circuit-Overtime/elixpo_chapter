@@ -19,7 +19,8 @@ subjects, the Project board, and committed state remain authoritative.
 7. On conflict, stop with a retryable receipt. Never merge stale local memory over a newer revision.
 
 Keep `elixpoo-followups.json`, `elixpoo-merge-summaries.json`, and
-`elixpoo-model-cache.json` separate even when they share one Gist.
+`elixpoo-model-cache.json` separate even when they share one Gist. Keep
+Discussion cursors and handled source IDs in `elixpoo-discussions.json`.
 
 ## Corruption and repair
 

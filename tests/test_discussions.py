@@ -10,6 +10,7 @@ from agents.discussions.__main__ import (
     _handle_pulse,
     _labels_for,
     _poll_mentions,
+    _publish,
     _recent_moods,
     _repo_name,
     _source_repo_name,
@@ -24,7 +25,8 @@ from agents.discussions.core import (
     safety_check,
 )
 from agents.discussions.mood import Genre, Mood, assess_mood
-from lib.github.discussions import GitHubDiscussions
+from lib.github.discussions import DiscussionPage, GitHubDiscussions
+from lib.state.discussions import DiscussionMemory
 from rtk.models import ChatCompletionResponse, Choice, FunctionCall, Message, ToolCall
 
 
@@ -354,8 +356,12 @@ class FakeMentionDiscussions:
         }
         self.added = []
 
-    async def recent_threads(self):
-        return [self.thread]
+    async def recent_thread_page(self, cursor=None):
+        return DiscussionPage(nodes=[self.thread], end_cursor="thread-next", has_next_page=True)
+
+    async def comment_page(self, number, cursor=None):
+        assert number == 7
+        return DiscussionPage(nodes=[self.comment], end_cursor=None, has_next_page=False)
 
     async def comments(self, number):
         assert number == 7
@@ -373,11 +379,124 @@ async def test_mention_poll_replies_to_recent_exact_mention():
         response(tool="submit_reply", arguments={"body": "Use error-rate and latency guardrails."}),
         response("SAFE"),
     )
-    handled = await _poll_mentions(discussions, router, "elixpoo")
+    memory = DiscussionMemory()
+    handled = await _poll_mentions(discussions, router, "elixpoo", memory)
     assert handled == 1
     assert discussions.added[0][0] == "discussion-id"
     assert discussions.added[0][2] == "comment-id"
     assert "elixpoo-discussions:reply:comment-id" in discussions.added[0][1]
+    assert memory.handled("comment-id")
+    assert memory.thread_cursor == "thread-next"
+
+    handled = await _poll_mentions(discussions, FakeRouter(), "elixpoo", memory)
+    assert handled == 0
+    assert len(discussions.added) == 1
+
+
+@pytest.mark.asyncio
+async def test_mention_poll_isolates_failed_thread_and_handles_nested_reply():
+    now = datetime.now(timezone.utc).isoformat()
+    nested = {
+        "id": "nested-id",
+        "body": "@elixpoo can you compare these?",
+        "createdAt": now,
+        "author": {"login": "member"},
+    }
+    broken = {
+        "id": "broken-id",
+        "number": 1,
+        "title": "Broken",
+        "body": "",
+        "url": "https://github.test/1",
+        "createdAt": now,
+        "author": {"login": "member"},
+    }
+    healthy = {
+        "id": "healthy-id",
+        "number": 2,
+        "title": "Healthy",
+        "body": "",
+        "url": "https://github.test/2",
+        "createdAt": now,
+        "author": {"login": "member"},
+    }
+
+    class Discussions:
+        def __init__(self):
+            self.added = []
+
+        async def recent_thread_page(self, cursor=None):
+            return DiscussionPage(nodes=[broken, healthy], end_cursor=None, has_next_page=False)
+
+        async def comment_page(self, number, cursor=None):
+            if number == 1:
+                raise RuntimeError("one inaccessible Discussion")
+            parent = {
+                "id": "parent-id",
+                "body": "parent",
+                "createdAt": now,
+                "author": {"login": "member"},
+                "replies": {"nodes": [nested]},
+            }
+            return DiscussionPage(nodes=[parent], end_cursor=None, has_next_page=False)
+
+        async def comments(self, number):
+            return []
+
+        async def add_comment(self, discussion_id, body, reply_to_id=None):
+            self.added.append((discussion_id, reply_to_id))
+            return {"id": "reply", "url": "https://github.test/reply"}
+
+    discussions = Discussions()
+    router = FakeRouter(
+        response(tool="submit_reply", arguments={"body": "Compare failure domains."}),
+        response("SAFE"),
+    )
+    memory = DiscussionMemory()
+    handled = await _poll_mentions(discussions, router, "elixpoo", memory)
+    assert handled == 1
+    assert discussions.added == [("healthy-id", "nested-id")]
+    assert memory.handled("nested-id")
+
+
+@pytest.mark.asyncio
+async def test_preview_does_not_create_or_resolve_labels():
+    class Discussions:
+        async def create(self, *args):
+            raise AssertionError("preview must not create")
+
+        async def ensure_labels(self, *args):
+            raise AssertionError("preview must not mutate labels")
+
+    result = await _publish(
+        Discussions(),
+        "category-id",
+        "Title",
+        "Body",
+        kind="qna",
+        topic="gitops",
+        mood="mentoring",
+        dry_run=True,
+    )
+    assert result["status"] == "preview"
+    assert result["labels"] == ["qna", "gitops", "mood-mentoring", "elixpoo-generated"]
+
+
+@pytest.mark.asyncio
+async def test_label_failure_does_not_remove_created_discussion():
+    class Discussions:
+        async def create(self, *args):
+            return {"id": "discussion-id", "url": "https://github.test/discussions/1"}
+
+        async def ensure_labels(self, *args):
+            raise RuntimeError("Resource not accessible by token")
+
+    result = await _publish(
+        Discussions(), "category-id", "Title", "Body", kind="qna", topic="general", mood="mentoring"
+    )
+    assert result["id"] == "discussion-id"
+    assert result["labels"] == []
+    assert "Resource not accessible" in result["label_warning"]
 
 
 class FakePulseAPI:
