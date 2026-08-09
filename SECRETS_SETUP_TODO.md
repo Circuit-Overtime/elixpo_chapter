@@ -85,9 +85,9 @@ python -m json.tool state/project_setup.json
 
 These belong in Cloudflare Worker secrets, not GitHub Actions secrets:
 
-- [ ] `GITHUB_WEBHOOK_SECRET`
+- [x] `GITHUB_WEBHOOK_SECRET`
   - Must exactly match the secret configured on the GitHub webhook.
-- [ ] `GITHUB_CONTROL_TOKEN`
+- [x] `GITHUB_CONTROL_TOKEN`
   - Token used only to dispatch verified events to the control repository.
 
 Set them with `wrangler secret put`; never place their values in Worker
