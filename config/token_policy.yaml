@@ -51,7 +51,6 @@ restricted_secrets:
     - discussions.yml
     - elixpo-ci.yml
     - gist-custodian.yml
-    - merge-gist.yml
     - on-merge.yml
     - solve.yml
     - steward-approval.yml

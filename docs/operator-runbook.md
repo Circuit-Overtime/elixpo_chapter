@@ -29,6 +29,16 @@ For the Worker, store `GITHUB_WEBHOOK_SECRET` and `GITHUB_CONTROL_TOKEN` with
 and the same webhook secret. Keep `ALLOWED_OWNERS=elixpo` unless another owner is
 explicitly approved.
 
+Deploy from `workers/` with its pinned Wrangler runtime. The configuration
+declares both secrets as required, so deployment fails closed when either is
+missing:
+
+```bash
+npm install
+npm run deploy
+curl --fail https://oreoflow-webhook-ingress.<workers-subdomain>.workers.dev/health
+```
+
 ## Repository rollout
 
 GitHub requires event-triggering caller workflows to remain in each repository;
