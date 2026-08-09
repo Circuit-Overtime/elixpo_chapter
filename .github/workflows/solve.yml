@@ -122,10 +122,10 @@ jobs:
       - name: Commit state
         if: always() && steps.gate.outputs.run == 'true'
         env:
-          CONTROL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONTROL_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
         run: |
-          git config user.name "elixpoo[bot]"
-          git config user.email "elixpoo[bot]@users.noreply.github.com"
+          git config user.name "elixpoo"
+          git config user.email "elixpoo@gmail.com"
           git add state/solve.json state/ledger.json
           if [[ -f state/submit.json ]]; then git add state/submit.json; fi
           git diff --cached --quiet || git commit -m "chore(solve): record implementation run"

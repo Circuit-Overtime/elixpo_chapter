@@ -34,6 +34,9 @@ whose workflows use them.
 
 Recommended `ELIXPOO_GITHUB_AGENTIC_TOKEN` fine-grained PAT:
 
+- Token owner: the human `elixpoo` account. State-writing workflows use this
+  credential for pushes so GitHub records `elixpoo`, not `github-actions[bot]`,
+  as the authenticated pusher.
 - Resource owner: `elixpo`; repository access: every repository using the agent.
 - Repository permissions: Actions read/write, Contents read/write, Issues
   read/write, Pull requests read/write, Variables read/write, Workflows
@@ -45,6 +48,11 @@ Classic PAT fallback for `ELIXPOO_GITHUB_AGENTIC_TOKEN`: `repo`, `workflow`, and
 Add `read:org` only if the organization restricts project access in a
 way that requires membership lookup. This is broader than the fine-grained
 profile.
+
+The commit identity is `elixpoo <elixpoo@gmail.com>`. Keep that email verified
+on the `elixpoo` GitHub account or replace it everywhere with the account's
+GitHub-provided private noreply address; an unverified email will not link the
+commit to the profile.
 
 `ELIXPOO_GIST_AGENTIC_TOKEN` needs only classic PAT scope `gist`. It does not need `repo`,
 `workflow`, or organization administration scopes.

@@ -33,6 +33,8 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -51,8 +53,8 @@ jobs:
           python -m agents.vet "${args[@]}"
       - name: Commit verdict memory
         run: |
-          git config user.name  "elixpoo[bot]"
-          git config user.email "elixpoo[bot]@users.noreply.github.com"
+          git config user.name "elixpoo"
+          git config user.email "elixpoo@gmail.com"
           git add state/vet.json state/rejected_issues.json state/pick.json state/ledger.json
           git diff --cached --quiet || git commit -m "chore(vet): record issue verdict"
           git push
