@@ -368,7 +368,11 @@ def test_fix_fingerprint_uses_latest_reviewer_state_and_current_checks():
             "user": {"login": "maintainer"},
         },
     ]
-    checks = [{"id": 7, "status": "completed", "conclusion": "failure"}]
+    checks = [
+        {"id": 6, "name": "lint", "status": "completed", "conclusion": "failure"},
+        {"id": 7, "name": "typecheck", "status": "completed", "conclusion": "failure"},
+        {"id": 8, "name": "lint", "status": "completed", "conclusion": "success"},
+    ]
 
     action = build_fix_action(pull, reviews, checks)
 

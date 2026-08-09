@@ -17,7 +17,9 @@ from pathlib import Path
 from typing import Literal
 
 import structlog
+from lib.github.issues import parse_issue_url
 from lib.state.followups import FollowupRecord
+from lib.state.ledger import Ledger
 from lib.workspace import Workspace, git_auth_env
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from rtk.models import FunctionDef, Message, ToolDef
@@ -92,9 +94,13 @@ def build_fix_action(pull: dict, reviews: list[dict], checks: list[dict]) -> dic
         for review in latest_by_author.values()
         if str(review.get("state") or "").casefold() == "changes_requested"
     ]
+    latest_checks: dict[str, dict] = {}
+    for check in sorted(checks, key=lambda item: int(item.get("id") or 0)):
+        identity = f"{(check.get('app') or {}).get('slug', '')}:{check.get('name', '')}"
+        latest_checks[identity] = check
     failed = [
         check
-        for check in checks
+        for check in latest_checks.values()
         if str(check.get("status") or "").casefold() == "completed"
         and str(check.get("conclusion") or "").casefold() in _FAILED_CONCLUSIONS
     ]
@@ -199,6 +205,9 @@ def _feedback(reviews: list[dict], comments: list[dict], checks: list[dict], act
                 }
             )
     for comment in comments[-20:]:
+        review_id = int(comment.get("pull_request_review_id") or 0)
+        if review_ids and review_id not in review_ids:
+            continue
         result.append(
             {
                 "kind": "inline_comment",
@@ -268,21 +277,30 @@ async def _implementation(
 
 def _apply(workspace: Path, implementation: FixImplementation, allowed: set[str]) -> list[str]:
     rendered: dict[Path, str] = {}
+    originals: dict[Path, str] = {}
     for edit in implementation.edits:
         if edit.path not in allowed:
             raise StewardFixRejected(f"model attempted an ungrounded file: {edit.path}")
         target = (workspace / edit.path).resolve()
         if workspace.resolve() not in target.parents or not target.is_file() or target.is_symlink():
             raise StewardFixRejected(f"unsafe follow-up edit target: {edit.path}")
+        if target in rendered:
+            raise StewardFixRejected(f"duplicate follow-up edit target: {edit.path}")
         text = target.read_text(encoding="utf-8")
+        originals[target] = text
         for replacement in edit.replacements:
             count = text.count(replacement.old)
             if count != 1:
                 raise StewardFixRejected(f"replacement context occurs {count} times in {edit.path}")
             text = text.replace(replacement.old, replacement.new, 1)
         rendered[target] = text
-    for target, text in rendered.items():
-        target.write_text(text, encoding="utf-8")
+    try:
+        for target, text in rendered.items():
+            target.write_text(text, encoding="utf-8")
+    except Exception:
+        for target, text in originals.items():
+            target.write_text(text, encoding="utf-8")
+        raise
     return [str(path.relative_to(workspace)) for path in rendered]
 
 
@@ -445,12 +463,6 @@ async def fix_one(api, gist, router, store, *, key: str, fingerprint: str, works
             ["git", "push", "origin", f"HEAD:{record.branch}"],
             env=git_auth_env(await api._token()),
         )
-        body = (
-            f"Pushed `{head_sha[:8]}` with the requested follow-up changes. "
-            f"Verified: {', '.join(item['command'] for item in check_receipts)}."
-        )
-        await safety_check(router, body)
-        await api.create_issue_comment(owner, repo, record.subject_number, body)
         record.head_sha = head_sha
         record.last_fix_fingerprint = fingerprint
         record.fix_attempts[fingerprint] = 1
@@ -458,6 +470,25 @@ async def fix_one(api, gist, router, store, *, key: str, fingerprint: str, works
         record.clear_action()
         memory.upsert(record)
         await gist.save(memory)
+        if record.issue_url:
+            issue_owner, issue_repo, issue_number = parse_issue_url(record.issue_url)
+            ledger = Ledger.load(store)
+            ledger.set_status(
+                f"{issue_owner}/{issue_repo}#{issue_number}",
+                "awaiting_review",
+                datetime.now(timezone.utc).isoformat(),
+            )
+            ledger.save(store)
+        body = (
+            f"Pushed `{head_sha[:8]}` with the requested follow-up changes. "
+            f"Verified: {', '.join(item['command'] for item in check_receipts)}."
+        )
+        comment_error = ""
+        try:
+            await safety_check(router, body)
+            await api.create_issue_comment(owner, repo, record.subject_number, body)
+        except Exception as exc:
+            comment_error = str(exc)[:500]
         receipt.update(
             {
                 "status": "complete",
@@ -465,6 +496,7 @@ async def fix_one(api, gist, router, store, *, key: str, fingerprint: str, works
                 "changed_files": changed,
                 "checks": check_receipts,
                 "summary": implementation.summary,
+                "comment_error": comment_error,
                 "completed_at": datetime.now(timezone.utc).isoformat(),
             }
         )
@@ -476,6 +508,15 @@ async def fix_one(api, gist, router, store, *, key: str, fingerprint: str, works
         record.last_error = str(exc)[:500]
         memory.upsert(record)
         await gist.save(memory)
+        if record.issue_url:
+            issue_owner, issue_repo, issue_number = parse_issue_url(record.issue_url)
+            ledger = Ledger.load(store)
+            ledger.set_status(
+                f"{issue_owner}/{issue_repo}#{issue_number}",
+                "changes_requested",
+                datetime.now(timezone.utc).isoformat(),
+            )
+            ledger.save(store)
         receipt.update({"status": "failed", "error": str(exc)[:1000]})
         store.write_json("steward_fix.json", receipt)
         raise

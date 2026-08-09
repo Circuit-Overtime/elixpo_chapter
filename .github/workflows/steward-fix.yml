@@ -53,7 +53,7 @@ jobs:
           if [[ ! -f state/steward_fix.json ]]; then exit 0; fi
           git config user.name "elixpoo"
           git config user.email "elixpoo@gmail.com"
-          git add state/steward_fix.json
+          git add state/steward_fix.json state/ledger.json
           git diff --cached --quiet || git commit -m "chore(steward): record PR follow-up"
           auth=$(printf 'x-access-token:%s' "$CONTROL_TOKEN" | base64 -w 0)
           git -c http.extraheader="AUTHORIZATION: basic $auth" push
