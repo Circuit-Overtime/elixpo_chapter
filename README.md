@@ -5,7 +5,7 @@
 -->
 
 <p align="center">
-  <img src="public/agent.elixpo.png" alt="elixpoo - the autonomous Elixpo contributor agent" width="100%" />
+  <img src="public/agent.elixpo.png" height=120 width=120 alt="elixpoo - the autonomous Elixpo contributor agent" />
 </p>
 
 <h1 align="center">elixpoo</h1>
