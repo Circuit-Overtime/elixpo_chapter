@@ -1,6 +1,8 @@
 name: Elixpoo Discussions
 
 on:
+  repository_dispatch:
+    types: [discussion_reconcile]
   discussion:
     types: [created, edited]
   discussion_comment:
@@ -97,7 +99,7 @@ jobs:
           python -m agents.discussions qna "${args[@]}"
 
   poll-mentions:
-    if: (github.event_name == 'workflow_dispatch' && inputs.mode == 'poll-mentions') || (github.event_name == 'schedule' && github.event.schedule == '*/10 * * * *')
+    if: github.event_name == 'repository_dispatch' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'poll-mentions') || (github.event_name == 'schedule' && github.event.schedule == '*/10 * * * *')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

@@ -26,9 +26,10 @@
 
 ## About
 
-**elixpoo** (`@elixpoo`) is an autonomous GitHub-contributor agent. It picks up
+**elixpoo** (`@elixpoo`) is an autonomous GitHub-contributor agent. Its complete
+Scout → merge contribution lifecycle is named **OreoFlow**. OreoFlow picks up
 community issues, forks, solves them, opens PRs, and shepherds those PRs to
-merge — built as **independent squads**, each a standalone Python module run as
+merge. It is built as **independent squads**, each a standalone Python module run as
 a GitHub Actions workflow (runtime-agnostic: liftable to Cloudflare compute).
 There is no server and no database — state lives in GitHub issues, a Project
 board, and `state/*.json`. It runs in CI, not as a hosted website.
@@ -42,13 +43,14 @@ See **[AGENTS.md](AGENTS.md)** for the operating manual and
 
 | Path | Purpose |
 |------|---------|
-| `agents/` | the squads (scout, triage, pick, comprehend, solve, submit, steward) — independent |
+| `agents/` | independent OreoFlow, repository response, operations, and synchronization squads |
 | `rtk/` | the token economy over Pollinations (router, budget, cache, ledger, shrinkers) |
 | `lib/` | shared plumbing: github, tools, state (issues + board + json), scorer, config |
 | `config/` | `models.yaml` (role→model), `languages.yaml`, `budgets.yaml` |
 | `state/` | committed-back JSON ledgers |
 | `prompts/` | squad prompt templates |
 | `agent.elixpo/` | Next.js frontend (Cloudflare Pages) |
+| `workers/` | stateless signed-webhook ingress; no D1/KV agent state |
 
 ### Develop
 

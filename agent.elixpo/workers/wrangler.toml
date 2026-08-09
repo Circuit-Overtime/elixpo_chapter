@@ -1,16 +1,7 @@
-name = "elixpo"
+name = "oreoflow-webhook-ingress"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
 [vars]
-ENVIRONMENT = "production"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "elixpo"
-database_id = "4c028188-932f-4808-81ba-67e67a832be7"
-migrations_dir = "migrations"
-
-[[kv_namespaces]]
-binding = "KV"
-id = "8e440b0aebbe4961a655915469da98df"
+CONTROL_REPOSITORY = "elixpo/agent.elixpo"
+ALLOWED_OWNERS = "elixpo"

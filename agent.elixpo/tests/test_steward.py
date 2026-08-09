@@ -8,9 +8,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from agents.steward.approval import approval_body, approval_fingerprint, parse_approval
 from agents.steward.celebrate import build_terminal_action, finalize_one
 from agents.steward.fix import _apply, _verification_env, build_fix_action
 from agents.steward.intake import IntakeRejected, seed_issue
+from agents.steward.mention_policy import MentionPolicy, MentionRoute
 from agents.steward.poll import _subject_identity, reconcile
 from agents.steward.remember import register_submission
 from agents.steward.respond import authored_by_bot, contains_mention, marker
@@ -164,7 +166,9 @@ def test_workflows_wire_turn_headroom_and_discussion_mentions():
     steward_workflow = Path(".github/workflows/steward.yml").read_text(encoding="utf-8")
     intake_workflow = Path(".github/workflows/steward-intake.yml").read_text(encoding="utf-8")
 
-    assert "ELIXPO_AGENT_MAX_TURNS || 64" in agent_workflow
+    assert "python -m agents.repository_agent" in agent_workflow
+    assert "claude-code-action" not in agent_workflow
+    assert "claude-code-router" not in agent_workflow
     assert "discussion_comment:" in discussion_workflow
     assert "python -m agents.discussions respond" in discussion_workflow
     assert 'cron: "*/10 * * * *"' in steward_workflow
@@ -203,11 +207,12 @@ class FollowupAPI:
         self.failing = failing
         self.posts = []
         self.dispatches = []
+        self.approval_issues = []
         self.comment = {
             "id": 91,
             "body": "@elixpoo can you check the requested adjustment?",
             "created_at": "2026-08-04T00:00:00Z",
-            "user": {"login": "maintainer"},
+            "user": {"login": "Circuit-Overtime"},
         }
 
     async def _request(self, method, path, **kwargs):
@@ -270,6 +275,20 @@ class FollowupAPI:
         self.posts[comment_id - 1] = body
         return {"id": comment_id, "body": body}
 
+    async def ensure_label(self, owner, repo, name, color, description=""):
+        return None
+
+    async def create_issue(self, owner, repo, title, body, *, labels=None):
+        issue = {
+            "number": 99,
+            "title": title,
+            "body": body,
+            "labels": labels or [],
+            "html_url": f"https://github.com/{owner}/{repo}/issues/99",
+        }
+        self.approval_issues.append(issue)
+        return issue
+
 
 def _tracked_memory():
     record = FollowupRecord.create(
@@ -279,6 +298,35 @@ def _tracked_memory():
         ttl_days=360,
     )
     return FollowupMemory(active={record.key: record})
+
+
+def test_mention_policy_routes_trust_scope_and_approval():
+    policy = MentionPolicy(
+        trusted_users=frozenset({"trusted"}),
+        trusted_orgs=frozenset({"elixpo"}),
+        watched_repositories=frozenset({"outside/watched"}),
+    )
+
+    assert policy.route("trusted", "elixpo/site") == MentionRoute.DIRECT
+    assert policy.route("visitor", "elixpo/site") == MentionRoute.APPROVAL
+    assert policy.route("trusted", "outside/repo") == MentionRoute.VET
+    assert policy.route("visitor", "outside/watched") == MentionRoute.APPROVAL
+    assert policy.route("visitor", "outside/repo") == MentionRoute.REJECT
+
+
+def test_approval_metadata_is_bounded_and_round_trips():
+    payload = {
+        "repository": "outside/repo",
+        "subject_kind": "issue",
+        "subject_number": 7,
+        "subject_url": "https://github.com/outside/repo/issues/7",
+        "source_id": 91,
+        "author": "visitor",
+        "body": "@elixpoo please inspect this",
+        "fingerprint": approval_fingerprint("outside/repo", 7, 91),
+    }
+
+    assert parse_approval(approval_body(payload)) == payload
 
 
 @pytest.mark.asyncio
@@ -301,6 +349,57 @@ async def test_reconcile_posts_progress_then_safe_reply_and_marks_source_handled
     assert marker("reply", 91) in api.posts[1]
     assert gist.memory.active["elixpo/project#12"].handled_comment_ids == [91]
     assert gist.saves == 1
+
+
+@pytest.mark.asyncio
+async def test_untrusted_elixpo_mention_creates_approval_without_source_reply_or_generation():
+    api = FollowupAPI()
+    api.comment["user"]["login"] = "visitor"
+    gist = MemoryGist(_tracked_memory())
+    router = FakeRouter("SAFE")
+
+    result = await reconcile(
+        api,
+        gist,
+        router,
+        bot_username="elixpoo",
+        ttl_days=360,
+        control_repo="elixpo/agent.elixpo",
+    )
+
+    assert result["approvals"] == 1
+    assert result["replies"] == 0
+    assert api.posts == []
+    assert api.approval_issues[0]["labels"] == ["elixpoo/approval-required"]
+    assert router.roles == ["safety"]
+
+
+@pytest.mark.asyncio
+async def test_untrusted_out_of_scope_mention_gets_one_deterministic_rejection():
+    api = FollowupAPI()
+    api.comment["user"]["login"] = "visitor"
+    record = next(iter(_tracked_memory().active.values()))
+    record.status = "mention_received"
+    gist = MemoryGist(FollowupMemory(active={record.key: record}))
+    router = FakeRouter("SAFE")
+    policy = MentionPolicy(
+        trusted_users=frozenset(),
+        trusted_orgs=frozenset(),
+        watched_repositories=frozenset(),
+    )
+
+    result = await reconcile(
+        api,
+        gist,
+        router,
+        bot_username="elixpoo",
+        ttl_days=360,
+        mention_policy=policy,
+    )
+
+    assert result["rejected"] == 1
+    assert "outside elixpoo's approved scope" in api.posts[0]
+    assert gist.memory.active[record.key].handled_comment_ids == [91]
 
 
 @pytest.mark.asyncio
