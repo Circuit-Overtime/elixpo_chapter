@@ -91,6 +91,21 @@
       "title": "Qt6/Wayland: CudaText crashes (SIGABRT) when copying large text (~5000 lines)",
       "url": "https://github.com/Alexey-T/CudaText/issues/6355"
     },
+    "BlackMixture/Mix-Studio#25": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-31T00:48:11Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "Prompt Enhancer",
+      "url": "https://github.com/BlackMixture/Mix-Studio/issues/25"
+    },
     "ClickHouse/ClickBench#960": {
       "confidence": 0.5,
       "issue_kind": "unknown",
@@ -405,6 +420,74 @@
       "title": "Support password authentication for shelly integration",
       "url": "https://github.com/bramstroker/homeassistant-powercalc/issues/4398"
     },
+    "chthollyphile/folia-major#120": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-07T02:14:46Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "[FEATURE] \u8981\u662f\u80fd\u7528spotify\u5c31\u597d\u4e86",
+      "url": "https://github.com/chthollyphile/folia-major/issues/120"
+    },
+    "chthollyphile/folia-major#155": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-19T06:45:55Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "[FEATURE] \u5e0c\u671b\u53ef\u4ee5\u63a5\u5165\u843d\u96ea\u97f3\u4e50\uff0c\u53ef\u4ee5\u6dfb\u52a0\u97f3\u6e90",
+      "url": "https://github.com/chthollyphile/folia-major/issues/155"
+    },
+    "chthollyphile/folia-major#226": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-28T10:45:56Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs external access or credentials",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "[FEATURE] \u589e\u52a0\u5bf9Apple Music\u7684\u652f\u6301",
+      "url": "https://github.com/chthollyphile/folia-major/issues/226"
+    },
+    "chthollyphile/folia-major#238": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-02T09:39:29Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "[FEATURE] \u5e0c\u671b\u9002\u914d\u7eaf\u97f3\u4e50\u6548\u679c",
+      "url": "https://github.com/chthollyphile/folia-major/issues/238"
+    },
     "czl0325/coin11-tb#68": {
       "confidence": 0.5,
       "issue_kind": "unknown",
@@ -526,6 +609,22 @@
       "rejected_at": "2026-08-05T08:37:23.420231+00:00",
       "title": "Installation from Microsoft Store cannot switch off Spanish",
       "url": "https://github.com/horsicq/Detect-It-Easy/issues/367"
+    },
+    "hykilpikonna/hyfetch#531": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-29T11:24:24Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "Hyfetch gets stuck for a few seconds",
+      "url": "https://github.com/hykilpikonna/hyfetch/issues/531"
     },
     "jnMetaCode/superpowers-zh#107": {
       "confidence": 0.5,
@@ -895,6 +994,72 @@
       "title": "feat(workflows): routines - scheduled and event-driven triggers",
       "url": "https://github.com/stella/stella/issues/1378"
     },
+    "vitali87/code-graph-rag#1022": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-02T13:58:35Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "[Question]:",
+      "url": "https://github.com/vitali87/code-graph-rag/issues/1022"
+    },
+    "wanshuiyin/Auto-claude-code-research-in-sleep#375": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-22T17:02:38Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "Bug! The workflow seems to have been disrupted by the updated Claude.",
+      "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/issues/375"
+    },
+    "wanshuiyin/Auto-claude-code-research-in-sleep#379": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-27T07:33:21Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "\u8fd9\u4e2a\u9879\u76ee\u5982\u4f55\u5728TRAE\u4e2d\u5177\u4f53\u5e94\u7528\u5462\uff1f\u5168\u7528\u56fd\u5185\u7684\u5927\u6a21\u578b\u3002\u53ef\u5426\u51fa\u4e2a\u793a\u8303\u6837\u4f8b\u554a",
+      "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/issues/379"
+    },
+    "wanshuiyin/Auto-claude-code-research-in-sleep#380": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-27T11:00:58Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "wanshuiyin/Auto-claude-code-research-in-sleep was independently reviewed on Hlido \u2014 scored 82/100, right of reply open",
+      "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/issues/380"
+    },
     "webbrain-one/webbrain#432": {
       "confidence": 0.5,
       "issue_kind": "unknown",
@@ -945,6 +1110,36 @@
       "rejected_at": "2026-08-06T08:37:42.198956+00:00",
       "title": "capsolver as a skill?",
       "url": "https://github.com/webbrain-one/webbrain/issues/488"
+    },
+    "whoahaow/rjsxrd#12": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-11T10:06:05Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "\u0415\u0441\u0442\u044c \u043b\u0438 mtpoxy?",
+      "url": "https://github.com/whoahaow/rjsxrd/issues/12"
+    },
+    "whoahaow/rjsxrd#14": {
+      "confidence": 0.4,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-30T14:50:41Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.40 is below 0.70",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-09T06:57:48.152520+00:00",
+      "title": "\u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u044c",
+      "url": "https://github.com/whoahaow/rjsxrd/issues/14"
     }
   }
 }
