@@ -29,7 +29,8 @@ async function setupDatabase() {
             client_type TEXT NOT NULL,
             is_active INTEGER NOT NULL DEFAULT 1,
             scopes TEXT NOT NULL,
-            name TEXT NOT NULL
+            name TEXT NOT NULL,
+            audience TEXT
         )`),
         env.DB.prepare(`CREATE TABLE IF NOT EXISTS device_authorizations (
             id TEXT PRIMARY KEY,
@@ -71,11 +72,15 @@ async function setupDatabase() {
 
 async function insertClient(
     clientId = PUBLIC_CLIENT_ID,
-    options: { type?: "public" | "confidential"; active?: boolean } = {},
+    options: {
+        type?: "public" | "confidential";
+        active?: boolean;
+        audience?: string;
+    } = {},
 ) {
     await env.DB.prepare(
-        `INSERT INTO oauth_clients (client_id, client_type, is_active, scopes, name)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO oauth_clients (client_id, client_type, is_active, scopes, name, audience)
+         VALUES (?, ?, ?, ?, ?, ?)`,
     )
         .bind(
             clientId,
@@ -83,6 +88,7 @@ async function insertClient(
             options.active === false ? 0 : 1,
             JSON.stringify(["openid", "lixblogs:blog:read"]),
             "LixBlogs CLI",
+            options.audience ?? null,
         )
         .run();
 }
@@ -162,6 +168,40 @@ describe("device authorization with D1", () => {
                 appUrl: "https://accounts.elixpo.com",
             }),
         ).rejects.toMatchObject({ code: "invalid_scope" });
+    });
+
+    it("stores only the client's registered audience", async () => {
+        await insertClient(PUBLIC_CLIENT_ID, {
+            audience: "api.lixblogs.com",
+        });
+
+        await createDeviceAuthorization(env.DB, {
+            clientId: PUBLIC_CLIENT_ID,
+            audience: "api.lixblogs.com",
+            ipAddress: "203.0.113.10",
+            appUrl: "https://accounts.elixpo.com",
+        });
+        const row = await env.DB.prepare(
+            "SELECT audience FROM device_authorizations WHERE client_id = ?",
+        )
+            .bind(PUBLIC_CLIENT_ID)
+            .first<{ audience: string }>();
+        expect(row?.audience).toBe("api.lixblogs.com");
+    });
+
+    it("rejects an audience not registered to the client", async () => {
+        await insertClient(PUBLIC_CLIENT_ID, {
+            audience: "api.lixblogs.com",
+        });
+
+        await expect(
+            createDeviceAuthorization(env.DB, {
+                clientId: PUBLIC_CLIENT_ID,
+                audience: "attacker.example",
+                ipAddress: "203.0.113.10",
+                appUrl: "https://accounts.elixpo.com",
+            }),
+        ).rejects.toMatchObject({ code: "invalid_request" });
     });
 
     it("treats every authorization status as expired after its deadline", async () => {

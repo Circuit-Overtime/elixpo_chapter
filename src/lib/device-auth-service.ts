@@ -99,6 +99,7 @@ interface OAuthClientRow {
     client_type: string;
     is_active: number;
     scopes: string;
+    audience: string | null;
 }
 
 /**
@@ -138,7 +139,7 @@ export async function createDeviceAuthorization(
 
     const client = (await db
         .prepare(
-            "SELECT client_id, client_type, is_active, scopes FROM oauth_clients WHERE client_id = ?",
+            "SELECT client_id, client_type, is_active, scopes, audience FROM oauth_clients WHERE client_id = ?",
         )
         .bind(clientId)
         .first()) as OAuthClientRow | null;
@@ -149,6 +150,13 @@ export async function createDeviceAuthorization(
         throw new DeviceAuthorizationRequestError(
             "invalid_client",
             "Unknown or ineligible client",
+        );
+    }
+
+    if (!isRequestedAudienceAllowed(audience, client.audience)) {
+        throw new DeviceAuthorizationRequestError(
+            "invalid_request",
+            "Requested audience is not registered for this client",
         );
     }
 
@@ -198,7 +206,7 @@ export async function createDeviceAuthorization(
                     deviceCodeHash,
                     userCodeHash,
                     clientId,
-                    audience ?? null,
+                    audience ?? client.audience,
                     requestedScopes.join(" "),
                     DEFAULT_INTERVAL_SECONDS,
                     ipAddress,
@@ -550,4 +558,20 @@ export function classifyDevicePollAttempt(
     }
 
     return { kind: "not_exchangeable" };
+}
+
+/**
+ * PURE FUNCTION: Verifies if a requested audience is permitted for this client.
+ * Prevents confused-deputy attacks where a public client requests tokens for an unapproved resource.
+ */
+export function isRequestedAudienceAllowed(
+    requestedAudience: string | null | undefined,
+    clientApprovedAudience: string | null | undefined,
+): boolean {
+    // If no specific audience is requested, it defaults safely to the client's registered audience
+    if (!requestedAudience) return true;
+    // If requested, but the client has no approved audience at all, deny
+    if (!clientApprovedAudience) return false;
+    // Require exact string match
+    return requestedAudience === clientApprovedAudience;
 }

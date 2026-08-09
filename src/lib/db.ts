@@ -208,24 +208,27 @@ export async function createRefreshToken(
         expiresAt,
         ipHash,
         uaShort,
+        familyId,
+        parentTokenHash,
+        sid,
     }: {
         id: string;
         userId: string;
         tokenHash: string;
         clientId?: string;
         expiresAt: Date;
-        // Per-session metadata for /dashboard/security listings. Both
-        // optional so old callers compile, but every login/callback path
-        // should populate them.
         ipHash?: string | null;
         uaShort?: string | null;
+        familyId?: string | null;
+        parentTokenHash?: string | null;
+        sid?: string | null;
     },
 ) {
     const stmt = db.prepare(
         `INSERT INTO refresh_tokens
             (id, user_id, token_hash, client_id, expires_at,
-             ip_hash, ua_short, last_used_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+             ip_hash, ua_short, last_used_at, family_id, parent_token_hash, sid)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?)`,
     );
     return await stmt
         .bind(
@@ -236,15 +239,13 @@ export async function createRefreshToken(
             expiresAt.toISOString(),
             ipHash ?? null,
             uaShort ?? null,
+            familyId ?? null,
+            parentTokenHash ?? null,
+            sid ?? null,
         )
         .run();
 }
 
-/**
- * Privacy-friendly fingerprint helpers shared with trusted-devices.ts.
- * Truncated SHA-256 is plenty for uniqueness without leaking the raw IP
- * into KV/audit logs.
- */
 export async function hashIpForSession(ip: string): Promise<string | null> {
     if (!ip || ip === "unknown") return null;
     const buf = await crypto.subtle.digest(
@@ -280,11 +281,65 @@ export async function getRefreshTokenByHash(db: D1Database, tokenHash: string) {
     return await stmt.bind(tokenHash).first();
 }
 
-export async function revokeRefreshToken(db: D1Database, tokenHash: string) {
+export async function getRefreshTokenByHashIncludingRevoked(
+    db: D1Database,
+    tokenHash: string,
+) {
     const stmt = db.prepare(
-        "UPDATE refresh_tokens SET revoked = 1, revoked_at = CURRENT_TIMESTAMP WHERE token_hash = ?",
+        "SELECT * FROM refresh_tokens WHERE token_hash = ?",
     );
-    return await stmt.bind(tokenHash).run();
+    return await stmt.bind(tokenHash).first();
+}
+
+export async function revokeRefreshToken(
+    db: D1Database,
+    tokenHash: string,
+    reason?: string,
+) {
+    const stmt = db.prepare(
+        "UPDATE refresh_tokens SET revoked = 1, revoked_at = CURRENT_TIMESTAMP, revoked_reason = ? WHERE token_hash = ?",
+    );
+    return await stmt.bind(reason || null, tokenHash).run();
+}
+
+export async function markRefreshTokenRotated(
+    db: D1Database,
+    tokenHash: string,
+    familyId: string,
+    sid: string,
+) {
+    const stmt = db.prepare(
+        `UPDATE refresh_tokens
+         SET revoked = 1,
+             revoked_at = CURRENT_TIMESTAMP,
+             revoked_reason = 'rotated',
+             family_id = COALESCE(family_id, ?),
+             sid = COALESCE(sid, ?)
+         WHERE token_hash = ? AND revoked = 0`,
+    );
+    return await stmt.bind(familyId, sid, tokenHash).run();
+}
+
+export async function revokeRefreshTokenFamily(
+    db: D1Database,
+    familyId: string,
+    reason: string,
+) {
+    const stmt = db.prepare(
+        "UPDATE refresh_tokens SET revoked = 1, revoked_at = CURRENT_TIMESTAMP, revoked_reason = ? WHERE family_id = ? AND revoked = 0",
+    );
+    return await stmt.bind(reason, familyId).run();
+}
+
+export async function revokeAllRefreshTokensForUser(
+    db: D1Database,
+    userId: string,
+    reason: string,
+) {
+    const stmt = db.prepare(
+        "UPDATE refresh_tokens SET revoked = 1, revoked_at = CURRENT_TIMESTAMP, revoked_reason = ? WHERE user_id = ? AND revoked = 0",
+    );
+    return await stmt.bind(reason, userId).run();
 }
 
 export async function updateUserLastLogin(db: D1Database, userId: string) {
@@ -294,21 +349,6 @@ export async function updateUserLastLogin(db: D1Database, userId: string) {
     return await stmt.bind(userId).run();
 }
 
-/**
- * Parse the request's IP, User-Agent, and Cloudflare geo headers into the
- * users-table session-context columns. Called from every authenticated
- * entry point (login, OAuth callback) so the row reflects the buyer's
- * latest known device and rough location.
- *
- * Privacy stance:
- *  - We store the raw `ip_address` here (separately from the hashed-IP
- *    used for session dedupe in refresh_tokens). The column existed in
- *    the schema from day one; populating it is the explicit intent.
- *  - Geo comes from `cf-ipcountry` only — no third-party lookup. City /
- *    region populate only if Cloudflare's `cf-iplookupzone` or similar
- *    headers are present (Workers pro-tier feature); otherwise stay null.
- *  - User-Agent is parsed into coarse browser+OS labels, not stored raw.
- */
 export function deriveSessionContext(request: Request | { headers: Headers }) {
     const headers = request.headers;
     const ipAddress =
@@ -317,15 +357,11 @@ export function deriveSessionContext(request: Request | { headers: Headers }) {
         null;
     const ua = headers.get("user-agent") || "";
 
-    // Geo — populated by Cloudflare on the edge. `cf-ipcountry` is always
-    // present on a Pages request; the other two are best-effort.
     const country = headers.get("cf-ipcountry") || null;
     const city = headers.get("cf-ipcity") || null;
     const region =
         headers.get("cf-region-code") || headers.get("cf-region") || null;
 
-    // Browser + version from UA — same logic as shortUaForSession but
-    // split out so we can persist the parts individually.
     let browser: string | null = null;
     let browserVersion: string | null = null;
     if (ua.includes("Edg/")) {
@@ -387,12 +423,6 @@ export function deriveSessionContext(request: Request | { headers: Headers }) {
     };
 }
 
-/**
- * Persist the session context onto the users row. Called from login +
- * OAuth callback paths. Uses COALESCE so already-set fields aren't
- * blanked out by a request that's missing a header (e.g. a server-side
- * refresh where there's no UA on the request).
- */
 export async function updateUserSessionContext(
     db: D1Database,
     userId: string,
@@ -470,6 +500,43 @@ export async function logAuditEvent(
         .run();
 }
 
+export async function redactStaleAuditLogs(
+    db: D1Database,
+    limit: number = 1000,
+    retentionDays: number = 90,
+) {
+    const stmt = db.prepare(`
+        UPDATE audit_logs 
+        SET ip_address = NULL, user_agent = NULL, error_message = NULL 
+        WHERE id IN (
+            SELECT id FROM audit_logs 
+            WHERE created_at < datetime('now', '-' || ? || ' days')
+              AND (ip_address IS NOT NULL OR user_agent IS NOT NULL OR error_message IS NOT NULL)
+            LIMIT ?
+        )
+    `);
+    const result = await stmt.bind(retentionDays, limit).run();
+    return result.meta?.changes ?? 0;
+}
+
+export async function cleanupExpiredOrRevokedRefreshTokens(
+    db: D1Database,
+    limit: number = 1000,
+    revokedRetentionDays: number = 30,
+) {
+    const stmt = db.prepare(`
+        DELETE FROM refresh_tokens 
+        WHERE id IN (
+            SELECT id FROM refresh_tokens 
+            WHERE (expires_at < datetime('now', '-7 days'))
+               OR (revoked = 1 AND revoked_at < datetime('now', '-' || ? || ' days'))
+            LIMIT ?
+        )
+    `);
+    const result = await stmt.bind(revokedRetentionDays, limit).run();
+    return result.meta?.changes ?? 0;
+}
+
 /**
  * OAuth Client Management
  * For registering and managing OAuth applications
@@ -499,8 +566,6 @@ export async function createOAuthClient(
         ownerId: string;
         description?: string;
         homepageUrl?: string;
-        // Optional webhook subscription set at registration time. Plaintext
-        // secret is stored only in KV — D1 only sees the SHA-256 hash.
         webhookUrl?: string | null;
         webhookSecretHash?: string | null;
         webhookEvents?: string | null; // JSON stringified array
@@ -561,6 +626,30 @@ export async function validateOAuthClient(
     );
     const result = await stmt.bind(clientId, clientSecretHash).first();
     return !!result;
+}
+
+export async function authenticateOAuthClient(
+    db: D1Database,
+    clientId: string,
+    clientSecretHash?: string | null,
+) {
+    const stmt = db.prepare(
+        "SELECT * FROM oauth_clients WHERE client_id = ? AND is_active = 1",
+    );
+    // Explicitly typed as any because we added audience and client_type directly to the schema
+    const client = await stmt.bind(clientId).first<any>();
+
+    if (!client) return null;
+
+    if (client.client_type === "public") {
+        return client;
+    }
+
+    if (!clientSecretHash || client.client_secret_hash !== clientSecretHash) {
+        return null;
+    }
+
+    return client;
 }
 
 export async function updateOAuthClient(
@@ -625,19 +714,13 @@ export async function updateOAuthClient(
     return await stmt.bind(...(values as (string | number)[])).run();
 }
 
-/**
- * Update an OAuth app's webhook subscription. Caller passes one or more of
- * webhookUrl / webhookEvents to change them. Pass empty string + null to
- * clear the whole subscription (effectively disabling). Returns whether a
- * row was affected, so callers can 404 cleanly on no-such-app.
- */
 export async function updateOAuthClientWebhook(
     db: D1Database,
     clientId: string,
     ownerId: string,
     patch: {
         webhookUrl?: string | null;
-        webhookEvents?: string | null; // JSON stringified array, or null/empty to clear
+        webhookEvents?: string | null;
     },
 ): Promise<boolean> {
     const setClauses: string[] = [];
@@ -659,11 +742,6 @@ export async function updateOAuthClientWebhook(
     return (result.meta?.changes ?? 0) > 0;
 }
 
-/**
- * Atomic secret rotation. New hash + reset of webhook_secret_set_at in
- * one statement; KV write is the caller's responsibility (so they can
- * sequence it however their environment requires).
- */
 export async function rotateOAuthClientWebhookSecret(
     db: D1Database,
     clientId: string,
@@ -681,20 +759,12 @@ export async function rotateOAuthClientWebhookSecret(
     return (result.meta?.changes ?? 0) > 0;
 }
 
-/**
- * Multi-endpoint webhook helpers
- * One OAuth app → many webhook endpoints. Each endpoint has its own URL,
- * its own secret hash, and its own event subscription. Plaintext secrets
- * are stored in KV at `webhook_secret:<endpoint_id>`; this layer only
- * touches D1.
- */
-
 export interface WebhookEndpointRow {
     id: string;
     client_id: string;
     url: string;
     secret_hash: string;
-    events: string; // JSON array
+    events: string;
     is_active: number;
     label: string | null;
     created_at: string;
@@ -765,18 +835,13 @@ export async function createAppWebhookEndpoint(
         .run();
 }
 
-/**
- * Update an endpoint's mutable fields. ownerId is checked via a subquery on
- * oauth_clients so we can't accidentally let one app's owner touch
- * another's endpoint by id-guessing.
- */
 export async function updateAppWebhookEndpoint(
     db: D1Database,
     endpointId: string,
     ownerId: string,
     patch: {
         url?: string;
-        events?: string; // JSON array
+        events?: string;
         is_active?: boolean;
         label?: string | null;
     },
@@ -875,11 +940,6 @@ export async function listOAuthClients(
     );
     return await stmt.bind(limit, offset).all();
 }
-
-/**
- * Privilege/Role Management
- * For fine-grained access control
- */
 
 export async function createPrivilege(
     db: D1Database,
@@ -985,10 +1045,6 @@ export async function listPrivileges(db: D1Database) {
     return await stmt.all();
 }
 
-/**
- * Admin Dashboard Queries
- */
-
 export async function getAdminDashboardStats(
     db: D1Database,
     daysBack: number = 7,
@@ -1086,8 +1142,6 @@ export async function getTopApps(db: D1Database, limit: number = 5) {
 }
 
 export async function listUserOAuthClients(db: D1Database, userId: string) {
-    // webhook_url is selected because the dashboard webhooks page filters
-    // dropdown options on it. Don't drop it without updating that filter.
     return db
         .prepare(
             `SELECT client_id, name, description, logo_url, homepage_url, redirect_uris, scopes,
