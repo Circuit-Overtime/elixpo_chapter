@@ -1,11 +1,11 @@
 {
-  "branch": "patch/patch-in-the-pricing-route-show-the-copy-ema-11-6a13",
-  "head_sha": "a89a16b2422892274356bca7c30fd94bae78d37c",
-  "issue_url": "https://github.com/elixpo/lixrl.com/issues/11",
-  "key": "elixpo/lixrl.com#11",
-  "pr_number": 12,
-  "pr_url": "https://github.com/elixpo/lixrl.com/pull/12",
+  "branch": "patch/bug-the-graph-of-the-tracker-of-clicks-is-di-18-49a8",
+  "head_sha": "c54071f591505d0880dad412a514bd873738fe5a",
+  "issue_url": "https://github.com/elixpo/lixrl.com/issues/18",
+  "key": "elixpo/lixrl.com#18",
+  "pr_number": 19,
+  "pr_url": "https://github.com/elixpo/lixrl.com/pull/19",
   "status": "submitted",
-  "submitted_at": "2026-08-04T11:34:54.622773+00:00",
+  "submitted_at": "2026-08-09T10:42:10.667943+00:00",
   "test_mode": true
 }

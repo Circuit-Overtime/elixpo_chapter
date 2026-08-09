@@ -33,7 +33,13 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
         or "harness exceeded" in lowered
     ):
         category, retryable, candidate_action = "timeout", True, "retry_once"
-    elif isinstance(exc, BudgetExceeded) or "token budget" in lowered or "breach ceiling" in lowered:
+    elif (
+        isinstance(exc, BudgetExceeded)
+        or "token budget" in lowered
+        or "breach ceiling" in lowered
+        or "hard_token_limit_exceeded" in lowered
+        or "repeated_tool_chain_with_abnormal_token_growth" in lowered
+    ):
         category, candidate_action = "token_budget", "reduce_context_or_terminate"
     elif isinstance(exc, httpx.HTTPStatusError):
         status = exc.response.status_code
@@ -109,7 +115,12 @@ def classify_failure(exc: Exception, stage: str) -> dict[str, Any]:
     }
 
 
-def cleanup_manifest(state: dict[str, Any], workspace_base: Path) -> dict[str, Any]:
+def cleanup_manifest(
+    state: dict[str, Any],
+    workspace_base: Path,
+    *,
+    status: str = "blocked_on_doctor",
+) -> dict[str, Any]:
     """Describe resources only; Janitor performs validated cleanup later."""
     resources: list[dict[str, Any]] = []
     workspace = str(state.get("workspace") or "")
@@ -131,8 +142,10 @@ def cleanup_manifest(state: dict[str, Any], workspace_base: Path) -> dict[str, A
             }
         )
     return {
+        "schema_version": 1,
+        "run_id": str(state.get("run_id") or ""),
         "owner": "janitor",
-        "status": "blocked_on_doctor",
+        "status": status,
         "resources": resources,
     }
 
@@ -149,6 +162,8 @@ def failure_handoff(
     """Build the complete state contract consumed by future Doctor/Janitor squads."""
     failed = dict(state)
     failure = classify_failure(exc, str(failed.get("stage") or "starting"))
+    failure["model_route"] = str(failed.get("model_route") or "")
+    failure["token_overage"] = max(0, int(token_spent) - int(token_limit))
     failed.update(
         {
             "status": "doctor_pending",

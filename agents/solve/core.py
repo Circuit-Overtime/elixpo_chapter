@@ -18,7 +18,12 @@ from lib.state.store import StateStore
 from lib.workspace import Workspace
 
 from agents.solve.branch import build_work_branch
-from agents.solve.command_policy import effective_prefixes, setup_fallback_command
+from agents.solve.command_policy import (
+    effective_prefixes,
+    setup_failure_is_infrastructure,
+    setup_fallback_command,
+)
+from agents.solve.failure import cleanup_manifest
 from agents.solve.git import (
     assert_workspace_identity,
     changed_files,
@@ -28,6 +33,7 @@ from agents.solve.git import (
     validate_command,
 )
 from agents.solve.harness import run_harness
+from agents.solve.model import review_diff
 from agents.solve.models import SolvePlan
 from agents.solve.verification_plan import complete_verification_plan
 
@@ -45,7 +51,11 @@ def resolve_target(store: StateStore, explicit_url: str | None, owned_test: bool
     if explicit_url:
         if not owned_test or not is_test_repository(_repo_from_url(explicit_url)):
             raise SolveRejected("explicit targets require --owned-test and a configured test repository")
-        if vet.get("url") != explicit_url or vet.get("suitable") is not True or vet.get("test_mode") is not True:
+        if vet.get("url") == explicit_url and vet.get("suitable") is not True:
+            reasons = "; ".join(str(item) for item in (vet.get("reasons") or [])[:3])
+            suffix = f": {reasons}" if reasons else ""
+            raise SolveRejected(f"Vet rejected this target{suffix}")
+        if vet.get("url") != explicit_url or vet.get("test_mode") is not True:
             raise SolveRejected("run Vet with the same URL, --owned-test, and --force before Solve")
         return explicit_url
 
@@ -237,6 +247,7 @@ async def solve(
     session_id = re.sub(r"[^A-Za-z0-9_-]", "-", f"{owner}-{repo}-{number}-{secrets.token_hex(3)}")
     workspace = Workspace(session_id, workspace_base)
     running = {
+        "run_id": str(preparing.get("run_id") or ""),
         "status": "running",
         "stage": "workspace_setup",
         "issue_url": issue_url,
@@ -248,7 +259,11 @@ async def solve(
         "workspace": str(workspace.root),
         "test_mode": owned_test,
         "started_at": datetime.now(timezone.utc).isoformat(),
+        "model_route": str(preparing.get("model_route") or ""),
+        "token_target": int(policy.get("token_target") or 0),
+        "token_limit": int(policy.get("token_limit") or 0),
     }
+    running["cleanup"] = cleanup_manifest(running, workspace_base, status="active")
     store.write_json("solve.json", running)
     root = workspace.setup(
         fork_url=str(fork.get("clone_url") or f"https://github.com/{fork_owner}/{repo}.git"),
@@ -267,12 +282,21 @@ async def solve(
     store.write_json("solve.json", running)
 
     remaining_seconds = max(1, int(policy["max_minutes"]) * 60 - int(time.monotonic() - started))
+
+    def record_live_doctor(snapshot: dict[str, Any]) -> None:
+        current = store.read_json("solve.json", {}) or {}
+        if str(current.get("run_id") or "") != str(snapshot.get("run_id") or ""):
+            return
+        current["doctor_live"] = snapshot
+        store.write_json("solve.json", current)
+
     outcome, usage, harness_metadata = await asyncio.to_thread(
         run_harness,
         root,
         issue,
         policy,
         timeout=remaining_seconds,
+        live_update=record_live_doctor,
     )
     router.record_external_usage("code", usage, source="ccr-node-harness", extra=harness_metadata)
     _budget_guard(router)
@@ -297,6 +321,25 @@ async def solve(
             raise SolveRejected(f"coding harness deleted a file: {path}")
         if resolved.is_symlink():
             raise SolveRejected(f"coding harness created or changed a symlink: {path}")
+
+    running.update({"stage": "semantic_review", "target_files": sorted(targets)})
+    store.write_json("solve.json", running)
+    review_diff_text = git(root, "diff", "--unified=40", "--", *targets, timeout=60)
+    review_verdict = await review_diff(
+        router,
+        issue,
+        {
+            "source": "bounded_coding_harness",
+            "target_files": sorted(targets),
+            "review_stage": "pre_verification",
+        },
+        review_diff_text,
+        [],
+    )
+    _budget_guard(router)
+    if not review_verdict.approved or review_verdict.findings:
+        findings = "; ".join(review_verdict.findings[:3]) or review_verdict.summary
+        raise SolveRejected(f"semantic self-review rejected implementation: {findings}")
 
     outcome, verification_inferred = complete_verification_plan(
         root,
@@ -354,7 +397,10 @@ async def solve(
         )
         record_check("setup", command, result)
         if result.code != 0:
-            fallback = setup_fallback_command(command)
+            if setup_failure_is_infrastructure(result.output):
+                record_exception(checks[-1])
+                raise SolveRejected(f"dependency setup failed due to infrastructure: {command}")
+            fallback = setup_fallback_command(command, result.output)
             if fallback:
                 result = run_verification(
                     root,
@@ -384,6 +430,21 @@ async def solve(
     observed = set(changed_files(root))
     if observed != set(targets):
         raise SolveRejected(f"verification changed the working tree: {sorted(observed ^ set(targets))}")
+    unavailable = [
+        check
+        for check in checks
+        if check.get("kind") == "verification"
+        and int(check.get("exit_code") or 0) != 0
+        and re.search(
+            r"(?:execvp|command not found|no such file or directory)",
+            str(check.get("output") or ""),
+            flags=re.IGNORECASE,
+        )
+    ]
+    if unavailable:
+        commands = ", ".join(str(check.get("command") or "") for check in unavailable)
+        raise SolveRejected(f"required verification tool unavailable: {commands}")
+
     running["stage"] = "committing"
     store.write_json("solve.json", running)
     commit_sha = commit_files(root, targets, outcome.commit_message)
@@ -430,14 +491,10 @@ async def solve(
             "verification_inferred": verification_inferred,
         },
         "review": {
-            "approved": True,
-            "findings": [],
-            "summary": outcome.summary,
-            "source": (
-                "deterministic_diff_review_with_reported_verification"
-                if harness_metadata.get("structured_fallback")
-                else "bounded_harness_self_review_with_reported_verification"
-            ),
+            "approved": review_verdict.approved,
+            "findings": review_verdict.findings,
+            "summary": review_verdict.summary,
+            "source": "independent_semantic_diff_review",
         },
         "token_spent": router.budget.spent,
         "token_target": int(policy.get("token_target", router.budget.limit)),

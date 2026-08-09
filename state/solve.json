@@ -1,100 +1,63 @@
 {
   "base_branch": "main",
-  "branch": "patch/patch-in-the-pricing-route-show-the-copy-ema-11-6a13",
-  "checks": [
-    {
-      "command": "npm ci --ignore-scripts",
-      "exit_code": 1,
-      "kind": "setup",
-      "output": "[sandbox=bubblewrap]\n[FAIL] Command failed (exit code: 1)\n  bwrap: execvp npm: No such file or directory\n"
-    },
-    {
-      "command": "npm install --ignore-scripts --no-audit --no-fund",
-      "exit_code": 1,
-      "kind": "setup_fallback",
-      "output": "[sandbox=bubblewrap]\n[FAIL] Command failed (exit code: 1)\n  bwrap: execvp npm: No such file or directory\n"
-    },
-    {
-      "command": "npx tsc --noEmit",
-      "exit_code": 1,
-      "kind": "verification",
-      "output": "[sandbox=bubblewrap]\n[FAIL] Command failed (exit code: 1)\n  bwrap: execvp npx: No such file or directory\n"
-    }
-  ],
-  "commits": [
-    "a89a16b2422892274356bca7c30fd94bae78d37c"
-  ],
-  "finished_at": "2026-08-04T11:34:42.830882+00:00",
+  "branch": "patch/bug-the-graph-of-the-tracker-of-clicks-is-di-18-646d",
+  "cleanup": {
+    "cleaned_at": "2026-08-09T11:37:35.897039+00:00",
+    "doctor_fingerprint": "d84fa813cc31e8ada2b4",
+    "owner": "janitor",
+    "resources": [
+      {
+        "disposition": "remove_after_terminal_decision",
+        "kind": "workspace",
+        "locator": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-18-9b5e82",
+        "safe_root": "/tmp/elixpoo-workspaces"
+      },
+      {
+        "disposition": "preserve_shared_resource",
+        "kind": "fork",
+        "locator": "elixpoo/lixrl.com"
+      }
+    ],
+    "run_id": "3f5464cea6a9292a",
+    "schema_version": 1,
+    "status": "complete"
+  },
+  "doctor": {
+    "decided_at": "2026-08-09T11:37:35.746873+00:00",
+    "decision": "terminate",
+    "fingerprint": "d84fa813cc31e8ada2b4",
+    "status": "decided"
+  },
+  "elapsed_seconds": 121.442,
+  "error": "semantic self-review rejected implementation: Missing implementation of light red theme for bars using red accent gradient.; Missing implementation of light theme for tooltip.; Missing implementation of light theme for axis labels and grid on white card background.",
+  "failed_at": "2026-08-09T11:37:35.510382+00:00",
+  "failure": {
+    "candidate_action": "terminate_or_replan",
+    "category": "review_rejected",
+    "exception_type": "SolveRejected",
+    "message": "semantic self-review rejected implementation: Missing implementation of light red theme for bars using red accent gradient.; Missing implementation of light theme for tooltip.; Missing implementation of light theme for axis labels and grid on white card background.",
+    "model_route": "qwen-coder",
+    "occurred_at": "2026-08-09T11:37:35.510382+00:00",
+    "retryable": false,
+    "schema_version": 1,
+    "stage": "semantic_review",
+    "token_overage": 0
+  },
   "fork_repo": "elixpoo/lixrl.com",
-  "harness": {
-    "commit_message": "fix: In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card",
-    "duration_ms": 190853,
-    "estimated_minutes": 4,
-    "rationale": "The coding harness produced a non-empty diff; deterministic repository gates validate it.",
-    "reviewed_paths": [
-      "app/pricing/page.tsx"
-    ],
-    "session_id": "bb572e89-527e-4892-911c-76a4f343a7b3",
-    "setup_commands": [
-      "npm ci --ignore-scripts"
-    ],
-    "solvable": true,
-    "structured_fallback": true,
-    "structured_fallback_reason": "missing_structured_payload",
-    "summary": "In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card",
-    "terminal_subtype": "success",
-    "turns": 22,
-    "verification_commands": [
-      "npx tsc --noEmit"
-    ],
-    "verification_inferred": true
-  },
-  "head_sha": "a89a16b2422892274356bca7c30fd94bae78d37c",
-  "issue_number": 11,
-  "issue_url": "https://github.com/elixpo/lixrl.com/issues/11",
-  "key": "elixpo/lixrl.com#11",
-  "pr_url": "https://github.com/elixpo/lixrl.com/pull/12",
-  "rationale": "The coding harness produced a non-empty diff; deterministic repository gates validate it.",
-  "review": {
-    "approved": true,
-    "findings": [],
-    "source": "deterministic_diff_review_with_reported_verification",
-    "summary": "In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card"
-  },
-  "stage": "complete",
-  "started_at": "2026-08-04T11:31:16.024645+00:00",
-  "status": "submitted",
-  "summary": "In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card",
+  "issue_url": "https://github.com/elixpo/lixrl.com/issues/18",
+  "key": "elixpo/lixrl.com#18",
+  "model_route": "qwen-coder",
+  "run_id": "3f5464cea6a9292a",
+  "stage": "semantic_review",
+  "started_at": "2026-08-09T11:35:39.608775+00:00",
+  "status": "terminated",
   "target_files": [
-    "app/pricing/page.tsx"
+    "app/components/ClicksChart.tsx"
   ],
   "test_mode": true,
-  "title": "[PATCH]:- In the /pricing route show the copy email chip with \"hello@elixpo.com\" in the enterprise card",
   "token_limit": 750000,
-  "token_spent": 176099,
+  "token_spent": 96694,
   "token_target": 240000,
-  "token_target_exceeded": false,
   "upstream_repo": "elixpo/lixrl.com",
-  "verification_exceptions": [
-    {
-      "command": "npm ci --ignore-scripts",
-      "detail": "[sandbox=bubblewrap] [FAIL] Command failed (exit code: 1) bwrap: execvp npm: No such file or directory",
-      "exit_code": 1,
-      "kind": "setup"
-    },
-    {
-      "command": "npm install --ignore-scripts --no-audit --no-fund",
-      "detail": "[sandbox=bubblewrap] [FAIL] Command failed (exit code: 1) bwrap: execvp npm: No such file or directory",
-      "exit_code": 1,
-      "kind": "setup_fallback"
-    },
-    {
-      "command": "npx tsc --noEmit",
-      "detail": "[sandbox=bubblewrap] [FAIL] Command failed (exit code: 1) bwrap: execvp npx: No such file or directory",
-      "exit_code": 1,
-      "kind": "verification"
-    }
-  ],
-  "verification_status": "exceptions",
-  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-11-2a5210"
+  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-18-9b5e82"
 }
