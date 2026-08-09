@@ -146,18 +146,18 @@ Items are ordered by dependency, not by issue number.
 - [ ] Expose squad health, queue depth, token spend, success rate, and cleanup debt in
       the frontend without exposing secrets or private metadata.
 
-## 9. Dedicated GitHub Project operations view — after post-PR lifecycle
+## 9. Dedicated GitHub Project operations view — orchestration completed
 
-- [ ] Create one Project V2 view as the operational source of truth; do not add a database.
-- [ ] Track repository, issue number/URL, issue title, current squad, run ID, branch,
+- [x] Explicitly create one public Project V2 as the operational source of truth; do not add a database.
+- [x] Track repository, issue number/URL, issue title, current squad, run ID, branch,
       PR URL, started/updated timestamps, token target/spend, Doctor warnings, and cleanup status.
-- [ ] Define explicit states for discovered, vetted, claimed, solving, ready, submitted,
+- [x] Define explicit states for discovered, vetted, claimed, solving, ready, submitted,
       open, changes requested, CI failed, merged, closed, rejected, and cleanup pending.
-- [ ] Make every transition idempotent and keyed by `owner/repo#issue`; reject stale run IDs.
-- [ ] Reconcile PR open/closed/merged state from webhooks plus bounded polling recovery.
-- [ ] Add views for active work, awaiting maintainers, failures needing attention,
+- [x] Make every transition idempotent and keyed by `owner/repo#issue`; reject stale run IDs.
+- [x] Reconcile state after control workflows plus bounded scheduled recovery; external PR state enters through Steward.
+- [x] Add views for active work, awaiting maintainers, failures needing attention,
       merged contributions, token anomalies, and cleanup debt.
-- [ ] Keep public repository metadata only; never place secrets, prompts, source code,
+- [x] Keep public repository metadata only; never place secrets, prompts, source code,
       or raw model/tool transcripts in Project fields.
 - [ ] Surface the same sanitized status data in the frontend after the board contract stabilizes.
 
@@ -180,10 +180,9 @@ Items are ordered by dependency, not by issue number.
 
 ## Immediate execution order
 
-1. Dedicated GitHub Project operations view.
-2. Gist Custodian.
-3. Discussion reliability pass.
-4. End-to-end orchestration and failure testing (section 6).
-5. Security and public-action controls (section 7).
-6. Cost, observability, and anomaly controls (section 8).
-7. Validation, documentation, and controlled release (section 10).
+1. Gist Custodian.
+2. Discussion reliability pass.
+3. End-to-end orchestration and failure testing (section 6).
+4. Security and public-action controls (section 7).
+5. Cost, observability, frontend status, and anomaly controls (sections 8–9).
+6. Validation, documentation, and controlled release (section 10).
