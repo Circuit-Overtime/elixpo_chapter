@@ -88,6 +88,16 @@ class FollowupSettings(BaseSettings):
     ttl_days: int = Field(default=360, ge=60, le=360, validation_alias="ELIXPO_FOLLOWUP_TTL_DAYS")
 
 
+class ProjectSettings(BaseSettings):
+    """Dedicated GitHub Project V2 operations view."""
+
+    model_config = SettingsConfigDict(extra="ignore")
+
+    token: str = Field(default="", validation_alias="ELIXPOO_GITHUB_PROJECT_TOKEN")
+    owner: str = Field(default="", validation_alias="ELIXPO_GITHUB_PROJECT_OWNER")
+    number: int = Field(default=0, ge=0, validation_alias="ELIXPO_GITHUB_PROJECT_NUMBER")
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
 
@@ -95,6 +105,7 @@ class Settings(BaseSettings):
     github: GitHubSettings = GitHubSettings()
     upstash: UpstashSettings = UpstashSettings()
     followups: FollowupSettings = FollowupSettings()
+    project: ProjectSettings = ProjectSettings()
 
     root: Path = ROOT
     config_dir: Path = ROOT / "config"

@@ -3,6 +3,8 @@ name: steward follow-ups
 on:
   schedule:
     - cron: "*/10 * * * *"
+  repository_dispatch:
+    types: [steward_reconcile]
   workflow_dispatch: {}
 
 concurrency:
