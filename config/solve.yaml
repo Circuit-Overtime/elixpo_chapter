@@ -16,6 +16,9 @@ max_context_tokens: 3200
 max_file_tokens: 1400
 max_test_commands: 3
 max_setup_commands: 1
+semantic_correction_passes: 1
+semantic_correction_max_context_tokens: 6000
+semantic_correction_max_output_tokens: 3200
 command_timeout_seconds: 180
 # Mirrors the production two-phase model: dependency setup may use the network,
 # while coding and verification remain offline. All child environments exclude

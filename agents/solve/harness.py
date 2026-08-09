@@ -1244,7 +1244,21 @@ def run_harness(
                     )
             if return_code != 0 and not recovered_error_envelope:
                 raise HarnessError((stderr or f"coding harness exited with status {return_code}")[:3000])
-            metadata = {**metadata, "live_doctor": supervisor.snapshot()}
+            grounded_paths = list(
+                dict.fromkeys(
+                    [
+                        *(observed_gate.get("source_reads") or []),
+                        *(observed_gate.get("rtk_reads") or []),
+                        *(observed_gate.get("review_reads") or []),
+                        *(observed_gate.get("edited_paths") or []),
+                    ]
+                )
+            )
+            metadata = {
+                **metadata,
+                "grounded_paths": grounded_paths,
+                "live_doctor": supervisor.snapshot(),
+            }
             return outcome, usage, metadata
         except subprocess.TimeoutExpired as exc:
             raise HarnessError(f"coding harness exceeded its {timeout}-second timeout") from exc

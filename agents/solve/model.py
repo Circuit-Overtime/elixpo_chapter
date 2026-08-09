@@ -142,6 +142,53 @@ async def implement_step(
     return _parse(response, StepImplementation)
 
 
+async def implement_review_correction(
+    router,
+    *,
+    issue: dict,
+    findings: list[str],
+    current_diff: str,
+    allowed_paths: list[str],
+    exact_context: str,
+    max_tokens: int,
+) -> StepImplementation:
+    """Return one exact edit batch that resolves every semantic-review finding."""
+    name = "record_semantic_correction"
+    payload = {
+        "issue": {"title": issue.get("title"), "body": issue.get("body")},
+        "review_findings": findings,
+        "current_diff": truncate_text(current_diff, max_tokens=1800),
+        "allowed_paths": allowed_paths,
+        "exact_current_files": exact_context,
+        "rules": [
+            "Resolve every review finding with observable behavior, not declarations or placeholders.",
+            "Edit only allowed_paths and preserve unrelated behavior.",
+            "Use small exact replacements against exact_current_files.",
+            "Return one structured edit batch; do not explain or request more discovery.",
+        ],
+    }
+    response = await router.call(
+        "code",
+        [
+            Message(
+                role="system",
+                content=(
+                    _SYSTEM
+                    + _skill_body("implement-exact-edit")
+                    + "\n\nRepair a rejected bounded diff from concrete reviewer findings. "
+                    "Complete the behavior in one atomic structured edit batch."
+                ),
+            ),
+            Message(role="user", content=json.dumps(payload)),
+        ],
+        tools=[_tool(name, "Record exact replacements that resolve the semantic findings.", StepImplementation)],
+        tool_choice=_forced(name),
+        effort="low",
+        max_tokens=max_tokens,
+    )
+    return _parse(response, StepImplementation)
+
+
 async def review_diff(
     router,
     issue: dict,
