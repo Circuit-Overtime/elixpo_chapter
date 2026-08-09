@@ -10,10 +10,10 @@ import os
 from datetime import datetime, timezone
 
 import structlog
-
-from agents.steward.respond import safety_check
 from lib.github.issues import parse_issue_url
 from lib.state.ledger import Ledger
+
+from agents.steward.respond import safety_check
 
 log = structlog.get_logger()
 
@@ -23,7 +23,12 @@ class CelebrationRejected(RuntimeError):
 
 
 def build_terminal_action(pull: dict) -> dict | None:
-    outcome = "merged" if pull.get("merged_at") else "closed" if str(pull.get("state") or "").casefold() == "closed" else ""
+    if pull.get("merged_at"):
+        outcome = "merged"
+    elif str(pull.get("state") or "").casefold() == "closed":
+        outcome = "closed"
+    else:
+        outcome = ""
     if not outcome:
         return None
     head_sha = str((pull.get("head") or {}).get("sha") or "")

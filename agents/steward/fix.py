@@ -17,13 +17,13 @@ from pathlib import Path
 from typing import Literal
 
 import structlog
+from lib.state.followups import FollowupRecord
+from lib.workspace import Workspace, git_auth_env
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from rtk.models import FunctionDef, Message, ToolDef
 from rtk.truncate import truncate_text
 
 from agents.steward.respond import safety_check
-from lib.state.followups import FollowupRecord
-from lib.workspace import Workspace, git_auth_env
 
 log = structlog.get_logger()
 _FAILED_CONCLUSIONS = {"action_required", "cancelled", "failure", "startup_failure", "timed_out"}
@@ -222,7 +222,14 @@ def _feedback(reviews: list[dict], comments: list[dict], checks: list[dict], act
     return result
 
 
-async def _implementation(router, record: FollowupRecord, paths: list[str], context: str, feedback: list[dict], diff: str):
+async def _implementation(
+    router,
+    record: FollowupRecord,
+    paths: list[str],
+    context: str,
+    feedback: list[dict],
+    diff: str,
+):
     name = "record_steward_fix"
     payload = {
         "pull_request": {
@@ -286,7 +293,12 @@ def _verification_commands(workspace: Path, changed: list[str]) -> list[list[str
     if suffixes & {".js", ".jsx", ".ts", ".tsx"} and package_path.is_file():
         package = json.loads(package_path.read_text(encoding="utf-8"))
         scripts = package.get("scripts") or {}
-        manager = "pnpm" if (workspace / "pnpm-lock.yaml").is_file() else "yarn" if (workspace / "yarn.lock").is_file() else "npm"
+        if (workspace / "pnpm-lock.yaml").is_file():
+            manager = "pnpm"
+        elif (workspace / "yarn.lock").is_file():
+            manager = "yarn"
+        else:
+            manager = "npm"
         for name in ("typecheck", "check", "lint", "test"):
             if name in scripts:
                 commands.append([manager, "run", name] if manager == "npm" else [manager, name])
@@ -294,7 +306,12 @@ def _verification_commands(workspace: Path, changed: list[str]) -> list[list[str
         if not commands and (workspace / "tsconfig.json").is_file():
             commands.append(["./node_modules/.bin/tsc", "--noEmit"])
     if ".py" in suffixes:
-        commands.append(["python", "-m", "pytest"] if (workspace / "tests").is_dir() else ["python", "-m", "compileall", *changed])
+        command = (
+            ["python", "-m", "pytest"]
+            if (workspace / "tests").is_dir()
+            else ["python", "-m", "compileall", *changed]
+        )
+        commands.append(command)
     shell = [path for path in changed if Path(path).suffix.casefold() in {".sh", ".bash"}]
     commands.extend([["bash", "-n", path] for path in shell])
     workflows = [path for path in changed if Path(path).parts[:2] == (".github", "workflows")]

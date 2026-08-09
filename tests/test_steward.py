@@ -8,12 +8,16 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from agents.steward.celebrate import build_terminal_action, finalize_one
+from agents.steward.fix import _apply, _verification_env, build_fix_action
 from agents.steward.intake import IntakeRejected, seed_issue
 from agents.steward.poll import _subject_identity, reconcile
 from agents.steward.remember import register_submission
 from agents.steward.respond import authored_by_bot, contains_mention, marker
 from lib.github.gists import FollowupGist
 from lib.state.followups import FollowupMemory, FollowupRecord, bounded_ttl_days
+from lib.state.ledger import Ledger, PRRecord
+from lib.state.store import StateStore
 
 
 def _response(content: str):
@@ -165,6 +169,12 @@ def test_workflows_wire_turn_headroom_and_discussion_mentions():
     assert 'cron: "*/10 * * * *"' in steward_workflow
     assert "types: [steward_issue_intake]" in intake_workflow
     assert "python -m agents.steward.intake" in intake_workflow
+    fix_workflow = Path(".github/workflows/steward-fix.yml").read_text(encoding="utf-8")
+    terminal_workflow = Path(".github/workflows/steward-terminal.yml").read_text(encoding="utf-8")
+    assert "types: [steward_fix]" in fix_workflow
+    assert "python -m agents.steward.fix" in fix_workflow
+    assert "types: [steward_terminal]" in terminal_workflow
+    assert "python -m agents.steward.celebrate" in terminal_workflow
 
 
 def test_mention_intake_seeds_only_an_available_vet_slot(tmp_path):
@@ -186,8 +196,10 @@ def test_mention_intake_seeds_only_an_available_vet_slot(tmp_path):
 
 
 class FollowupAPI:
-    def __init__(self, *, merged=False):
+    def __init__(self, *, merged=False, changes_requested=False, failing=False):
         self.merged = merged
+        self.changes_requested = changes_requested
+        self.failing = failing
         self.posts = []
         self.dispatches = []
         self.comment = {
@@ -212,6 +224,8 @@ class FollowupAPI:
             "body": "Small patch.",
             "state": "closed" if self.merged else "open",
             "merged_at": "2026-08-04T01:00:00Z" if self.merged else None,
+            "closed_at": "2026-08-04T01:00:00Z" if self.merged else None,
+            "head": {"sha": "abc123"},
         }
 
     async def get_issue(self, owner, repo, number):
@@ -230,7 +244,22 @@ class FollowupAPI:
         return []
 
     async def get_pull_reviews(self, owner, repo, number):
-        return []
+        if not self.changes_requested:
+            return []
+        return [
+            {
+                "id": 41,
+                "state": "CHANGES_REQUESTED",
+                "submitted_at": "2026-08-04T00:10:00Z",
+                "body": "Use the shared color token.",
+                "user": {"login": "maintainer"},
+            }
+        ]
+
+    async def get_check_runs(self, owner, repo, ref):
+        if not self.failing:
+            return []
+        return [{"id": 51, "name": "typecheck", "status": "completed", "conclusion": "failure"}]
 
     async def create_issue_comment(self, owner, repo, number, body):
         self.posts.append(body)
@@ -274,17 +303,147 @@ async def test_reconcile_posts_progress_then_safe_reply_and_marks_source_handled
 
 
 @pytest.mark.asyncio
-async def test_reconcile_removes_merged_pr_without_model_calls():
+async def test_reconcile_dispatches_merged_pr_for_terminal_reconciliation_without_model_calls():
     api = FollowupAPI(merged=True)
     gist = MemoryGist(_tracked_memory())
     router = FakeRouter()
 
-    result = await reconcile(api, gist, router, bot_username="elixpoo", ttl_days=360)
+    result = await reconcile(
+        api,
+        gist,
+        router,
+        bot_username="elixpoo",
+        ttl_days=360,
+        control_repo="elixpoo/agent.elixpo",
+    )
 
     assert result["completed"] == 1
-    assert gist.memory.active == {}
-    assert gist.memory.completed[-1].outcome == "merged"
+    record = gist.memory.active["elixpo/project#12"]
+    assert record.pending_action["kind"] == "terminal"
+    assert record.pending_action["outcome"] == "merged"
+    assert api.dispatches[0][1]["event_type"] == "steward_terminal"
     assert router.roles == []
+
+
+@pytest.mark.asyncio
+async def test_reconcile_dispatches_one_changes_requested_fingerprint():
+    api = FollowupAPI(changes_requested=True)
+    gist = MemoryGist(_tracked_memory())
+    router = FakeRouter(
+        "SAFE",
+        "I’ve recorded the requested adjustment.",
+        "SAFE",
+        "SAFE",
+    )
+
+    result = await reconcile(
+        api,
+        gist,
+        router,
+        bot_username="elixpoo",
+        ttl_days=360,
+        control_repo="elixpoo/agent.elixpo",
+    )
+
+    record = gist.memory.active["elixpo/project#12"]
+    assert result["fixes"] == 1
+    assert record.status == "changes_requested"
+    assert record.pending_action["kind"] == "fix"
+    assert api.dispatches[0][1]["event_type"] == "steward_fix"
+
+
+def test_fix_fingerprint_uses_latest_reviewer_state_and_current_checks():
+    pull = {"head": {"sha": "head-1"}}
+    reviews = [
+        {
+            "id": 1,
+            "state": "CHANGES_REQUESTED",
+            "submitted_at": "2026-08-04T00:00:00Z",
+            "user": {"login": "maintainer"},
+        },
+        {
+            "id": 2,
+            "state": "APPROVED",
+            "submitted_at": "2026-08-04T01:00:00Z",
+            "user": {"login": "maintainer"},
+        },
+    ]
+    checks = [{"id": 7, "status": "completed", "conclusion": "failure"}]
+
+    action = build_fix_action(pull, reviews, checks)
+
+    assert action is not None
+    assert action["review_ids"] == []
+    assert action["check_ids"] == [7]
+    assert build_fix_action(pull, reviews, []) is None
+    assert build_fix_action({"head": {"sha": "head-2"}}, reviews, checks)["fingerprint"] != action["fingerprint"]
+
+
+def test_followup_edit_is_confined_and_verification_env_has_no_secrets(tmp_path, monkeypatch):
+    source = tmp_path / "app.ts"
+    source.write_text("const color = 'blue';\n")
+    implementation = SimpleNamespace(
+        edits=[
+            SimpleNamespace(
+                path="app.ts",
+                replacements=[SimpleNamespace(old="'blue'", new="'red'")],
+            )
+        ]
+    )
+    monkeypatch.setenv("AGENT_GITHUB_SOLVER_TOKEN", "secret")
+    monkeypatch.setenv("ELIXPO_POLLINATIONS_API_KEY", "secret")
+
+    changed = _apply(tmp_path, implementation, {"app.ts"})
+    env = _verification_env()
+
+    assert changed == ["app.ts"]
+    assert "'red'" in source.read_text()
+    assert "AGENT_GITHUB_SOLVER_TOKEN" not in env
+    assert "ELIXPO_POLLINATIONS_API_KEY" not in env
+
+
+@pytest.mark.asyncio
+async def test_terminal_reconciliation_updates_issue_ledger_and_completes_memory(tmp_path):
+    now = datetime(2026, 8, 4, tzinfo=timezone.utc)
+    record = FollowupRecord.create(
+        repository="elixpo/project",
+        subject_number=12,
+        subject_url="https://github.com/elixpo/project/pull/12",
+        issue_url="https://github.com/elixpo/project/issues/9",
+        now=now,
+    )
+    pull = {
+        "state": "closed",
+        "merged_at": "2026-08-04T01:00:00Z",
+        "closed_at": "2026-08-04T01:00:00Z",
+        "head": {"sha": "abc123"},
+    }
+    action = build_terminal_action(pull)
+    record.queue_action(action, now=now)
+    gist = MemoryGist(FollowupMemory(active={record.key: record}))
+    store = StateStore(tmp_path)
+    Ledger(prs={"elixpo/project#9": PRRecord(status="awaiting_review")}).save(store)
+
+    class API:
+        async def get_pull(self, owner, repo, number):
+            return pull
+
+        async def create_issue_comment(self, owner, repo, number, body):
+            raise AssertionError("celebration is disabled")
+
+    result = await finalize_one(
+        API(),
+        gist,
+        FakeRouter(),
+        store,
+        key=record.key,
+        fingerprint=action["fingerprint"],
+    )
+
+    assert result["outcome"] == "merged"
+    assert Ledger.load(store).prs["elixpo/project#9"].status == "merged"
+    assert record.key not in gist.memory.active
+    assert gist.memory.completed[-1].outcome == "merged"
 
 
 @pytest.mark.asyncio

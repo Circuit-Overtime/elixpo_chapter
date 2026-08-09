@@ -104,6 +104,7 @@ async def reconcile(
 
     for key, record in list(memory.active.items()):
         owner, repo = record.repository.split("/", 1)
+        reviews: list[dict] = []
         if record.subject_kind == "pull_request":
             subject = await api.get_pull(owner, repo, record.subject_number)
             terminal_action = build_terminal_action(subject)
@@ -150,7 +151,7 @@ async def reconcile(
         comments = list(await api.get_issue_comments(owner, repo, record.subject_number) or [])
         if record.subject_kind == "pull_request":
             comments.extend(await api.get_pull_comments(owner, repo, record.subject_number) or [])
-            comments.extend(await api.get_pull_reviews(owner, repo, record.subject_number) or [])
+            comments.extend(reviews)
         if contains_mention(str(subject.get("body") or "")):
             comments.append(
                 {

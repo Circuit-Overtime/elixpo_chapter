@@ -98,7 +98,17 @@ class Workspace:
             raise WorkspaceError(f"workspace already exists: {self.root}")
         env = git_auth_env(token)
         self._run(
-            ["git", "clone", "--filter=blob:none", "--no-tags", "--single-branch", "--branch", branch, fork_url, str(self.root)],
+            [
+                "git",
+                "clone",
+                "--filter=blob:none",
+                "--no-tags",
+                "--single-branch",
+                "--branch",
+                branch,
+                fork_url,
+                str(self.root),
+            ],
             env=env,
         )
         self._run(["git", "remote", "add", "upstream", upstream_url], cwd=self.root)
