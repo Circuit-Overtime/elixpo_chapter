@@ -43,7 +43,7 @@ Solve target sandbox.
     requests read, Contents read, and Metadata read.
   - Issues write is required for automatic Discussion labels.
 
-- [ ] `ELIXPOO_GITHUB_PROJECT_TOKEN`
+- [x] `ELIXPOO_GITHUB_PROJECT_TOKEN`
   - Owner: `elixpoo`.
   - Read access to public Issues and Pull requests.
   - Read/write access to the selected GitHub Project V2.
@@ -57,7 +57,7 @@ or copy it as an organization secret.
 - [x] `ELIXPOO_FOLLOWUP_GIST_ID=<private-gist-id>`
 - [x] `ELIXPO_GITHUB_CONTROL_REPO=elixpo/agent.elixpo`
 - [x] `ELIXPO_GITHUB_PROJECT_OWNER=<project-owner-login>`
-- [ ] `ELIXPO_GITHUB_PROJECT_NUMBER=<project-number>`
+- [x] `ELIXPO_GITHUB_PROJECT_NUMBER=<project-number>`
 - [x] `ELIXPO_MENTION_TRUSTED_USERS=<comma-separated-logins>`
 - [x] `ELIXPO_MENTION_TRUSTED_ORGS=elixpo`
 - [ ] `ELIXPO_MENTION_WATCHED_REPOS=<comma-separated-owner/repository-names>`
