@@ -1,14 +1,14 @@
 {
-  "authorization_id": "submit:c54071f591505d0880da",
-  "authorization_source": "submit",
-  "cleaned_at": "2026-08-09T10:42:10.859375+00:00",
-  "doctor_fingerprint": "",
+  "authorization_id": "d84fa813cc31e8ada2b4",
+  "authorization_source": "doctor",
+  "cleaned_at": "2026-08-09T11:37:35.897039+00:00",
+  "doctor_fingerprint": "d84fa813cc31e8ada2b4",
   "key": "elixpo/lixrl.com#18",
   "results": [
     {
       "detail": "",
       "kind": "workspace",
-      "locator": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-18-96a295",
+      "locator": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-18-9b5e82",
       "outcome": "removed"
     },
     {
@@ -18,7 +18,7 @@
       "outcome": "preserved"
     }
   ],
-  "run_id": "711ff073648a8a87",
+  "run_id": "3f5464cea6a9292a",
   "schema_version": 1,
   "status": "complete"
 }
