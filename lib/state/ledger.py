@@ -36,10 +36,12 @@ class Ledger(BaseModel):
 
     @classmethod
     def load(cls, store: StateStore) -> Ledger:
-        return cls(**(store.read_json(LEDGER_FILE, {}) or {}))
+        if store.read_json(LEDGER_FILE, None) is None:
+            return cls()
+        return cls(**(store.read_state(LEDGER_FILE, {}, expected_producer={"ledger", "migration"}) or {}))
 
     def save(self, store: StateStore) -> None:
-        store.write_json(LEDGER_FILE, self.model_dump())
+        store.write_state(LEDGER_FILE, self.model_dump(), producer="ledger")
 
     # --- blocklist (opt-out is permanent) ---
 

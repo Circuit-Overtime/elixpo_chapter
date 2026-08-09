@@ -12,7 +12,7 @@ import shlex
 import shutil
 import subprocess
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -440,7 +440,14 @@ async def fix_one(api, gist, router, store, *, key: str, fingerprint: str, works
         "workspace": str(root),
         "started_at": datetime.now(timezone.utc).isoformat(),
     }
-    store.write_json("steward_fix.json", receipt)
+    store.write_state(
+        "steward_fix.json",
+        receipt,
+        producer="steward-fix",
+        run_id=fingerprint,
+        key=key,
+        ttl=timedelta(days=30),
+    )
     try:
         paths = _candidate_paths(root, files)
         feedback = _feedback(reviews, comments, checks, action)
@@ -514,7 +521,14 @@ async def fix_one(api, gist, router, store, *, key: str, fingerprint: str, works
                 "completed_at": datetime.now(timezone.utc).isoformat(),
             }
         )
-        store.write_json("steward_fix.json", receipt)
+        store.write_state(
+            "steward_fix.json",
+            receipt,
+            producer="steward-fix",
+            run_id=fingerprint,
+            key=key,
+            ttl=timedelta(days=30),
+        )
         return receipt
     except Exception as exc:
         record.fix_attempts[fingerprint] = record.fix_attempts.get(fingerprint, 0) + 1
@@ -532,7 +546,14 @@ async def fix_one(api, gist, router, store, *, key: str, fingerprint: str, works
             )
             ledger.save(store)
         receipt.update({"status": "failed", "error": str(exc)[:1000]})
-        store.write_json("steward_fix.json", receipt)
+        store.write_state(
+            "steward_fix.json",
+            receipt,
+            producer="steward-fix",
+            run_id=fingerprint,
+            key=key,
+            ttl=timedelta(days=30),
+        )
         raise
     finally:
         workspace.cleanup()

@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "contracts": {
+    "blocklist.json": {
+      "schema_version": 1,
+      "state_file": "blocklist.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "sequence": 1,
+      "run_id": "",
+      "key": "",
+      "status": "",
+      "expires_at": ""
+    },
+    "candidates.json": {
+      "schema_version": 1,
+      "state_file": "candidates.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "efdde6d92d4f66142d1f944abcdc01274bc17eb31af9927ef65b01223ce84900",
+      "sequence": 1,
+      "run_id": "",
+      "key": "",
+      "status": "",
+      "expires_at": ""
+    },
+    "doctor.json": {
+      "schema_version": 1,
+      "state_file": "doctor.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "caf8b52d4ce471b1e06326920c045734636a12ad48cb0093c18f6237fcda9b40",
+      "sequence": 1,
+      "run_id": "3f5464cea6a9292a",
+      "key": "elixpo/lixrl.com#18",
+      "status": "decided",
+      "expires_at": ""
+    },
+    "janitor.json": {
+      "schema_version": 1,
+      "state_file": "janitor.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "5fc1b9459899f0b849a34107e07f7866369469bfde369a2fd047392aac727aa6",
+      "sequence": 1,
+      "run_id": "3f5464cea6a9292a",
+      "key": "elixpo/lixrl.com#18",
+      "status": "complete",
+      "expires_at": ""
+    },
+    "ledger.json": {
+      "schema_version": 1,
+      "state_file": "ledger.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "7556a6630e1adf1ff91b0f151d43abc234bfc5672a03ba27c73e9f585b860aa5",
+      "sequence": 1,
+      "run_id": "",
+      "key": "",
+      "status": "",
+      "expires_at": ""
+    },
+    "pick.json": {
+      "schema_version": 1,
+      "state_file": "pick.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "c7760cf5460f0a33beeac91cafc3d062a7c9ab47def98fe17641d44317a27e06",
+      "sequence": 1,
+      "run_id": "",
+      "key": "",
+      "status": "no_pick",
+      "expires_at": ""
+    },
+    "rejected_issues.json": {
+      "schema_version": 1,
+      "state_file": "rejected_issues.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "f6c252273a79f1ab32683c9cb64dfc571aa0a15b9010f4d030d5f49aa936005a",
+      "sequence": 1,
+      "run_id": "",
+      "key": "",
+      "status": "",
+      "expires_at": ""
+    },
+    "solve.json": {
+      "schema_version": 1,
+      "state_file": "solve.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "82d7444088ae33c61fc50192bbc03a672a678d48def6b2e71c3fdde5f4052292",
+      "sequence": 1,
+      "run_id": "3f5464cea6a9292a",
+      "key": "elixpo/lixrl.com#18",
+      "status": "terminated",
+      "expires_at": ""
+    },
+    "submit.json": {
+      "schema_version": 1,
+      "state_file": "submit.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "7680205411fdb877648b80c1f646f4d8a528484b3b94aae315179498a373bde5",
+      "sequence": 1,
+      "run_id": "",
+      "key": "elixpo/lixrl.com#18",
+      "status": "submitted",
+      "expires_at": ""
+    },
+    "triaged.json": {
+      "schema_version": 1,
+      "state_file": "triaged.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "2d414a700229263562dc22a7d94ae621585be0145d6a650dc5f3488d421d539e",
+      "sequence": 1,
+      "run_id": "",
+      "key": "",
+      "status": "",
+      "expires_at": ""
+    },
+    "vet.json": {
+      "schema_version": 1,
+      "state_file": "vet.json",
+      "producer": "migration",
+      "produced_at": "2026-08-09T12:00:00+00:00",
+      "payload_sha256": "f207fd0e80837a81e798b50c7c69d1434ddacfec044323e60e54bd045fd28092",
+      "sequence": 1,
+      "run_id": "",
+      "key": "elixpo/lixrl.com#18",
+      "status": "approved",
+      "expires_at": ""
+    }
+  },
+  "updated_at": "2026-08-09T12:00:00+00:00"
+}

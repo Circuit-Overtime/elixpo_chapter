@@ -105,7 +105,7 @@ def test_plan_is_bounded_by_time_files_and_checks():
 def test_explicit_solve_reports_the_recorded_vet_rejection(tmp_path):
     store = StateStore(tmp_path)
     url = "https://github.com/elixpo/lixrl.com/issues/18"
-    store.write_json(
+    store.write_state(
         "vet.json",
         {
             "url": url,
@@ -113,6 +113,7 @@ def test_explicit_solve_reports_the_recorded_vet_rejection(tmp_path):
             "test_mode": True,
             "reasons": ["estimated work time 20 minutes is outside 1-15"],
         },
+        producer="vet",
     )
 
     with pytest.raises(SolveRejected, match="Vet rejected this target"):
@@ -1761,9 +1762,10 @@ def test_owned_target_requires_matching_test_vet(tmp_path, monkeypatch):
     store = StateStore(tmp_path)
     url = "https://github.com/elixpo/lixrl.com/issues/9"
     monkeypatch.setattr(core, "is_test_repository", lambda repo: repo == "elixpo/lixrl.com")
-    store.write_json(
+    store.write_state(
         "vet.json",
         {"url": url, "suitable": True, "test_mode": True, "issue_updated_at": "2026-08-02T16:41:07Z"},
+        producer="vet",
     )
     assert resolve_target(store, url, True) == url
 

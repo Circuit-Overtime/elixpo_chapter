@@ -152,7 +152,12 @@ async def _run() -> int:
     finally:
         await api.close()
 
-    store.write_json("candidates.json", [c.model_dump() for c in cands])
+    store.write_state(
+        "candidates.json",
+        [c.model_dump() for c in cands],
+        producer="scout",
+        ttl=timedelta(hours=24),
+    )
     log.info("scout.done", count=len(cands), languages=languages)
     return 0
 

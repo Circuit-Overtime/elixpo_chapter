@@ -7,7 +7,7 @@ import asyncio
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import structlog
 from lib.github.issues import parse_issue_url
@@ -89,7 +89,14 @@ async def finalize_one(api, gist, router, store, *, key: str, fingerprint: str, 
         "public_message": bool(public_message),
         "completed_at": completion.completed_at,
     }
-    store.write_json("steward_celebrate.json", receipt)
+    store.write_state(
+        "steward_celebrate.json",
+        receipt,
+        producer="steward-celebrate",
+        run_id=fingerprint,
+        key=key,
+        ttl=timedelta(days=30),
+    )
     return receipt
 
 
