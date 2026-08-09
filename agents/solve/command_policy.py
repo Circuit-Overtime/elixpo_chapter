@@ -82,6 +82,10 @@ def repository_command_prefixes(workspace: Path) -> list[str]:
         prefixes.extend(["cargo check", "cargo test", "cargo clippy", "cargo fmt --check"])
     if any(path.suffix == ".sh" for path in workspace.rglob("*.sh")):
         prefixes.extend(["shellcheck", "bash -n", "sh -n"])
+    if (workspace / ".github/workflows").is_dir():
+        prefixes.append("actionlint")
+    if any(workspace.glob("*.yml")) or any(workspace.glob("*.yaml")):
+        prefixes.append("yamllint")
     return list(dict.fromkeys(prefixes))
 
 

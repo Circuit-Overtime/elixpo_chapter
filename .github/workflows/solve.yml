@@ -75,6 +75,11 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         with:
           python-version: "3.11"
+      - name: Setup Node verification runtime
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Setup Node harness runtime
         if: steps.gate.outputs.run == 'true'
         uses: oven-sh/setup-bun@v2
@@ -100,7 +105,10 @@ jobs:
           rtk --version
       - name: Install
         if: steps.gate.outputs.run == 'true'
-        run: pip install -e .
+        run: |
+          pip install -e . yamllint
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Solve
         id: solve
         if: steps.gate.outputs.run == 'true'

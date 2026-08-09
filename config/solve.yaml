@@ -50,7 +50,6 @@ live_abnormal_token_extra: 100000
 verification_node_heap_mb: 512
 ccr_start_timeout_seconds: 60
 blocked_change_prefixes:
-  - .github/workflows/
   - .github/actions/
   - .env
   - secrets/
@@ -93,6 +92,10 @@ allowed_command_prefixes:
   - mypy
   - pyright
   - shellcheck
+  - bash -n
+  - sh -n
+  - actionlint
+  - yamllint
 
 allowed_setup_prefixes:
   - npm ci --ignore-scripts

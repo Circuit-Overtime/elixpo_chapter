@@ -110,6 +110,18 @@ def validate_verification_record(solve_state: dict) -> None:
     verification = [item for item in checks if item.get("kind", "verification") == "verification"]
     if not verification:
         raise SubmitRejected("Solve has no attempted verification record")
+    unavailable = [
+        item
+        for item in verification
+        if item.get("exit_code") != 0
+        and re.search(
+            r"(?:execvp|command not found|no such file or directory)",
+            str(item.get("output") or ""),
+            flags=re.IGNORECASE,
+        )
+    ]
+    if unavailable:
+        raise SubmitRejected("Solve verification tool was unavailable; rerun Solve in a complete toolchain")
 
     setup_passed = any(
         item.get("kind") in {"setup", "setup_fallback"} and item.get("exit_code") == 0 for item in checks
@@ -253,6 +265,8 @@ def validate_solve_state(solve_state: dict, workspace_base: Path) -> Path:
     review = solve_state.get("review") or {}
     if review.get("approved") is not True or review.get("findings"):
         raise SubmitRejected("Solve has no clean approved review")
+    if review.get("source") != "independent_semantic_diff_review":
+        raise SubmitRejected("Solve has no independent semantic diff review")
     harness = solve_state.get("harness") or {}
     if harness.get("structured_fallback"):
         reviewed = set(harness.get("reviewed_paths") or [])

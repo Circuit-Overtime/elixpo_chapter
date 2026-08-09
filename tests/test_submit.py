@@ -24,7 +24,11 @@ def _state():
         "fork_repo": "Circuit-Overtime/lixrl.com",
         "branch": "patch/copy-full-llm-text-9-a1b2",
         "status": "ready_to_submit",
-        "review": {"approved": True, "findings": []},
+        "review": {
+            "approved": True,
+            "findings": [],
+            "source": "independent_semantic_diff_review",
+        },
         "head_sha": "a" * 40,
         "summary": "Copy the complete documentation abstraction.",
         "harness": {"commit_message": "fix(docs): preserve leaf content in LLM copy payload"},
@@ -70,6 +74,26 @@ def test_submit_rejects_undisclosed_verification_failure():
     }
 
     with pytest.raises(SubmitRejected, match="undisclosed"):
+        validate_verification_record(state)
+
+
+def test_submit_rejects_disclosed_missing_verification_tool():
+    state = {
+        **_state(),
+        "checks": [
+            {
+                "kind": "verification",
+                "command": "npx tsc --noEmit",
+                "exit_code": 1,
+                "output": "bwrap: execvp npx: No such file or directory",
+            }
+        ],
+        "verification_exceptions": [
+            {"kind": "verification", "command": "npx tsc --noEmit", "exit_code": 1}
+        ],
+    }
+
+    with pytest.raises(SubmitRejected, match="tool was unavailable"):
         validate_verification_record(state)
 
 

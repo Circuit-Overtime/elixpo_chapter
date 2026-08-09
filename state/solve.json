@@ -1,15 +1,35 @@
 {
   "base_branch": "main",
-  "branch": "patch/bug-the-graph-of-the-tracker-of-clicks-is-di-18-0e29",
+  "branch": "patch/bug-the-graph-of-the-tracker-of-clicks-is-di-18-49a8",
+  "checks": [
+    {
+      "command": "npm ci --ignore-scripts",
+      "exit_code": 1,
+      "kind": "setup",
+      "output": "[sandbox=bubblewrap]\n[FAIL] Command failed (exit code: 1)\n  bwrap: execvp npm: No such file or directory\n"
+    },
+    {
+      "command": "npm install --ignore-scripts --no-audit --no-fund",
+      "exit_code": 1,
+      "kind": "setup_fallback",
+      "output": "[sandbox=bubblewrap]\n[FAIL] Command failed (exit code: 1)\n  bwrap: execvp npm: No such file or directory\n"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "exit_code": 1,
+      "kind": "verification",
+      "output": "[sandbox=bubblewrap]\n[FAIL] Command failed (exit code: 1)\n  bwrap: execvp npx: No such file or directory\n"
+    }
+  ],
   "cleanup": {
-    "cleaned_at": "2026-08-09T10:33:33.106446+00:00",
-    "doctor_fingerprint": "a566525b26c2ee64ee75",
+    "authorized_by": "submit",
+    "cleaned_at": "2026-08-09T10:42:10.859375+00:00",
     "owner": "janitor",
     "resources": [
       {
         "disposition": "remove_after_terminal_decision",
         "kind": "workspace",
-        "locator": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-18-d41f16",
+        "locator": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-18-96a295",
         "safe_root": "/tmp/elixpoo-workspaces"
       },
       {
@@ -18,60 +38,105 @@
         "locator": "elixpoo/lixrl.com"
       }
     ],
-    "run_id": "47d377bb9f5530d7",
+    "run_id": "711ff073648a8a87",
     "schema_version": 1,
-    "status": "complete"
+    "status": "complete",
+    "submission_head_sha": "c54071f591505d0880dad412a514bd873738fe5a"
   },
-  "doctor": {
-    "decided_at": "2026-08-09T10:33:32.981656+00:00",
-    "decision": "terminate",
-    "fingerprint": "a566525b26c2ee64ee75",
-    "status": "decided"
-  },
-  "doctor_live": {
-    "edit_calls": 3,
-    "loop_token_stop_threshold": 480000,
-    "repeated_chain_events": 0,
-    "run_id": "47d377bb9f5530d7",
-    "schema_version": 1,
-    "status": "terminal",
-    "stop_reason": "",
-    "target_exceeded": false,
-    "token_limit": 750000,
-    "token_spent_observed": 135325,
-    "token_target": 240000,
-    "tool_calls": 14,
-    "turns_observed": 19,
-    "updated_at": "2026-08-09T10:33:32.549054+00:00",
-    "warnings": []
-  },
-  "elapsed_seconds": 166.453,
-  "error": "coding harness produced no diff",
-  "failed_at": "2026-08-09T10:33:32.613742+00:00",
-  "failure": {
-    "candidate_action": "terminate",
-    "category": "policy",
-    "exception_type": "SolveRejected",
-    "message": "coding harness produced no diff",
-    "model_route": "qwen-coder",
-    "occurred_at": "2026-08-09T10:33:32.613742+00:00",
-    "retryable": false,
-    "schema_version": 1,
-    "stage": "harness",
-    "token_overage": 0
-  },
+  "commits": [
+    "c54071f591505d0880dad412a514bd873738fe5a"
+  ],
+  "finished_at": "2026-08-09T10:41:57.627783+00:00",
   "fork_repo": "elixpoo/lixrl.com",
+  "harness": {
+    "commit_message": "fix: The graph of the tracker of clicks is discoloured on the page of a particular link settings",
+    "duration_ms": 38014,
+    "estimated_minutes": 1,
+    "live_doctor": {
+      "edit_calls": 2,
+      "loop_token_stop_threshold": 480000,
+      "repeated_chain_events": 0,
+      "run_id": "711ff073648a8a87",
+      "schema_version": 1,
+      "status": "terminal",
+      "stop_reason": "",
+      "target_exceeded": false,
+      "token_limit": 750000,
+      "token_spent_observed": 52828,
+      "token_target": 240000,
+      "tool_calls": 6,
+      "turns_observed": 11,
+      "updated_at": "2026-08-09T10:41:57.317669+00:00",
+      "warnings": []
+    },
+    "rationale": "The coding harness produced a non-empty diff; deterministic repository gates validate it.",
+    "review_source": "deterministic_diff_gate",
+    "reviewed_paths": [
+      "app/components/ClicksChart.tsx"
+    ],
+    "session_id": "052b2b7b-620d-4341-8a36-94b1f6a6ef24",
+    "setup_commands": [
+      "npm ci --ignore-scripts"
+    ],
+    "solvable": true,
+    "structured_fallback": true,
+    "structured_fallback_reason": "grounded_edit_without_structured_payload",
+    "summary": "The graph of the tracker of clicks is discoloured on the page of a particular link settings",
+    "terminal_subtype": "success",
+    "turns": 11,
+    "verification_commands": [
+      "npx tsc --noEmit"
+    ],
+    "verification_inferred": true
+  },
+  "head_sha": "c54071f591505d0880dad412a514bd873738fe5a",
+  "issue_number": 18,
   "issue_url": "https://github.com/elixpo/lixrl.com/issues/18",
   "key": "elixpo/lixrl.com#18",
   "model_route": "qwen-coder",
-  "run_id": "47d377bb9f5530d7",
-  "stage": "harness",
-  "started_at": "2026-08-09T10:30:51.049519+00:00",
-  "status": "terminated",
+  "pr_url": "https://github.com/elixpo/lixrl.com/pull/19",
+  "rationale": "The coding harness produced a non-empty diff; deterministic repository gates validate it.",
+  "review": {
+    "approved": true,
+    "findings": [],
+    "source": "deterministic_diff_review_with_reported_verification",
+    "summary": "The graph of the tracker of clicks is discoloured on the page of a particular link settings"
+  },
+  "run_id": "711ff073648a8a87",
+  "stage": "complete",
+  "started_at": "2026-08-09T10:38:51.002196+00:00",
+  "status": "submitted",
+  "summary": "The graph of the tracker of clicks is discoloured on the page of a particular link settings",
+  "target_files": [
+    "app/components/ClicksChart.tsx"
+  ],
   "test_mode": true,
+  "title": "[BUG] The graph of the tracker of clicks is discoloured on the page of a particular link settings",
   "token_limit": 750000,
-  "token_spent": 135325,
+  "token_spent": 52828,
   "token_target": 240000,
+  "token_target_exceeded": false,
   "upstream_repo": "elixpo/lixrl.com",
-  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-18-d41f16"
+  "verification_exceptions": [
+    {
+      "command": "npm ci --ignore-scripts",
+      "detail": "[sandbox=bubblewrap] [FAIL] Command failed (exit code: 1) bwrap: execvp npm: No such file or directory",
+      "exit_code": 1,
+      "kind": "setup"
+    },
+    {
+      "command": "npm install --ignore-scripts --no-audit --no-fund",
+      "detail": "[sandbox=bubblewrap] [FAIL] Command failed (exit code: 1) bwrap: execvp npm: No such file or directory",
+      "exit_code": 1,
+      "kind": "setup_fallback"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "detail": "[sandbox=bubblewrap] [FAIL] Command failed (exit code: 1) bwrap: execvp npx: No such file or directory",
+      "exit_code": 1,
+      "kind": "verification"
+    }
+  ],
+  "verification_status": "exceptions",
+  "workspace": "/tmp/elixpoo-workspaces/elixpo-lixrl-com-18-96a295"
 }

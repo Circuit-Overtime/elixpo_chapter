@@ -29,6 +29,7 @@ from agents.solve.git import (
     validate_command,
 )
 from agents.solve.harness import run_harness
+from agents.solve.model import review_diff
 from agents.solve.models import SolvePlan
 from agents.solve.verification_plan import complete_verification_plan
 
@@ -403,6 +404,40 @@ async def solve(
     observed = set(changed_files(root))
     if observed != set(targets):
         raise SolveRejected(f"verification changed the working tree: {sorted(observed ^ set(targets))}")
+    unavailable = [
+        check
+        for check in checks
+        if check.get("kind") == "verification"
+        and int(check.get("exit_code") or 0) != 0
+        and re.search(
+            r"(?:execvp|command not found|no such file or directory)",
+            str(check.get("output") or ""),
+            flags=re.IGNORECASE,
+        )
+    ]
+    if unavailable:
+        commands = ", ".join(str(check.get("command") or "") for check in unavailable)
+        raise SolveRejected(f"required verification tool unavailable: {commands}")
+
+    running["stage"] = "semantic_review"
+    store.write_json("solve.json", running)
+    review_diff_text = git(root, "diff", "--unified=40", "--", *targets, timeout=60)
+    review_verdict = await review_diff(
+        router,
+        issue,
+        {
+            "source": "bounded_coding_harness",
+            "target_files": sorted(targets),
+            "verification_exceptions": verification_exceptions,
+        },
+        review_diff_text,
+        checks,
+    )
+    _budget_guard(router)
+    if not review_verdict.approved or review_verdict.findings:
+        findings = "; ".join(review_verdict.findings[:3]) or review_verdict.summary
+        raise SolveRejected(f"semantic self-review rejected implementation: {findings}")
+
     running["stage"] = "committing"
     store.write_json("solve.json", running)
     commit_sha = commit_files(root, targets, outcome.commit_message)
@@ -449,14 +484,10 @@ async def solve(
             "verification_inferred": verification_inferred,
         },
         "review": {
-            "approved": True,
-            "findings": [],
-            "summary": outcome.summary,
-            "source": (
-                "deterministic_diff_review_with_reported_verification"
-                if harness_metadata.get("structured_fallback")
-                else "bounded_harness_self_review_with_reported_verification"
-            ),
+            "approved": review_verdict.approved,
+            "findings": review_verdict.findings,
+            "summary": review_verdict.summary,
+            "source": "independent_semantic_diff_review",
         },
         "token_spent": router.budget.spent,
         "token_target": int(policy.get("token_target", router.budget.limit)),
