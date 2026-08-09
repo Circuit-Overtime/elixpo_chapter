@@ -107,38 +107,64 @@ class Board:
         """Explicitly create one public operations Project; never called by reconciliation."""
         query = """
         query($login:String!) {
-          organization(login:$login) { id }
-          user(login:$login) { id }
+          repositoryOwner(login:$login) {
+            __typename
+            ... on Organization {
+              id
+              projectsV2(first:100) { nodes { id number title closed } }
+            }
+            ... on User {
+              id
+              projectsV2(first:100) { nodes { id number title closed } }
+            }
+          }
         }
         """
         identity = await api.graphql(query, {"login": owner})
-        owner_id = str((identity.get("organization") or {}).get("id") or (identity.get("user") or {}).get("id") or "")
+        repository_owner = identity.get("repositoryOwner") or {}
+        owner_id = str(repository_owner.get("id") or "")
         if not owner_id:
             raise BoardRejected(f"GitHub Project owner {owner!r} was not found")
-        mutation = """
-        mutation($owner:ID!,$title:String!) {
-          createProjectV2(input:{ownerId:$owner,title:$title}) { projectV2 { id number title } }
-        }
-        """
-        result = await api.graphql(mutation, {"owner": owner_id, "title": title})
-        project = (result.get("createProjectV2") or {}).get("projectV2")
-        if not project:
-            raise BoardRejected("GitHub did not create the operations Project")
+        project = next(
+            (
+                candidate
+                for candidate in ((repository_owner.get("projectsV2") or {}).get("nodes") or [])
+                if candidate and str(candidate.get("title") or "") == title and not candidate.get("closed")
+            ),
+            None,
+        )
+        reused = project is not None
+        if project is None:
+            mutation = """
+            mutation($owner:ID!,$title:String!) {
+              createProjectV2(input:{ownerId:$owner,title:$title}) { projectV2 { id number title } }
+            }
+            """
+            result = await api.graphql(mutation, {"owner": owner_id, "title": title})
+            project = (result.get("createProjectV2") or {}).get("projectV2")
+            if not project:
+                raise BoardRejected("GitHub did not create the operations Project")
+        board = cls(api, owner, int(project["number"]))
         await api.graphql(
             "mutation($project:ID!){updateProjectV2(input:{projectId:$project,public:true}){projectV2{id}}}",
             {"project": project["id"]},
         )
-        return cls(api, owner, int(project["number"])), project
+        if reused:
+            project = await board.project()
+        return board, project
 
     async def project(self) -> dict[str, Any]:
         query = (
             "query($login:String!,$number:Int!){"
-            f"organization(login:$login){{projectV2(number:$number){{{_PROJECT_FRAGMENT}}}}}"
-            f"user(login:$login){{projectV2(number:$number){{{_PROJECT_FRAGMENT}}}}}"
+            "repositoryOwner(login:$login){"
+            "__typename "
+            f"... on Organization{{projectV2(number:$number){{{_PROJECT_FRAGMENT}}}}}"
+            f"... on User{{projectV2(number:$number){{{_PROJECT_FRAGMENT}}}}}"
+            "}"
             "}"
         )
         data = await self.api.graphql(query, {"login": self.owner, "number": self.number})
-        project = (data.get("organization") or {}).get("projectV2") or (data.get("user") or {}).get("projectV2")
+        project = (data.get("repositoryOwner") or {}).get("projectV2")
         if not project:
             raise BoardRejected(f"GitHub Project {self.owner}/{self.number} was not found")
         return project
@@ -204,7 +230,7 @@ class Board:
             if view is None:
                 mutation = """
                 mutation($project:ID!,$name:String!,$visible:[ID!]) {
-                  createProjectV2View(input:{projectId:$project,name:$name,layout:TABLE,
+                  createProjectV2View(input:{projectId:$project,name:$name,layout:TABLE_LAYOUT,
                                              configuration:{visibleFieldIds:$visible}}) {
                     projectV2View { id name }
                   }
@@ -263,7 +289,7 @@ class Board:
             }
             """
             data = await self.api.graphql(query, {"project": project_id, "cursor": cursor})
-            connection = ((data.get("node") or {}).get("items") or {})
+            connection = (data.get("node") or {}).get("items") or {}
             for item in connection.get("nodes") or []:
                 if str((item.get("content") or {}).get("id") or "") == issue_node_id:
                     return item
@@ -292,7 +318,7 @@ class Board:
     @staticmethod
     def _values(item: dict) -> dict[str, Any]:
         values: dict[str, Any] = {}
-        for node in ((item.get("fieldValues") or {}).get("nodes") or []):
+        for node in (item.get("fieldValues") or {}).get("nodes") or []:
             name = str((node.get("field") or {}).get("name") or "")
             if not name:
                 continue
@@ -331,8 +357,7 @@ class Board:
                 raise BoardRejected("stale run ID attempted to overwrite a newer Project item")
 
         status_options = {
-            str(option["name"]): str(option["id"])
-            for option in fields["Agent Status"].get("options") or []
+            str(option["name"]): str(option["id"]) for option in fields["Agent Status"].get("options") or []
         }
         values: dict[str, Any] = {
             "Agent Status": {"singleSelectOptionId": status_options[snapshot.status]},

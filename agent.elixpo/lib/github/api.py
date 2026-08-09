@@ -36,6 +36,8 @@ class GitHubAPI:
         self._installation_id = installation_id
         self._static_token = token
         self._client: httpx.AsyncClient | None = None
+        self._client_token = ""
+        self._client_lock = asyncio.Lock()
 
     @classmethod
     def from_token(cls, token: str) -> GitHubAPI:
@@ -52,18 +54,24 @@ class GitHubAPI:
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create an authenticated HTTP client."""
         token = await self._token()
-        if self._client is not None:
-            await self._client.aclose()
-        self._client = httpx.AsyncClient(
-            base_url=GITHUB_API,
-            headers={
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
-            },
-            timeout=30.0,
-        )
-        return self._client
+        if self._client is not None and not self._client.is_closed and token == self._client_token:
+            return self._client
+        async with self._client_lock:
+            if self._client is not None and not self._client.is_closed and token == self._client_token:
+                return self._client
+            if self._client is not None:
+                await self._client.aclose()
+            self._client = httpx.AsyncClient(
+                base_url=GITHUB_API,
+                headers={
+                    "Authorization": f"token {token}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                },
+                timeout=30.0,
+            )
+            self._client_token = token
+            return self._client
 
     async def request_json_with_headers(self, method: str, path: str, **kwargs) -> tuple[Any, dict[str, str]]:
         """Return decoded JSON plus response headers for revision-sensitive APIs."""
@@ -95,6 +103,8 @@ class GitHubAPI:
     async def close(self):
         if self._client:
             await self._client.aclose()
+            self._client = None
+            self._client_token = ""
 
     async def graphql(self, query: str, variables: dict | None = None) -> dict:
         """Run an authenticated GitHub GraphQL request and surface schema errors."""

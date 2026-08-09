@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
+import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import yaml
 
@@ -24,6 +26,20 @@ class FileChange:
     path: str
     content: bytes
     status: str
+
+
+@dataclass(frozen=True)
+class RepositoryPlan:
+    repository: str
+    changes: tuple[FileChange, ...]
+    elapsed_seconds: float
+    error: str = ""
+
+    @property
+    def status(self) -> str:
+        if self.error:
+            return "failed"
+        return "drifted" if self.changes else "current"
 
 
 def load_standard(root: Path, path: Path) -> StandardConfig:
@@ -75,6 +91,49 @@ async def plan_repository(api, root: Path, config: StandardConfig, repo: str) ->
         if current != wanted:
             changes.append(FileChange(path=name, content=wanted, status="add" if current is None else "update"))
     return changes
+
+
+async def scan_repositories(
+    api,
+    root: Path,
+    config: StandardConfig,
+    repositories: list[str],
+    *,
+    concurrency: int,
+    on_progress: Callable[[int, int, RepositoryPlan], None] | None = None,
+) -> list[RepositoryPlan]:
+    """Scan repositories concurrently while returning stable, name-sorted plans."""
+    if concurrency < 1:
+        raise ValueError("standard-sync concurrency must be at least one")
+    semaphore = asyncio.Semaphore(concurrency)
+
+    async def scan_one(repo: str) -> RepositoryPlan:
+        async with semaphore:
+            started = time.monotonic()
+            try:
+                changes = await plan_repository(api, root, config, repo)
+                return RepositoryPlan(
+                    repository=repo,
+                    changes=tuple(changes),
+                    elapsed_seconds=time.monotonic() - started,
+                )
+            except Exception as exc:
+                return RepositoryPlan(
+                    repository=repo,
+                    changes=(),
+                    elapsed_seconds=time.monotonic() - started,
+                    error=f"{type(exc).__name__}: {exc}",
+                )
+
+    tasks = [asyncio.create_task(scan_one(repo)) for repo in repositories]
+    completed: list[RepositoryPlan] = []
+    total = len(tasks)
+    for future in asyncio.as_completed(tasks):
+        plan = await future
+        completed.append(plan)
+        if on_progress is not None:
+            on_progress(len(completed), total, plan)
+    return sorted(completed, key=lambda item: item.repository.casefold())
 
 
 async def publish_repository_update(
