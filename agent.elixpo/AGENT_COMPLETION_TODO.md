@@ -71,42 +71,42 @@ Items are ordered by dependency, not by issue number.
 - [x] Run Janitor after successful Submit so completed workspaces and dependency
       trees do not accumulate after the pushed branch is safe.
 
-## 3. Complete Steward follow-through
+## 3. Complete Steward follow-through — completed
 
-- [ ] Implement `agents/steward/fix.py` for maintainer change requests and CI failures.
-- [ ] Reuse the existing fork branch and reviewed PR identity from Gist memory.
-- [ ] Run a fresh bounded Solve session only against the requested delta.
-- [ ] Push additional commits only after verification and safety checks.
-- [ ] Update the progress checklist and Gist receipt after every terminal outcome.
-- [ ] Implement `agents/steward/celebrate.py` for merged PRs.
-- [ ] Mark the ledger merged, remove active follow-up memory, and retain a bounded
+- [x] Implement `agents/steward/fix.py` for maintainer change requests and CI failures.
+- [x] Reuse the existing fork branch and reviewed PR identity from Gist memory.
+- [x] Run one bounded correction session only against the requested delta.
+- [x] Push additional commits only after verification and semantic/safety checks.
+- [x] Update the progress receipt and Gist memory after every terminal outcome.
+- [x] Implement `agents/steward/celebrate.py` for merged and closed PRs.
+- [x] Mark the ledger merged or closed, remove active follow-up memory, and retain a bounded
       completion receipt.
-- [ ] Make celebration posts optional, cooldown-aware, and safety-gated.
-- [ ] Add workflows for review comments, requested changes, CI failure, merge, and
+- [x] Make celebration posts optional and safety-gated; terminal fingerprints prevent duplicates.
+- [x] Add dispatch workers for requested changes, CI failure, merge/close, and
       webhook-loss polling.
-- [ ] Add rich skills for Steward Fix and Celebrate.
+- [x] Add rich skills for Steward Fix and Celebrate.
 
 ## 4. Gist memory and cache custodian
 
-- [ ] Create a small Gist custodian squad and skill; it must not import other squads.
-- [ ] Own schema migrations, TTL pruning, compaction, and corrupted-file recovery.
-- [ ] Keep follow-up memory, merge summaries, and model cache in separate Gist files.
-- [ ] Use conditional updates or revision checks to prevent concurrent lost writes.
-- [ ] Bound completed receipts and handled-comment IDs.
-- [ ] Never store credentials, repository source, hidden prompts, or raw model context.
-- [ ] Add a manual repair command and a scheduled low-frequency purge workflow.
+- [x] Create a small Gist custodian squad and skill; it must not import other squads.
+- [x] Own schema migrations, TTL pruning, compaction, and corrupted-file recovery.
+- [x] Keep follow-up memory, merge summaries, and model cache in separate Gist files.
+- [x] Use conditional updates or revision checks to prevent concurrent lost writes.
+- [x] Bound completed receipts and handled-comment IDs.
+- [x] Never store credentials, repository source, hidden prompts, or raw model context.
+- [x] Add a manual repair command and a scheduled low-frequency purge workflow.
 
 ## 5. Discussion reliability pass
 
 - [ ] Test a real top-level and nested `@elixpoo` reply in `elixpo/elixpo`.
-- [ ] Confirm the ten-minute poll is the authoritative cross-repository fallback.
-- [ ] Add pagination and per-run cursors so active threads cannot starve older mentions.
-- [ ] Record handled source IDs durably instead of depending only on HTML markers.
-- [ ] Isolate one failed Discussion so the remainder of the poll still completes.
-- [ ] Verify Announcement, Q&A, and Poll category aliases in production.
+- [x] Confirm the ten-minute poll is the authoritative cross-repository fallback.
+- [x] Add pagination and per-run cursors so active threads cannot starve older mentions.
+- [x] Record handled source IDs durably instead of depending only on HTML markers.
+- [x] Isolate one failed Discussion so the remainder of the poll still completes.
+- [x] Verify Announcement, Q&A, and Poll category aliases in production.
 - [ ] Verify label creation permissions and graceful behavior when labels are blocked.
-- [ ] Add dry-run/preview modes for Q&A, pulse, and merge-generated posts.
-- [ ] Document the mood cadence, cooldowns, and deterministic safety constraints.
+- [x] Add dry-run/preview modes for Q&A, pulse, and merge-generated posts.
+- [x] Document the mood cadence, cooldowns, and deterministic safety constraints.
 
 ## 6. End-to-end orchestration
 
@@ -146,18 +146,18 @@ Items are ordered by dependency, not by issue number.
 - [ ] Expose squad health, queue depth, token spend, success rate, and cleanup debt in
       the frontend without exposing secrets or private metadata.
 
-## 9. Dedicated GitHub Project operations view — after post-PR lifecycle
+## 9. Dedicated GitHub Project operations view — orchestration completed
 
-- [ ] Create one Project V2 view as the operational source of truth; do not add a database.
-- [ ] Track repository, issue number/URL, issue title, current squad, run ID, branch,
+- [x] Explicitly create one public Project V2 as the operational source of truth; do not add a database.
+- [x] Track repository, issue number/URL, issue title, current squad, run ID, branch,
       PR URL, started/updated timestamps, token target/spend, Doctor warnings, and cleanup status.
-- [ ] Define explicit states for discovered, vetted, claimed, solving, ready, submitted,
+- [x] Define explicit states for discovered, vetted, claimed, solving, ready, submitted,
       open, changes requested, CI failed, merged, closed, rejected, and cleanup pending.
-- [ ] Make every transition idempotent and keyed by `owner/repo#issue`; reject stale run IDs.
-- [ ] Reconcile PR open/closed/merged state from webhooks plus bounded polling recovery.
-- [ ] Add views for active work, awaiting maintainers, failures needing attention,
+- [x] Make every transition idempotent and keyed by `owner/repo#issue`; reject stale run IDs.
+- [x] Reconcile state after control workflows plus bounded scheduled recovery; external PR state enters through Steward.
+- [x] Add views for active work, awaiting maintainers, failures needing attention,
       merged contributions, token anomalies, and cleanup debt.
-- [ ] Keep public repository metadata only; never place secrets, prompts, source code,
+- [x] Keep public repository metadata only; never place secrets, prompts, source code,
       or raw model/tool transcripts in Project fields.
 - [ ] Surface the same sanitized status data in the frontend after the board contract stabilizes.
 
@@ -180,10 +180,9 @@ Items are ordered by dependency, not by issue number.
 
 ## Immediate execution order
 
-1. Steward Fix.
-2. Steward Celebrate.
-3. Dedicated GitHub Project operations view.
-4. Gist Custodian.
-5. Discussion reliability pass.
-6. End-to-end orchestration and failure testing.
-7. Security/cost audit, documentation, and controlled release.
+1. Gist Custodian.
+2. Discussion reliability pass.
+3. End-to-end orchestration and failure testing (section 6).
+4. Security and public-action controls (section 7).
+5. Cost, observability, frontend status, and anomaly controls (sections 8–9).
+6. Validation, documentation, and controlled release (section 10).

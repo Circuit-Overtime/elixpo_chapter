@@ -12,6 +12,8 @@ import structlog
 from lib.github.dispatch import repository_dispatch
 from lib.state.followups import FollowupRecord
 
+from agents.steward.celebrate import build_terminal_action
+from agents.steward.fix import build_fix_action
 from agents.steward.respond import (
     authored_by_bot,
     completed_progress_body,
@@ -98,19 +100,47 @@ async def reconcile(
     replies = 0
     dispatched = 0
     terminal = 0
+    fixes = 0
 
     for key, record in list(memory.active.items()):
         owner, repo = record.repository.split("/", 1)
+        reviews: list[dict] = []
         if record.subject_kind == "pull_request":
             subject = await api.get_pull(owner, repo, record.subject_number)
-            if subject.get("merged_at"):
-                memory.complete(key, "merged")
-                terminal += 1
+            terminal_action = build_terminal_action(subject)
+            if terminal_action is not None:
+                if not control_repo or "/" not in control_repo:
+                    raise RuntimeError("terminal reconciliation requires ELIXPO_GITHUB_CONTROL_REPO")
+                if record.queue_action(terminal_action):
+                    control_owner, control_name = control_repo.split("/", 1)
+                    await repository_dispatch(
+                        api,
+                        control_owner,
+                        control_name,
+                        "steward_terminal",
+                        {"key": key, "fingerprint": terminal_action["fingerprint"]},
+                    )
+                    record.status = f"{terminal_action['outcome']}_detected"
+                    terminal += 1
                 continue
-            if str(subject.get("state") or "").casefold() == "closed":
-                memory.complete(key, "closed")
-                terminal += 1
-                continue
+            reviews = list(await api.get_pull_reviews(owner, repo, record.subject_number) or [])
+            head_sha = str((subject.get("head") or {}).get("sha") or "")
+            checks = list(await api.get_check_runs(owner, repo, head_sha) or []) if head_sha else []
+            fix_action = build_fix_action(subject, reviews, checks)
+            if fix_action is not None and record.fix_attempts.get(fix_action["fingerprint"], 0) < 1:
+                if not control_repo or "/" not in control_repo:
+                    raise RuntimeError("PR follow-up fixes require ELIXPO_GITHUB_CONTROL_REPO")
+                if record.queue_action(fix_action):
+                    control_owner, control_name = control_repo.split("/", 1)
+                    await repository_dispatch(
+                        api,
+                        control_owner,
+                        control_name,
+                        "steward_fix",
+                        {"key": key, "fingerprint": fix_action["fingerprint"]},
+                    )
+                    record.status = "changes_requested" if fix_action["review_ids"] else "ci_failed"
+                    fixes += 1
         else:
             subject = await api.get_issue(owner, repo, record.subject_number)
             if str(subject.get("state") or "").casefold() == "closed":
@@ -121,7 +151,7 @@ async def reconcile(
         comments = list(await api.get_issue_comments(owner, repo, record.subject_number) or [])
         if record.subject_kind == "pull_request":
             comments.extend(await api.get_pull_comments(owner, repo, record.subject_number) or [])
-            comments.extend(await api.get_pull_reviews(owner, repo, record.subject_number) or [])
+            comments.extend(reviews)
         if contains_mention(str(subject.get("body") or "")):
             comments.append(
                 {
@@ -186,6 +216,7 @@ async def reconcile(
         "expired": len(expired),
         "dispatched": dispatched,
         "replies": replies,
+        "fixes": fixes,
     }
 
 

@@ -113,12 +113,20 @@ async def _publish(
     kind: str,
     topic: str,
     mood: str,
+    dry_run: bool = False,
 ) -> dict:
-    """Resolve/create labels before publishing, then attach them to the new Discussion."""
-    labels = await discussions.ensure_labels(_labels_for(kind, topic, mood))
+    """Publish first, then attach optional labels without risking the public post."""
+    if dry_run:
+        return {"status": "preview", "title": title, "body": body, "labels": list(_labels_for(kind, topic, mood))}
     created = await discussions.create(category_id, title, body)
-    await discussions.add_labels(created["id"], [label.id for label in labels])
-    created["labels"] = [label.name for label in labels]
+    try:
+        labels = await discussions.ensure_labels(_labels_for(kind, topic, mood))
+        await discussions.add_labels(created["id"], [label.id for label in labels])
+        created["labels"] = [label.name for label in labels]
+    except Exception as exc:
+        created["labels"] = []
+        created["label_warning"] = str(exc)[:300]
+        log.warning("discussions.labels_skipped", error=str(exc))
     return created
 
 
@@ -153,6 +161,8 @@ async def _publish_mood_activity(
     files: list[dict],
     decision: MoodDecision,
     marker: str,
+    *,
+    dry_run: bool = False,
 ) -> dict:
     draft = await merge_draft(router, pulls, files, decision)
     genre = decision.genre
@@ -176,6 +186,7 @@ async def _publish_mood_activity(
         kind=genre.value,
         topic=str(draft.get("topic", "general")),
         mood=decision.mood.value,
+        dry_run=dry_run,
     )
     log.info(
         "discussions.created",
@@ -187,7 +198,7 @@ async def _publish_mood_activity(
     return created
 
 
-async def _handle_merge(api, discussions, router, event: dict) -> dict | None:
+async def _handle_merge(api, discussions, router, event: dict, *, dry_run: bool = False) -> dict | None:
     pull = event.get("pull_request", {})
     if not pull or not pull.get("merged"):
         log.info("discussions.merge_skipped", reason="pull request was not merged")
@@ -218,10 +229,12 @@ async def _handle_merge(api, discussions, router, event: dict) -> dict | None:
     if decision.mood is not Mood.ALERT and _cooldown_active(recent):
         log.info("discussions.activity_deferred", reason="six-hour autonomous-post cooldown")
         return None
-    return await _publish_mood_activity(discussions, router, [pull], changed_files, decision, marker)
+    return await _publish_mood_activity(
+        discussions, router, [pull], changed_files, decision, marker, dry_run=dry_run
+    )
 
 
-async def _handle_qna(discussions, router) -> dict | None:
+async def _handle_qna(discussions, router, *, dry_run: bool = False) -> dict | None:
     recent = await discussions.recent()
     day = datetime.now(timezone.utc).date().isoformat()
     marker = _marker("qna", day)
@@ -244,12 +257,13 @@ async def _handle_qna(discussions, router) -> dict | None:
         kind="qna",
         topic=str(draft.get("topic", "general")),
         mood=Mood.MENTORING.value,
+        dry_run=dry_run,
     )
     log.info("discussions.created", kind="qna", labels=created["labels"], url=created.get("url"))
     return created
 
 
-async def _handle_pulse(api, discussions, router, event: dict) -> dict | None:
+async def _handle_pulse(api, discussions, router, event: dict, *, dry_run: bool = False) -> dict | None:
     """Recompute mood from recent unhandled merges and publish at a bounded cadence."""
     recent = await discussions.recent(limit=50)
     seen_text = "\n".join(item.get("body", "") for item in recent)
@@ -290,10 +304,13 @@ async def _handle_pulse(api, discussions, router, event: dict) -> dict | None:
         files,
         decision,
         _marker("pulse", source_ids),
+        dry_run=dry_run,
     )
 
 
-async def _handle_response(discussions, router, event: dict, bot_username: str) -> dict | None:
+async def _handle_response(
+    discussions, router, event: dict, bot_username: str, *, memory=None
+) -> dict | None:
     discussion = event.get("discussion", {})
     comment = event.get("comment")
     source = comment or discussion
@@ -304,10 +321,15 @@ async def _handle_response(discussions, router, event: dict, bot_username: str) 
         return None
 
     source_id = source.get("node_id") or source.get("id")
+    if memory is not None and memory.handled(source_id):
+        log.info("discussions.duplicate_skipped", source_id=source_id)
+        return None
     marker = _marker("reply", source_id)
     number = int(discussion["number"])
     comments = await discussions.comments(number)
     if any(marker in item.get("body", "") for item in comments):
+        if memory is not None:
+            memory.remember(source_id)
         log.info("discussions.duplicate_skipped", marker=marker)
         return None
 
@@ -317,6 +339,8 @@ async def _handle_response(discussions, router, event: dict, bot_username: str) 
     await safety_check(router, reply)
     reply_to = comment.get("node_id") if comment else None
     created = await discussions.add_comment(discussion["node_id"], reply, reply_to)
+    if memory is not None:
+        memory.remember(source_id)
     log.info("discussions.replied", url=created.get("url"))
     return created
 
@@ -333,11 +357,24 @@ def _created_at(item: dict) -> datetime:
         return datetime.min.replace(tzinfo=timezone.utc)
 
 
-async def _poll_mentions(discussions, router, bot_username: str) -> int:
+async def _poll_mentions(discussions, router, bot_username: str, memory=None) -> int:
     """Catch target-repository mentions when its webhook cannot run this repository's workflow."""
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    from lib.state.discussions import DiscussionMemory
+
+    memory = memory or DiscussionMemory()
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
     handled = 0
-    for raw_discussion in await discussions.recent_threads():
+    failures = 0
+    capped = False
+    try:
+        page = await discussions.recent_thread_page(cursor=memory.thread_cursor)
+    except Exception:
+        if not memory.thread_cursor:
+            raise
+        log.warning("discussions.thread_cursor_reset", reason="saved cursor was no longer valid")
+        memory.set_thread_cursor(None)
+        page = await discussions.recent_thread_page(cursor=None)
+    for raw_discussion in page.nodes:
         discussion = {
             "node_id": raw_discussion["id"],
             "number": raw_discussion["number"],
@@ -346,45 +383,71 @@ async def _poll_mentions(discussions, router, bot_username: str) -> int:
             "html_url": raw_discussion.get("url", ""),
             "user": _webhook_actor(raw_discussion),
         }
-        comments = raw_discussion.get("comments", {}).get("nodes", [])
-        sources = [
-            item
-            for comment in comments
-            for item in (comment, *comment.get("replies", {}).get("nodes", []))
-        ]
-        if _created_at(raw_discussion) >= cutoff:
-            sources.append(raw_discussion)
-        for raw_source in reversed(sources):
-            if handled >= 5 or _created_at(raw_source) < cutoff:
-                continue
-            comment = None
-            if raw_source is not raw_discussion:
-                comment = {
-                    "node_id": raw_source["id"],
-                    "body": raw_source.get("body", ""),
-                    "user": _webhook_actor(raw_source),
-                }
-            result = await _handle_response(
-                discussions,
-                router,
-                {"discussion": discussion, "comment": comment} if comment else {"discussion": discussion},
-                bot_username,
+        try:
+            comment_cursor = memory.comment_cursors.get(raw_discussion["id"])
+            comment_page = await discussions.comment_page(raw_discussion["number"], cursor=comment_cursor)
+            comments = comment_page.nodes
+            sources = [
+                item
+                for comment in comments
+                for item in (comment, *comment.get("replies", {}).get("nodes", []))
+            ]
+            if not comment_cursor and _created_at(raw_discussion) >= cutoff:
+                sources.insert(0, raw_discussion)
+            for raw_source in sources:
+                if handled >= 5:
+                    capped = True
+                    break
+                if memory.handled(raw_source.get("id")) or _created_at(raw_source) < cutoff:
+                    continue
+                comment = None
+                if raw_source is not raw_discussion:
+                    comment = {
+                        "node_id": raw_source["id"],
+                        "body": raw_source.get("body", ""),
+                        "user": _webhook_actor(raw_source),
+                    }
+                result = await _handle_response(
+                    discussions,
+                    router,
+                    {"discussion": discussion, "comment": comment} if comment else {"discussion": discussion},
+                    bot_username,
+                    memory=memory,
+                )
+                handled += int(result is not None)
+            if not capped:
+                memory.set_comment_cursor(
+                    raw_discussion["id"], comment_page.end_cursor if comment_page.has_next_page else None
+                )
+        except Exception as exc:
+            failures += 1
+            log.warning(
+                "discussions.thread_failed",
+                discussion=raw_discussion.get("number"),
+                error=str(exc),
             )
-            handled += int(result is not None)
-    log.info("discussions.mention_poll_done", replies=handled)
+    if not capped:
+        memory.set_thread_cursor(page.end_cursor if page.has_next_page else None)
+    log.info(
+        "discussions.mention_poll_done",
+        replies=handled,
+        failures=failures,
+        thread_cursor=memory.thread_cursor,
+    )
     return handled
 
 
-async def _run(mode: str) -> int:
+async def _run(mode: str, *, dry_run: bool = False) -> int:
     from lib.config import settings
     from lib.github.api import GitHubAPI
     from lib.github.discussions import GitHubDiscussions
+    from lib.github.gists import DiscussionGist
     from rtk import Budget, Router
 
     if not settings.github.token:
         log.error("discussions.no_token", hint="set GITHUB_TOKEN in .env.local or Actions")
         return 1
-    if not settings.pollinations.api_key:
+    if mode != "verify-config" and not settings.pollinations.api_key:
         log.error("discussions.no_pollinations_key", hint="set ELIXPO_POLLINATIONS_API_KEY")
         return 1
 
@@ -393,17 +456,44 @@ async def _run(mode: str) -> int:
     api = GitHubAPI.from_token(settings.github.token)
     discussions = GitHubDiscussions(api, owner, repo)
     router = Router.from_settings("discussions", budget=Budget("discussions", limit=12_000))
+    result = None
+    memory_gist = None
+    memory_api = None
     try:
         if mode == "merge":
-            await _handle_merge(api, discussions, router, event)
+            result = await _handle_merge(api, discussions, router, event, dry_run=dry_run)
         elif mode == "qna":
-            await _handle_qna(discussions, router)
+            result = await _handle_qna(discussions, router, dry_run=dry_run)
         elif mode == "respond":
-            await _handle_response(discussions, router, event, settings.github.bot_username)
+            if not settings.followups.gist_token or not settings.followups.gist_id:
+                raise RuntimeError("respond requires ELIXPOO_GIST_AGENTIC_TOKEN and ELIXPOO_FOLLOWUP_GIST_ID")
+            memory_api = GitHubAPI.from_token(settings.followups.gist_token)
+            memory_gist = DiscussionGist(memory_api, settings.followups.gist_id)
+            memory = await memory_gist.load()
+            result = await _handle_response(
+                discussions, router, event, settings.github.bot_username, memory=memory
+            )
+            await memory_gist.save(memory)
         elif mode == "poll-mentions":
-            await _poll_mentions(discussions, router, settings.github.bot_username)
+            if not settings.followups.gist_token or not settings.followups.gist_id:
+                raise RuntimeError("poll-mentions requires ELIXPOO_GIST_AGENTIC_TOKEN and ELIXPOO_FOLLOWUP_GIST_ID")
+            memory_api = GitHubAPI.from_token(settings.followups.gist_token)
+            memory_gist = DiscussionGist(memory_api, settings.followups.gist_id)
+            memory = await memory_gist.load()
+            result = await _poll_mentions(discussions, router, settings.github.bot_username, memory)
+            await memory_gist.save(memory)
         elif mode == "pulse":
-            await _handle_pulse(api, discussions, router, event)
+            result = await _handle_pulse(api, discussions, router, event, dry_run=dry_run)
+        elif mode == "verify-config":
+            result = {
+                "repository": f"{owner}/{repo}",
+                "categories": {
+                    "announcement": (await discussions.category("Announcement", "Announcements")).name,
+                    "qna": (await discussions.category("Q&A", "QNA", "Questions and Answers")).name,
+                    "poll": (await discussions.category("Poll", "Polls")).name,
+                },
+                "existing_labels": sorted(label.name for label in await discussions.labels()),
+            }
         else:
             raise RuntimeError(f"unsupported discussions mode: {mode}")
     except UnsafeDraft as exc:
@@ -411,15 +501,24 @@ async def _run(mode: str) -> int:
         return 0
     finally:
         await api.close()
+        if memory_api is not None:
+            await memory_api.close()
         await router.aclose()
+    if dry_run or mode == "verify-config":
+        print(json.dumps(result, indent=2, sort_keys=True))
     return 0
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Orchestrate elixpo GitHub Discussions")
-    parser.add_argument("mode", choices=("merge", "qna", "respond", "poll-mentions", "pulse"))
+    parser.add_argument(
+        "mode", choices=("merge", "qna", "respond", "poll-mentions", "pulse", "verify-config")
+    )
+    parser.add_argument("--dry-run", action="store_true", help="generate and safety-check without publishing")
     args = parser.parse_args()
-    raise SystemExit(asyncio.run(_run(args.mode)))
+    if args.dry_run and args.mode not in {"merge", "qna", "pulse"}:
+        parser.error("--dry-run is supported for merge, qna, and pulse")
+    raise SystemExit(asyncio.run(_run(args.mode, dry_run=args.dry_run)))
 
 
 if __name__ == "__main__":
