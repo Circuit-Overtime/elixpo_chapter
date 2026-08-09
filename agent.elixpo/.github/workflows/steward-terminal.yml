@@ -48,7 +48,7 @@ jobs:
         run: |
           git config user.name "elixpoo"
           git config user.email "elixpoo@gmail.com"
-          git add state/ledger.json state/steward_celebrate.json
+          git add state/ledger.json state/steward_celebrate.json state/contracts.json
           git diff --cached --quiet || git commit -m "chore(steward): reconcile terminal PR"
           auth=$(printf 'x-access-token:%s' "$CONTROL_TOKEN" | base64 -w 0)
           git -c http.extraheader="AUTHORIZATION: basic $auth" push

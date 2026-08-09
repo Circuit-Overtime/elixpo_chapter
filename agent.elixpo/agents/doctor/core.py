@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from pydantic import ValidationError
@@ -133,8 +133,27 @@ def decide(
 
 
 def decide_and_record(store, *, now: datetime | None = None) -> DoctorDecision:
-    solve_state = store.read_json("solve.json", {}) or {}
-    previous = store.read_json("doctor.json", {}) or {}
+    solve_state = store.read_state(
+        "solve.json",
+        {},
+        expected_producer={"solve", "doctor"},
+        max_age=timedelta(hours=24),
+        now=now,
+    ) or {}
+    previous_raw = store.read_json("doctor.json", {}) or {}
+    previous = (
+        store.read_state(
+            "doctor.json",
+            {},
+            expected_producer="doctor",
+            expected_run_id=str(solve_state.get("run_id") or ""),
+            expected_key=str(solve_state.get("key") or ""),
+            max_age=timedelta(days=7),
+            now=now,
+        )
+        if previous_raw
+        else {}
+    ) or {}
     if solve_state.get("status") in {"retry_authorized", "terminated", "inspection_required"}:
         parsed = _existing_state(previous)
         mirror = solve_state.get("doctor") or {}
@@ -157,6 +176,22 @@ def decide_and_record(store, *, now: datetime | None = None) -> DoctorDecision:
         "terminate": "terminated",
         "preserve": "inspection_required",
     }[decision.action]
-    store.write_json("doctor.json", doctor_state.model_dump(mode="json"))
-    store.write_json("solve.json", solve_state)
+    store.write_state(
+        "doctor.json",
+        doctor_state.model_dump(mode="json"),
+        producer="doctor",
+        run_id=decision.run_id,
+        key=decision.key,
+        ttl=timedelta(days=7),
+        now=now,
+    )
+    store.write_state(
+        "solve.json",
+        solve_state,
+        producer="doctor",
+        run_id=decision.run_id,
+        key=decision.key,
+        ttl=timedelta(days=7),
+        now=now,
+    )
     return decision

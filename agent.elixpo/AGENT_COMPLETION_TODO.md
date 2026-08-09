@@ -110,9 +110,9 @@ Items are ordered by dependency, not by issue number.
 
 ## 6. End-to-end orchestration
 
-- [ ] Define one versioned state contract for every squad input and output.
-- [ ] Validate state at workflow boundaries and reject stale/mismatched receipts.
-- [ ] Ensure every state-writing workflow uses the shared `state-write` concurrency lock.
+- [x] Define one versioned state contract for every committed squad handoff and receipt.
+- [x] Validate state at workflow boundaries and reject stale/mismatched receipts.
+- [x] Ensure every state-writing workflow uses the shared `state-write` concurrency lock.
 - [ ] Make workflow chaining explicit from Scout through Janitor/Steward completion.
 - [ ] Add bounded retries only for transient network/provider operations.
 - [ ] Add a daily summary workflow for picks, rejections, PRs, merges, failures,

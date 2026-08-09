@@ -26,10 +26,19 @@ class RejectionLedger(BaseModel):
 
     @classmethod
     def load(cls, store: StateStore) -> RejectionLedger:
-        return cls(**(store.read_json(REJECTIONS_FILE, {}) or {}))
+        if store.read_json(REJECTIONS_FILE, None) is None:
+            return cls()
+        return cls(
+            **(
+                store.read_state(
+                    REJECTIONS_FILE, {}, expected_producer={"rejections", "migration"}
+                )
+                or {}
+            )
+        )
 
     def save(self, store: StateStore) -> None:
-        store.write_json(REJECTIONS_FILE, self.model_dump())
+        store.write_state(REJECTIONS_FILE, self.model_dump(), producer="rejections")
 
     def rejects_unchanged(self, key: str, issue_updated_at: str) -> bool:
         """Skip only the rejected revision; new issue activity permits re-evaluation."""

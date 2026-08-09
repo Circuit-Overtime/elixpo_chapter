@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from lib.github.issues import referenced_pull_requests
 from lib.solve_policy import load_solve_policy, solve_token_limit
@@ -107,6 +107,7 @@ async def vet_issue(
     force: bool = False,
     owned_test: bool = False,
     policy: dict | None = None,
+    run_id: str = "",
 ) -> dict:
     now = now or datetime.now(timezone.utc)
     issue = evidence["issue"]
@@ -118,6 +119,7 @@ async def vet_issue(
     if not force and rejections.rejects_unchanged(key, updated_at):
         record = rejections.issues[key]
         result = {
+            "run_id": run_id,
             "status": "cached_rejection",
             "suitable": False,
             "key": key,
@@ -130,7 +132,9 @@ async def vet_issue(
             "checked_at": now.isoformat(),
             "model_called": False,
         }
-        store.write_json("vet.json", result)
+        store.write_state(
+            "vet.json", result, producer="vet", ttl=timedelta(hours=24), now=now
+        )
         return result
 
     hard_blockers = deterministic_blockers(evidence, number, now, allow_assigned=owned_test)
@@ -148,6 +152,7 @@ async def vet_issue(
     confidence = _as_float(model_verdict.get("confidence", 1.0 if hard_blockers else 0.0))
     estimated_solve_tokens = _as_int(model_verdict.get("estimated_solve_tokens", 0))
     result = {
+        "run_id": run_id,
         "status": "approved" if suitable else "rejected",
         "suitable": suitable,
         "key": key,
@@ -181,5 +186,5 @@ async def vet_issue(
             now=now,
         )
     rejections.save(store)
-    store.write_json("vet.json", result)
+    store.write_state("vet.json", result, producer="vet", ttl=timedelta(hours=24), now=now)
     return result

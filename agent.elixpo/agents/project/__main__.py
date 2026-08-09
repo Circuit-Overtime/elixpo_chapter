@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import structlog
 from lib.state.board import Board
@@ -36,7 +36,9 @@ async def reconcile(api, board, store, *, dry_run: bool = False) -> dict:
         "failures": failures,
         "reconciled_at": datetime.now(timezone.utc).isoformat(),
     }
-    store.write_json("project.json", receipt)
+    store.write_state(
+        "project.json", receipt, producer="project", ttl=timedelta(days=7)
+    )
     return receipt
 
 
@@ -77,7 +79,9 @@ async def _run(dry_run: bool, setup: bool) -> int:
                 "views": views,
                 "configured_at": datetime.now(timezone.utc).isoformat(),
             }
-            store.write_json("project_setup.json", result)
+            store.write_state(
+                "project_setup.json", result, producer="project", ttl=timedelta(days=30)
+            )
         else:
             result = await reconcile(api, board, store, dry_run=dry_run)
     except Exception as exc:

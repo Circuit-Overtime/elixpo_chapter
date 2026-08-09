@@ -33,7 +33,7 @@ jobs:
         run: |
           git config user.name "elixpoo"
           git config user.email "elixpoo@gmail.com"
-          git add state/solve.json
+          git add state/solve.json state/contracts.json
           if [[ -f state/janitor.json ]]; then git add state/janitor.json; fi
           git diff --cached --quiet || git commit -m "chore(janitor): reconcile cleanup debt"
           git push

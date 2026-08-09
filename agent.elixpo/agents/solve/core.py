@@ -6,7 +6,7 @@ import asyncio
 import re
 import secrets
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -48,8 +48,25 @@ def issue_key(owner: str, repo: str, number: int) -> str:
     return f"{owner}/{repo}#{number}"
 
 
+def write_solve_state(store: StateStore, payload: dict) -> None:
+    """Persist one evolving Solve receipt with its current execution identity."""
+    store.write_state(
+        "solve.json",
+        payload,
+        producer="solve",
+        run_id=str(payload.get("run_id") or ""),
+        key=str(payload.get("key") or ""),
+        ttl=timedelta(hours=24),
+    )
+
+
 def resolve_target(store: StateStore, explicit_url: str | None, owned_test: bool) -> str:
-    vet = store.read_json("vet.json", {}) or {}
+    vet = store.read_state(
+        "vet.json",
+        {},
+        expected_producer="vet",
+        max_age=timedelta(hours=24),
+    ) or {}
     if explicit_url:
         if not owned_test or not is_test_repository(_repo_from_url(explicit_url)):
             raise SolveRejected("explicit targets require --owned-test and a configured test repository")
@@ -61,7 +78,14 @@ def resolve_target(store: StateStore, explicit_url: str | None, owned_test: bool
             raise SolveRejected("run Vet with the same URL, --owned-test, and --force before Solve")
         return explicit_url
 
-    pick = store.read_json("pick.json", {}) or {}
+    pick = store.read_state(
+        "pick.json",
+        {},
+        expected_producer="vet",
+        expected_run_id=str(vet.get("run_id") or "") if vet.get("run_id") else None,
+        expected_key=str(vet.get("key") or "") if vet.get("key") else None,
+        max_age=timedelta(hours=24),
+    ) or {}
     if pick.get("status") != "picked" or not pick.get("url"):
         raise SolveRejected("state/pick.json has no Vet-approved target")
     url = str(pick["url"])
@@ -259,7 +283,7 @@ async def solve(
             "fork_repo": f"{fork_owner}/{repo}",
         }
     )
-    store.write_json("solve.json", preparing)
+    write_solve_state(store, preparing)
     fork = await ensure_fork(api, owner, repo, fork_owner)
 
     base_branch = str(upstream.get("default_branch") or "main")
@@ -284,7 +308,7 @@ async def solve(
         "token_limit": int(policy.get("token_limit") or 0),
     }
     running["cleanup"] = cleanup_manifest(running, workspace_base, status="active")
-    store.write_json("solve.json", running)
+    write_solve_state(store, running)
     root = workspace.setup(
         fork_url=str(fork.get("clone_url") or f"https://github.com/{fork_owner}/{repo}.git"),
         upstream_url=str(upstream.get("clone_url") or f"https://github.com/{owner}/{repo}.git"),
@@ -299,7 +323,7 @@ async def solve(
         branch=work_branch,
     )
     running["stage"] = "harness"
-    store.write_json("solve.json", running)
+    write_solve_state(store, running)
 
     remaining_seconds = max(1, int(policy["max_minutes"]) * 60 - int(time.monotonic() - started))
 
@@ -308,7 +332,7 @@ async def solve(
         if str(current.get("run_id") or "") != str(snapshot.get("run_id") or ""):
             return
         current["doctor_live"] = snapshot
-        store.write_json("solve.json", current)
+        write_solve_state(store, current)
 
     outcome, usage, harness_metadata = await asyncio.to_thread(
         run_harness,
@@ -329,7 +353,7 @@ async def solve(
     _validate_changed_targets(root, targets, policy)
 
     running.update({"stage": "semantic_review", "target_files": sorted(targets)})
-    store.write_json("solve.json", running)
+    write_solve_state(store, running)
     review_diff_text = git(root, "diff", "--unified=40", "--", *targets, timeout=60)
     review_verdict = await review_diff(
         router,
@@ -376,7 +400,7 @@ async def solve(
                 },
             }
         )
-        store.write_json("solve.json", running)
+        write_solve_state(store, running)
         try:
             corrected_paths, correction_summary = await apply_review_correction(
                 router,
@@ -418,7 +442,7 @@ async def solve(
         }
         running["target_files"] = sorted(targets)
         running["stage"] = "semantic_re_review"
-        store.write_json("solve.json", running)
+        write_solve_state(store, running)
         review_verdict = await review_diff(
             router,
             issue,
@@ -466,7 +490,7 @@ async def solve(
             "target_files": sorted(targets),
         }
     )
-    store.write_json("solve.json", running)
+    write_solve_state(store, running)
 
     checks: list[dict] = []
     verification_exceptions: list[dict] = []
@@ -476,7 +500,7 @@ async def solve(
     def record_check(kind: str, command: str, result) -> None:
         checks.append({"kind": kind, "command": command, "exit_code": result.code, "output": result.output})
         running["checks"] = checks
-        store.write_json("solve.json", running)
+        write_solve_state(store, running)
 
     def record_exception(check: dict) -> None:
         detail = re.sub(r"\s+", " ", str(check.get("output") or "")).strip()[-600:]
@@ -489,7 +513,7 @@ async def solve(
             }
         )
         running["verification_exceptions"] = verification_exceptions
-        store.write_json("solve.json", running)
+        write_solve_state(store, running)
 
     for command in outcome.setup_commands[: int(policy["max_setup_commands"])]:
         attempt_start = len(checks)
@@ -552,7 +576,7 @@ async def solve(
         raise SolveRejected(f"required verification tool unavailable: {commands}")
 
     running["stage"] = "committing"
-    store.write_json("solve.json", running)
+    write_solve_state(store, running)
     commit_sha = commit_files(root, targets, outcome.commit_message)
     assert_workspace_identity(
         root,
@@ -609,5 +633,5 @@ async def solve(
         "token_limit": router.budget.limit,
         "finished_at": datetime.now(timezone.utc).isoformat(),
     }
-    store.write_json("solve.json", result)
+    write_solve_state(store, result)
     return result
