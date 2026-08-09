@@ -1,6 +1,6 @@
-<p align="center">
-  <img src="public/og-image.png" alt="lixrl - the flagship Elixpo URL shortener" width="100%" />
-</p>
+<div align="center">
+
+<img src="public/logo.png" alt="LixBlogs Logo" width="80" />
 
 <h1 align="center">lixrl</h1>
 
@@ -28,7 +28,9 @@
   <img src="https://img.shields.io/github/stars/elixpo/elixpourl?style=flat-square&color=a3e635" alt="Stars" />
 </p>
 
----
+<div align="center">
+<img src="public/banner.png" alt="LixBlogs Banner" width="100%" style="border-radius: 12px;" />
+</div>
 
 ## About
 
