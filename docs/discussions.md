@@ -57,6 +57,9 @@ publisher independently enforces the safety, disclosure, and duplicate checks.
 5. Reuse `ELIXPOO_GIST_AGENTIC_TOKEN` and `ELIXPOO_FOLLOWUP_GIST_ID` for the
    revision-checked Discussion cursor and handled-source file.
 
+The production alias check on 2026-08-09 resolved `Announcements`, `Q&A`, and
+`Polls` successfully in `elixpo/elixpo`.
+
 The workflow recomputes mood at minute 13 and 43 of each hour, runs Q&A each
 Wednesday at 09:17 UTC, and exposes both through `workflow_dispatch`. The mood
 pulse looks back 48 hours, aggregates up to five unhandled merges, and publishes

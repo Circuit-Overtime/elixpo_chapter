@@ -103,7 +103,7 @@ Items are ordered by dependency, not by issue number.
 - [x] Add pagination and per-run cursors so active threads cannot starve older mentions.
 - [x] Record handled source IDs durably instead of depending only on HTML markers.
 - [x] Isolate one failed Discussion so the remainder of the poll still completes.
-- [ ] Verify Announcement, Q&A, and Poll category aliases in production.
+- [x] Verify Announcement, Q&A, and Poll category aliases in production.
 - [ ] Verify label creation permissions and graceful behavior when labels are blocked.
 - [x] Add dry-run/preview modes for Q&A, pulse, and merge-generated posts.
 - [x] Document the mood cadence, cooldowns, and deterministic safety constraints.
