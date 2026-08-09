@@ -84,6 +84,31 @@ class Workspace:
         self._run(["git", "config", "user.email", "elixpoo@gmail.com"], cwd=self.root)
         return self.root
 
+    def setup_existing_branch(
+        self,
+        *,
+        fork_url: str,
+        upstream_url: str,
+        branch: str,
+        token: str,
+    ) -> Path:
+        """Clone the recorded fork branch without creating or rebasing it."""
+        self.base_path.mkdir(parents=True, exist_ok=True)
+        if self.root.exists():
+            raise WorkspaceError(f"workspace already exists: {self.root}")
+        env = git_auth_env(token)
+        self._run(
+            ["git", "clone", "--filter=blob:none", "--no-tags", "--single-branch", "--branch", branch, fork_url, str(self.root)],
+            env=env,
+        )
+        self._run(["git", "remote", "add", "upstream", upstream_url], cwd=self.root)
+        self._run(["git", "config", "user.name", "elixpoo"], cwd=self.root)
+        self._run(["git", "config", "user.email", "elixpoo@gmail.com"], cwd=self.root)
+        current = self._run(["git", "branch", "--show-current"], cwd=self.root)
+        if current != branch:
+            raise WorkspaceError(f"workspace branch is {current}, expected {branch}")
+        return self.root
+
     def cleanup(self) -> None:
         if self.root.is_dir() and self.root.parent == self.base_path:
             shutil.rmtree(self.root)

@@ -192,6 +192,14 @@ class GitHubAPI:
     async def get_pull_reviews(self, owner: str, repo: str, pr_number: int) -> list:
         return await self._request("GET", f"/repos/{owner}/{repo}/pulls/{pr_number}/reviews")
 
+    async def get_check_runs(self, owner: str, repo: str, ref: str) -> list:
+        result = await self._request(
+            "GET",
+            f"/repos/{owner}/{repo}/commits/{ref}/check-runs",
+            params={"per_page": 100},
+        )
+        return list((result or {}).get("check_runs") or [])
+
     async def create_pull(
         self,
         owner: str,
