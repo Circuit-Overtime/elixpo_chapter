@@ -26,6 +26,7 @@ from agents.solve.harness import (
     HarnessError,
     _candidate_read_offsets,
     _candidate_read_windows,
+    _apply_grounded_terminal_edit,
     _compact_harness_context,
     _deterministic_outcome,
     _harness_command,
@@ -36,6 +37,7 @@ from agents.solve.harness import (
     _prompt,
     _redact,
     _render_harness_event,
+    _recoverable_file_calls,
     _router_ready,
     _stop_stale_isolated_routers,
     _structured_fallback_reason,
@@ -418,6 +420,67 @@ def test_tool_gate_recovers_complete_unparsed_multiline_edit(tmp_path):
     post = {**event, "hook_event_name": "PostToolUse"}
     assert _decision(post, state)[0] == 0
     assert state["edited_paths"] == ["app/pricing/page.tsx"]
+
+
+def test_stream_recovers_complete_client_rejected_edit():
+    raw = (
+        '{"file_path":"app/pricing/page.tsx","old_string":"before\nafter",'
+        '"new_string":"before\nchip\nafter","replace_all":false}'
+    )
+    event = {
+        "type": "assistant",
+        "message": {
+            "content": [
+                {
+                    "type": "tool_use",
+                    "name": "Edit",
+                    "input": {"__unparsedToolInput": raw},
+                }
+            ]
+        },
+    }
+
+    assert _recoverable_file_calls(event) == [
+        (
+            "Edit",
+            {
+                "file_path": "app/pricing/page.tsx",
+                "old_string": "before\nafter",
+                "new_string": "before\nchip\nafter",
+                "replace_all": False,
+            },
+        )
+    ]
+
+
+def test_terminal_edit_repair_requires_exact_grounded_changed_path(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+    target = tmp_path / "app/page.tsx"
+    target.parent.mkdir(parents=True)
+    target.write_text("const color = 'blue';\n")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "test"], cwd=tmp_path, check=True)
+    calls = [
+        (
+            "Edit",
+            {
+                "file_path": "app/page.tsx",
+                "old_string": "'blue'",
+                "new_string": "'red'",
+            },
+        )
+    ]
+
+    assert _apply_grounded_terminal_edit(tmp_path, {}, calls) is None
+    assert target.read_text() == "const color = 'blue';\n"
+    assert _apply_grounded_terminal_edit(
+        tmp_path,
+        {"source_reads": ["app/page.tsx"]},
+        calls,
+    ) == "app/page.tsx"
+    assert target.read_text() == "const color = 'red';\n"
 
 
 def test_tool_gate_rejects_incomplete_unparsed_edit(tmp_path):

@@ -27,6 +27,7 @@ from rtk.models import PromptTokensDetails, Usage
 
 from agents.comprehend import build_context_bundle
 from agents.solve.models import HarnessOutcome
+from agents.solve.tool_gate import _recover_unparsed_file_input
 
 _CONTROL_ROOT = Path(__file__).resolve().parents[2]
 _CCR_PACKAGE = "@musistudio/claude-code-router@2.0.0"
@@ -406,6 +407,28 @@ def _render_harness_event(event: dict[str, Any]) -> None:
         )
 
 
+def _recoverable_file_calls(event: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
+    """Extract complete Edit/Write calls that the compatible client could not parse."""
+    if event.get("type") != "assistant":
+        return []
+    message = event.get("message") or {}
+    blocks = message.get("content") or []
+    if not isinstance(blocks, list):
+        return []
+    recovered: list[tuple[str, dict[str, Any]]] = []
+    for block in blocks:
+        if not isinstance(block, dict) or block.get("type") != "tool_use":
+            continue
+        tool = str(block.get("name") or "")
+        tool_input = block.get("input") or {}
+        if tool not in {"Edit", "Write"} or not isinstance(tool_input, dict):
+            continue
+        repaired = _recover_unparsed_file_input(tool, tool_input.get("__unparsedToolInput"))
+        if repaired is not None:
+            recovered.append((tool, repaired))
+    return recovered
+
+
 def _is_empty_connection_failure(event: dict[str, Any] | None) -> bool:
     """Return true only for a provider refusal before any model work occurred."""
     if not event or event.get("type") != "result" or event.get("is_error") is not True:
@@ -438,7 +461,7 @@ def _stream_harness(
     prompt: str,
     timeout: int,
     supervisor: LiveDoctor | None = None,
-) -> tuple[dict[str, Any] | None, int, str]:
+) -> tuple[dict[str, Any] | None, int, str, list[tuple[str, dict[str, Any]]]]:
     process = subprocess.Popen(
         command,
         cwd=workspace,
@@ -489,6 +512,7 @@ def _stream_harness(
     deadline = time.monotonic() + timeout
     closed: set[str] = set()
     final_event: dict[str, Any] | None = None
+    recoverable_file_calls: list[tuple[str, dict[str, Any]]] = []
     stderr_lines: list[str] = []
     try:
         while len(closed) < 2:
@@ -518,6 +542,7 @@ def _stream_harness(
                 continue
             if isinstance(event, dict):
                 _render_harness_event(event)
+                recoverable_file_calls.extend(_recoverable_file_calls(event))
                 if supervisor is not None:
                     try:
                         supervisor.observe(event)
@@ -544,7 +569,7 @@ def _stream_harness(
                         "supervision_stop": exc.snapshot.get("stop_reason", ""),
                     },
                 ) from exc
-        return final_event, process.wait(timeout=5), "\n".join(stderr_lines)
+        return final_event, process.wait(timeout=5), "\n".join(stderr_lines), recoverable_file_calls
     finally:
         stopping.set()
         _stop_process(process)
@@ -747,6 +772,48 @@ def _worktree_changed_paths(workspace: Path) -> set[str]:
         for path in (*changed.stdout.splitlines(), *untracked.stdout.splitlines())
         if path.strip()
     }
+
+
+def _apply_grounded_terminal_edit(
+    workspace: Path,
+    gate_state: dict[str, Any],
+    calls: list[tuple[str, dict[str, Any]]],
+) -> str | None:
+    """Apply the last complete client-rejected edit, never an ungrounded write."""
+    if _has_worktree_diff(workspace) or not calls:
+        return None
+    grounded = set(gate_state.get("source_reads") or []) | set(gate_state.get("rtk_reads") or [])
+    root = workspace.resolve()
+    for tool, tool_input in reversed(calls):
+        relative = str(tool_input.get("file_path") or "").strip()
+        path = Path(relative)
+        if not relative or path.is_absolute() or ".." in path.parts or relative not in grounded:
+            continue
+        target = (root / path).resolve()
+        try:
+            target.relative_to(root)
+        except ValueError:
+            continue
+        if not target.is_file() or target.is_symlink() or ".git" in path.parts:
+            continue
+        original = target.read_text(encoding="utf-8")
+        if tool == "Edit":
+            old = str(tool_input["old_string"])
+            new = str(tool_input["new_string"])
+            count = original.count(old)
+            replace_all = tool_input.get("replace_all") is True
+            if count == 0 or (count > 1 and not replace_all):
+                continue
+            updated = original.replace(old, new) if replace_all else original.replace(old, new, 1)
+        else:
+            updated = str(tool_input["content"])
+        if updated == original:
+            continue
+        target.write_text(updated, encoding="utf-8")
+        if _worktree_changed_paths(workspace) == {relative}:
+            return relative
+        target.write_text(original, encoding="utf-8")
+    return None
 
 
 def _structured_fallback_reason(
@@ -1058,7 +1125,7 @@ def run_harness(
             )
             retry_limit = max(0, min(int(policy.get("harness_max_retries", 2)), 2))
             for attempt in range(retry_limit + 1):
-                final_event, return_code, stderr = _stream_harness(
+                final_event, return_code, stderr, recoverable_file_calls = _stream_harness(
                     command,
                     workspace=workspace,
                     env=harness_environment,
@@ -1154,9 +1221,28 @@ def run_harness(
                     metadata,
                 )
                 recovered_error_envelope = fallback_reason == "turn_limit_after_structured_handoff"
+            outcome, usage, metadata = parsed
+            if outcome.solvable and not _has_worktree_diff(workspace):
+                repaired_path = _apply_grounded_terminal_edit(
+                    workspace,
+                    observed_gate,
+                    recoverable_file_calls,
+                )
+                if repaired_path is not None:
+                    metadata = {
+                        **metadata,
+                        "structured_fallback": True,
+                        "structured_fallback_reason": "client_rejected_grounded_file_edit",
+                        "reviewed_paths": [repaired_path],
+                        "review_source": "deterministic_diff_gate",
+                        "recovered_terminal_edit": True,
+                    }
+                    print(
+                        f"[harness] recovered client-rejected grounded edit path={repaired_path}",
+                        flush=True,
+                    )
             if return_code != 0 and not recovered_error_envelope:
                 raise HarnessError((stderr or f"coding harness exited with status {return_code}")[:3000])
-            outcome, usage, metadata = parsed
             metadata = {**metadata, "live_doctor": supervisor.snapshot()}
             return outcome, usage, metadata
         except subprocess.TimeoutExpired as exc:
