@@ -21,11 +21,19 @@ validates both labels, the embedded source identity, and the matching pending
 Gist record before posting one response. Closing the request without approval
 denies it.
 
-Repository variables control the policy without code changes:
+The reviewed control-repository policy lives in
+`.github/elixpoo-whitelist.yml`. Add external repositories under
+`watched_repositories` using exact `owner/repository` names. A malformed schema,
+invalid name, or case-insensitive duplicate fails closed before Steward handles
+mentions.
+
+Repository variables control trusted identities and provide an emergency
+additive override:
 
 - `ELIXPO_MENTION_TRUSTED_USERS`: comma-separated GitHub logins;
 - `ELIXPO_MENTION_TRUSTED_ORGS`: comma-separated organization owners;
-- `ELIXPO_MENTION_WATCHED_REPOS`: comma-separated `owner/repository` names.
+- `ELIXPO_MENTION_WATCHED_REPOS`: optional comma-separated watched repositories
+  added to the reviewed YAML list.
 
 The Project board and `elixpo/elixpo` Discussions remain dedicated Elixpo
 control surfaces. Discussion mentions continue through their own exact-mention,
