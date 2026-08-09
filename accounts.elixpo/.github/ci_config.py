@@ -1,5 +1,5 @@
 """
-Elixpo CI Configuration — accounts.elixpo
+Elixpo CI Configuration — agent.elixpo
 Single source of truth for all CI workflows and scripts.
 """
 
@@ -20,9 +20,9 @@ LLM_MAX_TOKENS_SEARCH = 2500
 LLM_MODEL = LLM_MODEL_CHAT
 
 # ── Repository ──────────────────────────────────────
-REPO = "elixpo/accounts.elixpo"
-PROJECT_NAME = "accounts.elixpo"
-PROJECT_DESCRIPTION = "Elixpo OAuth SSO Provider"
+REPO = "elixpo/agent.elixpo"
+PROJECT_NAME = "agent.elixpo"
+PROJECT_DESCRIPTION = "Elixpo agent orchestration hub"
 
 # ── GitHub Projects V2 ──────────────────────────────
 # Shared org-wide projects (linked to all elixpo repos).
@@ -132,8 +132,4 @@ AGENT_LABEL = "ELIXPO"
 # ── README update heuristics ────────────────────────
 # Path prefixes that count as "core" for this repo — changes touching these
 # are more likely to warrant a README update. Override per-repo.
-CORE_PATHS = (
-    "app/api/auth/",
-    "src/lib/",
-    "app/dashboard/",
-)
+CORE_PATHS = ()  # TODO: list path prefixes that count as "core" for README-update heuristics
