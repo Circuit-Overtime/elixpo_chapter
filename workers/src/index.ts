@@ -1,150 +1,156 @@
-/**
- * Elixpo Cloudflare Worker — edge API for D1 and KV operations.
- * The core agent runs on the VPS; this worker provides:
- *   - D1 read/write for user data, sessions metadata, memories
- *   - KV for rate limiting, feature flags
- *   - Lightweight edge endpoints
- */
+/** Signed GitHub webhook ingress. It stores no agent state or repository data. */
 
 export interface Env {
-  DB: D1Database;
-  KV: KVNamespace;
-  ENVIRONMENT: string;
+  GITHUB_WEBHOOK_SECRET: string;
+  GITHUB_CONTROL_TOKEN: string;
+  CONTROL_REPOSITORY: string;
+  ALLOWED_OWNERS: string;
+}
+
+const MAX_BODY_BYTES = 1_000_000;
+const MAX_REPOSITORY_EVENTS_PER_MINUTE = 30;
+const ALLOWED_ACTIONS: Record<string, Set<string>> = {
+  issue_comment: new Set(["created"]),
+  pull_request_review_comment: new Set(["created"]),
+  pull_request_review: new Set(["submitted"]),
+  pull_request: new Set(["opened", "synchronize", "closed", "review_requested"]),
+  discussion: new Set(["created", "edited"]),
+  discussion_comment: new Set(["created", "edited"]),
+};
+
+function response(status: number, body: Record<string, unknown>): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json", "cache-control": "no-store" },
+  });
+}
+
+function hex(bytes: ArrayBuffer): string {
+  return [...new Uint8Array(bytes)].map((value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+function constantTimeEqual(left: string, right: string): boolean {
+  const size = Math.max(left.length, right.length);
+  let mismatch = left.length ^ right.length;
+  for (let index = 0; index < size; index += 1) {
+    mismatch |= (left.charCodeAt(index) || 0) ^ (right.charCodeAt(index) || 0);
+  }
+  return mismatch === 0;
+}
+
+async function validSignature(secret: string, body: ArrayBuffer, supplied: string): Promise<boolean> {
+  if (!secret || !supplied.startsWith("sha256=")) return false;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const expected = `sha256=${hex(await crypto.subtle.sign("HMAC", key, body))}`;
+  return constantTimeEqual(expected, supplied.toLowerCase());
+}
+
+async function replayed(delivery: string): Promise<boolean> {
+  const cache = caches.default;
+  const key = new Request(`https://replay.oreoflow.invalid/${encodeURIComponent(delivery)}`);
+  if (await cache.match(key)) return true;
+  await cache.put(
+    key,
+    new Response("seen", { headers: { "cache-control": "public, max-age=86400" } }),
+  );
+  return false;
+}
+
+async function rateLimited(repository: string, now = Date.now()): Promise<boolean> {
+  const cache = caches.default;
+  const minute = Math.floor(now / 60_000);
+  const key = new Request(
+    `https://rate.oreoflow.invalid/${encodeURIComponent(repository)}/${minute}`,
+  );
+  const found = await cache.match(key);
+  const count = found ? Number(await found.text()) : 0;
+  if (count >= MAX_REPOSITORY_EVENTS_PER_MINUTE) return true;
+  await cache.put(
+    key,
+    new Response(String(count + 1), { headers: { "cache-control": "public, max-age=120" } }),
+  );
+  return false;
+}
+
+function dispatchType(event: string): string {
+  return event.startsWith("discussion") ? "discussion_reconcile" : "steward_reconcile";
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    const path = url.pathname;
-
-    // CORS headers
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    };
-
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
+    if (request.method === "GET" && url.pathname === "/health") {
+      return response(200, { status: "ok", service: "oreoflow-webhook-ingress" });
     }
-
+    if (request.method !== "POST" || url.pathname !== "/github/webhook") {
+      return response(404, { error: "not_found" });
+    }
+    const length = Number(request.headers.get("content-length") || "0");
+    if (length > MAX_BODY_BYTES) return response(413, { error: "payload_too_large" });
+    const event = request.headers.get("x-github-event") || "";
+    const delivery = request.headers.get("x-github-delivery") || "";
+    const signature = request.headers.get("x-hub-signature-256") || "";
+    if (!event || !delivery || !ALLOWED_ACTIONS[event]) {
+      return response(400, { error: "unsupported_event" });
+    }
+    const body = await request.arrayBuffer();
+    if (body.byteLength > MAX_BODY_BYTES) return response(413, { error: "payload_too_large" });
+    if (!(await validSignature(env.GITHUB_WEBHOOK_SECRET, body, signature))) {
+      return response(401, { error: "invalid_signature" });
+    }
+    if (await replayed(delivery)) return response(202, { status: "duplicate" });
+    let payload: Record<string, any>;
     try {
-      // Health check
-      if (path === "/health") {
-        return json({ status: "ok", env: env.ENVIRONMENT }, corsHeaders);
-      }
-
-      // === D1 Routes ===
-
-      // GET /d1/users/:id
-      if (path.startsWith("/d1/users/") && request.method === "GET") {
-        const id = path.split("/d1/users/")[1];
-        const user = await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(id).first();
-        if (!user) return json({ error: "not found" }, corsHeaders, 404);
-        return json(user, corsHeaders);
-      }
-
-      // GET /d1/users?github_user_id=123
-      if (path === "/d1/users" && request.method === "GET") {
-        const ghId = url.searchParams.get("github_user_id");
-        if (ghId) {
-          const user = await env.DB.prepare("SELECT * FROM users WHERE github_user_id = ?").bind(Number(ghId)).first();
-          return json(user || { error: "not found" }, corsHeaders, user ? 200 : 404);
-        }
-        const { results } = await env.DB.prepare("SELECT * FROM users ORDER BY created_at DESC LIMIT 50").all();
-        return json({ users: results }, corsHeaders);
-      }
-
-      // POST /d1/users
-      if (path === "/d1/users" && request.method === "POST") {
-        const body: any = await request.json();
-        await env.DB.prepare(
-          "INSERT INTO users (id, github_user_id, github_username, email, api_key_hash, settings, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-        ).bind(body.id, body.github_user_id, body.github_username, body.email, body.api_key_hash, JSON.stringify(body.settings || {}), body.created_at, body.updated_at).run();
-        return json({ ok: true }, corsHeaders, 201);
-      }
-
-      // GET /d1/sessions
-      if (path === "/d1/sessions" && request.method === "GET") {
-        const userId = url.searchParams.get("user_id");
-        const limit = Number(url.searchParams.get("limit") || "50");
-        let query = "SELECT * FROM sessions_meta ORDER BY updated_at DESC LIMIT ?";
-        let stmt = env.DB.prepare(query).bind(limit);
-        if (userId) {
-          query = "SELECT * FROM sessions_meta WHERE user_id = ? ORDER BY updated_at DESC LIMIT ?";
-          stmt = env.DB.prepare(query).bind(userId, limit);
-        }
-        const { results } = await stmt.all();
-        return json({ sessions: results }, corsHeaders);
-      }
-
-      // POST /d1/sessions
-      if (path === "/d1/sessions" && request.method === "POST") {
-        const body: any = await request.json();
-        await env.DB.prepare(
-          "INSERT OR REPLACE INTO sessions_meta (id, status, trigger, repo_full_name, issue_number, pr_number, user_id, created_at, updated_at, completed_at, prompt_tokens, completion_tokens, total_tokens, current_step, result_pr_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        ).bind(body.id, body.status, body.trigger, body.repo_full_name, body.issue_number, body.pr_number, body.user_id, body.created_at, body.updated_at, body.completed_at, body.prompt_tokens || 0, body.completion_tokens || 0, body.total_tokens || 0, body.current_step || 0, body.result_pr_url).run();
-        return json({ ok: true }, corsHeaders, 201);
-      }
-
-      // GET /d1/memories?repo_id=xxx
-      if (path === "/d1/memories" && request.method === "GET") {
-        const repoId = url.searchParams.get("repo_id");
-        const category = url.searchParams.get("category");
-        let query = "SELECT * FROM memories WHERE 1=1";
-        const params: any[] = [];
-        if (repoId) { query += " AND repo_id = ?"; params.push(repoId); }
-        if (category) { query += " AND category = ?"; params.push(category); }
-        query += " ORDER BY relevance_score DESC LIMIT 50";
-        const { results } = await env.DB.prepare(query).bind(...params).all();
-        return json({ memories: results }, corsHeaders);
-      }
-
-      // POST /d1/memories
-      if (path === "/d1/memories" && request.method === "POST") {
-        const body: any = await request.json();
-        await env.DB.prepare(
-          "INSERT INTO memories (id, repo_id, user_id, category, content, source_session_id, relevance_score, created_at, last_accessed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        ).bind(body.id, body.repo_id, body.user_id, body.category, body.content, body.source_session_id, body.relevance_score || 1.0, body.created_at, body.last_accessed_at).run();
-        return json({ ok: true }, corsHeaders, 201);
-      }
-
-      // === KV Routes ===
-
-      // GET /kv/:key
-      if (path.startsWith("/kv/") && request.method === "GET") {
-        const key = path.slice(4);
-        const value = await env.KV.get(key);
-        if (value === null) return json({ error: "not found" }, corsHeaders, 404);
-        return json({ key, value }, corsHeaders);
-      }
-
-      // PUT /kv/:key
-      if (path.startsWith("/kv/") && request.method === "PUT") {
-        const key = path.slice(4);
-        const body: any = await request.json();
-        const ttl = body.ttl ? { expirationTtl: body.ttl } : undefined;
-        await env.KV.put(key, body.value, ttl);
-        return json({ ok: true }, corsHeaders);
-      }
-
-      // DELETE /kv/:key
-      if (path.startsWith("/kv/") && request.method === "DELETE") {
-        const key = path.slice(4);
-        await env.KV.delete(key);
-        return json({ ok: true }, corsHeaders);
-      }
-
-      return json({ error: "not found" }, corsHeaders, 404);
-    } catch (err: any) {
-      return json({ error: err.message }, corsHeaders, 500);
+      payload = JSON.parse(new TextDecoder().decode(body));
+    } catch {
+      return response(400, { error: "invalid_json" });
     }
+    const action = String(payload.action || "");
+    if (!ALLOWED_ACTIONS[event].has(action)) return response(202, { status: "ignored_action" });
+    const fullName = String(payload.repository?.full_name || "");
+    const owner = fullName.split("/")[0].toLowerCase();
+    const allowedOwners = new Set(
+      (env.ALLOWED_OWNERS || "elixpo").split(",").map((item) => item.trim().toLowerCase()),
+    );
+    if (!fullName || !allowedOwners.has(owner)) return response(403, { error: "repository_denied" });
+    if (await rateLimited(fullName)) return response(429, { error: "rate_limited" });
+    const [controlOwner, controlRepo] = env.CONTROL_REPOSITORY.split("/", 2);
+    if (!controlOwner || !controlRepo || !env.GITHUB_CONTROL_TOKEN) {
+      return response(503, { error: "ingress_not_configured" });
+    }
+    const sourceNumber = Number(
+      payload.issue?.number || payload.pull_request?.number || payload.discussion?.number || 0,
+    );
+    const dispatch = await fetch(
+      `https://api.github.com/repos/${controlOwner}/${controlRepo}/dispatches`,
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${env.GITHUB_CONTROL_TOKEN}`,
+          accept: "application/vnd.github+json",
+          "x-github-api-version": "2022-11-28",
+          "content-type": "application/json",
+          "user-agent": "oreoflow-webhook-ingress",
+        },
+        body: JSON.stringify({
+          event_type: dispatchType(event),
+          client_payload: {
+            delivery,
+            event,
+            action,
+            repository: fullName,
+            number: sourceNumber,
+          },
+        }),
+      },
+    );
+    if (!dispatch.ok) return response(502, { error: "dispatch_failed", status: dispatch.status });
+    return response(202, { status: "accepted" });
   },
 };
-
-function json(data: any, headers: Record<string, string>, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json", ...headers },
-  });
-}

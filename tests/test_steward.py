@@ -166,7 +166,9 @@ def test_workflows_wire_turn_headroom_and_discussion_mentions():
     steward_workflow = Path(".github/workflows/steward.yml").read_text(encoding="utf-8")
     intake_workflow = Path(".github/workflows/steward-intake.yml").read_text(encoding="utf-8")
 
-    assert "ELIXPO_AGENT_MAX_TURNS || 64" in agent_workflow
+    assert "python -m agents.repository_agent" in agent_workflow
+    assert "claude-code-action" not in agent_workflow
+    assert "claude-code-router" not in agent_workflow
     assert "discussion_comment:" in discussion_workflow
     assert "python -m agents.discussions respond" in discussion_workflow
     assert 'cron: "*/10 * * * *"' in steward_workflow
