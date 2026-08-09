@@ -206,7 +206,7 @@ def _feedback(reviews: list[dict], comments: list[dict], checks: list[dict], act
             )
     for comment in comments[-20:]:
         review_id = int(comment.get("pull_request_review_id") or 0)
-        if review_ids and review_id not in review_ids:
+        if review_id not in review_ids:
             continue
         result.append(
             {
@@ -335,6 +335,12 @@ def _verification_commands(workspace: Path, changed: list[str]) -> list[list[str
     workflows = [path for path in changed if Path(path).parts[:2] == (".github", "workflows")]
     if workflows and shutil.which("actionlint"):
         commands.append(["actionlint", *workflows])
+    yaml_files = [path for path in changed if Path(path).suffix.casefold() in {".yaml", ".yml"}]
+    if yaml_files and not workflows and shutil.which("yamllint"):
+        commands.append(["yamllint", *yaml_files])
+    plain_javascript = [path for path in changed if Path(path).suffix.casefold() in {".js", ".mjs", ".cjs"}]
+    if plain_javascript and not any(command[0] in {"npm", "pnpm", "yarn"} for command in commands):
+        commands.extend([["node", "--check", path] for path in plain_javascript])
     if not commands:
         raise StewardFixRejected("no language-specific verification command could be inferred")
     return commands[:3]
@@ -480,7 +486,7 @@ async def fix_one(api, gist, router, store, *, key: str, fingerprint: str, works
             )
             ledger.save(store)
         body = (
-            f"Pushed `{head_sha[:8]}` with the requested follow-up changes. "
+            f"Automated follow-up pushed `{head_sha[:8]}` with the requested changes. "
             f"Verified: {', '.join(item['command'] for item in check_receipts)}."
         )
         comment_error = ""

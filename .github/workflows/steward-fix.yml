@@ -34,7 +34,11 @@ jobs:
         with:
           node-version: "22"
       - name: Install Steward runtime
-        run: pip install -e .
+        run: |
+          pip install -e . yamllint
+          corepack enable
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Apply requested PR delta
         env:
           AGENT_GITHUB_SOLVER_TOKEN: ${{ secrets.AGENT_GITHUB_SOLVER_TOKEN }}

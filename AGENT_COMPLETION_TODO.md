@@ -71,20 +71,20 @@ Items are ordered by dependency, not by issue number.
 - [x] Run Janitor after successful Submit so completed workspaces and dependency
       trees do not accumulate after the pushed branch is safe.
 
-## 3. Complete Steward follow-through
+## 3. Complete Steward follow-through — completed
 
-- [ ] Implement `agents/steward/fix.py` for maintainer change requests and CI failures.
-- [ ] Reuse the existing fork branch and reviewed PR identity from Gist memory.
-- [ ] Run a fresh bounded Solve session only against the requested delta.
-- [ ] Push additional commits only after verification and safety checks.
-- [ ] Update the progress checklist and Gist receipt after every terminal outcome.
-- [ ] Implement `agents/steward/celebrate.py` for merged PRs.
-- [ ] Mark the ledger merged, remove active follow-up memory, and retain a bounded
+- [x] Implement `agents/steward/fix.py` for maintainer change requests and CI failures.
+- [x] Reuse the existing fork branch and reviewed PR identity from Gist memory.
+- [x] Run one bounded correction session only against the requested delta.
+- [x] Push additional commits only after verification and semantic/safety checks.
+- [x] Update the progress receipt and Gist memory after every terminal outcome.
+- [x] Implement `agents/steward/celebrate.py` for merged and closed PRs.
+- [x] Mark the ledger merged or closed, remove active follow-up memory, and retain a bounded
       completion receipt.
-- [ ] Make celebration posts optional, cooldown-aware, and safety-gated.
-- [ ] Add workflows for review comments, requested changes, CI failure, merge, and
+- [x] Make celebration posts optional and safety-gated; terminal fingerprints prevent duplicates.
+- [x] Add dispatch workers for requested changes, CI failure, merge/close, and
       webhook-loss polling.
-- [ ] Add rich skills for Steward Fix and Celebrate.
+- [x] Add rich skills for Steward Fix and Celebrate.
 
 ## 4. Gist memory and cache custodian
 
@@ -180,10 +180,10 @@ Items are ordered by dependency, not by issue number.
 
 ## Immediate execution order
 
-1. Steward Fix.
-2. Steward Celebrate.
-3. Dedicated GitHub Project operations view.
-4. Gist Custodian.
-5. Discussion reliability pass.
-6. End-to-end orchestration and failure testing.
-7. Security/cost audit, documentation, and controlled release.
+1. Dedicated GitHub Project operations view.
+2. Gist Custodian.
+3. Discussion reliability pass.
+4. End-to-end orchestration and failure testing (section 6).
+5. Security and public-action controls (section 7).
+6. Cost, observability, and anomaly controls (section 8).
+7. Validation, documentation, and controlled release (section 10).
