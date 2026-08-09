@@ -46,7 +46,12 @@ def test_webhook_ingress_has_signature_replay_size_and_owner_gates():
     assert "MAX_BODY_BYTES" in source
     assert "replayed(delivery)" in source
     assert "ALLOWED_ACTIONS" in source
+    assert 'event === "ping"' in source
+    assert "ignored_event" in source
     assert "ALLOWED_OWNERS" in source
     assert "rateLimited(fullName)" in source
+    assert "MAX_REPLAY_ENTRIES" in source
+    assert "seenDeliveries" in source
+    assert "caches.default" not in source
     assert "D1Database" not in source
     assert "KVNamespace" not in source

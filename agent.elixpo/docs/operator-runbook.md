@@ -9,6 +9,8 @@
 
 There is no operational database. The webhook Worker verifies and forwards
 events but stores no agent state.
+Its bounded in-isolate replay and rate guards are best effort; durable Gist and
+workflow idempotency markers remain authoritative across regions and restarts.
 
 ## Required organization configuration
 
@@ -18,16 +20,33 @@ Discussions, Project, or Gist credential with an unrelated workflow. Configure:
 
 - `ELIXPO_MENTION_TRUSTED_USERS`
 - `ELIXPO_MENTION_TRUSTED_ORGS=elixpo`
-- `ELIXPO_MENTION_WATCHED_REPOS`
+- `.github/elixpoo-whitelist.yml` with reviewed external repositories
 - `ELIXPO_GITHUB_CONTROL_REPO=elixpo/agent.elixpo`
 - `ELIXPOO_FOLLOWUP_GIST_ID`
 - `OREOFLOW_RUNTIME_REF` after creating a reviewed release tag.
 
 For the Worker, store `GITHUB_WEBHOOK_SECRET` and `GITHUB_CONTROL_TOKEN` with
 `wrangler secret put`. Set the GitHub webhook URL to
-`https://<worker>/github/webhook`, content type `application/json`, SSL enabled,
+`https://oreoflow-webhook-ingress.ayushbhatt633.workers.dev/github/webhook`,
+content type `application/json`, SSL enabled,
 and the same webhook secret. Keep `ALLOWED_OWNERS=elixpo` unless another owner is
 explicitly approved.
+
+The `elixpo` GitHub App owns the production webhook configuration. Its
+Permissions & events settings must subscribe to Issues, Issue comments, Pull
+requests, Pull request reviews, Pull request review comments, Discussions, and
+Discussion comments. Scheduled Steward and Discussion polling remains the
+authoritative recovery path for missed deliveries.
+
+Deploy from `workers/` with its pinned Wrangler runtime. The configuration
+declares both secrets as required, so deployment fails closed when either is
+missing:
+
+```bash
+npm install
+npm run deploy
+curl --fail https://oreoflow-webhook-ingress.ayushbhatt633.workers.dev/health
+```
 
 ## Repository rollout
 
