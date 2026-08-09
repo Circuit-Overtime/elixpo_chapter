@@ -27,7 +27,6 @@ def _resolve_target(store, explicit_url: str | None) -> tuple[str, bool]:
         {},
         expected_producer={"pick", "steward-intake"},
         max_age=timedelta(hours=24),
-        allow_legacy=True,
     ) or {}
     return str(pick["url"]), True
 
@@ -41,7 +40,6 @@ def _finalize_pick(store, result: dict, now: datetime) -> None:
         expected_producer={"pick", "steward-intake"},
         max_age=timedelta(hours=24),
         now=now,
-        allow_legacy=True,
     ) or {}
     if pick.get("status") != "pending_vet" or pick.get("url") != result.get("url"):
         raise RuntimeError("Vet result does not match the pending Pick target")

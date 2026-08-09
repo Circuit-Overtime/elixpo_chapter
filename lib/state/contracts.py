@@ -109,15 +109,12 @@ def read_versioned(
     expected_key: str | None = None,
     max_age: timedelta | None = None,
     now: datetime | None = None,
-    allow_legacy: bool = False,
 ) -> Any:
     """Read one payload only after its sidecar contract passes boundary checks."""
     payload = store.read_json(name, default)
     registry = StateContractRegistry.model_validate(store.read_json(CONTRACTS_FILE, {}) or {})
     contract = registry.contracts.get(name)
     if contract is None:
-        if allow_legacy:
-            return payload
         raise StateBoundaryError(f"state/{name} has no versioned contract")
     if contract.state_file != name:
         raise StateBoundaryError(f"state/{name} contract names {contract.state_file!r}")

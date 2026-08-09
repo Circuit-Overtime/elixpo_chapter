@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+from datetime import timedelta
 
 import structlog
 
@@ -42,7 +43,12 @@ async def _run(*, dry_run: bool, repair: bool, confirm_reset: bool) -> int:
         return 75
     finally:
         await api.close()
-    store.write_json("gist_custodian.json", receipt)
+    store.write_state(
+        "gist_custodian.json",
+        receipt,
+        producer="gist-custodian",
+        ttl=timedelta(days=7),
+    )
     print(json.dumps(receipt, indent=2, sort_keys=True))
     return 1 if receipt["status"] == "repair_required" else 0
 

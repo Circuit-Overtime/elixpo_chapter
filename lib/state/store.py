@@ -79,7 +79,6 @@ class StateStore:
         expected_key: str | None = None,
         max_age: timedelta | None = None,
         now: datetime | None = None,
-        allow_legacy: bool = False,
     ) -> Any:
         """Read and validate state at a squad boundary."""
         from lib.state.contracts import read_versioned
@@ -93,7 +92,6 @@ class StateStore:
             expected_key=expected_key,
             max_age=max_age,
             now=now,
-            allow_legacy=allow_legacy,
         )
 
     def read_jsonl(self, name: str) -> list[dict[str, Any]]:

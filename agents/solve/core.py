@@ -66,7 +66,6 @@ def resolve_target(store: StateStore, explicit_url: str | None, owned_test: bool
         {},
         expected_producer="vet",
         max_age=timedelta(hours=24),
-        allow_legacy=True,
     ) or {}
     if explicit_url:
         if not owned_test or not is_test_repository(_repo_from_url(explicit_url)):
@@ -86,7 +85,6 @@ def resolve_target(store: StateStore, explicit_url: str | None, owned_test: bool
         expected_run_id=str(vet.get("run_id") or "") if vet.get("run_id") else None,
         expected_key=str(vet.get("key") or "") if vet.get("key") else None,
         max_age=timedelta(hours=24),
-        allow_legacy=True,
     ) or {}
     if pick.get("status") != "picked" or not pick.get("url"):
         raise SolveRejected("state/pick.json has no Vet-approved target")

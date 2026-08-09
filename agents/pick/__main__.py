@@ -37,7 +37,6 @@ def run(store: StateStore, now: datetime | None = None) -> dict | None:
             expected_producer={"pick", "steward-intake"},
             max_age=timedelta(hours=24),
             now=now,
-            allow_legacy=True,
         ) or {}
         log.info("pick.awaiting_vet", key=f"{pending.get('repo')}#{pending.get('number')}")
         return pending

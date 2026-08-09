@@ -72,7 +72,6 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         {},
         expected_producer="vet",
         expected_key=(store.read_json("vet.json", {}) or {}).get("key") or None,
-        allow_legacy=True,
     ) or {}
     matching_vet = vet if vet.get("url") == target else None
     token_target = solve_token_limit(policy, matching_vet)

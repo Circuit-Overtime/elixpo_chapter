@@ -79,13 +79,12 @@ def test_boundary_rejects_stale_and_expired_contracts(tmp_path):
         store.read_state("pick.json", now=later)
 
 
-def test_legacy_state_requires_explicit_compatibility(tmp_path):
+def test_uncontracted_state_is_always_rejected(tmp_path):
     store = StateStore(tmp_path)
     payload = [{"repo": "elixpo/repo"}]
     store.write_json("triaged.json", payload)
     with pytest.raises(StateBoundaryError, match="no versioned contract"):
         store.read_state("triaged.json")
-    assert store.read_state("triaged.json", allow_legacy=True) == payload
 
 
 def test_unknown_future_registry_schema_fails_closed(tmp_path):

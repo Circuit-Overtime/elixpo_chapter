@@ -466,7 +466,6 @@ async def _run() -> int:
         {},
         expected_producer="solve",
         max_age=timedelta(hours=24),
-        allow_legacy=True,
     ) or {}
     api = GitHubAPI.from_token(settings.github.solver_token)
     router = Router.from_settings("submit", budget=Budget("submit", limit=2500, kill_multiple=1.0))

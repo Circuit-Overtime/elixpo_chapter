@@ -51,10 +51,12 @@ jobs:
         env:
           CONTROL_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
         run: |
-          if [[ ! -f state/project.json ]]; then exit 0; fi
+          if [[ ! -f state/project.json && ! -f state/project_setup.json ]]; then exit 0; fi
           git config user.name "elixpoo"
           git config user.email "elixpoo@gmail.com"
-          git add state/project.json state/contracts.json
+          git add state/contracts.json
+          [[ ! -f state/project.json ]] || git add state/project.json
+          [[ ! -f state/project_setup.json ]] || git add state/project_setup.json
           git diff --cached --quiet || git commit -m "chore(project): reconcile operations view"
           auth=$(printf 'x-access-token:%s' "$CONTROL_TOKEN" | base64 -w 0)
           git -c http.extraheader="AUTHORIZATION: basic $auth" push
