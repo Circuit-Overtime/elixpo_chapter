@@ -8,8 +8,8 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from agents.gist_custodian.core import maintain_gist
 from lib.github.gists import (
-    FOLLOWUP_FILENAME,
     DISCUSSIONS_FILENAME,
+    FOLLOWUP_FILENAME,
     MERGE_SUMMARIES_FILENAME,
     MODEL_CACHE_FILENAME,
     GistConflictError,

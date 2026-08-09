@@ -59,8 +59,8 @@ post into a semantically different category.
 
 ## Apply labels
 
-Resolve labels from the Discussion source repository before creating a post.
-Create missing deterministic labels, then apply them through
+Create the safety-approved Discussion first. Then resolve missing deterministic
+labels and apply them through
 `addLabelsToLabelable` after creation:
 
 - always apply `announcement`, `qna`, or `poll` for the post type;
@@ -71,6 +71,8 @@ Create missing deterministic labels, then apply them through
 
 Require Discussions and Issues write permission on the source repository. Never
 reuse a label ID from another repository because labels are repository-scoped.
+If label lookup, creation, or attachment is forbidden, retain the already-created
+Discussion, emit a bounded warning, and do not retry the public post.
 
 GitHub’s public GraphQL API does not create native poll options. Publish numbered
 options in the Poll body and ask readers to reply with an option plus reasoning.
@@ -86,8 +88,13 @@ Use HTML comments so markers remain invisible in rendered prose:
 <!-- elixpoo-discussions:reply:<source-node-id> -->
 ```
 
-Check top-level comments and nested replies. A workflow retry must find the marker
-and exit successfully without generating or posting again.
+Check durable source node IDs first, then top-level comments and nested replies for
+legacy markers. A workflow retry must exit successfully without generating or
+posting again.
+
+For preview runs, perform generation, rendering, category resolution, and safety
+moderation, but never create a Discussion or mutate labels. Return the exact title,
+body, and intended labels that would be published.
 
 ## Handle failures
 

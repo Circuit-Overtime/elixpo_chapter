@@ -6,17 +6,17 @@ import hashlib
 from datetime import datetime, timezone
 
 from lib.github.gists import (
-    FOLLOWUP_FILENAME,
     DISCUSSIONS_FILENAME,
+    FOLLOWUP_FILENAME,
     MERGE_SUMMARIES_FILENAME,
     MODEL_CACHE_FILENAME,
     RevisionedGist,
     parse_json_file,
     render_json,
 )
+from lib.state.discussions import DiscussionMemory
 from lib.state.followups import FOLLOWUP_COMPLETION_LIMIT, FollowupMemory
 from lib.state.gist_memory import MergeSummaryMemory, ModelCacheMemory
-from lib.state.discussions import DiscussionMemory
 
 FILES = (FOLLOWUP_FILENAME, MERGE_SUMMARIES_FILENAME, MODEL_CACHE_FILENAME, DISCUSSIONS_FILENAME)
 
