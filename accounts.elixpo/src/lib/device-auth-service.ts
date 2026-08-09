@@ -319,3 +319,235 @@ export async function cleanupExpiredDeviceAuthorizations(
 
     return (result as any)?.meta?.changes ?? 0;
 }
+/**
+ * accounts.elixpo#80 additions — appended to the existing
+ * src/lib/device-auth-service.ts (from #79 / PR #83), below
+ * cleanupExpiredDeviceAuthorizations(). Nothing above this point is
+ * touched; `hashUserCode` below is the existing private helper already
+ * in the file, reused directly rather than re-exported (these functions
+ * live in the same module, so no export is needed).
+ *
+ * Design note per the #80 handoff: these take the raw `user_code`, not
+ * `id` — the verification page and the approve/deny routes only ever
+ * have the human-typed code, never the internal row id, so hashing here
+ * (mirroring lookupDeviceAuthorizationByUserCode's own normalize-then-
+ * hash pattern) avoids requiring a second, id-based lookup step upstream.
+ *
+ * TEST COVERAGE NOTE: this repo has no working D1-backed test harness —
+ * #79 tried `@cloudflare/vitest-pool-workers` and explicitly gave up on
+ * it (API mismatch with `defineWorkersConfig`), and `createInMemoryMockDb`
+ * in d1-client.ts doesn't round-trip inserts/updates, so it can't
+ * meaningfully test an `UPDATE ... WHERE status = 'pending'` guard. Per
+ * the #80 PR discussion, rather than leave the pending/expired/
+ * already-resolved branching untested, it's extracted below into
+ * `evaluateDeviceAuthorizationForResolution` — a pure function with no DB
+ * access, testable with plain vitest exactly like `normalizeUserCode`
+ * above. approveDeviceAuthorization/denyDeviceAuthorization call it and
+ * then perform the one remaining untested piece: the atomic UPDATE
+ * itself. That gap is real and explicit, not silently fixed here — see
+ * PR-80-NOTES.md.
+ */
+
+export interface DeviceAuthorizationStatusRow {
+    status: string;
+    expires_at: string;
+}
+
+export type DeviceAuthorizationResolutionOutcome =
+    | { canResolve: true }
+    | { canResolve: false; reason: "already_resolved" | "expired" };
+
+/**
+ * Pure decision: given a device_authorizations row's status/expires_at,
+ * can an approve/deny action proceed against it right now? Mirrors
+ * lookupDeviceAuthorizationByUserCode's own not_found/expired collapsing
+ * — an approve/deny attempt on an expired-but-still-"pending" row should
+ * read the same as acting on something that no longer exists, not a
+ * distinct third outcome.
+ */
+export function evaluateDeviceAuthorizationForResolution(
+    row: DeviceAuthorizationStatusRow,
+    now: Date = new Date(),
+): DeviceAuthorizationResolutionOutcome {
+    if (row.status === "pending" && new Date(row.expires_at) <= now) {
+        return { canResolve: false, reason: "expired" };
+    }
+    if (row.status !== "pending") {
+        return { canResolve: false, reason: "already_resolved" };
+    }
+    return { canResolve: true };
+}
+
+export interface ResolveDeviceAuthorizationInput {
+    userCode: string;
+    userId: string;
+    ipAddress?: string;
+}
+
+export type DeviceAuthorizationResolutionResult =
+    | { ok: true; clientId: string }
+    | { ok: false; reason: "not_found" | "already_resolved" | "expired" };
+
+export async function approveDeviceAuthorization(
+    db: D1Database,
+    input: ResolveDeviceAuthorizationInput,
+): Promise<DeviceAuthorizationResolutionResult> {
+    const userCodeHash = await hashUserCode(input.userCode);
+
+    const row = (await db
+        .prepare(
+            "SELECT id, client_id, status, expires_at FROM device_authorizations WHERE user_code_hash = ?",
+        )
+        .bind(userCodeHash)
+        .first()) as {
+        id: string;
+        client_id: string;
+        status: string;
+        expires_at: string;
+    } | null;
+
+    if (!row) {
+        return { ok: false, reason: "not_found" };
+    }
+
+    const decision = evaluateDeviceAuthorizationForResolution(row);
+    if (!decision.canResolve) {
+        return { ok: false, reason: decision.reason };
+    }
+
+    // Atomic guard against a concurrent approve/deny race on the same
+    // request — same `UPDATE ... WHERE status = 'pending'` + changes-count
+    // check pattern cleanupExpiredDeviceAuthorizations already uses.
+    // NOT covered by the pure-function tests above — see the test
+    // coverage note at the top of this file.
+    const result = await db
+        .prepare(
+            "UPDATE device_authorizations SET status = 'approved', user_id = ?, approved_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP",
+        )
+        .bind(input.userId, row.id)
+        .run();
+
+    if (result.meta.changes !== 1) {
+        return { ok: false, reason: "already_resolved" };
+    }
+
+    return { ok: true, clientId: row.client_id };
+}
+
+export async function denyDeviceAuthorization(
+    db: D1Database,
+    input: ResolveDeviceAuthorizationInput,
+): Promise<DeviceAuthorizationResolutionResult> {
+    const userCodeHash = await hashUserCode(input.userCode);
+
+    const row = (await db
+        .prepare(
+            "SELECT id, client_id, status, expires_at FROM device_authorizations WHERE user_code_hash = ?",
+        )
+        .bind(userCodeHash)
+        .first()) as {
+        id: string;
+        client_id: string;
+        status: string;
+        expires_at: string;
+    } | null;
+
+    if (!row) {
+        return { ok: false, reason: "not_found" };
+    }
+
+    const decision = evaluateDeviceAuthorizationForResolution(row);
+    if (!decision.canResolve) {
+        return { ok: false, reason: decision.reason };
+    }
+
+    const result = await db
+        .prepare(
+            "UPDATE device_authorizations SET status = 'denied', denied_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP",
+        )
+        .bind(row.id)
+        .run();
+
+    if (result.meta.changes !== 1) {
+        return { ok: false, reason: "already_resolved" };
+    }
+
+    return { ok: true, clientId: row.client_id };
+}
+
+/**
+ * Pure classifier for the token endpoint's device_code polling grant
+ * (RFC 8628 §3.5). Given the stored row, the polling client_id, and the
+ * current time, decides what should happen next — WITHOUT touching the
+ * DB. token/route.ts's device_code branch calls this once per poll, then
+ * performs exactly the DB write (if any) each outcome implies and builds
+ * the HTTP response. Extracted so every branch — pending, denied,
+ * expired, slow_down (with backoff math), client substitution, and
+ * ready-to-exchange — is testable with plain vitest, same as
+ * normalizeUserCode/evaluateDeviceAuthorizationForResolution above.
+ *
+ * Deliberately does NOT decide the atomic exchange-claim outcome
+ * (`exchanged_at IS NULL` race) — that UPDATE's result can only be known
+ * by actually running it against D1, so "ready_to_exchange" is as far as
+ * a pure function can take this decision. See the test coverage note at
+ * the top of this file for why that one piece stays untested here.
+ */
+export interface DevicePollRow {
+    client_id: string;
+    status: string;
+    user_id: string | null;
+    interval_seconds: number;
+    last_polled_at: string | null;
+    expires_at: string;
+}
+
+export type DevicePollClassification =
+    | { kind: "client_mismatch" }
+    | { kind: "access_denied" }
+    | { kind: "expired_token"; wasPending: boolean }
+    | { kind: "slow_down"; newIntervalSeconds: number }
+    | { kind: "authorization_pending" }
+    | { kind: "ready_to_exchange" }
+    | { kind: "not_exchangeable" };
+
+export function classifyDevicePollAttempt(
+    row: DevicePollRow,
+    requestingClientId: string,
+    now: Date = new Date(),
+): DevicePollClassification {
+    if (row.client_id !== requestingClientId) {
+        return { kind: "client_mismatch" };
+    }
+
+    const expiresAt = new Date(row.expires_at);
+    if (row.status === "expired" || expiresAt <= now) {
+        return { kind: "expired_token", wasPending: row.status === "pending" };
+    }
+
+    if (row.status === "denied") {
+        return { kind: "access_denied" };
+    }
+
+    if (row.status === "pending") {
+        const lastPolledAt = row.last_polled_at
+            ? new Date(row.last_polled_at)
+            : null;
+        const elapsedSeconds = lastPolledAt
+            ? (now.getTime() - lastPolledAt.getTime()) / 1000
+            : Number.POSITIVE_INFINITY;
+
+        if (elapsedSeconds < row.interval_seconds) {
+            return {
+                kind: "slow_down",
+                newIntervalSeconds: row.interval_seconds + 5,
+            };
+        }
+        return { kind: "authorization_pending" };
+    }
+
+    if (row.status === "approved" && row.user_id) {
+        return { kind: "ready_to_exchange" };
+    }
+
+    return { kind: "not_exchangeable" };
+}
