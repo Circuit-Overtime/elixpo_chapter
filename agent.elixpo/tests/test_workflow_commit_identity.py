@@ -11,6 +11,7 @@ STATE_WRITERS = (
     "vet.yml",
     "solve.yml",
     "steward-intake.yml",
+    "janitor-audit.yml",
 )
 
 

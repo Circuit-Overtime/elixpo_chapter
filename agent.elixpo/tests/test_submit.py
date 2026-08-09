@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
+from agents.submit import __main__ as submit_module
 from agents.submit.__main__ import (
     SubmitRejected,
     build_pr_body,
@@ -11,6 +12,7 @@ from agents.submit.__main__ import (
     validate_verification_record,
     write_punch_line,
 )
+from lib.state.store import StateStore
 
 
 def _state():
@@ -22,7 +24,11 @@ def _state():
         "fork_repo": "Circuit-Overtime/lixrl.com",
         "branch": "patch/copy-full-llm-text-9-a1b2",
         "status": "ready_to_submit",
-        "review": {"approved": True, "findings": []},
+        "review": {
+            "approved": True,
+            "findings": [],
+            "source": "independent_semantic_diff_review",
+        },
         "head_sha": "a" * 40,
         "summary": "Copy the complete documentation abstraction.",
         "harness": {"commit_message": "fix(docs): preserve leaf content in LLM copy payload"},
@@ -68,6 +74,26 @@ def test_submit_rejects_undisclosed_verification_failure():
     }
 
     with pytest.raises(SubmitRejected, match="undisclosed"):
+        validate_verification_record(state)
+
+
+def test_submit_rejects_disclosed_missing_verification_tool():
+    state = {
+        **_state(),
+        "checks": [
+            {
+                "kind": "verification",
+                "command": "npx tsc --noEmit",
+                "exit_code": 1,
+                "output": "bwrap: execvp npx: No such file or directory",
+            }
+        ],
+        "verification_exceptions": [
+            {"kind": "verification", "command": "npx tsc --noEmit", "exit_code": 1}
+        ],
+    }
+
+    with pytest.raises(SubmitRejected, match="tool was unavailable"):
         validate_verification_record(state)
 
 
@@ -177,6 +203,17 @@ def test_submit_state_workspace_and_identity_must_match(tmp_path):
         raise AssertionError("unsafe branch passed")
 
 
+def test_submit_requires_independent_semantic_review(tmp_path):
+    workspace_base = tmp_path / "workspaces"
+    workspace = workspace_base / "session"
+    workspace.mkdir(parents=True)
+    state = {**_state(), "workspace": str(workspace)}
+    state["review"] = {"approved": True, "findings": [], "source": "deterministic_diff_review"}
+
+    with pytest.raises(SubmitRejected, match="independent semantic diff review"):
+        validate_solve_state(state, workspace_base)
+
+
 def test_submit_rejects_unreviewed_structured_fallback(tmp_path):
     workspace_base = tmp_path / "workspaces"
     workspace = workspace_base / "session"
@@ -198,3 +235,54 @@ def test_pr_body_omits_only_missing_optional_footer():
     body = build_pr_body(_state(), None)
     assert body.endswith("Fixes #9")
     assert "@elixpoo</sub>" not in body
+
+
+@pytest.mark.asyncio
+async def test_successful_submit_authorizes_exact_workspace_cleanup(tmp_path, monkeypatch):
+    workspace_base = tmp_path / "workspaces"
+    workspace = workspace_base / "session"
+    workspace.mkdir(parents=True)
+    state = {
+        **_state(),
+        "run_id": "run-1",
+        "key": "elixpo/lixrl.com#9",
+        "workspace": str(workspace),
+        "base_branch": "main",
+        "test_mode": True,
+        "cleanup": {
+            "schema_version": 1,
+            "run_id": "run-1",
+            "owner": "janitor",
+            "status": "active",
+            "resources": [],
+        },
+    }
+    store = StateStore(tmp_path / "state")
+
+    class API:
+        async def _token(self):
+            return "token"
+
+        async def _request(self, method, path, params=None):
+            assert method == "GET" and path.endswith("/pulls") and params
+            return [{"html_url": "https://github.com/elixpo/lixrl.com/pull/10", "number": 10}]
+
+    class Router:
+        pass
+
+    async def punch_line(router, solve_state):
+        return None
+
+    async def safe(router, title, body):
+        return None
+
+    monkeypatch.setattr(submit_module, "write_punch_line", punch_line)
+    monkeypatch.setattr(submit_module, "safety_check", safe)
+    monkeypatch.setattr(submit_module, "push_branch", lambda *args, **kwargs: None)
+
+    await submit_module.submit(API(), Router(), store, state, workspace_base)
+
+    solved = store.read_json("solve.json")
+    assert solved["status"] == "submitted"
+    assert solved["cleanup"]["status"] == "authorized_after_submit"
+    assert solved["cleanup"]["submission_head_sha"] == state["head_sha"]

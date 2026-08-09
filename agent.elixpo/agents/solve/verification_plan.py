@@ -57,29 +57,55 @@ def _node_verification(workspace: Path, manager: str, package: dict[str, Any]) -
         if matching := _matching_script(scripts, preferred):
             return _node_script(manager, matching)
     if _uses_biome(workspace, package):
-        return "npx biome check ."
+        return "./node_modules/.bin/biome check ."
     if (workspace / "tsconfig.json").is_file():
-        return "npx tsc --noEmit"
+        return "./node_modules/.bin/tsc --noEmit"
     for preferred in ("lint", "test", "build"):
         if matching := _matching_script(scripts, preferred):
             return _node_script(manager, matching)
     return None
 
 
-def _non_node_verification(workspace: Path, changed_paths: list[str]) -> str | None:
+def _non_node_verifications(workspace: Path, changed_paths: list[str]) -> list[str]:
     suffixes = {Path(path).suffix.casefold() for path in changed_paths}
+    commands: list[str] = []
     if ".py" in suffixes:
         if (workspace / "tests").is_dir():
-            return "python -m pytest"
-        return "python -m compileall ."
+            commands.append("python -m pytest")
+        else:
+            commands.append("python -m compileall .")
     if (workspace / "go.mod").is_file() and suffixes & {".go"}:
-        return "go test ./..."
+        commands.append("go test ./...")
     if (workspace / "Cargo.toml").is_file() and suffixes & {".rs"}:
-        return "cargo check"
+        commands.append("cargo check")
     shell_paths = [path for path in changed_paths if Path(path).suffix.casefold() in {".sh", ".bash"}]
     if shell_paths:
-        return "shellcheck " + " ".join(shell_paths)
-    return None
+        commands.append("shellcheck " + " ".join(shell_paths))
+    yaml_paths = [path for path in changed_paths if Path(path).suffix.casefold() in {".yaml", ".yml"}]
+    workflow_paths = [path for path in yaml_paths if Path(path).parts[:2] == (".github", "workflows")]
+    if workflow_paths:
+        commands.append("actionlint " + " ".join(workflow_paths))
+    elif yaml_paths:
+        commands.append("yamllint " + " ".join(yaml_paths))
+    return commands
+
+
+def _command_lane(command: str) -> str:
+    executable = command.split(maxsplit=1)[0]
+    executable_name = Path(executable).name
+    if executable_name in {"npm", "npx", "pnpm", "yarn", "bun", "tsc", "biome", "eslint"}:
+        return "node"
+    if executable in {"python", "pytest", "ruff", "mypy", "pyright"}:
+        return "python"
+    if executable in {"shellcheck", "bash", "sh"}:
+        return "shell"
+    if executable in {"actionlint", "yamllint"}:
+        return "yaml"
+    if executable == "go":
+        return "go"
+    if executable == "cargo":
+        return "rust"
+    return ""
 
 
 def complete_verification_plan(
@@ -119,6 +145,7 @@ def complete_verification_plan(
         checks = filtered_checks
     package_file = workspace / "package.json"
     node_change = any(Path(path).suffix.casefold() in {".js", ".jsx", ".ts", ".tsx"} for path in changed_paths)
+    required: list[str] = []
     if package_file.is_file() and node_change:
         try:
             package = json.loads(package_file.read_text(encoding="utf-8"))
@@ -130,16 +157,17 @@ def complete_verification_plan(
             if not setup:
                 setup = [setup_command]
                 inferred = True
-            if not checks:
-                command = _node_verification(workspace, manager, package)
-                if command:
-                    checks = [command]
-                    inferred = True
+            command = _node_verification(workspace, manager, package)
+            if command:
+                required.append(command)
 
-    if not checks:
-        command = _non_node_verification(workspace, changed_paths)
-        if command:
-            checks = [command]
+    required.extend(_non_node_verifications(workspace, changed_paths))
+    covered = {_command_lane(command) for command in checks}
+    for command in required:
+        lane = _command_lane(command)
+        if lane and lane not in covered and len(checks) < 3:
+            checks.append(command)
+            covered.add(lane)
             inferred = True
     if any(Path(path).suffix.casefold() == ".py" for path in changed_paths):
         if not setup and (workspace / "pyproject.toml").is_file():
