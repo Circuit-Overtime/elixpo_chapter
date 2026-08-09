@@ -22,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
@@ -37,8 +39,8 @@ jobs:
 
       - name: Commit candidates
         run: |
-          git config user.name  "elixpoo[bot]"
-          git config user.email "elixpoo[bot]@users.noreply.github.com"
+          git config user.name "elixpoo"
+          git config user.email "elixpoo@gmail.com"
           git add state/candidates.json
           git diff --cached --quiet || git commit -m "chore(scout): refresh candidates"
           git push
