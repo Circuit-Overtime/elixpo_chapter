@@ -11,6 +11,7 @@ import time
 import urllib.error
 from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -24,9 +25,9 @@ from agents.solve.harness import (
     _CCR_PACKAGE,
     _HARNESS_PACKAGE,
     HarnessError,
+    _apply_grounded_terminal_edit,
     _candidate_read_offsets,
     _candidate_read_windows,
-    _apply_grounded_terminal_edit,
     _compact_harness_context,
     _deterministic_outcome,
     _harness_command,
@@ -35,15 +36,17 @@ from agents.solve.harness import (
     _parse_cli_result,
     _prepare_context_bundle,
     _prompt,
+    _recoverable_file_calls,
     _redact,
     _render_harness_event,
-    _recoverable_file_calls,
     _router_ready,
     _stop_stale_isolated_routers,
     _structured_fallback_reason,
     _worktree_changed_paths,
 )
+from agents.solve.model import review_diff
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
+from agents.solve.sandbox import language_toolchain_roots, sandbox_command
 from agents.solve.tool_gate import _decision
 from agents.solve.verification_plan import complete_verification_plan
 from lib.solve_policy import load_solve_policy, solve_hard_token_limit, solve_token_limit
@@ -230,6 +233,27 @@ def test_target_command_environment_excludes_agent_credentials(tmp_path, monkeyp
     assert captured["npm_config_maxsockets"] == "4"
     assert captured["npm_config_audit"] == "false"
     assert captured["npm_config_fund"] == "false"
+
+
+def test_bubblewrap_mounts_only_the_required_external_node_toolchain(tmp_path, monkeypatch):
+    from agents.solve import sandbox as solve_sandbox
+
+    tools = {
+        "bwrap": "/usr/bin/bwrap",
+        "npm": "/home/test/.nvm/versions/node/v22/bin/npm",
+        "node": "/home/test/.nvm/versions/node/v22/bin/node",
+    }
+    monkeypatch.setattr(solve_sandbox.shutil, "which", lambda name: tools.get(name))
+    monkeypatch.setattr(solve_sandbox, "bubblewrap_available", lambda: True)
+
+    roots = language_toolchain_roots(["npm", "run", "typecheck"])
+    command, backend = sandbox_command(tmp_path, ["npm", "run", "typecheck"], network=False)
+
+    assert roots == [Path("/home/test/.nvm/versions/node/v22")]
+    assert backend == "bubblewrap"
+    index = command.index("--ro-bind", command.index("--ro-bind") + 1)
+    assert "/home/test/.nvm/versions/node/v22" in command[index:]
+    assert command[-3:] == ["npm", "run", "typecheck"]
 
 
 def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
@@ -1162,6 +1186,92 @@ def test_manifest_specific_node_check_is_inferred(tmp_path):
     assert inferred is True
     assert completed.setup_commands == ["pnpm install --frozen-lockfile --ignore-scripts"]
     assert completed.verification_commands == ["pnpm test:unit"]
+
+
+def test_mixed_language_verification_uses_each_required_lane(tmp_path):
+    (tmp_path / "package.json").write_text('{"scripts":{"typecheck":"tsc --noEmit"}}')
+    (tmp_path / "package-lock.json").write_text("{}")
+    outcome = HarnessOutcome(
+        solvable=True,
+        estimated_minutes=5,
+        rationale="localized component and script fix",
+        summary="Correct component and helper behavior.",
+        commit_message="fix: correct component and helper behavior",
+    )
+
+    completed, inferred = complete_verification_plan(
+        tmp_path,
+        outcome,
+        ["app/component.tsx", "scripts/check.sh"],
+    )
+
+    assert inferred is True
+    assert completed.verification_commands == ["npm run typecheck", "shellcheck scripts/check.sh"]
+
+
+def test_workflow_yaml_uses_actionlint(tmp_path):
+    outcome = HarnessOutcome(
+        solvable=True,
+        estimated_minutes=3,
+        rationale="localized workflow correction",
+        summary="Correct the workflow trigger.",
+        commit_message="fix: correct workflow trigger",
+    )
+
+    completed, inferred = complete_verification_plan(
+        tmp_path,
+        outcome,
+        [".github/workflows/ci.yml"],
+    )
+
+    assert inferred is True
+    assert completed.verification_commands == ["actionlint .github/workflows/ci.yml"]
+
+
+@pytest.mark.asyncio
+async def test_semantic_review_receives_observable_rules_diff_and_checks():
+    captured = {}
+
+    class Router:
+        async def call(self, role, messages, **kwargs):
+            captured["role"] = role
+            captured["payload"] = json.loads(messages[1].content)
+            captured["kwargs"] = kwargs
+            return SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(
+                            tool_calls=[
+                                SimpleNamespace(
+                                    function=SimpleNamespace(
+                                        arguments=json.dumps(
+                                            {
+                                                "approved": False,
+                                                "summary": "Theme prop is unused.",
+                                                "findings": ["The new theme prop does not change rendered colors."],
+                                            }
+                                        )
+                                    )
+                                )
+                            ]
+                        )
+                    )
+                ]
+            )
+
+    verdict = await review_diff(
+        Router(),
+        {"title": "Use a light chart theme", "body": "Tooltip and grid must be readable."},
+        {"target_files": ["app/components/Chart.tsx"]},
+        "+ theme?: 'dark' | 'light'\n+ theme = 'dark'",
+        [{"kind": "verification", "command": "npx tsc --noEmit", "exit_code": 0, "output": "ok"}],
+    )
+
+    assert verdict.approved is False
+    assert captured["role"] == "review"
+    assert captured["kwargs"]["max_tokens"] == 650
+    assert captured["payload"]["issue"]["body"] == "Tooltip and grid must be readable."
+    assert any("must be used" in rule for rule in captured["payload"]["approval_rules"])
 
 
 def test_invalid_harness_output_preserves_usage_for_accounting():

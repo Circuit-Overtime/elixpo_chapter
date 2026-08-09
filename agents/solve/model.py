@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
-
-from agents.solve.models import ReviewVerdict, SolvePlan, StepImplementation
 from rtk.models import FunctionDef, Message, ToolDef
 from rtk.truncate import truncate_text
+
+from agents.solve.models import ReviewVerdict, SolvePlan, StepImplementation
 
 _SKILLS = Path(__file__).resolve().parents[2] / "skills"
 T = TypeVar("T", bound=BaseModel)

@@ -203,6 +203,17 @@ def test_submit_state_workspace_and_identity_must_match(tmp_path):
         raise AssertionError("unsafe branch passed")
 
 
+def test_submit_requires_independent_semantic_review(tmp_path):
+    workspace_base = tmp_path / "workspaces"
+    workspace = workspace_base / "session"
+    workspace.mkdir(parents=True)
+    state = {**_state(), "workspace": str(workspace)}
+    state["review"] = {"approved": True, "findings": [], "source": "deterministic_diff_review"}
+
+    with pytest.raises(SubmitRejected, match="independent semantic diff review"):
+        validate_solve_state(state, workspace_base)
+
+
 def test_submit_rejects_unreviewed_structured_fallback(tmp_path):
     workspace_base = tmp_path / "workspaces"
     workspace = workspace_base / "session"
