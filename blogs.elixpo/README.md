@@ -291,6 +291,11 @@ graph TB
 
 ## Running locally
 
+Create `.env.local` with the development credentials before starting the app.
+It is the single source for local secrets used by both Next.js and the
+Cloudflare platform proxy. Do not create `.dev.vars`; Wrangler gives that file
+precedence and it can silently shadow `.env.local` with stale values.
+
 ```bash
 npm install
 npm run dev

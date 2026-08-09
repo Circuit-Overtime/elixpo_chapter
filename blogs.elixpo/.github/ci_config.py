@@ -1,13 +1,10 @@
 """
-Elixpo CI Configuration — blogs.elixpo
+Elixpo CI Configuration — agent.elixpo
 Single source of truth for all CI workflows and scripts.
 """
 
 # ── LLM ─────────────────────────────────────────────
 LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
-# Cost-aware routing. Prices/capabilities were checked against Pollinations'
-# /text/models catalog. Routine work stays on the cheapest tool-capable model;
-# specialized models are only selected by CCR when their route is required.
 LLM_MODEL_AGENT = "deepseek"
 LLM_MODEL_CODE = "nova-fast"
 LLM_MODEL_CHAT = "nova-fast"
@@ -23,9 +20,9 @@ LLM_MAX_TOKENS_SEARCH = 2500
 LLM_MODEL = LLM_MODEL_CHAT
 
 # ── Repository ──────────────────────────────────────
-REPO = "elixpo/blogs.elixpo"
-PROJECT_NAME = "blogs.elixpo"
-PROJECT_DESCRIPTION = "Real-time collaborative blogging platform"
+REPO = "elixpo/agent.elixpo"
+PROJECT_NAME = "agent.elixpo"
+PROJECT_DESCRIPTION = "Elixpo agent orchestration hub"
 
 # ── GitHub Projects V2 ──────────────────────────────
 # Shared org-wide projects (linked to all elixpo repos).
@@ -82,19 +79,6 @@ PROJECTS = {
             "Low": "987b0728",
         },
     },
-    # Moderation = blog reports (issues opened by @elixpoo with the REPORT label).
-    "Moderation": {
-        "id": "PVT_kwDOCZpXlc4BZB6p",
-        "number": 6,
-        "url": "https://github.com/orgs/elixpo/projects/6",
-        "priority_field_id": "PVTSSF_lADOCZpXlc4BZB6pzhUDgmg",
-        "priority_options": {
-            "Urgent": "77879a01",
-            "High": "a18435ad",
-            "Medium": "40e8adee",
-            "Low": "6902e37d",
-        },
-    },
 }
 
 # Valid categories and priorities (for LLM prompts + validation)
@@ -116,7 +100,6 @@ CATEGORY_TO_TYPE = {
     "Bugs": "Bug",
     "Support": "Task",
     "Dev": "Task",
-    "Moderation": "Task",
 }
 
 # ── Organization ────────────────────────────────────
