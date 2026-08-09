@@ -1,14 +1,34 @@
 ---
 name: diagnose-agent-failure
-description: Diagnose a versioned agent failure receipt and authorize exactly one fail-closed recovery outcome. Use when Solve records doctor_pending after provider, credential, timeout, token, structured-output, workspace, verification, review, stale-issue, policy, or unknown failures; also use to detect repeated failure loops and decide retry, termination, or evidence preservation.
+description: Supervise a running Solve harness and diagnose its versioned terminal failure receipts. Use to detect repeated tool chains, abnormal token growth, hard token ceilings, provider or workspace failures, malformed output, timeouts, verification failures, and retry loops; steer live work without blocking justified token headroom, then decide retry, termination, or evidence preservation after failure.
 ---
 
 # Diagnose agent failure
 
-Read only recorded state. Do not infer a failure from a live process, partial log,
-or public conversation, and never modify a target repository or publish a reply.
+Operate in two deterministic modes: live supervision from authenticated harness
+events, and terminal diagnosis from recorded state. Never modify a target
+repository or publish a reply.
 
-## Validate the handoff
+## Supervise the live harness
+
+Consume structured usage and tool events emitted by the supervised process; do
+not scrape prose logs. Keep a bounded receipt in Solve state with run ID, token
+target and ceiling, observed turns, tool/edit counts, repeated-chain signals,
+warnings, and timestamps.
+
+- Treat Vet's token target as advisory. Warn when crossed, but continue novel or
+  productive work because some valid issues need the approved headroom.
+- Stop at the absolute token ceiling.
+- Steer three identical calls or a repeated two-call cycle toward existing
+  evidence, an edit, or StructuredOutput. Clear the recent chain after a
+  successful edit.
+- Stop before the ceiling only when a repeated chain and abnormal token growth
+  occur together. Never stop from cost alone while still below the hard ceiling.
+- Bound telemetry and stream queues so monitoring cannot create its own memory
+  leak. The Python supervisor must terminate the exact harness/CCR process group
+  in `finally` on every outcome.
+
+## Validate a terminal handoff
 
 Require all of the following before deciding:
 

@@ -44,6 +44,8 @@ class JanitorReceipt(StrictModel):
     status: Literal["complete", "partial", "preserved"]
     run_id: str = ""
     key: str = ""
-    doctor_fingerprint: str
+    authorization_source: Literal["doctor", "submit"] = "doctor"
+    authorization_id: str = ""
+    doctor_fingerprint: str = ""
     results: list[CleanupResult] = Field(default_factory=list, max_length=20)
     cleaned_at: str

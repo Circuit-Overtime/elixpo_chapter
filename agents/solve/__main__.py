@@ -71,12 +71,18 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     matching_vet = vet if vet.get("url") == target else None
     token_target = solve_token_limit(policy, matching_vet)
     token_limit = solve_hard_token_limit(policy, matching_vet)
-    policy = {**policy, "token_target": token_target}
+    run_id = secrets.token_hex(8)
+    policy = {
+        **policy,
+        "run_id": run_id,
+        "token_target": token_target,
+        "token_limit": token_limit,
+    }
 
     store.write_json(
         "solve.json",
         {
-            "run_id": secrets.token_hex(8),
+            "run_id": run_id,
             "status": "starting",
             "stage": "preflight",
             "issue_url": target,

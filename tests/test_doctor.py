@@ -139,6 +139,7 @@ def test_solve_workflow_runs_recovery_on_the_same_runner_and_bounds_retry():
     assert "python -m agents.doctor" in workflow
     assert "python -m agents.janitor" in workflow
     assert "steps.solve.outcome == 'failure'" in workflow
+    assert "steps.submit.outcome == 'success'" in workflow
     assert "steps.doctor.outputs.action == 'retry'" in workflow
     assert "state/doctor.json" in workflow
     assert "state/janitor.json" in workflow

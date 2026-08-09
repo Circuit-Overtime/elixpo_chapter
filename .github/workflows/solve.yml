@@ -119,6 +119,7 @@ jobs:
           fi
           python -m agents.solve "${args[@]}"
       - name: Submit
+        id: submit
         if: steps.gate.outputs.run == 'true' && steps.gate.outputs.submit == 'true'
         env:
           AGENT_GITHUB_SOLVER_TOKEN: ${{ secrets.AGENT_GITHUB_SOLVER_TOKEN }}
@@ -131,12 +132,18 @@ jobs:
           ELIXPOO_FOLLOWUP_GIST_ID: ${{ vars.ELIXPOO_FOLLOWUP_GIST_ID }}
           ELIXPO_FOLLOWUP_TTL_DAYS: ${{ vars.ELIXPO_FOLLOWUP_TTL_DAYS || 360 }}
         run: python -m agents.steward.remember
+      - name: Clean submitted workspace
+        id: janitor_success
+        if: always() && steps.submit.outcome == 'success'
+        env:
+          ELIXPO_WORKSPACE_DIR: /tmp/elixpoo-workspaces
+        run: python -m agents.janitor
       - name: Diagnose failed Solve
         id: doctor
         if: always() && steps.gate.outputs.run == 'true' && steps.solve.outcome == 'failure'
         run: python -m agents.doctor
       - name: Clean Doctor-authorized resources
-        id: janitor
+        id: janitor_failure
         if: always() && steps.doctor.outcome == 'success'
         env:
           ELIXPO_WORKSPACE_DIR: /tmp/elixpoo-workspaces
@@ -156,7 +163,7 @@ jobs:
           auth=$(printf 'x-access-token:%s' "$CONTROL_TOKEN" | base64 -w 0)
           git -c http.extraheader="AUTHORIZATION: basic $auth" push
       - name: Dispatch one Doctor-authorized retry
-        if: always() && steps.doctor.outputs.action == 'retry' && steps.janitor.outcome == 'success'
+        if: always() && steps.doctor.outputs.action == 'retry' && steps.janitor_failure.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
           FINGERPRINT: ${{ steps.doctor.outputs.fingerprint }}

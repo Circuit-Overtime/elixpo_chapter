@@ -128,24 +128,47 @@ def clean_and_record(
 ) -> JanitorReceipt:
     solve = store.read_json("solve.json", {}) or {}
     doctor = store.read_json("doctor.json", {}) or {}
-    try:
-        current = DoctorAuthorization.model_validate(doctor.get("current"))
-    except ValidationError as exc:
-        raise JanitorRejected(f"Doctor authorization violates schema: {exc}") from exc
-    fingerprint = current.failure_fingerprint
-    solve_doctor = solve.get("doctor") or {}
     cleanup = solve.get("cleanup") or {}
-    if not fingerprint or solve_doctor.get("fingerprint") != fingerprint:
-        raise JanitorRejected("Doctor and Solve receipts do not identify the same failure")
     if cleanup.get("schema_version") != 1 or cleanup.get("owner") != "janitor":
         raise JanitorRejected("Solve cleanup manifest violates its ownership or schema contract")
-    if str(cleanup.get("run_id") or "") != current.run_id or str(solve.get("run_id") or "") != current.run_id:
-        raise JanitorRejected("Doctor and cleanup receipts do not identify the same run")
+
+    submit = store.read_json("submit.json", {}) or {}
+    submitted_head = str(solve.get("head_sha") or "")
+    submitted = (
+        solve.get("status") == "submitted"
+        and submit.get("status") == "submitted"
+        and bool(submitted_head)
+        and cleanup.get("status") in {"authorized_after_submit", "partial"}
+        and cleanup.get("authorized_by") == "submit"
+        and str(submit.get("key") or "") == str(solve.get("key") or "")
+        and str(submit.get("head_sha") or "") == submitted_head
+        and str(cleanup.get("submission_head_sha") or "") == submitted_head
+    )
+    current: DoctorAuthorization | None = None
+    if submitted:
+        fingerprint = f"submit:{str(solve.get('head_sha') or '')[:20]}"
+        run_id = str(solve.get("run_id") or "")
+        authorization_source = "submit"
+    else:
+        try:
+            current = DoctorAuthorization.model_validate(doctor.get("current"))
+        except ValidationError as exc:
+            raise JanitorRejected(f"Doctor authorization violates schema: {exc}") from exc
+        fingerprint = current.failure_fingerprint
+        run_id = current.run_id
+        authorization_source = "doctor"
+        solve_doctor = solve.get("doctor") or {}
+        if not fingerprint or solve_doctor.get("fingerprint") != fingerprint:
+            raise JanitorRejected("Doctor and Solve receipts do not identify the same failure")
+
+    if str(cleanup.get("run_id") or "") != run_id or str(solve.get("run_id") or "") != run_id:
+        raise JanitorRejected("authorization and cleanup receipts do not identify the same run")
 
     existing = store.read_json("janitor.json", {}) or {}
+    existing_authorization = existing.get("authorization_id") or existing.get("doctor_fingerprint")
     if (
-        existing.get("doctor_fingerprint") == fingerprint
-        and existing.get("run_id") == current.run_id
+        existing_authorization == fingerprint
+        and existing.get("run_id") == run_id
         and existing.get("status") in {"complete", "preserved"}
     ):
         try:
@@ -153,21 +176,28 @@ def clean_and_record(
         except ValidationError as exc:
             raise JanitorRejected(f"state/janitor.json violates schema: {exc}") from exc
 
-    action = current.action
-    if action == "preserve" and cleanup.get("status") == "preserved_for_inspection":
+    action = current.action if current is not None else "submitted"
+    if current is not None and action == "preserve" and cleanup.get("status") == "preserved_for_inspection":
         receipt = JanitorReceipt(
             status="preserved",
             run_id=str(solve.get("run_id") or ""),
             key=str(solve.get("key") or ""),
+            authorization_source="doctor",
+            authorization_id=fingerprint,
             doctor_fingerprint=fingerprint,
             results=[],
             cleaned_at=_stamp(now),
         )
         store.write_json("janitor.json", receipt.model_dump(mode="json"))
         return receipt
-    allowed_statuses = {"authorized", "partial"} if allow_partial else {"authorized"}
-    if not current.cleanup_authorized or cleanup.get("status") not in allowed_statuses:
-        raise JanitorRejected("Doctor has not authorized cleanup")
+    if submitted:
+        allowed_statuses = {"authorized_after_submit", "partial"} if allow_partial else {"authorized_after_submit"}
+        authorized = cleanup.get("status") in allowed_statuses
+    else:
+        allowed_statuses = {"authorized", "partial"} if allow_partial else {"authorized"}
+        authorized = bool(current and current.cleanup_authorized and cleanup.get("status") in allowed_statuses)
+    if not authorized:
+        raise JanitorRejected("neither Doctor nor a matching successful Submit authorized cleanup")
 
     planned = _validate_resources(list(cleanup.get("resources") or []), workspace_root, temporary_root)
     results: list[CleanupResult] = []
@@ -202,7 +232,9 @@ def clean_and_record(
         status="partial" if failed else "complete",
         run_id=str(solve.get("run_id") or ""),
         key=str(solve.get("key") or ""),
-        doctor_fingerprint=fingerprint,
+        authorization_source=authorization_source,
+        authorization_id=fingerprint,
+        doctor_fingerprint=fingerprint if authorization_source == "doctor" else "",
         results=results,
         cleaned_at=_stamp(now),
     )

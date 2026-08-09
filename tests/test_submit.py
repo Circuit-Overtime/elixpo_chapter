@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
+from agents.submit import __main__ as submit_module
 from agents.submit.__main__ import (
     SubmitRejected,
     build_pr_body,
@@ -11,6 +12,7 @@ from agents.submit.__main__ import (
     validate_verification_record,
     write_punch_line,
 )
+from lib.state.store import StateStore
 
 
 def _state():
@@ -198,3 +200,54 @@ def test_pr_body_omits_only_missing_optional_footer():
     body = build_pr_body(_state(), None)
     assert body.endswith("Fixes #9")
     assert "@elixpoo</sub>" not in body
+
+
+@pytest.mark.asyncio
+async def test_successful_submit_authorizes_exact_workspace_cleanup(tmp_path, monkeypatch):
+    workspace_base = tmp_path / "workspaces"
+    workspace = workspace_base / "session"
+    workspace.mkdir(parents=True)
+    state = {
+        **_state(),
+        "run_id": "run-1",
+        "key": "elixpo/lixrl.com#9",
+        "workspace": str(workspace),
+        "base_branch": "main",
+        "test_mode": True,
+        "cleanup": {
+            "schema_version": 1,
+            "run_id": "run-1",
+            "owner": "janitor",
+            "status": "active",
+            "resources": [],
+        },
+    }
+    store = StateStore(tmp_path / "state")
+
+    class API:
+        async def _token(self):
+            return "token"
+
+        async def _request(self, method, path, params=None):
+            assert method == "GET" and path.endswith("/pulls") and params
+            return [{"html_url": "https://github.com/elixpo/lixrl.com/pull/10", "number": 10}]
+
+    class Router:
+        pass
+
+    async def punch_line(router, solve_state):
+        return None
+
+    async def safe(router, title, body):
+        return None
+
+    monkeypatch.setattr(submit_module, "write_punch_line", punch_line)
+    monkeypatch.setattr(submit_module, "safety_check", safe)
+    monkeypatch.setattr(submit_module, "push_branch", lambda *args, **kwargs: None)
+
+    await submit_module.submit(API(), Router(), store, state, workspace_base)
+
+    solved = store.read_json("solve.json")
+    assert solved["status"] == "submitted"
+    assert solved["cleanup"]["status"] == "authorized_after_submit"
+    assert solved["cleanup"]["submission_head_sha"] == state["head_sha"]

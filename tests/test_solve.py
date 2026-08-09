@@ -111,6 +111,8 @@ def test_solve_policy_leaves_turn_headroom_for_post_edit_review():
     assert policy["harness_max_turns"] == 40
     assert policy["max_minutes"] == 15
     assert policy["max_token_budget"] == 750_000
+    assert policy["live_repeat_exact_calls"] == 3
+    assert policy["live_abnormal_token_ratio"] == 2.0
 
 
 def test_work_branch_uses_natural_feature_or_patch_prefix():
@@ -331,6 +333,39 @@ def test_tool_gate_repairs_pathless_edit_from_single_grounded_read(tmp_path):
 
     assert code == 0 and reason is None
     assert output["hookSpecificOutput"]["updatedInput"]["file_path"] == "app/pricing/page.tsx"
+
+
+def test_tool_gate_live_doctor_steers_repeated_commands_and_resets_after_edit(tmp_path):
+    target = tmp_path / "app/page.tsx"
+    target.parent.mkdir(parents=True)
+    target.write_text("old")
+    state: dict = {}
+    read = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Read",
+        "cwd": str(tmp_path),
+        "tool_input": {"file_path": "app/page.tsx"},
+    }
+
+    assert _decision(read, state)[0] == 0
+    assert _decision(read, state)[0] == 0
+    code, _, reason = _decision(read, state)
+    assert code == 2
+    assert "repeated tool chain" in str(reason)
+
+    edit = {
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Edit",
+        "cwd": str(tmp_path),
+        "tool_input": {
+            "file_path": "app/page.tsx",
+            "old_string": "old",
+            "new_string": "new",
+        },
+    }
+    assert _decision(edit, state)[0] == 0
+    assert state["live_tool_history"] == []
+    assert _decision(read, state)[0] == 0
 
 
 def test_tool_gate_recovers_complete_unparsed_multiline_edit(tmp_path):

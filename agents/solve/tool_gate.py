@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fcntl
+import hashlib
 import json
 import os
 import shlex
@@ -24,6 +25,50 @@ _READ_ONLY_COMMANDS = {
 _READ_ONLY_GIT = {"diff", "status", "show", "grep", "ls-files"}
 _READ_ONLY_RTK = {"read", "grep", "find", "smart"}
 _GIT_DENIED = {"--output", "--ext-diff", "--textconv", "--open-files-in-pager"}
+
+
+def _live_loop_guard(tool: str, tool_input: dict[str, Any], state: dict[str, Any]) -> str | None:
+    """Steer repeated tool chains while allowing novel, productive work."""
+    if tool == "StructuredOutput":
+        return None
+    material = json.dumps(tool_input, sort_keys=True, separators=(",", ":"), default=str)
+    signature = hashlib.sha256(f"{tool}|{material}".encode()).hexdigest()[:16]
+    history = list(state.get("live_tool_history") or [])
+    history.append(signature)
+    history = history[-8:]
+    state["live_tool_history"] = history
+    state["live_tool_calls"] = int(state.get("live_tool_calls") or 0) + 1
+
+    exact_calls = max(2, min(int(state.get("live_repeat_exact_calls") or 3), 8))
+    cycle_calls = max(4, min(int(state.get("live_repeat_cycle_calls") or 6), 8))
+    if cycle_calls % 2:
+        cycle_calls += 1
+    exact = len(history) >= exact_calls and len(set(history[-exact_calls:])) == 1
+    cycle = history[-cycle_calls:]
+    alternating = (
+        len(cycle) == cycle_calls
+        and len(set(cycle[::2])) == 1
+        and len(set(cycle[1::2])) == 1
+    )
+    if not exact and not alternating:
+        if state.get("live_discovery_restricted") and tool in {"Read", "Glob", "Grep", "Bash", "WebSearch"}:
+            return (
+                "Live Doctor paused further discovery after repeated loops. Use the evidence already gathered "
+                "to Edit/Write, or call StructuredOutput with a concrete terminal result."
+            )
+        return None
+
+    strikes = int(state.get("live_loop_strikes") or 0) + 1
+    state["live_loop_strikes"] = strikes
+    state["live_last_loop_kind"] = "exact" if exact else "alternating"
+    pause_after = max(1, min(int(state.get("live_loop_strikes_before_pause") or 3), 8))
+    if strikes >= pause_after:
+        state["live_discovery_restricted"] = True
+    return (
+        "Live Doctor detected a repeated tool chain. Do not repeat the same command or read. "
+        "Use the result already returned, choose one genuinely different targeted action, edit the grounded file, "
+        "or call StructuredOutput."
+    )
 
 
 def _deny(reason: str) -> int:
@@ -202,6 +247,8 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                     path for path in (state.get("review_reads") or []) if path != relative
                 ]
                 state["post_edit_structured_blocks"] = 0
+                state["live_tool_history"] = []
+                state["live_discovery_restricted"] = False
         return 0, None, None
 
     if event_name != "PreToolUse":
@@ -224,6 +271,10 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
         tool_input = repaired
         recovered_unparsed = True
         state["unparsed_recoveries"] = int(state.get("unparsed_recoveries") or 0) + 1
+
+    loop_reason = _live_loop_guard(tool, tool_input, state)
+    if loop_reason:
+        return 2, None, loop_reason
 
     if tool == "StructuredOutput":
         edited = set(state.get("edited_paths") or [])

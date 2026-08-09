@@ -97,11 +97,14 @@ activity permits one fresh evaluation.
 - **Output:** exact fork branch pushed once, disclosed PR opened upstream, ledger updated.
 - **Skill:** `skills/submit-autonomous-pr/SKILL.md`
 
-### Doctor — Failure decisions
+### Doctor — Live supervision and failure decisions
 
-- **Trigger:** a Solve step records `doctor_pending`; runs on the same runner.
-- **Job:** validate versioned evidence, fingerprint the failure, and choose one
-  deterministic `retry`, `terminate`, or `preserve` outcome.
+- **Trigger:** starts with the bounded harness, then evaluates `doctor_pending` on failure.
+- **Live job:** consume structured stream usage, warn at the advisory token target,
+  steer repeated tool chains, and stop only at the hard ceiling or when a loop and
+  abnormal token growth occur together.
+- **Terminal job:** validate versioned evidence, fingerprint the failure, and choose
+  one deterministic `retry`, `terminate`, or `preserve` outcome.
 - **Retry policy:** at most one retry across an issue's recovery chain. A repeated
   fingerprint or a second changed failure terminates the loop.
 - **Output:** `state/doctor.json` plus a mirrored decision in `state/solve.json`.
@@ -110,7 +113,8 @@ activity permits one fresh evaluation.
 
 ### Janitor — Resource cleanup
 
-- **Trigger:** a Doctor decision on the same Solve runner, or a daily partial-cleanup audit.
+- **Trigger:** a Doctor decision, a matching successful Submit receipt, or a daily
+  partial-cleanup audit.
 - **Job:** preflight every resource, remove exact authorized workspaces and isolated
   CCR temporary directories, terminate only verified recorded process groups, and
   preserve shared forks.
@@ -118,7 +122,7 @@ activity permits one fresh evaluation.
   in `state/solve.json`.
 - **Skill:** `skills/clean-agent-resources/SKILL.md`.
 - **Safety:** no globbing, symlink following, inferred targets, broad process killing,
-  or cleanup before Doctor authorization.
+  or workspace cleanup while Solve/Submit still needs it.
 
 ### Steward — Follow-through
 Three workflows triggered by webhooks (via the Cloudflare Worker forwarding to `repository_dispatch`):

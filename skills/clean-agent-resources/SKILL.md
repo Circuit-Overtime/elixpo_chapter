@@ -1,6 +1,6 @@
 ---
 name: clean-agent-resources
-description: Validate and clean exact resources from a Doctor-authorized agent cleanup manifest. Use after Doctor chooses retry or termination, for idempotent workspace removal, verified isolated CCR process-group termination, shared-fork preservation, cleanup receipts, and local recovery audits; never use on active or undecided runs.
+description: Validate and clean exact resources from an agent cleanup manifest after Doctor authorization or a matching successful Submit receipt. Use for idempotent workspace and isolated CCR temporary-directory removal, verified process-group termination, shared-fork preservation, cleanup receipts, and recovery audits; never use on active, unsubmitted, or undecided runs.
 ---
 
 # Clean agent resources
@@ -11,11 +11,12 @@ glob, follow a symlink, or clean by process name.
 
 ## Require authorization
 
-- Doctor and Solve must name the same failure fingerprint.
-- Doctor must explicitly set `cleanup_authorized` after `retry` or `terminate`.
-- Solve cleanup status must be `authorized`.
+- A failed run requires matching Doctor and Solve fingerprints plus explicit
+  `cleanup_authorized` after `retry` or `terminate`.
+- A successful run requires matching Solve and Submit issue keys and head SHAs,
+  plus `authorized_after_submit`; never clean before the branch is pushed.
 - A `preserve` decision creates a preservation receipt without mutation.
-- An existing complete receipt for the fingerprint makes the run idempotent.
+- An existing complete receipt for the authorization identity makes the run idempotent.
 
 Reject missing, active, mismatched, malformed, or overlarge manifests.
 
@@ -25,6 +26,8 @@ Preflight the whole manifest; if one resource is unsafe, clean nothing.
 
 - Workspace: absolute, non-symlink, direct child of the configured resolved
   `/tmp/elixpoo-workspaces` root, never the root itself.
+- Temporary directory: direct child of the configured temporary root and named
+  with the isolated `elixpoo-ccr-` prefix.
 - Fork: disposition must be `preserve_shared_resource`; never delete it.
 - Process group: use only an exact recorded numeric group, never the current
   group. Verify a same-user process in that group is an isolated CCR router whose

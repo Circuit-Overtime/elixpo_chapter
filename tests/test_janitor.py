@@ -71,6 +71,37 @@ def _workspace(path, root) -> dict:
     }
 
 
+def _seed_submitted(store: StateStore, resources: list[dict]) -> None:
+    head_sha = "a" * 40
+    store.write_json(
+        "solve.json",
+        {
+            "run_id": "run-submitted",
+            "key": "owner/repo#8",
+            "status": "submitted",
+            "head_sha": head_sha,
+            "cleanup": {
+                "schema_version": 1,
+                "run_id": "run-submitted",
+                "owner": "janitor",
+                "status": "authorized_after_submit",
+                "authorized_by": "submit",
+                "submission_head_sha": head_sha,
+                "resources": resources,
+            },
+        },
+    )
+    store.write_json(
+        "submit.json",
+        {
+            "status": "submitted",
+            "key": "owner/repo#8",
+            "head_sha": head_sha,
+            "pr_url": "https://github.com/owner/repo/pull/9",
+        },
+    )
+
+
 def test_janitor_removes_exact_workspace_and_preserves_fork(tmp_path):
     state = StateStore(tmp_path / "state")
     root = tmp_path / "workspaces"
@@ -104,6 +135,37 @@ def test_janitor_missing_workspace_is_idempotent(tmp_path):
 
     assert first == second
     assert first.results[0].outcome == "missing"
+
+
+def test_janitor_cleans_workspace_after_matching_successful_submit(tmp_path):
+    state = StateStore(tmp_path / "state")
+    root = tmp_path / "workspaces"
+    workspace = root / "run-submitted"
+    workspace.mkdir(parents=True)
+    _seed_submitted(state, [_workspace(workspace, root)])
+
+    receipt = clean_and_record(state, workspace_root=root, now=NOW)
+
+    assert receipt.status == "complete"
+    assert receipt.authorization_source == "submit"
+    assert receipt.authorization_id == f"submit:{'a' * 20}"
+    assert receipt.doctor_fingerprint == ""
+    assert not workspace.exists()
+
+
+def test_janitor_rejects_mismatched_successful_submit(tmp_path):
+    state = StateStore(tmp_path / "state")
+    root = tmp_path / "workspaces"
+    workspace = root / "run-submitted"
+    workspace.mkdir(parents=True)
+    _seed_submitted(state, [_workspace(workspace, root)])
+    submit = state.read_json("submit.json")
+    submit["head_sha"] = "b" * 40
+    state.write_json("submit.json", submit)
+
+    with pytest.raises(JanitorRejected, match="Doctor authorization"):
+        clean_and_record(state, workspace_root=root, now=NOW)
+    assert workspace.exists()
 
 
 def test_janitor_removes_only_prefixed_recorded_ccr_directory(tmp_path):

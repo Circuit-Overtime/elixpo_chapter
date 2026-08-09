@@ -21,6 +21,7 @@ from math import ceil
 from pathlib import Path
 from typing import Any
 
+from lib.live_supervision import LiveDoctor, LiveSupervisionStop
 from pydantic import ValidationError
 from rtk.models import PromptTokensDetails, Usage
 
@@ -436,6 +437,7 @@ def _stream_harness(
     env: dict[str, str],
     prompt: str,
     timeout: int,
+    supervisor: LiveDoctor | None = None,
 ) -> tuple[dict[str, Any] | None, int, str]:
     process = subprocess.Popen(
         command,
@@ -516,8 +518,32 @@ def _stream_harness(
                 continue
             if isinstance(event, dict):
                 _render_harness_event(event)
+                if supervisor is not None:
+                    try:
+                        supervisor.observe(event)
+                    except LiveSupervisionStop as exc:
+                        raise HarnessError(
+                            str(exc),
+                            usage=exc.usage,
+                            metadata={
+                                "live_doctor": exc.snapshot,
+                                "supervision_stop": exc.snapshot.get("stop_reason", ""),
+                            },
+                        ) from exc
                 if event.get("type") == "result":
                     final_event = event
+        if supervisor is not None:
+            try:
+                supervisor.complete(final_event)
+            except LiveSupervisionStop as exc:
+                raise HarnessError(
+                    str(exc),
+                    usage=exc.usage,
+                    metadata={
+                        "live_doctor": exc.snapshot,
+                        "supervision_stop": exc.snapshot.get("stop_reason", ""),
+                    },
+                ) from exc
         return final_event, process.wait(timeout=5), "\n".join(stderr_lines)
     finally:
         stopping.set()
@@ -879,6 +905,7 @@ def run_harness(
     policy: dict[str, Any],
     *,
     timeout: int,
+    live_update=None,
 ) -> tuple[HarnessOutcome, Usage, dict[str, Any]]:
     """Start an isolated CCR, run the Node harness, and return its validated result."""
     router_process: subprocess.Popen[str] | None = None
@@ -891,6 +918,15 @@ def run_harness(
     bundle_text = (workspace / ".elixpo-context/context.md").read_text(encoding="utf-8")
     read_windows = _candidate_read_windows(bundle_text, issue, candidate_hints)
     read_offsets = {path: offsets[0] for path, offsets in read_windows.items() if offsets}
+    supervisor = LiveDoctor(
+        run_id=str(policy.get("run_id") or ""),
+        token_target=max(1, int(policy.get("token_target") or policy.get("token_budget") or 1)),
+        token_limit=max(1, int(policy.get("token_limit") or policy.get("max_token_budget") or 1)),
+        abnormal_token_ratio=float(policy.get("live_abnormal_token_ratio", 2.0)),
+        abnormal_token_extra=int(policy.get("live_abnormal_token_extra", 100_000)),
+        emit=live_update,
+    )
+    supervisor.start()
     print(
         f"[context] compressed_bundle candidates={len(candidate_hints)} "
         f"max_tokens={int(policy.get('max_context_tokens', 3200))}",
@@ -954,6 +990,11 @@ def run_harness(
                     "read_offsets": read_offsets,
                     "read_windows": read_windows,
                     "max_web_search_calls": max(0, int(policy.get("max_search_calls", 0))),
+                    "live_repeat_exact_calls": int(policy.get("live_repeat_exact_calls", 3)),
+                    "live_repeat_cycle_calls": int(policy.get("live_repeat_cycle_calls", 6)),
+                    "live_loop_strikes_before_pause": int(
+                        policy.get("live_loop_strikes_before_discovery_pause", 3)
+                    ),
                 },
             )
             command = _harness_command(
@@ -982,12 +1023,14 @@ def run_harness(
                     env=harness_environment,
                     prompt=prompt,
                     timeout=timeout,
+                    supervisor=supervisor,
                 )
                 gate_state_path = router_home / "claude-config/tmp/tool-gate.json"
                 try:
                     observed_gate = json.loads(gate_state_path.read_text(encoding="utf-8"))
                 except (OSError, json.JSONDecodeError):
                     observed_gate = {}
+                supervisor.merge_gate_state(observed_gate)
                 source_windows = sum(
                     int(value or 0)
                     for value in (observed_gate.get("source_read_counts") or {}).values()
@@ -1038,6 +1081,7 @@ def run_harness(
             try:
                 parsed = _parse_cli_result(json.dumps(final_event))
             except HarnessError as exc:
+                exc.metadata = {**exc.metadata, "live_doctor": supervisor.snapshot()}
                 fallback_reason = _structured_fallback_reason(
                     exc,
                     observed_gate,
@@ -1064,7 +1108,9 @@ def run_harness(
                 recovered_error_envelope = fallback_reason == "turn_limit_after_structured_handoff"
             if return_code != 0 and not recovered_error_envelope:
                 raise HarnessError((stderr or f"coding harness exited with status {return_code}")[:3000])
-            return parsed
+            outcome, usage, metadata = parsed
+            metadata = {**metadata, "live_doctor": supervisor.snapshot()}
+            return outcome, usage, metadata
         except subprocess.TimeoutExpired as exc:
             raise HarnessError(f"coding harness exceeded its {timeout}-second timeout") from exc
         finally:

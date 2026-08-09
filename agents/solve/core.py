@@ -19,6 +19,7 @@ from lib.workspace import Workspace
 
 from agents.solve.branch import build_work_branch
 from agents.solve.command_policy import effective_prefixes, setup_fallback_command
+from agents.solve.failure import cleanup_manifest
 from agents.solve.git import (
     assert_workspace_identity,
     changed_files,
@@ -249,7 +250,11 @@ async def solve(
         "workspace": str(workspace.root),
         "test_mode": owned_test,
         "started_at": datetime.now(timezone.utc).isoformat(),
+        "model_route": str(preparing.get("model_route") or ""),
+        "token_target": int(policy.get("token_target") or 0),
+        "token_limit": int(policy.get("token_limit") or 0),
     }
+    running["cleanup"] = cleanup_manifest(running, workspace_base, status="active")
     store.write_json("solve.json", running)
     root = workspace.setup(
         fork_url=str(fork.get("clone_url") or f"https://github.com/{fork_owner}/{repo}.git"),
@@ -268,12 +273,21 @@ async def solve(
     store.write_json("solve.json", running)
 
     remaining_seconds = max(1, int(policy["max_minutes"]) * 60 - int(time.monotonic() - started))
+
+    def record_live_doctor(snapshot: dict[str, Any]) -> None:
+        current = store.read_json("solve.json", {}) or {}
+        if str(current.get("run_id") or "") != str(snapshot.get("run_id") or ""):
+            return
+        current["doctor_live"] = snapshot
+        store.write_json("solve.json", current)
+
     outcome, usage, harness_metadata = await asyncio.to_thread(
         run_harness,
         root,
         issue,
         policy,
         timeout=remaining_seconds,
+        live_update=record_live_doctor,
     )
     router.record_external_usage("code", usage, source="ccr-node-harness", extra=harness_metadata)
     _budget_guard(router)
