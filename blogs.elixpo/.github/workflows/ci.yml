@@ -26,9 +26,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # `next build` type-checks and compiles the whole app — the real gate.
-      # (The Cloudflare adapter build runs in deploy.yml, on main only.)
-      - name: Build
-        run: npm run build
+      # Use the production adapter here, not plain `next build`: Cloudflare
+      # rejects dynamic routes that omit the Edge Runtime even when Next's
+      # build succeeds. Keeping both workflows on the same command prevents a
+      # green PR from blocking the production deployment after merge.
+      - name: Build for Cloudflare Pages
+        run: npm run pages:build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
