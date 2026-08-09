@@ -1,23 +1,28 @@
 """
-Elixpo CI Configuration — oreo
+Elixpo CI Configuration — agent.elixpo
 Single source of truth for all CI workflows and scripts.
 """
 
 # ── LLM ─────────────────────────────────────────────
 LLM_API_URL = "https://gen.pollinations.ai/v1/chat/completions"
-LLM_MODEL_AGENT = "glm"       
-LLM_MODEL_CODE = "qwen-coder"        
-LLM_MODEL_CHAT = "perplexity-fast"        
-LLM_MODEL_THINKING = "perplexity-reasoning"  
-LLM_MODEL_SEARCH = "gemini-search"    
+LLM_MODEL_AGENT = "deepseek"
+LLM_MODEL_CODE = "nova-fast"
+LLM_MODEL_CHAT = "nova-fast"
+LLM_MODEL_THINKING = "deepseek"
+LLM_MODEL_SEARCH = "perplexity-fast"
+
+LLM_MAX_TOKENS_AGENT = 3500
+LLM_MAX_TOKENS_CODE = 6000
+LLM_MAX_TOKENS_THINKING = 5000
+LLM_MAX_TOKENS_SEARCH = 2500
 
 # Back-compat alias — scripts that haven't been migrated still import LLM_MODEL.
 LLM_MODEL = LLM_MODEL_CHAT
 
 # ── Repository ──────────────────────────────────────
-REPO = "elixpo/oreo"
-PROJECT_NAME = "oreo"
-PROJECT_DESCRIPTION = "OreoOS — MicroPython badge OS for the Elixpo conference badge"
+REPO = "elixpo/agent.elixpo"
+PROJECT_NAME = "agent.elixpo"
+PROJECT_DESCRIPTION = "Elixpo agent orchestration hub"
 
 # ── GitHub Projects V2 ──────────────────────────────
 # Shared org-wide projects (linked to all elixpo repos).
@@ -126,15 +131,5 @@ AGENT_LABEL = "ELIXPO"
 
 # ── README update heuristics ────────────────────────
 # Path prefixes that count as "core" for this repo — changes touching these
-# are more likely to warrant a README / HARDWARE / CONTRIBUTING update.
-# For the badge, the OS layer + driver layer + the public app SDK are the
-# things end-users and contributors actually read about.
-CORE_PATHS = (
-    "oreoOS/",
-    "oreoWare/",
-    "apps/",
-    "templates/example_app/",
-    "tools/deploy.py",
-    "tools/build_release.py",
-    "docs/HARDWARE.md",
-)
+# are more likely to warrant a README update. Override per-repo.
+CORE_PATHS = ()  # TODO: list path prefixes that count as "core" for README-update heuristics
