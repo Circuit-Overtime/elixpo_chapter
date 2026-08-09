@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +41,60 @@ class StateStore:
     def append_jsonl(self, name: str, row: dict[str, Any]) -> None:
         with self._path(name).open("a", encoding="utf-8") as f:
             f.write(json.dumps(row) + "\n")
+
+    def write_state(
+        self,
+        name: str,
+        data: Any,
+        *,
+        producer: str,
+        run_id: str | None = None,
+        key: str | None = None,
+        status: str | None = None,
+        ttl: timedelta | None = None,
+        now: datetime | None = None,
+    ):
+        """Write state plus its versioned integrity contract."""
+        from lib.state.contracts import write_versioned
+
+        return write_versioned(
+            self,
+            name,
+            data,
+            producer=producer,
+            run_id=run_id,
+            key=key,
+            status=status,
+            ttl=ttl,
+            now=now,
+        )
+
+    def read_state(
+        self,
+        name: str,
+        default: Any = None,
+        *,
+        expected_producer: str | set[str] | None = None,
+        expected_run_id: str | None = None,
+        expected_key: str | None = None,
+        max_age: timedelta | None = None,
+        now: datetime | None = None,
+        allow_legacy: bool = False,
+    ) -> Any:
+        """Read and validate state at a squad boundary."""
+        from lib.state.contracts import read_versioned
+
+        return read_versioned(
+            self,
+            name,
+            default,
+            expected_producer=expected_producer,
+            expected_run_id=expected_run_id,
+            expected_key=expected_key,
+            max_age=max_age,
+            now=now,
+            allow_legacy=allow_legacy,
+        )
 
     def read_jsonl(self, name: str) -> list[dict[str, Any]]:
         p = self._path(name)
