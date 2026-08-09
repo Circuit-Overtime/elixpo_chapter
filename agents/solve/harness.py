@@ -722,21 +722,62 @@ def _has_worktree_diff(workspace: Path) -> bool:
     return result.returncode == 0 and bool(result.stdout.strip())
 
 
+def _worktree_changed_paths(workspace: Path) -> set[str]:
+    """Return modified and untracked paths without parsing human status output."""
+    changed = subprocess.run(
+        ["git", "diff", "--name-only", "--relative", "HEAD", "--"],
+        cwd=workspace,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        cwd=workspace,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    if changed.returncode != 0 or untracked.returncode != 0:
+        return set()
+    return {
+        path.strip()
+        for path in (*changed.stdout.splitlines(), *untracked.stdout.splitlines())
+        if path.strip()
+    }
+
+
 def _structured_fallback_reason(
     error: HarnessError,
     gate_state: dict[str, Any],
     *,
     has_diff: bool,
+    changed_paths: set[str] | None = None,
 ) -> str | None:
-    """Accept only reviewed, usage-bearing terminal handoffs with a real diff."""
+    """Accept only grounded, usage-bearing terminal handoffs with a real diff."""
     if error.usage is None or error.usage.total_tokens <= 0 or not has_diff:
         return None
     edited_paths = set(gate_state.get("edited_paths") or [])
     reviewed_paths = set(gate_state.get("review_reads") or [])
-    if not edited_paths or not edited_paths.issubset(reviewed_paths):
+    model_reviewed = bool(edited_paths) and edited_paths.issubset(reviewed_paths)
+    grounded_paths = set(gate_state.get("source_reads") or []) | set(gate_state.get("rtk_reads") or [])
+    deterministic_review = (
+        gate_state.get("deterministic_review_requested") is True
+        and bool(edited_paths)
+        and changed_paths is not None
+        and changed_paths == edited_paths
+        and edited_paths.issubset(grounded_paths)
+    )
+    if not model_reviewed and not deterministic_review:
         return None
     if "result was not structured JSON" in str(error):
-        return "missing_structured_payload"
+        return (
+            "missing_structured_payload"
+            if model_reviewed
+            else "grounded_edit_without_structured_payload"
+        )
     if (
         error.metadata.get("terminal_subtype") == "error_max_turns"
         and gate_state.get("structured_output") is True
@@ -1082,22 +1123,29 @@ def run_harness(
                 parsed = _parse_cli_result(json.dumps(final_event))
             except HarnessError as exc:
                 exc.metadata = {**exc.metadata, "live_doctor": supervisor.snapshot()}
+                changed_paths = _worktree_changed_paths(workspace)
                 fallback_reason = _structured_fallback_reason(
                     exc,
                     observed_gate,
                     has_diff=_has_worktree_diff(workspace),
+                    changed_paths=changed_paths,
                 )
                 if fallback_reason is None:
                     raise
                 reviewed_paths = set(observed_gate.get("review_reads") or [])
+                review_source = "harness"
+                if fallback_reason == "grounded_edit_without_structured_payload":
+                    reviewed_paths = changed_paths
+                    review_source = "deterministic_diff_gate"
                 metadata = {
                     **exc.metadata,
                     "structured_fallback": True,
                     "structured_fallback_reason": fallback_reason,
                     "reviewed_paths": sorted(reviewed_paths),
+                    "review_source": review_source,
                 }
                 print(
-                    "[harness] accepted reviewed terminal handoff; using deterministic diff and verification gates",
+                    "[harness] accepted grounded terminal handoff; using deterministic diff and verification gates",
                     flush=True,
                 )
                 parsed = (

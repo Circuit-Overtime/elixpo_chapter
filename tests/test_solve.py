@@ -39,6 +39,7 @@ from agents.solve.harness import (
     _router_ready,
     _stop_stale_isolated_routers,
     _structured_fallback_reason,
+    _worktree_changed_paths,
 )
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
 from agents.solve.tool_gate import _decision
@@ -525,6 +526,8 @@ def test_tool_gate_records_only_successful_edits_and_allows_stop(tmp_path):
     assert _decision(post, state)[0] == 0
     assert state["edited_paths"] == ["app/pricing/page.tsx"]
     assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 0
+    assert state["deterministic_review_requested"] is True
     premature = {
         "hook_event_name": "PreToolUse",
         "tool_name": "StructuredOutput",
@@ -559,7 +562,21 @@ def test_successful_reedit_invalidates_prior_review(tmp_path):
     assert _decision(event, state)[0] == 0
     assert state["review_reads"] == []
     assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
-    assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 0
+
+
+def test_worktree_changed_paths_includes_modified_and_untracked(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+    tracked = tmp_path / "tracked.txt"
+    tracked.write_text("before\n")
+    subprocess.run(["git", "add", "tracked.txt"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "test"], cwd=tmp_path, check=True)
+    tracked.write_text("after\n")
+    (tmp_path / "new.txt").write_text("new\n")
+
+    assert _worktree_changed_paths(tmp_path) == {"tracked.txt", "new.txt"}
 
 
 def test_tool_gate_leaves_decline_judgment_to_model():
@@ -1223,6 +1240,38 @@ def test_turn_limit_without_post_edit_review_cannot_fallback():
     }
 
     assert _structured_fallback_reason(error, gate, has_diff=True) is None
+
+
+def test_unstructured_grounded_edit_uses_deterministic_diff_fallback():
+    error = HarnessError(
+        "coding harness result was not structured JSON: Expecting value",
+        usage=Usage(prompt_tokens=1000, completion_tokens=100, total_tokens=1100),
+    )
+    gate = {
+        "edited_paths": ["app/pricing/page.tsx"],
+        "review_reads": [],
+        "source_reads": ["app/pricing/page.tsx"],
+        "deterministic_review_requested": True,
+    }
+
+    assert _structured_fallback_reason(
+        error,
+        gate,
+        has_diff=True,
+        changed_paths={"app/pricing/page.tsx"},
+    ) == "grounded_edit_without_structured_payload"
+    assert _structured_fallback_reason(
+        error,
+        gate,
+        has_diff=True,
+        changed_paths={"app/pricing/page.tsx", "app/extra.tsx"},
+    ) is None
+    assert _structured_fallback_reason(
+        error,
+        {**gate, "source_reads": []},
+        has_diff=True,
+        changed_paths={"app/pricing/page.tsx"},
+    ) is None
 
 
 def test_unstructured_harness_result_preserves_usage_for_doctor():

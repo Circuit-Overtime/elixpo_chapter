@@ -201,6 +201,17 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
         if edited:
             reviewed = set(state.get("review_reads") or [])
             if not edited.issubset(reviewed):
+                blocks = int(state.get("post_edit_review_blocks") or 0)
+                if blocks >= 1:
+                    # Compatible providers occasionally ignore a Stop denial and
+                    # emit more prose instead of the requested Read. End that
+                    # token loop; the Python supervisor will only recover this
+                    # handoff when every real changed path was grounded by a
+                    # successful pre-edit read and the deterministic diff gates
+                    # still pass.
+                    state["deterministic_review_requested"] = True
+                    return 0, None, None
+                state["post_edit_review_blocks"] = blocks + 1
                 return (
                     2,
                     None,
@@ -247,6 +258,8 @@ def _decision(event: dict[str, Any], state: dict[str, Any]) -> tuple[int, dict[s
                     path for path in (state.get("review_reads") or []) if path != relative
                 ]
                 state["post_edit_structured_blocks"] = 0
+                state["post_edit_review_blocks"] = 0
+                state["deterministic_review_requested"] = False
                 state["live_tool_history"] = []
                 state["live_discovery_restricted"] = False
         return 0, None, None
