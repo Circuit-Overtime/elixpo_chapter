@@ -52,6 +52,18 @@ def test_github_settings_keeps_solver_token_separate(monkeypatch):
     assert configured.solver_token == "solver-token"
 
 
+def test_followup_settings_use_separate_gist_credentials(monkeypatch):
+    from lib.config import FollowupSettings
+
+    monkeypatch.setenv("ELIXPOO_GIST_AGENTIC_TOKEN", "gist-token")
+    monkeypatch.setenv("ELIXPOO_FOLLOWUP_GIST_ID", "gist-id")
+    monkeypatch.setenv("ELIXPO_FOLLOWUP_TTL_DAYS", "120")
+    configured = FollowupSettings()
+    assert configured.gist_token == "gist-token"
+    assert configured.gist_id == "gist-id"
+    assert configured.ttl_days == 120
+
+
 def test_scorer_good_first_issue_qualifies():
     s = IssueSignals(
         labels=["good first issue"],
