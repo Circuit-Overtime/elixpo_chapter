@@ -18,6 +18,7 @@ from typing import Literal
 
 import structlog
 from lib.github.issues import parse_issue_url
+from lib.sandbox import sandbox_command
 from lib.state.followups import FollowupRecord
 from lib.state.ledger import Ledger
 from lib.workspace import Workspace, git_auth_env
@@ -122,9 +123,18 @@ def build_fix_action(pull: dict, reviews: list[dict], checks: list[dict]) -> dic
     }
 
 
-def _run(workspace: Path, args: list[str], *, timeout: int = 180, env: dict[str, str] | None = None) -> str:
+def _run(
+    workspace: Path,
+    args: list[str],
+    *,
+    timeout: int = 180,
+    env: dict[str, str] | None = None,
+    sandbox: bool = False,
+    network: bool = False,
+) -> str:
+    command, backend = sandbox_command(workspace, args, network=network) if sandbox else (args, "host")
     process = subprocess.run(
-        args,
+        command,
         cwd=workspace,
         env=env,
         capture_output=True,
@@ -134,7 +144,7 @@ def _run(workspace: Path, args: list[str], *, timeout: int = 180, env: dict[str,
     )
     if process.returncode:
         output = (process.stderr or process.stdout).strip()
-        raise StewardFixRejected(f"command failed ({shlex.join(args)}): {output[:1600]}")
+        raise StewardFixRejected(f"command failed ({shlex.join(args)}, sandbox={backend}): {output[:1600]}")
     return process.stdout.strip()
 
 
@@ -355,8 +365,6 @@ def _setup_command(workspace: Path, changed: list[str]) -> list[str] | None:
             return ["yarn", "install", "--immutable", "--ignore-scripts"]
         if (workspace / "package-lock.json").is_file() or (workspace / "npm-shrinkwrap.json").is_file():
             return ["npm", "ci", "--ignore-scripts"]
-    if ".py" in suffixes and (workspace / "pyproject.toml").is_file():
-        return ["python", "-m", "pip", "install", "-e", "."]
     return None
 
 
@@ -454,9 +462,9 @@ async def fix_one(api, gist, router, store, *, key: str, fingerprint: str, works
         check_receipts = []
         setup = _setup_command(root, changed)
         if setup:
-            _run(root, setup, timeout=300, env=_verification_env())
+            _run(root, setup, timeout=300, env=_verification_env(), sandbox=True, network=True)
         for command in _verification_commands(root, changed):
-            output = _run(root, command, timeout=240, env=_verification_env())
+            output = _run(root, command, timeout=240, env=_verification_env(), sandbox=True, network=False)
             check_receipts.append({"command": shlex.join(command), "status": "passed", "output": output[-1000:]})
         verdict = await _review(router, record, feedback, diff, check_receipts)
         if not verdict.approved or verdict.findings:
