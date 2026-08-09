@@ -1,36 +1,9 @@
-/**
- * Server-side session refresh — shared by `/api/auth/me` and any other
- * route that needs to transparently rotate an expired access token using
- * a still-valid refresh-token cookie.
- *
- * The split exists so server-only routes (e.g. /oauth/authorize, which
- * 302s to the consent screen) can refresh inline instead of bouncing the
- * buyer through /login first — eliminating the "spinner flash" UX nit
- * for users who already have a valid session.
- *
- * Pattern:
- *
- *   const result = await tryRefreshSession(request, refreshToken);
- *   if (!result.ok) return NextResponse.redirect(loginUrl);
- *   const response = NextResponse.redirect(nextUrl);
- *   await applyRefreshedCookies(response, result, request);
- *   return response;
- *
- * The DB rotation (revoke old, store new) and device-fingerprint carry
- * happen inside `tryRefreshSession` — callers only deal with the cookies.
- */
-
 import type { NextRequest, NextResponse } from "next/server";
 import { setAccountSessionsCookie } from "./account-sessions";
 import { getDatabase } from "./d1-client";
-import {
-    getRefreshTokenByHash,
-    getUserById,
-    revokeRefreshToken,
-    createRefreshToken as storeRefreshToken,
-} from "./db";
-import { createAccessToken, createRefreshToken, verifyJWT } from "./jwt";
-import { generateUUID, hashString } from "./webcrypto";
+import { getUserById } from "./db";
+import { verifyJWT } from "./jwt";
+import { rotateRefreshToken } from "./refresh-rotation";
 
 export type RefreshSuccess = {
     ok: true;
@@ -60,14 +33,6 @@ export type RefreshFailure = {
         | "internal_error";
 };
 
-/**
- * Attempt to mint a new access + refresh token pair using the supplied
- * refresh token. Rotates the DB row (revokes the old, stores the new)
- * and preserves the device fingerprint from the incoming request.
- *
- * Does NOT mutate cookies — caller applies them via
- * `applyRefreshedCookies`.
- */
 export async function tryRefreshSession(
     request: NextRequest,
     refreshToken: string,
@@ -79,10 +44,32 @@ export async function tryRefreshSession(
         }
 
         const db = await getDatabase();
-        const refreshTokenHash = await hashString(refreshToken);
-        const tokenRecord = await getRefreshTokenByHash(db, refreshTokenHash);
-        if (!tokenRecord) {
-            return { ok: false, reason: "token_revoked" };
+        const ipAddress =
+            request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+            request.headers.get("cf-connecting-ip") ||
+            "unknown";
+        const userAgent = request.headers.get("user-agent") || "unknown";
+        const refreshRemainingSeconds = Math.max(
+            payload.exp - Math.floor(Date.now() / 1000),
+            0,
+        );
+        const refreshDays = Math.max(
+            Math.ceil(refreshRemainingSeconds / 86_400),
+            1,
+        );
+
+        const result = await rotateRefreshToken(db, {
+            refreshTokenJWT: refreshToken,
+            clientId: "elixpo-web-ui",
+            ipAddress,
+            userAgent,
+            refreshExpiresInDays: refreshDays,
+        });
+
+        if ("error" in result) {
+            if (result.error === "invalid_grant")
+                return { ok: false, reason: "token_revoked" };
+            return { ok: false, reason: "invalid_token" };
         }
 
         const user = (await getUserById(db, payload.sub)) as {
@@ -97,63 +84,7 @@ export async function tryRefreshSession(
 
         const accessMaxAge =
             parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) * 60;
-
-        // Carry the remaining lifetime of the inbound refresh token
-        // forward — the new refresh token shouldn't extend past the
-        // user's original sign-in session duration (so it can't be
-        // refreshed indefinitely past the lifetime of the original
-        // grant).
-        const refreshRemainingSeconds = Math.max(
-            payload.exp - Math.floor(Date.now() / 1000),
-            0,
-        );
-        const refreshDays = Math.max(
-            Math.ceil(refreshRemainingSeconds / 86400),
-            1,
-        );
-        const refreshMaxAge = refreshDays * 86400;
-
-        const newAccessToken = await createAccessToken(
-            payload.sub,
-            user.email,
-            payload.provider,
-            parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10),
-            payload.scopes,
-        );
-        const newRefreshToken = await createRefreshToken(
-            payload.sub,
-            payload.provider,
-            refreshDays,
-            payload.scopes,
-        );
-        const newRefreshTokenHash = await hashString(newRefreshToken);
-
-        // Carry the device fingerprint from THIS request through to the
-        // new row so the active-sessions list keeps showing the same
-        // device after rotation (otherwise every token refresh would
-        // create a row with NULL metadata).
-        const ipAddress =
-            request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-            request.headers.get("cf-connecting-ip") ||
-            "";
-        const userAgent = request.headers.get("user-agent") || "";
-        const { hashIpForSession, shortUaForSession } = await import("./db");
-
-        await revokeRefreshToken(db, refreshTokenHash);
-        await storeRefreshToken(db, {
-            id: generateUUID(),
-            userId: payload.sub,
-            tokenHash: newRefreshTokenHash,
-            expiresAt: new Date(Date.now() + refreshMaxAge * 1000),
-            ipHash:
-                (await hashIpForSession(ipAddress)) ||
-                (tokenRecord as any).ip_hash ||
-                null,
-            uaShort:
-                shortUaForSession(userAgent) ||
-                (tokenRecord as any).ua_short ||
-                null,
-        });
+        const refreshMaxAge = refreshDays * 86_400;
 
         return {
             ok: true,
@@ -162,26 +93,17 @@ export async function tryRefreshSession(
             displayName: user.display_name ?? null,
             provider: payload.provider,
             emailVerified: !!user.email_verified,
-            newAccessToken,
-            newRefreshToken,
+            newAccessToken: result.access_token,
+            newRefreshToken: result.refresh_token,
             accessMaxAge,
             refreshMaxAge,
         };
     } catch (err) {
-        console.error(
-            "[auth-refresh] tryRefreshSession failed: %s",
-            err instanceof Error ? err.message : String(err),
-        );
+        console.error("[auth-refresh] tryRefreshSession failed:", err);
         return { ok: false, reason: "internal_error" };
     }
 }
 
-/**
- * Apply the rotated tokens to a NextResponse — sets the same trio of
- * cookies (`access_token`, `refresh_token`, `user_id`) the login route
- * sets. Mutates the response in place; returns the same reference for
- * chaining ergonomics.
- */
 export async function applyRefreshedCookies(
     response: NextResponse,
     refresh: RefreshSuccess,

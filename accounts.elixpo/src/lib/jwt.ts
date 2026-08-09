@@ -8,6 +8,15 @@ export interface JWTPayload {
     iat: number;
     exp: number;
     type: "access" | "refresh";
+    client_id?: string;
+    aud?: string | string[];
+    sid?: string;
+}
+
+export interface OAuthClaims {
+    clientId?: string;
+    audience?: string | string[];
+    sid?: string;
 }
 
 export async function getSigningKey(): Promise<jose.KeyLike | Uint8Array> {
@@ -32,6 +41,7 @@ export async function createAccessToken(
     provider?: "google" | "github" | "discord" | "microsoft" | "email",
     expiresInMinutes: number = 15,
     scopes?: string[],
+    oauthClaims?: OAuthClaims,
 ): Promise<string> {
     const payload: Omit<JWTPayload, "iat" | "exp"> = {
         sub: userId,
@@ -39,17 +49,22 @@ export async function createAccessToken(
         type: "access",
         ...(provider && { provider }),
         ...(scopes && { scopes }),
+        ...(oauthClaims?.clientId && { client_id: oauthClaims.clientId }),
+        ...(oauthClaims?.sid && { sid: oauthClaims.sid }),
     };
 
     const key = await getSigningKey();
 
-    const jwt = await new jose.SignJWT(payload)
+    let builder = new jose.SignJWT(payload)
         .setProtectedHeader({ alg: "EdDSA" })
         .setIssuedAt()
-        .setExpirationTime(`${expiresInMinutes}m`)
-        .sign(key);
+        .setExpirationTime(`${expiresInMinutes}m`);
 
-    return jwt;
+    if (oauthClaims?.audience) {
+        builder = builder.setAudience(oauthClaims.audience);
+    }
+
+    return await builder.sign(key);
 }
 
 export async function createRefreshToken(
@@ -57,6 +72,7 @@ export async function createRefreshToken(
     provider?: "google" | "github" | "discord" | "microsoft" | "email",
     expiresInDays: number = 30,
     scopes?: string[],
+    oauthClaims?: OAuthClaims,
 ): Promise<string> {
     const payload: Omit<JWTPayload, "iat" | "exp"> = {
         sub: userId,
@@ -64,17 +80,22 @@ export async function createRefreshToken(
         type: "refresh",
         ...(provider && { provider }),
         ...(scopes && { scopes }),
+        ...(oauthClaims?.clientId && { client_id: oauthClaims.clientId }),
+        ...(oauthClaims?.sid && { sid: oauthClaims.sid }),
     };
 
     const key = await getSigningKey();
 
-    const jwt = await new jose.SignJWT(payload)
+    let builder = new jose.SignJWT(payload)
         .setProtectedHeader({ alg: "EdDSA" })
         .setIssuedAt()
-        .setExpirationTime(`${expiresInDays}d`)
-        .sign(key);
+        .setExpirationTime(`${expiresInDays}d`);
 
-    return jwt;
+    if (oauthClaims?.audience) {
+        builder = builder.setAudience(oauthClaims.audience);
+    }
+
+    return await builder.sign(key);
 }
 
 export async function verifyJWT(token: string): Promise<JWTPayload | null> {
