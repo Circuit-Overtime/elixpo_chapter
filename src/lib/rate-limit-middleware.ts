@@ -14,6 +14,8 @@
 
 import type { D1Database } from "@cloudflare/workers-types";
 import {
+    createDeviceIssuanceRateLimiter,
+    createDeviceLookupRateLimiter,
     createLoginRateLimiter,
     createPasswordResetRateLimiter,
     createRegisterRateLimiter,
@@ -42,4 +44,20 @@ export async function checkPasswordResetRateLimit(
 ): Promise<RateLimitResult> {
     const limiter = createPasswordResetRateLimiter();
     return limiter.check(db, ipAddress, "password_reset");
+}
+
+export async function checkDeviceIssuanceRateLimit(
+    db: D1Database,
+    ipAddress: string,
+): Promise<RateLimitResult> {
+    const limiter = createDeviceIssuanceRateLimiter();
+    return limiter.check(db, ipAddress, "device_issue");
+}
+
+export async function checkDeviceLookupRateLimit(
+    db: D1Database,
+    ipAddress: string,
+): Promise<RateLimitResult> {
+    const limiter = createDeviceLookupRateLimiter();
+    return limiter.check(db, ipAddress, "device_lookup");
 }
