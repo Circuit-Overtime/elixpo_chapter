@@ -8,6 +8,7 @@ per_task:
   discussions: 12000
   steward: 12000
   repository_agent: 16000
+  standard_sync: 4000
   steward_fix: 50000
   steward_celebrate: 2000
   doctor: 0

@@ -21,12 +21,19 @@ log = structlog.get_logger()
 async def _run(*, dry_run: bool, repositories: list[str]) -> int:
     from lib.config import settings
     from lib.github.api import GitHubAPI
+    from lib.publication import safety_check
+    from rtk import Budget, Router
 
     if not settings.github.token:
         log.error("standard_sync.missing_token")
         return 1
     config = load_standard(settings.root, settings.config_dir / "org_standard.yaml")
     api = GitHubAPI.from_token(settings.github.token)
+    router = (
+        Router.from_settings("standard-sync", budget=Budget("standard-sync", limit=4000))
+        if not dry_run
+        else None
+    )
     try:
         available = await api.list_org_repositories(config.target_owner)
         requested = set(repositories)
@@ -54,11 +61,19 @@ async def _run(*, dry_run: bool, repositories: list[str]) -> int:
             else:
                 results.append(
                     await publish_repository_update(
-                        api, settings.root, config, name, changes, digest=digest
+                        api,
+                        settings.root,
+                        config,
+                        name,
+                        changes,
+                        digest=digest,
+                        safety_gate=lambda body: safety_check(router, body),
                     )
                 )
     finally:
         await api.close()
+        if router is not None:
+            await router.aclose()
     receipt = {"standard": config.name, "digest": digest, "dry_run": dry_run, "results": results}
     print(json.dumps(receipt, indent=2, sort_keys=True))
     return 0

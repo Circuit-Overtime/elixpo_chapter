@@ -85,6 +85,7 @@ async def publish_repository_update(
     changes: list[FileChange],
     *,
     digest: str,
+    safety_gate=None,
 ) -> dict[str, Any]:
     if not changes:
         return {"repository": f"{config.target_owner}/{repo}", "status": "current"}
@@ -127,6 +128,8 @@ async def publish_repository_update(
         f"`elixpo/agent.elixpo` standard `{digest[:12]}`.\n\n"
         f"Files changed: {len(changes)}. Review repository-specific behavior before merging."
     )
+    if safety_gate is not None:
+        await safety_gate(f"[CHORE]:- Update OreoFlow repository standard\n\n{body}")
     pull = await api.create_pull(
         config.target_owner,
         repo,

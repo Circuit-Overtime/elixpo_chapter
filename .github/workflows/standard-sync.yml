@@ -19,12 +19,16 @@ on:
       - .github/docs/agentic-planner.md
       - .github/scripts/**
       - .github/workflows/elixpo-agent.yml
+      - .github/workflows/elixpo-ci.yml
       - .github/workflows/elixpo-triage.yml
       - .github/workflows/elixpoo-ack.yml
       - .github/workflows/elixpoo-retry.yml
       - .github/workflows/on-merge.yml
       - .github/workflows/pr-assign.yml
       - .github/workflows/pr-description-fill.yml
+      - .github/workflows/pr-management.yml
+      - .github/workflows/quality-gate.yml
+      - .github/workflows/stale-management.yml
 
 permissions:
   contents: read
@@ -47,7 +51,8 @@ jobs:
       - name: Compare or publish repository standard
         env:
           ELIXPOO_GITHUB_AGENTIC_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
-          APPLY: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}
+          APPLY: ${{ github.event_name == 'push' || inputs.apply || false }}
+          ELIXPO_POLLINATIONS_API_KEY: ${{ secrets.ELIXPO_POLLINATIONS_API_KEY }}
           REPOSITORY: ${{ inputs.repository }}
         run: |
           args=()

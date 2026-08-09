@@ -43,13 +43,14 @@ See **[AGENTS.md](AGENTS.md)** for the operating manual and
 
 | Path | Purpose |
 |------|---------|
-| `agents/` | the squads (scout, triage, pick, comprehend, solve, submit, steward) — independent |
+| `agents/` | independent OreoFlow, repository response, operations, and synchronization squads |
 | `rtk/` | the token economy over Pollinations (router, budget, cache, ledger, shrinkers) |
 | `lib/` | shared plumbing: github, tools, state (issues + board + json), scorer, config |
 | `config/` | `models.yaml` (role→model), `languages.yaml`, `budgets.yaml` |
 | `state/` | committed-back JSON ledgers |
 | `prompts/` | squad prompt templates |
 | `agent.elixpo/` | Next.js frontend (Cloudflare Pages) |
+| `workers/` | stateless signed-webhook ingress; no D1/KV agent state |
 
 ### Develop
 

@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
-
 from agents.repository_agent.core import (
     PUBLIC_MARKER,
     RepositoryAgentRejected,

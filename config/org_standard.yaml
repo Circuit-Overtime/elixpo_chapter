@@ -16,6 +16,7 @@ files:
   - .github/scripts/triage_issue.py
   - .github/scripts/triage_pr.py
   - .github/workflows/artifact-update.yml
+  - .github/workflows/elixpo-ci.yml
   - .github/workflows/elixpo-agent.yml
   - .github/workflows/elixpo-triage.yml
   - .github/workflows/elixpoo-ack.yml
@@ -23,3 +24,6 @@ files:
   - .github/workflows/on-merge.yml
   - .github/workflows/pr-assign.yml
   - .github/workflows/pr-description-fill.yml
+  - .github/workflows/pr-management.yml
+  - .github/workflows/quality-gate.yml
+  - .github/workflows/stale-management.yml
