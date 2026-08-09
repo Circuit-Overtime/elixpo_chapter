@@ -37,6 +37,7 @@ roles:
 
   # steward replies — conversational follow-ups + tool use
   steward:       { model: kimi }                       # free
+  repository_agent: { model: nova-fast }               # bounded issue/PR response and routing
 
   # GitHub Discussions — lowest-priced general text model in the registry
   discussions:   { model: nova-fast }

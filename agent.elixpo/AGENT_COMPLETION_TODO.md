@@ -115,22 +115,22 @@ Items are ordered by dependency, not by issue number.
 - [x] Ensure every state-writing workflow uses the shared `state-write` concurrency lock.
 - [ ] Make workflow chaining explicit from Scout through Janitor/Steward completion.
 - [ ] Add bounded retries only for transient network/provider operations.
-- [ ] Add a daily summary workflow for picks, rejections, PRs, merges, failures,
+- [x] Add a daily summary workflow for picks, rejections, PRs, merges, failures,
       token spend, and cleanup outcomes.
-- [ ] Finish webhook ingress and verify signatures, replay protection, and dispatch
+- [x] Finish webhook ingress and verify signatures, replay protection, and dispatch
       allowlists while retaining polling as the loss-recovery path.
 - [ ] Remove or implement every remaining `not implemented yet` entrypoint.
 
 ## 7. Security and public-action controls
 
-- [ ] Audit each token against its exact job and remove fallback credential sharing.
+- [x] Audit each token against its exact job and remove fallback credential sharing.
 - [ ] Keep target-repository commands credential-free inside the coding sandbox.
 - [ ] Redact secrets, router URLs, web tokens, and authorization headers from logs.
 - [ ] Require `qwen-safety` before every public comment, Discussion, PR, or issue post.
 - [ ] Enforce repository opt-out/blocklist changes immediately and permanently.
-- [ ] Add prompt-injection fixtures for issues, comments, repository instructions,
+- [x] Add prompt-injection fixtures for issues, comments, repository instructions,
       command output, and dependency metadata.
-- [ ] Add rate limits for comments, model calls, forks, PRs, and Discussions.
+- [x] Add rate limits for comments, model calls, forks, PRs, and Discussions.
 - [ ] Verify all public posts honestly disclose autonomous contribution where needed.
 
 ## 8. Cost, observability, and anomaly controls
@@ -175,7 +175,7 @@ Items are ordered by dependency, not by issue number.
       token cost, public-post error rate, and leaked-resource count.
 - [ ] Update `docs/refactor_plan.md` to match the implemented budgets, workflows,
       models, state contracts, and polling cadence.
-- [ ] Publish an operator runbook covering setup, testing, failure recovery, secret
+- [x] Publish an operator runbook covering setup, testing, failure recovery, secret
       rotation, emergency stop, blocklisting, and manual cleanup.
 
 ## Immediate execution order

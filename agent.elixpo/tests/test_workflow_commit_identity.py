@@ -25,9 +25,9 @@ def test_state_workflows_use_elixpoo_commit_identity_and_pat():
         assert "ELIXPOO_GITHUB_AGENTIC_TOKEN" in workflow
 
 
-def test_repository_agent_uses_same_human_account_identity():
+def test_repository_agent_cannot_create_repository_commits():
     workflow = Path(".github/workflows/elixpo-agent.yml").read_text(encoding="utf-8")
-    assert "GIT_AUTHOR_NAME: elixpoo" in workflow
-    assert "GIT_AUTHOR_EMAIL: elixpoo@gmail.com" in workflow
-    assert "GIT_COMMITTER_NAME: elixpoo" in workflow
-    assert "GIT_COMMITTER_EMAIL: elixpoo@gmail.com" in workflow
+    assert "contents: read" in workflow
+    assert "contents: write" not in workflow
+    assert "claude-code-action" not in workflow
+    assert "python -m agents.repository_agent" in workflow

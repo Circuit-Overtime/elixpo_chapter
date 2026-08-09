@@ -128,6 +128,20 @@ class GitHubAPI:
         repo_data = await self.get_repo(owner, repo)
         return repo_data.get("default_branch", "main")
 
+    async def list_org_repositories(self, owner: str) -> list[dict]:
+        repositories: list[dict] = []
+        page = 1
+        while True:
+            batch = await self._request(
+                "GET",
+                f"/orgs/{owner}/repos",
+                params={"type": "all", "sort": "full_name", "per_page": 100, "page": page},
+            )
+            repositories.extend(batch or [])
+            if len(batch or []) < 100:
+                return repositories
+            page += 1
+
     # --- Issues ---
 
     async def get_issue(self, owner: str, repo: str, issue_number: int) -> dict:
@@ -149,6 +163,34 @@ class GitHubAPI:
             f"/repos/{owner}/{repo}/issues/comments/{comment_id}",
             json={"body": body},
         )
+
+    async def create_issue(
+        self, owner: str, repo: str, title: str, body: str, *, labels: list[str] | None = None
+    ) -> dict:
+        return await self._request(
+            "POST",
+            f"/repos/{owner}/{repo}/issues",
+            json={"title": title, "body": body, "labels": labels or []},
+        )
+
+    async def update_issue(self, owner: str, repo: str, issue_number: int, **fields) -> dict:
+        return await self._request(
+            "PATCH", f"/repos/{owner}/{repo}/issues/{issue_number}", json=fields
+        )
+
+    async def ensure_label(
+        self, owner: str, repo: str, name: str, color: str, description: str = ""
+    ) -> None:
+        try:
+            await self._request("GET", f"/repos/{owner}/{repo}/labels/{name}")
+        except Exception as exc:
+            if getattr(getattr(exc, "response", None), "status_code", None) != 404:
+                raise
+            await self._request(
+                "POST",
+                f"/repos/{owner}/{repo}/labels",
+                json={"name": name, "color": color, "description": description},
+            )
 
     # --- Pull Requests ---
 
@@ -247,6 +289,34 @@ class GitHubAPI:
             "POST",
             f"/repos/{owner}/{repo}/git/refs",
             json={"ref": ref, "sha": sha},
+        )
+
+    async def get_commit(self, owner: str, repo: str, sha: str) -> dict:
+        return await self._request("GET", f"/repos/{owner}/{repo}/git/commits/{sha}")
+
+    async def create_blob(self, owner: str, repo: str, content: bytes) -> dict:
+        import base64
+
+        return await self._request(
+            "POST",
+            f"/repos/{owner}/{repo}/git/blobs",
+            json={"content": base64.b64encode(content).decode(), "encoding": "base64"},
+        )
+
+    async def create_tree(self, owner: str, repo: str, base_tree: str, tree: list[dict]) -> dict:
+        return await self._request(
+            "POST",
+            f"/repos/{owner}/{repo}/git/trees",
+            json={"base_tree": base_tree, "tree": tree},
+        )
+
+    async def create_commit(
+        self, owner: str, repo: str, message: str, tree: str, parents: list[str]
+    ) -> dict:
+        return await self._request(
+            "POST",
+            f"/repos/{owner}/{repo}/git/commits",
+            json={"message": message, "tree": tree, "parents": parents},
         )
 
     async def get_ref(self, owner: str, repo: str, ref: str) -> dict:

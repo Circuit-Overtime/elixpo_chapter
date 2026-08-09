@@ -7,6 +7,7 @@ The path is injectable so tests write to a tmp file.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,7 @@ class TokenLedger:
         extra: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         row: dict[str, Any] = {
+            "timestamp": ts or datetime.now(timezone.utc).isoformat(),
             "task_id": task_id,
             "role": role,
             "model": model,
@@ -37,8 +39,6 @@ class TokenLedger:
             "completion_tokens": usage.completion_tokens,
             "total_tokens": usage.total_tokens,
         }
-        if ts is not None:
-            row["ts"] = ts
         if extra:
             row.update(extra)
         with self.path.open("a", encoding="utf-8") as f:

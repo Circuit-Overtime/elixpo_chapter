@@ -60,10 +60,12 @@ commit to the profile.
 Set the organization variable `ELIXPOO_FOLLOWUP_GIST_ID` to one private Gist
 owned by `elixpoo`. Steward stores `elixpoo-followups.json` beside any other
 Gist files; it never overwrites the merge changelog. Optionally set
-`ELIXPO_FOLLOWUP_TTL_DAYS` from 60 through 360 (default 360) and
-`ELIXPO_AGENT_MAX_TURNS` (default 64). Set `ELIXPO_GITHUB_CONTROL_REPO` to the
+`ELIXPO_FOLLOWUP_TTL_DAYS` from 60 through 360 (default 360). Set
+`ELIXPO_GITHUB_CONTROL_REPO` to the
 `owner/repository` containing the squad workflows when Steward runs anywhere
 other than that control repository; Actions otherwise uses `GITHUB_REPOSITORY`.
+`ELIXPO_AGENT_MAX_TURNS` is retired: the repository responder no longer runs a
+coding tool loop.
 
 `AGENT_GITHUB_SOLVER_TOKEN` is deliberately separate from the general
 agentic token. Mint it from the account that owns the forks. Use classic scope
@@ -80,9 +82,10 @@ workflow is rolled out everywhere.
 
 ### Portable repository baseline
 
-For another Elixpo repository, copy the agent workflows, supporting scripts,
-`ci_config.py`, and this document. Then customize only the repository identity,
-description, core paths, maintainers, and project mappings in `ci_config.py`.
+For another Elixpo repository, use the canonical bundle in
+`config/org_standard.yaml`. `python -m agents.standard_sync` reports drift;
+`--apply` opens one reviewable update PR per repository. Do not manually copy
+individual workflow files because that recreates version drift.
 
 Required organization secrets:
 
@@ -119,20 +122,17 @@ These are not part of the organization agent bundle:
 
 | Route | Model | Use |
 | --- | --- | --- |
-| default | `deepseek` | repository changes, review, and scoped tool use |
-| background | `nova-fast` | inexpensive metadata and supporting work |
-| think | `deepseek` | complex reasoning or review only |
+| repository_agent | `nova-fast` | bounded issue replies, PR review, and OreoFlow routing |
+| code | `qwen-coder` | Solve and Steward Fix coding only |
 | webSearch | `perplexity-fast` | time-sensitive external lookup only |
 
 Token ceilings are centralized in `.github/ci_config.py`. The prompt directs the agent to read the prepared context once, use targeted repository reads, and avoid search unless local context is insufficient. RTK compresses supported shell output before it reaches the model.
 
-PR context is bounded to metadata, diff statistics, changed-file names, and the
-single matching follow-up-memory record. The agent requests per-file diffs only
-when needed; the workflow never injects the full patch or shared memory. Agent
-execution defaults to 64 turns and 12 minutes, with prompt-level budgets of 12
-tool calls for questions/reviews and 30 for implementation. Repositories may
-lower or raise the turn ceiling with `ELIXPO_AGENT_MAX_TURNS`; time, tool, and
-context limits remain authoritative.
+The repository responder receives bounded issue context or at most 12,000
+characters of PR diff. It makes one `repository_agent` call and one safety call,
+with a 16,000-token soft budget and 20,000-token ceiling. It has no file, shell,
+branch, or metadata tools. Implementation requests enter OreoFlow Vet; Solve is
+the only CCR coding harness and remains supervised by Doctor and Janitor.
 
 Steward polls the elixpoo account's participating mention notifications every
 ten minutes. This catches public issue and PR mentions outside repositories that
@@ -150,7 +150,7 @@ GitHub Discussion mentions are handled both by direct `discussion` and
 `discussion_comment` events and by the existing ten-minute target-repository
 poll, which covers webhook gaps and nested replies.
 
-The setup script also maps the harness's Sonnet, Opus, and Haiku aliases to these configured free models. This prevents the upstream API from receiving an unavailable Anthropic model name after CCR has selected a Pollinations provider.
+CCR configuration applies only to the bounded Solve coding harness.
 
 ## Scope and safety
 
