@@ -3,3 +3,4 @@ whitelist:
   - typescript
   - javascript
   - shell
+  - yaml

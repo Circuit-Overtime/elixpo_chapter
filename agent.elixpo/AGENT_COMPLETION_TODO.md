@@ -20,48 +20,56 @@ Items are ordered by dependency, not by issue number.
 - [x] Discussions support Q&A, announcements, polls, mood variance, labels, emoji
       titles, direct events, and cross-repository mention polling.
 
-## 1. Doctor — next implementation
+## 1. Doctor — completed
 
-- [ ] Create `agents/doctor/` as an independent squad and add its rich `SKILL.md`.
-- [ ] Consume only versioned `doctor_pending` receipts; never inspect an unrecorded
-      live process to guess what happened.
-- [ ] Define a strict decision schema with `retry`, `terminate`, `preserve`, and
+- [x] Create `agents/doctor/` as an independent squad and add its rich `SKILL.md`.
+- [x] Consume structured live harness telemetry while Solve runs, and consume only
+      versioned `doctor_pending` receipts for terminal recovery decisions.
+- [x] Warn at the Vet-derived token target without stopping productive work below
+      the absolute ceiling.
+- [x] Steer exact and alternating repeated tool chains through the deterministic
+      tool gate; stop early only when looping coincides with abnormal token growth.
+- [x] Bound live telemetry, transcript queues, and process groups so supervision
+      cannot create its own memory leak.
+- [x] Define a strict decision schema with `retry`, `terminate`, `preserve`, and
       `cleanup_authorized` outcomes plus evidence and retry parameters.
-- [ ] Make deterministic decisions for known failures before considering a cheap
+- [x] Make deterministic decisions for known failures before considering a cheap
       routed model call:
-  - [ ] authentication and permission failures;
-  - [ ] provider connection, rate-limit, and unavailable-model failures;
-  - [ ] timeouts and stalled tool loops;
-  - [ ] token-target and hard-ceiling breaches;
-  - [ ] malformed structured output;
-  - [ ] dependency/setup failures;
-  - [ ] verification or review failures;
-  - [ ] unsuitable or changed issues.
-- [ ] Detect repeated failure fingerprints and forbid whole-pipeline retry loops.
-- [ ] Allow at most one stage-scoped retry unless policy explicitly permits more.
-- [ ] Record token deltas, elapsed time, model route, retry count, and final reason
-      in `state/doctor.json` and the token ledger.
-- [ ] Never publish externally and never modify a target repository.
-- [ ] Add a serialized Doctor workflow triggered by a Solve failure receipt.
-- [ ] Add unit tests for every decision category, idempotency, and loop prevention.
+  - [x] authentication and permission failures;
+  - [x] provider connection, rate-limit, and unavailable-model failures;
+  - [x] timeouts and stalled tool loops;
+  - [x] token-target and hard-ceiling breaches;
+  - [x] malformed structured output;
+  - [x] dependency/setup failures;
+  - [x] verification or review failures;
+  - [x] unsuitable or changed issues.
+- [x] Detect repeated failure fingerprints and forbid whole-pipeline retry loops.
+- [x] Allow at most one stage-scoped retry unless policy explicitly permits more.
+- [x] Record token deltas, elapsed time, model route, retry count, and final reason
+      in `state/doctor.json`; preserve Solve as the owner of token-ledger writes.
+- [x] Never publish externally and never modify a target repository.
+- [x] Add serialized Doctor execution to the failing Solve runner before cleanup.
+- [x] Add unit tests for every decision category, idempotency, and loop prevention.
 
-## 2. Janitor — immediately after Doctor
+## 2. Janitor — completed
 
-- [ ] Create `agents/janitor/` as an independent squad and add its rich `SKILL.md`.
-- [ ] Accept cleanup only when Doctor records `cleanup_authorized` or a terminal
-      decision; fail closed for active, missing, or mismatched runs.
-- [ ] Validate every resource against its recorded kind, locator, and safe root.
-- [ ] Remove only the exact recorded workspace under `/tmp/elixpoo-workspaces`.
-- [ ] Terminate only the CCR process group or PID recorded for that Solve run; never
+- [x] Create `agents/janitor/` as an independent squad and add its rich `SKILL.md`.
+- [x] Accept cleanup only when Doctor records `cleanup_authorized` or Submit records
+      a matching successful terminal receipt; fail closed for active or mismatched runs.
+- [x] Validate every resource against its recorded kind, locator, and safe root.
+- [x] Remove only the exact recorded workspace under `/tmp/elixpoo-workspaces`.
+- [x] Terminate only the CCR process group or PID recorded for that Solve run; never
       use broad process-name killing on a shared host.
-- [ ] Remove isolated CCR configuration, context bundles, dependency caches created
+- [x] Remove isolated CCR configuration, context bundles, dependency caches created
       for the run, and other explicitly recorded temporary resources.
-- [ ] Preserve shared forks and any workspace Doctor marked for inspection.
-- [ ] Make cleanup idempotent and emit `state/janitor.json` with per-resource results.
-- [ ] Add a bounded orphan audit for expired workspaces whose owning run is terminal.
-- [ ] Add filesystem/process tests using temporary directories and fake PIDs.
-- [ ] Add a Janitor workflow chained after Doctor, including an `always()` fallback
+- [x] Preserve shared forks and any workspace Doctor marked for inspection.
+- [x] Make cleanup idempotent and emit `state/janitor.json` with per-resource results.
+- [x] Add a bounded orphan audit for expired partial cleanup whose owning run is terminal.
+- [x] Add filesystem/process tests using temporary directories and fake PIDs.
+- [x] Run Janitor after Doctor in the same Solve job, including an `always()` fallback
       that records cleanup failure without hiding the original Solve failure.
+- [x] Run Janitor after successful Submit so completed workspaces and dependency
+      trees do not accumulate after the pushed branch is safe.
 
 ## 3. Complete Steward follow-through
 
@@ -138,7 +146,22 @@ Items are ordered by dependency, not by issue number.
 - [ ] Expose squad health, queue depth, token spend, success rate, and cleanup debt in
       the frontend without exposing secrets or private metadata.
 
-## 9. Validation and release gates
+## 9. Dedicated GitHub Project operations view — after post-PR lifecycle
+
+- [ ] Create one Project V2 view as the operational source of truth; do not add a database.
+- [ ] Track repository, issue number/URL, issue title, current squad, run ID, branch,
+      PR URL, started/updated timestamps, token target/spend, Doctor warnings, and cleanup status.
+- [ ] Define explicit states for discovered, vetted, claimed, solving, ready, submitted,
+      open, changes requested, CI failed, merged, closed, rejected, and cleanup pending.
+- [ ] Make every transition idempotent and keyed by `owner/repo#issue`; reject stale run IDs.
+- [ ] Reconcile PR open/closed/merged state from webhooks plus bounded polling recovery.
+- [ ] Add views for active work, awaiting maintainers, failures needing attention,
+      merged contributions, token anomalies, and cleanup debt.
+- [ ] Keep public repository metadata only; never place secrets, prompts, source code,
+      or raw model/tool transcripts in Project fields.
+- [ ] Surface the same sanitized status data in the frontend after the board contract stabilizes.
+
+## 10. Validation and release gates
 
 - [ ] Add an end-to-end owned-repository fixture covering Vet → Solve → Submit →
       Steward → Doctor/Janitor → merge completion.
@@ -157,11 +180,10 @@ Items are ordered by dependency, not by issue number.
 
 ## Immediate execution order
 
-1. Doctor.
-2. Janitor.
-3. Steward Fix.
-4. Steward Celebrate.
-5. Gist Custodian.
-6. Discussion reliability pass.
-7. End-to-end orchestration and failure testing.
-8. Security/cost audit, documentation, and controlled release.
+1. Steward Fix.
+2. Steward Celebrate.
+3. Dedicated GitHub Project operations view.
+4. Gist Custodian.
+5. Discussion reliability pass.
+6. End-to-end orchestration and failure testing.
+7. Security/cost audit, documentation, and controlled release.

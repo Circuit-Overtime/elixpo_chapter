@@ -16,6 +16,9 @@ max_context_tokens: 3200
 max_file_tokens: 1400
 max_test_commands: 3
 max_setup_commands: 1
+semantic_correction_passes: 1
+semantic_correction_max_context_tokens: 6000
+semantic_correction_max_output_tokens: 3200
 command_timeout_seconds: 180
 # Mirrors the production two-phase model: dependency setup may use the network,
 # while coding and verification remain offline. All child environments exclude
@@ -40,10 +43,16 @@ harness_stale_tool_result_chars: 400
 harness_recent_tool_results: 2
 harness_node_heap_mb: 512
 harness_stream_queue_max_lines: 32
+# Live Doctor treats the Vet target as advisory. These signals steer repetitive
+# work and permit productive sessions to use the remaining hard-limit headroom.
+live_repeat_exact_calls: 3
+live_repeat_cycle_calls: 6
+live_loop_strikes_before_discovery_pause: 3
+live_abnormal_token_ratio: 2.0
+live_abnormal_token_extra: 100000
 verification_node_heap_mb: 512
 ccr_start_timeout_seconds: 60
 blocked_change_prefixes:
-  - .github/workflows/
   - .github/actions/
   - .env
   - secrets/
@@ -70,9 +79,9 @@ allowed_command_prefixes:
   - npm run lint
   - npm run typecheck
   - npm run build
-  - npx eslint
-  - npx biome
-  - npx tsc
+  - ./node_modules/.bin/eslint
+  - ./node_modules/.bin/biome
+  - ./node_modules/.bin/tsc
   - pnpm test
   - pnpm lint
   - pnpm typecheck
@@ -86,6 +95,10 @@ allowed_command_prefixes:
   - mypy
   - pyright
   - shellcheck
+  - bash -n
+  - sh -n
+  - actionlint
+  - yamllint
 
 allowed_setup_prefixes:
   - npm ci --ignore-scripts

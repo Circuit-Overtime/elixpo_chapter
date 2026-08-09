@@ -4,6 +4,8 @@ name: solve
 # runner so the local fork workspace never becomes cross-workflow state.
 
 on:
+  repository_dispatch:
+    types: [doctor_retry]
   workflow_run:
     workflows: [vet]
     types: [completed]
@@ -32,7 +34,7 @@ concurrency:
 
 jobs:
   solve:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -46,6 +48,7 @@ jobs:
           ISSUE_URL: ${{ inputs.issue_url }}
           OWNED_TEST: ${{ inputs.owned_test }}
           WANT_SUBMIT: ${{ inputs.submit }}
+          RETRY_FINGERPRINT: ${{ github.event.client_payload.fingerprint }}
         run: |
           run=false
           submit=true
@@ -54,6 +57,14 @@ jobs:
               run=true
             fi
             submit="${WANT_SUBMIT:-true}"
+          elif [[ "$EVENT_NAME" == "repository_dispatch" ]]; then
+            if jq -e --arg fingerprint "$RETRY_FINGERPRINT" \
+              '.status == "decided" and .current.action == "retry" and .current.failure_fingerprint == $fingerprint and .current.retry_count == 1' \
+              state/doctor.json >/dev/null \
+              && jq -e '.status == "picked" and .picked == true' state/pick.json >/dev/null \
+              && jq -e '.status == "approved" and .suitable == true and .test_mode != true' state/vet.json >/dev/null; then
+              run=true
+            fi
           elif jq -e '.status == "picked" and .picked == true' state/pick.json >/dev/null \
             && jq -e '.status == "approved" and .suitable == true and .test_mode != true' state/vet.json >/dev/null; then
             run=true
@@ -64,6 +75,11 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         with:
           python-version: "3.11"
+      - name: Setup Node verification runtime
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Setup Node harness runtime
         if: steps.gate.outputs.run == 'true'
         uses: oven-sh/setup-bun@v2
@@ -89,8 +105,12 @@ jobs:
           rtk --version
       - name: Install
         if: steps.gate.outputs.run == 'true'
-        run: pip install -e .
+        run: |
+          pip install -e . yamllint
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Solve
+        id: solve
         if: steps.gate.outputs.run == 'true'
         env:
           AGENT_GITHUB_SOLVER_TOKEN: ${{ secrets.AGENT_GITHUB_SOLVER_TOKEN }}
@@ -107,6 +127,7 @@ jobs:
           fi
           python -m agents.solve "${args[@]}"
       - name: Submit
+        id: submit
         if: steps.gate.outputs.run == 'true' && steps.gate.outputs.submit == 'true'
         env:
           AGENT_GITHUB_SOLVER_TOKEN: ${{ secrets.AGENT_GITHUB_SOLVER_TOKEN }}
@@ -119,6 +140,22 @@ jobs:
           ELIXPOO_FOLLOWUP_GIST_ID: ${{ vars.ELIXPOO_FOLLOWUP_GIST_ID }}
           ELIXPO_FOLLOWUP_TTL_DAYS: ${{ vars.ELIXPO_FOLLOWUP_TTL_DAYS || 360 }}
         run: python -m agents.steward.remember
+      - name: Clean submitted workspace
+        id: janitor_success
+        if: always() && steps.submit.outcome == 'success'
+        env:
+          ELIXPO_WORKSPACE_DIR: /tmp/elixpoo-workspaces
+        run: python -m agents.janitor
+      - name: Diagnose failed Solve
+        id: doctor
+        if: always() && steps.gate.outputs.run == 'true' && steps.solve.outcome == 'failure'
+        run: python -m agents.doctor
+      - name: Clean Doctor-authorized resources
+        id: janitor_failure
+        if: always() && steps.doctor.outcome == 'success'
+        env:
+          ELIXPO_WORKSPACE_DIR: /tmp/elixpoo-workspaces
+        run: python -m agents.janitor
       - name: Commit state
         if: always() && steps.gate.outputs.run == 'true'
         env:
@@ -128,6 +165,20 @@ jobs:
           git config user.email "elixpoo@gmail.com"
           git add state/solve.json state/ledger.json
           if [[ -f state/submit.json ]]; then git add state/submit.json; fi
+          if [[ -f state/doctor.json ]]; then git add state/doctor.json; fi
+          if [[ -f state/janitor.json ]]; then git add state/janitor.json; fi
           git diff --cached --quiet || git commit -m "chore(solve): record implementation run"
           auth=$(printf 'x-access-token:%s' "$CONTROL_TOKEN" | base64 -w 0)
           git -c http.extraheader="AUTHORIZATION: basic $auth" push
+      - name: Dispatch one Doctor-authorized retry
+        if: always() && steps.doctor.outputs.action == 'retry' && steps.janitor_failure.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
+          FINGERPRINT: ${{ steps.doctor.outputs.fingerprint }}
+          RETRY_AFTER_SECONDS: ${{ steps.doctor.outputs.retry_after_seconds }}
+        run: |
+          delay=$(( RETRY_AFTER_SECONDS > 60 ? 60 : RETRY_AFTER_SECONDS ))
+          if (( delay > 0 )); then sleep "$delay"; fi
+          gh api --method POST "repos/${{ github.repository }}/dispatches" \
+            -f event_type=doctor_retry \
+            -F "client_payload[fingerprint]=$FINGERPRINT"

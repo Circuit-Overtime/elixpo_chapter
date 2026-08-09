@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
-
-from agents.solve.models import ReviewVerdict, SolvePlan, StepImplementation
 from rtk.models import FunctionDef, Message, ToolDef
 from rtk.truncate import truncate_text
+
+from agents.solve.models import ReviewVerdict, SolvePlan, StepImplementation
 
 _SKILLS = Path(__file__).resolve().parents[2] / "skills"
 T = TypeVar("T", bound=BaseModel)
@@ -142,13 +142,83 @@ async def implement_step(
     return _parse(response, StepImplementation)
 
 
-async def review_diff(router, issue: dict, plan: SolvePlan, diff: str, checks: list[dict]) -> ReviewVerdict:
-    name = "record_review"
+async def implement_review_correction(
+    router,
+    *,
+    issue: dict,
+    findings: list[str],
+    current_diff: str,
+    allowed_paths: list[str],
+    exact_context: str,
+    max_tokens: int,
+) -> StepImplementation:
+    """Return one exact edit batch that resolves every semantic-review finding."""
+    name = "record_semantic_correction"
     payload = {
         "issue": {"title": issue.get("title"), "body": issue.get("body")},
-        "plan": plan.model_dump(),
-        "checks": checks,
+        "review_findings": findings,
+        "current_diff": truncate_text(current_diff, max_tokens=1800),
+        "allowed_paths": allowed_paths,
+        "exact_current_files": exact_context,
+        "rules": [
+            "Resolve every review finding with observable behavior, not declarations or placeholders.",
+            "Edit only allowed_paths and preserve unrelated behavior.",
+            "Use small exact replacements against exact_current_files.",
+            "Return one structured edit batch; do not explain or request more discovery.",
+        ],
+    }
+    response = await router.call(
+        "code",
+        [
+            Message(
+                role="system",
+                content=(
+                    _SYSTEM
+                    + _skill_body("implement-exact-edit")
+                    + "\n\nRepair a rejected bounded diff from concrete reviewer findings. "
+                    "Complete the behavior in one atomic structured edit batch."
+                ),
+            ),
+            Message(role="user", content=json.dumps(payload)),
+        ],
+        tools=[_tool(name, "Record exact replacements that resolve the semantic findings.", StepImplementation)],
+        tool_choice=_forced(name),
+        effort="low",
+        max_tokens=max_tokens,
+    )
+    return _parse(response, StepImplementation)
+
+
+async def review_diff(
+    router,
+    issue: dict,
+    plan: SolvePlan | dict,
+    diff: str,
+    checks: list[dict],
+) -> ReviewVerdict:
+    name = "record_review"
+    plan_payload = plan.model_dump() if isinstance(plan, SolvePlan) else plan
+    compact_checks = [
+        {
+            "kind": str(check.get("kind") or ""),
+            "command": str(check.get("command") or ""),
+            "exit_code": int(check.get("exit_code") or 0),
+            "output": truncate_text(str(check.get("output") or ""), max_tokens=250),
+        }
+        for check in checks
+    ]
+    payload = {
+        "issue": {"title": issue.get("title"), "body": issue.get("body")},
+        "plan": plan_payload,
+        "checks": compact_checks,
         "diff": truncate_text(diff, max_tokens=3500),
+        "approval_rules": [
+            "Every observable requirement in the issue must be implemented by the diff.",
+            "Added props, flags, functions, or constants must be used by the behavior that needs them.",
+            "Reject placeholders, partial wiring, unrelated scope, and claims unsupported by additions.",
+            "Review implementation semantics only; the supervisor evaluates language checks afterward.",
+            "Workflow changes must not broaden permissions, expose secrets, or add untrusted code execution.",
+        ],
     }
     response = await router.call(
         "review",
@@ -156,8 +226,10 @@ async def review_diff(router, issue: dict, plan: SolvePlan, diff: str, checks: l
             Message(
                 role="system",
                 content=(
-                    "Review one small implementation against its issue and plan. Fail closed for "
-                    "scope creep, incomplete behavior, unsafe changes, or missing required checks.\n\n"
+                    "Review one small implementation against every observable issue requirement. "
+                    "Trace each requirement to concrete added or changed behavior in the diff. Fail closed "
+                    "for unused wiring, scope creep, incomplete behavior, or unsafe changes. Verification "
+                    "runs separately after this semantic decision.\n\n"
                     + _skill_body("review-bounded-diff")
                 ),
             ),
@@ -166,6 +238,6 @@ async def review_diff(router, issue: dict, plan: SolvePlan, diff: str, checks: l
         tools=[_tool(name, "Record the final implementation review.", ReviewVerdict)],
         tool_choice=_forced(name),
         effort="low",
-        max_tokens=450,
+        max_tokens=650,
     )
     return _parse(response, ReviewVerdict)

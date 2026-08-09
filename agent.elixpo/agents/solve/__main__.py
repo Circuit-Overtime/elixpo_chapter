@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 import os
+import secrets
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -70,11 +71,18 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
     matching_vet = vet if vet.get("url") == target else None
     token_target = solve_token_limit(policy, matching_vet)
     token_limit = solve_hard_token_limit(policy, matching_vet)
-    policy = {**policy, "token_target": token_target}
+    run_id = secrets.token_hex(8)
+    policy = {
+        **policy,
+        "run_id": run_id,
+        "token_target": token_target,
+        "token_limit": token_limit,
+    }
 
     store.write_json(
         "solve.json",
         {
+            "run_id": run_id,
             "status": "starting",
             "stage": "preflight",
             "issue_url": target,
@@ -90,6 +98,9 @@ async def _run(issue_url: str | None, owned_test: bool) -> int:
         "solve",
         budget=Budget("solve", limit=token_limit, kill_multiple=1.0),
     )
+    starting = store.read_json("solve.json", {}) or {}
+    starting["model_route"] = str(router.resolve("code").get("model") or "")
+    store.write_json("solve.json", starting)
     try:
         result = await asyncio.wait_for(
             solve(

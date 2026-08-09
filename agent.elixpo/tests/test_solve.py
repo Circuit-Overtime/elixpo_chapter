@@ -11,12 +11,19 @@ import time
 import urllib.error
 from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
 
 import httpx
 import pytest
 from agents.solve.branch import build_work_branch
-from agents.solve.command_policy import effective_prefixes, repository_command_prefixes
+from agents.solve.command_policy import (
+    effective_prefixes,
+    repository_command_prefixes,
+    setup_failure_is_infrastructure,
+    setup_fallback_command,
+)
 from agents.solve.core import SolveRejected, ensure_fork, resolve_target, validate_plan
+from agents.solve.correction import apply_review_correction, correction_context, correction_targets
 from agents.solve.edit import EditRejected, apply_edit_batch
 from agents.solve.failure import classify_failure, cleanup_manifest, failure_handoff
 from agents.solve.git import CommandRejected, assert_workspace_identity, run_verification, validate_command
@@ -24,6 +31,7 @@ from agents.solve.harness import (
     _CCR_PACKAGE,
     _HARNESS_PACKAGE,
     HarnessError,
+    _apply_grounded_terminal_edit,
     _candidate_read_offsets,
     _candidate_read_windows,
     _compact_harness_context,
@@ -34,13 +42,17 @@ from agents.solve.harness import (
     _parse_cli_result,
     _prepare_context_bundle,
     _prompt,
+    _recoverable_file_calls,
     _redact,
     _render_harness_event,
     _router_ready,
     _stop_stale_isolated_routers,
     _structured_fallback_reason,
+    _worktree_changed_paths,
 )
+from agents.solve.model import review_diff
 from agents.solve.models import HarnessOutcome, PlanStep, ReplaceFileEdit, Replacement, SolvePlan, StepImplementation
+from agents.solve.sandbox import language_toolchain_roots, sandbox_command
 from agents.solve.tool_gate import _decision
 from agents.solve.verification_plan import complete_verification_plan
 from lib.solve_policy import load_solve_policy, solve_hard_token_limit, solve_token_limit
@@ -91,6 +103,23 @@ def test_plan_is_bounded_by_time_files_and_checks():
         raise AssertionError("overlong plan passed")
 
 
+def test_explicit_solve_reports_the_recorded_vet_rejection(tmp_path):
+    store = StateStore(tmp_path)
+    url = "https://github.com/elixpo/lixrl.com/issues/18"
+    store.write_json(
+        "vet.json",
+        {
+            "url": url,
+            "suitable": False,
+            "test_mode": True,
+            "reasons": ["estimated work time 20 minutes is outside 1-15"],
+        },
+    )
+
+    with pytest.raises(SolveRejected, match="Vet rejected this target"):
+        resolve_target(store, url, True)
+
+
 def test_vet_estimate_grants_bounded_solver_headroom():
     policy = {
         "token_budget": 240_000,
@@ -111,6 +140,12 @@ def test_solve_policy_leaves_turn_headroom_for_post_edit_review():
     assert policy["harness_max_turns"] == 40
     assert policy["max_minutes"] == 15
     assert policy["max_token_budget"] == 750_000
+    assert policy["live_repeat_exact_calls"] == 3
+    assert policy["live_abnormal_token_ratio"] == 2.0
+    assert "./node_modules/.bin/tsc" in policy["allowed_command_prefixes"]
+    assert all(not command.startswith("npx ") for command in policy["allowed_command_prefixes"])
+    assert policy["semantic_correction_passes"] == 1
+    assert policy["semantic_correction_max_context_tokens"] == 6000
 
 
 def test_work_branch_uses_natural_feature_or_patch_prefix():
@@ -208,6 +243,27 @@ def test_target_command_environment_excludes_agent_credentials(tmp_path, monkeyp
     assert captured["npm_config_maxsockets"] == "4"
     assert captured["npm_config_audit"] == "false"
     assert captured["npm_config_fund"] == "false"
+
+
+def test_bubblewrap_mounts_only_the_required_external_node_toolchain(tmp_path, monkeypatch):
+    from agents.solve import sandbox as solve_sandbox
+
+    tools = {
+        "bwrap": "/usr/bin/bwrap",
+        "npm": "/home/test/.nvm/versions/node/v22/bin/npm",
+        "node": "/home/test/.nvm/versions/node/v22/bin/node",
+    }
+    monkeypatch.setattr(solve_sandbox.shutil, "which", lambda name: tools.get(name))
+    monkeypatch.setattr(solve_sandbox, "bubblewrap_available", lambda: True)
+
+    roots = language_toolchain_roots(["npm", "run", "typecheck"])
+    command, backend = sandbox_command(tmp_path, ["npm", "run", "typecheck"], network=False)
+
+    assert roots == [Path("/home/test/.nvm/versions/node/v22")]
+    assert backend == "bubblewrap"
+    index = command.index("--ro-bind", command.index("--ro-bind") + 1)
+    assert "/home/test/.nvm/versions/node/v22" in command[index:]
+    assert command[-3:] == ["npm", "run", "typecheck"]
 
 
 def test_harness_environment_excludes_agent_credentials(tmp_path, monkeypatch):
@@ -333,6 +389,39 @@ def test_tool_gate_repairs_pathless_edit_from_single_grounded_read(tmp_path):
     assert output["hookSpecificOutput"]["updatedInput"]["file_path"] == "app/pricing/page.tsx"
 
 
+def test_tool_gate_live_doctor_steers_repeated_commands_and_resets_after_edit(tmp_path):
+    target = tmp_path / "app/page.tsx"
+    target.parent.mkdir(parents=True)
+    target.write_text("old")
+    state: dict = {}
+    read = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Read",
+        "cwd": str(tmp_path),
+        "tool_input": {"file_path": "app/page.tsx"},
+    }
+
+    assert _decision(read, state)[0] == 0
+    assert _decision(read, state)[0] == 0
+    code, _, reason = _decision(read, state)
+    assert code == 2
+    assert "repeated tool chain" in str(reason)
+
+    edit = {
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Edit",
+        "cwd": str(tmp_path),
+        "tool_input": {
+            "file_path": "app/page.tsx",
+            "old_string": "old",
+            "new_string": "new",
+        },
+    }
+    assert _decision(edit, state)[0] == 0
+    assert state["live_tool_history"] == []
+    assert _decision(read, state)[0] == 0
+
+
 def test_tool_gate_recovers_complete_unparsed_multiline_edit(tmp_path):
     target = tmp_path / "app/pricing/page.tsx"
     target.parent.mkdir(parents=True)
@@ -365,6 +454,67 @@ def test_tool_gate_recovers_complete_unparsed_multiline_edit(tmp_path):
     post = {**event, "hook_event_name": "PostToolUse"}
     assert _decision(post, state)[0] == 0
     assert state["edited_paths"] == ["app/pricing/page.tsx"]
+
+
+def test_stream_recovers_complete_client_rejected_edit():
+    raw = (
+        '{"file_path":"app/pricing/page.tsx","old_string":"before\nafter",'
+        '"new_string":"before\nchip\nafter","replace_all":false}'
+    )
+    event = {
+        "type": "assistant",
+        "message": {
+            "content": [
+                {
+                    "type": "tool_use",
+                    "name": "Edit",
+                    "input": {"__unparsedToolInput": raw},
+                }
+            ]
+        },
+    }
+
+    assert _recoverable_file_calls(event) == [
+        (
+            "Edit",
+            {
+                "file_path": "app/pricing/page.tsx",
+                "old_string": "before\nafter",
+                "new_string": "before\nchip\nafter",
+                "replace_all": False,
+            },
+        )
+    ]
+
+
+def test_terminal_edit_repair_requires_exact_grounded_changed_path(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+    target = tmp_path / "app/page.tsx"
+    target.parent.mkdir(parents=True)
+    target.write_text("const color = 'blue';\n")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "test"], cwd=tmp_path, check=True)
+    calls = [
+        (
+            "Edit",
+            {
+                "file_path": "app/page.tsx",
+                "old_string": "'blue'",
+                "new_string": "'red'",
+            },
+        )
+    ]
+
+    assert _apply_grounded_terminal_edit(tmp_path, {}, calls) is None
+    assert target.read_text() == "const color = 'blue';\n"
+    assert _apply_grounded_terminal_edit(
+        tmp_path,
+        {"source_reads": ["app/page.tsx"]},
+        calls,
+    ) == "app/page.tsx"
+    assert target.read_text() == "const color = 'red';\n"
 
 
 def test_tool_gate_rejects_incomplete_unparsed_edit(tmp_path):
@@ -473,6 +623,8 @@ def test_tool_gate_records_only_successful_edits_and_allows_stop(tmp_path):
     assert _decision(post, state)[0] == 0
     assert state["edited_paths"] == ["app/pricing/page.tsx"]
     assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 0
+    assert state["deterministic_review_requested"] is True
     premature = {
         "hook_event_name": "PreToolUse",
         "tool_name": "StructuredOutput",
@@ -507,7 +659,21 @@ def test_successful_reedit_invalidates_prior_review(tmp_path):
     assert _decision(event, state)[0] == 0
     assert state["review_reads"] == []
     assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
-    assert _decision({"hook_event_name": "Stop"}, state)[0] == 2
+    assert _decision({"hook_event_name": "Stop"}, state)[0] == 0
+
+
+def test_worktree_changed_paths_includes_modified_and_untracked(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+    tracked = tmp_path / "tracked.txt"
+    tracked.write_text("before\n")
+    subprocess.run(["git", "add", "tracked.txt"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "test"], cwd=tmp_path, check=True)
+    tracked.write_text("after\n")
+    (tmp_path / "new.txt").write_text("new\n")
+
+    assert _worktree_changed_paths(tmp_path) == {"tracked.txt", "new.txt"}
 
 
 def test_tool_gate_leaves_decline_judgment_to_model():
@@ -901,7 +1067,7 @@ def test_node_verification_is_inferred_from_lockfile_and_tsconfig(tmp_path):
 
     assert inferred is True
     assert completed.setup_commands == ["npm ci --ignore-scripts"]
-    assert completed.verification_commands == ["npx tsc --noEmit"]
+    assert completed.verification_commands == ["./node_modules/.bin/tsc --noEmit"]
 
 
 def test_biome_is_discovered_and_preferred_for_node_verification(tmp_path):
@@ -924,9 +1090,9 @@ def test_biome_is_discovered_and_preferred_for_node_verification(tmp_path):
         allowed_command_prefixes=effective_prefixes(tmp_path, []),
     )
 
-    assert "npx biome" in prefixes
+    assert "./node_modules/.bin/biome" in prefixes
     assert inferred is True
-    assert completed.verification_commands == ["npx biome check ."]
+    assert completed.verification_commands == ["./node_modules/.bin/biome check ."]
 
 
 def test_unsafe_model_verification_is_replaced_by_manifest_plan(tmp_path):
@@ -947,12 +1113,23 @@ def test_unsafe_model_verification_is_replaced_by_manifest_plan(tmp_path):
         outcome,
         ["app/pricing/page.tsx"],
         allowed_setup_prefixes=["npm ci --ignore-scripts"],
-        allowed_command_prefixes=["npx tsc"],
+        allowed_command_prefixes=["./node_modules/.bin/tsc"],
     )
 
     assert inferred is True
     assert completed.setup_commands == ["npm ci --ignore-scripts"]
-    assert completed.verification_commands == ["npx tsc --noEmit"]
+    assert completed.verification_commands == ["./node_modules/.bin/tsc --noEmit"]
+
+
+def test_setup_infrastructure_failure_suppresses_equivalent_fallback():
+    output = "npm error code EAI_AGAIN\nnpm error getaddrinfo registry.npmjs.org"
+
+    assert setup_failure_is_infrastructure(output) is True
+    assert setup_fallback_command("npm ci --ignore-scripts", output) is None
+    assert setup_fallback_command("npm ci --ignore-scripts", "npm error lockfile mismatch") == (
+        "npm install --ignore-scripts --no-audit --no-fund"
+    )
+    assert setup_failure_is_infrastructure("npm error Exit handler never called!") is True
 
 
 def test_safe_model_verification_is_preserved(tmp_path):
@@ -1030,6 +1207,248 @@ def test_manifest_specific_node_check_is_inferred(tmp_path):
     assert inferred is True
     assert completed.setup_commands == ["pnpm install --frozen-lockfile --ignore-scripts"]
     assert completed.verification_commands == ["pnpm test:unit"]
+
+
+def test_mixed_language_verification_uses_each_required_lane(tmp_path):
+    (tmp_path / "package.json").write_text('{"scripts":{"typecheck":"tsc --noEmit"}}')
+    (tmp_path / "package-lock.json").write_text("{}")
+    outcome = HarnessOutcome(
+        solvable=True,
+        estimated_minutes=5,
+        rationale="localized component and script fix",
+        summary="Correct component and helper behavior.",
+        commit_message="fix: correct component and helper behavior",
+    )
+
+    completed, inferred = complete_verification_plan(
+        tmp_path,
+        outcome,
+        ["app/component.tsx", "scripts/check.sh"],
+    )
+
+    assert inferred is True
+    assert completed.verification_commands == ["npm run typecheck", "shellcheck scripts/check.sh"]
+
+
+def test_workflow_yaml_uses_actionlint(tmp_path):
+    outcome = HarnessOutcome(
+        solvable=True,
+        estimated_minutes=3,
+        rationale="localized workflow correction",
+        summary="Correct the workflow trigger.",
+        commit_message="fix: correct workflow trigger",
+    )
+
+    completed, inferred = complete_verification_plan(
+        tmp_path,
+        outcome,
+        [".github/workflows/ci.yml"],
+    )
+
+    assert inferred is True
+    assert completed.verification_commands == ["actionlint .github/workflows/ci.yml"]
+
+
+@pytest.mark.asyncio
+async def test_semantic_review_receives_observable_rules_diff_and_checks():
+    captured = {}
+
+    class Router:
+        async def call(self, role, messages, **kwargs):
+            captured["role"] = role
+            captured["payload"] = json.loads(messages[1].content)
+            captured["kwargs"] = kwargs
+            return SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(
+                            tool_calls=[
+                                SimpleNamespace(
+                                    function=SimpleNamespace(
+                                        arguments=json.dumps(
+                                            {
+                                                "approved": False,
+                                                "summary": "Theme prop is unused.",
+                                                "findings": ["The new theme prop does not change rendered colors."],
+                                            }
+                                        )
+                                    )
+                                )
+                            ]
+                        )
+                    )
+                ]
+            )
+
+    verdict = await review_diff(
+        Router(),
+        {"title": "Use a light chart theme", "body": "Tooltip and grid must be readable."},
+        {"target_files": ["app/components/Chart.tsx"]},
+        "+ theme?: 'dark' | 'light'\n+ theme = 'dark'",
+        [{"kind": "verification", "command": "npx tsc --noEmit", "exit_code": 0, "output": "ok"}],
+    )
+
+    assert verdict.approved is False
+    assert captured["role"] == "review"
+    assert captured["kwargs"]["max_tokens"] == 650
+    assert captured["payload"]["issue"]["body"] == "Tooltip and grid must be readable."
+    assert any("must be used" in rule for rule in captured["payload"]["approval_rules"])
+
+
+def test_semantic_correction_targets_only_grounded_code_and_current_diff(tmp_path):
+    for path in (
+        "app/components/Chart.tsx",
+        "app/dashboard/page.tsx",
+        "package.json",
+        "AGENTS.md",
+    ):
+        target = tmp_path / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("content\n")
+
+    selected = correction_targets(
+        tmp_path,
+        ["app/components/Chart.tsx"],
+        ["package.json", "app/dashboard/page.tsx", "AGENTS.md"],
+        max_files=3,
+        blocked_prefixes=[".github/actions/"],
+    )
+
+    assert selected == ["app/components/Chart.tsx", "app/dashboard/page.tsx"]
+
+
+def test_semantic_correction_context_is_bounded_and_labels_files(tmp_path):
+    first = tmp_path / "app/one.ts"
+    second = tmp_path / "app/two.ts"
+    first.parent.mkdir(parents=True)
+    first.write_text("const one = 1;\n" * 500)
+    second.write_text("const two = 2;\n" * 500)
+
+    context = correction_context(tmp_path, ["app/one.ts", "app/two.ts"], max_tokens=600)
+
+    assert "// FILE: app/one.ts" in context
+    assert "// FILE: app/two.ts" in context
+    assert len(context) < 5000
+
+
+@pytest.mark.asyncio
+async def test_semantic_correction_applies_one_structured_grounded_batch(tmp_path):
+    component = tmp_path / "app/components/Chart.tsx"
+    page = tmp_path / "app/dashboard/page.tsx"
+    component.parent.mkdir(parents=True)
+    page.parent.mkdir(parents=True)
+    component.write_text("export function Chart() { return 'dark'; }\n")
+    page.write_text("const chart = <Chart />;\n")
+    captured = {}
+
+    class Router:
+        async def call(self, role, messages, **kwargs):
+            captured["role"] = role
+            captured["payload"] = json.loads(messages[1].content)
+            captured["max_tokens"] = kwargs["max_tokens"]
+            arguments = {
+                "summary": "Wire the light chart variant through the page.",
+                "edits": [
+                    {
+                        "path": "app/components/Chart.tsx",
+                        "operation": "replace",
+                        "replacements": [{"old": "return 'dark'", "new": "return 'light-red'"}],
+                    },
+                    {
+                        "path": "app/dashboard/page.tsx",
+                        "operation": "replace",
+                        "replacements": [{"old": "<Chart />", "new": "<Chart theme=\"light\" />"}],
+                    },
+                ],
+            }
+            return SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(
+                            tool_calls=[
+                                SimpleNamespace(function=SimpleNamespace(arguments=json.dumps(arguments)))
+                            ]
+                        )
+                    )
+                ]
+            )
+
+    changed, summary = await apply_review_correction(
+        Router(),
+        workspace=tmp_path,
+        issue={"title": "Use light chart", "body": "Use the light theme on this page."},
+        findings=["The theme declaration is unused."],
+        diff="+ theme?: 'dark' | 'light'",
+        allowed_paths=["app/components/Chart.tsx", "app/dashboard/page.tsx"],
+        max_context_tokens=1200,
+        max_output_tokens=2400,
+    )
+
+    assert changed == ["app/components/Chart.tsx", "app/dashboard/page.tsx"]
+    assert summary == "Wire the light chart variant through the page."
+    assert "light-red" in component.read_text()
+    assert 'theme="light"' in page.read_text()
+    assert captured["role"] == "code"
+    assert captured["max_tokens"] == 2400
+    assert captured["payload"]["review_findings"] == ["The theme declaration is unused."]
+
+
+@pytest.mark.asyncio
+async def test_semantic_correction_rejects_model_edits_outside_grounded_paths(tmp_path):
+    component = tmp_path / "app/components/Chart.tsx"
+    component.parent.mkdir(parents=True)
+    component.write_text("export const theme = 'dark';\n")
+    manifest = tmp_path / "package.json"
+    manifest.write_text('{"name": "example"}\n')
+
+    class Router:
+        async def call(self, role, messages, **kwargs):
+            arguments = {
+                "summary": "Change an unrelated manifest.",
+                "edits": [
+                    {
+                        "path": "package.json",
+                        "operation": "replace",
+                        "replacements": [{"old": "example", "new": "changed"}],
+                    }
+                ],
+            }
+            return SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(
+                            tool_calls=[
+                                SimpleNamespace(function=SimpleNamespace(arguments=json.dumps(arguments)))
+                            ]
+                        )
+                    )
+                ]
+            )
+
+    with pytest.raises(EditRejected, match="unplanned file"):
+        await apply_review_correction(
+            Router(),
+            workspace=tmp_path,
+            issue={"title": "Use light chart", "body": "Update only the chart."},
+            findings=["The requested chart behavior is missing."],
+            diff="+ export const theme = 'light';",
+            allowed_paths=["app/components/Chart.tsx"],
+            max_context_tokens=1200,
+            max_output_tokens=2400,
+        )
+
+    assert manifest.read_text() == '{"name": "example"}\n'
+
+
+def test_semantic_correction_failure_is_a_terminal_review_rejection():
+    failure = classify_failure(
+        SolveRejected("semantic correction remained incomplete: theme is still unused"),
+        "semantic_review",
+    )
+
+    assert failure["category"] == "review_rejected"
+    assert failure["retryable"] is False
+    assert failure["candidate_action"] == "terminate_or_replan"
 
 
 def test_invalid_harness_output_preserves_usage_for_accounting():
@@ -1171,6 +1590,38 @@ def test_turn_limit_without_post_edit_review_cannot_fallback():
     }
 
     assert _structured_fallback_reason(error, gate, has_diff=True) is None
+
+
+def test_unstructured_grounded_edit_uses_deterministic_diff_fallback():
+    error = HarnessError(
+        "coding harness result was not structured JSON: Expecting value",
+        usage=Usage(prompt_tokens=1000, completion_tokens=100, total_tokens=1100),
+    )
+    gate = {
+        "edited_paths": ["app/pricing/page.tsx"],
+        "review_reads": [],
+        "source_reads": ["app/pricing/page.tsx"],
+        "deterministic_review_requested": True,
+    }
+
+    assert _structured_fallback_reason(
+        error,
+        gate,
+        has_diff=True,
+        changed_paths={"app/pricing/page.tsx"},
+    ) == "grounded_edit_without_structured_payload"
+    assert _structured_fallback_reason(
+        error,
+        gate,
+        has_diff=True,
+        changed_paths={"app/pricing/page.tsx", "app/extra.tsx"},
+    ) is None
+    assert _structured_fallback_reason(
+        error,
+        {**gate, "source_reads": []},
+        has_diff=True,
+        changed_paths={"app/pricing/page.tsx"},
+    ) is None
 
 
 def test_unstructured_harness_result_preserves_usage_for_doctor():

@@ -8,6 +8,11 @@ from pathlib import Path
 from typing import Any
 
 _SAFE_SCRIPT = re.compile(r"^(?:test|lint|typecheck|check|build|verify|validate|format(?::check)?)(?::[\w.-]+)?$")
+_SETUP_INFRASTRUCTURE_FAILURE = re.compile(
+    r"(?:EAI_AGAIN|ENETUNREACH|ETIMEDOUT|ECONNREFUSED|ENOTFOUND|ERR_SOCKET_TIMEOUT|ERR_NETWORK|getaddrinfo|"
+    r"Exit handler never called|execvp .*No such file|command not found)",
+    re.IGNORECASE,
+)
 
 
 def _package(workspace: Path) -> dict[str, Any]:
@@ -56,9 +61,9 @@ def repository_command_prefixes(workspace: Path) -> list[str]:
             for name in sorted(str(item) for item in scripts if _SAFE_SCRIPT.fullmatch(str(item))):
                 prefixes.append(f"{manager} run {name}" if manager in {"npm", "bun"} else f"{manager} {name}")
         if (workspace / "tsconfig.json").is_file():
-            prefixes.append("npx tsc")
+            prefixes.append("./node_modules/.bin/tsc")
         if _uses_biome(workspace, package):
-            prefixes.append("npx biome")
+            prefixes.append("./node_modules/.bin/biome")
 
     if (workspace / "pyproject.toml").is_file() or (workspace / "setup.py").is_file():
         prefixes.extend(
@@ -82,6 +87,10 @@ def repository_command_prefixes(workspace: Path) -> list[str]:
         prefixes.extend(["cargo check", "cargo test", "cargo clippy", "cargo fmt --check"])
     if any(path.suffix == ".sh" for path in workspace.rglob("*.sh")):
         prefixes.extend(["shellcheck", "bash -n", "sh -n"])
+    if (workspace / ".github/workflows").is_dir():
+        prefixes.append("actionlint")
+    if any(workspace.glob("*.yml")) or any(workspace.glob("*.yaml")):
+        prefixes.append("yamllint")
     return list(dict.fromkeys(prefixes))
 
 
@@ -106,8 +115,15 @@ def effective_prefixes(workspace: Path, configured: list[str], *, setup: bool = 
     return list(dict.fromkeys([*configured, *discovered]))
 
 
-def setup_fallback_command(command: str) -> str | None:
+def setup_failure_is_infrastructure(output: str) -> bool:
+    """Identify failures where repeating the package manager cannot help."""
+    return bool(_SETUP_INFRASTRUCTURE_FAILURE.search(output))
+
+
+def setup_fallback_command(command: str, output: str = "") -> str | None:
     """Return one bounded compatibility fallback for a failed clean npm install."""
+    if setup_failure_is_infrastructure(output):
+        return None
     if command == "npm ci --ignore-scripts":
         return "npm install --ignore-scripts --no-audit --no-fund"
     return None
