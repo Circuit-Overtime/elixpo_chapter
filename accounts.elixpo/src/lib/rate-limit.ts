@@ -206,4 +206,27 @@ export function createAccountSwitchRateLimiter(): DatabaseRateLimiter {
     });
 }
 
+// Device authorization grant (RFC 8628, accounts.elixpo#79). Issuance is
+// keyed by IP; a legitimate CLI issues one code per login attempt, so 10/min
+// comfortably covers retries while capping enumeration/DoS attempts against
+// the hashing + insert path.
+export function createDeviceIssuanceRateLimiter(): DatabaseRateLimiter {
+    return new DatabaseRateLimiter({
+        windowMs: 60 * 1000,
+        maxRequests: 10,
+        blockDurationMs: 10 * 60 * 1000,
+    });
+}
+
+// User-code lookup (verification page resolving a typed code). Tighter than
+// issuance — this is the endpoint code-guessing attacks would hammer, since
+// user codes are short and human-typeable by design.
+export function createDeviceLookupRateLimiter(): DatabaseRateLimiter {
+    return new DatabaseRateLimiter({
+        windowMs: 60 * 1000,
+        maxRequests: 20,
+        blockDurationMs: 15 * 60 * 1000,
+    });
+}
+
 export { DatabaseRateLimiter };

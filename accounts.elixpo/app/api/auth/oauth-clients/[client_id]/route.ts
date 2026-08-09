@@ -9,6 +9,7 @@ import {
     updateOAuthClient,
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
+import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
 import { sendMail } from "@/lib/mails";
 import {
     SUPPORTED_OAUTH_SCOPES,
@@ -110,14 +111,24 @@ export async function PUT(
             }
         }
 
+        const allowedScopes: string[] =
+            app.client_type === "public"
+                ? [...SUPPORTED_OAUTH_SCOPES, ...SUPPORTED_LIXBLOGS_SCOPES]
+                : [...SUPPORTED_OAUTH_SCOPES];
         if (
             scopes !== undefined &&
             (!Array.isArray(scopes) ||
-                unsupportedOAuthScopes(scopes).length > 0)
+                (app.client_type === "public"
+                    ? scopes.some(
+                          (scope: unknown) =>
+                              typeof scope !== "string" ||
+                              !allowedScopes.includes(scope),
+                      )
+                    : unsupportedOAuthScopes(scopes).length > 0))
         ) {
             return NextResponse.json(
                 {
-                    error: `scopes must only contain: ${SUPPORTED_OAUTH_SCOPES.join(", ")}`,
+                    error: `scopes must only contain: ${allowedScopes.join(", ")}`,
                 },
                 { status: 400 },
             );
@@ -153,6 +164,7 @@ export async function PUT(
             redirect_uris: JSON.parse(updated?.redirect_uris || "[]"),
             scopes: JSON.parse(updated?.scopes || "[]"),
             is_active: Boolean(updated?.is_active),
+            client_type: updated?.client_type || "confidential",
             request_count: updated?.request_count ?? 0,
             last_used: updated?.last_used,
         });
@@ -211,6 +223,12 @@ export async function PATCH(
         }
         if (app.owner_id !== payload.sub) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+        if (app.client_type === "public") {
+            return NextResponse.json(
+                { error: "Public clients do not use client secrets" },
+                { status: 400 },
+            );
         }
 
         // Generate new secret
@@ -426,6 +444,7 @@ export async function GET(
             redirect_uris,
             scopes,
             is_active: Boolean((app as any).is_active),
+            client_type: (app as any).client_type || "confidential",
             created_at: (app as any).created_at,
             ...(isOwner && {
                 logo_url: (app as any).logo_url,
