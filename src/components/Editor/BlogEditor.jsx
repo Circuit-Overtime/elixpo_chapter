@@ -41,6 +41,7 @@ import {
 } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { normalizeUrl } from "../../utils/linkHelper";
+import { confirmSubpageDelete } from "../../utils/subpageDelete";
 import {
     extractMermaidFences,
     extractMermaidPaste,
@@ -90,11 +91,15 @@ const SPECIAL_BLOCK_LABELS = {
     buttonBlock: "button",
     breadcrumbs: "breadcrumbs",
     tableOfContents: "table of contents",
+    tabsBlock: "tabs block",
+    canvasBlock: "canvas",
 };
 
 function withoutBlockIds(block) {
     if (!block || typeof block !== "object") return block;
-    const { id: _id, children, ...partial } = block;
+    const partial = { ...block };
+    delete partial.id;
+    const children = partial.children;
     return {
         ...partial,
         ...(Array.isArray(children)
@@ -1216,6 +1221,53 @@ const BlogEditor = forwardRef(function BlogEditor(
             });
         },
         [editable],
+    );
+    const CustomSideMenu = useCallback(
+        () => (
+            <EditorSideMenu onBlockContextMenu={openBlockContextMenu} />
+        ),
+        [openBlockContextMenu],
+    );
+    const removeSpecialBlock = useCallback(
+        async ({ blockId, blockType }) => {
+            const block = editor.getBlock(blockId);
+            if (!block) return;
+
+            let subpages = [];
+            if (blockType === "canvasBlock" && block.props?.subpageId) {
+                subpages = [
+                    {
+                        id: block.props.subpageId,
+                        kind: "canvas",
+                    },
+                ];
+            } else if (blockType === "tabsBlock") {
+                try {
+                    subpages = JSON.parse(block.props?.tabs || "[]")
+                        .filter((tab) => tab?.subpageId)
+                        .map((tab) => ({
+                            id: tab.subpageId,
+                            kind: tab.kind || "doc",
+                        }));
+                } catch {}
+            }
+
+            for (const subpage of subpages) {
+                const confirmed = await confirmSubpageDelete(subpage.id, {
+                    fallbackKind: subpage.kind,
+                });
+                if (!confirmed) return;
+            }
+            await Promise.all(
+                subpages.map((subpage) =>
+                    fetch(`/api/subpages?id=${subpage.id}`, {
+                        method: "DELETE",
+                    }).catch(() => null),
+                ),
+            );
+            editor.removeBlocks([blockId]);
+        },
+        [editor],
     );
     const aiAnchorIdRef = useRef(null);
     const wrapperRef = useRef(null);
@@ -4235,13 +4287,7 @@ const BlogEditor = forwardRef(function BlogEditor(
                     filePanel={false}
                     formattingToolbar={false}
                 >
-                    <SideMenuController
-                        sideMenu={() => (
-                            <EditorSideMenu
-                                onBlockContextMenu={openBlockContextMenu}
-                            />
-                        )}
-                    />
+                    <SideMenuController sideMenu={CustomSideMenu} />
                     <SuggestionMenuController
                         triggerCharacter="/"
                         getItems={getItems}
@@ -4311,53 +4357,63 @@ const BlogEditor = forwardRef(function BlogEditor(
                             </svg>
                             Add text below
                         </button>
-                        <button
-                            type="button"
-                            role="menuitem"
-                            className="page-context-menu-item"
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => {
-                                try {
-                                    const source = editor.getBlock(
-                                        blockMenu.blockId,
-                                    );
-                                    editor.insertBlocks(
-                                        [withoutBlockIds(source)],
-                                        source,
-                                        "after",
-                                    );
-                                } catch {}
-                                setBlockMenu(null);
-                            }}
-                        >
-                            <svg
-                                width="15"
-                                height="15"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <rect x="8" y="8" width="12" height="12" rx="2" />
-                                <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" />
-                            </svg>
-                            Duplicate block
-                        </button>
+                        {blockMenu.blockType !== "tabsBlock" &&
+                            blockMenu.blockType !== "canvasBlock" && (
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    className="page-context-menu-item"
+                                    onMouseDown={(event) =>
+                                        event.preventDefault()
+                                    }
+                                    onClick={() => {
+                                        try {
+                                            const source = editor.getBlock(
+                                                blockMenu.blockId,
+                                            );
+                                            editor.insertBlocks(
+                                                [withoutBlockIds(source)],
+                                                source,
+                                                "after",
+                                            );
+                                        } catch {}
+                                        setBlockMenu(null);
+                                    }}
+                                >
+                                    <svg
+                                        width="15"
+                                        height="15"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <rect
+                                            x="8"
+                                            y="8"
+                                            width="12"
+                                            height="12"
+                                            rx="2"
+                                        />
+                                        <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" />
+                                    </svg>
+                                    Duplicate block
+                                </button>
+                            )}
                         <div className="block-context-menu-separator" />
                         <button
                             type="button"
                             role="menuitem"
                             className="page-context-menu-item block-context-menu-delete"
                             onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => {
-                                try {
-                                    editor.removeBlocks([
-                                        blockMenu.blockId,
-                                    ]);
-                                } catch {}
+                            onClick={async () => {
+                                const menu = blockMenu;
                                 setBlockMenu(null);
+                                try {
+                                    await removeSpecialBlock(menu);
+                                } catch {}
                             }}
                         >
                             <svg
