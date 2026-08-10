@@ -293,6 +293,7 @@ function BlogImageRenderer({ block, editor }) {
               src={url}
               onLoad={() => setIsImgLoaded(true)}
               onError={() => setIsImgLoaded(true)}
+              decoding="async"
               style={{ display: 'none' }}
             />
           )}
@@ -442,7 +443,15 @@ function BlogImageRenderer({ block, editor }) {
   return (
     <div ref={blockRef} className="blog-img-loaded blog-img-fadein" tabIndex={0} onPaste={handlePaste}>
       <div className="blog-img-wrapper">
-        <img src={url} alt={caption || 'Blog image'} className="blog-img-main" draggable={false} />
+        <img
+          src={url}
+          alt={caption || 'Blog image'}
+          className="blog-img-main"
+          draggable={false}
+          loading="lazy"
+          decoding="async"
+          fetchPriority="low"
+        />
         <div className="blog-img-hover-overlay">
           <div className="blog-img-hover-actions">
             <button className="blog-img-hover-btn" onClick={handleReplace}>

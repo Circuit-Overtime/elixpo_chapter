@@ -7,23 +7,16 @@ import { readTimeFromWords } from '../../../lib/readTime';
 import { escapeHtmlAttribute, normalizeCssColor, normalizeImageUrl, normalizeUrl } from '../../utils/linkHelper';
 import { normalizeMermaidSource } from '../../utils/mermaidConfig';
 import { renderMermaidSvg } from '../../utils/mermaidRenderer';
+import { getLixShikiHighlighter, normalizeShikiLanguage } from '../../utils/shikiHighlighter';
 
-let previewHighlighterPromise = null;
 let previewLanguageLoadTail = Promise.resolve();
 const previewLoadedLanguages = new Set();
 
 async function getPreviewHighlighter(languages) {
-  if (!previewHighlighterPromise) {
-    previewHighlighterPromise = import('shiki').then(({ createHighlighter }) =>
-      createHighlighter({
-        themes: ['vitesse-dark', 'vitesse-light'],
-        langs: [],
-      }),
-    );
-  }
-
-  const highlighter = await previewHighlighterPromise;
-  const missing = [...languages].filter((language) => !previewLoadedLanguages.has(language));
+  const highlighter = await getLixShikiHighlighter();
+  const missing = [...languages]
+    .map(normalizeShikiLanguage)
+    .filter((language) => !previewLoadedLanguages.has(language));
   if (missing.length) {
     const load = previewLanguageLoadTail.then(async () => {
       for (const language of missing) {
@@ -132,6 +125,15 @@ function FloatingTOC({ headings }) {
 function renderBlocksToHTML(blocks) {
   if (!blocks || !blocks.length) return '';
 
+  const publishedTextColor = (value) => {
+    // BlockNote can carry its internal named gray mark out of a code block and
+    // into following paragraphs. LixBlogs' explicit Gray option is stored as
+    // #9ca3af, so named gray/grey is safe to treat as an inherited default.
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'gray' || normalized === 'grey' || normalized === 'default') return '';
+    return normalizeCssColor(value);
+  };
+
   function inlineToHTML(content) {
     if (!content || !Array.isArray(content)) return '';
     return content.map((c) => {
@@ -184,7 +186,7 @@ function renderBlocksToHTML(blocks) {
       if (s.strike) text = `<del>${text}</del>`;
       if (s.code) text = `<code>${text}</code>`;
       if (s.underline) text = `<u>${text}</u>`;
-      const textColor = normalizeCssColor(s.textColor);
+      const textColor = publishedTextColor(s.textColor);
       const backgroundColor = normalizeCssColor(s.backgroundColor);
       if (textColor) text = `<span style="color:${textColor}">${text}</span>`;
       if (backgroundColor) text = `<span style="background:${backgroundColor};border-radius:3px;padding:0 2px">${text}</span>`;
@@ -701,7 +703,7 @@ export default function BlogPreview({
                 zoomOutBtn.type = 'button';
                 zoomOutBtn.title = 'Zoom out';
                 zoomOutBtn.setAttribute('aria-label', 'Zoom out');
-                zoomOutBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>';
+                zoomOutBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>';
 
                 const zoomLabel = document.createElement('span');
                 zoomLabel.className = 'preview-mermaid-zoom-label';
@@ -711,15 +713,16 @@ export default function BlogPreview({
                 zoomInBtn.type = 'button';
                 zoomInBtn.title = 'Zoom in';
                 zoomInBtn.setAttribute('aria-label', 'Zoom in');
-                zoomInBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+                zoomInBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 
                 const resetBtn = document.createElement('button');
                 resetBtn.type = 'button';
-                resetBtn.title = 'Fit diagram';
-                resetBtn.setAttribute('aria-label', 'Fit diagram');
-                resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5"/></svg>';
+                resetBtn.title = 'Reset view';
+                resetBtn.setAttribute('aria-label', 'Reset view');
+                resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><polyline points="1 4 1 10 7 10"/></svg>';
 
                 const fsBtn = document.createElement('button');
+                fsBtn.type = 'button';
                 fsBtn.className = 'preview-mermaid-fullscreen-btn';
                 fsBtn.title = 'Open fullscreen';
                 fsBtn.setAttribute('aria-label', 'Open fullscreen');
@@ -779,12 +782,12 @@ export default function BlogPreview({
                 });
 
                 wrapper.appendChild(svgContainer);
-                controls.appendChild(zoomOutBtn);
-                controls.appendChild(zoomLabel);
                 controls.appendChild(zoomInBtn);
+                controls.appendChild(zoomLabel);
+                controls.appendChild(zoomOutBtn);
                 controls.appendChild(resetBtn);
-                controls.appendChild(fsBtn);
                 wrapper.appendChild(controls);
+                wrapper.appendChild(fsBtn);
                 el.appendChild(wrapper);
               }
             } catch (err) {

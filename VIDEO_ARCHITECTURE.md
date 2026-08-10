@@ -185,20 +185,20 @@ and destination dimensions. It then:
 
 ```mermaid
 sequenceDiagram
-    participant Loop as OreoOS loop
-    participant Gallery
-    participant Native as gallery_native.mpy
-    participant FB as Display._buf
-    participant LCD as ST7789
+    participant OS as OreoOS event loop
+    participant APP as Gallery app
+    participant NATIVE as Native scaler
+    participant BUFFER as Display buffer
+    participant PANEL as ST7789 panel
 
-    Loop->>Gallery: update(dt)
-    Gallery->>Gallery: select frame block
-    Loop->>Gallery: draw(display)
-    Gallery->>Native: indexed_scale_at(frame, 0, framebuffer, ...)
-    Native->>FB: write 76,800 RGB565 pixels
-    Native-->>Gallery: return (~5.2 ms)
-    Loop->>LCD: display.present()
-    LCD-->>Loop: full frame sent (~31 ms)
+    OS->>APP: Run update
+    APP->>APP: Select the current frame block
+    OS->>APP: Draw the current frame
+    APP->>NATIVE: Expand indexed frame into RGB565
+    NATIVE->>BUFFER: Write 76800 RGB565 pixels
+    NATIVE-->>APP: Return after about 5.2 ms
+    OS->>PANEL: Present the display buffer
+    PANEL-->>OS: Frame sent after about 31 ms
 ```
 
 The same module exposes `rgb565_scale()` for photos. Large Gallery images can

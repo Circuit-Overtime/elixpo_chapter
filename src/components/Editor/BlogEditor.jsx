@@ -50,6 +50,7 @@ import {
     createMediaUploadId,
     enqueueMediaUpload,
 } from "../../utils/mediaUploadQueue";
+import { getLixShikiHighlighter } from "../../utils/shikiHighlighter";
 import AICommandMenu from "./AICommandMenu";
 import AISelectionToolbar from "./AISelectionToolbar";
 import { AIBlock } from "./blocks/AIBlock";
@@ -67,7 +68,10 @@ import { InlineButton } from "./blocks/InlineButton";
 // Custom inline content
 import { InlineEquation } from "./blocks/InlineEquation";
 import { MentionInline } from "./blocks/MentionInline";
-import { MermaidBlock } from "./blocks/MermaidBlock";
+import {
+    MermaidBlock,
+    requestMermaidEditorFocus,
+} from "./blocks/MermaidBlock";
 import { OrgMentionInline } from "./blocks/OrgMentionInline";
 import { PDFEmbedBlock } from "./blocks/PDFEmbedBlock";
 // Custom blocks — local versions (package is for external consumers)
@@ -173,11 +177,28 @@ const codeBlockLanguages = {
 const codeBlockWithHighlighting = createCodeBlockSpec({
     supportedLanguages: codeBlockLanguages,
     createHighlighter: async () => {
-        const { createHighlighter } = await import("shiki");
-        return createHighlighter({
-            themes: ["vitesse-dark", "vitesse-light"],
-            langs: Object.keys(codeBlockLanguages).filter((k) => k !== "text"),
-        });
+        const highlighter = await getLixShikiHighlighter();
+
+        // BlockNote's adapter always asks Shiki for its first loaded theme. Emit
+        // both palettes as CSS variables instead, so reopened blocks follow the
+        // site theme and theme switches do not require re-tokenizing the document.
+        if (!highlighter.__lixDualTheme) {
+            const codeToTokens = highlighter.codeToTokens.bind(highlighter);
+            highlighter.codeToTokens = (code, options = {}) => {
+                const { theme: _ignoredTheme, ...rest } = options;
+                return codeToTokens(code, {
+                    ...rest,
+                    themes: {
+                        light: "vitesse-light",
+                        dark: "vitesse-dark",
+                    },
+                    defaultColor: false,
+                });
+            };
+            highlighter.__lixDualTheme = true;
+        }
+
+        return highlighter;
     },
 });
 
@@ -694,12 +715,23 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
                     d2="M6.5 10v4M17.5 10v4"
                 />
             ),
-            onItemClick: () =>
+            onItemClick: () => {
+                const anchor = editor.getTextCursorPosition().block;
                 editor.insertBlocks(
                     [{ type: "mermaidBlock" }],
-                    editor.getTextCursorPosition().block,
+                    anchor,
                     "after",
-                ),
+                );
+                const documentBlocks = editor.document;
+                const anchorIndex = documentBlocks.findIndex(
+                    (block) => block.id === anchor.id,
+                );
+                if (anchorIndex >= 0) {
+                    requestMermaidEditorFocus(
+                        documentBlocks[anchorIndex + 1]?.id,
+                    );
+                }
+            },
         },
         // PDF embed removed: only static-image attachments are allowed in blog
         // content. The pdfEmbed block spec stays mounted for backward compat
@@ -865,6 +897,30 @@ function sanitizeInitialContent(blocks) {
     return sanitized?.length ? sanitized : undefined;
 }
 
+function normalizeInternalTextColors(content) {
+    if (!Array.isArray(content)) return content;
+    return content.map((item) => {
+        let next = item;
+        const textColor = String(item?.styles?.textColor || "").toLowerCase();
+        if (
+            textColor === "gray" ||
+            textColor === "grey" ||
+            textColor === "default"
+        ) {
+            const styles = { ...item.styles };
+            delete styles.textColor;
+            next = { ...next, styles };
+        }
+        if (Array.isArray(item?.content)) {
+            next = {
+                ...next,
+                content: normalizeInternalTextColors(item.content),
+            };
+        }
+        return next;
+    });
+}
+
 function doSanitize(blocks) {
     if (!blocks || !Array.isArray(blocks)) return blocks;
     const result = [];
@@ -883,6 +939,12 @@ function doSanitize(blocks) {
 
     while (i < blocks.length) {
         let block = blocks[i];
+        if (Array.isArray(block.content)) {
+            block = {
+                ...block,
+                content: normalizeInternalTextColors(block.content),
+            };
+        }
         // Recursively sanitize children
         if (block.children && block.children.length > 0) {
             block = { ...block, children: doSanitize(block.children) };
@@ -1238,6 +1300,13 @@ const BlogEditor = forwardRef(function BlogEditor(
                 : "Type '/' for commands",
         },
     });
+
+    // BlockNote's ExtensionManager retains its complete construction options,
+    // including the full initial block array, after ProseMirror has already
+    // converted it into a document. Drop that redundant tree immediately.
+    if (!collaboration && editor._extensionManager?.options?.initialContent) {
+        delete editor._extensionManager.options.initialContent;
+    }
 
     const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
     const [blockMenu, setBlockMenu] = useState(null); // {x,y,blockId,blockType}
@@ -2074,6 +2143,17 @@ const BlogEditor = forwardRef(function BlogEditor(
                 editorEl === document.activeElement;
             if (!isEditorFocused) return;
 
+            // Do not ask BlockNote for its cursor during ordinary navigation.
+            // This listener runs in capture phase, before ProseMirror processes the
+            // key; reading the editor cursor here can restore the previous selection
+            // and swallow ArrowLeft/ArrowRight caret movement in Firefox.
+            const handlesCtrlA =
+                e.key === "a" && (e.ctrlKey || e.metaKey);
+            const handlesCtrlEnter =
+                e.key === "Enter" && (e.ctrlKey || e.metaKey);
+            if (!handlesCtrlA && !handlesCtrlEnter && e.key !== "Backspace")
+                return;
+
             const cursor = editor.getTextCursorPosition();
             const block = cursor?.block;
 
@@ -2695,6 +2775,32 @@ const BlogEditor = forwardRef(function BlogEditor(
                 }
                 block.style.position = "relative";
 
+                let lineNumbers = block.querySelector(".code-line-numbers");
+                if (!lineNumbers) {
+                    lineNumbers = document.createElement("div");
+                    lineNumbers.className = "code-line-numbers";
+                    lineNumbers.setAttribute("aria-hidden", "true");
+                    block.appendChild(lineNumbers);
+                }
+                const syncLineNumbers = () => {
+                    const lineCount = Math.max(
+                        1,
+                        (editable?.textContent || "").split("\n").length,
+                    );
+                    lineNumbers.replaceChildren(
+                        ...Array.from({ length: lineCount }, (_, index) => {
+                            const line = document.createElement("span");
+                            line.textContent = String(index + 1);
+                            return line;
+                        }),
+                    );
+                };
+                syncLineNumbers();
+                if (editable && editable.dataset.lineNumbersBound !== "true") {
+                    editable.dataset.lineNumbersBound = "true";
+                    editable.addEventListener("input", syncLineNumbers);
+                }
+
                 // Language label — always visible and clickable in edit mode.
                 const blockEl = block.closest("[data-id]");
                 const blockId = blockEl?.getAttribute("data-id");
@@ -2885,16 +2991,10 @@ const BlogEditor = forwardRef(function BlogEditor(
             "selectionchange",
             hideToolbarForCustomBlocks,
         );
-        document.addEventListener("click", hideToolbarForCustomBlocks, true);
         return () => {
             document.removeEventListener(
                 "selectionchange",
                 hideToolbarForCustomBlocks,
-            );
-            document.removeEventListener(
-                "click",
-                hideToolbarForCustomBlocks,
-                true,
             );
             if (rafId) cancelAnimationFrame(rafId);
         };
@@ -2902,17 +3002,34 @@ const BlogEditor = forwardRef(function BlogEditor(
 
     // Track block count to detect structural changes (import, paste, AI) vs. normal typing
     const blockCountRef = useRef(0);
+    const documentChangeTimerRef = useRef(null);
 
     const handleChange = useCallback(() => {
-        if (onChange) onChange(editor.document);
+        // editor.document materializes the full BlockNote JSON tree. Coalesce
+        // transactions so a long post does not allocate that tree per keystroke.
+        clearTimeout(documentChangeTimerRef.current);
+        const count =
+            editor._tiptapEditor?.state?.doc?.childCount ??
+            blockCountRef.current;
+        documentChangeTimerRef.current = setTimeout(
+            () => {
+                if (onChange) onChange(editor.document);
+            },
+            count >= 60 ? 500 : 120,
+        );
+
         // Only re-patch code blocks when the number of blocks changes (new block added/removed)
         // This avoids running expensive DOM queries on every keystroke
-        const count = editor.document.length;
         if (count !== blockCountRef.current) {
             blockCountRef.current = count;
             requestAnimationFrame(patchCodeBlocks);
         }
     }, [onChange, editor, patchCodeBlocks]);
+
+    useEffect(
+        () => () => clearTimeout(documentChangeTimerRef.current),
+        [],
+    );
 
     // Patch code blocks on mount + when new code blocks appear in the DOM
     useEffect(() => {
