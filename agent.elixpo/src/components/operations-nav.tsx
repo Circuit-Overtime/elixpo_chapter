@@ -25,7 +25,7 @@ export function OperationsNav() {
   return (
     <header className="real-topbar">
       <Link className="real-brand" href="/">
-        <Image src="/agent.elixpo.png" alt="elixpoo" width={38} height={38} priority />
+        <Image src="/logo.png" alt="elixpoo" width={38} height={38} priority />
         <span><strong>OreoFlow</strong><small>GitHub operations building</small></span>
       </Link>
       <nav className="real-nav" aria-label="Operations">

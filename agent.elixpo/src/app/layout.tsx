@@ -24,6 +24,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "OreoFlow · Agent Operations",
   description: "The private operations room for the elixpoo agent system.",
+  icons: {
+    icon: [{ url: "/logo.png", type: "image/png", sizes: "1024x1024" }],
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
