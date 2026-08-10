@@ -27,6 +27,8 @@ import hashlib
 import subprocess
 from pathlib import Path
 
+PYTHON = sys.executable or "python3"
+
 PORT = "/dev/ttyACM0"
 for arg in sys.argv[1:]:
     if arg.startswith("/dev/") or "COM" in arg:
@@ -305,13 +307,13 @@ def run(cmd, check=True):
 
 
 def mpremote(*args):
-    return run(["python", "-m", "mpremote", "connect", PORT] + list(args))
+    return run([PYTHON, "-m", "mpremote", "connect", PORT] + list(args))
 
 
 def _device_free_bytes():
     """Query the device's free flash via statvfs. Returns bytes, or None
     on failure (no device / unexpected output)."""
-    r = run(["python", "-m", "mpremote", "connect", PORT, "exec",
+    r = run([PYTHON, "-m", "mpremote", "connect", PORT, "exec",
              "import os\n"
              "s=os.statvfs('/')\n"
              "print('FREE=%d' % (s[1]*s[4]))"], check=False)
@@ -349,7 +351,7 @@ def mpremote_batch(actions, label=""):
     The trailing "↺ unchanged" appears when mpremote's per-file cache shortcut
     fires (the file content on the device matches our local copy).
     """
-    cmd = ["python", "-m", "mpremote", "connect", PORT]
+    cmd = [PYTHON, "-m", "mpremote", "connect", PORT]
     for a in actions:
         if cmd[-1] != PORT:
             cmd.append("+")

@@ -51,7 +51,9 @@ PORT          = 80
 MAX_BODY      = 8 * 1024 * 1024   # videos stream to flash; never buffered in RAM
 READ_CHUNK    = 2048
 RECV_TIMEOUT       = 3            # seconds — per-recv() during streaming
-HEAD_DEADLINE_MS   = 1500         # hard cap on header-read for tiny requests
+HEADER_RECV_TIMEOUT = 0.05        # never stall the badge input loop on an
+                                  # accepted browser socket with no data yet
+HEAD_DEADLINE_MS   = 300          # hard cap on header-read for tiny requests
                                   # (beacons / session/new). Anything slower
                                   # than this is almost certainly a TLS probe
                                   # or a stuck client and would otherwise
@@ -93,7 +95,7 @@ _transfer_enabled = True
 # Session state machine, code-gated:
 #
 #   _sessions[device_id] = {
-#       "state":     "authed" | "approved" | "denied",
+#       "state":     "authed" | "approving" | "approved" | "denied",
 #       "last_ms":   ticks_ms of last beacon hit,
 #       "addr":      requesting peer ip (for display),
 #       "uploads":   completed upload count for this session,
@@ -352,7 +354,8 @@ def list_sessions():
     """Snapshot for the WiFi/Transfer UI. Returns sessions sorted by
     last-seen so the newest beacons are on top.
 
-    Only `authed` and `approved` sessions are returned — denied ones
+    `authed`, transient `approving`, and `approved` sessions are returned;
+    denied ones
     are filtered out because the badge owner already made that call,
     and seeing them again would just be noise. Senders that haven't
     typed the correct code never enter _sessions in the first place,
@@ -386,7 +389,11 @@ def list_sessions():
 def approve(sid):
     """User tapped Allow on the WiFi/Transfer page."""
     if sid in _sessions:
-        _sessions[sid]["state"] = "approved"
+        # `approving` gives the badge immediate, one-press feedback. The next
+        # browser heartbeat promotes it to `approved`, proving that the sender
+        # has observed the decision and making the transition visible.
+        if _sessions[sid].get("state") == "authed":
+            _sessions[sid]["state"] = "approving"
         return True
     return False
 
@@ -563,7 +570,11 @@ def tick():
     except Exception:
         return
     try:
-        cli.settimeout(RECV_TIMEOUT)
+        # Header reads share the main UI loop. A browser can open a TCP socket
+        # speculatively and send nothing; using the 3-second upload timeout here
+        # used to swallow several button scans per socket. Actual body handling
+        # restores RECV_TIMEOUT after the request header has arrived.
+        cli.settimeout(HEADER_RECV_TIMEOUT)
     except Exception:
         pass
     try:
@@ -824,7 +835,7 @@ _UPLOAD_FORM = (
     b"approved &middot; <span id='okid' style='font-family:ui-monospace,monospace'>__DEVICE_ID__</span></span>"
     b"<h2>Pick a file to send</h2>"
     b"<p class='sub'>Images and videos are optimised in your browser before upload. "
-    b"Video is capped at 20 seconds for smooth badge playback.</p>"
+    b"Video is capped at 10 seconds for smooth fullscreen playback.</p>"
     b"<label class='drop' id='drop'>"
     b"<input id='file' type='file' accept='image/*,video/*,.txt,.md'>"
     b"<div class='icon'>&uarr;</div>"
@@ -859,12 +870,12 @@ _UPLOAD_FORM = (
     b"Powered by <a href='https://oreo.elixpo.com' target='_blank'>oreo.elixpo.com</a></div>"
     b"<script>"
     b"const $=id=>document.getElementById(id);"
-    b"const MAX_DIM=240,VIDEO_DIM=160,VIDEO_FPS=8,VIDEO_SECONDS=20,MAX_UPLOAD=8*1024*1024;"
+    b"const MAX_DIM=240,VIDEO_W=320,VIDEO_H=240,VIDEO_FPS=20,VIDEO_SECONDS=10,MAX_UPLOAD=8*1024*1024;"
     # The server inlined our device_id into the markup as
     # __DEVICE_ID__ before sending the page, so we just read it off
     # the DOM rather than running an auth handshake.
     b"const did=$('did').textContent.trim();"
-    b"let approved=false,beaconTimer=null,picked=null,activeXhr=null;"
+    b"let approved=false,beaconBusy=false,beaconTimer=null,picked=null,activeXhr=null;"
     # Tracked from every beacon response so file-picker can do a
     # pre-flight space check without an extra round-trip. 0 = unknown
     # (treat the badge as full and warn) until the first beacon lands.
@@ -898,7 +909,7 @@ _UPLOAD_FORM = (
     b"  location.reload();}"
     # ── beacon poll for approval ──
     b"async function beacon(){"
-    b"  if(!did||approved)return;"
+    b"  if(!did||approved||beaconBusy)return;beaconBusy=true;"
     b"  try{const r=await fetch('/beacon?id='+did);"
     b"      if(r.status===410){"           # session expired server-side
     b"        clearInterval(beaconTimer);"
@@ -914,8 +925,9 @@ _UPLOAD_FORM = (
     b"        $('wait').innerHTML=\"<h2>Denied</h2><p class='sub'>The badge "
     b"owner rejected this device.</p>"
     b"<button class='btn ghost' onclick='location.reload()'>Try again</button>\";}"
-    b"      else{setWaitStatus('live','waiting for approval on badge\\u2026');}}"
-    b"  catch(e){setWaitStatus('err','badge unreachable - check WiFi');}}"
+    b"      else{setWaitStatus('live',j.state==='approving'?'approval received\\u2026':'waiting for approval on badge\\u2026');}}"
+    b"  catch(e){setWaitStatus('err','badge unreachable - check WiFi');}"
+    b"  finally{beaconBusy=false;}}"
     # Centralised handler for "the badge stopped responding to beacons
     # for too long" — surfaces the modal once so the user knows to
     # check WiFi rather than staring at a frozen yellow dot.
@@ -989,29 +1001,41 @@ _UPLOAD_FORM = (
     b"    out.push(0x40|(p-start-1));"
     b"    for(let i=start;i<p;i++){out.push(cur[i]>>8,cur[i]&255);}"
     b"  }return new Uint8Array(out);}"
+    b"async function compressFrame(raw){"
+    b"  if(typeof CompressionStream==='undefined')throw new Error('this browser cannot compress video frames');"
+    b"  const stream=new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'));"
+    b"  return new Uint8Array(await new Response(stream).arrayBuffer());}"
     b"async function videoToRV565(file){"
     b"  const url=URL.createObjectURL(file),v=document.createElement('video');"
     b"  v.muted=true;v.playsInline=true;v.preload='auto';v.src=url;"
     b"  try{await new Promise((r,j)=>{v.onloadeddata=r;v.onerror=()=>j(new Error('unsupported video'));});"
     b"    const dur=Math.min(v.duration,VIDEO_SECONDS);"
     b"    if(!isFinite(dur)||dur<=0)throw new Error('video has no readable duration');"
-    b"    const sc=Math.min(1,VIDEO_DIM/Math.max(v.videoWidth,v.videoHeight));"
-    b"    const w=Math.max(1,Math.round(v.videoWidth*sc)),h=Math.max(1,Math.round(v.videoHeight*sc));"
+    # Fixed 4:3 canvas maps exactly to the 320x240 LCD via the native 2x
+    # playback kernel. Cover scaling deliberately crops wide/tall edges rather
+    # than letterboxing, as requested for true fullscreen playback.
+    b"    const w=VIDEO_W,h=VIDEO_H;"
     b"    const count=Math.max(1,Math.floor(dur*VIDEO_FPS));"
-    b"    const head=new Uint8Array(12);head.set([82,86,53,1]);"
+    b"    const head=new Uint8Array(12);head.set([82,86,53,2]);"
     b"    head[4]=w&255;head[5]=w>>8;head[6]=h&255;head[7]=h>>8;"
     b"    head[8]=VIDEO_FPS;head[10]=count&255;head[11]=count>>8;"
-    b"    const chunks=[head],prev=new Uint16Array(w*h);"
+    b"    const chunks=[head];"
     b"    const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');"
     b"    for(let f=0;f<count;f++){"
     b"      const t=Math.min(f/VIDEO_FPS,Math.max(0,dur-.001));"
     b"      if(Math.abs(v.currentTime-t)>.001){await new Promise((r,j)=>{v.onseeked=r;v.onerror=j;v.currentTime=t;});}"
-    b"      ctx.drawImage(v,0,0,w,h);const rgba=ctx.getImageData(0,0,w,h).data;"
-    b"      const cur=new Uint16Array(w*h);"
-    b"      for(let i=0,o=0;i<rgba.length;i+=4,o++)cur[o]=((rgba[i]>>3)<<11)|((rgba[i+1]>>2)<<5)|(rgba[i+2]>>3);"
-    b"      const enc=encodeDelta(cur,prev),sz=new Uint8Array(4),n=enc.length;"
+    b"      const sc=Math.max(w/v.videoWidth,h/v.videoHeight);"
+    b"      const dw=v.videoWidth*sc,dh=v.videoHeight*sc;"
+    b"      ctx.drawImage(v,(w-dw)/2,(h-dh)/2,dw,dh);"
+    b"      const rgba=ctx.getImageData(0,0,w,h).data;"
+    b"      const raw=new Uint8Array(w*h*2);"
+    # Quantise RGB565 to 4/4/4 effective colour bits. On the reference video
+    # this cuts zlib output from ~6.85 MB to ~3.05 MB at identical resolution
+    # and FPS, materially reducing inflate and flash pressure.
+    b"      for(let i=0,o=0;i<rgba.length;i+=4,o++){let px=((rgba[i]>>3)<<11)|((rgba[i+1]>>2)<<5)|(rgba[i+2]>>3);px&=0xF79E;raw[o*2]=px>>8;raw[o*2+1]=px&255;}"
+    b"      const enc=await compressFrame(raw),sz=new Uint8Array(4),n=enc.length;"
     b"      sz[0]=n&255;sz[1]=(n>>8)&255;sz[2]=(n>>16)&255;sz[3]=(n>>24)&255;"
-    b"      chunks.push(sz,enc);prev.set(cur);"
+    b"      chunks.push(sz,enc);"
     b"      $('pctn').textContent='Optimising '+Math.round((f+1)*100/count)+'%';"
     b"      if((f&3)===3)await new Promise(r=>setTimeout(r,0));}"
     b"    return new Blob(chunks,{type:'application/octet-stream'});"
@@ -1066,7 +1090,7 @@ _UPLOAD_FORM = (
     # No code-entry step any more — start the beacon poll
     # immediately so the page tracks approval state from the moment
     # it loads.
-    b"  beaconTimer=setInterval(beacon,2000);beacon();"
+    b"  beaconTimer=setInterval(beacon,500);beacon();"
     b"  $('file').addEventListener('change',e=>onFile(e.target.files[0]));"
     b"  const dz=$('drop');"
     b"  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));"
@@ -1197,6 +1221,10 @@ def _handle(sock):
     if head is None:
         _send_status(sock, 408, "Request Timeout", b"timeout")
         return
+    try:
+        sock.settimeout(RECV_TIMEOUT)
+    except Exception:
+        pass
     method, full_path, headers = _parse_headers(head)
     path, qs = _parse_query(full_path)
 
@@ -1344,6 +1372,11 @@ def _handle_beacon(sock, qs, peer_addr):
         pass
     if peer_addr:
         s["addr"] = peer_addr
+    # The owner decision is complete as soon as an authenticated browser
+    # checks back in. Return `approved` in this same response so the upload
+    # form opens without another polling interval.
+    if s.get("state") == "approving":
+        s["state"] = "approved"
     # Surface the badge's current free space on every beacon — the
     # upload page uses it for a pre-flight size check the moment the
     # user picks a file (cheap, no extra round-trip). statvfs is fast

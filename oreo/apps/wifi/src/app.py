@@ -439,6 +439,10 @@ class App(oreoOS.App):
                     self._last_sess_sig   = sig
                     self._last_sess_count = len(sessions)
                     self._dirty = True
+                # Keep the small approval loader animated until the sender's
+                # next heartbeat acknowledges the one-press decision.
+                if any(s.get("state") == "approving" for s in sessions):
+                    self._dirty = True
 
                 prog = hs.progress()
                 if prog:
@@ -865,10 +869,12 @@ class App(oreoOS.App):
         # ship one — primary is pink-red, teal is too cyan.
         # State → dot colour. State names changed in the new server
         # protocol — "authed" = correct code typed but badge owner
-        # hasn't approved yet (yellow); "approved" = green; "denied"
+        # hasn't approved yet (yellow); "approving" = owner pressed A and
+        # browser acknowledgement is pending; "approved" = green; "denied"
         # is filtered upstream so it shouldn't normally appear.
         dot_color = {
             "authed":   api.rgb(255, 209, 102),    # yellow
+            "approving": api.rgb(162, 155, 254),    # lilac
             "approved": api.rgb( 61, 220, 151),    # green
             "denied":   api.rgb(255,  93, 104),    # red (filtered)
             # Legacy fallback for the old "pending" state name —
@@ -898,6 +904,13 @@ class App(oreoOS.App):
             # busy with the old scale=2 codes once we added a progress
             # bar and a status dot to the same row).
             d.text(sid, ROW_PAD_X, row_y + 6, theme.TEXT_BRIGHT, scale=1)
+
+            if state == "approving":
+                # Immediate feedback for the same physical A press. Animate
+                # while the browser performs its next 500 ms heartbeat.
+                dots = "." * (1 + ((time.ticks_ms() // 180) % 3))
+                d.text("allowing" + dots, ROW_PAD_X + 58, row_y + 6,
+                       theme.PURPLE, scale=1)
 
             # Status dot, right side, vertically centred in the row.
             dx = SW - DOT_RIGHT - DOT_SIZE
