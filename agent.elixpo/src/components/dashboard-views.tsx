@@ -82,6 +82,35 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className="truthful-empty"><Box size={22} /><p>{children}</p></div>;
 }
 
+function uniqueRuntimeRoute(runs: DashboardRun[], limit = 6) {
+  const seen = new Set<string>();
+  return runs.filter((run) => {
+    const key = run.name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, limit);
+}
+
+function RuntimeRail({ runs, title = "Current runtime flow", caption = "Active first, then latest GitHub updates" }: { runs: DashboardRun[]; title?: string; caption?: string }) {
+  return (
+    <div className="runtime-rail">
+      <header><span><Activity size={16} /> {title}</span><small>{caption}</small></header>
+      {runs.length ? <div className="runtime-route">
+        {runs.map((run, index) => (
+          <div className="runtime-hop" key={run.id}>
+            <a href={run.url} target="_blank" rel="noreferrer">
+              <span className={`runtime-node tone-${runTone(run)}`}><Workflow size={15} /></span>
+              <span><strong>{run.name}</strong><small>{status(run)} · {run.branch}</small></span>
+            </a>
+            {index < runs.length - 1 && <ArrowRight className="runtime-arrow" size={16} />}
+          </div>
+        ))}
+      </div> : <p className="runtime-empty">No workflow route was returned by GitHub.</p>}
+    </div>
+  );
+}
+
 function RunRow({ run }: { run: DashboardRun }) {
   const tone = runTone(run);
   return (
@@ -128,13 +157,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
   const active = snapshot.runs.filter((run) => run.status === "in_progress" || run.status === "queued");
   const failed = snapshot.runs.filter((run) => ["failure", "timed_out", "action_required"].includes(run.conclusion || ""));
   const openWork = snapshot.work.filter((item) => item.state === "open");
-  const seenWorkflows = new Set<string>();
-  const runtimeRoute = [...active, ...snapshot.runs].filter((run) => {
-    const key = run.name.toLowerCase();
-    if (seenWorkflows.has(key)) return false;
-    seenWorkflows.add(key);
-    return true;
-  }).slice(0, 6);
+  const runtimeRoute = uniqueRuntimeRoute([...active, ...snapshot.runs]);
   const securityWatch = snapshot.security.slice(0, 3);
 
   return (
@@ -180,20 +203,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
             </aside>
           </div>
           <div className="building-source-note"><Workflow size={17} /><span>Workflow run status is live. Room memory is not exposed by GitHub Actions and is never estimated.</span></div>
-          <div className="runtime-rail">
-            <header><span><Activity size={16} /> Current runtime flow</span><small>Active first, then latest GitHub updates</small></header>
-            {runtimeRoute.length ? <div className="runtime-route">
-              {runtimeRoute.map((run, index) => (
-                <div className="runtime-hop" key={run.id}>
-                  <a href={run.url} target="_blank" rel="noreferrer">
-                    <span className={`runtime-node tone-${runTone(run)}`}><Workflow size={15} /></span>
-                    <span><strong>{run.name}</strong><small>{status(run)} · {run.branch}</small></span>
-                  </a>
-                  {index < runtimeRoute.length - 1 && <ArrowRight className="runtime-arrow" size={16} />}
-                </div>
-              ))}
-            </div> : <p className="runtime-empty">No workflow route was returned by GitHub.</p>}
-          </div>
+          <RuntimeRail runs={runtimeRoute} />
         </section>
 
         <section className="real-panel floor-summary-card">
@@ -251,6 +261,7 @@ export function FloorView({ snapshot, floor }: { snapshot: DashboardSnapshot; fl
   const runs = snapshot.runs.filter((run) => run.floor === floor.slug);
   const receipts = floor.slug === "oreoflow" ? snapshot.receipts : [];
   const active = runs.filter((run) => run.status !== "completed");
+  const runtimeRoute = uniqueRuntimeRoute([...active, ...runs]);
   return (
     <main className="real-page">
       <div className="floor-route-heading" style={{ "--floor-accent": floor.accent } as React.CSSProperties}>
@@ -264,6 +275,9 @@ export function FloorView({ snapshot, floor }: { snapshot: DashboardSnapshot; fl
         <div><Radio /><span><small>Active now</small><strong>{active.length}</strong></span></div>
         <div><Clock3 /><span><small>Latest activity</small><strong className="metric-date">{runs[0] ? time(runs[0].updatedAt) : "None"}</strong></span></div>
         <div><MemoryStick /><span><small>Runtime memory</small><strong className="metric-date">Not reported</strong></span></div>
+      </section>
+      <section className="real-panel floor-runtime-flow">
+        <RuntimeRail runs={runtimeRoute} title={`${floor.name} agent data flow`} caption="Distinct workflow rooms, ordered from active to latest" />
       </section>
       <div className="floor-route-grid">
         <section className="real-panel floor-runs-panel">

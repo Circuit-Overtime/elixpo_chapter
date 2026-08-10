@@ -434,12 +434,12 @@ button { color: inherit; }
 .building-visual-card { grid-row: 1 / span 2; min-height: 760px; }
 .cubic-building-zone { background: radial-gradient(circle at 32% 43%, #fff 0, #faf8f5 52%, #f2eee9 100%); display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr) 245px; min-height: 474px; padding: 22px 20px 28px; }
 .real-building { align-items: center; display: flex; flex-direction: column; justify-content: center; min-height: 420px; padding: 40px 38px 30px 8px; perspective: 1250px; perspective-origin: 52% 38%; }
-.real-floor-slab { color: var(--ink); display: block; height: 84px; margin: 25px 0; position: relative; text-decoration: none; transform: rotateX(-8deg) rotateY(-20deg) rotateZ(-2deg) translateX(calc((var(--floor-index) - 1) * 18px)); transform-style: preserve-3d; transition: filter 180ms, transform 180ms; width: min(535px, 86%); z-index: calc(4 - var(--floor-index)); }
-.cube-floor-face { backface-visibility: hidden; display: block; position: absolute; }
+.real-floor-slab { color: var(--ink); display: block; height: 84px; isolation: isolate; margin: 25px 0; position: relative; text-decoration: none; transform: rotateX(-8deg) rotateY(-20deg) rotateZ(-2deg) translateX(calc((var(--floor-index) - 1) * 18px)); transform-style: preserve-3d; transition: transform 180ms; width: min(535px, 86%); z-index: calc(4 - var(--floor-index)); }
+.cube-floor-face { backface-visibility: hidden; display: block; pointer-events: none; position: absolute; }
 .cube-floor-front { align-items: center; background: linear-gradient(135deg, #fff 15%, color-mix(in srgb, var(--floor-accent) 5%, white)); border: 1px solid color-mix(in srgb, var(--floor-accent) 42%, var(--line)); border-left: 14px solid var(--floor-accent); box-shadow: 0 19px 28px rgba(36,29,22,.13); display: grid; gap: 15px; grid-template-columns: 50px 1fr auto; inset: 0; padding: 16px 22px; transform: translateZ(24px); }
 .cube-floor-top { background: linear-gradient(90deg, color-mix(in srgb, var(--floor-accent) 9%, white), #fff 70%); border: 1px solid color-mix(in srgb, var(--floor-accent) 30%, var(--line)); height: 48px; left: 0; top: -48px; transform: rotateX(90deg); transform-origin: bottom; width: 100%; }
 .cube-floor-side { background: linear-gradient(180deg, color-mix(in srgb, var(--floor-accent) 55%, #d9d2cb), color-mix(in srgb, var(--floor-accent) 30%, #bbb2a9)); border: 1px solid color-mix(in srgb, var(--floor-accent) 48%, #aaa29a); height: 100%; right: -48px; top: 0; transform: rotateY(90deg); transform-origin: left; width: 48px; }
-.real-floor-slab:hover { filter: brightness(1.02); transform: rotateX(-8deg) rotateY(-20deg) rotateZ(-2deg) translateX(calc((var(--floor-index) - 1) * 18px)) translateY(-8px) scale(1.015); }
+.real-floor-slab:hover, .real-floor-slab:focus-visible { transform: rotateX(-8deg) rotateY(-20deg) rotateZ(-2deg) translateX(calc((var(--floor-index) - 1) * 18px)) translateY(-8px) scale(1.015); z-index: 20; }
 .slab-level { align-items: center; background: color-mix(in srgb, var(--floor-accent) 12%, white); border-radius: 10px; color: var(--floor-accent); display: flex; font-family: var(--font-display); font-size: 24px; font-weight: 800; height: 48px; justify-content: center; }
 .slab-copy { display: flex; flex-direction: column; min-width: 0; }
 .real-floor-slab strong { font-family: var(--font-display); font-size: 18px; }
@@ -474,6 +474,8 @@ button { color: inherit; }
 .runtime-node { align-items: center; border-radius: 8px; display: flex; height: 30px; justify-content: center; width: 30px; }
 .runtime-arrow { color: #b6afa8; flex: 0 0 auto; margin: 0 5px; }
 .runtime-empty { color: var(--ink-faint); font-size: 11px; margin: 0; }
+.floor-runtime-flow { margin-bottom: 18px; }
+.floor-runtime-flow .runtime-rail { border-top: 0; }
 .floor-summary-card, .security-card { min-height: 285px; }
 .real-floor-list { display: flex; flex-direction: column; }
 .real-floor-list > a { align-items: center; border-bottom: 1px solid var(--line); color: inherit; display: grid; gap: 12px; grid-template-columns: 34px 1fr auto; min-height: 71px; padding: 12px 17px; text-decoration: none; }
