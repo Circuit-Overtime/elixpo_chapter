@@ -537,7 +537,7 @@ button { color: inherit; }
 .directory-stats small { color: var(--ink-faint); font-size: 11px; }
 .directory-card footer { align-items: center; color: var(--ink-faint); display: flex; font-family: var(--font-mono); font-size: 11px; justify-content: space-between; margin-top: auto; padding-top: 17px; }
 
-.floor-route-heading { align-items: center; display: grid; gap: 18px; grid-template-columns: auto 62px 1fr; margin-bottom: 23px; }
+.floor-route-heading { align-items: center; display: grid; gap: 18px; grid-template-columns: 62px minmax(0, 1fr); margin-bottom: 23px; }
 .floor-route-heading > a { align-self: flex-start; color: var(--ink-soft); font-size: 12px; font-weight: 750; grid-column: 1 / -1; text-decoration: none; }
 .floor-route-level { align-items: center; background: var(--floor-accent); border-radius: 15px; color: white; display: flex; font-family: var(--font-display); font-size: 28px; font-weight: 800; height: 62px; justify-content: center; }
 .floor-route-heading h1 { font-size: 38px; }
