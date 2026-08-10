@@ -69,9 +69,34 @@
 }
 
 .blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
-  padding: 30px 16px 10px !important;
+  padding: 30px 16px 10px 52px !important;
   -webkit-text-decorations-in-effect: none;
   font-weight: 500;
+}
+
+.code-line-numbers {
+  position: absolute;
+  top: 30px;
+  bottom: 10px;
+  left: 0;
+  width: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-right: 9px;
+  border-right: 1px solid var(--border-default);
+  color: var(--text-faint);
+  font-size: 0.84em;
+  line-height: 1.7;
+  font-weight: 400;
+  user-select: none;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.code-line-numbers span {
+  display: block;
+  min-height: 1.7em;
 }
 
 /* Kill spellcheck red squiggles inside code blocks */
@@ -827,13 +852,40 @@
   font-size: 10px;
 }
 
+.mermaid-code-editor {
+  display: flex;
+  align-items: stretch;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-app);
+  min-height: 160px;
+}
+
+.mermaid-line-numbers {
+  flex: 0 0 42px;
+  padding: 12px 9px 12px 0;
+  border-right: 1px solid var(--border-default);
+  color: var(--text-faint);
+  font-family: 'lixCode', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  user-select: none;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.mermaid-line-numbers span {
+  display: block;
+  height: 1.5em;
+}
+
 .mermaid-block-textarea {
   width: 100%;
+  flex: 1 1 auto;
   box-sizing: border-box;
   background: var(--bg-app);
   border: none;
-  border-top: 1px solid var(--border-default);
-  margin-top: 8px;
   padding: 12px 14px;
   color: var(--text-primary);
   font-family: 'lixCode', monospace;
@@ -841,6 +893,7 @@
   resize: vertical;
   outline: none;
   min-height: 160px;
+  line-height: 1.5;
   white-space: pre;
   tab-size: 4;
   overflow: auto;

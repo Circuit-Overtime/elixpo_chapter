@@ -6,6 +6,12 @@ import { createPortal } from 'react-dom';
 import { useTheme } from '../../../context/ThemeContext';
 import { getCachedMermaidSvg, renderMermaidSvg } from '../../../utils/mermaidRenderer';
 
+const pendingEditorFocus = new Set();
+
+export function requestMermaidEditorFocus(blockId) {
+  if (blockId) pendingEditorFocus.add(blockId);
+}
+
 // Shared component that renders a mermaid diagram to SVG
 function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
   const containerRef = useRef(null);
@@ -201,6 +207,7 @@ export const MermaidBlock = createReactBlockSpec(
       const [value, setValue] = useState(block.props.diagram || '');
       const [livePreview, setLivePreview] = useState(block.props.diagram || '');
       const inputRef = useRef(null);
+      const lineGutterRef = useRef(null);
       const debounceRef = useRef(null);
       const previousEditingRef = useRef(editing);
       const [isFullscreen, setIsFullscreen] = useState(false);
@@ -219,6 +226,14 @@ export const MermaidBlock = createReactBlockSpec(
           document.body.style.overflow = '';
         };
       }, [isFullscreen]);
+
+      useEffect(() => {
+        if (!pendingEditorFocus.delete(block.id)) return;
+        const raf = requestAnimationFrame(() => {
+          inputRef.current?.focus({ preventScroll: true });
+        });
+        return () => cancelAnimationFrame(raf);
+      }, [block.id]);
 
       useEffect(() => {
         const startedEditing = editing && !previousEditingRef.current;
@@ -318,32 +333,48 @@ export const MermaidBlock = createReactBlockSpec(
               <span className="mermaid-supported-types">Flowchart · Sequence · Class · ER</span>
               <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-faint)' }}>Shift+Enter to save</span>
             </div>
-            <textarea
-              ref={inputRef}
-              value={value}
-              onChange={handleCodeChange}
-              onMouseDown={(e) => e.stopPropagation()}
-              onPaste={handleCodePaste}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); save(); }
-                if (e.key === 'Escape') { setEditing(false); setValue(block.props.diagram || ''); setLivePreview(block.props.diagram || ''); }
-                if (e.key === 'Tab') {
-                  e.preventDefault();
-                  const start = e.target.selectionStart;
-                  const end = e.target.selectionEnd;
-                  const newVal = value.substring(0, start) + '    ' + value.substring(end);
-                  setValue(newVal);
-                  setLivePreview(newVal);
-                  requestAnimationFrame(() => {
-                    e.target.selectionStart = e.target.selectionEnd = start + 4;
-                  });
-                }
-              }}
-              placeholder={`graph TD\n    A[Start] --> B{Decision}\n    B -->|Yes| C[OK]\n    B -->|No| D[End]`}
-              rows={8}
-              className="mermaid-block-textarea"
-            />
+            <div className="mermaid-code-editor">
+              <div
+                ref={lineGutterRef}
+                className="mermaid-line-numbers"
+                aria-hidden="true"
+              >
+                {Array.from({ length: Math.max(1, value.split('\n').length) }, (_, index) => (
+                  <span key={index}>{index + 1}</span>
+                ))}
+              </div>
+              <textarea
+                ref={inputRef}
+                value={value}
+                onChange={handleCodeChange}
+                onScroll={(event) => {
+                  if (lineGutterRef.current) {
+                    lineGutterRef.current.scrollTop = event.currentTarget.scrollTop;
+                  }
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPaste={handleCodePaste}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); save(); }
+                  if (e.key === 'Escape') { setEditing(false); setValue(block.props.diagram || ''); setLivePreview(block.props.diagram || ''); }
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = e.target.selectionStart;
+                    const end = e.target.selectionEnd;
+                    const newVal = value.substring(0, start) + '    ' + value.substring(end);
+                    setValue(newVal);
+                    setLivePreview(newVal);
+                    requestAnimationFrame(() => {
+                      e.target.selectionStart = e.target.selectionEnd = start + 4;
+                    });
+                  }
+                }}
+                placeholder={`graph TD\n    A[Start] --> B{Decision}\n    B -->|Yes| C[OK]\n    B -->|No| D[End]`}
+                rows={8}
+                className="mermaid-block-textarea"
+              />
+            </div>
             {/* Live preview panel */}
             <div className="mermaid-live-preview">
               <div className="mermaid-live-preview-label">Preview</div>

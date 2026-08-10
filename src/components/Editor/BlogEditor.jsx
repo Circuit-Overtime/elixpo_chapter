@@ -67,7 +67,10 @@ import { InlineButton } from "./blocks/InlineButton";
 // Custom inline content
 import { InlineEquation } from "./blocks/InlineEquation";
 import { MentionInline } from "./blocks/MentionInline";
-import { MermaidBlock } from "./blocks/MermaidBlock";
+import {
+    MermaidBlock,
+    requestMermaidEditorFocus,
+} from "./blocks/MermaidBlock";
 import { OrgMentionInline } from "./blocks/OrgMentionInline";
 import { PDFEmbedBlock } from "./blocks/PDFEmbedBlock";
 // Custom blocks — local versions (package is for external consumers)
@@ -694,12 +697,23 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
                     d2="M6.5 10v4M17.5 10v4"
                 />
             ),
-            onItemClick: () =>
+            onItemClick: () => {
+                const anchor = editor.getTextCursorPosition().block;
                 editor.insertBlocks(
                     [{ type: "mermaidBlock" }],
-                    editor.getTextCursorPosition().block,
+                    anchor,
                     "after",
-                ),
+                );
+                const documentBlocks = editor.document;
+                const anchorIndex = documentBlocks.findIndex(
+                    (block) => block.id === anchor.id,
+                );
+                if (anchorIndex >= 0) {
+                    requestMermaidEditorFocus(
+                        documentBlocks[anchorIndex + 1]?.id,
+                    );
+                }
+            },
         },
         // PDF embed removed: only static-image attachments are allowed in blog
         // content. The pdfEmbed block spec stays mounted for backward compat
@@ -2705,6 +2719,32 @@ const BlogEditor = forwardRef(function BlogEditor(
                     editable.setAttribute("autocapitalize", "off");
                 }
                 block.style.position = "relative";
+
+                let lineNumbers = block.querySelector(".code-line-numbers");
+                if (!lineNumbers) {
+                    lineNumbers = document.createElement("div");
+                    lineNumbers.className = "code-line-numbers";
+                    lineNumbers.setAttribute("aria-hidden", "true");
+                    block.appendChild(lineNumbers);
+                }
+                const syncLineNumbers = () => {
+                    const lineCount = Math.max(
+                        1,
+                        (editable?.textContent || "").split("\n").length,
+                    );
+                    lineNumbers.replaceChildren(
+                        ...Array.from({ length: lineCount }, (_, index) => {
+                            const line = document.createElement("span");
+                            line.textContent = String(index + 1);
+                            return line;
+                        }),
+                    );
+                };
+                syncLineNumbers();
+                if (editable && editable.dataset.lineNumbersBound !== "true") {
+                    editable.dataset.lineNumbersBound = "true";
+                    editable.addEventListener("input", syncLineNumbers);
+                }
 
                 // Language label — always visible and clickable in edit mode.
                 const blockEl = block.closest("[data-id]");
