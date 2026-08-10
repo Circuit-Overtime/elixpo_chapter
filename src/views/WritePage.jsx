@@ -3169,7 +3169,7 @@ export default function WritePage({ slugid }) {
                                     <>
                                         {/* Cover banner with emoji overlay */}
                                         <div className="relative mb-2">
-                                            {coverPreview ? (
+                                            {coverPreview && !showCoverModal ? (
                                                 <div
                                                     className="relative rounded-xl overflow-hidden group cover-banner-enter"
                                                     style={{
@@ -3423,9 +3423,16 @@ export default function WritePage({ slugid }) {
                                                         {/* Separator */}
                                                         <div className="w-px h-4 bg-white/20 mx-0.5" />
                                                         {/* Replace */}
-                                                        <label
+                                                        <button
+                                                            type="button"
                                                             className="cover-toolbar-btn cursor-pointer"
-                                                            title="Replace"
+                                                            title="Replace cover"
+                                                            onClick={(event) => {
+                                                                event.stopPropagation();
+                                                                setCoverUrlMode(false);
+                                                                setCoverUrlInput("");
+                                                                setShowCoverModal(true);
+                                                            }}
                                                         >
                                                             <svg
                                                                 width="14"
@@ -3452,24 +3459,7 @@ export default function WritePage({ slugid }) {
                                                                 />
                                                                 <polyline points="21 15 16 10 5 21" />
                                                             </svg>
-                                                            <input
-                                                                type="file"
-                                                                accept={
-                                                                    IMAGE_ACCEPT_ATTR
-                                                                }
-                                                                className="hidden"
-                                                                onChange={(
-                                                                    e,
-                                                                ) => {
-                                                                    openCoverCropper(
-                                                                        e.target
-                                                                            .files?.[0],
-                                                                    );
-                                                                    e.target.value =
-                                                                        "";
-                                                                }}
-                                                            />
-                                                        </label>
+                                                        </button>
                                                         {/* Remove */}
                                                         <button
                                                             onClick={(e) => {
