@@ -214,7 +214,7 @@ export const sx = {
     },
 };
 
-export default {
+const theme = {
     colors,
     gradients,
     shadows,
@@ -223,3 +223,5 @@ export default {
     getDifficultyColor,
     sx,
 };
+
+export default theme;
