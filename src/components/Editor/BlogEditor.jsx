@@ -50,6 +50,7 @@ import {
     createMediaUploadId,
     enqueueMediaUpload,
 } from "../../utils/mediaUploadQueue";
+import { getLixShikiHighlighter } from "../../utils/shikiHighlighter";
 import AICommandMenu from "./AICommandMenu";
 import AISelectionToolbar from "./AISelectionToolbar";
 import { AIBlock } from "./blocks/AIBlock";
@@ -67,7 +68,10 @@ import { InlineButton } from "./blocks/InlineButton";
 // Custom inline content
 import { InlineEquation } from "./blocks/InlineEquation";
 import { MentionInline } from "./blocks/MentionInline";
-import { MermaidBlock } from "./blocks/MermaidBlock";
+import {
+    MermaidBlock,
+    requestMermaidEditorFocus,
+} from "./blocks/MermaidBlock";
 import { OrgMentionInline } from "./blocks/OrgMentionInline";
 import { PDFEmbedBlock } from "./blocks/PDFEmbedBlock";
 // Custom blocks — local versions (package is for external consumers)
@@ -173,11 +177,28 @@ const codeBlockLanguages = {
 const codeBlockWithHighlighting = createCodeBlockSpec({
     supportedLanguages: codeBlockLanguages,
     createHighlighter: async () => {
-        const { createHighlighter } = await import("shiki");
-        return createHighlighter({
-            themes: ["vitesse-dark", "vitesse-light"],
-            langs: Object.keys(codeBlockLanguages).filter((k) => k !== "text"),
-        });
+        const highlighter = await getLixShikiHighlighter();
+
+        // BlockNote's adapter always asks Shiki for its first loaded theme. Emit
+        // both palettes as CSS variables instead, so reopened blocks follow the
+        // site theme and theme switches do not require re-tokenizing the document.
+        if (!highlighter.__lixDualTheme) {
+            const codeToTokens = highlighter.codeToTokens.bind(highlighter);
+            highlighter.codeToTokens = (code, options = {}) => {
+                const { theme: _ignoredTheme, ...rest } = options;
+                return codeToTokens(code, {
+                    ...rest,
+                    themes: {
+                        light: "vitesse-light",
+                        dark: "vitesse-dark",
+                    },
+                    defaultColor: false,
+                });
+            };
+            highlighter.__lixDualTheme = true;
+        }
+
+        return highlighter;
     },
 });
 
@@ -694,12 +715,23 @@ function getCustomSlashMenuItems(editor, callbacks = {}) {
                     d2="M6.5 10v4M17.5 10v4"
                 />
             ),
-            onItemClick: () =>
+            onItemClick: () => {
+                const anchor = editor.getTextCursorPosition().block;
                 editor.insertBlocks(
                     [{ type: "mermaidBlock" }],
-                    editor.getTextCursorPosition().block,
+                    anchor,
                     "after",
-                ),
+                );
+                const documentBlocks = editor.document;
+                const anchorIndex = documentBlocks.findIndex(
+                    (block) => block.id === anchor.id,
+                );
+                if (anchorIndex >= 0) {
+                    requestMermaidEditorFocus(
+                        documentBlocks[anchorIndex + 1]?.id,
+                    );
+                }
+            },
         },
         // PDF embed removed: only static-image attachments are allowed in blog
         // content. The pdfEmbed block spec stays mounted for backward compat
@@ -865,6 +897,30 @@ function sanitizeInitialContent(blocks) {
     return sanitized?.length ? sanitized : undefined;
 }
 
+function normalizeInternalTextColors(content) {
+    if (!Array.isArray(content)) return content;
+    return content.map((item) => {
+        let next = item;
+        const textColor = String(item?.styles?.textColor || "").toLowerCase();
+        if (
+            textColor === "gray" ||
+            textColor === "grey" ||
+            textColor === "default"
+        ) {
+            const styles = { ...item.styles };
+            delete styles.textColor;
+            next = { ...next, styles };
+        }
+        if (Array.isArray(item?.content)) {
+            next = {
+                ...next,
+                content: normalizeInternalTextColors(item.content),
+            };
+        }
+        return next;
+    });
+}
+
 function doSanitize(blocks) {
     if (!blocks || !Array.isArray(blocks)) return blocks;
     const result = [];
@@ -883,9 +939,75 @@ function doSanitize(blocks) {
 
     while (i < blocks.length) {
         let block = blocks[i];
+        if (Array.isArray(block.content)) {
+            block = {
+                ...block,
+                content: normalizeInternalTextColors(block.content),
+            };
+        }
         // Recursively sanitize children
         if (block.children && block.children.length > 0) {
             block = { ...block, children: doSanitize(block.children) };
+        }
+
+        // Migrate saved/pasted Mermaid code blocks into the native diagram block.
+        // Older documents used a regular codeBlock, which meant reopening the
+        // editor never showed the Mermaid controls or viewport.
+        if (block.type === "codeBlock") {
+            const codeText = getText(block);
+            const language = String(block.props?.language || "").toLowerCase();
+            const fenced = codeText.match(
+                /^\s*```\s*mermaid\s*\n([\s\S]*?)\n?```\s*$/i,
+            );
+            if (language === "mermaid" || fenced) {
+                const { content: _content, ...rest } = block;
+                result.push({
+                    ...rest,
+                    type: "mermaidBlock",
+                    props: { diagram: (fenced?.[1] || codeText).trim() },
+                    children: block.children || [],
+                });
+                i++;
+                continue;
+            }
+        }
+
+        if (block.type === "paragraph") {
+            const paragraphText = getText(block);
+            const inlineFence = paragraphText.match(
+                /^\s*```\s*mermaid\s*\n([\s\S]*?)\n?```\s*$/i,
+            );
+            if (inlineFence) {
+                result.push({
+                    id: block.id,
+                    type: "mermaidBlock",
+                    props: { diagram: inlineFence[1].trim() },
+                    children: block.children || [],
+                });
+                i++;
+                continue;
+            }
+
+            if (/^```\s*mermaid\s*$/i.test(paragraphText)) {
+                const diagramLines = [];
+                let cursor = i + 1;
+                while (cursor < blocks.length) {
+                    const line = getText(blocks[cursor]);
+                    if (/^```\s*$/.test(line)) break;
+                    diagramLines.push(line);
+                    cursor++;
+                }
+                if (cursor < blocks.length && diagramLines.length) {
+                    result.push({
+                        id: block.id,
+                        type: "mermaidBlock",
+                        props: { diagram: diagramLines.join("\n").trim() },
+                        children: block.children || [],
+                    });
+                    i = cursor + 1;
+                    continue;
+                }
+            }
         }
         // Headings render in the default color — drop stray inline text colors
         // (e.g. a pasted #e06c75) so they stay consistent and re-saving normalizes them.
@@ -1178,6 +1300,13 @@ const BlogEditor = forwardRef(function BlogEditor(
                 : "Type '/' for commands",
         },
     });
+
+    // BlockNote's ExtensionManager retains its complete construction options,
+    // including the full initial block array, after ProseMirror has already
+    // converted it into a document. Drop that redundant tree immediately.
+    if (!collaboration && editor._extensionManager?.options?.initialContent) {
+        delete editor._extensionManager.options.initialContent;
+    }
 
     const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
     const [blockMenu, setBlockMenu] = useState(null); // {x,y,blockId,blockType}
@@ -2014,6 +2143,17 @@ const BlogEditor = forwardRef(function BlogEditor(
                 editorEl === document.activeElement;
             if (!isEditorFocused) return;
 
+            // Do not ask BlockNote for its cursor during ordinary navigation.
+            // This listener runs in capture phase, before ProseMirror processes the
+            // key; reading the editor cursor here can restore the previous selection
+            // and swallow ArrowLeft/ArrowRight caret movement in Firefox.
+            const handlesCtrlA =
+                e.key === "a" && (e.ctrlKey || e.metaKey);
+            const handlesCtrlEnter =
+                e.key === "Enter" && (e.ctrlKey || e.metaKey);
+            if (!handlesCtrlA && !handlesCtrlEnter && e.key !== "Backspace")
+                return;
+
             const cursor = editor.getTextCursorPosition();
             const block = cursor?.block;
 
@@ -2269,10 +2409,25 @@ const BlogEditor = forwardRef(function BlogEditor(
                                 },
                             );
 
-                            let blocks =
-                                await editor.tryParseMarkdownToBlocks(
-                                    processed,
-                                );
+                            const singleMermaid = processed
+                                .trim()
+                                .match(/^MERMAIDPLACEHOLDER(\d+)END$/);
+                            let blocks = singleMermaid
+                                ? [
+                                      {
+                                          type: "mermaidBlock",
+                                          props: {
+                                              diagram:
+                                                  mermaidBlocks[
+                                                      Number(singleMermaid[1])
+                                                  ] || "",
+                                          },
+                                          children: [],
+                                      },
+                                  ]
+                                : await editor.tryParseMarkdownToBlocks(
+                                      processed,
+                                  );
 
                             // Post-process: replace placeholders with custom blocks
                             blocks = blocks.flatMap((block) => {
@@ -2620,6 +2775,32 @@ const BlogEditor = forwardRef(function BlogEditor(
                 }
                 block.style.position = "relative";
 
+                let lineNumbers = block.querySelector(".code-line-numbers");
+                if (!lineNumbers) {
+                    lineNumbers = document.createElement("div");
+                    lineNumbers.className = "code-line-numbers";
+                    lineNumbers.setAttribute("aria-hidden", "true");
+                    block.appendChild(lineNumbers);
+                }
+                const syncLineNumbers = () => {
+                    const lineCount = Math.max(
+                        1,
+                        (editable?.textContent || "").split("\n").length,
+                    );
+                    lineNumbers.replaceChildren(
+                        ...Array.from({ length: lineCount }, (_, index) => {
+                            const line = document.createElement("span");
+                            line.textContent = String(index + 1);
+                            return line;
+                        }),
+                    );
+                };
+                syncLineNumbers();
+                if (editable && editable.dataset.lineNumbersBound !== "true") {
+                    editable.dataset.lineNumbersBound = "true";
+                    editable.addEventListener("input", syncLineNumbers);
+                }
+
                 // Language label — always visible and clickable in edit mode.
                 const blockEl = block.closest("[data-id]");
                 const blockId = blockEl?.getAttribute("data-id");
@@ -2758,7 +2939,7 @@ const BlogEditor = forwardRef(function BlogEditor(
                     block.appendChild(btn);
                 }
             });
-    }, []);
+    }, [editor]);
 
     // Hide BlockNote's formatting toolbar when a custom block (code, equation, mermaid, etc.) is focused
     const noToolbarTypes = useMemo(
@@ -2810,16 +2991,10 @@ const BlogEditor = forwardRef(function BlogEditor(
             "selectionchange",
             hideToolbarForCustomBlocks,
         );
-        document.addEventListener("click", hideToolbarForCustomBlocks, true);
         return () => {
             document.removeEventListener(
                 "selectionchange",
                 hideToolbarForCustomBlocks,
-            );
-            document.removeEventListener(
-                "click",
-                hideToolbarForCustomBlocks,
-                true,
             );
             if (rafId) cancelAnimationFrame(rafId);
         };
@@ -2827,17 +3002,34 @@ const BlogEditor = forwardRef(function BlogEditor(
 
     // Track block count to detect structural changes (import, paste, AI) vs. normal typing
     const blockCountRef = useRef(0);
+    const documentChangeTimerRef = useRef(null);
 
     const handleChange = useCallback(() => {
-        if (onChange) onChange(editor.document);
+        // editor.document materializes the full BlockNote JSON tree. Coalesce
+        // transactions so a long post does not allocate that tree per keystroke.
+        clearTimeout(documentChangeTimerRef.current);
+        const count =
+            editor._tiptapEditor?.state?.doc?.childCount ??
+            blockCountRef.current;
+        documentChangeTimerRef.current = setTimeout(
+            () => {
+                if (onChange) onChange(editor.document);
+            },
+            count >= 60 ? 500 : 120,
+        );
+
         // Only re-patch code blocks when the number of blocks changes (new block added/removed)
         // This avoids running expensive DOM queries on every keystroke
-        const count = editor.document.length;
         if (count !== blockCountRef.current) {
             blockCountRef.current = count;
             requestAnimationFrame(patchCodeBlocks);
         }
     }, [onChange, editor, patchCodeBlocks]);
+
+    useEffect(
+        () => () => clearTimeout(documentChangeTimerRef.current),
+        [],
+    );
 
     // Patch code blocks on mount + when new code blocks appear in the DOM
     useEffect(() => {
@@ -2849,17 +3041,45 @@ const BlogEditor = forwardRef(function BlogEditor(
             });
         });
 
-        // Lightweight observer: only watch for direct children being added (new blocks),
-        // NOT subtree mutations (which fire on every keystroke inside code blocks)
+        // Code node views can rerender without changing the document block count.
+        // Watch child replacements too so the visible language control is restored.
         const wrapper = wrapperRef.current;
         if (!wrapper) return;
         const editorRoot = wrapper.querySelector(".bn-editor");
         if (!editorRoot) return;
-        const observer = new MutationObserver(() => {
-            requestAnimationFrame(patchCodeBlocks);
+        let patchFrame = null;
+        const observer = new MutationObserver((mutations) => {
+            const needsPatch = mutations.some((mutation) => {
+                const existingCodeBlock = mutation.target.closest?.(
+                    '[data-content-type="codeBlock"]',
+                );
+                if (
+                    existingCodeBlock &&
+                    (!existingCodeBlock.querySelector(".code-lang-label") ||
+                        !existingCodeBlock.querySelector(".code-copy-btn"))
+                ) {
+                    return true;
+                }
+                return [...mutation.addedNodes].some(
+                    (node) =>
+                        node.nodeType === Node.ELEMENT_NODE &&
+                        (node.matches?.('[data-content-type="codeBlock"]') ||
+                            node.querySelector?.(
+                                '[data-content-type="codeBlock"]',
+                            )),
+                );
+            });
+            if (!needsPatch || patchFrame) return;
+            patchFrame = requestAnimationFrame(() => {
+                patchFrame = null;
+                patchCodeBlocks();
+            });
         });
-        observer.observe(editorRoot, { childList: true });
-        return () => observer.disconnect();
+        observer.observe(editorRoot, { childList: true, subtree: true });
+        return () => {
+            observer.disconnect();
+            if (patchFrame) cancelAnimationFrame(patchFrame);
+        };
     }, [patchCodeBlocks, onReady, editor]);
 
     // AI sparkle star — inline element appended to last AI text block

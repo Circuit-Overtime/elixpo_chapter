@@ -33,7 +33,11 @@
 /* ===== Code blocks ===== */
 
 .blog-editor-wrapper [data-content-type="codeBlock"] {
-  background: var(--code-bg);
+  /* BlockNote ships a hard-coded dark code surface and Shiki adds a root
+     background decoration. The editor theme owns the surface in both modes. */
+  background: var(--code-bg) !important;
+  background-color: var(--code-bg) !important;
+  color: var(--code-text) !important;
   border: 1px solid var(--border-default);
   border-radius: 10px;
   font-family: 'lixCode', monospace;
@@ -46,19 +50,17 @@
 
 /* Light mode code block vars */
 :root {
-  --code-bg: #f8f8fb;
-  --code-text: #3d3d50;
-  /* Darker label text on a slightly stronger chip so the language selector is
-     clearly visible in light mode (was #6b7280 on #eeeef2 — too low contrast). */
-  --code-lang-bg: #dfe3ea;
-  --code-lang-text: #44485a;
+  --code-bg: #f2f3f8;
+  --code-text: #202334;
+  --code-lang-bg: #e9e3ff;
+  --code-lang-text: #5335a8;
 }
 
 [data-theme="dark"] {
-  --code-bg: #0e1219;
-  --code-text: #c8d1e0;
-  --code-lang-bg: #1a2030;
-  --code-lang-text: #9ba8b9;
+  --code-bg: #0b1020;
+  --code-text: #e5edf9;
+  --code-lang-bg: #28213f;
+  --code-lang-text: #ddd6fe;
 }
 
 .blog-editor-wrapper [data-content-type="codeBlock"] code {
@@ -71,9 +73,34 @@
 }
 
 .blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
-  padding: 30px 16px 10px !important;
+  padding: 30px 16px 10px 52px !important;
   -webkit-text-decorations-in-effect: none;
   font-weight: 500;
+}
+
+.code-line-numbers {
+  position: absolute;
+  top: 30px;
+  bottom: 10px;
+  left: 0;
+  width: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-right: 9px;
+  border-right: 1px solid var(--border-default);
+  color: var(--text-faint);
+  font-size: 0.84em;
+  line-height: 1.7;
+  font-weight: 400;
+  user-select: none;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.code-line-numbers span {
+  display: block;
+  min-height: 1.7em;
 }
 
 /* Kill spellcheck red squiggles inside code blocks */
@@ -85,6 +112,16 @@
 /* Shiki syntax highlighting — let inline styles override default color */
 .blog-editor-wrapper [data-content-type="codeBlock"] code span[style] {
   background: none !important;
+}
+
+/* Shiki emits both palettes from BlogEditor. This keeps persisted/reopened
+   blocks readable and makes theme changes a CSS-only operation. */
+.blog-editor-wrapper [data-content-type="codeBlock"] code .shiki {
+  color: var(--shiki-light, var(--code-text)) !important;
+}
+
+[data-theme="dark"] .blog-editor-wrapper [data-content-type="codeBlock"] code .shiki {
+  color: var(--shiki-dark, var(--code-text)) !important;
 }
 
 /* Language selector dropdown (BlockNote built-in) */
@@ -123,6 +160,11 @@
   border: none;
   transition: color 0.15s, background 0.15s;
   z-index: 5;
+  display: inline-flex !important;
+  align-items: center;
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: 0 1px 0 rgba(83, 53, 168, 0.15);
 }
 
 .code-lang-label:hover {
@@ -781,6 +823,14 @@
   font-size: 13px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
+  flex-wrap: wrap;
+}
+
+.mermaid-empty-types {
+  flex-basis: 100%;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 11px;
 }
 
 [data-theme="dark"] .mermaid-block--empty {
@@ -799,6 +849,8 @@
 
 .mermaid-block--editing {
   padding: 0;
+  pointer-events: auto !important;
+  user-select: auto !important;
 }
 
 .mermaid-block-header {
@@ -811,13 +863,46 @@
   color: var(--text-muted);
 }
 
+.mermaid-supported-types {
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.mermaid-code-editor {
+  display: flex;
+  align-items: stretch;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-app);
+  min-height: 160px;
+  pointer-events: auto !important;
+}
+
+.mermaid-line-numbers {
+  flex: 0 0 42px;
+  padding: 12px 9px 12px 0;
+  border-right: 1px solid var(--border-default);
+  color: var(--text-faint);
+  font-family: 'lixCode', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  user-select: none;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.mermaid-line-numbers span {
+  display: block;
+  height: 1.5em;
+}
+
 .mermaid-block-textarea {
   width: 100%;
+  flex: 1 1 auto;
   box-sizing: border-box;
   background: var(--bg-app);
   border: none;
-  border-top: 1px solid var(--border-default);
-  margin-top: 8px;
   padding: 12px 14px;
   color: var(--text-primary);
   font-family: 'lixCode', monospace;
@@ -825,9 +910,13 @@
   resize: vertical;
   outline: none;
   min-height: 160px;
+  line-height: 1.5;
   white-space: pre;
   tab-size: 4;
   overflow: auto;
+  pointer-events: auto !important;
+  user-select: text !important;
+  caret-color: var(--text-primary);
 }
 
 .mermaid-block-textarea::placeholder {
@@ -965,13 +1054,13 @@
   position: relative;
   padding: 0;
   cursor: default;
-  min-height: 280px;
+  min-height: 0;
 }
 
 .mermaid-viewport {
   position: relative;
   width: 100%;
-  height: 320px;
+  height: clamp(280px, 48vw, 420px);
   overflow: hidden;
   cursor: grab;
   display: flex;
@@ -990,22 +1079,38 @@
   align-items: center;
   transition: transform 0.05s linear;
   will-change: transform;
+  width: 100%;
+  height: 100%;
   padding: 24px;
+  box-sizing: border-box;
 }
 
 .mermaid-block-svg svg {
-  max-width: none !important;
-  height: auto !important;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  overflow: visible;
 }
 
-/* Make text inside mermaid SVG bigger and more readable */
-.mermaid-block-svg svg text {
-  font-size: 15px !important;
-}
-
+.mermaid-block-svg svg text,
 .mermaid-block-svg svg .nodeLabel,
-.mermaid-block-svg svg .edgeLabel {
+.mermaid-block-svg svg .edgeLabel,
+.mermaid-block-svg svg foreignObject div {
+  font-family: 'lixDefault', 'Inter', system-ui, sans-serif !important;
   font-size: 15px !important;
+  line-height: 1.3 !important;
+}
+
+@media (max-width: 640px) {
+  .mermaid-viewport {
+    height: 280px;
+  }
+
+  .mermaid-block-svg {
+    padding: 14px;
+  }
 }
 
 /* Zoom controls */

@@ -4,6 +4,8 @@ import {
   extractMermaidFences,
   extractMermaidPaste,
 } from '../src/utils/markdownMermaid.js';
+import { normalizeMermaidSource } from '../src/utils/mermaidConfig.js';
+import { parseMarkdownToBlocks } from '../src/components/Editor/markdownToBlocks.js';
 
 test('Mermaid fences are extracted across casing, spacing, and CRLF newlines', () => {
   const markdown = [
@@ -37,4 +39,22 @@ test('rich Mermaid code-block clipboard data becomes a Mermaid placeholder', () 
 
   assert.equal(result.content, 'MERMAIDPLACEHOLDER0END');
   assert.deepEqual(result.diagrams, ['flowchart TD\n    A --> B']);
+});
+
+test('Mermaid source normalization accepts fences and common diagram aliases', () => {
+  assert.equal(
+    normalizeMermaidSource('```mermaid\nsequence\n  A->>B: Hello\n```'),
+    'sequenceDiagram\n  A->>B: Hello',
+  );
+  assert.equal(normalizeMermaidSource('classDiagram\n  A <|-- B'), 'classDiagram\n  A <|-- B');
+  assert.equal(normalizeMermaidSource('seq\n  A->>B: Hello'), 'sequenceDiagram\n  A->>B: Hello');
+  assert.equal(normalizeMermaidSource('er\n  USER ||--o{ POST : writes'), 'erDiagram\n  USER ||--o{ POST : writes');
+  assert.equal(normalizeMermaidSource('flowchart LR\n  A --> B'), 'flowchart LR\n  A --> B');
+});
+
+test('Markdown imports turn spaced Mermaid fences into Mermaid blocks', () => {
+  const blocks = parseMarkdownToBlocks('``` Mermaid\nflowchart TD\n  A --> B\n```');
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0].type, 'mermaidBlock');
+  assert.equal(blocks[0].props.diagram, 'flowchart TD\n  A --> B');
 });

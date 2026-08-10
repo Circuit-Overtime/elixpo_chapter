@@ -152,6 +152,15 @@ function getDraftKey(slugid) {
     return STORAGE_KEY_PREFIX + (slugid || "new");
 }
 
+function serializedContentSize(content) {
+    if (typeof content === "string") return content.length;
+    try {
+        return JSON.stringify(content || []).length;
+    } catch {
+        return 0;
+    }
+}
+
 function loadDraft(slugid) {
     try {
         const raw = localStorage.getItem(getDraftKey(slugid));
@@ -194,13 +203,6 @@ function saveDraft(slugid, data) {
 
 function persistableCover(url) {
     return typeof url === "string" && /^https?:\/\//i.test(url) ? url : null;
-}
-
-function isCloudinaryMediaUrl(url) {
-    return (
-        typeof url === "string" &&
-        /^https:\/\/res\.cloudinary\.com\//i.test(url)
-    );
 }
 
 function generateBlogId() {
@@ -817,6 +819,9 @@ export default function WritePage({ slugid }) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [pageEmoji, setPageEmoji] = useState(null);
     const [editorContent, setEditorContent] = useState(null);
+    // The editor owns its document after mount. Keeping the seed separate prevents
+    // every keystroke from being fed back through initialContent and re-sanitized.
+    const [editorSeedContent, setEditorSeedContent] = useState(null);
     const [previewHtml, setPreviewHtml] = useState("");
     const [markdown, setMarkdown] = useState("");
     const [wordCount, setWordCount] = useState(0);
@@ -841,6 +846,8 @@ export default function WritePage({ slugid }) {
     const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
     const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
     const draftRevisionRef = useRef(0); // prevents an older request clearing newer edits
+    const editorSnapshotTimerRef = useRef(null);
+    const largeDocumentRef = useRef(false);
     const syncInFlightRef = useRef(null); // serialize saves so publish never races autosave
     const coverUploadRef = useRef(null); // pending upload whose permanent URL must win over blob: preview
     const isPublished = blogVersion?.isPublished;
@@ -1051,6 +1058,7 @@ export default function WritePage({ slugid }) {
         member_only: memberOnly,
     });
     useEffect(() => {
+        const latestEditorContent = draftDataRef.current.editorContent;
         draftDataRef.current = {
             title,
             subtitle,
@@ -1058,7 +1066,7 @@ export default function WritePage({ slugid }) {
             publishAs,
             collectionId,
             coverPreview,
-            editorContent,
+            editorContent: latestEditorContent ?? editorContent,
             pageEmoji,
             coverPos,
             coverZoom,
@@ -1122,6 +1130,16 @@ export default function WritePage({ slugid }) {
             if (syncInFlightRef.current) {
                 const updatedAt = await syncInFlightRef.current;
                 if (!dirtyRef.current) return updatedAt;
+            }
+            // BlogEditor coalesces document snapshots to avoid serializing a large
+            // post on every keystroke. A cloud save must still capture the exact
+            // live document when it starts.
+            const liveEditorContent = editorRef.current?.getBlocks?.();
+            if (Array.isArray(liveEditorContent)) {
+                draftDataRef.current = {
+                    ...draftDataRef.current,
+                    editorContent: liveEditorContent,
+                };
             }
             const latest = draftDataRef.current;
             const data = {
@@ -1349,6 +1367,14 @@ export default function WritePage({ slugid }) {
         // slugid change, the next blog's initial load isn't treated as user edits,
         // and the no-change snapshot re-captures for the new blog.
         loadedRef.current = false;
+        setDraftLoading(true);
+        setEditorContent(null);
+        setEditorSeedContent(null);
+        largeDocumentRef.current = false;
+        draftDataRef.current = {
+            ...draftDataRef.current,
+            editorContent: null,
+        };
         settingsSnapshotRef.current = "";
         const timer = setTimeout(async () => {
             // Resolve the URL param (slug or id) against the server, which returns the
@@ -1447,12 +1473,17 @@ export default function WritePage({ slugid }) {
                     if (local.pageEmoji) setPageEmoji(local.pageEmoji);
                     if (local.savedAt) setLastSaved(local.savedAt);
                     setEditorContent(local.editorContent);
+                    setEditorSeedContent(local.editorContent);
+                    largeDocumentRef.current =
+                        serializedContentSize(local.editorContent) >= 8000;
                 } else if (cloud.content) {
-                    setEditorContent(
+                    const initialContent =
                         typeof cloud.content === "string"
                             ? cloud.content
-                            : JSON.stringify(cloud.content),
-                    );
+                            : JSON.stringify(cloud.content);
+                    setEditorContent(initialContent);
+                    setEditorSeedContent(initialContent);
+                    largeDocumentRef.current = initialContent.length >= 8000;
                 }
             } else if (local?.editorContent) {
                 // Brand-new blog not yet on the server — use the local buffer.
@@ -1468,6 +1499,9 @@ export default function WritePage({ slugid }) {
                 if (local.pageEmoji) setPageEmoji(local.pageEmoji);
                 if (local.savedAt) setLastSaved(local.savedAt);
                 setEditorContent(local.editorContent);
+                setEditorSeedContent(local.editorContent);
+                largeDocumentRef.current =
+                    serializedContentSize(local.editorContent) >= 8000;
             }
             setDraftLoading(false);
             // Defer so the state updates above don't trip the autosave effect as "edits".
@@ -1586,10 +1620,31 @@ export default function WritePage({ slugid }) {
 
     const handleEditorChange = useCallback(
         (blocks) => {
-            setEditorContent(blocks);
-            setWordCount(computeWordCount(blocks));
+            // Keep crash/unload recovery current without forcing the entire editor,
+            // outline and metadata page through React on each ProseMirror transaction.
+            draftDataRef.current = {
+                ...draftDataRef.current,
+                editorContent: blocks,
+            };
+            if (loadedRef.current) {
+                setHasUnsavedEdits(true);
+                dirtyRef.current = true;
+                draftRevisionRef.current += 1;
+            }
+            clearTimeout(editorSnapshotTimerRef.current);
+            const delay =
+                largeDocumentRef.current || blocks.length >= 60 ? 700 : 120;
+            editorSnapshotTimerRef.current = setTimeout(() => {
+                setEditorContent(blocks);
+                setWordCount(computeWordCount(blocks));
+            }, delay);
         },
         [computeWordCount],
+    );
+
+    useEffect(
+        () => () => clearTimeout(editorSnapshotTimerRef.current),
+        [],
     );
 
     // Recompute word count when content loads from server/localStorage
@@ -1873,7 +1928,7 @@ export default function WritePage({ slugid }) {
                 publishAs,
                 collectionId,
                 coverPreview: latestCover,
-                editorContent,
+                editorContent: draftDataRef.current.editorContent,
                 pageEmoji,
                 coverPos,
                 coverZoom,
@@ -2169,7 +2224,7 @@ export default function WritePage({ slugid }) {
                     tags,
                     publishAs,
                     collectionId,
-                    editorContent,
+                    editorContent: draftDataRef.current.editorContent,
                     pageEmoji,
                     coverUrl: persistedCover,
                     coverPos,
@@ -2276,7 +2331,7 @@ export default function WritePage({ slugid }) {
                     tags,
                     publishAs,
                     collectionId,
-                    editorContent,
+                    editorContent: draftDataRef.current.editorContent,
                     pageEmoji,
                     slug,
                     status: "unlisted",
@@ -3117,7 +3172,7 @@ export default function WritePage({ slugid }) {
                                     <>
                                         {/* Cover banner with emoji overlay */}
                                         <div className="relative mb-2">
-                                            {coverPreview ? (
+                                            {coverPreview && !showCoverModal ? (
                                                 <div
                                                     className="relative rounded-xl overflow-hidden group cover-banner-enter"
                                                     style={{
@@ -3207,39 +3262,19 @@ export default function WritePage({ slugid }) {
                                                     />
                                                     {coverUploading && (
                                                         <div
-                                                            className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-[#17131f]/70 backdrop-blur-[3px]"
+                                                            className="cover-upload-overlay absolute inset-0 z-20 flex items-center justify-center"
                                                             role="status"
                                                             aria-live="polite"
                                                         >
-                                                            <div className="cover-upload-sheen absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                                                            <div className="relative flex min-w-[220px] flex-col items-center rounded-2xl border border-white/20 bg-[#211b2c]/90 px-6 py-5 text-white shadow-2xl">
-                                                                <div className="relative mb-3 flex h-11 w-11 items-center justify-center">
-                                                                    <span className="absolute inset-0 animate-ping rounded-full bg-[#9b7bf7]/35" />
-                                                                    <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#9b7bf7] shadow-lg shadow-[#9b7bf7]/30">
-                                                                        <ion-icon
-                                                                            name="cloud-upload-outline"
-                                                                            style={{
-                                                                                fontSize:
-                                                                                    "20px",
-                                                                            }}
-                                                                        />
-                                                                    </span>
-                                                                </div>
-                                                                <span className="text-[13px] font-semibold">
-                                                                    Preparing
-                                                                    your cover
+                                                            <div className="cover-upload-status">
+                                                                <span
+                                                                    className="cover-upload-spinner"
+                                                                    aria-hidden="true"
+                                                                />
+                                                                <span>
+                                                                    Uploading
+                                                                    cover…
                                                                 </span>
-                                                                <span className="mt-1 text-[11px] text-white/60">
-                                                                    Optimizing
-                                                                    for{" "}
-                                                                    {mediaStorageStatus.useForUploads &&
-                                                                    mediaStorageStatus.cloudName
-                                                                        ? mediaStorageStatus.cloudName
-                                                                        : "LixBlogs storage"}
-                                                                </span>
-                                                                <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                                                                    <span className="cover-upload-progress block h-full w-2/5 rounded-full bg-gradient-to-r from-[#8b6ae6] to-[#c4b5fd]" />
-                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}
@@ -3371,9 +3406,16 @@ export default function WritePage({ slugid }) {
                                                         {/* Separator */}
                                                         <div className="w-px h-4 bg-white/20 mx-0.5" />
                                                         {/* Replace */}
-                                                        <label
+                                                        <button
+                                                            type="button"
                                                             className="cover-toolbar-btn cursor-pointer"
-                                                            title="Replace"
+                                                            title="Replace cover"
+                                                            onClick={(event) => {
+                                                                event.stopPropagation();
+                                                                setCoverUrlMode(false);
+                                                                setCoverUrlInput("");
+                                                                setShowCoverModal(true);
+                                                            }}
                                                         >
                                                             <svg
                                                                 width="14"
@@ -3400,24 +3442,7 @@ export default function WritePage({ slugid }) {
                                                                 />
                                                                 <polyline points="21 15 16 10 5 21" />
                                                             </svg>
-                                                            <input
-                                                                type="file"
-                                                                accept={
-                                                                    IMAGE_ACCEPT_ATTR
-                                                                }
-                                                                className="hidden"
-                                                                onChange={(
-                                                                    e,
-                                                                ) => {
-                                                                    openCoverCropper(
-                                                                        e.target
-                                                                            .files?.[0],
-                                                                    );
-                                                                    e.target.value =
-                                                                        "";
-                                                                }}
-                                                            />
-                                                        </label>
+                                                        </button>
                                                         {/* Remove */}
                                                         <button
                                                             onClick={(e) => {
@@ -3799,14 +3824,6 @@ export default function WritePage({ slugid }) {
                                                 </div>
                                             )}
                                         </div>
-
-                                        {isCloudinaryMediaUrl(coverPreview) &&
-                                            !coverUploading && (
-                                                <MediaStorageChip
-                                                    status={mediaStorageStatus}
-                                                    returnTo={`/edit/${encodeURIComponent(slugid)}`}
-                                                />
-                                            )}
 
                                         {/* Spacer when emoji overlaps banner */}
                                         {pageEmoji &&
@@ -4203,10 +4220,14 @@ export default function WritePage({ slugid }) {
                                             <BlockNoteEditor
                                                 ref={editorRef}
                                                 onChange={handleEditorChange}
-                                                initialContent={editorContent}
-                                                onReady={() =>
-                                                    setEditorReady(true)
-                                                }
+                                                initialContent={editorSeedContent}
+                                                onReady={() => {
+                                                    setEditorReady(true);
+                                                    // BlockNote has consumed the seed into
+                                                    // ProseMirror; release the serialized
+                                                    // source held by the page on long posts.
+                                                    setEditorSeedContent(null);
+                                                }}
                                                 onTitleChange={(newTitle) => {
                                                     // Ignore until the initial load is done and ignore empties,
                                                     // so a content-derived title can't wipe/hide the loaded title.
@@ -4359,6 +4380,23 @@ export default function WritePage({ slugid }) {
                             {readTime} min read
                         </span>
                     </div>
+
+                    {/* Storage belongs with publishing/media configuration, not
+                        between the cover and the article's title hierarchy. */}
+                    {!coverUploading && (
+                        <div>
+                            <label
+                                className="text-[12px] font-medium mb-2 block"
+                                style={{ color: "var(--text-muted)" }}
+                            >
+                                Media storage
+                            </label>
+                            <MediaStorageChip
+                                status={mediaStorageStatus}
+                                returnTo={`/edit/${encodeURIComponent(slugid)}`}
+                            />
+                        </div>
+                    )}
 
                     {/* Owner — locked after publish */}
                     <div>

@@ -5,6 +5,35 @@ import { useTheme } from '../../context/ThemeContext';
 import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 import { readTimeFromWords } from '../../../lib/readTime';
 import { escapeHtmlAttribute, normalizeCssColor, normalizeImageUrl, normalizeUrl } from '../../utils/linkHelper';
+import { normalizeMermaidSource } from '../../utils/mermaidConfig';
+import { renderMermaidSvg } from '../../utils/mermaidRenderer';
+import { getLixShikiHighlighter, normalizeShikiLanguage } from '../../utils/shikiHighlighter';
+
+let previewLanguageLoadTail = Promise.resolve();
+const previewLoadedLanguages = new Set();
+
+async function getPreviewHighlighter(languages) {
+  const highlighter = await getLixShikiHighlighter();
+  const missing = [...languages]
+    .map(normalizeShikiLanguage)
+    .filter((language) => !previewLoadedLanguages.has(language));
+  if (missing.length) {
+    const load = previewLanguageLoadTail.then(async () => {
+      for (const language of missing) {
+        if (previewLoadedLanguages.has(language)) continue;
+        try {
+          await highlighter.loadLanguage(language);
+          previewLoadedLanguages.add(language);
+        } catch {
+          // Unknown language identifiers remain readable as plain code.
+        }
+      }
+    });
+    previewLanguageLoadTail = load.catch(() => {});
+    await load;
+  }
+  return highlighter;
+}
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -96,6 +125,15 @@ function FloatingTOC({ headings }) {
 function renderBlocksToHTML(blocks) {
   if (!blocks || !blocks.length) return '';
 
+  const publishedTextColor = (value) => {
+    // BlockNote can carry its internal named gray mark out of a code block and
+    // into following paragraphs. LixBlogs' explicit Gray option is stored as
+    // #9ca3af, so named gray/grey is safe to treat as an inherited default.
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'gray' || normalized === 'grey' || normalized === 'default') return '';
+    return normalizeCssColor(value);
+  };
+
   function inlineToHTML(content) {
     if (!content || !Array.isArray(content)) return '';
     return content.map((c) => {
@@ -148,7 +186,7 @@ function renderBlocksToHTML(blocks) {
       if (s.strike) text = `<del>${text}</del>`;
       if (s.code) text = `<code>${text}</code>`;
       if (s.underline) text = `<u>${text}</u>`;
-      const textColor = normalizeCssColor(s.textColor);
+      const textColor = publishedTextColor(s.textColor);
       const backgroundColor = normalizeCssColor(s.backgroundColor);
       if (textColor) text = `<span style="color:${textColor}">${text}</span>`;
       if (backgroundColor) text = `<span style="background:${backgroundColor};border-radius:3px;padding:0 2px">${text}</span>`;
@@ -393,6 +431,9 @@ export default function BlogPreview({
     const root = contentRef.current;
     if (!root) return;
     const gen = ++effectGenRef.current;
+    const mermaidWindowHandlers = [];
+    const mermaidController = new AbortController();
+    const mermaidFullscreenCleanups = new Set();
 
     // Set the base HTML — we own the DOM from here, React won't touch it
     root.innerHTML = renderedHTML || '';
@@ -448,59 +489,11 @@ export default function BlogPreview({
     // ── Mermaid diagrams (matches editor MermaidBlock config) ──
     const mermaidEls = root.querySelectorAll('.preview-mermaid-block[data-diagram]');
     if (mermaidEls.length) {
-      import('mermaid').then((mod) => {
+      Promise.resolve().then(() => {
         if (isStale()) return;
-        const mermaid = mod.default || mod;
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: 'strict',
-          theme: isDark ? 'dark' : 'default',
-          themeVariables: isDark ? {
-            primaryColor: '#232d3f',
-            primaryTextColor: '#e4e4e7',
-            primaryBorderColor: '#c4b5fd',
-            lineColor: '#8b8fa3',
-            secondaryColor: '#1e1e2e',
-            tertiaryColor: '#141a26',
-            fontFamily: "'lixFont', sans-serif",
-            fontSize: '16px',
-            nodeTextColor: '#e4e4e7',
-            nodeBorder: '#c4b5fd',
-            mainBkg: '#232d3f',
-            clusterBkg: '#1a1f2e',
-            clusterBorder: '#333',
-            titleColor: '#c4b5fd',
-            edgeLabelBackground: '#141a26',
-            git0: '#c4b5fd', git1: '#7c5cbf', git2: '#4ade80', git3: '#f59e0b',
-            git4: '#ef4444', git5: '#3b82f6', git6: '#ec4899', git7: '#14b8a6',
-            gitBranchLabel0: '#e4e4e7', gitBranchLabel1: '#e4e4e7',
-            gitBranchLabel2: '#e4e4e7', gitBranchLabel3: '#e4e4e7',
-            gitInv0: '#141a26',
-          } : {
-            primaryColor: '#e8e0ff',
-            primaryTextColor: '#1a1a2e',
-            primaryBorderColor: '#7c5cbf',
-            lineColor: '#6b7280',
-            secondaryColor: '#f3f0ff',
-            tertiaryColor: '#f9fafb',
-            fontFamily: "'lixFont', sans-serif",
-            fontSize: '16px',
-            nodeTextColor: '#1a1a2e',
-            nodeBorder: '#7c5cbf',
-            mainBkg: '#e8e0ff',
-            clusterBkg: '#f3f0ff',
-            clusterBorder: '#d1d5db',
-            titleColor: '#7c5cbf',
-            edgeLabelBackground: '#f9fafb',
-            git0: '#7c5cbf', git1: '#9b7bf7', git2: '#16a34a', git3: '#d97706',
-            git4: '#dc2626', git5: '#2563eb', git6: '#db2777', git7: '#0d9488',
-          },
-          flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: false, useMaxWidth: false },
-          sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
-          gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
-        });
         // Render all diagrams — don't bail early on stale, just skip applying to unmounted elements
         async function openFullscreenMermaid(diagramText, isDark) {
+          const fullscreenController = new AbortController();
           const overlay = document.createElement('div');
           overlay.className = 'mermaid-fullscreen-overlay';
           overlay.setAttribute('role', 'dialog');
@@ -567,9 +560,11 @@ export default function BlogPreview({
           document.body.style.overflow = 'hidden';
 
           const closeFullscreen = () => {
+            fullscreenController.abort();
             overlay.remove();
             document.body.style.overflow = '';
             window.removeEventListener('keydown', handleKeyDown);
+            mermaidFullscreenCleanups.delete(closeFullscreen);
           };
 
           const handleKeyDown = (e) => {
@@ -578,6 +573,7 @@ export default function BlogPreview({
             }
           };
           window.addEventListener('keydown', handleKeyDown);
+          mermaidFullscreenCleanups.add(closeFullscreen);
 
           closeBtn.addEventListener('click', closeFullscreen);
 
@@ -588,8 +584,8 @@ export default function BlogPreview({
           let panStart = { ...pan };
 
           const updateTransform = () => {
-            svgContainer.style.transform = `translate(\${pan.x}px, \${pan.y}px) scale(\${zoom})`;
-            zoomLabel.textContent = `\${Math.round(zoom * 100)}%`;
+            svgContainer.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`;
+            zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
           };
 
           contentEl.addEventListener('wheel', (e) => {
@@ -656,52 +652,30 @@ export default function BlogPreview({
             updateTransform();
           });
 
-          const overlayId = `fullscreen-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}`;
-          const tempOverlayDiv = document.createElement('div');
-          tempOverlayDiv.id = 'container-' + overlayId;
-          tempOverlayDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
-          document.body.appendChild(tempOverlayDiv);
-
           try {
-            const { svg } = await mermaid.render(overlayId, diagramText, tempOverlayDiv);
-            tempOverlayDiv.remove();
-
-            svgContainer.innerHTML = svg;
-            const svgEl = svgContainer.querySelector('svg');
-            if (svgEl) {
-              svgEl.removeAttribute('width');
-              svgEl.removeAttribute('height');
-              svgEl.style.width = '100%';
-              svgEl.style.height = '100%';
-              svgEl.style.maxWidth = 'none';
-              svgEl.style.maxHeight = 'none';
-            }
+            svgContainer.innerHTML = await renderMermaidSvg(
+              diagramText,
+              isDark,
+              fullscreenController.signal,
+            );
           } catch (err) {
-            showRenderError(svgContainer, err?.message || 'Diagram error', 'pre');
-            tempOverlayDiv.remove();
-            try { document.getElementById(overlayId)?.remove(); } catch {}
+            if (err?.name !== 'AbortError') {
+              showRenderError(svgContainer, err?.message || 'Diagram error', 'pre');
+            }
           }
         }
 
         (async () => {
           for (const el of mermaidEls) {
-            const id = `preview-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}`;
             try {
-              let diagram = decodeURIComponent(el.dataset.diagram).trim();
-              diagram = diagram.replace(/^s*gitgraph/i, 'gitGraph');
-              diagram = diagram.replace(/^s*sequencediagram/i, 'sequenceDiagram');
-              diagram = diagram.replace(/^s*classDiagram/i, 'classDiagram');
-              diagram = diagram.replace(/^s*stateDiagram/i, 'stateDiagram');
-              diagram = diagram.replace(/^s*erDiagram/i, 'erDiagram');
-              diagram = diagram.replace(/^s*gantt/i, 'gantt');
-
-              const tempDiv = document.createElement('div');
-              tempDiv.id = 'container-' + id;
-              tempDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
-              document.body.appendChild(tempDiv);
-
-              const { svg } = await mermaid.render(id, diagram, tempDiv);
-              tempDiv.remove();
+              const diagram = normalizeMermaidSource(
+                decodeURIComponent(el.dataset.diagram),
+              );
+              const svg = await renderMermaidSvg(
+                diagram,
+                isDark,
+                mermaidController.signal,
+              );
 
               // Only apply if element is still in the DOM and this is the current effect
               if (el.isConnected && !isStale()) {
@@ -713,16 +687,42 @@ export default function BlogPreview({
                 const svgContainer = document.createElement('div');
                 svgContainer.className = 'preview-mermaid-svg-container';
                 svgContainer.innerHTML = svg;
-                const svgEl = svgContainer.querySelector('svg');
-                if (svgEl) {
-                  svgEl.removeAttribute('width');
-                  svgEl.style.width = '100%';
-                  svgEl.style.maxWidth = 'none';
-                  svgEl.style.height = 'auto';
-                  svgEl.style.minHeight = '180px';
-                }
+
+                let zoom = 1;
+                let panX = 0;
+                let panY = 0;
+                const updateView = () => {
+                  svgContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+                  zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+                };
+
+                const controls = document.createElement('div');
+                controls.className = 'preview-mermaid-controls';
+
+                const zoomOutBtn = document.createElement('button');
+                zoomOutBtn.type = 'button';
+                zoomOutBtn.title = 'Zoom out';
+                zoomOutBtn.setAttribute('aria-label', 'Zoom out');
+                zoomOutBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>';
+
+                const zoomLabel = document.createElement('span');
+                zoomLabel.className = 'preview-mermaid-zoom-label';
+                zoomLabel.textContent = '100%';
+
+                const zoomInBtn = document.createElement('button');
+                zoomInBtn.type = 'button';
+                zoomInBtn.title = 'Zoom in';
+                zoomInBtn.setAttribute('aria-label', 'Zoom in');
+                zoomInBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+
+                const resetBtn = document.createElement('button');
+                resetBtn.type = 'button';
+                resetBtn.title = 'Reset view';
+                resetBtn.setAttribute('aria-label', 'Reset view');
+                resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><polyline points="1 4 1 10 7 10"/></svg>';
 
                 const fsBtn = document.createElement('button');
+                fsBtn.type = 'button';
                 fsBtn.className = 'preview-mermaid-fullscreen-btn';
                 fsBtn.title = 'Open fullscreen';
                 fsBtn.setAttribute('aria-label', 'Open fullscreen');
@@ -734,16 +734,66 @@ export default function BlogPreview({
                   openFullscreenMermaid(diagram, isDark);
                 });
 
+                zoomOutBtn.addEventListener('click', () => {
+                  zoom = Math.max(0.5, zoom - 0.2);
+                  updateView();
+                });
+                zoomInBtn.addEventListener('click', () => {
+                  zoom = Math.min(3, zoom + 0.2);
+                  updateView();
+                });
+                resetBtn.addEventListener('click', () => {
+                  zoom = 1;
+                  panX = 0;
+                  panY = 0;
+                  updateView();
+                });
+
+                let dragging = false;
+                let dragX = 0;
+                let dragY = 0;
+                let startX = 0;
+                let startY = 0;
+                svgContainer.addEventListener('mousedown', (event) => {
+                  if (event.button !== 0 || zoom <= 1) return;
+                  event.preventDefault();
+                  dragging = true;
+                  startX = event.clientX;
+                  startY = event.clientY;
+                  dragX = panX;
+                  dragY = panY;
+                  wrapper.classList.add('is-panning');
+                });
+                const handleInlineMermaidMove = (event) => {
+                  if (!dragging) return;
+                  panX = dragX + event.clientX - startX;
+                  panY = dragY + event.clientY - startY;
+                  updateView();
+                };
+                const handleInlineMermaidUp = () => {
+                  dragging = false;
+                  wrapper.classList.remove('is-panning');
+                };
+                window.addEventListener('mousemove', handleInlineMermaidMove);
+                window.addEventListener('mouseup', handleInlineMermaidUp);
+                mermaidWindowHandlers.push({
+                  move: handleInlineMermaidMove,
+                  up: handleInlineMermaidUp,
+                });
+
                 wrapper.appendChild(svgContainer);
+                controls.appendChild(zoomInBtn);
+                controls.appendChild(zoomLabel);
+                controls.appendChild(zoomOutBtn);
+                controls.appendChild(resetBtn);
+                wrapper.appendChild(controls);
                 wrapper.appendChild(fsBtn);
                 el.appendChild(wrapper);
               }
             } catch (err) {
-              if (el.isConnected && !isStale()) {
+              if (err?.name !== 'AbortError' && el.isConnected && !isStale()) {
                 showRenderError(el, err?.message || 'Diagram error', 'pre');
               }
-              try { document.getElementById(id)?.remove(); } catch {}
-              try { document.getElementById('container-' + id)?.remove(); } catch {}
             }
           }
         })();
@@ -753,17 +803,12 @@ export default function BlogPreview({
     // ── Code blocks: Shiki syntax highlighting + language label + copy button ──
     const codeEls = root.querySelectorAll('pre > code[class*="language-"]');
     if (codeEls.length) {
-      import('shiki').then(({ createHighlighter }) => {
-        if (isStale()) return;
-        const langs = new Set();
-        codeEls.forEach((el) => {
-          const m = el.className.match(/language-(\w+)/);
-          if (m && m[1] && m[1] !== 'text') langs.add(m[1]);
-        });
-        return createHighlighter({
-          themes: ['vitesse-dark', 'vitesse-light'],
-          langs: [...langs],
-        }).then((highlighter) => {
+      const langs = new Set();
+      codeEls.forEach((el) => {
+        const m = el.className.match(/language-(\w+)/);
+        if (m && m[1] && m[1] !== 'text') langs.add(m[1]);
+      });
+      getPreviewHighlighter(langs).then((highlighter) => {
           if (isStale()) return;
           const shikiTheme = isDark ? 'vitesse-dark' : 'vitesse-light';
           codeEls.forEach((codeEl) => {
@@ -809,7 +854,6 @@ export default function BlogPreview({
             };
             pre.appendChild(btn);
           });
-        });
       }).catch((err) => console.error('Shiki load failed:', err));
     }
 
@@ -883,6 +927,8 @@ export default function BlogPreview({
     root.addEventListener('click', handleModifierClick);
 
     return () => {
+      mermaidController.abort();
+      [...mermaidFullscreenCleanups].forEach((close) => close());
       root.removeEventListener('click', handleModifierClick);
       linkHandlers.forEach(({ el, onEnter, onLeave }) => {
         el.removeEventListener('mouseenter', onEnter);
@@ -891,6 +937,10 @@ export default function BlogPreview({
       mentionHandlers.forEach(({ el, onEnter, onLeave }) => {
         el.removeEventListener('mouseenter', onEnter);
         el.removeEventListener('mouseleave', onLeave);
+      });
+      mermaidWindowHandlers.forEach(({ move, up }) => {
+        window.removeEventListener('mousemove', move);
+        window.removeEventListener('mouseup', up);
       });
       clearTimeout(mentionTimerRef.current);
     };

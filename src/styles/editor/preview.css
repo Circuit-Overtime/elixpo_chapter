@@ -446,9 +446,10 @@
   border: 1px solid var(--border-default);
   border-radius: 12px;
   background: var(--bg-surface);
-  padding: 20px;
+  padding: 0;
   margin: 0.75em 0;
-  min-height: 200px;
+  height: clamp(280px, 48vw, 420px);
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -457,10 +458,20 @@
 }
 
 .blog-preview-content .preview-mermaid-block svg {
-  max-width: none;
-  width: 100%;
-  height: auto;
-  min-height: 180px;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+.blog-preview-content .preview-mermaid-block svg text,
+.blog-preview-content .preview-mermaid-block svg .nodeLabel,
+.blog-preview-content .preview-mermaid-block svg .edgeLabel,
+.blog-preview-content .preview-mermaid-block svg foreignObject div {
+  font-family: 'lixDefault', 'Inter', system-ui, sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.3 !important;
 }
 
 /* ===== Preview Inline TOC Block (matches editor toc-block) ===== */
@@ -756,35 +767,142 @@
 .preview-mermaid-wrapper {
   position: relative;
   width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.preview-mermaid-wrapper.is-panning {
+  cursor: grabbing;
+}
+
+.preview-mermaid-svg-container {
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+  transition: transform 0.06s linear;
+  will-change: transform;
+}
+
+.preview-mermaid-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 14px rgba(23, 18, 42, 0.08);
+}
+
+[data-theme="dark"] .preview-mermaid-controls {
+  background: rgba(14, 18, 27, 0.88);
+}
+
+.preview-mermaid-controls button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s, transform 0.15s;
+}
+
+.preview-mermaid-controls button:hover {
+  color: #8b6ee8;
+  background: rgba(139, 110, 232, 0.1);
+}
+
+.preview-mermaid-controls button:active {
+  transform: scale(0.92);
+}
+
+.preview-mermaid-controls button:focus-visible,
+.preview-mermaid-fullscreen-btn:focus-visible {
+  outline: 2px solid #9b7cf6;
+  outline-offset: 2px;
+}
+
+.preview-mermaid-zoom-label {
+  min-width: 38px;
+  color: var(--text-faint);
+  font: 11px/1 'lixDefault', system-ui, sans-serif;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .preview-mermaid-fullscreen-btn {
   position: absolute;
   top: 10px;
   right: 10px;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 6px;
   border: 1px solid var(--border-default);
-  background: var(--bg-surface);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
   color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.15s, background-color 0.15s, color 0.15s;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(23, 18, 42, 0.08);
+  transition: opacity 0.15s, transform 0.15s, background-color 0.15s, color 0.15s;
   z-index: 10;
 }
 
-.blog-preview-content .preview-mermaid-block:hover .preview-mermaid-fullscreen-btn {
+[data-theme="dark"] .preview-mermaid-fullscreen-btn {
+  background: rgba(14, 18, 27, 0.88);
+}
+
+.preview-mermaid-wrapper:hover .preview-mermaid-fullscreen-btn,
+.preview-mermaid-wrapper:focus-within .preview-mermaid-fullscreen-btn {
   opacity: 1;
+  transform: translateY(0);
 }
 
 .preview-mermaid-fullscreen-btn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
+  background-color: rgba(139, 110, 232, 0.12);
+  color: #8b6ee8;
+}
+
+@media (max-width: 640px) {
+  .blog-preview-content .preview-mermaid-block {
+    height: 280px;
+  }
+
+  .preview-mermaid-svg-container {
+    padding: 14px;
+  }
+
+  .preview-mermaid-fullscreen-btn {
+    opacity: 1;
+    transform: none;
+  }
+
+  .preview-mermaid-controls {
+    right: 8px;
+    bottom: 8px;
+  }
 }
