@@ -79,6 +79,14 @@ class Display(ABC):
     def blit(self, sprite, x, y, w, h):
         """Copy a w*h RGB565 sprite (bytes-like) to (x,y)."""
 
+    def blit_2x(self, sprite, x, y, w, h):
+        """Draw an RGB565 sprite at exactly 2× size.
+
+        Hardware backends can override this with a native framebuffer kernel;
+        the portable fallback keeps simulator/custom displays functional.
+        """
+        self.blit_scale(sprite, x, y, w, h, 2)
+
     def blit_scale(self, sprite, x, y, w, h, scale, dim=0.0):
         """Draw sprite scaled up by `scale`. dim 0.0–1.0 blends toward theme BG."""
         import struct

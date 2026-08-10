@@ -835,7 +835,7 @@ _UPLOAD_FORM = (
     b"approved &middot; <span id='okid' style='font-family:ui-monospace,monospace'>__DEVICE_ID__</span></span>"
     b"<h2>Pick a file to send</h2>"
     b"<p class='sub'>Images and videos are optimised in your browser before upload. "
-    b"Video is capped at 20 seconds for smooth badge playback.</p>"
+    b"Video is capped at 12 seconds for smooth fullscreen playback.</p>"
     b"<label class='drop' id='drop'>"
     b"<input id='file' type='file' accept='image/*,video/*,.txt,.md'>"
     b"<div class='icon'>&uarr;</div>"
@@ -870,7 +870,7 @@ _UPLOAD_FORM = (
     b"Powered by <a href='https://oreo.elixpo.com' target='_blank'>oreo.elixpo.com</a></div>"
     b"<script>"
     b"const $=id=>document.getElementById(id);"
-    b"const MAX_DIM=240,VIDEO_DIM=160,VIDEO_FPS=8,VIDEO_SECONDS=20,MAX_UPLOAD=8*1024*1024;"
+    b"const MAX_DIM=240,VIDEO_W=160,VIDEO_H=120,VIDEO_FPS=15,VIDEO_SECONDS=12,MAX_UPLOAD=8*1024*1024;"
     # The server inlined our device_id into the markup as
     # __DEVICE_ID__ before sending the page, so we just read it off
     # the DOM rather than running an auth handshake.
@@ -1007,8 +1007,10 @@ _UPLOAD_FORM = (
     b"  try{await new Promise((r,j)=>{v.onloadeddata=r;v.onerror=()=>j(new Error('unsupported video'));});"
     b"    const dur=Math.min(v.duration,VIDEO_SECONDS);"
     b"    if(!isFinite(dur)||dur<=0)throw new Error('video has no readable duration');"
-    b"    const sc=Math.min(1,VIDEO_DIM/Math.max(v.videoWidth,v.videoHeight));"
-    b"    const w=Math.max(1,Math.round(v.videoWidth*sc)),h=Math.max(1,Math.round(v.videoHeight*sc));"
+    # Fixed 4:3 canvas maps exactly to the 320x240 LCD via the native 2x
+    # playback kernel. Cover scaling deliberately crops wide/tall edges rather
+    # than letterboxing, as requested for true fullscreen playback.
+    b"    const w=VIDEO_W,h=VIDEO_H;"
     b"    const count=Math.max(1,Math.floor(dur*VIDEO_FPS));"
     b"    const head=new Uint8Array(12);head.set([82,86,53,1]);"
     b"    head[4]=w&255;head[5]=w>>8;head[6]=h&255;head[7]=h>>8;"
@@ -1018,7 +1020,10 @@ _UPLOAD_FORM = (
     b"    for(let f=0;f<count;f++){"
     b"      const t=Math.min(f/VIDEO_FPS,Math.max(0,dur-.001));"
     b"      if(Math.abs(v.currentTime-t)>.001){await new Promise((r,j)=>{v.onseeked=r;v.onerror=j;v.currentTime=t;});}"
-    b"      ctx.drawImage(v,0,0,w,h);const rgba=ctx.getImageData(0,0,w,h).data;"
+    b"      const sc=Math.max(w/v.videoWidth,h/v.videoHeight);"
+    b"      const dw=v.videoWidth*sc,dh=v.videoHeight*sc;"
+    b"      ctx.drawImage(v,(w-dw)/2,(h-dh)/2,dw,dh);"
+    b"      const rgba=ctx.getImageData(0,0,w,h).data;"
     b"      const cur=new Uint16Array(w*h);"
     b"      for(let i=0,o=0;i<rgba.length;i+=4,o++)cur[o]=((rgba[i]>>3)<<11)|((rgba[i+1]>>2)<<5)|(rgba[i+2]>>3);"
     b"      const enc=encodeDelta(cur,prev),sz=new Uint8Array(4),n=enc.length;"

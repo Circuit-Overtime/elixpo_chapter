@@ -33,6 +33,65 @@ def _swap(c):
 CHROMA_KEY = 0x1FF8
 
 
+def _scale2_kernel(src, dst, x, y, w, h, stride):
+    """Pure-Python fallback; replaced by Viper on the badge."""
+    for sy in range(h):
+        src_row = sy * w * 2
+        dst_row0 = ((y + sy * 2) * stride + x) * 2
+        dst_row1 = dst_row0 + stride * 2
+        for sx in range(w):
+            so = src_row + sx * 2
+            do = dst_row0 + sx * 4
+            b0, b1 = src[so], src[so + 1]
+            dst[do] = b0
+            dst[do + 1] = b1
+            dst[do + 2] = b0
+            dst[do + 3] = b1
+            do += dst_row1 - dst_row0
+            dst[do] = b0
+            dst[do + 1] = b1
+            dst[do + 2] = b0
+            dst[do + 3] = b1
+
+
+_SCALE2_VIPER_SRC = """
+@micropython.viper
+def _scale2_kernel(src: ptr8, dst: ptr8, x: int, y: int,
+                   w: int, h: int, stride: int):
+    sy = 0
+    while sy < h:
+        src_row = sy * w * 2
+        dst0 = ((y + sy * 2) * stride + x) * 2
+        dst1 = dst0 + stride * 2
+        sx = 0
+        while sx < w:
+            so = src_row + sx * 2
+            do0 = dst0 + sx * 4
+            do1 = dst1 + sx * 4
+            b0 = src[so]
+            b1 = src[so + 1]
+            dst[do0] = b0
+            dst[do0 + 1] = b1
+            dst[do0 + 2] = b0
+            dst[do0 + 3] = b1
+            dst[do1] = b0
+            dst[do1 + 1] = b1
+            dst[do1 + 2] = b0
+            dst[do1 + 3] = b1
+            sx += 1
+        sy += 1
+"""
+
+try:
+    import micropython as _mp
+    if hasattr(_mp, "viper"):
+        _scale_ns = {"micropython": _mp}
+        exec(_SCALE2_VIPER_SRC, _scale_ns)
+        _scale2_kernel = _scale_ns["_scale2_kernel"]
+except Exception:
+    pass
+
+
 class Display(api.Display):
     def __init__(self):
         spi = SPI(
@@ -124,6 +183,11 @@ class Display(api.Display):
             buf = bytearray(sprite[:w * h * 2])
         src = framebuf.FrameBuffer(buf, w, h, framebuf.RGB565)
         self._fb.blit(src, x, y, CHROMA_KEY)
+        self._dirty = True
+
+    def blit_2x(self, sprite, x, y, w, h):
+        """Native 2× RGB565 expansion directly into the screen buffer."""
+        _scale2_kernel(sprite, self._buf, x, y, w, h, api.SCREEN_W)
         self._dirty = True
 
     def blit_scale(self, sprite, x, y, w, h, scale, dim=0.0):

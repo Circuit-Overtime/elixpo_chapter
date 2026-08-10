@@ -90,6 +90,11 @@ class _Video:
             self.close()
             raise ValueError("bad RV565 dimensions")
         self.data = bytearray(self.w * self.h * 2)
+        # Reused compressed-frame buffer. The old decoder issued one flash
+        # read per command (hundreds per frame), which reduced real playback
+        # to ~0.5 FPS and starved button polling. One readinto() per frame is
+        # both allocation-free and dramatically faster.
+        self._packed = bytearray(len(self.data) + (len(self.data) // 2) + 16)
         self.index = 0
 
     def close(self):
@@ -122,37 +127,39 @@ class _Video:
         # A valid stream cannot need more than raw pixels plus commands.
         if left <= 0 or left > len(self.data) + (len(self.data) // 2) + 16:
             return False
+        packed_view = memoryview(self._packed)[:left]
+        try:
+            got = self._f.readinto(packed_view)
+        except Exception:
+            got = 0
+        if got != left:
+            return False
+
         pixel = 0
+        src = 0
         pixels = self.w * self.h
-        while left > 0 and pixel < pixels:
-            command = self._f.read(1)
-            if not command:
-                return False
-            left -= 1
-            op = command[0] >> 6
-            count = (command[0] & 0x3f) + 1
+        while src < left and pixel < pixels:
+            command = self._packed[src]
+            src += 1
+            op = command >> 6
+            count = (command & 0x3f) + 1
             if pixel + count > pixels:
                 return False
             if op == 0:                 # unchanged pixels
                 pixel += count
             elif op == 1:               # literal RGB565 pixels
                 n = count * 2
-                if left < n:
-                    return False
-                chunk = self._f.read(n)
-                if len(chunk) != n:
+                if src + n > left:
                     return False
                 start = pixel * 2
-                self.data[start:start + n] = chunk
+                self.data[start:start + n] = packed_view[src:src + n]
                 pixel += count
-                left -= n
+                src += n
             elif op == 2:               # one RGB565 colour repeated
-                if left < 2:
+                if src + 2 > left:
                     return False
-                colour = self._f.read(2)
-                if len(colour) != 2:
-                    return False
-                left -= 2
+                colour = bytes((self._packed[src], self._packed[src + 1]))
+                src += 2
                 off = pixel * 2
                 # count is capped at 64, so this creates at most a 128-byte
                 # temporary and lets native slice assignment do the hot copy.
@@ -160,11 +167,7 @@ class _Video:
                 pixel += count
             else:
                 return False
-        if left:
-            # Future encoders may append per-frame metadata. Ignore it while
-            # preserving record alignment.
-            self._f.seek(left, 1)
-        if pixel != pixels:
+        if pixel != pixels or src != left:
             return False
         self.index += 1
         return True
@@ -278,6 +281,7 @@ class App(oreoOS.App):
         self._video_name = ""
         self._video_playing = True
         self._video_elapsed = 0.0
+        self._video_needs_clear = True
         self._dirty = True
 
     def on_exit(self):
@@ -289,6 +293,7 @@ class App(oreoOS.App):
         self._video = None
         self._video_name = ""
         self._video_elapsed = 0.0
+        self._video_needs_clear = True
 
     def _is_video(self):
         return (not self._is_add_tile() and self._idx < len(self._names) and
@@ -414,6 +419,12 @@ class App(oreoOS.App):
     def draw(self, d):
         if not self._dirty:
             return
+        # Video owns the complete viewport. Avoid rebuilding Gallery's header,
+        # hint bar, and carousel chrome for every frame.
+        if self._is_video():
+            self._draw_video(d)
+            self._dirty = False
+            return
         d.clear(theme.BG)
         widgets.draw_header(d, "GALLERY")
         if self._is_add_tile():
@@ -442,35 +453,39 @@ class App(oreoOS.App):
         if self._is_add_tile():
             self._draw_add_tile(d)
         else:
-            if self._is_video():
-                self._draw_video(d)
-            else:
-                self._draw_photo(d)
+            self._draw_photo(d)
 
         self._dirty = False
 
     def _draw_video(self, d):
         video = self._open_video()
-        ay = widgets.HEADER_H + 8
-        ah = SH - widgets.HEADER_H - widgets.HINT_H - 16
+        if self._video_needs_clear:
+            d.clear(api.BLACK)
+            self._video_needs_clear = False
         if video is None:
-            d.text("broken video", (SW - 12 * 16) // 2, ay + 40,
+            d.text("broken video", (SW - 12 * 16) // 2, SH // 2 - 8,
                    theme.MUTED, scale=2)
         else:
-            px = (SW - video.w) // 2
-            py = ay + (ah - video.h) // 2
-            d.blit(video.data, px, py, video.w, video.h)
+            # New uploads are exactly 160×120 and use the hardware backend's
+            # native/Viper 2× path to cover all 320×240 pixels. Older clips
+            # retain their aspect ratio and are centred.
+            scale2 = getattr(d, "blit_2x", None)
+            if scale2 is not None and video.w * 2 <= SW and video.h * 2 <= SH:
+                px = (SW - video.w * 2) // 2
+                py = (SH - video.h * 2) // 2
+                scale2(video.data, px, py, video.w, video.h)
+            else:
+                px = (SW - video.w) // 2
+                py = (SH - video.h) // 2
+                d.blit(video.data, px, py, video.w, video.h)
             if not self._video_playing:
                 # Small pause badge over the frame.
-                d.rect(SW // 2 - 15, ay + ah // 2 - 15, 30, 30,
+                d.rect(SW // 2 - 15, SH // 2 - 15, 30, 30,
                        theme.BG, fill=True)
-                d.rect(SW // 2 - 7, ay + ah // 2 - 8, 4, 16,
+                d.rect(SW // 2 - 7, SH // 2 - 8, 4, 16,
                        api.WHITE, fill=True)
-                d.rect(SW // 2 + 3, ay + ah // 2 - 8, 4, 16,
+                d.rect(SW // 2 + 3, SH // 2 - 8, 4, 16,
                        api.WHITE, fill=True)
-        ar_y = ay + ah // 2 - 8
-        d.text("<", 4, ar_y, theme.PRIMARY, scale=2)
-        d.text(">", SW - 18, ar_y, theme.PRIMARY, scale=2)
 
     # ── photo render ─────────────────────────────────────────────────────
     def _draw_photo(self, d):
