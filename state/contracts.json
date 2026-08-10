@@ -13,14 +13,14 @@
       "status": ""
     },
     "candidates.json": {
-      "expires_at": "",
+      "expires_at": "2026-08-11T07:42:34.906086+00:00",
       "key": "",
-      "payload_sha256": "efdde6d92d4f66142d1f944abcdc01274bc17eb31af9927ef65b01223ce84900",
-      "produced_at": "2026-08-09T12:00:00+00:00",
-      "producer": "migration",
+      "payload_sha256": "fab83cb71a3e9546a51c40ceefc7698a50e9f42e9583384a663d3fc4e5b5dc76",
+      "produced_at": "2026-08-10T07:42:34.906086+00:00",
+      "producer": "scout",
       "run_id": "",
       "schema_version": 1,
-      "sequence": 1,
+      "sequence": 2,
       "state_file": "candidates.json",
       "status": ""
     },
@@ -170,5 +170,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": "2026-08-10T07:22:44.523793+00:00"
+  "updated_at": "2026-08-10T07:42:34.906086+00:00"
 }
