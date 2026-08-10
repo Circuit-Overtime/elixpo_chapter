@@ -205,13 +205,6 @@ function persistableCover(url) {
     return typeof url === "string" && /^https?:\/\//i.test(url) ? url : null;
 }
 
-function isCloudinaryMediaUrl(url) {
-    return (
-        typeof url === "string" &&
-        /^https:\/\/res\.cloudinary\.com\//i.test(url)
-    );
-}
-
 function generateBlogId() {
     // Short 8-char alphanumeric ID
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -3842,14 +3835,6 @@ export default function WritePage({ slugid }) {
                                             )}
                                         </div>
 
-                                        {isCloudinaryMediaUrl(coverPreview) &&
-                                            !coverUploading && (
-                                                <MediaStorageChip
-                                                    status={mediaStorageStatus}
-                                                    returnTo={`/edit/${encodeURIComponent(slugid)}`}
-                                                />
-                                            )}
-
                                         {/* Spacer when emoji overlaps banner */}
                                         {pageEmoji &&
                                             (coverPreview ||
@@ -4401,6 +4386,23 @@ export default function WritePage({ slugid }) {
                             {readTime} min read
                         </span>
                     </div>
+
+                    {/* Storage belongs with publishing/media configuration, not
+                        between the cover and the article's title hierarchy. */}
+                    {!coverUploading && (
+                        <div>
+                            <label
+                                className="text-[12px] font-medium mb-2 block"
+                                style={{ color: "var(--text-muted)" }}
+                            >
+                                Media storage
+                            </label>
+                            <MediaStorageChip
+                                status={mediaStorageStatus}
+                                returnTo={`/edit/${encodeURIComponent(slugid)}`}
+                            />
+                        </div>
+                    )}
 
                     {/* Owner — locked after publish */}
                     <div>
