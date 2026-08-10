@@ -272,6 +272,35 @@ export const MermaidBlock = createReactBlockSpec(
       const save = useCallback(() => {
         editor.updateBlock(block, { props: { diagram: value } });
         setEditing(false);
+
+        // Completing a custom block should return the author to normal writing.
+        // Reuse an existing paragraph directly below the diagram, otherwise add
+        // one, then focus it after the Mermaid node view has finished rerendering.
+        requestAnimationFrame(() => {
+          try {
+            const documentBlocks = editor.document;
+            const blockIndex = documentBlocks.findIndex((item) => item.id === block.id);
+            if (blockIndex < 0) return;
+
+            let nextBlock = documentBlocks[blockIndex + 1];
+            if (!nextBlock || nextBlock.type !== 'paragraph') {
+              editor.insertBlocks(
+                [{ type: 'paragraph', content: [] }],
+                block.id,
+                'after',
+              );
+              nextBlock = editor.document[blockIndex + 1];
+            }
+            if (!nextBlock) return;
+
+            requestAnimationFrame(() => {
+              try {
+                editor.setTextCursorPosition(nextBlock.id, 'start');
+                editor._tiptapEditor?.commands?.focus();
+              } catch {}
+            });
+          } catch {}
+        });
       }, [editor, block, value]);
 
       const handleDelete = useCallback(() => {
