@@ -122,13 +122,12 @@ const oreoFlowStages = [
   { id: "project", name: "Project", role: "synchronize" },
 ] as const;
 
-function A2ANode({ name, role, run }: { name: string; role: string; run?: DashboardRun }) {
+function A2ANode({ name, role, run, step }: { name: string; role: string; run?: DashboardRun; step: number }) {
   const tone = run ? runTone(run) : "neutral";
   const content = <>
-    <span className={`a2a-agent-icon tone-${tone}`}><Bot size={17} /></span>
+    <span className="a2a-agent-head"><span className={`a2a-agent-icon tone-${tone}`}><Bot size={18} /></span><small>Stage {String(step).padStart(2, "0")}</small></span>
     <span className="a2a-agent-copy"><strong>{name}</strong><small>{role}</small></span>
-    <span className={`a2a-agent-state tone-${tone}`}>{run ? status(run) : "no recent run"}</span>
-    <span className="a2a-agent-meta">{run ? `${run.branch} · ${time(run.updatedAt)}` : "GitHub has not returned a run in this feed"}</span>
+    <span className="a2a-agent-foot"><span className={`a2a-agent-state tone-${tone}`}>{run ? status(run) : "no recent run"}</span><span className="a2a-agent-meta">{run ? `${run.branch} · ${time(run.updatedAt)}` : "No matching GitHub run returned"}</span></span>
   </>;
   return run?.url
     ? <a className="a2a-agent" href={run.url} target="_blank" rel="noreferrer">{content}</a>
@@ -138,10 +137,9 @@ function A2ANode({ name, role, run }: { name: string; role: string; run?: Dashbo
 function A2AReceiptNode({ receipt, name, role, icon }: { receipt?: StateReceipt; name: string; role: string; icon: React.ReactNode }) {
   const tone = receipt ? receiptTone(receipt) : "neutral";
   const content = <>
-    <span className={`a2a-agent-icon tone-${tone}`}>{icon}</span>
-    <span className="a2a-agent-copy"><strong>{name}</strong><small>{role}</small></span>
-    <span className={`a2a-agent-state tone-${tone}`}>{receipt?.status || "no receipt"}</span>
-    <span className="a2a-agent-meta">{receipt ? `${receipt.stage} · ${receipt.updatedAt ? time(receipt.updatedAt) : "time not reported"}` : "No committed state receipt returned"}</span>
+    <span className="a2a-agent-head"><span className={`a2a-agent-icon tone-${tone}`}>{icon}</span><small>{role}</small></span>
+    <span className="a2a-agent-copy"><strong>{name}</strong><small>Continuous supervision</small></span>
+    <span className="a2a-agent-foot"><span className={`a2a-agent-state tone-${tone}`}>{receipt?.status || "no receipt"}</span><span className="a2a-agent-meta">{receipt ? `${receipt.stage} · ${receipt.updatedAt ? time(receipt.updatedAt) : "time not reported"}` : "No committed state receipt returned"}</span></span>
   </>;
   return receipt?.issueUrl
     ? <a className="a2a-agent a2a-support-agent" href={receipt.issueUrl} target="_blank" rel="noreferrer">{content}</a>
@@ -195,7 +193,6 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
   const failed = snapshot.runs.filter((run) => ["failure", "timed_out", "action_required"].includes(run.conclusion || ""));
   const openWork = snapshot.work.filter((item) => item.state === "open");
   const runtimeRoute = uniqueRuntimeRoute([...active, ...snapshot.runs]);
-  const securityWatch = snapshot.security.slice(0, 3);
   const oreoRuns = snapshot.runs.filter((run) => run.floor === "oreoflow");
   const stageRuns = new Map(oreoFlowStages.map((stage) => [stage.id, oreoRuns.find((run) => run.name.toLowerCase().includes(stage.id))]));
   const doctorReceipt = snapshot.receipts.find((receipt) => receipt.name === "doctor");
@@ -221,7 +218,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
               <div className="a2a-primary-route">
                 {oreoFlowStages.map((stage, index) => (
                   <div className="a2a-hop" key={stage.id}>
-                    <A2ANode name={stage.name} role={stage.role} run={stageRuns.get(stage.id)} />
+                    <A2ANode name={stage.name} role={stage.role} run={stageRuns.get(stage.id)} step={index + 1} />
                     {index < oreoFlowStages.length - 1 && <span className="a2a-connector"><i /><ArrowRight size={15} /></span>}
                   </div>
                 ))}
@@ -232,15 +229,6 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
                 <A2AReceiptNode receipt={janitorReceipt} name="Janitor" role="cleanup" icon={<Box size={17} />} />
               </div>
             </div>
-            <aside className="security-observatory">
-              <header><span><ShieldCheck size={17} /> Security watch</span><Link href="/alerts">Open <ArrowRight size={13} /></Link></header>
-              {securityWatch.length ? securityWatch.map((event) => (
-                <div className="observatory-event" key={event.id}>
-                  <i className={`tone-${event.level === "critical" ? "danger" : event.level}`} />
-                  <span><strong>{event.title}</strong><small>{event.detail}</small><em>{time(event.occurredAt)}</em></span>
-                </div>
-              )) : <p>No security activity returned by GitHub.</p>}
-            </aside>
           </div>
           <div className="building-source-note"><Workflow size={17} /><span>A2A connections show the configured OreoFlow route; node state comes from GitHub Actions and committed receipts. Room memory is not estimated.</span></div>
           <RuntimeRail runs={runtimeRoute} />
@@ -257,7 +245,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
         </section>
 
         <section className="real-panel security-card">
-          <div className="real-panel-head"><div><small>Building security</small><h2>Latest activity</h2></div><Link href="/alerts">All alerts <ArrowRight size={15} /></Link></div>
+          <div className="real-panel-head"><div><small>Building security</small><h2>Latest activity</h2></div><Link href="/security">Open security <ArrowRight size={15} /></Link></div>
           {snapshot.security.length ? <div className="security-feed">{snapshot.security.slice(0, 5).map((event) => <div key={event.id}><span className={`security-dot tone-${event.level === "critical" ? "danger" : event.level}`} /><span><strong>{event.title}</strong><small>{event.detail}</small><em>{event.source} · {time(event.occurredAt)}</em></span></div>)}</div> : <Empty>No security workflow activity was returned by GitHub.</Empty>}
         </section>
 
@@ -342,10 +330,10 @@ export function WorkView({ snapshot }: { snapshot: DashboardSnapshot }) {
   return <main className="real-page"><PageHeading eyebrow="GitHub work queue" title="Work" copy="Real issues and pull requests from the control repository, ordered by GitHub update time." /><WarningStrip snapshot={snapshot} /><section className="real-panel full-list-panel"><div className="real-panel-head"><div><small>{snapshot.repository.fullName}</small><h2>Issues and pull requests</h2></div><span>{snapshot.work.length} returned</span></div><div className="real-table">{snapshot.work.length ? snapshot.work.map((item) => <WorkRow item={item} key={`${item.kind}-${item.id}`} />) : <Empty>No issues or pull requests were returned by GitHub.</Empty>}</div></section></main>;
 }
 
-export function AlertsView({ snapshot }: { snapshot: DashboardSnapshot }) {
+export function SecurityView({ snapshot }: { snapshot: DashboardSnapshot }) {
   return (
     <main className="real-page"><PageHeading eyebrow="Guard desk" title="Building security" copy="Security workflow activity, failed Actions runs, and Doctor or Janitor decisions from committed receipts." /><WarningStrip snapshot={snapshot} />
-      <div className="alerts-grid"><section className="real-panel full-list-panel"><div className="real-panel-head"><div><small>Evidence feed</small><h2>Alerts and guard activity</h2></div><span>{snapshot.security.length} events</span></div>{snapshot.security.length ? <div className="alerts-feed">{snapshot.security.map((event) => <a href={event.url || undefined} target={event.url ? "_blank" : undefined} rel={event.url ? "noreferrer" : undefined} key={event.id}><span className={`alert-icon tone-${event.level === "critical" ? "danger" : event.level}`}>{event.level === "success" ? <ShieldCheck /> : <AlertTriangle />}</span><span><strong>{event.title}</strong><p>{event.detail}</p><small>{event.source} · {time(event.occurredAt)}</small></span>{event.url && <ExternalLink size={16} />}</a>)}</div> : <Empty>No security events were returned by GitHub or committed state receipts.</Empty>}</section>
+      <div className="alerts-grid"><section className="real-panel full-list-panel"><div className="real-panel-head"><div><small>Evidence feed</small><h2>Security and guard activity</h2></div><span>{snapshot.security.length} events</span></div>{snapshot.security.length ? <div className="alerts-feed">{snapshot.security.map((event) => <a href={event.url || undefined} target={event.url ? "_blank" : undefined} rel={event.url ? "noreferrer" : undefined} key={event.id}><span className={`alert-icon tone-${event.level === "critical" ? "danger" : event.level}`}>{event.level === "success" ? <ShieldCheck /> : <AlertTriangle />}</span><span><strong>{event.title}</strong><p>{event.detail}</p><small>{event.source} · {time(event.occurredAt)}</small></span>{event.url && <ExternalLink size={16} />}</a>)}</div> : <Empty>No security events were returned by GitHub or committed state receipts.</Empty>}</section>
       <aside className="real-panel evidence-card"><ShieldCheck size={28} /><h2>Evidence policy</h2><p>This page does not infer vulnerabilities or runtime health. It reports failed runs, security workflow runs, and durable Doctor or Janitor decisions.</p><dl><div><dt>RAM</dt><dd>Not reported</dd></div><div><dt>Workflow logs</dt><dd>Linked from GitHub</dd></div><div><dt>Receipts</dt><dd>Committed state JSON</dd></div></dl></aside></div>
     </main>
   );
