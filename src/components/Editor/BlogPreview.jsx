@@ -5,7 +5,42 @@ import { useTheme } from '../../context/ThemeContext';
 import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 import { readTimeFromWords } from '../../../lib/readTime';
 import { escapeHtmlAttribute, normalizeCssColor, normalizeImageUrl, normalizeUrl } from '../../utils/linkHelper';
-import { getMermaidConfig, normalizeMermaidSource, prepareMermaidSvg } from '../../utils/mermaidConfig';
+import { normalizeMermaidSource } from '../../utils/mermaidConfig';
+import { renderMermaidSvg } from '../../utils/mermaidRenderer';
+
+let previewHighlighterPromise = null;
+let previewLanguageLoadTail = Promise.resolve();
+const previewLoadedLanguages = new Set();
+
+async function getPreviewHighlighter(languages) {
+  if (!previewHighlighterPromise) {
+    previewHighlighterPromise = import('shiki').then(({ createHighlighter }) =>
+      createHighlighter({
+        themes: ['vitesse-dark', 'vitesse-light'],
+        langs: [],
+      }),
+    );
+  }
+
+  const highlighter = await previewHighlighterPromise;
+  const missing = [...languages].filter((language) => !previewLoadedLanguages.has(language));
+  if (missing.length) {
+    const load = previewLanguageLoadTail.then(async () => {
+      for (const language of missing) {
+        if (previewLoadedLanguages.has(language)) continue;
+        try {
+          await highlighter.loadLanguage(language);
+          previewLoadedLanguages.add(language);
+        } catch {
+          // Unknown language identifiers remain readable as plain code.
+        }
+      }
+    });
+    previewLanguageLoadTail = load.catch(() => {});
+    await load;
+  }
+  return highlighter;
+}
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -395,6 +430,8 @@ export default function BlogPreview({
     if (!root) return;
     const gen = ++effectGenRef.current;
     const mermaidWindowHandlers = [];
+    const mermaidController = new AbortController();
+    const mermaidFullscreenCleanups = new Set();
 
     // Set the base HTML — we own the DOM from here, React won't touch it
     root.innerHTML = renderedHTML || '';
@@ -450,12 +487,11 @@ export default function BlogPreview({
     // ── Mermaid diagrams (matches editor MermaidBlock config) ──
     const mermaidEls = root.querySelectorAll('.preview-mermaid-block[data-diagram]');
     if (mermaidEls.length) {
-      import('mermaid').then((mod) => {
+      Promise.resolve().then(() => {
         if (isStale()) return;
-        const mermaid = mod.default || mod;
-        mermaid.initialize(getMermaidConfig(isDark));
         // Render all diagrams — don't bail early on stale, just skip applying to unmounted elements
         async function openFullscreenMermaid(diagramText, isDark) {
+          const fullscreenController = new AbortController();
           const overlay = document.createElement('div');
           overlay.className = 'mermaid-fullscreen-overlay';
           overlay.setAttribute('role', 'dialog');
@@ -522,9 +558,11 @@ export default function BlogPreview({
           document.body.style.overflow = 'hidden';
 
           const closeFullscreen = () => {
+            fullscreenController.abort();
             overlay.remove();
             document.body.style.overflow = '';
             window.removeEventListener('keydown', handleKeyDown);
+            mermaidFullscreenCleanups.delete(closeFullscreen);
           };
 
           const handleKeyDown = (e) => {
@@ -533,6 +571,7 @@ export default function BlogPreview({
             }
           };
           window.addEventListener('keydown', handleKeyDown);
+          mermaidFullscreenCleanups.add(closeFullscreen);
 
           closeBtn.addEventListener('click', closeFullscreen);
 
@@ -611,39 +650,30 @@ export default function BlogPreview({
             updateTransform();
           });
 
-          const overlayId = `fullscreen-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-          const tempOverlayDiv = document.createElement('div');
-          tempOverlayDiv.id = 'container-' + overlayId;
-          tempOverlayDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
-          document.body.appendChild(tempOverlayDiv);
-
           try {
-            const { svg } = await mermaid.render(overlayId, diagramText, tempOverlayDiv);
-            tempOverlayDiv.remove();
-
-            svgContainer.innerHTML = prepareMermaidSvg(svg);
+            svgContainer.innerHTML = await renderMermaidSvg(
+              diagramText,
+              isDark,
+              fullscreenController.signal,
+            );
           } catch (err) {
-            showRenderError(svgContainer, err?.message || 'Diagram error', 'pre');
-            tempOverlayDiv.remove();
-            try { document.getElementById(overlayId)?.remove(); } catch {}
+            if (err?.name !== 'AbortError') {
+              showRenderError(svgContainer, err?.message || 'Diagram error', 'pre');
+            }
           }
         }
 
         (async () => {
           for (const el of mermaidEls) {
-            const id = `preview-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
             try {
               const diagram = normalizeMermaidSource(
                 decodeURIComponent(el.dataset.diagram),
               );
-
-              const tempDiv = document.createElement('div');
-              tempDiv.id = 'container-' + id;
-              tempDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
-              document.body.appendChild(tempDiv);
-
-              const { svg } = await mermaid.render(id, diagram, tempDiv);
-              tempDiv.remove();
+              const svg = await renderMermaidSvg(
+                diagram,
+                isDark,
+                mermaidController.signal,
+              );
 
               // Only apply if element is still in the DOM and this is the current effect
               if (el.isConnected && !isStale()) {
@@ -654,7 +684,7 @@ export default function BlogPreview({
 
                 const svgContainer = document.createElement('div');
                 svgContainer.className = 'preview-mermaid-svg-container';
-                svgContainer.innerHTML = prepareMermaidSvg(svg);
+                svgContainer.innerHTML = svg;
 
                 let zoom = 1;
                 let panX = 0;
@@ -758,11 +788,9 @@ export default function BlogPreview({
                 el.appendChild(wrapper);
               }
             } catch (err) {
-              if (el.isConnected && !isStale()) {
+              if (err?.name !== 'AbortError' && el.isConnected && !isStale()) {
                 showRenderError(el, err?.message || 'Diagram error', 'pre');
               }
-              try { document.getElementById(id)?.remove(); } catch {}
-              try { document.getElementById('container-' + id)?.remove(); } catch {}
             }
           }
         })();
@@ -772,17 +800,12 @@ export default function BlogPreview({
     // ── Code blocks: Shiki syntax highlighting + language label + copy button ──
     const codeEls = root.querySelectorAll('pre > code[class*="language-"]');
     if (codeEls.length) {
-      import('shiki').then(({ createHighlighter }) => {
-        if (isStale()) return;
-        const langs = new Set();
-        codeEls.forEach((el) => {
-          const m = el.className.match(/language-(\w+)/);
-          if (m && m[1] && m[1] !== 'text') langs.add(m[1]);
-        });
-        return createHighlighter({
-          themes: ['vitesse-dark', 'vitesse-light'],
-          langs: [...langs],
-        }).then((highlighter) => {
+      const langs = new Set();
+      codeEls.forEach((el) => {
+        const m = el.className.match(/language-(\w+)/);
+        if (m && m[1] && m[1] !== 'text') langs.add(m[1]);
+      });
+      getPreviewHighlighter(langs).then((highlighter) => {
           if (isStale()) return;
           const shikiTheme = isDark ? 'vitesse-dark' : 'vitesse-light';
           codeEls.forEach((codeEl) => {
@@ -828,7 +851,6 @@ export default function BlogPreview({
             };
             pre.appendChild(btn);
           });
-        });
       }).catch((err) => console.error('Shiki load failed:', err));
     }
 
@@ -902,6 +924,8 @@ export default function BlogPreview({
     root.addEventListener('click', handleModifierClick);
 
     return () => {
+      mermaidController.abort();
+      [...mermaidFullscreenCleanups].forEach((close) => close());
       root.removeEventListener('click', handleModifierClick);
       linkHandlers.forEach(({ el, onEnter, onLeave }) => {
         el.removeEventListener('mouseenter', onEnter);
