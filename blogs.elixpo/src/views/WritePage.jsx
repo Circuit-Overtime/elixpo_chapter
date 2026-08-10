@@ -205,13 +205,6 @@ function persistableCover(url) {
     return typeof url === "string" && /^https?:\/\//i.test(url) ? url : null;
 }
 
-function isCloudinaryMediaUrl(url) {
-    return (
-        typeof url === "string" &&
-        /^https:\/\/res\.cloudinary\.com\//i.test(url)
-    );
-}
-
 function generateBlogId() {
     // Short 8-char alphanumeric ID
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -1137,6 +1130,16 @@ export default function WritePage({ slugid }) {
             if (syncInFlightRef.current) {
                 const updatedAt = await syncInFlightRef.current;
                 if (!dirtyRef.current) return updatedAt;
+            }
+            // BlogEditor coalesces document snapshots to avoid serializing a large
+            // post on every keystroke. A cloud save must still capture the exact
+            // live document when it starts.
+            const liveEditorContent = editorRef.current?.getBlocks?.();
+            if (Array.isArray(liveEditorContent)) {
+                draftDataRef.current = {
+                    ...draftDataRef.current,
+                    editorContent: liveEditorContent,
+                };
             }
             const latest = draftDataRef.current;
             const data = {
@@ -3169,7 +3172,7 @@ export default function WritePage({ slugid }) {
                                     <>
                                         {/* Cover banner with emoji overlay */}
                                         <div className="relative mb-2">
-                                            {coverPreview ? (
+                                            {coverPreview && !showCoverModal ? (
                                                 <div
                                                     className="relative rounded-xl overflow-hidden group cover-banner-enter"
                                                     style={{
@@ -3259,39 +3262,19 @@ export default function WritePage({ slugid }) {
                                                     />
                                                     {coverUploading && (
                                                         <div
-                                                            className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-[#17131f]/70 backdrop-blur-[3px]"
+                                                            className="cover-upload-overlay absolute inset-0 z-20 flex items-center justify-center"
                                                             role="status"
                                                             aria-live="polite"
                                                         >
-                                                            <div className="cover-upload-sheen absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                                                            <div className="relative flex min-w-[220px] flex-col items-center rounded-2xl border border-white/20 bg-[#211b2c]/90 px-6 py-5 text-white shadow-2xl">
-                                                                <div className="relative mb-3 flex h-11 w-11 items-center justify-center">
-                                                                    <span className="absolute inset-0 animate-ping rounded-full bg-[#9b7bf7]/35" />
-                                                                    <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#9b7bf7] shadow-lg shadow-[#9b7bf7]/30">
-                                                                        <ion-icon
-                                                                            name="cloud-upload-outline"
-                                                                            style={{
-                                                                                fontSize:
-                                                                                    "20px",
-                                                                            }}
-                                                                        />
-                                                                    </span>
-                                                                </div>
-                                                                <span className="text-[13px] font-semibold">
-                                                                    Preparing
-                                                                    your cover
+                                                            <div className="cover-upload-status">
+                                                                <span
+                                                                    className="cover-upload-spinner"
+                                                                    aria-hidden="true"
+                                                                />
+                                                                <span>
+                                                                    Uploading
+                                                                    cover…
                                                                 </span>
-                                                                <span className="mt-1 text-[11px] text-white/60">
-                                                                    Optimizing
-                                                                    for{" "}
-                                                                    {mediaStorageStatus.useForUploads &&
-                                                                    mediaStorageStatus.cloudName
-                                                                        ? mediaStorageStatus.cloudName
-                                                                        : "LixBlogs storage"}
-                                                                </span>
-                                                                <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                                                                    <span className="cover-upload-progress block h-full w-2/5 rounded-full bg-gradient-to-r from-[#8b6ae6] to-[#c4b5fd]" />
-                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}
@@ -3423,9 +3406,16 @@ export default function WritePage({ slugid }) {
                                                         {/* Separator */}
                                                         <div className="w-px h-4 bg-white/20 mx-0.5" />
                                                         {/* Replace */}
-                                                        <label
+                                                        <button
+                                                            type="button"
                                                             className="cover-toolbar-btn cursor-pointer"
-                                                            title="Replace"
+                                                            title="Replace cover"
+                                                            onClick={(event) => {
+                                                                event.stopPropagation();
+                                                                setCoverUrlMode(false);
+                                                                setCoverUrlInput("");
+                                                                setShowCoverModal(true);
+                                                            }}
                                                         >
                                                             <svg
                                                                 width="14"
@@ -3452,24 +3442,7 @@ export default function WritePage({ slugid }) {
                                                                 />
                                                                 <polyline points="21 15 16 10 5 21" />
                                                             </svg>
-                                                            <input
-                                                                type="file"
-                                                                accept={
-                                                                    IMAGE_ACCEPT_ATTR
-                                                                }
-                                                                className="hidden"
-                                                                onChange={(
-                                                                    e,
-                                                                ) => {
-                                                                    openCoverCropper(
-                                                                        e.target
-                                                                            .files?.[0],
-                                                                    );
-                                                                    e.target.value =
-                                                                        "";
-                                                                }}
-                                                            />
-                                                        </label>
+                                                        </button>
                                                         {/* Remove */}
                                                         <button
                                                             onClick={(e) => {
@@ -3851,14 +3824,6 @@ export default function WritePage({ slugid }) {
                                                 </div>
                                             )}
                                         </div>
-
-                                        {isCloudinaryMediaUrl(coverPreview) &&
-                                            !coverUploading && (
-                                                <MediaStorageChip
-                                                    status={mediaStorageStatus}
-                                                    returnTo={`/edit/${encodeURIComponent(slugid)}`}
-                                                />
-                                            )}
 
                                         {/* Spacer when emoji overlaps banner */}
                                         {pageEmoji &&
@@ -4256,9 +4221,13 @@ export default function WritePage({ slugid }) {
                                                 ref={editorRef}
                                                 onChange={handleEditorChange}
                                                 initialContent={editorSeedContent}
-                                                onReady={() =>
-                                                    setEditorReady(true)
-                                                }
+                                                onReady={() => {
+                                                    setEditorReady(true);
+                                                    // BlockNote has consumed the seed into
+                                                    // ProseMirror; release the serialized
+                                                    // source held by the page on long posts.
+                                                    setEditorSeedContent(null);
+                                                }}
                                                 onTitleChange={(newTitle) => {
                                                     // Ignore until the initial load is done and ignore empties,
                                                     // so a content-derived title can't wipe/hide the loaded title.
@@ -4411,6 +4380,23 @@ export default function WritePage({ slugid }) {
                             {readTime} min read
                         </span>
                     </div>
+
+                    {/* Storage belongs with publishing/media configuration, not
+                        between the cover and the article's title hierarchy. */}
+                    {!coverUploading && (
+                        <div>
+                            <label
+                                className="text-[12px] font-medium mb-2 block"
+                                style={{ color: "var(--text-muted)" }}
+                            >
+                                Media storage
+                            </label>
+                            <MediaStorageChip
+                                status={mediaStorageStatus}
+                                returnTo={`/edit/${encodeURIComponent(slugid)}`}
+                            />
+                        </div>
+                    )}
 
                     {/* Owner — locked after publish */}
                     <div>

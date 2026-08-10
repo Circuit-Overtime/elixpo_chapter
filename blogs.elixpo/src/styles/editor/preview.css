@@ -799,18 +799,22 @@
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 4px;
+  gap: 4px;
+  padding: 4px 6px;
   border: 1px solid var(--border-default);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(12px);
-  box-shadow: 0 6px 20px rgba(23, 18, 42, 0.1);
+  box-shadow: 0 4px 14px rgba(23, 18, 42, 0.08);
+}
+
+[data-theme="dark"] .preview-mermaid-controls {
+  background: rgba(14, 18, 27, 0.88);
 }
 
 .preview-mermaid-controls button {
-  width: 27px;
-  height: 27px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 0;
   border-radius: 5px;
@@ -820,11 +824,22 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: color 0.15s, background-color 0.15s, transform 0.15s;
 }
 
 .preview-mermaid-controls button:hover {
-  color: #7c5ce0;
-  background: var(--bg-hover);
+  color: #8b6ee8;
+  background: rgba(139, 110, 232, 0.1);
+}
+
+.preview-mermaid-controls button:active {
+  transform: scale(0.92);
+}
+
+.preview-mermaid-controls button:focus-visible,
+.preview-mermaid-fullscreen-btn:focus-visible {
+  outline: 2px solid #9b7cf6;
+  outline-offset: 2px;
 }
 
 .preview-mermaid-zoom-label {
@@ -836,25 +851,40 @@
 }
 
 .preview-mermaid-fullscreen-btn {
-  position: static;
-  width: 28px;
-  height: 28px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
   border-radius: 6px;
   border: 1px solid var(--border-default);
-  background: var(--bg-surface);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
   color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 1;
-  transition: background-color 0.15s, color 0.15s;
+  opacity: 0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(23, 18, 42, 0.08);
+  transition: opacity 0.15s, transform 0.15s, background-color 0.15s, color 0.15s;
   z-index: 10;
 }
 
+[data-theme="dark"] .preview-mermaid-fullscreen-btn {
+  background: rgba(14, 18, 27, 0.88);
+}
+
+.preview-mermaid-wrapper:hover .preview-mermaid-fullscreen-btn,
+.preview-mermaid-wrapper:focus-within .preview-mermaid-fullscreen-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .preview-mermaid-fullscreen-btn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
+  background-color: rgba(139, 110, 232, 0.12);
+  color: #8b6ee8;
 }
 
 @media (max-width: 640px) {
@@ -864,5 +894,15 @@
 
   .preview-mermaid-svg-container {
     padding: 14px;
+  }
+
+  .preview-mermaid-fullscreen-btn {
+    opacity: 1;
+    transform: none;
+  }
+
+  .preview-mermaid-controls {
+    right: 8px;
+    bottom: 8px;
   }
 }
