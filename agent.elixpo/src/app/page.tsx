@@ -1,5 +1,8 @@
-import { AgentRoom } from "@/components/agent-room";
+import { BuildingDashboard } from "@/components/dashboard-views";
+import { getDashboardSnapshot } from "@/lib/github-dashboard";
 
-export default function Home() {
-  return <AgentRoom />;
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  return <BuildingDashboard snapshot={await getDashboardSnapshot()} />;
 }
