@@ -85,14 +85,14 @@
       "status": "no_pick"
     },
     "project.json": {
-      "expires_at": "2026-08-17T08:57:03.225566+00:00",
+      "expires_at": "2026-08-17T10:16:13.165455+00:00",
       "key": "",
-      "payload_sha256": "928269a55e5266c8ee2f5789a3b7475807a419dca285c2a2e32eac0ab9eaeed0",
-      "produced_at": "2026-08-10T08:57:03.225566+00:00",
+      "payload_sha256": "3109e5617caf4cd61e9aaffd6c69e2502bb6a569aee431f701a0dff73e81a151",
+      "produced_at": "2026-08-10T10:16:13.165455+00:00",
       "producer": "project",
       "run_id": "",
       "schema_version": 1,
-      "sequence": 14,
+      "sequence": 15,
       "state_file": "project.json",
       "status": "complete"
     },
@@ -170,5 +170,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": "2026-08-10T10:06:53.555388+00:00"
+  "updated_at": "2026-08-10T10:16:13.165455+00:00"
 }
