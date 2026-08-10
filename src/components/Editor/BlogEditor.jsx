@@ -50,6 +50,7 @@ import {
     createMediaUploadId,
     enqueueMediaUpload,
 } from "../../utils/mediaUploadQueue";
+import { getLixShikiHighlighter } from "../../utils/shikiHighlighter";
 import AICommandMenu from "./AICommandMenu";
 import AISelectionToolbar from "./AISelectionToolbar";
 import { AIBlock } from "./blocks/AIBlock";
@@ -176,29 +177,26 @@ const codeBlockLanguages = {
 const codeBlockWithHighlighting = createCodeBlockSpec({
     supportedLanguages: codeBlockLanguages,
     createHighlighter: async () => {
-        const { createHighlighter } = await import("shiki");
-        const highlighter = await createHighlighter({
-            themes: ["vitesse-dark", "vitesse-light"],
-            // BlockNote loads a grammar when a code block first requests it.
-            // Starting empty avoids retaining every supported grammar in memory.
-            langs: [],
-        });
+        const highlighter = await getLixShikiHighlighter();
 
         // BlockNote's adapter always asks Shiki for its first loaded theme. Emit
         // both palettes as CSS variables instead, so reopened blocks follow the
         // site theme and theme switches do not require re-tokenizing the document.
-        const codeToTokens = highlighter.codeToTokens.bind(highlighter);
-        highlighter.codeToTokens = (code, options = {}) => {
-            const { theme: _ignoredTheme, ...rest } = options;
-            return codeToTokens(code, {
-                ...rest,
-                themes: {
-                    light: "vitesse-light",
-                    dark: "vitesse-dark",
-                },
-                defaultColor: false,
-            });
-        };
+        if (!highlighter.__lixDualTheme) {
+            const codeToTokens = highlighter.codeToTokens.bind(highlighter);
+            highlighter.codeToTokens = (code, options = {}) => {
+                const { theme: _ignoredTheme, ...rest } = options;
+                return codeToTokens(code, {
+                    ...rest,
+                    themes: {
+                        light: "vitesse-light",
+                        dark: "vitesse-dark",
+                    },
+                    defaultColor: false,
+                });
+            };
+            highlighter.__lixDualTheme = true;
+        }
 
         return highlighter;
     },
@@ -1302,6 +1300,13 @@ const BlogEditor = forwardRef(function BlogEditor(
                 : "Type '/' for commands",
         },
     });
+
+    // BlockNote's ExtensionManager retains its complete construction options,
+    // including the full initial block array, after ProseMirror has already
+    // converted it into a document. Drop that redundant tree immediately.
+    if (!collaboration && editor._extensionManager?.options?.initialContent) {
+        delete editor._extensionManager.options.initialContent;
+    }
 
     const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
     const [blockMenu, setBlockMenu] = useState(null); // {x,y,blockId,blockType}

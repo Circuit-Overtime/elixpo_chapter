@@ -34,7 +34,8 @@ export function requestMermaidEditorFocus(blockId) {
 // Shared component that renders a mermaid diagram to SVG
 function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
   const containerRef = useRef(null);
-  const [svgHTML, setSvgHTML] = useState(() => getCachedMermaidSvg(diagram, isDark));
+  const [isNearViewport, setIsNearViewport] = useState(!interactive);
+  const [svgHTML, setSvgHTML] = useState(() => interactive ? '' : getCachedMermaidSvg(diagram, isDark));
   const [error, setError] = useState('');
   const [errorCopied, setErrorCopied] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -43,8 +44,34 @@ function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
   const dragStart = useRef({ x: 0, y: 0 });
   const panStart = useRef({ x: 0, y: 0 });
 
+  // Saved diagrams are expensive SVG trees. Keep only diagrams near the
+  // viewport mounted; their fixed-height placeholder preserves scroll layout.
+  // Live editor previews and non-interactive previews remain immediate.
+  useEffect(() => {
+    if (!interactive) {
+      setIsNearViewport(true);
+      return;
+    }
+    const element = containerRef.current;
+    if (!element || typeof IntersectionObserver === 'undefined') {
+      setIsNearViewport(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsNearViewport(entry.isIntersecting),
+      { rootMargin: '900px 0px' },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [interactive]);
+
   useEffect(() => {
     if (!diagram?.trim()) {
+      setSvgHTML('');
+      setError('');
+      return;
+    }
+    if (interactive && !isNearViewport) {
       setSvgHTML('');
       setError('');
       return;
@@ -69,7 +96,7 @@ function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
       active = false;
       controller?.abort();
     };
-  }, [diagram, isDark, cancelStale]);
+  }, [diagram, isDark, cancelStale, interactive, isNearViewport]);
 
   // Mouse wheel zoom
   useEffect(() => {
@@ -109,14 +136,14 @@ function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
   }, []);
 
   useEffect(() => {
-    if (!interactive) return;
+    if (!interactive || !svgHTML || !isNearViewport) return;
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [handleMouseMove, handleMouseUp, interactive]);
+  }, [handleMouseMove, handleMouseUp, interactive, svgHTML, isNearViewport]);
 
   const resetView = useCallback(() => {
     setZoom(1);
@@ -125,7 +152,7 @@ function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
 
   if (error) {
     return (
-      <div className="mermaid-viewport mermaid-viewport--compact mermaid-error-output">
+      <div ref={containerRef} className="mermaid-viewport mermaid-viewport--compact mermaid-error-output">
         <button
           type="button"
           className="mermaid-error-copy"
@@ -147,7 +174,7 @@ function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
 
   if (!diagram?.trim()) {
     return (
-      <div className="mermaid-viewport mermaid-viewport--compact" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div ref={containerRef} className="mermaid-viewport mermaid-viewport--compact" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <span style={{ color: 'var(--text-faint)', fontSize: '12px' }}>Preview will appear here...</span>
       </div>
     );
@@ -155,8 +182,10 @@ function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
 
   if (!svgHTML) {
     return (
-      <div className="mermaid-viewport mermaid-viewport--compact" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: 'var(--text-faint)', fontSize: '13px' }}>Rendering...</span>
+      <div ref={containerRef} className="mermaid-viewport mermaid-viewport--compact" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: 'var(--text-faint)', fontSize: '13px' }}>
+          {interactive && !isNearViewport ? 'Diagram preview' : 'Rendering...'}
+        </span>
       </div>
     );
   }

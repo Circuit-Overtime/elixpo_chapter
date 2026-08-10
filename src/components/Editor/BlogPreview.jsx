@@ -7,23 +7,16 @@ import { readTimeFromWords } from '../../../lib/readTime';
 import { escapeHtmlAttribute, normalizeCssColor, normalizeImageUrl, normalizeUrl } from '../../utils/linkHelper';
 import { normalizeMermaidSource } from '../../utils/mermaidConfig';
 import { renderMermaidSvg } from '../../utils/mermaidRenderer';
+import { getLixShikiHighlighter, normalizeShikiLanguage } from '../../utils/shikiHighlighter';
 
-let previewHighlighterPromise = null;
 let previewLanguageLoadTail = Promise.resolve();
 const previewLoadedLanguages = new Set();
 
 async function getPreviewHighlighter(languages) {
-  if (!previewHighlighterPromise) {
-    previewHighlighterPromise = import('shiki').then(({ createHighlighter }) =>
-      createHighlighter({
-        themes: ['vitesse-dark', 'vitesse-light'],
-        langs: [],
-      }),
-    );
-  }
-
-  const highlighter = await previewHighlighterPromise;
-  const missing = [...languages].filter((language) => !previewLoadedLanguages.has(language));
+  const highlighter = await getLixShikiHighlighter();
+  const missing = [...languages]
+    .map(normalizeShikiLanguage)
+    .filter((language) => !previewLoadedLanguages.has(language));
   if (missing.length) {
     const load = previewLanguageLoadTail.then(async () => {
       for (const language of missing) {

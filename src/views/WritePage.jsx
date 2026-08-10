@@ -4241,9 +4241,13 @@ export default function WritePage({ slugid }) {
                                                 ref={editorRef}
                                                 onChange={handleEditorChange}
                                                 initialContent={editorSeedContent}
-                                                onReady={() =>
-                                                    setEditorReady(true)
-                                                }
+                                                onReady={() => {
+                                                    setEditorReady(true);
+                                                    // BlockNote has consumed the seed into
+                                                    // ProseMirror; release the serialized
+                                                    // source held by the page on long posts.
+                                                    setEditorSeedContent(null);
+                                                }}
                                                 onTitleChange={(newTitle) => {
                                                     // Ignore until the initial load is done and ignore empties,
                                                     // so a content-derived title can't wipe/hide the loaded title.
