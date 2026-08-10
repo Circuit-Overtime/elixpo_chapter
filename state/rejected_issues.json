@@ -1,5 +1,39 @@
 {
   "issues": {
+    "0xNyk/council-of-high-intelligence#63": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-17T10:28:36Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "Your project is on StackMap \u2014 a curated map of the AI stack",
+      "url": "https://github.com/0xNyk/council-of-high-intelligence/issues/63"
+    },
+    "0xNyk/council-of-high-intelligence#70": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-01T10:55:51Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "Complementary approach: DAUDIT \u2014 decision-context engine with 5-dimension audit",
+      "url": "https://github.com/0xNyk/council-of-high-intelligence/issues/70"
+    },
     "0xsline/OpenChatCut#11": {
       "confidence": 0.5,
       "issue_kind": "unknown",
@@ -30,6 +64,21 @@
       "rejected_at": "2026-08-07T07:17:20.682229+00:00",
       "title": "feat: \u7ba1\u7406\u5458\u7edf\u4e00 AI \u914d\u7f6e\u4e0e\u6309\u7528\u6237\u7528\u91cf\u8ba1\u91cf\uff08SaaS MVP\uff09",
       "url": "https://github.com/0xsline/OpenChatCut/issues/15"
+    },
+    "Agions/story-fab#79": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-28T06:53:40Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "\u95ea\u9000\u2014\u2014\u6839\u672c\u6ca1\u5f39\u51fa\u6765\u754c\u9762",
+      "url": "https://github.com/Agions/story-fab/issues/79"
     },
     "Alexey-T/CudaText#6328": {
       "confidence": 0.7,
@@ -585,6 +634,38 @@
       "title": "Maintainer Needed \u5c0b\u627e\u7dad\u8b77\u8005  :sys-kernel/cachyos-sources",
       "url": "https://github.com/gentoo-zh/overlay/issues/11556"
     },
+    "gz-yami/mall4cloud#41": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-17T02:30:04Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "\u5728\u6dfb\u52a0\u5e73\u53f0\u5206\u7c7b\u70b9\u51fb\u786e\u8ba4\u9009\u62e9\uff0c\u6ca1\u6709\u53cd\u5e94",
+      "url": "https://github.com/gz-yami/mall4cloud/issues/41"
+    },
+    "gz-yami/mall4cloud#42": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-17T04:01:59Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70",
+        "no acceptance criterion or reproducible bug"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "\u6dfb\u52a0\u5546\u54c1\u540e\u600e\u4e48\u540c\u6b65\u5546\u54c1\u4fe1\u606f\u5230es",
+      "url": "https://github.com/gz-yami/mall4cloud/issues/42"
+    },
     "horsicq/Detect-It-Easy#365": {
       "confidence": 1.0,
       "issue_kind": "standalone",
@@ -993,6 +1074,101 @@
       "rejected_at": "2026-08-04T08:38:10.439912+00:00",
       "title": "feat(workflows): routines - scheduled and event-driven triggers",
       "url": "https://github.com/stella/stella/issues/1378"
+    },
+    "usekaneo/kaneo#1463": {
+      "confidence": 0.7,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-08T07:04:14Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is medium",
+        "estimated file count 0 is outside 1-5",
+        "needs a maintainer decision"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "feat: Manual resource linking & commit/PR traceability for tickets",
+      "url": "https://github.com/usekaneo/kaneo/issues/1463"
+    },
+    "usekaneo/kaneo#1473": {
+      "confidence": 0.95,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-08T03:10:55Z",
+      "reasons": [
+        "needs external access or credentials",
+        "needs specialized hardware",
+        "issue is already assigned or claimed"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "[Bug]: File upload fails for files without a standard MIME type (.conf/.log/.md etc.) \u2014 contentType sent as empty string",
+      "url": "https://github.com/usekaneo/kaneo/issues/1473"
+    },
+    "usnistgov/macos_security#733": {
+      "confidence": 0.5,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-17T17:51:49Z",
+      "reasons": [
+        "not confirmed tractable",
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.50 is below 0.70"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "[Bug]: \"sh: sudo: not found\"",
+      "url": "https://github.com/usnistgov/macos_security/issues/733"
+    },
+    "usnistgov/macos_security#735": {
+      "confidence": 0.75,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-15T14:17:09Z",
+      "reasons": [
+        "complexity is medium",
+        "needs external access or credentials",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "mSCP 2.0: literal $ODV ships in generated profiles when a rule lacks the baseline's odv key (_fill_in_odv has no fallback)",
+      "url": "https://github.com/usnistgov/macos_security/issues/735"
+    },
+    "usnistgov/macos_security#736": {
+      "confidence": 0.75,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-15T14:31:39Z",
+      "reasons": [
+        "complexity is medium",
+        "needs external access or credentials",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "mSCP 2.0: version-scoped check ships with the generic expected result \u2014 affected rules can never pass",
+      "url": "https://github.com/usnistgov/macos_security/issues/736"
+    },
+    "usnistgov/macos_security#753": {
+      "confidence": 0.6,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-07-30T08:17:14Z",
+      "reasons": [
+        "complexity is unknown",
+        "estimated file count 0 is outside 1-5",
+        "solvability confidence 0.60 is below 0.70",
+        "needs a maintainer decision",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "[Rule]: system_settings_time_machine_auto_backup_enable should pass with empty result value",
+      "url": "https://github.com/usnistgov/macos_security/issues/753"
+    },
+    "usnistgov/macos_security#755": {
+      "confidence": 0.75,
+      "issue_kind": "unknown",
+      "issue_updated_at": "2026-08-04T15:07:06Z",
+      "reasons": [
+        "complexity is medium",
+        "needs external access or credentials",
+        "needs specialized hardware"
+      ],
+      "rejected_at": "2026-08-10T07:43:06.880747+00:00",
+      "title": "[Rule]: 2.3.3.7 (Disable Internet Sharing)",
+      "url": "https://github.com/usnistgov/macos_security/issues/755"
     },
     "vitali87/code-graph-rag#1022": {
       "confidence": 0.5,

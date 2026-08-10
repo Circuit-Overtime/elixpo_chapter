@@ -111,12 +111,12 @@
     "rejected_issues.json": {
       "expires_at": "",
       "key": "",
-      "payload_sha256": "f6c252273a79f1ab32683c9cb64dfc571aa0a15b9010f4d030d5f49aa936005a",
-      "produced_at": "2026-08-09T12:00:00+00:00",
-      "producer": "migration",
+      "payload_sha256": "e4c08727e0c53b72909798796ede06d8b7fec22bfd58871d39219b4c7f7d549c",
+      "produced_at": "2026-08-10T07:43:16.311668+00:00",
+      "producer": "rejections",
       "run_id": "",
       "schema_version": 1,
-      "sequence": 1,
+      "sequence": 2,
       "state_file": "rejected_issues.json",
       "status": ""
     },
@@ -145,14 +145,14 @@
       "status": "submitted"
     },
     "triaged.json": {
-      "expires_at": "",
+      "expires_at": "2026-08-11T07:43:06.880747+00:00",
       "key": "",
-      "payload_sha256": "2d414a700229263562dc22a7d94ae621585be0145d6a650dc5f3488d421d539e",
-      "produced_at": "2026-08-09T12:00:00+00:00",
-      "producer": "migration",
+      "payload_sha256": "4970842a5dc618f2eb917eb049cb8cc8b3f08f88b2f2d312d741cef5648ee387",
+      "produced_at": "2026-08-10T07:43:06.880747+00:00",
+      "producer": "triage",
       "run_id": "",
       "schema_version": 1,
-      "sequence": 1,
+      "sequence": 2,
       "state_file": "triaged.json",
       "status": ""
     },
@@ -170,5 +170,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": "2026-08-10T07:42:34.906086+00:00"
+  "updated_at": "2026-08-10T07:43:06.880747+00:00"
 }
