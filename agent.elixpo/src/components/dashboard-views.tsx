@@ -111,6 +111,43 @@ function RuntimeRail({ runs, title = "Current runtime flow", caption = "Active f
   );
 }
 
+const oreoFlowStages = [
+  { id: "scout", name: "Scout", role: "discover" },
+  { id: "triage", name: "Triage", role: "classify" },
+  { id: "pick", name: "Pick", role: "select" },
+  { id: "vet", name: "Vet", role: "verify" },
+  { id: "solve", name: "Solve", role: "implement" },
+  { id: "submit", name: "Submit", role: "publish" },
+  { id: "steward", name: "Steward", role: "shepherd" },
+  { id: "project", name: "Project", role: "synchronize" },
+] as const;
+
+function A2ANode({ name, role, run }: { name: string; role: string; run?: DashboardRun }) {
+  const tone = run ? runTone(run) : "neutral";
+  const content = <>
+    <span className={`a2a-agent-icon tone-${tone}`}><Bot size={17} /></span>
+    <span className="a2a-agent-copy"><strong>{name}</strong><small>{role}</small></span>
+    <span className={`a2a-agent-state tone-${tone}`}>{run ? status(run) : "no recent run"}</span>
+    <span className="a2a-agent-meta">{run ? `${run.branch} · ${time(run.updatedAt)}` : "GitHub has not returned a run in this feed"}</span>
+  </>;
+  return run?.url
+    ? <a className="a2a-agent" href={run.url} target="_blank" rel="noreferrer">{content}</a>
+    : <div className="a2a-agent">{content}</div>;
+}
+
+function A2AReceiptNode({ receipt, name, role, icon }: { receipt?: StateReceipt; name: string; role: string; icon: React.ReactNode }) {
+  const tone = receipt ? receiptTone(receipt) : "neutral";
+  const content = <>
+    <span className={`a2a-agent-icon tone-${tone}`}>{icon}</span>
+    <span className="a2a-agent-copy"><strong>{name}</strong><small>{role}</small></span>
+    <span className={`a2a-agent-state tone-${tone}`}>{receipt?.status || "no receipt"}</span>
+    <span className="a2a-agent-meta">{receipt ? `${receipt.stage} · ${receipt.updatedAt ? time(receipt.updatedAt) : "time not reported"}` : "No committed state receipt returned"}</span>
+  </>;
+  return receipt?.issueUrl
+    ? <a className="a2a-agent a2a-support-agent" href={receipt.issueUrl} target="_blank" rel="noreferrer">{content}</a>
+    : <div className="a2a-agent a2a-support-agent">{content}</div>;
+}
+
 function RunRow({ run }: { run: DashboardRun }) {
   const tone = runTone(run);
   return (
@@ -159,6 +196,10 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
   const openWork = snapshot.work.filter((item) => item.state === "open");
   const runtimeRoute = uniqueRuntimeRoute([...active, ...snapshot.runs]);
   const securityWatch = snapshot.security.slice(0, 3);
+  const oreoRuns = snapshot.runs.filter((run) => run.floor === "oreoflow");
+  const stageRuns = new Map(oreoFlowStages.map((stage) => [stage.id, oreoRuns.find((run) => run.name.toLowerCase().includes(stage.id))]));
+  const doctorReceipt = snapshot.receipts.find((receipt) => receipt.name === "doctor");
+  const janitorReceipt = snapshot.receipts.find((receipt) => receipt.name === "janitor");
 
   return (
     <main className="real-page">
@@ -173,24 +214,23 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
 
       <div className="real-building-grid">
         <section className="real-panel building-visual-card">
-          <div className="real-panel-head"><div><small>Isometric directory</small><h2>Three floors, one GitHub record</h2></div><span className="source-pill"><Radio size={13} /> refreshed {time(snapshot.generatedAt)}</span></div>
-          <div className="cubic-building-zone">
-            <div className="real-building" aria-label="Agent operations floors">
-              {[...floors].reverse().map((floor, index) => {
-                const floorRuns = snapshot.runs.filter((run) => run.floor === floor.slug);
-                const live = floorRuns.filter((run) => run.status === "in_progress" || run.status === "queued").length;
-                return (
-                  <Link className="real-floor-slab" href={`/${floor.slug}`} key={floor.slug} style={{ "--floor-accent": floor.accent, "--floor-index": index } as React.CSSProperties}>
-                    <span className="cube-floor-face cube-floor-front">
-                      <span className="slab-level">{floor.level}</span>
-                      <span className="slab-copy"><strong>{floor.name}</strong><small>{live ? `${live} active` : `${floorRuns.length} recent runs`}</small></span>
-                      <ArrowRight size={18} />
-                    </span>
-                    <span className="cube-floor-face cube-floor-top" aria-hidden="true" />
-                    <span className="cube-floor-face cube-floor-side" aria-hidden="true" />
-                  </Link>
-                );
-              })}
+          <div className="real-panel-head"><div><small>Live A2A route</small><h2>OreoFlow agent dataflow</h2></div><span className="source-pill"><Radio size={13} /> refreshed {time(snapshot.generatedAt)}</span></div>
+          <div className="a2a-building-zone">
+            <div className="a2a-flow-map" aria-label="OreoFlow agent-to-agent route">
+              <div className="a2a-route-label"><span><Workflow size={15} /> Primary route</span><small>Topology from OreoFlow · state from GitHub</small></div>
+              <div className="a2a-primary-route">
+                {oreoFlowStages.map((stage, index) => (
+                  <div className="a2a-hop" key={stage.id}>
+                    <A2ANode name={stage.name} role={stage.role} run={stageRuns.get(stage.id)} />
+                    {index < oreoFlowStages.length - 1 && <span className="a2a-connector"><i /><ArrowRight size={15} /></span>}
+                  </div>
+                ))}
+              </div>
+              <div className="a2a-support-lane">
+                <div className="a2a-support-title"><ShieldCheck size={15} /><span>Supervision lane</span><i /></div>
+                <A2AReceiptNode receipt={doctorReceipt} name="Doctor" role="runtime guard" icon={<Activity size={17} />} />
+                <A2AReceiptNode receipt={janitorReceipt} name="Janitor" role="cleanup" icon={<Box size={17} />} />
+              </div>
             </div>
             <aside className="security-observatory">
               <header><span><ShieldCheck size={17} /> Security watch</span><Link href="/alerts">Open <ArrowRight size={13} /></Link></header>
@@ -202,7 +242,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
               )) : <p>No security activity returned by GitHub.</p>}
             </aside>
           </div>
-          <div className="building-source-note"><Workflow size={17} /><span>Workflow run status is live. Room memory is not exposed by GitHub Actions and is never estimated.</span></div>
+          <div className="building-source-note"><Workflow size={17} /><span>A2A connections show the configured OreoFlow route; node state comes from GitHub Actions and committed receipts. Room memory is not estimated.</span></div>
           <RuntimeRail runs={runtimeRoute} />
         </section>
 
