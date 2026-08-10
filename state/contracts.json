@@ -73,14 +73,14 @@
       "status": ""
     },
     "pick.json": {
-      "expires_at": "",
+      "expires_at": "2026-08-11T10:06:53.555388+00:00",
       "key": "",
-      "payload_sha256": "c7760cf5460f0a33beeac91cafc3d062a7c9ab47def98fe17641d44317a27e06",
-      "produced_at": "2026-08-09T12:00:00+00:00",
-      "producer": "migration",
-      "run_id": "",
+      "payload_sha256": "41f685a580bfb55a63403a7b93b13b44083f7967400636dac29d4be0fa129043",
+      "produced_at": "2026-08-10T10:06:53.555388+00:00",
+      "producer": "pick",
+      "run_id": "d293ebcd5114fc1c",
       "schema_version": 1,
-      "sequence": 1,
+      "sequence": 2,
       "state_file": "pick.json",
       "status": "no_pick"
     },
@@ -170,5 +170,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": "2026-08-10T08:57:03.225566+00:00"
+  "updated_at": "2026-08-10T10:06:53.555388+00:00"
 }
