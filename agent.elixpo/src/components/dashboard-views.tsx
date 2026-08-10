@@ -128,6 +128,14 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
   const active = snapshot.runs.filter((run) => run.status === "in_progress" || run.status === "queued");
   const failed = snapshot.runs.filter((run) => ["failure", "timed_out", "action_required"].includes(run.conclusion || ""));
   const openWork = snapshot.work.filter((item) => item.state === "open");
+  const seenWorkflows = new Set<string>();
+  const runtimeRoute = [...active, ...snapshot.runs].filter((run) => {
+    const key = run.name.toLowerCase();
+    if (seenWorkflows.has(key)) return false;
+    seenWorkflows.add(key);
+    return true;
+  }).slice(0, 6);
+  const securityWatch = snapshot.security.slice(0, 3);
 
   return (
     <main className="real-page">
@@ -143,20 +151,45 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
       <div className="real-building-grid">
         <section className="real-panel building-visual-card">
           <div className="real-panel-head"><div><small>Isometric directory</small><h2>Three floors, one GitHub record</h2></div><span className="source-pill"><Radio size={13} /> refreshed {time(snapshot.generatedAt)}</span></div>
-          <div className="real-building" aria-label="Agent operations floors">
-            {[...floors].reverse().map((floor, index) => {
-              const floorRuns = snapshot.runs.filter((run) => run.floor === floor.slug);
-              const live = floorRuns.filter((run) => run.status === "in_progress" || run.status === "queued").length;
-              return (
-                <Link className="real-floor-slab" href={`/${floor.slug}`} key={floor.slug} style={{ "--floor-accent": floor.accent, "--floor-index": index } as React.CSSProperties}>
-                  <span className="slab-level">{floor.level}</span>
-                  <span><strong>{floor.name}</strong><small>{live ? `${live} active` : `${floorRuns.length} recent runs`}</small></span>
-                  <ArrowRight size={18} />
-                </Link>
-              );
-            })}
+          <div className="cubic-building-zone">
+            <div className="real-building" aria-label="Agent operations floors">
+              {[...floors].reverse().map((floor, index) => {
+                const floorRuns = snapshot.runs.filter((run) => run.floor === floor.slug);
+                const live = floorRuns.filter((run) => run.status === "in_progress" || run.status === "queued").length;
+                return (
+                  <Link className="real-floor-slab" href={`/${floor.slug}`} key={floor.slug} style={{ "--floor-accent": floor.accent, "--floor-index": index } as React.CSSProperties}>
+                    <span className="slab-level">{floor.level}</span>
+                    <span><strong>{floor.name}</strong><small>{live ? `${live} active` : `${floorRuns.length} recent runs`}</small></span>
+                    <ArrowRight size={18} />
+                  </Link>
+                );
+              })}
+            </div>
+            <aside className="security-observatory">
+              <header><span><ShieldCheck size={17} /> Security watch</span><Link href="/alerts">Open <ArrowRight size={13} /></Link></header>
+              {securityWatch.length ? securityWatch.map((event) => (
+                <div className="observatory-event" key={event.id}>
+                  <i className={`tone-${event.level === "critical" ? "danger" : event.level}`} />
+                  <span><strong>{event.title}</strong><small>{event.detail}</small><em>{time(event.occurredAt)}</em></span>
+                </div>
+              )) : <p>No security activity returned by GitHub.</p>}
+            </aside>
           </div>
           <div className="building-source-note"><Workflow size={17} /><span>Workflow run status is live. Room memory is not exposed by GitHub Actions and is never estimated.</span></div>
+          <div className="runtime-rail">
+            <header><span><Activity size={16} /> Current runtime flow</span><small>Active first, then latest GitHub updates</small></header>
+            {runtimeRoute.length ? <div className="runtime-route">
+              {runtimeRoute.map((run, index) => (
+                <div className="runtime-hop" key={run.id}>
+                  <a href={run.url} target="_blank" rel="noreferrer">
+                    <span className={`runtime-node tone-${runTone(run)}`}><Workflow size={15} /></span>
+                    <span><strong>{run.name}</strong><small>{status(run)} · {run.branch}</small></span>
+                  </a>
+                  {index < runtimeRoute.length - 1 && <ArrowRight className="runtime-arrow" size={16} />}
+                </div>
+              ))}
+            </div> : <p className="runtime-empty">No workflow route was returned by GitHub.</p>}
+          </div>
         </section>
 
         <section className="real-panel floor-summary-card">

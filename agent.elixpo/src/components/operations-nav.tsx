@@ -19,7 +19,7 @@ function active(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function OperationsNav() {
+export function OperationsNav({ repositoryUrl }: { repositoryUrl: string }) {
   const pathname = usePathname();
 
   return (
@@ -36,7 +36,7 @@ export function OperationsNav() {
           </Link>
         ))}
       </nav>
-      <span className="github-source"><Radio size={15} /><span>GitHub source</span></span>
+      <a className="github-source" href={repositoryUrl} target="_blank" rel="noreferrer"><Radio size={15} /><span>GitHub source</span></a>
     </header>
   );
 }

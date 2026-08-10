@@ -13,9 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const controlRepo = process.env.ELIXPO_GITHUB_CONTROL_REPO || "elixpo/agent.elixpo";
   return (
     <html lang="en">
-      <body><div className="operations-shell"><OperationsNav />{children}</div></body>
+      <body><div className="operations-shell"><OperationsNav repositoryUrl={`https://github.com/${controlRepo}`} />{children}</div></body>
     </html>
   );
 }
