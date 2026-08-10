@@ -899,6 +899,30 @@ function sanitizeInitialContent(blocks) {
     return sanitized?.length ? sanitized : undefined;
 }
 
+function normalizeInternalTextColors(content) {
+    if (!Array.isArray(content)) return content;
+    return content.map((item) => {
+        let next = item;
+        const textColor = String(item?.styles?.textColor || "").toLowerCase();
+        if (
+            textColor === "gray" ||
+            textColor === "grey" ||
+            textColor === "default"
+        ) {
+            const styles = { ...item.styles };
+            delete styles.textColor;
+            next = { ...next, styles };
+        }
+        if (Array.isArray(item?.content)) {
+            next = {
+                ...next,
+                content: normalizeInternalTextColors(item.content),
+            };
+        }
+        return next;
+    });
+}
+
 function doSanitize(blocks) {
     if (!blocks || !Array.isArray(blocks)) return blocks;
     const result = [];
@@ -917,6 +941,12 @@ function doSanitize(blocks) {
 
     while (i < blocks.length) {
         let block = blocks[i];
+        if (Array.isArray(block.content)) {
+            block = {
+                ...block,
+                content: normalizeInternalTextColors(block.content),
+            };
+        }
         // Recursively sanitize children
         if (block.children && block.children.length > 0) {
             block = { ...block, children: doSanitize(block.children) };

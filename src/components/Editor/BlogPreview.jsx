@@ -132,6 +132,15 @@ function FloatingTOC({ headings }) {
 function renderBlocksToHTML(blocks) {
   if (!blocks || !blocks.length) return '';
 
+  const publishedTextColor = (value) => {
+    // BlockNote can carry its internal named gray mark out of a code block and
+    // into following paragraphs. LixBlogs' explicit Gray option is stored as
+    // #9ca3af, so named gray/grey is safe to treat as an inherited default.
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'gray' || normalized === 'grey' || normalized === 'default') return '';
+    return normalizeCssColor(value);
+  };
+
   function inlineToHTML(content) {
     if (!content || !Array.isArray(content)) return '';
     return content.map((c) => {
@@ -184,7 +193,7 @@ function renderBlocksToHTML(blocks) {
       if (s.strike) text = `<del>${text}</del>`;
       if (s.code) text = `<code>${text}</code>`;
       if (s.underline) text = `<u>${text}</u>`;
-      const textColor = normalizeCssColor(s.textColor);
+      const textColor = publishedTextColor(s.textColor);
       const backgroundColor = normalizeCssColor(s.backgroundColor);
       if (textColor) text = `<span style="color:${textColor}">${text}</span>`;
       if (backgroundColor) text = `<span style="background:${backgroundColor};border-radius:3px;padding:0 2px">${text}</span>`;
