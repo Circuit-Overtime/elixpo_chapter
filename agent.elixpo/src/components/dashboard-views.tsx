@@ -195,6 +195,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
   const runtimeRoute = uniqueRuntimeRoute([...active, ...snapshot.runs]);
   const oreoRuns = snapshot.runs.filter((run) => run.floor === "oreoflow");
   const stageRuns = new Map(oreoFlowStages.map((stage) => [stage.id, oreoRuns.find((run) => run.name.toLowerCase().includes(stage.id))]));
+  const activeStageCount = [...stageRuns.values()].filter((run) => run?.status === "in_progress" || run?.status === "queued").length;
   const doctorReceipt = snapshot.receipts.find((receipt) => receipt.name === "doctor");
   const janitorReceipt = snapshot.receipts.find((receipt) => receipt.name === "janitor");
 
@@ -214,7 +215,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
           <div className="real-panel-head"><div><small>Live A2A route</small><h2>OreoFlow agent dataflow</h2></div><span className="source-pill"><Radio size={13} /> refreshed {time(snapshot.generatedAt)}</span></div>
           <div className="a2a-building-zone">
             <div className="a2a-flow-map" aria-label="OreoFlow agent-to-agent route">
-              <div className="a2a-route-label"><span><Workflow size={15} /> Primary route</span><small>Topology from OreoFlow · state from GitHub</small></div>
+              <div className="a2a-route-label"><span><Workflow size={17} /> Primary route</span><small className={activeStageCount ? "a2a-live-summary is-live" : "a2a-live-summary"}><i />{activeStageCount ? `${activeStageCount} ${activeStageCount === 1 ? "stage" : "stages"} live now` : "No stages running now"}</small></div>
               <div className="a2a-primary-route">
                 {oreoFlowStages.map((stage, index) => (
                   <div className="a2a-hop" key={stage.id}>
