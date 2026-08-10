@@ -2074,6 +2074,17 @@ const BlogEditor = forwardRef(function BlogEditor(
                 editorEl === document.activeElement;
             if (!isEditorFocused) return;
 
+            // Do not ask BlockNote for its cursor during ordinary navigation.
+            // This listener runs in capture phase, before ProseMirror processes the
+            // key; reading the editor cursor here can restore the previous selection
+            // and swallow ArrowLeft/ArrowRight caret movement in Firefox.
+            const handlesCtrlA =
+                e.key === "a" && (e.ctrlKey || e.metaKey);
+            const handlesCtrlEnter =
+                e.key === "Enter" && (e.ctrlKey || e.metaKey);
+            if (!handlesCtrlA && !handlesCtrlEnter && e.key !== "Backspace")
+                return;
+
             const cursor = editor.getTextCursorPosition();
             const block = cursor?.block;
 
@@ -2885,16 +2896,10 @@ const BlogEditor = forwardRef(function BlogEditor(
             "selectionchange",
             hideToolbarForCustomBlocks,
         );
-        document.addEventListener("click", hideToolbarForCustomBlocks, true);
         return () => {
             document.removeEventListener(
                 "selectionchange",
                 hideToolbarForCustomBlocks,
-            );
-            document.removeEventListener(
-                "click",
-                hideToolbarForCustomBlocks,
-                true,
             );
             if (rafId) cancelAnimationFrame(rafId);
         };
