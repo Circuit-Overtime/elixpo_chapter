@@ -701,7 +701,7 @@ export default function BlogPreview({
                 zoomOutBtn.type = 'button';
                 zoomOutBtn.title = 'Zoom out';
                 zoomOutBtn.setAttribute('aria-label', 'Zoom out');
-                zoomOutBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>';
+                zoomOutBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>';
 
                 const zoomLabel = document.createElement('span');
                 zoomLabel.className = 'preview-mermaid-zoom-label';
@@ -711,15 +711,16 @@ export default function BlogPreview({
                 zoomInBtn.type = 'button';
                 zoomInBtn.title = 'Zoom in';
                 zoomInBtn.setAttribute('aria-label', 'Zoom in');
-                zoomInBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+                zoomInBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 
                 const resetBtn = document.createElement('button');
                 resetBtn.type = 'button';
-                resetBtn.title = 'Fit diagram';
-                resetBtn.setAttribute('aria-label', 'Fit diagram');
-                resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5"/></svg>';
+                resetBtn.title = 'Reset view';
+                resetBtn.setAttribute('aria-label', 'Reset view');
+                resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><polyline points="1 4 1 10 7 10"/></svg>';
 
                 const fsBtn = document.createElement('button');
+                fsBtn.type = 'button';
                 fsBtn.className = 'preview-mermaid-fullscreen-btn';
                 fsBtn.title = 'Open fullscreen';
                 fsBtn.setAttribute('aria-label', 'Open fullscreen');
@@ -779,12 +780,12 @@ export default function BlogPreview({
                 });
 
                 wrapper.appendChild(svgContainer);
-                controls.appendChild(zoomOutBtn);
-                controls.appendChild(zoomLabel);
                 controls.appendChild(zoomInBtn);
+                controls.appendChild(zoomLabel);
+                controls.appendChild(zoomOutBtn);
                 controls.appendChild(resetBtn);
-                controls.appendChild(fsBtn);
                 wrapper.appendChild(controls);
+                wrapper.appendChild(fsBtn);
                 el.appendChild(wrapper);
               }
             } catch (err) {
