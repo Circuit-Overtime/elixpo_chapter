@@ -24,6 +24,18 @@
       "state_file": "candidates.json",
       "status": ""
     },
+    "daily_summary.json": {
+      "expires_at": "2026-08-18T02:34:25.377320+00:00",
+      "key": "",
+      "payload_sha256": "f8c9277f697f974f4084d7385cdff52cfec6d40253e530ece97231dbe2f59fe3",
+      "produced_at": "2026-08-10T02:34:25.377320+00:00",
+      "producer": "daily-summary",
+      "run_id": "",
+      "schema_version": 1,
+      "sequence": 1,
+      "state_file": "daily_summary.json",
+      "status": "complete"
+    },
     "doctor.json": {
       "expires_at": "",
       "key": "elixpo/lixrl.com#18",
@@ -158,5 +170,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": "2026-08-10T02:33:27.010048+00:00"
+  "updated_at": "2026-08-10T02:34:25.377320+00:00"
 }
