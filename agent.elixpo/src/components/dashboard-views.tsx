@@ -36,14 +36,6 @@ function time(value: string) {
   return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
-function duration(run: DashboardRun) {
-  if (!run.createdAt || !run.updatedAt) return "Not reported";
-  const seconds = Math.max(0, Math.round((Date.parse(run.updatedAt) - Date.parse(run.createdAt)) / 1000));
-  if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
-}
-
 function status(run: DashboardRun) {
   return run.status === "completed" ? run.conclusion || "completed" : run.status;
 }
