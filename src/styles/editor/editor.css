@@ -36,28 +36,45 @@
   overflow-wrap: anywhere;
   word-break: break-word;
 }
-@keyframes cover-upload-sheen {
-  from { transform: translateX(-40%); }
-  to { transform: translateX(340%); }
+@keyframes cover-upload-spin {
+  to { transform: rotate(360deg); }
 }
 
-@keyframes cover-upload-progress {
-  0% { transform: translateX(-110%); }
-  55% { transform: translateX(95%); }
-  100% { transform: translateX(260%); }
+.cover-upload-overlay {
+  overflow: hidden;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--bg-surface) 28%, transparent);
+  backdrop-filter: blur(1.5px);
 }
 
-.cover-upload-sheen {
-  animation: cover-upload-sheen 1.8s ease-in-out infinite;
+.cover-upload-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 0 15px;
+  border: 1px solid color-mix(in srgb, var(--border-default) 82%, transparent);
+  border-radius: 999px;
+  color: var(--text-primary, #24202a);
+  background: color-mix(in srgb, var(--bg-app) 94%, transparent);
+  box-shadow: 0 6px 22px rgba(24, 18, 35, 0.14);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
-.cover-upload-progress {
-  animation: cover-upload-progress 1.35s ease-in-out infinite;
+.cover-upload-spinner {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  border: 2px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: cover-upload-spin 0.8s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cover-upload-sheen,
-  .cover-upload-progress {
+  .cover-upload-spinner {
     animation: none;
   }
 }

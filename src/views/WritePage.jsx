@@ -3262,39 +3262,19 @@ export default function WritePage({ slugid }) {
                                                     />
                                                     {coverUploading && (
                                                         <div
-                                                            className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-[#17131f]/70 backdrop-blur-[3px]"
+                                                            className="cover-upload-overlay absolute inset-0 z-20 flex items-center justify-center"
                                                             role="status"
                                                             aria-live="polite"
                                                         >
-                                                            <div className="cover-upload-sheen absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                                                            <div className="relative flex min-w-[220px] flex-col items-center rounded-2xl border border-white/20 bg-[#211b2c]/90 px-6 py-5 text-white shadow-2xl">
-                                                                <div className="relative mb-3 flex h-11 w-11 items-center justify-center">
-                                                                    <span className="absolute inset-0 animate-ping rounded-full bg-[#9b7bf7]/35" />
-                                                                    <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#9b7bf7] shadow-lg shadow-[#9b7bf7]/30">
-                                                                        <ion-icon
-                                                                            name="cloud-upload-outline"
-                                                                            style={{
-                                                                                fontSize:
-                                                                                    "20px",
-                                                                            }}
-                                                                        />
-                                                                    </span>
-                                                                </div>
-                                                                <span className="text-[13px] font-semibold">
-                                                                    Preparing
-                                                                    your cover
+                                                            <div className="cover-upload-status">
+                                                                <span
+                                                                    className="cover-upload-spinner"
+                                                                    aria-hidden="true"
+                                                                />
+                                                                <span>
+                                                                    Uploading
+                                                                    cover…
                                                                 </span>
-                                                                <span className="mt-1 text-[11px] text-white/60">
-                                                                    Optimizing
-                                                                    for{" "}
-                                                                    {mediaStorageStatus.useForUploads &&
-                                                                    mediaStorageStatus.cloudName
-                                                                        ? mediaStorageStatus.cloudName
-                                                                        : "LixBlogs storage"}
-                                                                </span>
-                                                                <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                                                                    <span className="cover-upload-progress block h-full w-2/5 rounded-full bg-gradient-to-r from-[#8b6ae6] to-[#c4b5fd]" />
-                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}
