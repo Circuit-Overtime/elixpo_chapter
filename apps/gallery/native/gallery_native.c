@@ -14,6 +14,43 @@ static void get_buffer(mp_obj_t obj, mp_buffer_info_t *info, int flags,
     }
 }
 
+static void indexed_scale_kernel(const uint8_t *indices,
+    const uint16_t *palette, uint16_t *dst, mp_int_t sw, mp_int_t sh,
+    mp_int_t dw, mp_int_t dh) {
+    // Build the nearest-neighbour maps once per frame. Recomputing the X
+    // accumulator for all 240 rows costs several milliseconds on the S3.
+    uint16_t xmap[320];
+    uint16_t ymap[240];
+    mp_int_t sx = 0;
+    mp_int_t xacc = 0;
+    for (mp_int_t x = 0; x < dw; ++x) {
+        xmap[x] = (uint16_t)sx;
+        xacc += sw;
+        while (xacc >= dw) {
+            xacc -= dw;
+            ++sx;
+        }
+    }
+    mp_int_t sy = 0;
+    mp_int_t yacc = 0;
+    for (mp_int_t y = 0; y < dh; ++y) {
+        ymap[y] = (uint16_t)sy;
+        yacc += sh;
+        while (yacc >= dh) {
+            yacc -= dh;
+            ++sy;
+        }
+    }
+
+    for (mp_int_t y = 0; y < dh; ++y) {
+        const uint8_t *src_row = indices + ymap[y] * sw;
+        uint16_t *dst_row = dst + y * dw;
+        for (mp_int_t x = 0; x < dw; ++x) {
+            *dst_row++ = palette[src_row[xmap[x]]];
+        }
+    }
+}
+
 // indexed_scale(indices, palette_rgb565be, dst, src_w, src_h, dst_w, dst_h)
 // Expands one 8-bit indexed frame to an opaque, full-screen RGB565 frame.
 static mp_obj_t indexed_scale(mp_obj_fun_bc_t *self, size_t n_args,
@@ -37,34 +74,41 @@ static mp_obj_t indexed_scale(mp_obj_fun_bc_t *self, size_t n_args,
     get_buffer(args[1], &palette_info, MP_BUFFER_READ, 512);
     get_buffer(args[2], &dst_info, MP_BUFFER_RW, (size_t)dw * dh * 2);
 
-    const uint8_t *indices = (const uint8_t *)index_info.buf;
-    // MicroPython bytearray payloads are word-aligned.  A uint16_t assignment
-    // preserves the two in-memory RGB565 bytes while halving the number of
-    // stores in this hottest loop.
-    const uint16_t *palette = (const uint16_t *)palette_info.buf;
-    uint16_t *dst = (uint16_t *)dst_info.buf;
+    indexed_scale_kernel(
+        (const uint8_t *)index_info.buf,
+        (const uint16_t *)palette_info.buf,
+        (uint16_t *)dst_info.buf, sw, sh, dw, dh);
+    return mp_const_none;
+}
 
-    mp_int_t sy = 0;
-    mp_int_t yacc = 0;
-    for (mp_int_t y = 0; y < dh; ++y) {
-        const uint8_t *src_row = indices + sy * sw;
-        uint16_t *dst_row = dst + y * dw;
-        mp_int_t sx = 0;
-        mp_int_t xacc = 0;
-        for (mp_int_t x = 0; x < dw; ++x) {
-            *dst_row++ = palette[src_row[sx]];
-            xacc += sw;
-            while (xacc >= dw) {
-                xacc -= dw;
-                ++sx;
-            }
-        }
-        yacc += sh;
-        while (yacc >= dh) {
-            yacc -= dh;
-            ++sy;
-        }
+// indexed_scale_at(frames, offset, dst, src_w, src_h, dst_w, dst_h)
+// The palette and indices are adjacent inside a preloaded V4 clip. Passing an
+// offset avoids allocating two memoryview slices for every displayed frame.
+static mp_obj_t indexed_scale_at(mp_obj_fun_bc_t *self, size_t n_args,
+    size_t n_kw, mp_obj_t *args) {
+    (void)self;
+    mp_arg_check_num(n_args, n_kw, 7, 7, false);
+
+    mp_int_t offset = mp_obj_get_int(args[1]);
+    mp_int_t sw = mp_obj_get_int(args[3]);
+    mp_int_t sh = mp_obj_get_int(args[4]);
+    mp_int_t dw = mp_obj_get_int(args[5]);
+    mp_int_t dh = mp_obj_get_int(args[6]);
+    if (offset < 0 || sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0 ||
+        sw > 320 || sh > 240 || dw > 320 || dh > 240) {
+        mp_raise_ValueError(MP_ERROR_TEXT("invalid dimensions"));
     }
+
+    size_t frame_size = 512 + (size_t)sw * sh;
+    mp_buffer_info_t frames_info;
+    mp_buffer_info_t dst_info;
+    get_buffer(args[0], &frames_info, MP_BUFFER_READ,
+        (size_t)offset + frame_size);
+    get_buffer(args[2], &dst_info, MP_BUFFER_RW, (size_t)dw * dh * 2);
+    const uint8_t *frame = (const uint8_t *)frames_info.buf + offset;
+
+    indexed_scale_kernel(frame + 512, (const uint16_t *)frame,
+        (uint16_t *)dst_info.buf, sw, sh, dw, dh);
     return mp_const_none;
 }
 
@@ -129,6 +173,8 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw,
     MP_DYNRUNTIME_INIT_ENTRY
     mp_store_global(MP_QSTR_indexed_scale,
         MP_DYNRUNTIME_MAKE_FUNCTION(indexed_scale));
+    mp_store_global(MP_QSTR_indexed_scale_at,
+        MP_DYNRUNTIME_MAKE_FUNCTION(indexed_scale_at));
     mp_store_global(MP_QSTR_rgb565_scale,
         MP_DYNRUNTIME_MAKE_FUNCTION(rgb565_scale));
     MP_DYNRUNTIME_INIT_EXIT

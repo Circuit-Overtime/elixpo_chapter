@@ -15,6 +15,7 @@ Controls:
   HOME           apps drawer
 """
 
+import gc as _gc
 import os as _os
 import oreoOS
 from oreoOS import api
@@ -83,6 +84,12 @@ class _Video:
     def __init__(self, path):
         self._path = path
         self._inflate = None
+        self._blob = None
+        self._loaded = 0
+        self._payload_size = 0
+        self._frame_size = 0
+        self._load_error = False
+        self.frame_offset = 0
         self._f = open(path, "rb")
         head = self._f.read(_VIDEO_HEADER_SIZE)
         if (len(head) != _VIDEO_HEADER_SIZE or head[:3] != b"RV5" or
@@ -105,8 +112,17 @@ class _Video:
             if _gallery_native is None:
                 self.close()
                 raise ValueError("native video decoder unavailable")
-            self.palette = bytearray(512)
-            self.data = bytearray(self.w * self.h)
+            self.palette = None
+            self.data = None
+            self._frame_size = 512 + self.w * self.h
+            self._payload_size = self._frame_size * self.frames
+            try:
+                if _os.stat(path)[6] != _VIDEO_HEADER_SIZE + self._payload_size:
+                    raise ValueError("bad RV565 v4 size")
+                self._blob = bytearray(self._payload_size)
+            except Exception:
+                self.close()
+                raise
         else:
             self.palette = None
             self.data = bytearray(self.w * self.h * 2)
@@ -134,13 +150,54 @@ class _Video:
         f = getattr(self, "_f", None)
         self._f = None
         self._inflate = None
+        self._blob = None
         if f is not None:
             try:
                 f.close()
             except Exception:
                 pass
 
+    @property
+    def ready(self):
+        return (self.version != 4 or
+                self._loaded == self._payload_size)
+
+    @property
+    def load_percent(self):
+        if self.version != 4 or self._payload_size <= 0:
+            return 100
+        return self._loaded * 100 // self._payload_size
+
+    def load_step(self, amount=65536):
+        """Read one bounded V4 chunk into PSRAM; keeps loader/input alive."""
+        if self.version != 4 or self.ready:
+            return True
+        end = min(self._loaded + amount, self._payload_size)
+        target = memoryview(self._blob)[self._loaded:end]
+        total = 0
+        try:
+            while total < len(target):
+                n = self._f.readinto(target[total:])
+                if not n:
+                    self._load_error = True
+                    break
+                total += n
+        except Exception:
+            self._load_error = True
+        self._loaded += total
+        if self.ready or self._load_error:
+            try:
+                self._f.close()
+            except Exception:
+                pass
+            self._f = None
+        return self.ready
+
     def rewind(self):
+        if self.version == 4:
+            self.index = 0
+            self.frame_offset = 0
+            return
         if self.version == 3:
             try:
                 self._f.close()
@@ -164,25 +221,14 @@ class _Video:
 
     def next_frame(self):
         """Decode one delta frame in place. Returns False on corrupt/EOF."""
-        if self._f is None:
-            return False
         if self.version == 4:
-            # Raw palette + indices means two predictable flash reads and no
-            # inflater. Both bytearrays are reused for the entire clip.
-            for target in (memoryview(self.palette), memoryview(self.data)):
-                total = 0
-                try:
-                    while total < len(target):
-                        n = self._f.readinto(target[total:])
-                        if not n:
-                            break
-                        total += n
-                except Exception:
-                    return False
-                if total != len(target):
-                    return False
+            if not self.ready or self.index >= self.frames:
+                return False
+            self.frame_offset = self.index * self._frame_size
             self.index += 1
             return True
+        if self._f is None:
+            return False
         if self.version == 3:
             if self._inflate is None:
                 return False
@@ -408,6 +454,7 @@ class App(oreoOS.App):
         self._video_name = ""
         self._video_elapsed = 0.0
         self._video_needs_clear = True
+        _gc.collect()
 
     def _is_video(self):
         return (not self._is_add_tile() and self._idx < len(self._names) and
@@ -422,10 +469,15 @@ class App(oreoOS.App):
             return self._video
         self._close_video()
         try:
+            # A preloaded V4 clip needs a large contiguous PSRAM block. Drop
+            # photo caches before allocating it; they are cheap to reload.
+            self._cache = {}
+            self._scaled_cache = {}
+            _gc.collect()
             self._video = _Video(_GALLERY_DIR + "/" + name)
             self._video_name = name
             self._video_playing = True
-            if not self._video.next_frame():
+            if self._video.version != 4 and not self._video.next_frame():
                 self._close_video()
         except Exception:
             self._close_video()
@@ -510,7 +562,22 @@ class App(oreoOS.App):
         if not self._is_video():
             return
         video = self._open_video()
-        if video is None or not self._video_playing:
+        if video is None:
+            return
+        if video.version == 4 and not video.ready:
+            video.load_step()
+            if video._load_error:
+                self._close_video()
+                return
+            self._dirty = True
+            if not video.ready:
+                return
+            if not video.next_frame():
+                self._close_video()
+                return
+            self._video_elapsed = 0.0
+            return
+        if not self._video_playing:
             return
         self._video_elapsed += dt
         frame_time = 1.0 / video.fps
@@ -580,13 +647,25 @@ class App(oreoOS.App):
             d.text("broken video", (SW - 12 * 16) // 2, SH // 2 - 8,
                    theme.MUTED, scale=2)
         else:
+            if video.version == 4 and not video.ready:
+                d.clear(api.BLACK)
+                label = "LOADING VIDEO %d%%" % video.load_percent
+                d.text(label, (SW - len(label) * 8) // 2,
+                       SH // 2 - 18, api.WHITE)
+                bx, by, bw, bh = 30, SH // 2 + 4, SW - 60, 10
+                d.rect(bx, by, bw, bh, theme.MUTED, fill=False)
+                fill = (bw - 4) * video.load_percent // 100
+                if fill:
+                    d.rect(bx + 2, by + 2, fill, bh - 4,
+                           theme.PRIMARY, fill=True)
+                return
             # V4 is expanded and scaled straight into Display._buf by C. It
             # avoids a 153 KB intermediate frame and all Python pixel loops.
             native_buf = getattr(d, "_buf", None)
             if (video.version == 4 and _gallery_native is not None and
                     native_buf is not None):
-                _gallery_native.indexed_scale(
-                    video.data, video.palette, native_buf,
+                _gallery_native.indexed_scale_at(
+                    video._blob, video.frame_offset, native_buf,
                     video.w, video.h, SW, SH)
                 # We intentionally use the hardware buffer directly to keep
                 # the accelerator Gallery-local. Tell Display to flush it.

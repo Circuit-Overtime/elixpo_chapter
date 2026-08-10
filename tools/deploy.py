@@ -209,14 +209,17 @@ for _root in _app_roots:
 
         # Optional src/ subtree for the modular-app convention:
         # apps/<name>/main.py is a thin shim that imports from
-        # apps/<name>/src/. Anything .py under src/ gets pushed
-        # recursively so contributors can drop helper modules in
+        # apps/<name>/src/. Python sources and architecture-matched dynamic
+        # native .mpy helpers under src/ get pushed recursively so apps can
+        # accelerate hot loops without rebuilding the whole firmware.
         # without touching the deploy script. We deliberately skip
         # __pycache__, .pyc, hidden files, and any subdirectory
         # named `tests/` (host-only — they pull in pytest etc).
         src_dir = app_dir / "src"
         if src_dir.is_dir():
-            for sp in sorted(src_dir.rglob("*.py")):
+            for sp in sorted(src_dir.rglob("*")):
+                if not sp.is_file() or sp.suffix not in (".py", ".mpy"):
+                    continue
                 # Filter out everything we don't want on flash.
                 parts = sp.relative_to(app_dir).parts
                 if any(p == "__pycache__" or p.startswith(".") or

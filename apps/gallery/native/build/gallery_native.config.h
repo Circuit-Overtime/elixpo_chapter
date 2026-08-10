@@ -168,6 +168,7 @@ typedef uintptr_t mp_off_t;
 #define MP_QSTR_write (164)
 #define MP_QSTR_zip (165)
 #define MP_QSTR_indexed_scale (mp_native_qstr_table[1])
-#define MP_QSTR_rgb565_scale (mp_native_qstr_table[2])
+#define MP_QSTR_indexed_scale_at (mp_native_qstr_table[2])
+#define MP_QSTR_rgb565_scale (mp_native_qstr_table[3])
 extern const uint16_t mp_native_qstr_table[];
 extern const mp_uint_t mp_native_obj_table[];

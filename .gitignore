@@ -16,6 +16,8 @@ firmware/*.bin
 
 # MicroPython device artifacts
 *.mpy
+# Gallery ships this architecture-matched dynamic module as a runtime asset.
+!apps/gallery/src/gallery_native.mpy
 
 # IDE
 .vscode/settings.json

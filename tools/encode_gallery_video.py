@@ -20,8 +20,8 @@ from pathlib import Path
 from PIL import Image
 
 
-W = 200
-H = 150
+W = 180
+H = 135
 
 
 def _rgb565_palette(palette):
