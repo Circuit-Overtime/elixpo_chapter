@@ -835,6 +835,8 @@
 
 .mermaid-block--editing {
   padding: 0;
+  pointer-events: auto !important;
+  user-select: auto !important;
 }
 
 .mermaid-block-header {
@@ -859,6 +861,7 @@
   border-top: 1px solid var(--border-default);
   background: var(--bg-app);
   min-height: 160px;
+  pointer-events: auto !important;
 }
 
 .mermaid-line-numbers {
@@ -897,6 +900,9 @@
   white-space: pre;
   tab-size: 4;
   overflow: auto;
+  pointer-events: auto !important;
+  user-select: text !important;
+  caret-color: var(--text-primary);
 }
 
 .mermaid-block-textarea::placeholder {

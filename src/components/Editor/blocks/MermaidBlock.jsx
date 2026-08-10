@@ -9,7 +9,26 @@ import { getCachedMermaidSvg, renderMermaidSvg } from '../../../utils/mermaidRen
 const pendingEditorFocus = new Set();
 
 export function requestMermaidEditorFocus(blockId) {
-  if (blockId) pendingEditorFocus.add(blockId);
+  if (!blockId) return;
+  pendingEditorFocus.add(blockId);
+
+  let attempts = 0;
+  const focusWhenMounted = () => {
+    const textarea = document.querySelector(
+      `[data-id="${CSS.escape(blockId)}"] .mermaid-block-textarea`,
+    );
+    if (textarea) {
+      pendingEditorFocus.delete(blockId);
+      textarea.focus({ preventScroll: true });
+      return;
+    }
+    if (attempts++ < 6) {
+      requestAnimationFrame(focusWhenMounted);
+    } else {
+      pendingEditorFocus.delete(blockId);
+    }
+  };
+  requestAnimationFrame(focusWhenMounted);
 }
 
 // Shared component that renders a mermaid diagram to SVG
@@ -197,15 +216,20 @@ export const MermaidBlock = createReactBlockSpec(
     type: 'mermaidBlock',
     propSchema: {
       diagram: { default: '' },
+      editingDraft: { default: '' },
+      isEditing: { default: false },
     },
     content: 'none',
   },
   {
     render: ({ block, editor }) => {
       const { isDark } = useTheme();
-      const [editing, setEditing] = useState(!block.props.diagram);
-      const [value, setValue] = useState(block.props.diagram || '');
-      const [livePreview, setLivePreview] = useState(block.props.diagram || '');
+      const initialDraft = block.props.isEditing
+        ? block.props.editingDraft || block.props.diagram || ''
+        : block.props.diagram || '';
+      const [editing, setEditing] = useState(block.props.isEditing || !block.props.diagram);
+      const [value, setValue] = useState(initialDraft);
+      const [livePreview, setLivePreview] = useState(initialDraft);
       const inputRef = useRef(null);
       const lineGutterRef = useRef(null);
       const debounceRef = useRef(null);
@@ -254,12 +278,23 @@ export const MermaidBlock = createReactBlockSpec(
       }, [editing]);
 
       // Debounced live preview update while typing
-      const handleCodeChange = useCallback((e) => {
-        const v = e.target.value;
-        setValue(v);
+      const persistEditingDraft = useCallback((nextValue) => {
         clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => setLivePreview(v), 400);
-      }, []);
+        debounceRef.current = setTimeout(() => {
+          setLivePreview(nextValue);
+          try {
+            editor.updateBlock(block.id, {
+              props: { editingDraft: nextValue, isEditing: true },
+            });
+          } catch {}
+        }, 400);
+      }, [editor, block.id]);
+
+      const handleCodeChange = useCallback((e) => {
+        const nextValue = e.target.value;
+        setValue(nextValue);
+        persistEditingDraft(nextValue);
+      }, [persistEditingDraft]);
 
       const handleCodePaste = useCallback((e) => {
         e.preventDefault();
@@ -272,20 +307,22 @@ export const MermaidBlock = createReactBlockSpec(
         const nextValue = value.slice(0, start) + pasted + value.slice(end);
 
         setValue(nextValue);
-        clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => setLivePreview(nextValue), 400);
+        persistEditingDraft(nextValue);
         requestAnimationFrame(() => {
           const cursor = start + pasted.length;
           input.setSelectionRange(cursor, cursor);
         });
-      }, [value]);
+      }, [value, persistEditingDraft]);
 
       useEffect(() => {
         return () => clearTimeout(debounceRef.current);
       }, []);
 
       const save = useCallback(() => {
-        editor.updateBlock(block, { props: { diagram: value } });
+        clearTimeout(debounceRef.current);
+        editor.updateBlock(block.id, {
+          props: { diagram: value, editingDraft: '', isEditing: false },
+        });
         setEditing(false);
 
         // Completing a custom block should return the author to normal writing.
@@ -316,7 +353,31 @@ export const MermaidBlock = createReactBlockSpec(
             });
           } catch {}
         });
-      }, [editor, block, value]);
+      }, [editor, block.id, value]);
+
+      const beginEditing = useCallback(() => {
+        const nextValue = block.props.editingDraft || block.props.diagram || '';
+        setValue(nextValue);
+        setLivePreview(nextValue);
+        setEditing(true);
+        try {
+          editor.updateBlock(block.id, {
+            props: { editingDraft: nextValue, isEditing: true },
+          });
+        } catch {}
+      }, [editor, block.id, block.props.diagram, block.props.editingDraft]);
+
+      const cancelEditing = useCallback(() => {
+        clearTimeout(debounceRef.current);
+        setEditing(false);
+        setValue(block.props.diagram || '');
+        setLivePreview(block.props.diagram || '');
+        try {
+          editor.updateBlock(block.id, {
+            props: { editingDraft: '', isEditing: false },
+          });
+        } catch {}
+      }, [editor, block.id, block.props.diagram]);
 
       const handleDelete = useCallback(() => {
         try { editor.removeBlocks([block.id]); } catch {}
@@ -324,7 +385,11 @@ export const MermaidBlock = createReactBlockSpec(
 
       if (editing) {
         return (
-          <div className="mermaid-block mermaid-block--editing">
+          <div
+            className="mermaid-block mermaid-block--editing"
+            contentEditable={false}
+            suppressContentEditableWarning
+          >
             <div className="mermaid-block-header">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
@@ -345,26 +410,40 @@ export const MermaidBlock = createReactBlockSpec(
               </div>
               <textarea
                 ref={inputRef}
+                draggable={false}
                 value={value}
                 onChange={handleCodeChange}
+                onBlur={() => {
+                  clearTimeout(debounceRef.current);
+                  try {
+                    editor.updateBlock(block.id, {
+                      props: { editingDraft: value, isEditing: true },
+                    });
+                  } catch {}
+                }}
                 onScroll={(event) => {
                   if (lineGutterRef.current) {
                     lineGutterRef.current.scrollTop = event.currentTarget.scrollTop;
                   }
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.currentTarget.focus();
+                }}
                 onPaste={handleCodePaste}
                 onKeyDown={(e) => {
                   e.stopPropagation();
                   if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); save(); }
-                  if (e.key === 'Escape') { setEditing(false); setValue(block.props.diagram || ''); setLivePreview(block.props.diagram || ''); }
+                  if (e.key === 'Escape') cancelEditing();
                   if (e.key === 'Tab') {
                     e.preventDefault();
                     const start = e.target.selectionStart;
                     const end = e.target.selectionEnd;
                     const newVal = value.substring(0, start) + '    ' + value.substring(end);
                     setValue(newVal);
-                    setLivePreview(newVal);
+                    persistEditingDraft(newVal);
                     requestAnimationFrame(() => {
                       e.target.selectionStart = e.target.selectionEnd = start + 4;
                     });
@@ -381,7 +460,7 @@ export const MermaidBlock = createReactBlockSpec(
               <MermaidPreview diagram={livePreview} isDark={isDark} interactive={false} cancelStale />
             </div>
             <div className="mermaid-block-actions">
-              <button onClick={() => { setEditing(false); setValue(block.props.diagram || ''); setLivePreview(block.props.diagram || ''); }} className="mermaid-btn-cancel">Cancel</button>
+              <button onClick={cancelEditing} className="mermaid-btn-cancel">Cancel</button>
               <button onClick={save} className="mermaid-btn-save" disabled={!value.trim()}>Done</button>
             </div>
           </div>
@@ -390,7 +469,7 @@ export const MermaidBlock = createReactBlockSpec(
 
       if (!block.props.diagram) {
         return (
-          <div onClick={() => setEditing(true)} className="mermaid-block mermaid-block--empty">
+          <div contentEditable={false} onClick={beginEditing} className="mermaid-block mermaid-block--empty">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7" rx="1.5" />
               <rect x="14" y="3" width="7" height="7" rx="1.5" />
@@ -407,7 +486,7 @@ export const MermaidBlock = createReactBlockSpec(
       }
 
       return (
-        <div className="mermaid-block mermaid-block--rendered group" onDoubleClick={() => setEditing(true)}>
+        <div contentEditable={false} className="mermaid-block mermaid-block--rendered group" onDoubleClick={beginEditing}>
           <MermaidPreview diagram={block.props.diagram} isDark={isDark} interactive />
           <div className="mermaid-block-hover">
             <button onClick={() => setIsFullscreen(true)} className="mermaid-hover-btn" title="Fullscreen">
@@ -415,7 +494,7 @@ export const MermaidBlock = createReactBlockSpec(
                 <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
               </svg>
             </button>
-            <button onClick={() => setEditing(true)} className="mermaid-hover-btn" title="Edit diagram">
+            <button onClick={beginEditing} className="mermaid-hover-btn" title="Edit diagram">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
