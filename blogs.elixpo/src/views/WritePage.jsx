@@ -152,6 +152,15 @@ function getDraftKey(slugid) {
     return STORAGE_KEY_PREFIX + (slugid || "new");
 }
 
+function serializedContentSize(content) {
+    if (typeof content === "string") return content.length;
+    try {
+        return JSON.stringify(content || []).length;
+    } catch {
+        return 0;
+    }
+}
+
 function loadDraft(slugid) {
     try {
         const raw = localStorage.getItem(getDraftKey(slugid));
@@ -817,6 +826,9 @@ export default function WritePage({ slugid }) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [pageEmoji, setPageEmoji] = useState(null);
     const [editorContent, setEditorContent] = useState(null);
+    // The editor owns its document after mount. Keeping the seed separate prevents
+    // every keystroke from being fed back through initialContent and re-sanitized.
+    const [editorSeedContent, setEditorSeedContent] = useState(null);
     const [previewHtml, setPreviewHtml] = useState("");
     const [markdown, setMarkdown] = useState("");
     const [wordCount, setWordCount] = useState(0);
@@ -841,6 +853,8 @@ export default function WritePage({ slugid }) {
     const bypassUnloadRef = useRef(false); // set during publish redirect to skip the leave prompt
     const dirtyRef = useRef(false); // true when there are edits not yet flushed to the cloud
     const draftRevisionRef = useRef(0); // prevents an older request clearing newer edits
+    const editorSnapshotTimerRef = useRef(null);
+    const largeDocumentRef = useRef(false);
     const syncInFlightRef = useRef(null); // serialize saves so publish never races autosave
     const coverUploadRef = useRef(null); // pending upload whose permanent URL must win over blob: preview
     const isPublished = blogVersion?.isPublished;
@@ -1051,6 +1065,7 @@ export default function WritePage({ slugid }) {
         member_only: memberOnly,
     });
     useEffect(() => {
+        const latestEditorContent = draftDataRef.current.editorContent;
         draftDataRef.current = {
             title,
             subtitle,
@@ -1058,7 +1073,7 @@ export default function WritePage({ slugid }) {
             publishAs,
             collectionId,
             coverPreview,
-            editorContent,
+            editorContent: latestEditorContent ?? editorContent,
             pageEmoji,
             coverPos,
             coverZoom,
@@ -1349,6 +1364,14 @@ export default function WritePage({ slugid }) {
         // slugid change, the next blog's initial load isn't treated as user edits,
         // and the no-change snapshot re-captures for the new blog.
         loadedRef.current = false;
+        setDraftLoading(true);
+        setEditorContent(null);
+        setEditorSeedContent(null);
+        largeDocumentRef.current = false;
+        draftDataRef.current = {
+            ...draftDataRef.current,
+            editorContent: null,
+        };
         settingsSnapshotRef.current = "";
         const timer = setTimeout(async () => {
             // Resolve the URL param (slug or id) against the server, which returns the
@@ -1447,12 +1470,17 @@ export default function WritePage({ slugid }) {
                     if (local.pageEmoji) setPageEmoji(local.pageEmoji);
                     if (local.savedAt) setLastSaved(local.savedAt);
                     setEditorContent(local.editorContent);
+                    setEditorSeedContent(local.editorContent);
+                    largeDocumentRef.current =
+                        serializedContentSize(local.editorContent) >= 8000;
                 } else if (cloud.content) {
-                    setEditorContent(
+                    const initialContent =
                         typeof cloud.content === "string"
                             ? cloud.content
-                            : JSON.stringify(cloud.content),
-                    );
+                            : JSON.stringify(cloud.content);
+                    setEditorContent(initialContent);
+                    setEditorSeedContent(initialContent);
+                    largeDocumentRef.current = initialContent.length >= 8000;
                 }
             } else if (local?.editorContent) {
                 // Brand-new blog not yet on the server — use the local buffer.
@@ -1468,6 +1496,9 @@ export default function WritePage({ slugid }) {
                 if (local.pageEmoji) setPageEmoji(local.pageEmoji);
                 if (local.savedAt) setLastSaved(local.savedAt);
                 setEditorContent(local.editorContent);
+                setEditorSeedContent(local.editorContent);
+                largeDocumentRef.current =
+                    serializedContentSize(local.editorContent) >= 8000;
             }
             setDraftLoading(false);
             // Defer so the state updates above don't trip the autosave effect as "edits".
@@ -1586,10 +1617,31 @@ export default function WritePage({ slugid }) {
 
     const handleEditorChange = useCallback(
         (blocks) => {
-            setEditorContent(blocks);
-            setWordCount(computeWordCount(blocks));
+            // Keep crash/unload recovery current without forcing the entire editor,
+            // outline and metadata page through React on each ProseMirror transaction.
+            draftDataRef.current = {
+                ...draftDataRef.current,
+                editorContent: blocks,
+            };
+            if (loadedRef.current) {
+                setHasUnsavedEdits(true);
+                dirtyRef.current = true;
+                draftRevisionRef.current += 1;
+            }
+            clearTimeout(editorSnapshotTimerRef.current);
+            const delay =
+                largeDocumentRef.current || blocks.length >= 60 ? 700 : 120;
+            editorSnapshotTimerRef.current = setTimeout(() => {
+                setEditorContent(blocks);
+                setWordCount(computeWordCount(blocks));
+            }, delay);
         },
         [computeWordCount],
+    );
+
+    useEffect(
+        () => () => clearTimeout(editorSnapshotTimerRef.current),
+        [],
     );
 
     // Recompute word count when content loads from server/localStorage
@@ -1873,7 +1925,7 @@ export default function WritePage({ slugid }) {
                 publishAs,
                 collectionId,
                 coverPreview: latestCover,
-                editorContent,
+                editorContent: draftDataRef.current.editorContent,
                 pageEmoji,
                 coverPos,
                 coverZoom,
@@ -2169,7 +2221,7 @@ export default function WritePage({ slugid }) {
                     tags,
                     publishAs,
                     collectionId,
-                    editorContent,
+                    editorContent: draftDataRef.current.editorContent,
                     pageEmoji,
                     coverUrl: persistedCover,
                     coverPos,
@@ -2276,7 +2328,7 @@ export default function WritePage({ slugid }) {
                     tags,
                     publishAs,
                     collectionId,
-                    editorContent,
+                    editorContent: draftDataRef.current.editorContent,
                     pageEmoji,
                     slug,
                     status: "unlisted",
@@ -4203,7 +4255,7 @@ export default function WritePage({ slugid }) {
                                             <BlockNoteEditor
                                                 ref={editorRef}
                                                 onChange={handleEditorChange}
-                                                initialContent={editorContent}
+                                                initialContent={editorSeedContent}
                                                 onReady={() =>
                                                     setEditorReady(true)
                                                 }
