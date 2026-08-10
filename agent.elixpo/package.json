@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "preview": "next build && wrangler pages dev out",
-    "deploy": "next build && wrangler pages deploy out --project-name agent-elixpo",
+    "deploy": "next build && wrangler pages deploy out --project-name agent-elixpo-web",
     "start": "next start",
     "lint": "eslint"
   },

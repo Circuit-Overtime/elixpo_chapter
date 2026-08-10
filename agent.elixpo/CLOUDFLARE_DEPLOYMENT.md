@@ -30,7 +30,7 @@ npm ci
 npm run deploy
 ```
 
-The deploy script performs the static Next.js export and uploads `out/` to the `agent-elixpo` Pages project. For Git integration use:
+The deploy script performs the static Next.js export and uploads `out/` to the `agent-elixpo-web` Pages project. This distinct name avoids colliding with the obsolete `agent-elixpo` SSR Worker. For Git integration use:
 
 - Root directory: `agent.elixpo`
 - Build command: `npm run build`
@@ -45,8 +45,8 @@ NEXT_PUBLIC_DASHBOARD_API_URL=http://localhost:8788
 
 ## 3. Attach the domain
 
-1. Remove the existing `agent.elixpo.com` Custom Domain from the old SSR Worker.
-2. Add `agent.elixpo.com` as the Pages project's Custom Domain.
+1. Remove the existing `agent.elixpo.com` Custom Domain and catch-all route from the old `agent-elixpo` SSR Worker.
+2. Add `agent.elixpo.com` as the `agent-elixpo-web` Pages project's Custom Domain.
 3. Keep the Worker route `agent.elixpo.com/api/*` assigned to `agent-elixpo-api`.
 
 Cloudflare serves Pages for the site and intercepts only `/api/*` for live data.

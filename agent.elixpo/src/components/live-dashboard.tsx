@@ -16,7 +16,6 @@ export function LiveDashboard({ view, floor }: { view: DashboardView; floor?: Fl
 
   useEffect(() => {
     const controller = new AbortController();
-    setError("");
     fetch(`${apiRoot}/snapshot`, { signal: controller.signal, headers: { accept: "application/json" } })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Dashboard API returned ${response.status}`);
@@ -29,7 +28,7 @@ export function LiveDashboard({ view, floor }: { view: DashboardView; floor?: Fl
     return () => controller.abort();
   }, [attempt]);
 
-  if (error) return <main className="real-page"><section className="live-data-state live-data-error"><AlertTriangle size={24} /><div><strong>Live GitHub data is unavailable</strong><p>{error}</p></div><button onClick={() => setAttempt((value) => value + 1)}>Retry</button></section></main>;
+  if (error) return <main className="real-page"><section className="live-data-state live-data-error"><AlertTriangle size={24} /><div><strong>Live GitHub data is unavailable</strong><p>{error}</p></div><button onClick={() => { setError(""); setSnapshot(null); setAttempt((value) => value + 1); }}>Retry</button></section></main>;
   if (!snapshot) return <main className="real-page"><section className="live-data-state"><Radio size={24} /><div><strong>Connecting to the operations Worker</strong><p>Loading current GitHub runs and state receipts.</p></div></section></main>;
 
   if (view === "building") return <BuildingDashboard snapshot={snapshot} />;
