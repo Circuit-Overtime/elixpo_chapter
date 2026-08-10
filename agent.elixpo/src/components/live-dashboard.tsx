@@ -7,7 +7,14 @@ import type { DashboardSnapshot, FloorDefinition } from "@/lib/dashboard-model";
 
 type DashboardView = "building" | "floors" | "floor" | "runs" | "work" | "journal" | "security";
 
-const apiRoot = (process.env.NEXT_PUBLIC_DASHBOARD_API_URL || "/api").replace(/\/$/, "");
+function dashboardApiRoot() {
+  const configured = process.env.NEXT_PUBLIC_DASHBOARD_API_URL;
+  if (configured) return configured.replace(/\/$/, "");
+  if (typeof window !== "undefined" && window.location.hostname.endsWith(".pages.dev")) {
+    return "https://agent-elixpo-api.ayushbhatt633.workers.dev";
+  }
+  return "/api";
+}
 
 export function LiveDashboard({ view, floor }: { view: DashboardView; floor?: FloorDefinition }) {
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null);
@@ -16,7 +23,7 @@ export function LiveDashboard({ view, floor }: { view: DashboardView; floor?: Fl
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${apiRoot}/snapshot`, { signal: controller.signal, headers: { accept: "application/json" } })
+    fetch(`${dashboardApiRoot()}/snapshot`, { signal: controller.signal, headers: { accept: "application/json" } })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Dashboard API returned ${response.status}`);
         return response.json() as Promise<DashboardSnapshot>;
