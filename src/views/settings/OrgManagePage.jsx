@@ -460,6 +460,7 @@ export default function OrgManagePage({ slug }) {
             quality={0.7}
             maxSizeKB={40}
             currentImage={org.logo_url || null}
+            squareDialog
             onSave={handleLogoSave}
             onClose={() => setShowLogoModal(false)}
           />

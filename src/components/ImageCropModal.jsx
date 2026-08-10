@@ -19,6 +19,7 @@ export default function ImageCropModal({
   currentImage = null,    // shows a "Remove" action when set
   initialSrc = null,      // open straight into crop with this image (skips the source tabs)
   belowHeader = false,    // editor covers sit below its fixed navbar
+  squareDialog = false,   // constrain the outer panel to a responsive 1:1 shape
   onSave,
   onClose,
 }) {
@@ -235,6 +236,10 @@ export default function ImageCropModal({
       <div
         className="border rounded-2xl w-full max-w-[900px] overflow-y-auto overscroll-contain"
         style={{
+          ...(squareDialog && {
+            width: 'min(640px, calc(100vw - 2rem), calc(100dvh - 2rem))',
+            height: 'min(640px, calc(100vw - 2rem), calc(100dvh - 2rem))',
+          }),
           maxHeight: belowHeader ? 'calc(100dvh - 5rem)' : 'calc(100dvh - 2rem)',
           backgroundColor: 'var(--card-bg)',
           borderColor: 'var(--card-border)',
