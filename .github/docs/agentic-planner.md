@@ -18,6 +18,7 @@ repository that installs the agent workflows:
 | --- | --- | --- |
 | `ELIXPO_POLLINATIONS_API_KEY` | Every model request: agent, triage, PR metadata, and changelog summaries | Pollinations text API; this is the only model credential |
 | `ELIXPOO_GITHUB_AGENTIC_TOKEN` | Repository reads/writes, issue and PR metadata, branches, failed-run retries, repository variables, and Project V2 fields | See the token profiles below |
+| `ELIXPOO_GITHUB_NOTIFICATIONS_TOKEN` | Optional discovery of mentions outside repositories with installed webhooks | Classic PAT with `notifications`; fine-grained PATs are unsupported by this endpoint |
 | `AGENT_GITHUB_SOLVER_TOKEN` | Solve/Submit fork creation, fork branch pushes, and pull-request creation | Classic PAT from the fork owner with `public_repo` for public targets |
 | `ELIXPOO_GIST_AGENTIC_TOKEN` | Merge changelog and Steward follow-up memory | Gist read/write |
 
@@ -42,8 +43,6 @@ Recommended `ELIXPOO_GITHUB_AGENTIC_TOKEN` fine-grained PAT:
   read/write, Pull requests read/write, Variables read/write, Workflows
   read/write, and Metadata read.
 - Organization permissions: Projects read/write.
-- The account must also be able to read its participating GitHub notifications
-  so Steward can discover mentions outside installed repositories.
 Classic PAT fallback for `ELIXPOO_GITHUB_AGENTIC_TOKEN`: `repo`, `workflow`, and `project`.
 Add `read:org` only if the organization restricts project access in a
 way that requires membership lookup. This is broader than the fine-grained
@@ -54,8 +53,11 @@ on the `elixpoo` GitHub account or replace it everywhere with the account's
 GitHub-provided private noreply address; an unverified email will not link the
 commit to the profile.
 
-`ELIXPOO_GIST_AGENTIC_TOKEN` needs only classic PAT scope `gist`. It does not need `repo`,
-`workflow`, or organization administration scopes.
+`ELIXPOO_GIST_AGENTIC_TOKEN` needs either the fine-grained Gists user permission
+set to read/write or the classic PAT scope `gist`. It does not need `repo`,
+`workflow`, or organization administration scopes. An optional
+`ELIXPOO_GITHUB_NOTIFICATIONS_TOKEN` must be a classic PAT with the
+`notifications` scope; GitHub rejects fine-grained tokens for that endpoint.
 
 Set the organization variable `ELIXPOO_FOLLOWUP_GIST_ID` to one private Gist
 owned by `elixpoo`. Steward stores `elixpoo-followups.json` beside any other

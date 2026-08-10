@@ -21,9 +21,16 @@ Solve target sandbox.
     read/write, Pull requests read/write, Variables read/write, Workflows
     read/write, and Metadata read.
   - Organization permission: Projects read/write.
-  - The account must be able to read participating notifications for Steward.
   - Classic fallback scopes: `repo`, `workflow`, and `project`; add `read:org`
     only when organization policy requires it.
+
+- [ ] `ELIXPOO_GITHUB_NOTIFICATIONS_TOKEN` (optional)
+  - Classic PAT owned by `elixpoo` with the `notifications` scope.
+  - Enables Steward to discover mentions in repositories that do not install
+    the shared webhook workflow.
+  - GitHub does not allow fine-grained PATs or GitHub App tokens to call the
+    authenticated-user Notifications endpoint. Without this secret, Steward
+    still reconciles tracked work and webhook-discovered mentions.
 
 - [x] `AGENT_GITHUB_SOLVER_TOKEN`
   - Owner: the account that owns contribution forks, normally `elixpoo`.
@@ -34,7 +41,8 @@ Solve target sandbox.
 
 - [x] `ELIXPOO_GIST_AGENTIC_TOKEN`
   - Owner: `elixpoo`.
-  - Classic PAT scope: `gist` only.
+  - Fine-grained PAT: Gists user permission read/write; or classic PAT scope:
+    `gist` only.
   - Used for follow-up memory, cursors, caches, and merge changelogs.
 
 - [x] `ELIXPOO_GITHUB_DISCUSSIONS_TOKEN`

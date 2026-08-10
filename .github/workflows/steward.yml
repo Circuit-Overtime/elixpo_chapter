@@ -28,6 +28,8 @@ jobs:
       - name: Reconcile tracked work and answer mentions
         env:
           ELIXPOO_GITHUB_AGENTIC_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
+          # Optional classic PAT with the notifications scope. Fine-grained PATs cannot use /notifications.
+          ELIXPOO_GITHUB_NOTIFICATIONS_TOKEN: ${{ secrets.ELIXPOO_GITHUB_NOTIFICATIONS_TOKEN }}
           ELIXPOO_GIST_AGENTIC_TOKEN: ${{ secrets.ELIXPOO_GIST_AGENTIC_TOKEN }}
           ELIXPOO_FOLLOWUP_GIST_ID: ${{ vars.ELIXPOO_FOLLOWUP_GIST_ID }}
           ELIXPO_FOLLOWUP_TTL_DAYS: ${{ vars.ELIXPO_FOLLOWUP_TTL_DAYS || 360 }}
