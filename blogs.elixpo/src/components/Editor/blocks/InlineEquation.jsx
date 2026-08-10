@@ -2,23 +2,22 @@
 
 import { createReactInlineContentSpec } from '@blocknote/react';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import katex from 'katex';
+import { renderKatex } from '../../../utils/katexRenderer';
 
-function stripDelimiters(raw) {
-  let s = raw.trim();
-  if (s.startsWith('\\(') && s.endsWith('\\)')) return s.slice(2, -2).trim();
-  if (s.startsWith('\\[') && s.endsWith('\\]')) return s.slice(2, -2).trim();
-  if (s.startsWith('$$') && s.endsWith('$$')) return s.slice(2, -2).trim();
-  if (s.startsWith('$') && s.endsWith('$') && s.length > 2) return s.slice(1, -1).trim();
-  return s;
-}
-
-function renderKaTeXInline(latex) {
-  try {
-    return katex.renderToString(stripDelimiters(latex), { displayMode: false, throwOnError: false });
-  } catch {
-    return `<span style="color:#f87171">${latex}</span>`;
-  }
+function useInlineKatex(latex) {
+  const [html, setHtml] = useState('');
+  useEffect(() => {
+    let active = true;
+    if (!latex?.trim()) {
+      setHtml('');
+      return () => { active = false; };
+    }
+    renderKatex(latex, false).then((result) => {
+      if (active) setHtml(result);
+    });
+    return () => { active = false; };
+  }, [latex]);
+  return html;
 }
 
 function InlineEquationChip({ inlineContent }) {
@@ -50,10 +49,10 @@ function InlineEquationChip({ inlineContent }) {
     setEditing(false);
   }, [value, inlineContent]);
 
-  const html = renderKaTeXInline(inlineContent.props.latex);
+  const html = useInlineKatex(inlineContent.props.latex);
 
   // Live preview while editing
-  const previewHtml = value.trim() ? renderKaTeXInline(value) : '';
+  const previewHtml = useInlineKatex(editing ? value : '');
 
   return (
     <span className="relative inline-flex items-center">
@@ -62,7 +61,9 @@ function InlineEquationChip({ inlineContent }) {
         className="inline-equation-chip"
         data-inline-type="equation"
         data-latex={inlineContent.props.latex}
-        dangerouslySetInnerHTML={{ __html: html }}
+        {...(html
+          ? { dangerouslySetInnerHTML: { __html: html } }
+          : { children: inlineContent.props.latex })}
         title={inlineContent.props.latex}
         spellCheck={false}
       />
