@@ -825,6 +825,9 @@
   resize: vertical;
   outline: none;
   min-height: 160px;
+  white-space: pre;
+  tab-size: 4;
+  overflow: auto;
 }
 
 .mermaid-block-textarea::placeholder {

@@ -37,7 +37,10 @@ import {
 } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { normalizeUrl } from "../../utils/linkHelper";
-import { extractMermaidFences } from "../../utils/markdownMermaid";
+import {
+    extractMermaidFences,
+    extractMermaidPaste,
+} from "../../utils/markdownMermaid";
 import {
     createMediaUploadId,
     enqueueMediaUpload,
@@ -2119,6 +2122,13 @@ const BlogEditor = forwardRef(function BlogEditor(
             if (!items) return;
 
             const textData = e.clipboardData.getData("text/plain");
+            const htmlData = e.clipboardData.getData("text/html");
+            const extractedClipboardMermaid = extractMermaidPaste(
+                textData,
+                htmlData,
+            );
+            const hasClipboardMermaid =
+                extractedClipboardMermaid.diagrams.length > 0;
 
             // If pasting a bare URL, convert to a link inline
             if (
@@ -2172,10 +2182,14 @@ const BlogEditor = forwardRef(function BlogEditor(
             }
 
             // Check for plain text with markdown
-            if (textData && looksLikeMarkdown(textData)) {
-                // Only intercept if there's no HTML (which means it's raw markdown, not rich copy)
-                const htmlData = e.clipboardData.getData("text/html");
-                if (!htmlData) {
+            if (
+                textData &&
+                (looksLikeMarkdown(textData) || hasClipboardMermaid)
+            ) {
+                // Raw Markdown is intercepted normally. Rich clipboard data is
+                // intercepted only when it explicitly contains Mermaid; other
+                // rich text should continue through BlockNote's HTML parser.
+                if (!htmlData || hasClipboardMermaid) {
                     e.preventDefault();
                     e.stopPropagation();
 
@@ -2183,8 +2197,9 @@ const BlogEditor = forwardRef(function BlogEditor(
                         try {
                             // Pre-process: extract mermaid fenced blocks before BlockNote parses
                             // Use placeholder format without double underscores (markdown interprets __ as bold)
-                            const extractedMermaid =
-                                extractMermaidFences(textData);
+                            const extractedMermaid = hasClipboardMermaid
+                                ? extractedClipboardMermaid
+                                : extractMermaidFences(textData);
                             const mermaidBlocks = extractedMermaid.diagrams;
                             let processed = extractedMermaid.content;
 
