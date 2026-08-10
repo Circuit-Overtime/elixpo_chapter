@@ -158,9 +158,13 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
                 const live = floorRuns.filter((run) => run.status === "in_progress" || run.status === "queued").length;
                 return (
                   <Link className="real-floor-slab" href={`/${floor.slug}`} key={floor.slug} style={{ "--floor-accent": floor.accent, "--floor-index": index } as React.CSSProperties}>
-                    <span className="slab-level">{floor.level}</span>
-                    <span><strong>{floor.name}</strong><small>{live ? `${live} active` : `${floorRuns.length} recent runs`}</small></span>
-                    <ArrowRight size={18} />
+                    <span className="cube-floor-face cube-floor-front">
+                      <span className="slab-level">{floor.level}</span>
+                      <span className="slab-copy"><strong>{floor.name}</strong><small>{live ? `${live} active` : `${floorRuns.length} recent runs`}</small></span>
+                      <ArrowRight size={18} />
+                    </span>
+                    <span className="cube-floor-face cube-floor-top" aria-hidden="true" />
+                    <span className="cube-floor-face cube-floor-side" aria-hidden="true" />
                   </Link>
                 );
               })}
