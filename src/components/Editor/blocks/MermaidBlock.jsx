@@ -4,12 +4,12 @@ import { createReactBlockSpec } from '@blocknote/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTheme } from '../../../context/ThemeContext';
-import { renderMermaidSvg } from '../../../utils/mermaidRenderer';
+import { getCachedMermaidSvg, renderMermaidSvg } from '../../../utils/mermaidRenderer';
 
 // Shared component that renders a mermaid diagram to SVG
-function MermaidPreview({ diagram, isDark, interactive }) {
+function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
   const containerRef = useRef(null);
-  const [svgHTML, setSvgHTML] = useState('');
+  const [svgHTML, setSvgHTML] = useState(() => getCachedMermaidSvg(diagram, isDark));
   const [error, setError] = useState('');
   const [errorCopied, setErrorCopied] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -24,23 +24,27 @@ function MermaidPreview({ diagram, isDark, interactive }) {
       setError('');
       return;
     }
-    const controller = new AbortController();
-    renderMermaidSvg(diagram, isDark, controller.signal).then((svg) => {
-      if (!controller.signal.aborted) {
+    let active = true;
+    const controller = cancelStale ? new AbortController() : null;
+    renderMermaidSvg(diagram, isDark, controller?.signal).then((svg) => {
+      if (active) {
         setSvgHTML(svg);
         setError('');
         setZoom(1);
         setPan({ x: 0, y: 0 });
       }
     }).catch((err) => {
-      if (!controller.signal.aborted && err?.name !== 'AbortError') {
+      if (active && err?.name !== 'AbortError') {
         setError(err.message || 'Invalid diagram syntax');
         setSvgHTML('');
       }
     });
 
-    return () => controller.abort();
-  }, [diagram, isDark]);
+    return () => {
+      active = false;
+      controller?.abort();
+    };
+  }, [diagram, isDark, cancelStale]);
 
   // Mouse wheel zoom
   useEffect(() => {
@@ -314,7 +318,7 @@ export const MermaidBlock = createReactBlockSpec(
             {/* Live preview panel */}
             <div className="mermaid-live-preview">
               <div className="mermaid-live-preview-label">Preview</div>
-              <MermaidPreview diagram={livePreview} isDark={isDark} interactive={false} />
+              <MermaidPreview diagram={livePreview} isDark={isDark} interactive={false} cancelStale />
             </div>
             <div className="mermaid-block-actions">
               <button onClick={() => { setEditing(false); setValue(block.props.diagram || ''); setLivePreview(block.props.diagram || ''); }} className="mermaid-btn-cancel">Cancel</button>

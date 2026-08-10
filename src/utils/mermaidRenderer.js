@@ -52,6 +52,12 @@ function readCachedSvg(key) {
     return svg;
 }
 
+export function getCachedMermaidSvg(source, isDark) {
+    if (!source?.trim()) return "";
+    const diagram = normalizeMermaidSource(source);
+    return readCachedSvg(`${isDark ? "dark" : "light"}\u0000${diagram}`) || "";
+}
+
 /**
  * Mermaid mutates singleton state while rendering, so unique renders must remain
  * serialized. Identical requests are coalesced and completed SVGs use a bounded
