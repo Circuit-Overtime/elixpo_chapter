@@ -459,10 +459,11 @@
 
 .blog-preview-content .preview-mermaid-block svg {
   display: block;
-  width: 100% !important;
-  height: 100% !important;
+  width: auto !important;
+  height: auto !important;
   max-width: 100% !important;
   max-height: 100% !important;
+  overflow: hidden;
 }
 
 .blog-preview-content .preview-mermaid-block svg text,

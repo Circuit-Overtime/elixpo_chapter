@@ -86,8 +86,20 @@ export function prepareMermaidSvg(svg) {
   const svgElement = documentNode.querySelector('svg');
   if (!svgElement) return svg;
 
-  svgElement.removeAttribute('width');
-  svgElement.removeAttribute('height');
+  // Preserve a numeric intrinsic size from the viewBox. Chromium/WebKit can
+  // resolve an SVG with only a viewBox and forced 100% width/height differently
+  // from Firefox, which clips or stretches complex diagrams in fixed viewports.
+  const viewBox = (svgElement.getAttribute('viewBox') || '')
+    .trim()
+    .split(/[\s,]+/)
+    .map(Number);
+  if (viewBox.length === 4 && viewBox.every(Number.isFinite) && viewBox[2] > 0 && viewBox[3] > 0) {
+    svgElement.setAttribute('width', String(viewBox[2]));
+    svgElement.setAttribute('height', String(viewBox[3]));
+  } else {
+    svgElement.removeAttribute('width');
+    svgElement.removeAttribute('height');
+  }
   svgElement.removeAttribute('style');
   svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   svgElement.setAttribute('class', `${svgElement.getAttribute('class') || ''} lix-mermaid-svg`.trim());

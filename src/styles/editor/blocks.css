@@ -1087,11 +1087,11 @@
 
 .mermaid-block-svg svg {
   display: block;
-  width: 100% !important;
-  height: 100% !important;
+  width: auto !important;
+  height: auto !important;
   max-width: 100% !important;
   max-height: 100% !important;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .mermaid-block-svg svg text,

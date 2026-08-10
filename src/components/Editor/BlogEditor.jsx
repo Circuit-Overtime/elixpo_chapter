@@ -51,6 +51,7 @@ import {
     enqueueMediaUpload,
 } from "../../utils/mediaUploadQueue";
 import { getLixShikiHighlighter } from "../../utils/shikiHighlighter";
+import { clearInheritedBlockTextColors } from "../../utils/blockColorNormalization";
 import AICommandMenu from "./AICommandMenu";
 import AISelectionToolbar from "./AISelectionToolbar";
 import { AIBlock } from "./blocks/AIBlock";
@@ -893,7 +894,7 @@ function sanitizeInitialContent(blocks) {
     );
     if (filtered.length === 0) return undefined;
 
-    const sanitized = doSanitize(filtered);
+    const sanitized = clearInheritedBlockTextColors(doSanitize(filtered));
     return sanitized?.length ? sanitized : undefined;
 }
 
