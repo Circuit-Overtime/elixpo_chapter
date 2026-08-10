@@ -1061,15 +1061,28 @@ export default function BlogPreview({
         return (
           <div className="flex items-center gap-3 mt-1 mb-2">
             <div className="flex -space-x-2 items-center">
-              {shownAvatars.map((a, i) => (
-                a.avatar_url ? (
-                  <img key={i} src={a.avatar_url} alt="" title={a.name} className="w-7 h-7 rounded-full object-cover border-2 border-[var(--bg-app)]" />
+              {shownAvatars.map((a, i) => {
+                const avatar = a.avatar_url ? (
+                  <img src={a.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-[var(--bg-app)]" />
                 ) : (
-                  <div key={i} title={a.name} className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--bg-app)] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
+                  <span className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--bg-app)] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
                     {(a.name || '?')[0].toUpperCase()}
-                  </div>
-                )
-              ))}
+                  </span>
+                );
+                return a.username ? (
+                  <a
+                    key={a.username}
+                    href={`/${encodeURIComponent(a.username)}`}
+                    title={`View ${a.name}'s profile`}
+                    aria-label={`View ${a.name}'s public profile`}
+                    className="relative rounded-full transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9b7bf7]"
+                  >
+                    {avatar}
+                  </a>
+                ) : (
+                  <span key={`anonymous-${i}`} title={a.name} className="relative rounded-full">{avatar}</span>
+                );
+              })}
               {moreAuthors > 0 && (
                 <div title={`${moreAuthors} more`} className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--bg-app)] flex items-center justify-center text-[10px] font-bold text-[var(--text-muted)]">
                   +{moreAuthors}
@@ -1084,7 +1097,20 @@ export default function BlogPreview({
                 </>
               )}
               <span className="text-[var(--text-muted)] font-medium">
-                {shownNames.map((a) => a.name).join(', ')}
+                {shownNames.map((a, index) => (
+                  <span key={a.username || `anonymous-${index}`}>
+                    {index > 0 && ', '}
+                    {a.username ? (
+                      <a
+                        href={`/${encodeURIComponent(a.username)}`}
+                        className="hover:text-[#9b7bf7] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9b7bf7] rounded-sm"
+                        aria-label={`View ${a.name}'s public profile`}
+                      >
+                        {a.name}
+                      </a>
+                    ) : a.name}
+                  </span>
+                ))}
               </span>
               {moreNames > 0 && (
                 <span className="text-[var(--text-faint)]">+ {moreNames} more</span>
