@@ -177,12 +177,30 @@ const codeBlockWithHighlighting = createCodeBlockSpec({
     supportedLanguages: codeBlockLanguages,
     createHighlighter: async () => {
         const { createHighlighter } = await import("shiki");
-        return createHighlighter({
+        const highlighter = await createHighlighter({
             themes: ["vitesse-dark", "vitesse-light"],
             // BlockNote loads a grammar when a code block first requests it.
             // Starting empty avoids retaining every supported grammar in memory.
             langs: [],
         });
+
+        // BlockNote's adapter always asks Shiki for its first loaded theme. Emit
+        // both palettes as CSS variables instead, so reopened blocks follow the
+        // site theme and theme switches do not require re-tokenizing the document.
+        const codeToTokens = highlighter.codeToTokens.bind(highlighter);
+        highlighter.codeToTokens = (code, options = {}) => {
+            const { theme: _ignoredTheme, ...rest } = options;
+            return codeToTokens(code, {
+                ...rest,
+                themes: {
+                    light: "vitesse-light",
+                    dark: "vitesse-dark",
+                },
+                defaultColor: false,
+            });
+        };
+
+        return highlighter;
     },
 });
 

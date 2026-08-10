@@ -33,7 +33,11 @@
 /* ===== Code blocks ===== */
 
 .blog-editor-wrapper [data-content-type="codeBlock"] {
-  background: var(--code-bg);
+  /* BlockNote ships a hard-coded dark code surface and Shiki adds a root
+     background decoration. The editor theme owns the surface in both modes. */
+  background: var(--code-bg) !important;
+  background-color: var(--code-bg) !important;
+  color: var(--code-text) !important;
   border: 1px solid var(--border-default);
   border-radius: 10px;
   font-family: 'lixCode', monospace;
@@ -108,6 +112,16 @@
 /* Shiki syntax highlighting — let inline styles override default color */
 .blog-editor-wrapper [data-content-type="codeBlock"] code span[style] {
   background: none !important;
+}
+
+/* Shiki emits both palettes from BlogEditor. This keeps persisted/reopened
+   blocks readable and makes theme changes a CSS-only operation. */
+.blog-editor-wrapper [data-content-type="codeBlock"] code .shiki {
+  color: var(--shiki-light, var(--code-text)) !important;
+}
+
+[data-theme="dark"] .blog-editor-wrapper [data-content-type="codeBlock"] code .shiki {
+  color: var(--shiki-dark, var(--code-text)) !important;
 }
 
 /* Language selector dropdown (BlockNote built-in) */
