@@ -35,7 +35,9 @@ export function requestMermaidEditorFocus(blockId) {
 function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
   const containerRef = useRef(null);
   const [isNearViewport, setIsNearViewport] = useState(!interactive);
-  const [svgHTML, setSvgHTML] = useState(() => interactive ? '' : getCachedMermaidSvg(diagram, isDark));
+  // Reuse a completed render when BlockNote remounts a node view. Starting an
+  // interactive preview empty caused a visible placeholder flash on each remount.
+  const [svgHTML, setSvgHTML] = useState(() => getCachedMermaidSvg(diagram, isDark));
   const [error, setError] = useState('');
   const [errorCopied, setErrorCopied] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -44,9 +46,10 @@ function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
   const dragStart = useRef({ x: 0, y: 0 });
   const panStart = useRef({ x: 0, y: 0 });
 
-  // Saved diagrams are expensive SVG trees. Keep only diagrams near the
-  // viewport mounted; their fixed-height placeholder preserves scroll layout.
-  // Live editor previews and non-interactive previews remain immediate.
+  // Saved diagrams are expensive SVG trees, so defer their first render until
+  // they approach the viewport. Hydration is deliberately one-way: unmounting
+  // an SVG when its intersection changes can alter layout, bounce the observer,
+  // and make the preview flash indefinitely.
   useEffect(() => {
     if (!interactive) {
       setIsNearViewport(true);
@@ -57,8 +60,18 @@ function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
       setIsNearViewport(true);
       return;
     }
+    const rect = element.getBoundingClientRect();
+    const margin = 900;
+    if (rect.bottom >= -margin && rect.top <= window.innerHeight + margin) {
+      setIsNearViewport(true);
+      return;
+    }
     const observer = new IntersectionObserver(
-      ([entry]) => setIsNearViewport(entry.isIntersecting),
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setIsNearViewport(true);
+        observer.disconnect();
+      },
       { rootMargin: '900px 0px' },
     );
     observer.observe(element);
@@ -72,8 +85,6 @@ function MermaidPreview({ diagram, isDark, interactive, cancelStale = false }) {
       return;
     }
     if (interactive && !isNearViewport) {
-      setSvgHTML('');
-      setError('');
       return;
     }
     let active = true;
