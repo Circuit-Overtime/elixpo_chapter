@@ -887,6 +887,66 @@ function doSanitize(blocks) {
         if (block.children && block.children.length > 0) {
             block = { ...block, children: doSanitize(block.children) };
         }
+
+        // Migrate saved/pasted Mermaid code blocks into the native diagram block.
+        // Older documents used a regular codeBlock, which meant reopening the
+        // editor never showed the Mermaid controls or viewport.
+        if (block.type === "codeBlock") {
+            const codeText = getText(block);
+            const language = String(block.props?.language || "").toLowerCase();
+            const fenced = codeText.match(
+                /^\s*```\s*mermaid\s*\n([\s\S]*?)\n?```\s*$/i,
+            );
+            if (language === "mermaid" || fenced) {
+                const { content: _content, ...rest } = block;
+                result.push({
+                    ...rest,
+                    type: "mermaidBlock",
+                    props: { diagram: (fenced?.[1] || codeText).trim() },
+                    children: block.children || [],
+                });
+                i++;
+                continue;
+            }
+        }
+
+        if (block.type === "paragraph") {
+            const paragraphText = getText(block);
+            const inlineFence = paragraphText.match(
+                /^\s*```\s*mermaid\s*\n([\s\S]*?)\n?```\s*$/i,
+            );
+            if (inlineFence) {
+                result.push({
+                    id: block.id,
+                    type: "mermaidBlock",
+                    props: { diagram: inlineFence[1].trim() },
+                    children: block.children || [],
+                });
+                i++;
+                continue;
+            }
+
+            if (/^```\s*mermaid\s*$/i.test(paragraphText)) {
+                const diagramLines = [];
+                let cursor = i + 1;
+                while (cursor < blocks.length) {
+                    const line = getText(blocks[cursor]);
+                    if (/^```\s*$/.test(line)) break;
+                    diagramLines.push(line);
+                    cursor++;
+                }
+                if (cursor < blocks.length && diagramLines.length) {
+                    result.push({
+                        id: block.id,
+                        type: "mermaidBlock",
+                        props: { diagram: diagramLines.join("\n").trim() },
+                        children: block.children || [],
+                    });
+                    i = cursor + 1;
+                    continue;
+                }
+            }
+        }
         // Headings render in the default color — drop stray inline text colors
         // (e.g. a pasted #e06c75) so they stay consistent and re-saving normalizes them.
         if (block.type === "heading" && Array.isArray(block.content)) {
@@ -2269,10 +2329,25 @@ const BlogEditor = forwardRef(function BlogEditor(
                                 },
                             );
 
-                            let blocks =
-                                await editor.tryParseMarkdownToBlocks(
-                                    processed,
-                                );
+                            const singleMermaid = processed
+                                .trim()
+                                .match(/^MERMAIDPLACEHOLDER(\d+)END$/);
+                            let blocks = singleMermaid
+                                ? [
+                                      {
+                                          type: "mermaidBlock",
+                                          props: {
+                                              diagram:
+                                                  mermaidBlocks[
+                                                      Number(singleMermaid[1])
+                                                  ] || "",
+                                          },
+                                          children: [],
+                                      },
+                                  ]
+                                : await editor.tryParseMarkdownToBlocks(
+                                      processed,
+                                  );
 
                             // Post-process: replace placeholders with custom blocks
                             blocks = blocks.flatMap((block) => {
@@ -2857,19 +2932,26 @@ const BlogEditor = forwardRef(function BlogEditor(
         if (!editorRoot) return;
         let patchFrame = null;
         const observer = new MutationObserver((mutations) => {
-            const needsPatch = mutations.some((mutation) =>
-                [...mutation.addedNodes].some(
+            const needsPatch = mutations.some((mutation) => {
+                const existingCodeBlock = mutation.target.closest?.(
+                    '[data-content-type="codeBlock"]',
+                );
+                if (
+                    existingCodeBlock &&
+                    (!existingCodeBlock.querySelector(".code-lang-label") ||
+                        !existingCodeBlock.querySelector(".code-copy-btn"))
+                ) {
+                    return true;
+                }
+                return [...mutation.addedNodes].some(
                     (node) =>
                         node.nodeType === Node.ELEMENT_NODE &&
                         (node.matches?.('[data-content-type="codeBlock"]') ||
                             node.querySelector?.(
                                 '[data-content-type="codeBlock"]',
-                            ) ||
-                            node.closest?.(
-                                '[data-content-type="codeBlock"]',
                             )),
-                ),
-            );
+                );
+            });
             if (!needsPatch || patchFrame) return;
             patchFrame = requestAnimationFrame(() => {
                 patchFrame = null;

@@ -4,42 +4,7 @@ import { createReactBlockSpec } from '@blocknote/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTheme } from '../../../context/ThemeContext';
-import {
-  getMermaidConfig,
-  normalizeMermaidSource,
-  prepareMermaidSvg,
-} from '../../../utils/mermaidConfig';
-
-let mermaidModule = null;
-let mermaidLoadPromise = null;
-let renderQueue = Promise.resolve();
-let lastTheme = null;
-
-async function getMermaid(isDark) {
-  if (!mermaidModule) {
-    if (!mermaidLoadPromise) {
-      // Import the full ESM bundle — the default 'mermaid' export maps to mermaid.core.mjs
-      // which strips gitGraph, pie, timeline, etc. via lazy-loading that breaks with webpack.
-      mermaidLoadPromise = import('mermaid').then(m => {
-        mermaidModule = m.default;
-        return mermaidModule;
-      });
-    }
-    await mermaidLoadPromise;
-  }
-  const theme = isDark ? 'dark' : 'light';
-  if (lastTheme !== theme) {
-    lastTheme = theme;
-    mermaidModule.initialize(getMermaidConfig(isDark));
-  }
-  return mermaidModule;
-}
-
-// Serialize render calls — mermaid is a singleton and concurrent renders cause conflicts
-function queueRender(fn) {
-  renderQueue = renderQueue.then(fn, fn);
-  return renderQueue;
-}
+import { renderMermaidSvg } from '../../../utils/mermaidRenderer';
 
 // Shared component that renders a mermaid diagram to SVG
 function MermaidPreview({ diagram, isDark, interactive }) {
@@ -59,42 +24,22 @@ function MermaidPreview({ diagram, isDark, interactive }) {
       setError('');
       return;
     }
-    let cancelled = false;
-    const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-
-    queueRender(async () => {
-      if (cancelled) return;
-      try {
-        const mermaid = await getMermaid(isDark);
-        if (cancelled) return;
-
-        const diagramText = normalizeMermaidSource(diagram);
-
-        const tempDiv = document.createElement('div');
-        tempDiv.id = 'container-' + id;
-        tempDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
-        document.body.appendChild(tempDiv);
-
-        const { svg } = await mermaid.render(id, diagramText, tempDiv);
-        tempDiv.remove();
-
-        if (!cancelled) {
-          setSvgHTML(prepareMermaidSvg(svg));
-          setError('');
-          setZoom(1);
-          setPan({ x: 0, y: 0 });
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err.message || 'Invalid diagram syntax');
-          setSvgHTML('');
-        }
-        try { document.getElementById(id)?.remove(); } catch {}
-        try { document.getElementById('container-' + id)?.remove(); } catch {}
+    const controller = new AbortController();
+    renderMermaidSvg(diagram, isDark, controller.signal).then((svg) => {
+      if (!controller.signal.aborted) {
+        setSvgHTML(svg);
+        setError('');
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+      }
+    }).catch((err) => {
+      if (!controller.signal.aborted && err?.name !== 'AbortError') {
+        setError(err.message || 'Invalid diagram syntax');
+        setSvgHTML('');
       }
     });
 
-    return () => { cancelled = true; };
+    return () => controller.abort();
   }, [diagram, isDark]);
 
   // Mouse wheel zoom
