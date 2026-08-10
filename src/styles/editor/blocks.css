@@ -1336,49 +1336,6 @@
   background: rgba(248, 113, 113, 0.10);
 }
 
-/* ── Side delete button on custom blocks ──
-   Sits at the top-right corner of each custom block (mermaid, equation,
-   AI, table, PDF, button, breadcrumbs, ToC, code). Hover-reveal so it
-   doesn't fight with content. Click removes only that block. */
-
-.block-side-delete-btn {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-surface, rgba(0, 0, 0, 0.3));
-  border: 1px solid var(--border-default);
-  color: var(--text-faint);
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.12s, background 0.12s, color 0.12s, border-color 0.12s;
-  z-index: 5;
-  padding: 0;
-}
-
-.block-side-delete-btn:focus-visible {
-  opacity: 1;
-  outline: 2px solid rgba(248, 113, 113, 0.4);
-  outline-offset: 1px;
-}
-
-[data-content-type]:hover > .block-side-delete-btn,
-.bn-block-content:hover > .block-side-delete-btn {
-  opacity: 0.85;
-}
-
-.block-side-delete-btn:hover {
-  opacity: 1;
-  color: #f87171;
-  background: rgba(248, 113, 113, 0.12);
-  border-color: rgba(248, 113, 113, 0.35);
-}
-
 /* ===== Fullscreen Modal Overlay for Mermaid diagrams ===== */
 .mermaid-fullscreen-overlay {
   position: fixed;
