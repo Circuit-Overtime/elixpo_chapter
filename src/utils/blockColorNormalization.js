@@ -1,4 +1,11 @@
 const COLOR_LEAK_SOURCE_BLOCKS = new Set(["codeBlock", "mermaidBlock"]);
+const RESETTABLE_TEXT_BLOCKS = new Set([
+    "paragraph",
+    "quote",
+    "bulletListItem",
+    "numberedListItem",
+    "checkListItem",
+]);
 
 const LEAKED_GRAY_VALUES = new Set([
     "gray",
@@ -38,21 +45,50 @@ function clearLeakedGray(content) {
     return changed ? normalized : content;
 }
 
+function hasLeakedGray(content) {
+    if (!Array.isArray(content)) return false;
+    return content.some(
+        (item) =>
+            LEAKED_GRAY_VALUES.has(
+                normalizeColorValue(item?.styles?.textColor),
+            ) || hasLeakedGray(item?.content),
+    );
+}
+
+function hasText(content) {
+    if (!Array.isArray(content)) return false;
+    return content.some(
+        (item) =>
+            Boolean(String(item?.text || "").trim()) || hasText(item?.content),
+    );
+}
+
 /**
- * BlockNote can carry the neutral code-block foreground into the next text
- * block. Only clear that palette value at the boundary where the leak occurs,
- * preserving deliberately gray text everywhere else.
+ * BlockNote can carry the neutral code-block foreground through several text
+ * blocks. Clear the contiguous leaked-gray run after that boundary, stopping
+ * at the first normal text block or non-text section.
  */
 export function clearInheritedBlockTextColors(blocks) {
     if (!Array.isArray(blocks)) return blocks;
     let changed = false;
-    const normalized = blocks.map((block, index) => {
-        const previousType = blocks[index - 1]?.type;
+    let resetGrayRun = false;
+    const normalized = blocks.map((block) => {
         const children = clearInheritedBlockTextColors(block?.children);
-        const shouldReset = COLOR_LEAK_SOURCE_BLOCKS.has(previousType);
-        const content = shouldReset
-            ? clearLeakedGray(block?.content)
-            : block?.content;
+        let content = block?.content;
+
+        if (COLOR_LEAK_SOURCE_BLOCKS.has(block?.type)) {
+            resetGrayRun = true;
+        } else if (resetGrayRun && RESETTABLE_TEXT_BLOCKS.has(block?.type)) {
+            if (hasLeakedGray(content)) {
+                content = clearLeakedGray(content);
+            } else if (hasText(content)) {
+                resetGrayRun = false;
+            }
+            // Empty paragraphs keep the reset active for the next typed line.
+        } else if (resetGrayRun) {
+            resetGrayRun = false;
+        }
+
         if (children === block?.children && content === block?.content) return block;
         changed = true;
         return { ...block, children, content };
