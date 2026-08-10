@@ -13,16 +13,28 @@
       "status": ""
     },
     "candidates.json": {
-      "expires_at": "",
+      "expires_at": "2026-08-11T07:42:34.906086+00:00",
       "key": "",
-      "payload_sha256": "efdde6d92d4f66142d1f944abcdc01274bc17eb31af9927ef65b01223ce84900",
-      "produced_at": "2026-08-09T12:00:00+00:00",
-      "producer": "migration",
+      "payload_sha256": "fab83cb71a3e9546a51c40ceefc7698a50e9f42e9583384a663d3fc4e5b5dc76",
+      "produced_at": "2026-08-10T07:42:34.906086+00:00",
+      "producer": "scout",
+      "run_id": "",
+      "schema_version": 1,
+      "sequence": 2,
+      "state_file": "candidates.json",
+      "status": ""
+    },
+    "daily_summary.json": {
+      "expires_at": "2026-08-18T02:34:25.377320+00:00",
+      "key": "",
+      "payload_sha256": "f8c9277f697f974f4084d7385cdff52cfec6d40253e530ece97231dbe2f59fe3",
+      "produced_at": "2026-08-10T02:34:25.377320+00:00",
+      "producer": "daily-summary",
       "run_id": "",
       "schema_version": 1,
       "sequence": 1,
-      "state_file": "candidates.json",
-      "status": ""
+      "state_file": "daily_summary.json",
+      "status": "complete"
     },
     "doctor.json": {
       "expires_at": "",
@@ -61,26 +73,26 @@
       "status": ""
     },
     "pick.json": {
-      "expires_at": "",
+      "expires_at": "2026-08-11T10:06:53.555388+00:00",
       "key": "",
-      "payload_sha256": "c7760cf5460f0a33beeac91cafc3d062a7c9ab47def98fe17641d44317a27e06",
-      "produced_at": "2026-08-09T12:00:00+00:00",
-      "producer": "migration",
-      "run_id": "",
+      "payload_sha256": "41f685a580bfb55a63403a7b93b13b44083f7967400636dac29d4be0fa129043",
+      "produced_at": "2026-08-10T10:06:53.555388+00:00",
+      "producer": "pick",
+      "run_id": "d293ebcd5114fc1c",
       "schema_version": 1,
-      "sequence": 1,
+      "sequence": 2,
       "state_file": "pick.json",
       "status": "no_pick"
     },
     "project.json": {
-      "expires_at": "2026-08-16T19:56:20.717145+00:00",
+      "expires_at": "2026-08-17T14:45:04.634060+00:00",
       "key": "",
-      "payload_sha256": "5460509a8c19062766f7f7b5ba8b32db7313d57c5b571836c87b76c3487517b3",
-      "produced_at": "2026-08-09T19:56:20.717145+00:00",
+      "payload_sha256": "a1295036afa032377729306ab197170a17ab1526e2a57dce4aa88351eee8c296",
+      "produced_at": "2026-08-10T14:45:04.634060+00:00",
       "producer": "project",
       "run_id": "",
       "schema_version": 1,
-      "sequence": 2,
+      "sequence": 19,
       "state_file": "project.json",
       "status": "complete"
     },
@@ -99,12 +111,12 @@
     "rejected_issues.json": {
       "expires_at": "",
       "key": "",
-      "payload_sha256": "f6c252273a79f1ab32683c9cb64dfc571aa0a15b9010f4d030d5f49aa936005a",
-      "produced_at": "2026-08-09T12:00:00+00:00",
-      "producer": "migration",
+      "payload_sha256": "e4c08727e0c53b72909798796ede06d8b7fec22bfd58871d39219b4c7f7d549c",
+      "produced_at": "2026-08-10T07:43:16.311668+00:00",
+      "producer": "rejections",
       "run_id": "",
       "schema_version": 1,
-      "sequence": 1,
+      "sequence": 2,
       "state_file": "rejected_issues.json",
       "status": ""
     },
@@ -133,14 +145,14 @@
       "status": "submitted"
     },
     "triaged.json": {
-      "expires_at": "",
+      "expires_at": "2026-08-11T07:43:06.880747+00:00",
       "key": "",
-      "payload_sha256": "2d414a700229263562dc22a7d94ae621585be0145d6a650dc5f3488d421d539e",
-      "produced_at": "2026-08-09T12:00:00+00:00",
-      "producer": "migration",
+      "payload_sha256": "4970842a5dc618f2eb917eb049cb8cc8b3f08f88b2f2d312d741cef5648ee387",
+      "produced_at": "2026-08-10T07:43:06.880747+00:00",
+      "producer": "triage",
       "run_id": "",
       "schema_version": 1,
-      "sequence": 1,
+      "sequence": 2,
       "state_file": "triaged.json",
       "status": ""
     },
@@ -158,5 +170,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": "2026-08-09T19:56:20.717145+00:00"
+  "updated_at": "2026-08-10T14:45:04.634060+00:00"
 }

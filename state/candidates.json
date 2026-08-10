@@ -2,226 +2,282 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "jvxiao/speed-github",
+    "full_name": "SnailDev/douyin-hot-hub",
     "has_contributing": false,
     "language": "Python",
     "open_issues": 3,
-    "pushed_at": "2026-08-09T06:57:08Z",
+    "pushed_at": "2026-08-10T07:42:22Z",
     "reasons": [
-      "348\u2605 python active",
+      "111\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 348,
+    "stars": 111,
     "topics": [],
-    "url": "https://github.com/jvxiao/speed-github"
+    "url": "https://github.com/SnailDev/douyin-hot-hub"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "kizuna-ai-lab/sokuji",
+    "full_name": "Agions/story-fab",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 34,
-    "pushed_at": "2026-08-09T06:57:14Z",
+    "open_issues": 4,
+    "pushed_at": "2026-08-10T07:42:01Z",
     "reasons": [
-      "1053\u2605 typescript active",
+      "126\u2605 typescript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 1053,
+    "stars": 126,
     "topics": [
-      "ai",
-      "bilingual",
-      "chrome-extension",
-      "electron",
-      "linux-app",
-      "live-translation",
-      "llm",
-      "meeting",
-      "openai",
-      "real-time",
-      "simultaneous-interpretation",
-      "soniox",
-      "speech-translation",
-      "stt",
-      "translation",
-      "translator",
-      "tts",
-      "two-way-translation"
+      "ai-video-editing",
+      "automation",
+      "content-creation",
+      "desktop-application",
+      "ffmpeg",
+      "react",
+      "rust",
+      "short-video",
+      "social-media-tools",
+      "subtitle-generator",
+      "tauri",
+      "typescript",
+      "video-editing",
+      "whisper"
     ],
-    "url": "https://github.com/kizuna-ai-lab/sokuji"
+    "url": "https://github.com/Agions/story-fab"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "BlackMixture/Mix-Studio",
+    "full_name": "QVerisAI/qveris-agent-toolkit",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 14,
-    "pushed_at": "2026-08-09T06:56:38Z",
+    "open_issues": 7,
+    "pushed_at": "2026-08-10T07:37:51Z",
     "reasons": [
-      "238\u2605 javascript active",
+      "254\u2605 javascript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 238,
+    "stars": 254,
     "topics": [
-      "ai-art",
-      "comfyui",
-      "image-generation",
-      "lora",
-      "mixstudio",
-      "mobile-first",
-      "self-hosted",
-      "stable-diffusion",
-      "video-generation"
+      "ai-agent",
+      "ai-tools",
+      "cli",
+      "developer-tools",
+      "mcp",
+      "model-context-protocol",
+      "openclaw",
+      "plugin",
+      "python-sdk",
+      "qveris",
+      "rest-api",
+      "tool-calling",
+      "tool-discovery",
+      "typescript"
     ],
-    "url": "https://github.com/BlackMixture/Mix-Studio"
+    "url": "https://github.com/QVerisAI/qveris-agent-toolkit"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "syncliteio/SyncLite",
+    "full_name": "grafana/docker-otel-lgtm",
     "has_contributing": true,
     "language": "Shell",
-    "open_issues": 9,
-    "pushed_at": "2026-08-09T06:56:15Z",
+    "open_issues": 17,
+    "pushed_at": "2026-08-10T07:38:16Z",
     "reasons": [
-      "163\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 163,
-    "topics": [],
-    "url": "https://github.com/syncliteio/SyncLite"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "vitali87/code-graph-rag",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 26,
-    "pushed_at": "2026-08-09T06:56:45Z",
-    "reasons": [
-      "2632\u2605 python active",
+      "1983\u2605 shell active",
       "has open issues"
     ],
     "score": 52,
-    "stars": 2632,
+    "stars": 1983,
     "topics": [
-      "ai",
-      "ast",
-      "claude-code",
-      "code-analysis",
-      "code-understanding",
-      "codebase-search",
-      "developer-tools",
-      "graph-database",
-      "knowledge-graph",
-      "llm",
-      "mcp",
-      "mcp-server",
-      "memgraph",
-      "monorepo",
-      "multi-language",
-      "python",
-      "rag",
-      "retrieval-augmented-generation",
-      "semantic-search",
-      "tree-sitter"
+      "grafana",
+      "loki",
+      "opentelemetry",
+      "opentelemetry-collector",
+      "prometheus",
+      "pyroscope",
+      "tempo"
     ],
-    "url": "https://github.com/vitali87/code-graph-rag"
+    "url": "https://github.com/grafana/docker-otel-lgtm"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "joryirving/home-ops",
+    "has_contributing": false,
+    "language": "YAML",
+    "open_issues": 4,
+    "pushed_at": "2026-08-10T07:28:55Z",
+    "reasons": [
+      "222\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 222,
+    "topics": [
+      "flux",
+      "gitops",
+      "kubernetes",
+      "kubesearch",
+      "renovate",
+      "self-hosted",
+      "talos",
+      "terraform"
+    ],
+    "url": "https://github.com/joryirving/home-ops"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "tinyplex/tinybase",
+    "full_name": "Q00/ouroboros",
     "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 18,
-    "pushed_at": "2026-08-09T06:45:08Z",
+    "language": "Python",
+    "open_issues": 45,
+    "pushed_at": "2026-08-10T07:35:23Z",
     "reasons": [
-      "5137\u2605 typescript active",
+      "5366\u2605 python active",
       "has open issues"
     ],
     "score": 54,
-    "stars": 5137,
+    "stars": 5366,
     "topics": [
-      "agent-skills",
-      "crdt",
-      "data",
-      "javascript",
-      "local-first",
+      "agent-os",
+      "agentic-ai",
+      "ai-agent",
+      "ai-coding-agent",
+      "claude",
+      "claude-code",
+      "cli",
+      "codex",
+      "developer-tools",
+      "github-copilot",
+      "llm-evaluation",
+      "llm-orchestration",
+      "llm-runtime",
+      "mcp",
+      "mcp-server",
+      "opencode",
+      "prompt-engineering",
+      "python",
+      "socratic-method",
+      "spec-driven-development"
+    ],
+    "url": "https://github.com/Q00/ouroboros"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "usekaneo/kaneo",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 58,
+    "pushed_at": "2026-08-10T07:39:22Z",
+    "reasons": [
+      "7960\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 56,
+    "stars": 7960,
+    "topics": [
+      "hacktoberfest",
+      "hono",
+      "issue-management",
+      "issue-tracker",
+      "jira-alternative",
+      "kanban",
+      "linear-alternative",
+      "project-management",
       "react",
-      "reactive",
-      "solid",
-      "state",
-      "svelte",
-      "sync-engine",
-      "tiny",
+      "self-hosted",
       "typescript"
     ],
-    "url": "https://github.com/tinyplex/tinybase"
+    "url": "https://github.com/usekaneo/kaneo"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "melonjs/melonJS",
-    "has_contributing": true,
+    "full_name": "gz-yami/mall4cloud",
+    "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 21,
-    "pushed_at": "2026-08-09T05:36:38Z",
+    "open_issues": 25,
+    "pushed_at": "2026-08-10T07:00:18Z",
     "reasons": [
-      "6351\u2605 javascript active",
+      "6124\u2605 javascript active",
       "has open issues"
     ],
-    "score": 55,
-    "stars": 6351,
+    "score": 40,
+    "stars": 6124,
     "topics": [
-      "2d-game-engine",
-      "canvas2d",
-      "contributions-welcome",
-      "es6",
-      "game-development",
-      "game-engine",
-      "gamedev",
-      "hacktoberfest",
-      "html5",
-      "html5-canvas",
-      "javascript",
-      "melonjs",
-      "tiled",
-      "typescript",
-      "web3",
-      "webaudio",
-      "webgl",
-      "webgpu"
+      "java",
+      "mall",
+      "springboot4",
+      "springcloud",
+      "vue3"
     ],
-    "url": "https://github.com/melonjs/melonJS"
+    "url": "https://github.com/gz-yami/mall4cloud"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "hykilpikonna/hyfetch",
+    "full_name": "0xNyk/council-of-high-intelligence",
     "has_contributing": true,
     "language": "Shell",
-    "open_issues": 8,
-    "pushed_at": "2026-08-09T05:50:51Z",
+    "open_issues": 25,
+    "pushed_at": "2026-08-10T05:47:15Z",
     "reasons": [
-      "2083\u2605 shell active",
+      "3851\u2605 shell active",
       "has open issues"
     ],
-    "score": 52,
-    "stars": 2083,
+    "score": 53,
+    "stars": 3851,
     "topics": [
-      "hyfetch",
-      "neofetch",
-      "neowofetch",
-      "screenfetch"
+      "agent-skill",
+      "ai-agents",
+      "claude-code",
+      "codex",
+      "decision-making",
+      "deliberation",
+      "gemini-cli",
+      "llm-routing",
+      "multi-agent-systems",
+      "multi-llm",
+      "open-source",
+      "opencode",
+      "prompt-engineering",
+      "structured-debate"
     ],
-    "url": "https://github.com/hykilpikonna/hyfetch"
+    "url": "https://github.com/0xNyk/council-of-high-intelligence"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "usnistgov/macos_security",
+    "has_contributing": true,
+    "language": "YAML",
+    "open_issues": 22,
+    "pushed_at": "2026-07-29T17:55:23Z",
+    "reasons": [
+      "2435\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 48,
+    "stars": 2435,
+    "topics": [
+      "apple",
+      "bash",
+      "compliance",
+      "macos",
+      "mdm",
+      "mscp",
+      "python3",
+      "zsh"
+    ],
+    "url": "https://github.com/usnistgov/macos_security"
   },
   {
     "archived": false,
@@ -229,14 +285,14 @@
     "full_name": "wanshuiyin/Auto-claude-code-research-in-sleep",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 58,
-    "pushed_at": "2026-08-09T06:01:54Z",
+    "open_issues": 59,
+    "pushed_at": "2026-08-10T07:39:58Z",
     "reasons": [
-      "14420\u2605 python active",
+      "14457\u2605 python active",
       "has open issues"
     ],
     "score": 60,
-    "stars": 14420,
+    "stars": 14457,
     "topics": [
       "ai-research",
       "ai-tools",
@@ -264,59 +320,66 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "rmyndharis/OpenWA",
+    "full_name": "liketrek/TREK",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 8,
-    "pushed_at": "2026-08-09T06:53:24Z",
+    "open_issues": 57,
+    "pushed_at": "2026-08-10T07:41:24Z",
     "reasons": [
-      "12572\u2605 typescript active",
+      "12007\u2605 typescript active",
       "has open issues"
     ],
     "score": 59,
-    "stars": 12572,
+    "stars": 12007,
     "topics": [
-      "api",
-      "bot",
-      "gateway",
+      "budget-tracker",
+      "collaborative",
+      "open-source",
+      "opensource",
+      "packing-list",
+      "poi",
+      "real-time",
+      "routes",
       "self-hosted",
-      "whatsapp",
-      "whatsapp-api",
-      "whatsapp-automation",
-      "whatsapp-bot",
-      "whatsapp-gateway",
-      "whatsapp-gateway-api",
-      "whatsapp-web",
-      "whatsapp-web-api"
+      "travel",
+      "travel-app",
+      "travel-planner",
+      "traveling",
+      "trip",
+      "trip-planner",
+      "tripit",
+      "wanderlog",
+      "wanderlust",
+      "webapplication"
     ],
-    "url": "https://github.com/rmyndharis/OpenWA"
+    "url": "https://github.com/liketrek/TREK"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "marko-js/marko",
+    "full_name": "earthtojake/text-to-cad",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 30,
-    "pushed_at": "2026-08-09T04:49:48Z",
+    "open_issues": 15,
+    "pushed_at": "2026-08-10T06:47:06Z",
     "reasons": [
-      "14396\u2605 javascript active",
+      "13181\u2605 javascript active",
       "has open issues"
     ],
-    "score": 60,
-    "stars": 14396,
+    "score": 59,
+    "stars": 13181,
     "topics": [
-      "client-side-rendering",
-      "dom",
-      "frontend",
-      "isomorphic",
-      "javascript",
-      "nodejs",
-      "server-side-rendering",
-      "ui-components",
-      "vdom"
+      "agents",
+      "ai-agents",
+      "cad",
+      "mechanical-engineering",
+      "robotics",
+      "step",
+      "stl",
+      "stp",
+      "text-to-cad"
     ],
-    "url": "https://github.com/marko-js/marko"
+    "url": "https://github.com/earthtojake/text-to-cad"
   },
   {
     "archived": false,
@@ -325,13 +388,13 @@
     "has_contributing": true,
     "language": "Shell",
     "open_issues": 7,
-    "pushed_at": "2026-08-08T10:08:36Z",
+    "pushed_at": "2026-08-09T16:57:12Z",
     "reasons": [
-      "13461\u2605 shell active",
+      "13467\u2605 shell active",
       "has open issues"
     ],
     "score": 59,
-    "stars": 13461,
+    "stars": 13467,
     "topics": [
       "anime",
       "cli",
@@ -353,212 +416,135 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "whoahaow/rjsxrd",
+    "full_name": "jvxiao/speed-github",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 4,
-    "pushed_at": "2026-08-09T06:56:53Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-10T07:42:11Z",
     "reasons": [
-      "769\u2605 python active",
+      "348\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 769,
-    "topics": [
-      "hy2",
-      "hysteria",
-      "hysteria2",
-      "shadowsocks",
-      "shadowsocksr",
-      "trojan",
-      "tuic",
-      "v2ray",
-      "vless",
-      "vless-reality",
-      "vmess",
-      "xray"
-    ],
-    "url": "https://github.com/whoahaow/rjsxrd"
+    "stars": 348,
+    "topics": [],
+    "url": "https://github.com/jvxiao/speed-github"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "chthollyphile/folia-major",
+    "full_name": "tornikebolokadze1-cyber/awesome-ai-pulse-georgia",
     "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 11,
-    "pushed_at": "2026-08-09T06:56:51Z",
+    "open_issues": 9,
+    "pushed_at": "2026-08-10T07:42:25Z",
     "reasons": [
-      "1673\u2605 typescript active",
+      "133\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 133,
+    "topics": [
+      "ai-agents",
+      "ai-tools",
+      "automation",
+      "awesome",
+      "awesome-list",
+      "claude-code",
+      "curated-list",
+      "georgia",
+      "mcp"
+    ],
+    "url": "https://github.com/tornikebolokadze1-cyber/awesome-ai-pulse-georgia"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "Lawin0129/LawinServer",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 25,
+    "pushed_at": "2026-08-10T07:40:40Z",
+    "reasons": [
+      "177\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 177,
+    "topics": [
+      "backend",
+      "fortnite"
+    ],
+    "url": "https://github.com/Lawin0129/LawinServer"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "hotyue/IP-Sentinel",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 8,
+    "pushed_at": "2026-08-10T07:41:45Z",
+    "reasons": [
+      "1627\u2605 shell active",
       "has open issues"
     ],
     "score": 37,
-    "stars": 1673,
+    "stars": 1627,
+    "topics": [],
+    "url": "https://github.com/hotyue/IP-Sentinel"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "billimek/k8s-gitops",
+    "has_contributing": false,
+    "language": "YAML",
+    "open_issues": 4,
+    "pushed_at": "2026-08-10T06:31:08Z",
+    "reasons": [
+      "776\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 776,
+    "topics": [
+      "flux",
+      "gitops",
+      "helm",
+      "k8s",
+      "k8s-at-home",
+      "kubernetes"
+    ],
+    "url": "https://github.com/billimek/k8s-gitops"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "bethington/ghidra-mcp",
+    "has_contributing": true,
+    "language": "Python",
+    "open_issues": 19,
+    "pushed_at": "2026-08-10T07:27:35Z",
+    "reasons": [
+      "3244\u2605 python active",
+      "has open issues"
+    ],
+    "score": 53,
+    "stars": 3244,
     "topics": [
       "ai",
-      "music",
-      "music-player",
-      "navidrome-client",
-      "netease-music",
-      "player",
-      "pwa",
-      "react",
-      "typescript",
-      "vercel-deployment"
-    ],
-    "url": "https://github.com/chthollyphile/folia-major"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "scribeocr/scribe.js",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 24,
-    "pushed_at": "2026-08-09T06:56:31Z",
-    "reasons": [
-      "310\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 310,
-    "topics": [
-      "javascript",
+      "binary-analysis",
+      "ghidra",
+      "ghidra-extension",
+      "java",
       "mcp",
-      "ocr",
-      "tesseract",
-      "webassembly"
+      "mcp-server",
+      "model-context-protocol",
+      "python",
+      "reverse-engineering",
+      "static-analysis"
     ],
-    "url": "https://github.com/scribeocr/scribe.js"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "The01Geek/prflow",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 55,
-    "pushed_at": "2026-08-09T06:50:37Z",
-    "reasons": [
-      "113\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 113,
-    "topics": [
-      "agentic-ai",
-      "ai-agents",
-      "ai-coding-assistant",
-      "automation",
-      "claude-code",
-      "code-review",
-      "code-review-automation",
-      "developer-productivity",
-      "developer-tools",
-      "documentation",
-      "github-actions",
-      "plugin",
-      "pull-request",
-      "software-development"
-    ],
-    "url": "https://github.com/The01Geek/prflow"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "piccolomo/plotext",
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 58,
-    "pushed_at": "2026-08-09T06:48:30Z",
-    "reasons": [
-      "2172\u2605 python active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 2172,
-    "topics": [],
-    "url": "https://github.com/piccolomo/plotext"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "ineo6/hosts",
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 12,
-    "pushed_at": "2026-08-09T06:49:03Z",
-    "reasons": [
-      "5353\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 39,
-    "stars": 5353,
-    "topics": [
-      "github",
-      "hosts",
-      "hosts-file"
-    ],
-    "url": "https://github.com/ineo6/hosts"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "frejs/fre",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 10,
-    "pushed_at": "2026-08-09T06:37:11Z",
-    "reasons": [
-      "3767\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 38,
-    "stars": 3767,
-    "topics": [
-      "fiber",
-      "fre",
-      "hook",
-      "hooks",
-      "jsx",
-      "keyed-reconcilation-algorithm",
-      "react-hooks",
-      "react-like",
-      "reconcilation",
-      "reconciliation-algorithm",
-      "vdom",
-      "vdom-library"
-    ],
-    "url": "https://github.com/frejs/fre"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "nyldn/claude-octopus",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 6,
-    "pushed_at": "2026-08-09T06:54:59Z",
-    "reasons": [
-      "3946\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 38,
-    "stars": 3946,
-    "topics": [
-      "ai-agents",
-      "ai-orchestration",
-      "claude-code",
-      "claude-code-plugin",
-      "codex",
-      "copilot",
-      "developer-tools",
-      "double-diamond",
-      "gemini",
-      "multi-ai",
-      "multi-llm",
-      "ollama"
-    ],
-    "url": "https://github.com/nyldn/claude-octopus"
+    "url": "https://github.com/bethington/ghidra-mcp"
   }
 ]
