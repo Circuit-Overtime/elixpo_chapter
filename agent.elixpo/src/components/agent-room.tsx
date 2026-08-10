@@ -4,8 +4,11 @@ import Image from "next/image";
 import {
   Activity,
   Archive,
+  ArrowLeft,
   BellRing,
+  Bot,
   Box,
+  Building2,
   ChevronRight,
   CircleCheck,
   CircleDot,
@@ -13,12 +16,18 @@ import {
   Cloud,
   Code2,
   Database,
+  ExternalLink,
   GitBranch,
   GitPullRequest,
+  Globe2,
   HeartPulse,
+  Layers3,
   ListChecks,
   MessageSquareText,
   Network,
+  PackageCheck,
+  Radio,
+  Route,
   Search,
   ShieldCheck,
   Sparkles,
@@ -28,221 +37,38 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  buildingCommunications,
+  buildingFloors,
+  type AgentIcon,
+  type AgentSnapshot,
+  type AgentStatus,
+  type AgentZone,
+  type CommunicationSnapshot,
+  type FloorId,
+  type FloorSnapshot,
+  type RoomStatus,
+} from "@/lib/building-simulation";
 
-type AgentStatus = "working" | "watching" | "waiting" | "sleeping";
-type AgentZone = "intake" | "workshop" | "control" | "output";
-
-type Agent = {
-  id: string;
-  name: string;
-  role: string;
-  status: AgentStatus;
-  zone: AgentZone;
-  icon: LucideIcon;
-  activity: string;
-  detail: string;
-  model: string;
-  memory: number;
-  tokens: number;
-  elapsed: string;
-  task: string;
-  logs: string[];
+const iconMap: Record<AgentIcon, LucideIcon> = {
+  archive: Archive,
+  bot: Bot,
+  box: Box,
+  carrier: PackageCheck,
+  code: Code2,
+  database: Database,
+  doctor: HeartPulse,
+  discussion: MessageSquareText,
+  globe: Globe2,
+  guard: ShieldCheck,
+  pick: CircleDot,
+  project: GitPullRequest,
+  publish: GitBranch,
+  route: Route,
+  search: Search,
+  triage: ListChecks,
+  vet: ShieldCheck,
 };
-
-const agents: Agent[] = [
-  {
-    id: "scout",
-    name: "Scout",
-    role: "Repository radar",
-    status: "working",
-    zone: "intake",
-    icon: Search,
-    activity: "Scanning watched repositories",
-    detail: "Finding recent, tractable issues across the approved repository set.",
-    model: "deterministic + nova-fast",
-    memory: 118,
-    tokens: 3240,
-    elapsed: "01:42",
-    task: "elixpo/lixrl.com · issue sweep",
-    logs: ["loaded 12 watched repositories", "filtered 47 stale issues", "queued 4 candidates for triage"],
-  },
-  {
-    id: "triage",
-    name: "Triage",
-    role: "Issue classifier",
-    status: "working",
-    zone: "intake",
-    icon: ListChecks,
-    activity: "Scoring four candidates",
-    detail: "Measures scope, language fit, ownership, activity, and linked pull requests.",
-    model: "nova-fast",
-    memory: 96,
-    tokens: 5190,
-    elapsed: "00:38",
-    task: "candidate batch · 4 issues",
-    logs: ["rejected tracking issue #822", "language gate passed: TypeScript", "estimating files for candidate 03"],
-  },
-  {
-    id: "vet",
-    name: "Vet",
-    role: "Feasibility gate",
-    status: "watching",
-    zone: "intake",
-    icon: ShieldCheck,
-    activity: "Reviewing candidate evidence",
-    detail: "Checks conversations, resolution status, scope, and expected solve effort.",
-    model: "nova-fast",
-    memory: 84,
-    tokens: 2293,
-    elapsed: "00:21",
-    task: "candidate · elixpo/lixrl.com#24",
-    logs: ["conversation fetched", "scope estimate: small", "waiting for final suitability verdict"],
-  },
-  {
-    id: "pick",
-    name: "Pick",
-    role: "Queue selector",
-    status: "sleeping",
-    zone: "intake",
-    icon: CircleDot,
-    activity: "No eligible handoff yet",
-    detail: "Selects the best vetted issue while honoring the attempt ledger.",
-    model: "heuristic",
-    memory: 31,
-    tokens: 0,
-    elapsed: "—",
-    task: "waiting on Vet",
-    logs: ["queue unchanged", "ledger policy ready", "sleeping until state update"],
-  },
-  {
-    id: "solve",
-    name: "Solve",
-    role: "Coding workspace",
-    status: "working",
-    zone: "workshop",
-    icon: Code2,
-    activity: "Verifying a focused patch",
-    detail: "Runs the bounded coding harness, edits the fork, and verifies the diff.",
-    model: "qwen-coder via CCR",
-    memory: 684,
-    tokens: 48210,
-    elapsed: "04:16",
-    task: "elixpo/lixrl.com#21 · patch/analytics-color",
-    logs: ["changed app/dashboard/analytics.tsx", "running local TypeScript check", "1 of 2 verification commands passed"],
-  },
-  {
-    id: "doctor",
-    name: "Doctor",
-    role: "Runtime guardian",
-    status: "watching",
-    zone: "control",
-    icon: HeartPulse,
-    activity: "Watching Solve telemetry",
-    detail: "Detects loops, resource pressure, token anomalies, and safe retry conditions.",
-    model: "policy + telemetry",
-    memory: 72,
-    tokens: 0,
-    elapsed: "04:17",
-    task: "supervising run 8f24b",
-    logs: ["command repetition: normal", "token slope: stable", "memory below warning threshold"],
-  },
-  {
-    id: "janitor",
-    name: "Janitor",
-    role: "Resource cleanup",
-    status: "waiting",
-    zone: "control",
-    icon: Archive,
-    activity: "Cleanup manifest armed",
-    detail: "Reclaims workspaces and processes after a terminal Doctor decision.",
-    model: "deterministic",
-    memory: 28,
-    tokens: 0,
-    elapsed: "—",
-    task: "waiting on terminal state",
-    logs: ["workspace registered", "fork marked preserve", "cleanup authorization pending"],
-  },
-  {
-    id: "steward",
-    name: "Steward",
-    role: "PR shepherd",
-    status: "waiting",
-    zone: "control",
-    icon: GitPullRequest,
-    activity: "Monitoring two open PRs",
-    detail: "Tracks checks, reviews, merge state, and approved follow-up work.",
-    model: "nova-fast",
-    memory: 91,
-    tokens: 820,
-    elapsed: "12:08",
-    task: "PR #19 and PR #23",
-    logs: ["PR #19 checks passing", "PR #23 review requested", "no approved follow-up queued"],
-  },
-  {
-    id: "submit",
-    name: "Submit",
-    role: "Publication gate",
-    status: "sleeping",
-    zone: "output",
-    icon: GitBranch,
-    activity: "No verified commit to publish",
-    detail: "Pushes the reviewed branch and opens a disclosed pull request.",
-    model: "nova-fast + qwen-safety",
-    memory: 35,
-    tokens: 0,
-    elapsed: "—",
-    task: "waiting on Solve",
-    logs: ["safety route ready", "Git identity loaded", "sleeping until verification passes"],
-  },
-  {
-    id: "project",
-    name: "Project",
-    role: "Board synchronizer",
-    status: "working",
-    zone: "output",
-    icon: Box,
-    activity: "Reconciling project fields",
-    detail: "Keeps repository, issue, PR, phase, and outcome visible on Project V2.",
-    model: "deterministic",
-    memory: 64,
-    tokens: 0,
-    elapsed: "00:12",
-    task: "OreoFlow project · 7 items",
-    logs: ["matched 7 existing items", "updated phase for run 8f24b", "project state consistent"],
-  },
-  {
-    id: "discussions",
-    name: "Discussions",
-    role: "Community desk",
-    status: "sleeping",
-    zone: "output",
-    icon: MessageSquareText,
-    activity: "Next mood scan in 38 min",
-    detail: "Creates announcements, questions, polls, and approved mention replies.",
-    model: "nova-fast + qwen-safety",
-    memory: 42,
-    tokens: 0,
-    elapsed: "—",
-    task: "schedule idle",
-    logs: ["community mood: calm", "last discussion: Q&A", "variance cooldown active"],
-  },
-  {
-    id: "gist",
-    name: "Gist",
-    role: "Shared cache keeper",
-    status: "watching",
-    zone: "output",
-    icon: Database,
-    activity: "Cache healthy",
-    detail: "Maintains bounded cross-run cache entries and expires stale state.",
-    model: "deterministic",
-    memory: 39,
-    tokens: 0,
-    elapsed: "08:51",
-    task: "follow-up cache · 6 entries",
-    logs: ["6 live cache entries", "oldest TTL: 43 minutes", "no purge required"],
-  },
-];
 
 const statusLabel: Record<AgentStatus, string> = {
   working: "Working",
@@ -251,11 +77,18 @@ const statusLabel: Record<AgentStatus, string> = {
   sleeping: "Sleeping",
 };
 
+const roomStatusLabel: Record<RoomStatus, string> = {
+  active: "Active",
+  queued: "Queued",
+  completed: "Complete",
+  guarded: "Guarded",
+};
+
 const zones: Array<{ id: AgentZone; label: string; hint: string }> = [
-  { id: "intake", label: "Intake bay", hint: "discover · qualify · choose" },
-  { id: "workshop", label: "Build room", hint: "understand · edit · verify" },
-  { id: "control", label: "Control room", hint: "protect · clean · shepherd" },
-  { id: "output", label: "Outbound dock", hint: "publish · sync · converse" },
+  { id: "intake", label: "Intake", hint: "receive · qualify" },
+  { id: "workshop", label: "Workshop", hint: "research · build" },
+  { id: "control", label: "Control", hint: "protect · supervise" },
+  { id: "output", label: "Outbound", hint: "carry · publish" },
 ];
 
 function formatTokens(tokens: number) {
@@ -273,189 +106,310 @@ function StatusMark({ status }: { status: AgentStatus }) {
   );
 }
 
-function AgentCard({ agent, selected, onSelect }: { agent: Agent; selected: boolean; onSelect: () => void }) {
-  const Icon = agent.icon;
+function RoomStatusMark({ status }: { status: RoomStatus }) {
   return (
-    <button
-      type="button"
-      className={`agent-card ${selected ? "agent-card-selected" : ""}`}
-      onClick={onSelect}
-      aria-label={`Inspect ${agent.name}`}
-      aria-pressed={selected}
-    >
-      <span className="agent-card-top">
-        <span className="agent-icon"><Icon size={17} strokeWidth={1.8} /></span>
-        <StatusMark status={agent.status} />
-      </span>
-      <span className="agent-name-row">
-        <span>
-          <strong>{agent.name}</strong>
-          <small>{agent.role}</small>
-        </span>
-        <ChevronRight size={16} className="agent-chevron" />
-      </span>
+    <span className={`room-status room-status-${status}`}>
+      <span />
+      {roomStatusLabel[status]}
+    </span>
+  );
+}
+
+function FlowState({ state }: { state: CommunicationSnapshot["state"] }) {
+  return <span className={`flow-state flow-state-${state}`}>{state}</span>;
+}
+
+function BuildingModel({ onOpenFloor }: { onOpenFloor: (floor: FloorId) => void }) {
+  const shapes = [
+    { floor: buildingFloors[2], top: "300,72 474,157 300,242 126,157", front: "126,157 300,242 300,276 126,191", side: "300,242 474,157 474,191 300,276", y: 157 },
+    { floor: buildingFloors[1], top: "300,184 498,281 300,378 102,281", front: "102,281 300,378 300,417 102,320", side: "300,378 498,281 498,320 300,417", y: 281 },
+    { floor: buildingFloors[0], top: "300,323 530,435 300,547 70,435", front: "70,435 300,547 300,591 70,479", side: "300,547 530,435 530,479 300,591", y: 435 },
+  ];
+
+  return (
+    <div className="iso-wrap">
+      <div className="building-beacon"><Radio size={14} /><span>live building</span></div>
+      <svg className="iso-building" viewBox="0 0 700 650" role="img" aria-label="Three-floor Elixpo agent operations building">
+        <defs>
+          <filter id="floorShadow" x="-30%" y="-30%" width="160%" height="180%">
+            <feDropShadow dx="0" dy="12" stdDeviation="12" floodColor="#211a15" floodOpacity=".13" />
+          </filter>
+          <linearGradient id="carrierBeam" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#7856c8" />
+            <stop offset=".52" stopColor="#e53935" />
+            <stop offset="1" stopColor="#3975d5" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="300" cy="575" rx="260" ry="58" fill="#ded8d1" opacity=".45" />
+        <path d="M300 114 L300 534" stroke="url(#carrierBeam)" strokeWidth="3" strokeDasharray="5 9" opacity=".75" />
+        <circle className="iso-packet packet-a" cx="300" cy="114" r="7" fill="#e53935" />
+        <circle className="iso-packet packet-b" cx="300" cy="114" r="5" fill="#3975d5" />
+        {shapes.map(({ floor, top, front, side, y }, index) => (
+          <g
+            className={`iso-floor iso-floor-${floor.id}`}
+            key={floor.id}
+            onClick={() => onOpenFloor(floor.id)}
+            onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onOpenFloor(floor.id)}
+            role="button"
+            tabIndex={0}
+            aria-label={`Open ${floor.name}`}
+            filter="url(#floorShadow)"
+          >
+            <polygon points={front} className="iso-front" style={{ fill: floor.accent }} />
+            <polygon points={side} className="iso-side" style={{ fill: floor.accent }} />
+            <polygon points={top} className="iso-top" />
+            <g className="iso-room-lights">
+              <rect x={index === 0 ? 245 : 210} y={y - 20} width="30" height="12" rx="4" />
+              <rect x={index === 0 ? 290 : 275} y={y + 1} width="30" height="12" rx="4" />
+              <rect x={index === 0 ? 335 : 340} y={y - 20} width="30" height="12" rx="4" />
+            </g>
+          </g>
+        ))}
+        {shapes.map(({ floor }, index) => (
+          <g className="iso-label" key={`${floor.id}-label`} onClick={() => onOpenFloor(floor.id)}>
+            <line x1="505" y1={index === 0 ? 156 : index === 1 ? 280 : 434} x2="570" y2={index === 0 ? 156 : index === 1 ? 280 : 434} />
+            <circle cx="505" cy={index === 0 ? 156 : index === 1 ? 280 : 434} r="4" style={{ fill: floor.accent }} />
+            <text x="581" y={index === 0 ? 151 : index === 1 ? 275 : 429} className="iso-level-label">{floor.level}</text>
+            <text x="581" y={index === 0 ? 168 : index === 1 ? 292 : 446} className="iso-floor-label">{floor.name}</text>
+          </g>
+        ))}
+      </svg>
+      <div className="iso-caption"><Network size={13} /><span>Carrier lane</span><small>typed tasks · artifacts · receipts</small></div>
+    </div>
+  );
+}
+
+function CommunicationList({ items, compact = false }: { items: CommunicationSnapshot[]; compact?: boolean }) {
+  return (
+    <div className={`communication-list ${compact ? "communication-list-compact" : ""}`}>
+      {items.map((item) => (
+        <div className="communication-row" key={item.id}>
+          <span className={`communication-symbol communication-${item.state}`}><ChevronRight size={12} /></span>
+          <div className="communication-route">
+            <span><strong>{item.from}</strong><ChevronRight size={10} /><strong>{item.to}</strong></span>
+            <p>{item.detail}</p>
+          </div>
+          <div className="communication-meta"><FlowState state={item.state} /><small>{item.age}</small></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BuildingOverview({ onOpenFloor }: { onOpenFloor: (floor: FloorId) => void }) {
+  const rooms = buildingFloors.flatMap((floor) => floor.rooms.map((room) => ({ floor, room })));
+  const activeRooms = rooms.filter(({ room }) => room.status === "active");
+
+  return (
+    <div className="building-bento">
+      <section className="bento-card building-card">
+        <div className="bento-head">
+          <div><span className="eyebrow">Building topology</span><h2>Elixpo agent operations</h2><p>Click any floor to enter its rooms.</p></div>
+          <span className="simulation-pill"><span /> simulation live</span>
+        </div>
+        <BuildingModel onOpenFloor={onOpenFloor} />
+      </section>
+
+      <section className="bento-card building-summary-card">
+        <div className="small-card-head"><span><Layers3 size={15} /> Building load</span><small>now</small></div>
+        <div className="building-number"><strong>{activeRooms.length}</strong><span>active rooms<br />across {buildingFloors.length} floors</span></div>
+        <div className="capacity-bars">
+          {buildingFloors.map((floor) => {
+            const active = floor.rooms.filter((room) => room.status === "active").length;
+            return <div key={floor.id}><span>{floor.level} · {floor.name}<small>{active}/{floor.id === "oreoflow" ? 2 : floor.rooms.length}</small></span><i><b style={{ width: `${Math.max(8, (active / Math.max(floor.rooms.length, 1)) * 100)}%`, background: floor.accent }} /></i></div>;
+          })}
+        </div>
+      </section>
+
+      <section className="bento-card building-health-card">
+        <div className="small-card-head"><span><ShieldCheck size={15} /> Building guard</span><span className="healthy-label">healthy</span></div>
+        <div className="guard-orbit">
+          <span className="guard-core"><ShieldCheck size={23} /></span>
+          <span className="orbit orbit-one"><HeartPulse size={12} /></span>
+          <span className="orbit orbit-two"><Archive size={12} /></span>
+          <span className="orbit orbit-three"><PackageCheck size={12} /></span>
+        </div>
+        <p>Security, Doctors, Janitors, and Carriers are present on every occupied floor.</p>
+      </section>
+
+      <section className="bento-card floor-directory-card">
+        <div className="small-card-head"><span><Building2 size={15} /> Floor directory</span><small>3 online</small></div>
+        <div className="floor-directory">
+          {buildingFloors.slice().reverse().map((floor) => (
+            <button type="button" key={floor.id} onClick={() => onOpenFloor(floor.id)}>
+              <span className="floor-level" style={{ color: floor.accent }}>{floor.level}</span>
+              <span><strong>{floor.name}</strong><small>{floor.subtitle}</small></span>
+              <span className="floor-room-count">{floor.rooms.length} rooms</span>
+              <ChevronRight size={15} />
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="bento-card carrier-card">
+        <div className="small-card-head"><span><PackageCheck size={15} /> Between floors</span><span className="moving-label"><span /> 2 moving</span></div>
+        <CommunicationList items={buildingCommunications} compact />
+      </section>
+
+      <section className="bento-card active-rooms-card">
+        <div className="small-card-head"><span><Radio size={15} /> Rooms in motion</span><button type="button">View all <ChevronRight size={13} /></button></div>
+        <div className="active-room-grid">
+          {activeRooms.map(({ floor, room }) => (
+            <button type="button" key={room.id} onClick={() => onOpenFloor(floor.id)}>
+              <span className="active-room-floor" style={{ background: `${floor.accent}14`, color: floor.accent }}>{floor.level}</span>
+              <span><strong>{room.name}</strong><small>{room.subject}</small></span>
+              <span className="room-progress"><i><b style={{ width: `${room.progress}%`, background: floor.accent }} /></i><small>{room.progress}%</small></span>
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function AgentCard({ agent, selected, onSelect }: { agent: AgentSnapshot; selected: boolean; onSelect: () => void }) {
+  const Icon = iconMap[agent.icon];
+  return (
+    <button type="button" className={`agent-card ${selected ? "agent-card-selected" : ""}`} onClick={onSelect} aria-label={`Inspect ${agent.name}`} aria-pressed={selected}>
+      <span className="agent-card-top"><span className="agent-icon"><Icon size={17} strokeWidth={1.8} /></span><StatusMark status={agent.status} /></span>
+      <span className="agent-name-row"><span><strong>{agent.name}</strong><small>{agent.role}</small></span><ChevronRight size={16} className="agent-chevron" /></span>
       <span className="agent-task">{agent.activity}</span>
-      <span className="agent-stats">
-        <span><Activity size={12} /> {agent.memory} MB</span>
-        <span><Sparkles size={12} /> {formatTokens(agent.tokens)}</span>
-      </span>
+      <span className="agent-stats"><span><Activity size={12} /> {agent.memory} MB</span><span><Sparkles size={12} /> {formatTokens(agent.tokens)}</span></span>
     </button>
   );
 }
 
 function RoomConnector() {
+  return <div className="room-connector" aria-hidden="true"><span className="connector-line" /><span className="data-packet packet-one" /><span className="data-packet packet-two" /><ChevronRight size={15} /></div>;
+}
+
+function AgentInspector({ agent, onClose }: { agent: AgentSnapshot; onClose: () => void }) {
+  const Icon = iconMap[agent.icon];
   return (
-    <div className="room-connector" aria-hidden="true">
-      <span className="connector-line" />
-      <span className="data-packet packet-one" />
-      <span className="data-packet packet-two" />
-      <ChevronRight size={15} />
-    </div>
+    <aside className="agent-inspector" aria-live="polite">
+      <div className="inspector-head"><div className="inspector-agent"><span className="inspector-icon"><Icon size={21} /></span><span><small>Resident detail</small><strong>{agent.name}</strong></span></div><button type="button" aria-label="Close agent details" onClick={onClose}><X size={17} /></button></div>
+      <div className="inspector-status"><StatusMark status={agent.status} /><span>updated just now</span></div>
+      <div className="inspector-section current-work"><span className="section-label">Current assignment</span><strong>{agent.activity}</strong><p>{agent.detail}</p><div className="task-chip"><GitBranch size={13} /> {agent.task}</div></div>
+      <div className="inspector-grid">
+        <div><small>Memory</small><strong>{agent.memory} MB</strong><span className="mini-meter"><i style={{ width: `${Math.min(agent.memory / 8, 100)}%` }} /></span></div>
+        <div><small>Tokens</small><strong>{formatTokens(agent.tokens)}</strong><span className="mini-meter token-meter"><i style={{ width: `${Math.min(agent.tokens / 600, 100)}%` }} /></span></div>
+        <div><small>Runtime</small><strong>{agent.elapsed}</strong><span>current cycle</span></div>
+        <div><small>Route</small><strong className="model-name">{agent.model}</strong><span>least-cost fit</span></div>
+      </div>
+      <div className="inspector-section"><div className="section-heading"><span className="section-label">Latest logs</span><button type="button">View all</button></div><div className="log-list">{agent.logs.map((log, index) => <div key={log}><span>{index === agent.logs.length - 1 ? "now" : `${(agent.logs.length - index) * 7}s`}</span><p>{log}</p></div>)}</div></div>
+      <div className="doctor-note"><HeartPulse size={16} /><span><strong>Room Doctor reports healthy.</strong><small>No loops, memory pressure, or abnormal token growth.</small></span></div>
+    </aside>
+  );
+}
+
+function FloorView({ floor, selectedRoomId, onSelectRoom, onBack }: { floor: FloorSnapshot; selectedRoomId: string; onSelectRoom: (roomId: string) => void; onBack: () => void }) {
+  const room = floor.rooms.find((candidate) => candidate.id === selectedRoomId) ?? floor.rooms[0];
+  const [selectedAgents, setSelectedAgents] = useState<Record<string, string | null>>({});
+  const selectedAgentId = Object.prototype.hasOwnProperty.call(selectedAgents, room.id)
+    ? selectedAgents[room.id]
+    : room.agents.find((agent) => agent.status === "working")?.id ?? room.agents[0]?.id ?? null;
+  const selectedAgent = room.agents.find((agent) => agent.id === selectedAgentId) ?? null;
+  const activeAgents = room.agents.filter((agent) => agent.status === "working").length;
+  const memory = room.agents.reduce((sum, agent) => sum + agent.memory, 0);
+  const tokens = room.agents.reduce((sum, agent) => sum + agent.tokens, 0);
+
+  return (
+    <>
+      <section className="floor-heading">
+        <div className="floor-heading-main"><button type="button" onClick={onBack}><ArrowLeft size={15} /> Building</button><span className="floor-index" style={{ background: floor.accent }}>{floor.level}</span><div><span className="eyebrow" style={{ color: floor.accent }}>Floor {floor.level} / {floor.subtitle}</span><h1>{floor.name}</h1><p>{floor.description}</p></div></div>
+        <div className="floor-capacity"><span><strong>{floor.rooms.filter((candidate) => candidate.status === "active").length}</strong> active</span><span><strong>{floor.rooms.length}</strong> rooms</span><span><strong>{floor.rooms.reduce((sum, candidate) => sum + candidate.agents.length, 0)}</strong> residents</span></div>
+      </section>
+
+      <section className="room-switcher" aria-label="Rooms on this floor">
+        {floor.rooms.map((candidate) => (
+          <button type="button" key={candidate.id} className={candidate.id === room.id ? "room-tab-active" : ""} onClick={() => onSelectRoom(candidate.id)} style={{ "--floor-accent": floor.accent } as React.CSSProperties}>
+            <span className="room-tab-top"><RoomStatusMark status={candidate.status} /><small>{candidate.started}</small></span>
+            <strong>{candidate.name}</strong><span>{candidate.subject}</span>
+            <span className="room-tab-bottom"><i><b style={{ width: `${candidate.progress}%`, background: floor.accent }} /></i><small>{candidate.progress}%</small><small>{candidate.agents.length} agents</small></span>
+          </button>
+        ))}
+      </section>
+
+      <section className="metric-strip floor-metrics" aria-label="Room summary">
+        <div><span className="metric-icon metric-green"><Activity size={17} /></span><span><small>Agents working</small><strong>{activeAgents} <em>/ {room.agents.length}</em></strong></span></div>
+        <div><span className="metric-icon metric-red"><TerminalSquare size={17} /></span><span><small>Room run</small><strong>{room.runId} <em>· {room.started}</em></strong></span></div>
+        <div><span className="metric-icon metric-blue"><Cloud size={17} /></span><span><small>Room memory</small><strong>{memory} <em>MB</em></strong></span></div>
+        <div><span className="metric-icon metric-amber"><Sparkles size={17} /></span><span><small>Token flow</small><strong>{formatTokens(tokens)} <em>this run</em></strong></span></div>
+        <div><span className="metric-icon metric-violet"><Network size={17} /></span><span><small>Handoffs</small><strong>{room.communications.length} <em>tracked</em></strong></span></div>
+      </section>
+
+      <div className={`workspace-grid ${selectedAgent ? "" : "inspector-closed"}`}>
+        <section className="agent-room" aria-label={`${room.name} agent room`}>
+          <div className="room-toolbar"><div><span className="live-ring" /><strong>{room.name}</strong><small>{room.repository} · run {room.runId}</small></div><div className="room-legend"><span><i className="legend-work" /> working</span><span><i className="legend-watch" /> watching</span><span><i className="legend-sleep" /> sleeping</span></div></div>
+          <div className="room-floor">
+            {zones.map((zone, zoneIndex) => (
+              <div className={`agent-zone zone-${zone.id}`} key={zone.id}><div className="zone-heading"><span>{zone.label}</span><small>{zone.hint}</small></div><div className="zone-agents">{room.agents.filter((agent) => agent.zone === zone.id).map((agent) => <AgentCard key={agent.id} agent={agent} selected={agent.id === selectedAgentId} onSelect={() => setSelectedAgents((current) => ({ ...current, [room.id]: agent.id }))} />)}</div>{zoneIndex < zones.length - 1 && <RoomConnector />}</div>
+            ))}
+          </div>
+          <div className="flow-footer"><div className="flow-source"><GitBranch size={15} /><span><strong>Room objective</strong><small>{room.subject}</small></span></div><div className="flow-track"><span /><span /><span /><span /><span /></div><div className="flow-source flow-destination"><CircleCheck size={15} /><span><strong>Room output</strong><small>typed artifact + receipt</small></span></div></div>
+        </section>
+        {selectedAgent && <AgentInspector agent={selectedAgent} onClose={() => setSelectedAgents((current) => ({ ...current, [room.id]: null }))} />}
+      </div>
+
+      <section className="room-comms-card">
+        <div className="dock-heading"><span><Network size={16} /><strong>Room communications</strong><small>typed handoffs, not shared prompts</small></span><button type="button">Inspect artifacts <ExternalLink size={13} /></button></div>
+        <CommunicationList items={room.communications} />
+      </section>
+    </>
   );
 }
 
 export function AgentRoom() {
-  const [selectedId, setSelectedId] = useState<string | null>("solve");
+  const [selectedFloorId, setSelectedFloorId] = useState<FloorId | null>(null);
+  const [selectedRooms, setSelectedRooms] = useState<Record<FloorId, string>>({
+    mentions: buildingFloors[0].rooms[0].id,
+    oreoflow: buildingFloors[1].rooms[0].id,
+    discussions: buildingFloors[2].rooms[0].id,
+  });
   const [now, setNow] = useState<Date | null>(null);
-  const [pulse, setPulse] = useState(0);
 
   useEffect(() => {
-    const update = () => {
-      setNow(new Date());
-      setPulse((value) => value + 1);
-    };
+    const update = () => setNow(new Date());
     update();
-    const timer = window.setInterval(update, 4000);
+    const timer = window.setInterval(update, 1000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const selected = useMemo(
-    () => agents.find((agent) => agent.id === selectedId) ?? agents[0],
-    [selectedId],
-  );
-  const SelectedIcon = selected.icon;
-  const activeCount = agents.filter((agent) => agent.status === "working").length;
-  const totalMemory = agents.reduce((total, agent) => total + agent.memory, 0) + (pulse % 3) * 4;
-  const totalTokens = agents.reduce((total, agent) => total + agent.tokens, 0);
+  const selectedFloor = useMemo(() => buildingFloors.find((floor) => floor.id === selectedFloorId) ?? null, [selectedFloorId]);
+  const allRooms = buildingFloors.flatMap((floor) => floor.rooms);
+  const allAgents = allRooms.flatMap((room) => room.agents);
+  const activeRooms = allRooms.filter((room) => room.status === "active").length;
 
   return (
     <div className="operations-shell">
       <header className="topbar">
-        <div className="brand-lockup">
-          <Image src="/logo.png" alt="OreoFlow" width={34} height={34} className="brand-logo" priority />
-          <span>
-            <strong>OreoFlow</strong>
-            <small>agent operations</small>
-          </span>
-        </div>
-        <nav className="topbar-nav" aria-label="Main navigation">
-          <button className="nav-active" type="button"><Network size={15} /> Room</button>
-          <button type="button"><ListChecks size={15} /> Runs</button>
-          <button type="button"><GitPullRequest size={15} /> Work</button>
-          <button type="button"><BellRing size={15} /> Alerts <span className="nav-count">2</span></button>
-        </nav>
-        <div className="operator-block">
-          <span className="system-live"><span /> Systems live</span>
-          <span className="operator-avatar">EB</span>
-          <span className="operator-copy"><strong>Operator</strong><small>super-admin preview</small></span>
-        </div>
+        <button type="button" className="brand-lockup brand-button" onClick={() => setSelectedFloorId(null)}><Image src="/logo.png" alt="OreoFlow" width={34} height={34} className="brand-logo" priority /><span><strong>OreoFlow</strong><small>agent operations building</small></span></button>
+        <nav className="topbar-nav" aria-label="Main navigation"><button className="nav-active" type="button" onClick={() => setSelectedFloorId(null)}><Building2 size={15} /> Building</button><button type="button"><ListChecks size={15} /> Runs</button><button type="button"><GitPullRequest size={15} /> Work</button><button type="button"><BellRing size={15} /> Alerts <span className="nav-count">2</span></button></nav>
+        <div className="operator-block"><span className="system-live"><span /> Systems live</span><span className="operator-avatar">EB</span><span className="operator-copy"><strong>Operator</strong><small>super-admin preview</small></span></div>
       </header>
 
-      <main className="room-page">
-        <section className="room-heading">
-          <div>
-            <span className="eyebrow">OreoFlow / live topology</span>
-            <h1>The agents are in the room.</h1>
-            <p>Follow work as it moves from a GitHub signal to a reviewed contribution.</p>
-          </div>
-          <div className="room-clock">
-            <span><Clock3 size={14} /> {now ? now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}</span>
-            <small>Asia/Kolkata · simulated telemetry</small>
-          </div>
-        </section>
-
-        <section className="metric-strip" aria-label="Runtime summary">
-          <div><span className="metric-icon metric-green"><Activity size={17} /></span><span><small>Agents awake</small><strong>{activeCount} <em>/ {agents.length}</em></strong></span></div>
-          <div><span className="metric-icon metric-red"><TerminalSquare size={17} /></span><span><small>Active run</small><strong>8f24b <em>· 04:16</em></strong></span></div>
-          <div><span className="metric-icon metric-blue"><Cloud size={17} /></span><span><small>Room memory</small><strong>{totalMemory} <em>MB</em></strong></span></div>
-          <div><span className="metric-icon metric-amber"><Sparkles size={17} /></span><span><small>Token flow</small><strong>{formatTokens(totalTokens)} <em>today</em></strong></span></div>
-          <div><span className="metric-icon metric-violet"><CircleCheck size={17} /></span><span><small>Success rate</small><strong>94.2 <em>%</em></strong></span></div>
-        </section>
-
-        <div className={`workspace-grid ${selectedId ? "" : "inspector-closed"}`}>
-          <section className="agent-room" aria-label="Agent operations room">
-            <div className="room-toolbar">
-              <div><span className="live-ring" /><strong>Operations floor</strong><small>data moving now</small></div>
-              <div className="room-legend"><span><i className="legend-work" /> working</span><span><i className="legend-watch" /> watching</span><span><i className="legend-sleep" /> sleeping</span></div>
-            </div>
-
-            <div className="room-floor">
-              {zones.map((zone, zoneIndex) => (
-                <div className={`agent-zone zone-${zone.id}`} key={zone.id}>
-                  <div className="zone-heading"><span>{zone.label}</span><small>{zone.hint}</small></div>
-                  <div className="zone-agents">
-                    {agents.filter((agent) => agent.zone === zone.id).map((agent) => (
-                      <AgentCard key={agent.id} agent={agent} selected={agent.id === selectedId} onSelect={() => setSelectedId(agent.id)} />
-                    ))}
-                  </div>
-                  {zoneIndex < zones.length - 1 && <RoomConnector />}
-                </div>
-              ))}
-            </div>
-
-            <div className="flow-footer">
-              <div className="flow-source"><GitBranch size={15} /><span><strong>GitHub signal</strong><small>webhook · polling</small></span></div>
-              <div className="flow-track"><span /><span /><span /><span /><span /></div>
-              <div className="flow-source flow-destination"><CircleCheck size={15} /><span><strong>Contribution</strong><small>PR · board · discussion</small></span></div>
-            </div>
-          </section>
-
-          {selectedId && <aside className="agent-inspector" aria-live="polite">
-            <div className="inspector-head">
-              <div className="inspector-agent">
-                <span className="inspector-icon"><SelectedIcon size={21} /></span>
-                <span><small>Agent detail</small><strong>{selected.name}</strong></span>
-              </div>
-              <button type="button" aria-label="Close agent details" onClick={() => setSelectedId(null)}><X size={17} /></button>
-            </div>
-            <div className="inspector-status"><StatusMark status={selected.status} /><span>updated just now</span></div>
-            <div className="inspector-section current-work">
-              <span className="section-label">Current assignment</span>
-              <strong>{selected.activity}</strong>
-              <p>{selected.detail}</p>
-              <div className="task-chip"><GitBranch size={13} /> {selected.task}</div>
-            </div>
-            <div className="inspector-grid">
-              <div><small>Memory</small><strong>{selected.memory} MB</strong><span className="mini-meter"><i style={{ width: `${Math.min(selected.memory / 8, 100)}%` }} /></span></div>
-              <div><small>Tokens</small><strong>{formatTokens(selected.tokens)}</strong><span className="mini-meter token-meter"><i style={{ width: `${Math.min(selected.tokens / 600, 100)}%` }} /></span></div>
-              <div><small>Runtime</small><strong>{selected.elapsed}</strong><span>current cycle</span></div>
-              <div><small>Route</small><strong className="model-name">{selected.model}</strong><span>least-cost fit</span></div>
-            </div>
-            <div className="inspector-section">
-              <div className="section-heading"><span className="section-label">Latest logs</span><button type="button">View all</button></div>
-              <div className="log-list">
-                {selected.logs.map((log, index) => (
-                  <div key={log}><span>{index === selected.logs.length - 1 ? "now" : `${(selected.logs.length - index) * 7}s`}</span><p>{log}</p></div>
-                ))}
-              </div>
-            </div>
-            <div className="doctor-note">
-              <HeartPulse size={16} />
-              <span><strong>Doctor says this run is healthy.</strong><small>No loops, memory pressure, or abnormal token growth.</small></span>
-            </div>
-          </aside>}
-        </div>
-
-        <section className="activity-dock">
-          <div className="dock-heading"><span><Users size={16} /><strong>Room activity</strong></span><button type="button">Open run history <ChevronRight size={14} /></button></div>
-          <div className="activity-list">
-            <div><span className="activity-avatar avatar-solve"><Code2 size={15} /></span><p><strong>Solve</strong> changed <code>analytics.tsx</code><small>12 seconds ago</small></p><span className="activity-tag">edit</span></div>
-            <div><span className="activity-avatar avatar-doctor"><HeartPulse size={15} /></span><p><strong>Doctor</strong> sampled runtime health<small>18 seconds ago</small></p><span className="activity-tag tag-safe">healthy</span></div>
-            <div><span className="activity-avatar avatar-triage"><ListChecks size={15} /></span><p><strong>Triage</strong> sent a candidate to Vet<small>31 seconds ago</small></p><span className="activity-tag tag-route">handoff</span></div>
-            <div><span className="activity-avatar avatar-project"><Box size={15} /></span><p><strong>Project</strong> synchronized phase metadata<small>46 seconds ago</small></p><span className="activity-tag tag-sync">sync</span></div>
-          </div>
-        </section>
+      <main className="room-page building-page">
+        {!selectedFloor ? (
+          <>
+            <section className="room-heading building-heading"><div><span className="eyebrow">Elixpo ecosystem / live simulation</span><h1>One building. Many rooms in motion.</h1><p>Enter a floor, switch between concurrent rooms, and follow every typed handoff.</p></div><div className="room-clock"><span><Clock3 size={14} /> {now ? now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}</span><small>Asia/Kolkata · simulated telemetry</small></div></section>
+            <section className="metric-strip building-metrics" aria-label="Building summary">
+              <div><span className="metric-icon metric-green"><Activity size={17} /></span><span><small>Active rooms</small><strong>{activeRooms} <em>/ {allRooms.length}</em></strong></span></div>
+              <div><span className="metric-icon metric-red"><Building2 size={17} /></span><span><small>Floors online</small><strong>{buildingFloors.length} <em>systems</em></strong></span></div>
+              <div><span className="metric-icon metric-blue"><Users size={17} /></span><span><small>Residents loaded</small><strong>{allAgents.length} <em>agents</em></strong></span></div>
+              <div><span className="metric-icon metric-amber"><PackageCheck size={17} /></span><span><small>Carrier traffic</small><strong>2 <em>moving</em></strong></span></div>
+              <div><span className="metric-icon metric-violet"><ShieldCheck size={17} /></span><span><small>Security gates</small><strong>100 <em>% healthy</em></strong></span></div>
+            </section>
+            <BuildingOverview onOpenFloor={setSelectedFloorId} />
+          </>
+        ) : (
+          <FloorView floor={selectedFloor} selectedRoomId={selectedRooms[selectedFloor.id]} onSelectRoom={(roomId) => setSelectedRooms((current) => ({ ...current, [selectedFloor.id]: roomId }))} onBack={() => setSelectedFloorId(null)} />
+        )}
       </main>
+
+      <nav className="elevator" aria-label="Building floors">
+        <button type="button" className={!selectedFloorId ? "elevator-active" : ""} onClick={() => setSelectedFloorId(null)} aria-label="Building overview"><Building2 size={15} /></button>
+        {buildingFloors.slice().reverse().map((floor) => <button type="button" key={floor.id} className={selectedFloorId === floor.id ? "elevator-active" : ""} onClick={() => setSelectedFloorId(floor.id)} aria-label={`Floor ${floor.level}: ${floor.name}`} style={{ "--elevator-accent": floor.accent } as React.CSSProperties}><span>{floor.level}</span><small>{floor.name}</small></button>)}
+      </nav>
     </div>
   );
 }
