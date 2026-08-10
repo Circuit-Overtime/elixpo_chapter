@@ -269,6 +269,14 @@ for _root in _app_roots:
                     continue
                 DEPLOY.append((str(py), "%s/%s" % (r_base, py.name)))
 
+            # Gallery can also ship host-encoded streaming videos. Unlike
+            # WiFi-uploaded clips these are intentional firmware assets and
+            # are included by --force / --override=gallery deployments.
+            if app_dir.name == "gallery":
+                for video in sorted(opt.glob("*.rv565")):
+                    DEPLOY.append((str(video), "%s/%s" %
+                                   (r_base, video.name)))
+
 # assets — only the optimized .py modules (not raw PNGs/SVGs)
 for subdir in ["icons", "sprites", "status"]:
     opt = Path("assets") / subdir / "optimized"
@@ -777,14 +785,13 @@ def main():
     push_elapsed = _t.time() - push_t0
     print("  mpremote batch took %.1fs" % push_elapsed)
 
-    # Save the cache regardless of rc. mpremote's exit code reflects the LAST
-    # command in the `+`-chained session — a stray "File exists" mkdir or a
-    # transient warning was previously dropping us into the `rc != 0` branch
-    # and the cache never persisted, which is why "2 changed files" ended up
-    # pushing everything on the next run. We always persist the hashes for
-    # files we queued; if a single transfer actually corrupted, --force on
-    # the next deploy will re-push everything.
-    _save_hash_cache(new_cache)
+    # Only trust queued hashes after the complete mpremote batch succeeds.
+    # Saving them after an interrupted/failed --force run marks partial files
+    # as installed and makes the next normal deploy skip repairs.
+    if rc == 0:
+        _save_hash_cache(new_cache)
+    else:
+        print("  hash cache unchanged because the batch did not complete")
 
     elapsed = _t.time() - t0
     if rc == 0:
@@ -793,7 +800,8 @@ def main():
         mpremote("reset")
         print("Oreo OS is booting.")
     else:
-        print("\nBatch exited with code %d after %.1fs (cache still saved)." % (rc, elapsed))
+        print("\nBatch exited with code %d after %.1fs (cache not changed)." %
+              (rc, elapsed))
 
 
 if __name__ == "__main__":

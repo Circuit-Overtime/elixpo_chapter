@@ -6,6 +6,7 @@ Thumbs.db
 __pycache__/
 *.pyc
 *.mp4
+*.rv565
 *.pyo
 *.pyd
 .venv/

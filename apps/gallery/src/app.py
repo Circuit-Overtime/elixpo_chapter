@@ -76,10 +76,12 @@ class _Video:
     """
 
     def __init__(self, path):
+        self._path = path
+        self._inflate = None
         self._f = open(path, "rb")
         head = self._f.read(_VIDEO_HEADER_SIZE)
         if (len(head) != _VIDEO_HEADER_SIZE or head[:3] != b"RV5" or
-                head[3] not in (1, 2)):
+                head[3] not in (1, 2, 3)):
             self.close()
             raise ValueError("bad RV565 header")
         self.version = head[3]
@@ -96,14 +98,26 @@ class _Video:
         # read per command (hundreds per frame), which reduced real playback
         # to ~0.5 FPS and starved button polling. One readinto() per frame is
         # both allocation-free and dramatically faster.
-        packed_cap = (len(self.data) + 1024 if self.version == 2 else
+        packed_cap = (0 if self.version == 3 else
+                      len(self.data) + 1024 if self.version == 2 else
                       len(self.data) + (len(self.data) // 2) + 16)
         self._packed = bytearray(packed_cap)
         self.index = 0
+        if self.version == 3:
+            self._open_stream()
+
+    def _open_stream(self):
+        """Open one persistent native inflater for an RV565 v3 stream."""
+        try:
+            import deflate
+            self._inflate = deflate.DeflateIO(self._f)
+        except Exception:
+            self._inflate = None
 
     def close(self):
         f = getattr(self, "_f", None)
         self._f = None
+        self._inflate = None
         if f is not None:
             try:
                 f.close()
@@ -111,6 +125,16 @@ class _Video:
                 pass
 
     def rewind(self):
+        if self.version == 3:
+            try:
+                self._f.close()
+            except Exception:
+                pass
+            self._f = open(self._path, "rb")
+            self._f.read(_VIDEO_HEADER_SIZE)
+            self._open_stream()
+            self.index = 0
+            return
         self._f.seek(_VIDEO_HEADER_SIZE)
         if self.version == 2:
             self.index = 0
@@ -126,6 +150,23 @@ class _Video:
         """Decode one delta frame in place. Returns False on corrupt/EOF."""
         if self._f is None:
             return False
+        if self.version == 3:
+            if self._inflate is None:
+                return False
+            total = 0
+            target = memoryview(self.data)
+            try:
+                while total < len(self.data):
+                    n = self._inflate.readinto(target[total:])
+                    if not n:
+                        break
+                    total += n
+            except Exception:
+                return False
+            if total != len(self.data):
+                return False
+            self.index += 1
+            return True
         size_b = self._f.read(4)
         if len(size_b) != 4:
             return False
