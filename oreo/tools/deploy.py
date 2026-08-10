@@ -209,14 +209,17 @@ for _root in _app_roots:
 
         # Optional src/ subtree for the modular-app convention:
         # apps/<name>/main.py is a thin shim that imports from
-        # apps/<name>/src/. Anything .py under src/ gets pushed
-        # recursively so contributors can drop helper modules in
+        # apps/<name>/src/. Python sources and architecture-matched dynamic
+        # native .mpy helpers under src/ get pushed recursively so apps can
+        # accelerate hot loops without rebuilding the whole firmware.
         # without touching the deploy script. We deliberately skip
         # __pycache__, .pyc, hidden files, and any subdirectory
         # named `tests/` (host-only — they pull in pytest etc).
         src_dir = app_dir / "src"
         if src_dir.is_dir():
-            for sp in sorted(src_dir.rglob("*.py")):
+            for sp in sorted(src_dir.rglob("*")):
+                if not sp.is_file() or sp.suffix not in (".py", ".mpy"):
+                    continue
                 # Filter out everything we don't want on flash.
                 parts = sp.relative_to(app_dir).parts
                 if any(p == "__pycache__" or p.startswith(".") or
@@ -268,6 +271,14 @@ for _root in _app_roots:
                     # will remove it from flash on the next deploy.
                     continue
                 DEPLOY.append((str(py), "%s/%s" % (r_base, py.name)))
+
+            # Gallery can also ship host-encoded streaming videos. Unlike
+            # WiFi-uploaded clips these are intentional firmware assets and
+            # are included by --force / --override=gallery deployments.
+            if app_dir.name == "gallery":
+                for video in sorted(opt.glob("*.rv565")):
+                    DEPLOY.append((str(video), "%s/%s" %
+                                   (r_base, video.name)))
 
 # assets — only the optimized .py modules (not raw PNGs/SVGs)
 for subdir in ["icons", "sprites", "status"]:
@@ -492,9 +503,14 @@ def write_secrets_local():
 
 remote_dirs = set()
 for local, remote in DEPLOY:
-    parent = str(Path(remote).parent)
-    if parent != ".":
-        remote_dirs.add(parent)
+    # Include every ancestor. After --clean the top-level apps/ directory no
+    # longer exists, so trying os.mkdir("apps/about") first just raises ENOENT.
+    # The old code ignored that error and the batch later failed misleadingly
+    # while copying apps/about/__init__.py.
+    parent = Path(remote).parent
+    while str(parent) != ".":
+        remote_dirs.add(str(parent))
+        parent = parent.parent
 
 # sort so parents are created before children
 remote_dirs = sorted(remote_dirs, key=lambda p: p.count("/"))
@@ -630,6 +646,14 @@ def main():
                  "        except: pass\n"
                  "for f in os.listdir('/'):\n"
                  "    if f != 'boot.py': _rm('/' + f)\n")
+        # A wiped device has no files left to match the host-side cache.
+        # Keeping stale hashes here would make --clean skip nearly the entire
+        # OS and leave the badge unbootable.
+        try:
+            HASH_CACHE_PATH.unlink()
+            print("  cleared host hash cache after device wipe")
+        except FileNotFoundError:
+            pass
         print()
 
     # Create all directories in one device-side exec (ignores "File exists")
@@ -777,14 +801,13 @@ def main():
     push_elapsed = _t.time() - push_t0
     print("  mpremote batch took %.1fs" % push_elapsed)
 
-    # Save the cache regardless of rc. mpremote's exit code reflects the LAST
-    # command in the `+`-chained session — a stray "File exists" mkdir or a
-    # transient warning was previously dropping us into the `rc != 0` branch
-    # and the cache never persisted, which is why "2 changed files" ended up
-    # pushing everything on the next run. We always persist the hashes for
-    # files we queued; if a single transfer actually corrupted, --force on
-    # the next deploy will re-push everything.
-    _save_hash_cache(new_cache)
+    # Only trust queued hashes after the complete mpremote batch succeeds.
+    # Saving them after an interrupted/failed --force run marks partial files
+    # as installed and makes the next normal deploy skip repairs.
+    if rc == 0:
+        _save_hash_cache(new_cache)
+    else:
+        print("  hash cache unchanged because the batch did not complete")
 
     elapsed = _t.time() - t0
     if rc == 0:
@@ -793,7 +816,8 @@ def main():
         mpremote("reset")
         print("Oreo OS is booting.")
     else:
-        print("\nBatch exited with code %d after %.1fs (cache still saved)." % (rc, elapsed))
+        print("\nBatch exited with code %d after %.1fs (cache not changed)." %
+              (rc, elapsed))
 
 
 if __name__ == "__main__":
