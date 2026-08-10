@@ -503,9 +503,14 @@ def write_secrets_local():
 
 remote_dirs = set()
 for local, remote in DEPLOY:
-    parent = str(Path(remote).parent)
-    if parent != ".":
-        remote_dirs.add(parent)
+    # Include every ancestor. After --clean the top-level apps/ directory no
+    # longer exists, so trying os.mkdir("apps/about") first just raises ENOENT.
+    # The old code ignored that error and the batch later failed misleadingly
+    # while copying apps/about/__init__.py.
+    parent = Path(remote).parent
+    while str(parent) != ".":
+        remote_dirs.add(str(parent))
+        parent = parent.parent
 
 # sort so parents are created before children
 remote_dirs = sorted(remote_dirs, key=lambda p: p.count("/"))
@@ -641,6 +646,14 @@ def main():
                  "        except: pass\n"
                  "for f in os.listdir('/'):\n"
                  "    if f != 'boot.py': _rm('/' + f)\n")
+        # A wiped device has no files left to match the host-side cache.
+        # Keeping stale hashes here would make --clean skip nearly the entire
+        # OS and leave the badge unbootable.
+        try:
+            HASH_CACHE_PATH.unlink()
+            print("  cleared host hash cache after device wipe")
+        except FileNotFoundError:
+            pass
         print()
 
     # Create all directories in one device-side exec (ignores "File exists")
