@@ -192,6 +192,12 @@
 .blog-editor-wrapper [data-style-type="backgroundColor"][data-value="rgba(244,114,182,0.25)"] { background-color: rgba(244,114,182,0.25) !important; }
 
 /* Page context menu (#21) */
+.editor-context-menu-dismiss {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+
 .page-context-menu {
   min-width: 200px;
   background: var(--bg-surface);
@@ -218,6 +224,29 @@
 .page-context-menu-item:hover {
   background: var(--bg-active);
   color: var(--text-primary);
+}
+
+.blog-editor-side-menu-host {
+  display: contents;
+}
+
+.block-context-menu {
+  min-width: 210px;
+}
+
+.block-context-menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border-default);
+}
+
+.page-context-menu-item.block-context-menu-delete {
+  color: #ef6464;
+}
+
+.page-context-menu-item.block-context-menu-delete:hover {
+  color: #ff7b7b;
+  background: rgba(239, 100, 100, 0.12);
 }
 
 /* Inline button chip (#22) — editor + preview */

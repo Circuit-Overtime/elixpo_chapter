@@ -4,79 +4,7 @@ import { createReactBlockSpec } from '@blocknote/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useLixTheme as useTheme } from '../hooks/useLixTheme';
-
-const darkConfig = {
-  startOnLoad: false,
-  securityLevel: 'loose',
-  theme: 'dark',
-  themeVariables: {
-    primaryColor: '#232d3f',
-    primaryTextColor: '#e4e4e7',
-    primaryBorderColor: '#c4b5fd',
-    lineColor: '#8b8fa3',
-    secondaryColor: '#1e1e2e',
-    tertiaryColor: '#141a26',
-    fontFamily: "'lixFont', sans-serif",
-    fontSize: '16px',
-    nodeTextColor: '#e4e4e7',
-    nodeBorder: '#c4b5fd',
-    mainBkg: '#232d3f',
-    clusterBkg: '#1a1f2e',
-    clusterBorder: '#333',
-    titleColor: '#c4b5fd',
-    edgeLabelBackground: '#141a26',
-    git0: '#c4b5fd',
-    git1: '#7c5cbf',
-    git2: '#4ade80',
-    git3: '#f59e0b',
-    git4: '#ef4444',
-    git5: '#3b82f6',
-    git6: '#ec4899',
-    git7: '#14b8a6',
-    gitBranchLabel0: '#e4e4e7',
-    gitBranchLabel1: '#e4e4e7',
-    gitBranchLabel2: '#e4e4e7',
-    gitBranchLabel3: '#e4e4e7',
-    gitInv0: '#141a26',
-  },
-  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: true, useMaxWidth: false },
-  sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
-  gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
-};
-
-const lightConfig = {
-  startOnLoad: false,
-  securityLevel: 'loose',
-  theme: 'default',
-  themeVariables: {
-    primaryColor: '#e8e0ff',
-    primaryTextColor: '#1a1a2e',
-    primaryBorderColor: '#7c5cbf',
-    lineColor: '#6b7280',
-    secondaryColor: '#f3f0ff',
-    tertiaryColor: '#f9fafb',
-    fontFamily: "'lixFont', sans-serif",
-    fontSize: '16px',
-    nodeTextColor: '#1a1a2e',
-    nodeBorder: '#7c5cbf',
-    mainBkg: '#e8e0ff',
-    clusterBkg: '#f3f0ff',
-    clusterBorder: '#d1d5db',
-    titleColor: '#7c5cbf',
-    edgeLabelBackground: '#f9fafb',
-    git0: '#7c5cbf',
-    git1: '#9b7bf7',
-    git2: '#16a34a',
-    git3: '#d97706',
-    git4: '#dc2626',
-    git5: '#2563eb',
-    git6: '#db2777',
-    git7: '#0d9488',
-  },
-  flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: true, useMaxWidth: false },
-  sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
-  gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
-};
+import { getMermaidConfig, normalizeMermaidSource, prepareMermaidSvg } from '../utils/mermaidConfig';
 
 let mermaidModule = null;
 let mermaidLoadPromise = null;
@@ -98,7 +26,7 @@ async function getMermaid(isDark) {
   const theme = isDark ? 'dark' : 'light';
   if (lastTheme !== theme) {
     lastTheme = theme;
-    mermaidModule.initialize(isDark ? darkConfig : lightConfig);
+    mermaidModule.initialize(getMermaidConfig(isDark));
   }
   return mermaidModule;
 }
@@ -135,14 +63,7 @@ function MermaidPreview({ diagram, isDark, interactive }) {
         const mermaid = await getMermaid(isDark);
         if (cancelled) return;
 
-        // Normalize diagram type keywords to correct casing (mermaid is case-sensitive)
-        let diagramText = diagram.trim();
-        diagramText = diagramText.replace(/^\s*gitgraph/i, 'gitGraph');
-        diagramText = diagramText.replace(/^\s*sequencediagram/i, 'sequenceDiagram');
-        diagramText = diagramText.replace(/^\s*classDiagram/i, 'classDiagram');
-        diagramText = diagramText.replace(/^\s*stateDiagram/i, 'stateDiagram');
-        diagramText = diagramText.replace(/^\s*erDiagram/i, 'erDiagram');
-        diagramText = diagramText.replace(/^\s*gantt/i, 'gantt');
+        const diagramText = normalizeMermaidSource(diagram);
 
         const tempDiv = document.createElement('div');
         tempDiv.id = 'container-' + id;
@@ -153,14 +74,7 @@ function MermaidPreview({ diagram, isDark, interactive }) {
         tempDiv.remove();
 
         if (!cancelled) {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(svg, 'image/svg+xml');
-          const svgEl = doc.querySelector('svg');
-          if (svgEl) {
-            svgEl.removeAttribute('width');
-            svgEl.setAttribute('style', 'width:100%;height:auto;max-width:100%;');
-          }
-          setSvgHTML(svgEl ? svgEl.outerHTML : svg);
+          setSvgHTML(prepareMermaidSvg(svg));
           setError('');
           setZoom(1);
           setPan({ x: 0, y: 0 });
@@ -269,7 +183,7 @@ function MermaidPreview({ diagram, isDark, interactive }) {
         dangerouslySetInnerHTML={{ __html: svgHTML }}
       />
       {interactive && (
-        <div className="mermaid-zoom-controls">
+        <div className="mermaid-zoom-controls" onMouseDown={(event) => event.stopPropagation()}>
           <button
             onClick={(e) => { e.stopPropagation(); setZoom((z) => Math.min(3, z + 0.2)); }}
             className="mermaid-zoom-btn"
@@ -320,6 +234,7 @@ export const MermaidBlock = createReactBlockSpec(
       const [livePreview, setLivePreview] = useState(block.props.diagram || '');
       const inputRef = useRef(null);
       const debounceRef = useRef(null);
+      const previousEditingRef = useRef(editing);
       const [isFullscreen, setIsFullscreen] = useState(false);
 
       useEffect(() => {
@@ -338,7 +253,18 @@ export const MermaidBlock = createReactBlockSpec(
       }, [isFullscreen]);
 
       useEffect(() => {
-        if (editing && inputRef.current) inputRef.current.focus();
+        const startedEditing = editing && !previousEditingRef.current;
+        previousEditingRef.current = editing;
+        if (!startedEditing) return;
+
+        const raf = requestAnimationFrame(() => {
+          const el = inputRef.current;
+          if (el) {
+            el.focus({ preventScroll: true });
+            el.setSelectionRange(el.value.length, el.value.length);
+          }
+        });
+        return () => cancelAnimationFrame(raf);
       }, [editing]);
 
       // Debounced live preview update while typing
@@ -348,6 +274,25 @@ export const MermaidBlock = createReactBlockSpec(
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => setLivePreview(v), 400);
       }, []);
+
+      const handleCodePaste = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const input = e.currentTarget;
+        const pasted = e.clipboardData.getData('text/plain');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const nextValue = value.slice(0, start) + pasted + value.slice(end);
+
+        setValue(nextValue);
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => setLivePreview(nextValue), 400);
+        requestAnimationFrame(() => {
+          const cursor = start + pasted.length;
+          input.setSelectionRange(cursor, cursor);
+        });
+      }, [value]);
 
       useEffect(() => {
         return () => clearTimeout(debounceRef.current);
@@ -370,13 +315,17 @@ export const MermaidBlock = createReactBlockSpec(
                 <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
               </svg>
               <span>Mermaid Diagram</span>
+              <span className="mermaid-supported-types">Flowchart · Sequence · Class · ER</span>
               <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-faint)' }}>Shift+Enter to save</span>
             </div>
             <textarea
               ref={inputRef}
               value={value}
               onChange={handleCodeChange}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPaste={handleCodePaste}
               onKeyDown={(e) => {
+                e.stopPropagation();
                 if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); save(); }
                 if (e.key === 'Escape') { setEditing(false); setValue(block.props.diagram || ''); setLivePreview(block.props.diagram || ''); }
                 if (e.key === 'Tab') {
@@ -421,13 +370,14 @@ export const MermaidBlock = createReactBlockSpec(
               <line x1="17.5" y1="14" x2="15.5" y2="14" />
             </svg>
             <span>Click to add a Mermaid diagram</span>
+            <span className="mermaid-empty-types">Flowchart · Sequence · Class · ER</span>
           </div>
         );
       }
 
       return (
         <div className="mermaid-block mermaid-block--rendered group" onDoubleClick={() => setEditing(true)}>
-          <MermaidPreview diagram={block.props.diagram} isDark={isDark} interactive={false} />
+          <MermaidPreview diagram={block.props.diagram} isDark={isDark} interactive />
           <div className="mermaid-block-hover">
             <button onClick={() => setIsFullscreen(true)} className="mermaid-hover-btn" title="Fullscreen">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
