@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Activity,
   AlertTriangle,
@@ -9,10 +10,8 @@ import {
   CircleDot,
   Clock3,
   ExternalLink,
-  GitCommitHorizontal,
   GitPullRequest,
   Github,
-  HeartPulse,
   Layers3,
   MemoryStick,
   MessageSquareText,
@@ -126,7 +125,7 @@ function WorkRow({ item }: { item: DashboardWorkItem }) {
 function RepositorySource({ snapshot }: { snapshot: DashboardSnapshot }) {
   return (
     <a className="repository-source" href={snapshot.repository.url} target="_blank" rel="noreferrer">
-      {snapshot.repository.avatarUrl ? <img src={snapshot.repository.avatarUrl} alt="" /> : <Github size={32} />}
+      {snapshot.repository.avatarUrl ? <Image src={snapshot.repository.avatarUrl} alt="" width={44} height={44} /> : <Github size={32} />}
       <span><small>Control repository</small><strong>{snapshot.repository.fullName}</strong><em>{snapshot.repository.description || "No repository description"}</em></span>
       <ExternalLink size={17} />
     </a>
@@ -157,7 +156,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
               const floorRuns = snapshot.runs.filter((run) => run.floor === floor.slug);
               const live = floorRuns.filter((run) => run.status === "in_progress" || run.status === "queued").length;
               return (
-                <Link className="real-floor-slab" href={`/floors/${floor.slug}`} key={floor.slug} style={{ "--floor-accent": floor.accent, "--floor-index": index } as React.CSSProperties}>
+                <Link className="real-floor-slab" href={`/${floor.slug}`} key={floor.slug} style={{ "--floor-accent": floor.accent, "--floor-index": index } as React.CSSProperties}>
                   <span className="slab-level">{floor.level}</span>
                   <span><strong>{floor.name}</strong><small>{live ? `${live} active` : `${floorRuns.length} recent runs`}</small></span>
                   <ArrowRight size={18} />
@@ -173,7 +172,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
           <div className="real-floor-list">
             {floors.map((floor) => {
               const floorRuns = snapshot.runs.filter((run) => run.floor === floor.slug);
-              return <Link href={`/floors/${floor.slug}`} key={floor.slug}><span style={{ color: floor.accent }}><FloorIcon slug={floor.slug} /></span><span><strong>{floor.name}</strong><small>{floor.description}</small></span><b>{floorRuns.length}</b></Link>;
+              return <Link href={`/${floor.slug}`} key={floor.slug}><span style={{ color: floor.accent }}><FloorIcon slug={floor.slug} /></span><span><strong>{floor.name}</strong><small>{floor.description}</small></span><b>{floorRuns.length}</b></Link>;
             })}
           </div>
         </section>
@@ -205,7 +204,7 @@ export function FloorDirectoryView({ snapshot }: { snapshot: DashboardSnapshot }
           const active = runs.filter((run) => run.status !== "completed").length;
           const lastRun = runs[0];
           return (
-            <Link className="directory-card" href={`/floors/${floor.slug}`} key={floor.slug} style={{ "--floor-accent": floor.accent } as React.CSSProperties}>
+            <Link className="directory-card" href={`/${floor.slug}`} key={floor.slug} style={{ "--floor-accent": floor.accent } as React.CSSProperties}>
               <div className="directory-number">{floor.level}</div>
               <span className="directory-icon"><FloorIcon slug={floor.slug} /></span>
               <h2>{floor.name}</h2><p>{floor.description}</p>

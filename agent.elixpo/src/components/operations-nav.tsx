@@ -15,6 +15,7 @@ const links = [
 
 function active(pathname: string, href: string) {
   if (href === "/") return pathname === href;
+  if (href === "/floors" && ["/operations", "/oreoflow", "/discussions"].includes(pathname)) return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

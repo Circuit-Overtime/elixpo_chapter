@@ -204,7 +204,7 @@ function parseReceipt(name: string, text: string): StateReceipt | null {
   try {
     const data = JSON.parse(text) as JsonObject;
     const failure = typeof data.failure === "object" && data.failure ? data.failure as JsonObject : {};
-    const status = stringValue(data.status, "recorded");
+    const status = stringValue(data.status, stringValue(data.action, "recorded"));
     const stage = stringValue(data.stage, stringValue(failure.stage, name));
     const detail = stringValue(data.error) || stringValue(data.reason) || stringValue(data.summary) || stringValue(failure.message) || `${name} state recorded`;
     return {
