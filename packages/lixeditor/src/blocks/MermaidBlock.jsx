@@ -320,6 +320,7 @@ export const MermaidBlock = createReactBlockSpec(
       const [livePreview, setLivePreview] = useState(block.props.diagram || '');
       const inputRef = useRef(null);
       const debounceRef = useRef(null);
+      const previousEditingRef = useRef(editing);
       const [isFullscreen, setIsFullscreen] = useState(false);
 
       useEffect(() => {
@@ -338,7 +339,18 @@ export const MermaidBlock = createReactBlockSpec(
       }, [isFullscreen]);
 
       useEffect(() => {
-        if (editing && inputRef.current) inputRef.current.focus();
+        const startedEditing = editing && !previousEditingRef.current;
+        previousEditingRef.current = editing;
+        if (!startedEditing) return;
+
+        const raf = requestAnimationFrame(() => {
+          const el = inputRef.current;
+          if (el) {
+            el.focus({ preventScroll: true });
+            el.setSelectionRange(el.value.length, el.value.length);
+          }
+        });
+        return () => cancelAnimationFrame(raf);
       }, [editing]);
 
       // Debounced live preview update while typing
@@ -348,6 +360,25 @@ export const MermaidBlock = createReactBlockSpec(
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => setLivePreview(v), 400);
       }, []);
+
+      const handleCodePaste = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const input = e.currentTarget;
+        const pasted = e.clipboardData.getData('text/plain');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const nextValue = value.slice(0, start) + pasted + value.slice(end);
+
+        setValue(nextValue);
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => setLivePreview(nextValue), 400);
+        requestAnimationFrame(() => {
+          const cursor = start + pasted.length;
+          input.setSelectionRange(cursor, cursor);
+        });
+      }, [value]);
 
       useEffect(() => {
         return () => clearTimeout(debounceRef.current);
@@ -376,7 +407,10 @@ export const MermaidBlock = createReactBlockSpec(
               ref={inputRef}
               value={value}
               onChange={handleCodeChange}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPaste={handleCodePaste}
               onKeyDown={(e) => {
+                e.stopPropagation();
                 if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); save(); }
                 if (e.key === 'Escape') { setEditing(false); setValue(block.props.diagram || ''); setLivePreview(block.props.diagram || ''); }
                 if (e.key === 'Tab') {
