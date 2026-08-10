@@ -4,6 +4,7 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  BookOpen,
   Bot,
   Box,
   CheckCircle2,
@@ -11,6 +12,7 @@ import {
   Clock3,
   ExternalLink,
   GitPullRequest,
+  GitCommitHorizontal,
   Github,
   Layers3,
   MemoryStick,
@@ -80,6 +82,22 @@ function WarningStrip({ snapshot }: { snapshot: DashboardSnapshot }) {
 
 function Empty({ children }: { children: React.ReactNode }) {
   return <div className="truthful-empty"><Box size={22} /><p>{children}</p></div>;
+}
+
+function AgentPulse({ snapshot }: { snapshot: DashboardSnapshot }) {
+  const active = snapshot.runs.filter((run) => run.status === "in_progress" || run.status === "queued");
+  const recent = snapshot.runs.slice(0, 8);
+  const recentFailures = recent.filter((run) => ["failure", "timed_out", "action_required"].includes(run.conclusion || ""));
+  const mood = active.length ? "In motion" : recentFailures.length ? "Watchful" : recent.length ? "Steady" : "Resting";
+  const focus = active[0] || snapshot.runs[0];
+  return (
+    <section className={`agent-pulse ${active.length ? "agent-pulse-live" : ""}`}>
+      <span className="agent-pulse-orb"><Bot size={19} /><i /></span>
+      <span><small>Operational mood</small><strong>{mood}</strong></span>
+      <span className="agent-pulse-focus"><small>{active.length ? "Current focus" : "Latest focus"}</small><strong>{focus ? focus.name : "No GitHub activity returned"}</strong><em>{focus ? `${status(focus)} · ${time(focus.updatedAt)}` : "Waiting for the next recorded event"}</em></span>
+      <span className="agent-pulse-count"><strong>{active.length}</strong><small>live now</small></span>
+    </section>
+  );
 }
 
 function uniqueRuntimeRoute(runs: DashboardRun[], limit = 6) {
@@ -203,6 +221,7 @@ export function BuildingDashboard({ snapshot }: { snapshot: DashboardSnapshot })
     <main className="real-page">
       <PageHeading eyebrow="Live control plane" title="Agent operations building" copy="Rooms and activity are reconstructed from GitHub Actions and committed state receipts." />
       <WarningStrip snapshot={snapshot} />
+      <AgentPulse snapshot={snapshot} />
       <section className="real-metrics">
         <div><Play /><span><small>Active runs</small><strong>{active.length}</strong></span></div>
         <div><Layers3 /><span><small>Operational floors</small><strong>{floors.length}</strong></span></div>
@@ -266,6 +285,7 @@ export function FloorDirectoryView({ snapshot }: { snapshot: DashboardSnapshot }
     <main className="real-page">
       <PageHeading eyebrow="Building directory" title="Floor directory" copy="Each floor is a real operational slice of the control repository's workflow history." />
       <WarningStrip snapshot={snapshot} />
+      <AgentPulse snapshot={snapshot} />
       <div className="directory-grid">
         {floors.map((floor) => {
           const runs = snapshot.runs.filter((run) => run.floor === floor.slug);
@@ -287,9 +307,11 @@ export function FloorDirectoryView({ snapshot }: { snapshot: DashboardSnapshot }
 }
 
 export function FloorView({ snapshot, floor }: { snapshot: DashboardSnapshot; floor: FloorDefinition }) {
-  const runs = snapshot.runs.filter((run) => run.floor === floor.slug);
+  const classifiedRuns = snapshot.runs.filter((run) => run.floor === floor.slug);
+  const usingBuildingHistory = floor.slug === "operations" && classifiedRuns.length === 0;
+  const runs = usingBuildingHistory ? snapshot.runs.slice(0, 20) : classifiedRuns;
   const receipts = floor.slug === "oreoflow" ? snapshot.receipts : [];
-  const active = runs.filter((run) => run.status !== "completed");
+  const active = classifiedRuns.filter((run) => run.status !== "completed");
   const runtimeRoute = uniqueRuntimeRoute([...active, ...runs]);
   return (
     <main className="real-page">
@@ -299,6 +321,7 @@ export function FloorView({ snapshot, floor }: { snapshot: DashboardSnapshot; fl
         <div><span className="real-eyebrow">Operational floor</span><h1>{floor.name}</h1><p>{floor.description}</p></div>
       </div>
       <WarningStrip snapshot={snapshot} />
+      <AgentPulse snapshot={snapshot} />
       <section className="real-metrics floor-route-metrics">
         <div><Activity /><span><small>Runs returned</small><strong>{runs.length}</strong></span></div>
         <div><Radio /><span><small>Active now</small><strong>{active.length}</strong></span></div>
@@ -306,11 +329,11 @@ export function FloorView({ snapshot, floor }: { snapshot: DashboardSnapshot; fl
         <div><MemoryStick /><span><small>Runtime memory</small><strong className="metric-date">Not reported</strong></span></div>
       </section>
       <section className="real-panel floor-runtime-flow">
-        <RuntimeRail runs={runtimeRoute} title={`${floor.name} agent data flow`} caption="Distinct workflow rooms, ordered from active to latest" />
+        <RuntimeRail runs={runtimeRoute} title={`${floor.name} agent data flow`} caption={usingBuildingHistory ? "No lobby-specific room returned · showing recent building history" : "Distinct workflow rooms, ordered from active to latest"} />
       </section>
       <div className="floor-route-grid">
         <section className="real-panel floor-runs-panel">
-          <div className="real-panel-head"><div><small>Rooms</small><h2>Workflow runs on this floor</h2></div><span>{active.length} active</span></div>
+          <div className="real-panel-head"><div><small>{usingBuildingHistory ? "Past activity" : "Rooms"}</small><h2>{usingBuildingHistory ? "Recent workflow run times" : "Workflow runs on this floor"}</h2></div><span>{usingBuildingHistory ? `${runs.length} historical` : `${active.length} active`}</span></div>
           <div className="real-table">{runs.length ? runs.map((run) => <RunRow run={run} key={run.id} />) : <Empty>No workflow runs are currently classified on this floor.</Empty>}</div>
         </section>
         <aside className="real-panel floor-inspector">
@@ -324,16 +347,34 @@ export function FloorView({ snapshot, floor }: { snapshot: DashboardSnapshot; fl
 }
 
 export function RunsView({ snapshot }: { snapshot: DashboardSnapshot }) {
-  return <main className="real-page"><PageHeading eyebrow="GitHub Actions" title="Runs" copy="Workflow execution status, actors, branches, attempts, and direct log links from GitHub." /><WarningStrip snapshot={snapshot} /><section className="real-panel full-list-panel"><div className="real-panel-head"><div><small>{snapshot.repository.fullName}</small><h2>Latest workflow runs</h2></div><span>{snapshot.runs.length} returned</span></div><div className="real-table">{snapshot.runs.length ? snapshot.runs.map((run) => <RunRow run={run} key={run.id} />) : <Empty>No workflow runs were returned by GitHub.</Empty>}</div></section></main>;
+  return <main className="real-page"><PageHeading eyebrow="GitHub Actions" title="Runs" copy="Workflow execution status, actors, branches, attempts, and direct log links from GitHub." /><WarningStrip snapshot={snapshot} /><AgentPulse snapshot={snapshot} /><section className="real-panel full-list-panel"><div className="real-panel-head"><div><small>{snapshot.repository.fullName}</small><h2>Latest workflow runs</h2></div><span>{snapshot.runs.length} returned</span></div><div className="real-table">{snapshot.runs.length ? snapshot.runs.map((run) => <RunRow run={run} key={run.id} />) : <Empty>No workflow runs were returned by GitHub.</Empty>}</div></section></main>;
 }
 
 export function WorkView({ snapshot }: { snapshot: DashboardSnapshot }) {
-  return <main className="real-page"><PageHeading eyebrow="GitHub work queue" title="Work" copy="Real issues and pull requests from the control repository, ordered by GitHub update time." /><WarningStrip snapshot={snapshot} /><section className="real-panel full-list-panel"><div className="real-panel-head"><div><small>{snapshot.repository.fullName}</small><h2>Issues and pull requests</h2></div><span>{snapshot.work.length} returned</span></div><div className="real-table">{snapshot.work.length ? snapshot.work.map((item) => <WorkRow item={item} key={`${item.kind}-${item.id}`} />) : <Empty>No issues or pull requests were returned by GitHub.</Empty>}</div></section></main>;
+  return <main className="real-page"><PageHeading eyebrow="GitHub work queue" title="Work" copy="Real issues and pull requests from the control repository, ordered by GitHub update time." /><WarningStrip snapshot={snapshot} /><AgentPulse snapshot={snapshot} /><section className="real-panel full-list-panel"><div className="real-panel-head"><div><small>{snapshot.repository.fullName}</small><h2>Issues and pull requests</h2></div><span>{snapshot.work.length} returned</span></div><div className="real-table">{snapshot.work.length ? snapshot.work.map((item) => <WorkRow item={item} key={`${item.kind}-${item.id}`} />) : <Empty>No issues or pull requests were returned by GitHub.</Empty>}</div></section></main>;
+}
+
+export function JournalView({ snapshot }: { snapshot: DashboardSnapshot }) {
+  const entries = [
+    ...snapshot.runs.map((run) => ({ id: `run-${run.id}`, kind: "Workflow", title: run.name, detail: `${status(run)} on ${run.branch} · ${run.actor}`, occurredAt: run.updatedAt, url: run.url, icon: <Workflow size={17} />, tone: runTone(run) })),
+    ...snapshot.work.map((item) => ({ id: `work-${item.kind}-${item.id}`, kind: item.kind === "pull_request" ? "Pull request" : "Issue", title: item.title, detail: `#${item.number} · ${item.state} · ${item.author}`, occurredAt: item.updatedAt, url: item.url, icon: item.kind === "pull_request" ? <GitPullRequest size={17} /> : <CircleDot size={17} />, tone: item.state === "open" ? "live" : "neutral" })),
+    ...snapshot.commits.map((commit) => ({ id: `commit-${commit.sha}`, kind: "Commit", title: commit.message.split("\n")[0], detail: `${commit.sha.slice(0, 7)} · ${commit.author}`, occurredAt: commit.authoredAt, url: commit.url, icon: <GitCommitHorizontal size={17} />, tone: "success" })),
+    ...snapshot.receipts.filter((receipt) => receipt.updatedAt).map((receipt) => ({ id: `receipt-${receipt.name}-${receipt.updatedAt}`, kind: "State receipt", title: `${receipt.name} · ${receipt.status}`, detail: `${receipt.stage} · ${receipt.detail}`, occurredAt: receipt.updatedAt, url: receipt.issueUrl, icon: <Box size={17} />, tone: receiptTone(receipt) })),
+  ].sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt)).slice(0, 50);
+  return (
+    <main className="real-page">
+      <PageHeading eyebrow="Living repository" title="Activity journal" copy="A chronological record assembled from real workflow runs, issues, pull requests, commits, and durable state artifacts." />
+      <WarningStrip snapshot={snapshot} /><AgentPulse snapshot={snapshot} />
+      <section className="real-panel journal-panel"><div className="real-panel-head"><div><small>GitHub artifacts</small><h2>What the repository has been doing</h2></div><span><BookOpen size={14} /> {entries.length} entries</span></div>
+        {entries.length ? <div className="journal-timeline">{entries.map((entry) => <a href={entry.url || undefined} target={entry.url ? "_blank" : undefined} rel={entry.url ? "noreferrer" : undefined} key={entry.id}><span className={`journal-icon tone-${entry.tone}`}>{entry.icon}</span><span><small>{entry.kind}</small><strong>{entry.title}</strong><p>{entry.detail}</p><em>{time(entry.occurredAt)}</em></span>{entry.url && <ExternalLink size={15} />}</a>)}</div> : <Empty>No GitHub artifacts were returned.</Empty>}
+      </section>
+    </main>
+  );
 }
 
 export function SecurityView({ snapshot }: { snapshot: DashboardSnapshot }) {
   return (
-    <main className="real-page"><PageHeading eyebrow="Guard desk" title="Building security" copy="Security workflow activity, failed Actions runs, and Doctor or Janitor decisions from committed receipts." /><WarningStrip snapshot={snapshot} />
+    <main className="real-page"><PageHeading eyebrow="Guard desk" title="Building security" copy="Security workflow activity, failed Actions runs, and Doctor or Janitor decisions from committed receipts." /><WarningStrip snapshot={snapshot} /><AgentPulse snapshot={snapshot} />
       <div className="alerts-grid"><section className="real-panel full-list-panel"><div className="real-panel-head"><div><small>Evidence feed</small><h2>Security and guard activity</h2></div><span>{snapshot.security.length} events</span></div>{snapshot.security.length ? <div className="alerts-feed">{snapshot.security.map((event) => <a href={event.url || undefined} target={event.url ? "_blank" : undefined} rel={event.url ? "noreferrer" : undefined} key={event.id}><span className={`alert-icon tone-${event.level === "critical" ? "danger" : event.level}`}>{event.level === "success" ? <ShieldCheck /> : <AlertTriangle />}</span><span><strong>{event.title}</strong><p>{event.detail}</p><small>{event.source} · {time(event.occurredAt)}</small></span>{event.url && <ExternalLink size={16} />}</a>)}</div> : <Empty>No security events were returned by GitHub or committed state receipts.</Empty>}</section>
       <aside className="real-panel evidence-card"><ShieldCheck size={28} /><h2>Evidence policy</h2><p>This page does not infer vulnerabilities or runtime health. It reports failed runs, security workflow runs, and durable Doctor or Janitor decisions.</p><dl><div><dt>RAM</dt><dd>Not reported</dd></div><div><dt>Workflow logs</dt><dd>Linked from GitHub</dd></div><div><dt>Receipts</dt><dd>Committed state JSON</dd></div></dl></aside></div>
     </main>

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Building2, GitPullRequest, Layers3, Play, Radio, ShieldCheck } from "lucide-react";
+import { BookOpen, Building2, GitPullRequest, Layers3, Play, Radio, ShieldCheck } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const links = [
@@ -10,6 +10,7 @@ const links = [
   { href: "/floors", label: "Floors", icon: Layers3 },
   { href: "/runs", label: "Runs", icon: Play },
   { href: "/work", label: "Work", icon: GitPullRequest },
+  { href: "/journal", label: "Journal", icon: BookOpen },
   { href: "/security", label: "Security", icon: ShieldCheck },
 ];
 
