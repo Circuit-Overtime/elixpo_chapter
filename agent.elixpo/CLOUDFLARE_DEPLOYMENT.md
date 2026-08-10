@@ -1,39 +1,52 @@
 # Cloudflare deployment
 
-This frontend is a read-only, dynamically rendered Next.js application deployed as a Cloudflare Worker through the OpenNext adapter.
+The dashboard uses two independently deployable Cloudflare services:
 
-## First deployment
+- **Pages** serves the static Next.js frontend at `agent.elixpo.com`.
+- **agent-elixpo-api Worker** serves live GitHub data at `agent.elixpo.com/api/*`.
+
+The frontend has no credentials or mutation controls. The Worker owns the optional read-only GitHub token and can scale independently as floors are added.
+
+## 1. Deploy the dashboard API Worker
+
+```bash
+cd workers/dashboard-api
+npm install
+npx wrangler login
+npx wrangler deploy
+npx wrangler secret put ELIXPO_DASHBOARD_GITHUB_TOKEN
+```
+
+Use a dedicated fine-grained GitHub token scoped only to `elixpo/agent.elixpo`, with read access to Actions, Contents, Issues, Pull requests, and Metadata. The API also works anonymously at GitHub's lower public rate limit.
+
+The Worker configuration installs the route `agent.elixpo.com/api/*`. Do not attach the whole `agent.elixpo.com` hostname to this Worker.
+
+## 2. Deploy the Pages frontend
 
 From `agent.elixpo/`:
 
 ```bash
 npm ci
-npx wrangler login
-npx wrangler secret put ELIXPO_DASHBOARD_GITHUB_TOKEN
 npm run deploy
 ```
 
-`ELIXPO_DASHBOARD_GITHUB_TOKEN` is optional for a public control repository, but avoids GitHub's anonymous API rate limit. Use a dedicated fine-grained token scoped only to `elixpo/agent.elixpo` with read access to Actions, Contents, Issues, Pull requests, and Metadata. Never reuse an OreoFlow mutation token.
+The deploy script performs the static Next.js export and uploads `out/` to the `agent-elixpo` Pages project. For Git integration use:
 
-The committed Wrangler configuration supplies `ELIXPO_GITHUB_CONTROL_REPO=elixpo/agent.elixpo`. No secret value is committed.
+- Root directory: `agent.elixpo`
+- Build command: `npm run build`
+- Build output directory: `out`
+- Production branch: `main`
 
-## Validate in the Workers runtime
-
-```bash
-npm run preview
-```
-
-The command builds `.open-next/` and starts Wrangler locally. The regular development server remains `npm run dev`.
-
-## Custom domain
-
-After the first deployment, attach `agent.elixpo.com` from **Cloudflare Dashboard → Workers & Pages → agent-elixpo → Settings → Domains & Routes**. The hostname is intentionally absent from `wrangler.jsonc`, so deployment cannot create or replace its DNS record.
-
-## Updating production
+No frontend secret or API URL is required in production because it calls the same-origin `/api/snapshot` route. For local development against `wrangler dev --port 8788`, set:
 
 ```bash
-npm ci
-npm run lint
-npm run build:cloudflare
-npm run deploy
+NEXT_PUBLIC_DASHBOARD_API_URL=http://localhost:8788
 ```
+
+## 3. Attach the domain
+
+1. Remove the existing `agent.elixpo.com` Custom Domain from the old SSR Worker.
+2. Add `agent.elixpo.com` as the Pages project's Custom Domain.
+3. Keep the Worker route `agent.elixpo.com/api/*` assigned to `agent-elixpo-api`.
+
+Cloudflare serves Pages for the site and intercepts only `/api/*` for live data.

@@ -1,8 +1,5 @@
-import { RunsView } from "@/components/dashboard-views";
-import { getDashboardSnapshot } from "@/lib/github-dashboard";
+import { LiveDashboard } from "@/components/live-dashboard";
 
-export const dynamic = "force-dynamic";
-
-export default async function RunsPage() {
-  return <RunsView snapshot={await getDashboardSnapshot()} />;
+export default function RunsPage() {
+  return <LiveDashboard view="runs" />;
 }

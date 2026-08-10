@@ -1,8 +1,5 @@
-import { SecurityView } from "@/components/dashboard-views";
-import { getDashboardSnapshot } from "@/lib/github-dashboard";
+import { LiveDashboard } from "@/components/live-dashboard";
 
-export const dynamic = "force-dynamic";
-
-export default async function SecurityPage() {
-  return <SecurityView snapshot={await getDashboardSnapshot()} />;
+export default function SecurityPage() {
+  return <LiveDashboard view="security" />;
 }

@@ -1,8 +1,5 @@
-import { WorkView } from "@/components/dashboard-views";
-import { getDashboardSnapshot } from "@/lib/github-dashboard";
+import { LiveDashboard } from "@/components/live-dashboard";
 
-export const dynamic = "force-dynamic";
-
-export default async function WorkPage() {
-  return <WorkView snapshot={await getDashboardSnapshot()} />;
+export default function WorkPage() {
+  return <LiveDashboard view="work" />;
 }

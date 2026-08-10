@@ -31,7 +31,7 @@ import {
   type DashboardWorkItem,
   type FloorDefinition,
   type StateReceipt,
-} from "@/lib/github-dashboard";
+} from "@/lib/dashboard-model";
 
 function time(value: string) {
   if (!value) return "Time not reported";
