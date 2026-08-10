@@ -1131,6 +1131,16 @@ export default function WritePage({ slugid }) {
                 const updatedAt = await syncInFlightRef.current;
                 if (!dirtyRef.current) return updatedAt;
             }
+            // BlogEditor coalesces document snapshots to avoid serializing a large
+            // post on every keystroke. A cloud save must still capture the exact
+            // live document when it starts.
+            const liveEditorContent = editorRef.current?.getBlocks?.();
+            if (Array.isArray(liveEditorContent)) {
+                draftDataRef.current = {
+                    ...draftDataRef.current,
+                    editorContent: liveEditorContent,
+                };
+            }
             const latest = draftDataRef.current;
             const data = {
                 ...latest,

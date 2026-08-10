@@ -179,7 +179,9 @@ const codeBlockWithHighlighting = createCodeBlockSpec({
         const { createHighlighter } = await import("shiki");
         return createHighlighter({
             themes: ["vitesse-dark", "vitesse-light"],
-            langs: Object.keys(codeBlockLanguages).filter((k) => k !== "text"),
+            // BlockNote loads a grammar when a code block first requests it.
+            // Starting empty avoids retaining every supported grammar in memory.
+            langs: [],
         });
     },
 });
@@ -2947,17 +2949,34 @@ const BlogEditor = forwardRef(function BlogEditor(
 
     // Track block count to detect structural changes (import, paste, AI) vs. normal typing
     const blockCountRef = useRef(0);
+    const documentChangeTimerRef = useRef(null);
 
     const handleChange = useCallback(() => {
-        if (onChange) onChange(editor.document);
+        // editor.document materializes the full BlockNote JSON tree. Coalesce
+        // transactions so a long post does not allocate that tree per keystroke.
+        clearTimeout(documentChangeTimerRef.current);
+        const count =
+            editor._tiptapEditor?.state?.doc?.childCount ??
+            blockCountRef.current;
+        documentChangeTimerRef.current = setTimeout(
+            () => {
+                if (onChange) onChange(editor.document);
+            },
+            count >= 60 ? 500 : 120,
+        );
+
         // Only re-patch code blocks when the number of blocks changes (new block added/removed)
         // This avoids running expensive DOM queries on every keystroke
-        const count = editor.document.length;
         if (count !== blockCountRef.current) {
             blockCountRef.current = count;
             requestAnimationFrame(patchCodeBlocks);
         }
     }, [onChange, editor, patchCodeBlocks]);
+
+    useEffect(
+        () => () => clearTimeout(documentChangeTimerRef.current),
+        [],
+    );
 
     // Patch code blocks on mount + when new code blocks appear in the DOM
     useEffect(() => {
