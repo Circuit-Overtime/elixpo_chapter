@@ -37,7 +37,10 @@ board, and `state/*.json`. It runs in CI, not as a hosted website.
 > This repository is the source for the **elixpoo** agent.
 
 See **[AGENTS.md](AGENTS.md)** for the operating manual and
-[docs/refactor_plan.md](docs/refactor_plan.md) for the full design.
+[docs/refactor_plan.md](docs/refactor_plan.md) for the full design. Active
+operator references live under `docs/`, including the
+[ecosystem framework roadmap](docs/ecosystem-framework.md) and
+[secrets setup runbook](docs/secrets-setup.md).
 
 ### Layout
 

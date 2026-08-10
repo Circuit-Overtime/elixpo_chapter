@@ -1,4 +1,4 @@
-# Elixpo agent ecosystem framework
+# Elixpo agent ecosystem framework roadmap
 
 This is the dependency-ordered plan for evolving `agent.elixpo` from a set of
 independent squads into a vertically scalable multi-agent ecosystem.
