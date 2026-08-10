@@ -45,7 +45,10 @@ export async function POST(request, { params }) {
 
     // Notify ONLY when this created a new follow row — repeated POSTs (already
     // following) must not stack duplicate "started following you" notifications.
-    const isNewFollow = (ins?.meta?.changes ?? 1) > 0;
+    // D1 reports an ignored insert as zero changes. Treat an absent changes
+    // count as unknown/unchanged instead of creating a notification on every
+    // retry (some local adapters omit `meta`).
+    const isNewFollow = (ins?.meta?.changes ?? 0) > 0;
     if (isNewFollow) try {
       await db.prepare("INSERT INTO creator_follow_events (id, target_type, target_id, follower_id, delta) VALUES (?, 'user', ?, ?, 1)")
         .bind(crypto.randomUUID(), target.id, session.userId).run();
@@ -59,7 +62,11 @@ export async function POST(request, { params }) {
         actorId: session.userId,
         actorName: actor.display_name || actor.username || 'Someone',
         actorAvatar: actor.avatar_url || '',
+        // A follow relationship has one meaningful notification. This also
+        // protects the recipient when a browser retries the POST.
+        targetId: session.userId,
         targetUrl: `/${actor.username || ''}`,
+        dedupe: true,
       });
     } catch {}
 

@@ -51,6 +51,7 @@ import {
     enqueueMediaUpload,
 } from "../../utils/mediaUploadQueue";
 import { getLixShikiHighlighter } from "../../utils/shikiHighlighter";
+import { clearInheritedBlockTextColors } from "../../utils/blockColorNormalization";
 import AICommandMenu from "./AICommandMenu";
 import AISelectionToolbar from "./AISelectionToolbar";
 import { AIBlock } from "./blocks/AIBlock";
@@ -893,7 +894,7 @@ function sanitizeInitialContent(blocks) {
     );
     if (filtered.length === 0) return undefined;
 
-    const sanitized = doSanitize(filtered);
+    const sanitized = clearInheritedBlockTextColors(doSanitize(filtered));
     return sanitized?.length ? sanitized : undefined;
 }
 
@@ -2750,197 +2751,6 @@ const BlogEditor = forwardRef(function BlogEditor(
         };
     }, [editor, blogId]);
 
-    // Disable spellcheck on code blocks + inline code + inject copy buttons + language labels
-    const patchCodeBlocks = useCallback(() => {
-        const wrapper = wrapperRef.current;
-        if (!wrapper) return;
-
-        // Inline code elements — disable spellcheck
-        wrapper.querySelectorAll(".bn-inline-content code").forEach((code) => {
-            code.setAttribute("spellcheck", "false");
-            code.setAttribute("autocorrect", "off");
-            code.setAttribute("autocapitalize", "off");
-        });
-
-        wrapper
-            .querySelectorAll('[data-content-type="codeBlock"]')
-            .forEach((block) => {
-                block.setAttribute("spellcheck", "false");
-                const editable = block.querySelector("[contenteditable]");
-                if (editable) {
-                    editable.spellcheck = false;
-                    editable.setAttribute("spellcheck", "false");
-                    editable.setAttribute("autocorrect", "off");
-                    editable.setAttribute("autocapitalize", "off");
-                }
-                block.style.position = "relative";
-
-                let lineNumbers = block.querySelector(".code-line-numbers");
-                if (!lineNumbers) {
-                    lineNumbers = document.createElement("div");
-                    lineNumbers.className = "code-line-numbers";
-                    lineNumbers.setAttribute("aria-hidden", "true");
-                    block.appendChild(lineNumbers);
-                }
-                const syncLineNumbers = () => {
-                    const lineCount = Math.max(
-                        1,
-                        (editable?.textContent || "").split("\n").length,
-                    );
-                    lineNumbers.replaceChildren(
-                        ...Array.from({ length: lineCount }, (_, index) => {
-                            const line = document.createElement("span");
-                            line.textContent = String(index + 1);
-                            return line;
-                        }),
-                    );
-                };
-                syncLineNumbers();
-                if (editable && editable.dataset.lineNumbersBound !== "true") {
-                    editable.dataset.lineNumbersBound = "true";
-                    editable.addEventListener("input", syncLineNumbers);
-                }
-
-                // Language label — always visible and clickable in edit mode.
-                const blockEl = block.closest("[data-id]");
-                const blockId = blockEl?.getAttribute("data-id");
-                const lang =
-                    (blockId && editor.getBlock(blockId)?.props?.language) ||
-                    "text";
-                let label = block.querySelector(".code-lang-label");
-                if (!label) {
-                    label = document.createElement("button");
-                    label.className = "code-lang-label";
-                    label.title = "Click to change language";
-                    label.onmousedown = (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    };
-                    label.onclick = (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Remove any existing language picker
-                        document
-                            .querySelectorAll(".code-lang-picker")
-                            .forEach((el) => el.remove());
-
-                        const langs = [
-                            "text",
-                            "javascript",
-                            "typescript",
-                            "python",
-                            "java",
-                            "c",
-                            "cpp",
-                            "csharp",
-                            "go",
-                            "rust",
-                            "ruby",
-                            "php",
-                            "swift",
-                            "kotlin",
-                            "html",
-                            "css",
-                            "json",
-                            "yaml",
-                            "markdown",
-                            "bash",
-                            "shell",
-                            "sql",
-                            "graphql",
-                            "jsx",
-                            "tsx",
-                            "vue",
-                            "svelte",
-                            "dart",
-                            "lua",
-                            "r",
-                            "scala",
-                        ];
-                        const picker = document.createElement("div");
-                        picker.className = "code-lang-picker";
-                        const rect = label.getBoundingClientRect();
-                        picker.style.cssText = `position:fixed;top:${rect.bottom + 4}px;right:${window.innerWidth - rect.right}px;z-index:10000;`;
-                        picker.innerHTML = `<input class="code-lang-search" placeholder="Search..." autofocus /><div class="code-lang-list">${langs.map((l) => `<button class="code-lang-option" data-lang="${l}">${l}</button>`).join("")}</div>`;
-
-                        // Search filter
-                        picker
-                            .querySelector(".code-lang-search")
-                            .addEventListener("input", (ev) => {
-                                const q = ev.target.value.toLowerCase();
-                                picker
-                                    .querySelectorAll(".code-lang-option")
-                                    .forEach((opt) => {
-                                        opt.style.display =
-                                            opt.dataset.lang.includes(q)
-                                                ? ""
-                                                : "none";
-                                    });
-                            });
-
-                        // Select language
-                        picker.addEventListener("mousedown", (ev) => {
-                            const opt = ev.target.closest(".code-lang-option");
-                            if (!opt || !blockId) return;
-                            ev.preventDefault();
-                            try {
-                                editor.updateBlock(blockId, {
-                                    props: { language: opt.dataset.lang },
-                                });
-                                label.textContent = opt.dataset.lang;
-                            } catch {}
-                            picker.remove();
-                        });
-
-                        document.body.appendChild(picker);
-                        picker.querySelector(".code-lang-search").focus();
-                        setTimeout(() => {
-                            const dismiss = (ev) => {
-                                if (
-                                    !picker.contains(ev.target) &&
-                                    ev.target !== label
-                                ) {
-                                    picker.remove();
-                                    document.removeEventListener(
-                                        "mousedown",
-                                        dismiss,
-                                    );
-                                }
-                            };
-                            document.addEventListener("mousedown", dismiss);
-                        }, 0);
-                    };
-                    block.appendChild(label);
-                }
-                label.textContent = lang || "text";
-
-                // Copy button
-                if (!block.querySelector(".code-copy-btn")) {
-                    const copyIcon =
-                        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-                    const checkIcon =
-                        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-                    const btn = document.createElement("button");
-                    btn.className = "code-copy-btn";
-                    btn.title = "Copy code";
-                    btn.innerHTML = copyIcon;
-                    btn.onclick = () => {
-                        const code =
-                            block.querySelector("[contenteditable]")
-                                ?.textContent || "";
-                        navigator.clipboard.writeText(code);
-                        btn.innerHTML = checkIcon;
-                        btn.style.color = "#86efac";
-                        setTimeout(() => {
-                            btn.innerHTML = copyIcon;
-                            btn.style.color = "";
-                        }, 1500);
-                    };
-                    block.appendChild(btn);
-                }
-            });
-    }, [editor]);
-
     // Hide BlockNote's formatting toolbar when a custom block (code, equation, mermaid, etc.) is focused
     const noToolbarTypes = useMemo(
         () =>
@@ -3000,7 +2810,7 @@ const BlogEditor = forwardRef(function BlogEditor(
         };
     }, [editor, noToolbarTypes]);
 
-    // Track block count to detect structural changes (import, paste, AI) vs. normal typing
+    // Cache block count without materializing editor.document on every change.
     const blockCountRef = useRef(0);
     const documentChangeTimerRef = useRef(null);
 
@@ -3018,69 +2828,32 @@ const BlogEditor = forwardRef(function BlogEditor(
             count >= 60 ? 500 : 120,
         );
 
-        // Only re-patch code blocks when the number of blocks changes (new block added/removed)
-        // This avoids running expensive DOM queries on every keystroke
-        if (count !== blockCountRef.current) {
-            blockCountRef.current = count;
-            requestAnimationFrame(patchCodeBlocks);
-        }
-    }, [onChange, editor, patchCodeBlocks]);
+        blockCountRef.current = count;
+    }, [onChange, editor]);
 
     useEffect(
         () => () => clearTimeout(documentChangeTimerRef.current),
         [],
     );
 
-    // Patch code blocks on mount + when new code blocks appear in the DOM
-    useEffect(() => {
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                blockCountRef.current = editor.document.length;
-                patchCodeBlocks();
-                onReady?.();
-            });
-        });
+    const onReadyRef = useRef(onReady);
+    onReadyRef.current = onReady;
 
-        // Code node views can rerender without changing the document block count.
-        // Watch child replacements too so the visible language control is restored.
-        const wrapper = wrapperRef.current;
-        if (!wrapper) return;
-        const editorRoot = wrapper.querySelector(".bn-editor");
-        if (!editorRoot) return;
-        let patchFrame = null;
-        const observer = new MutationObserver((mutations) => {
-            const needsPatch = mutations.some((mutation) => {
-                const existingCodeBlock = mutation.target.closest?.(
-                    '[data-content-type="codeBlock"]',
-                );
-                if (
-                    existingCodeBlock &&
-                    (!existingCodeBlock.querySelector(".code-lang-label") ||
-                        !existingCodeBlock.querySelector(".code-copy-btn"))
-                ) {
-                    return true;
-                }
-                return [...mutation.addedNodes].some(
-                    (node) =>
-                        node.nodeType === Node.ELEMENT_NODE &&
-                        (node.matches?.('[data-content-type="codeBlock"]') ||
-                            node.querySelector?.(
-                                '[data-content-type="codeBlock"]',
-                            )),
-                );
-            });
-            if (!needsPatch || patchFrame) return;
-            patchFrame = requestAnimationFrame(() => {
-                patchFrame = null;
-                patchCodeBlocks();
+    // Initialize once. Keeping the unstable callback prop out of this effect
+    // prevents parent status renders from repeatedly materializing the document.
+    useEffect(() => {
+        let innerFrame = null;
+        const outerFrame = requestAnimationFrame(() => {
+            innerFrame = requestAnimationFrame(() => {
+                blockCountRef.current = editor.document.length;
+                onReadyRef.current?.();
             });
         });
-        observer.observe(editorRoot, { childList: true, subtree: true });
         return () => {
-            observer.disconnect();
-            if (patchFrame) cancelAnimationFrame(patchFrame);
+            cancelAnimationFrame(outerFrame);
+            if (innerFrame) cancelAnimationFrame(innerFrame);
         };
-    }, [patchCodeBlocks, onReady, editor]);
+    }, [editor]);
 
     // AI sparkle star — inline element appended to last AI text block
     const sparkleRef = useRef(null);
