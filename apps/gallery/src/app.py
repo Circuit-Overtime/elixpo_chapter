@@ -1,15 +1,15 @@
-"""Gallery — flip through optimised photos, or read upload instructions.
+"""Gallery — browse photos and device-native videos.
 
 The carousel always has one extra "ADD" tile at the end. Selecting it
-opens a scrollable instruction panel that walks the user through dropping
-a new picture in and re-flashing the badge.
+opens a scrollable instruction panel for adding bundled photos; WiFi uploads
+can add photos and videos directly.
 
 Controls:
   LEFT / RIGHT   previous / next tile (photos + the ADD tile at the end)
   UP   / DOWN    scroll the instruction panel (when on the ADD tile)
-  A              refresh the photo listing
-  B              delete the currently-shown photo (frees flash space).
-                 Only enabled on .r565 uploads — baked .py photos are
+  A              play/pause video, or refresh the media listing
+  B              delete the currently-shown uploaded media (frees flash).
+                 Only enabled on .r565/.rv565 uploads — baked .py photos are
                  part of the deploy and removing them would just have
                  the next deploy push them back.
   HOME           apps drawer
@@ -38,7 +38,8 @@ def _list_photos():
         for f in _os.listdir(_GALLERY_DIR):
             if f.startswith("_"):
                 continue
-            if f.endswith(".py") or f.endswith(".r565"):
+            if (f.endswith(".py") or f.endswith(".r565") or
+                    f.endswith(".rv565")):
                 out.append(f)
         out.sort()
         return out
@@ -60,6 +61,113 @@ def _load_photo(name):
         except (ImportError, AttributeError):
             return None
     return None
+
+
+_VIDEO_HEADER_SIZE = 12
+
+
+class _Video:
+    """Streaming RV565 decoder.
+
+    RV565 keeps one RGB565 frame in RAM and stores each following frame as
+    delta commands: skip unchanged pixels, copy literal pixels, or repeat one
+    colour.  Decoding directly from flash avoids allocating the whole clip and
+    makes frame delivery predictable on MicroPython.
+    """
+
+    def __init__(self, path):
+        self._f = open(path, "rb")
+        head = self._f.read(_VIDEO_HEADER_SIZE)
+        if len(head) != _VIDEO_HEADER_SIZE or head[:4] != b"RV5\x01":
+            self.close()
+            raise ValueError("bad RV565 header")
+        self.w = head[4] | (head[5] << 8)
+        self.h = head[6] | (head[7] << 8)
+        self.fps = head[8]
+        self.frames = head[10] | (head[11] << 8)
+        if (self.w <= 0 or self.h <= 0 or self.w > 240 or self.h > 240 or
+                self.fps <= 0 or self.fps > 20 or self.frames <= 0):
+            self.close()
+            raise ValueError("bad RV565 dimensions")
+        self.data = bytearray(self.w * self.h * 2)
+        self.index = 0
+
+    def close(self):
+        f = getattr(self, "_f", None)
+        self._f = None
+        if f is not None:
+            try:
+                f.close()
+            except Exception:
+                pass
+
+    def rewind(self):
+        self._f.seek(_VIDEO_HEADER_SIZE)
+        # Clear in small chunks so looping a clip does not briefly allocate a
+        # second frame-sized object on the MicroPython heap.
+        zero = b"\x00" * min(256, len(self.data))
+        for off in range(0, len(self.data), len(zero)):
+            self.data[off:off + len(zero)] = zero[:len(self.data) - off]
+        self.index = 0
+
+    def next_frame(self):
+        """Decode one delta frame in place. Returns False on corrupt/EOF."""
+        if self._f is None:
+            return False
+        size_b = self._f.read(4)
+        if len(size_b) != 4:
+            return False
+        left = (size_b[0] | (size_b[1] << 8) |
+                (size_b[2] << 16) | (size_b[3] << 24))
+        # A valid stream cannot need more than raw pixels plus commands.
+        if left <= 0 or left > len(self.data) + (len(self.data) // 2) + 16:
+            return False
+        pixel = 0
+        pixels = self.w * self.h
+        while left > 0 and pixel < pixels:
+            command = self._f.read(1)
+            if not command:
+                return False
+            left -= 1
+            op = command[0] >> 6
+            count = (command[0] & 0x3f) + 1
+            if pixel + count > pixels:
+                return False
+            if op == 0:                 # unchanged pixels
+                pixel += count
+            elif op == 1:               # literal RGB565 pixels
+                n = count * 2
+                if left < n:
+                    return False
+                chunk = self._f.read(n)
+                if len(chunk) != n:
+                    return False
+                start = pixel * 2
+                self.data[start:start + n] = chunk
+                pixel += count
+                left -= n
+            elif op == 2:               # one RGB565 colour repeated
+                if left < 2:
+                    return False
+                colour = self._f.read(2)
+                if len(colour) != 2:
+                    return False
+                left -= 2
+                off = pixel * 2
+                # count is capped at 64, so this creates at most a 128-byte
+                # temporary and lets native slice assignment do the hot copy.
+                self.data[off:off + count * 2] = colour * count
+                pixel += count
+            else:
+                return False
+        if left:
+            # Future encoders may append per-frame metadata. Ignore it while
+            # preserving record alignment.
+            self._f.seek(left, 1)
+        if pixel != pixels:
+            return False
+        self.index += 1
+        return True
 
 
 def _load_r565(path):
@@ -87,7 +195,7 @@ def _load_r565(path):
 # (heading), "b" (bullet), or "code" (monospace command). Centralised
 # here so the panel renderer stays simple.
 _HELP = [
-    ("h",   "Add a new photo"),
+    ("h",   "Add bundled photos"),
     ("b",   "Drop a JPG or PNG into"),
     ("code","apps/gallery/assets/raw/"),
     ("b",   "Square images render best;"),
@@ -106,7 +214,7 @@ _HELP = [
     ("b",   "push everything)."),
     ("h",   "On the badge"),
     ("b",   "Open Gallery, press A to refresh"),
-    ("b",   "the listing. New photos appear"),
+    ("b",   "the listing. New media appears"),
     ("b",   "in alphabetical order."),
 ]
 
@@ -166,7 +274,43 @@ class App(oreoOS.App):
         # extra key dimensions cost nothing and make a future fit-mode
         # toggle trivial. Cleared whenever the source list changes.
         self._scaled_cache = {}
+        self._video = None
+        self._video_name = ""
+        self._video_playing = True
+        self._video_elapsed = 0.0
         self._dirty = True
+
+    def on_exit(self):
+        self._close_video()
+
+    def _close_video(self):
+        if self._video is not None:
+            self._video.close()
+        self._video = None
+        self._video_name = ""
+        self._video_elapsed = 0.0
+
+    def _is_video(self):
+        return (not self._is_add_tile() and self._idx < len(self._names) and
+                self._names[self._idx].endswith(".rv565"))
+
+    def _open_video(self):
+        if not self._is_video():
+            self._close_video()
+            return None
+        name = self._names[self._idx]
+        if self._video is not None and self._video_name == name:
+            return self._video
+        self._close_video()
+        try:
+            self._video = _Video(_GALLERY_DIR + "/" + name)
+            self._video_name = name
+            self._video_playing = True
+            if not self._video.next_frame():
+                self._close_video()
+        except Exception:
+            self._close_video()
+        return self._video
 
     def _is_add_tile(self):
         return self._idx == len(self._names)
@@ -180,10 +324,12 @@ class App(oreoOS.App):
     def on_button_press(self, btn):
         total = len(self._names) + 1     # photos + ADD tile
         if btn == api.BTN_LEFT:
+            self._close_video()
             self._idx = (self._idx - 1) % total
             self._scroll = 0
             self._dirty = True
         elif btn == api.BTN_RIGHT:
+            self._close_video()
             self._idx = (self._idx + 1) % total
             self._scroll = 0
             self._dirty = True
@@ -194,7 +340,13 @@ class App(oreoOS.App):
             self._scroll = min(self._scroll + 1, max(0, len(_HELP) - 1))
             self._dirty = True
         elif btn == api.BTN_A:
-            # Refresh listing (e.g., after dropping new photos on the FS)
+            if self._is_video():
+                self._open_video()
+                self._video_playing = not self._video_playing
+                self._dirty = True
+                return
+            # Refresh listing (e.g., after dropping new media on the FS)
+            self._close_video()
             self._names = _list_photos()
             self._cache = {}
             self._scaled_cache = {}
@@ -202,7 +354,7 @@ class App(oreoOS.App):
             self._scroll = 0
             self._dirty = True
         elif btn == api.BTN_B:
-            # Delete the currently-selected photo. Only .r565 files
+            # Delete the currently-selected upload. Only .r565/.rv565 files
             # (WiFi uploads) get deleted from flash — .py files are
             # part of the deploy and a delete would only persist
             # until the next `python tools/deploy.py`. Refusing them
@@ -211,8 +363,9 @@ class App(oreoOS.App):
             if self._is_add_tile():
                 return
             name = self._names[self._idx] if self._idx < len(self._names) else ""
-            if not name or not name.endswith(".r565"):
+            if not name or not name.endswith((".r565", ".rv565")):
                 return
+            self._close_video()
             path = _GALLERY_DIR + "/" + name
             try:
                 _os.remove(path)
@@ -235,7 +388,28 @@ class App(oreoOS.App):
             self._dirty = True
 
     def update(self, dt):
-        pass
+        if not self._is_video():
+            return
+        video = self._open_video()
+        if video is None or not self._video_playing:
+            return
+        self._video_elapsed += dt
+        frame_time = 1.0 / video.fps
+        # Decode at most one frame per OS tick. If a slow frame makes us late,
+        # discard accumulated delay rather than decoding a burst and stalling.
+        if self._video_elapsed < frame_time:
+            return
+        self._video_elapsed %= frame_time
+        if video.index >= video.frames or not video.next_frame():
+            try:
+                video.rewind()
+                if not video.next_frame():
+                    self._close_video()
+                    return
+            except Exception:
+                self._close_video()
+                return
+        self._dirty = True
 
     def draw(self, d):
         if not self._dirty:
@@ -250,7 +424,10 @@ class App(oreoOS.App):
             # user with a hint that doesn't fire is worse than no hint.
             cur_name = (self._names[self._idx]
                         if self._idx < len(self._names) else "")
-            if cur_name.endswith(".r565"):
+            if cur_name.endswith(".rv565"):
+                state = "pause" if self._video_playing else "play"
+                widgets.draw_hint(d, "L/R=next  A=%s  B=delete" % state)
+            elif cur_name.endswith(".r565"):
                 widgets.draw_hint(d, "L/R=prev/next  A=refresh  B=delete")
             else:
                 widgets.draw_hint(d, "L/R=prev/next  A=refresh")
@@ -265,9 +442,35 @@ class App(oreoOS.App):
         if self._is_add_tile():
             self._draw_add_tile(d)
         else:
-            self._draw_photo(d)
+            if self._is_video():
+                self._draw_video(d)
+            else:
+                self._draw_photo(d)
 
         self._dirty = False
+
+    def _draw_video(self, d):
+        video = self._open_video()
+        ay = widgets.HEADER_H + 8
+        ah = SH - widgets.HEADER_H - widgets.HINT_H - 16
+        if video is None:
+            d.text("broken video", (SW - 12 * 16) // 2, ay + 40,
+                   theme.MUTED, scale=2)
+        else:
+            px = (SW - video.w) // 2
+            py = ay + (ah - video.h) // 2
+            d.blit(video.data, px, py, video.w, video.h)
+            if not self._video_playing:
+                # Small pause badge over the frame.
+                d.rect(SW // 2 - 15, ay + ah // 2 - 15, 30, 30,
+                       theme.BG, fill=True)
+                d.rect(SW // 2 - 7, ay + ah // 2 - 8, 4, 16,
+                       api.WHITE, fill=True)
+                d.rect(SW // 2 + 3, ay + ah // 2 - 8, 4, 16,
+                       api.WHITE, fill=True)
+        ar_y = ay + ah // 2 - 8
+        d.text("<", 4, ar_y, theme.PRIMARY, scale=2)
+        d.text(">", SW - 18, ar_y, theme.PRIMARY, scale=2)
 
     # ── photo render ─────────────────────────────────────────────────────
     def _draw_photo(self, d):
@@ -351,7 +554,7 @@ class App(oreoOS.App):
         d.rect(bx, by, bsz, bsz, theme.PRIMARY, fill=True)
         d.rect(bx + bsz // 2 - 2, by + 5,            4, bsz - 10, api.WHITE, fill=True)
         d.rect(bx + 5,            by + bsz // 2 - 2, bsz - 10, 4, api.WHITE, fill=True)
-        d.text("Add a photo",     bx + bsz + 10, by + 2,  theme.PRIMARY, scale=2)
+        d.text("Add media",       bx + bsz + 10, by + 2,  theme.PRIMARY, scale=2)
         d.text("scroll UP / DOWN", bx + bsz + 10, by + 22, theme.MUTED)
 
         # Scrollable instructions. Uniform scale=1 across headings,

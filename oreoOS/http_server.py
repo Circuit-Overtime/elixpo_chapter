@@ -8,7 +8,7 @@ firmware. When WiFi is up, this module:
   GET  /          serves a one-page upload form (HTML in-line below)
   POST /upload    parses one multipart file part, writes it to flash,
                   routes by extension:
-                       .png .jpg .jpeg .gif  -> apps/gallery/assets/raw/
+                       browser-made .r565/.rv565 -> Gallery optimized assets
                        .md                   -> documents/
                        .txt                  -> documents/
                        (anything else)        -> rejected with 415
@@ -48,7 +48,7 @@ except ImportError:
 
 
 PORT          = 80
-MAX_BODY      = 2 * 1024 * 1024   # 2 MB hard cap — bigger than any badge asset
+MAX_BODY      = 8 * 1024 * 1024   # videos stream to flash; never buffered in RAM
 READ_CHUNK    = 2048
 RECV_TIMEOUT       = 3            # seconds — per-recv() during streaming
 HEAD_DEADLINE_MS   = 1500         # hard cap on header-read for tiny requests
@@ -162,6 +162,7 @@ _DOCS_DIR     = "documents"
 # pixels. The browser does the conversion before upload — see the
 # canvas pipeline in _UPLOAD_FORM below.
 _IMG_EXTS = (".r565",)
+_VIDEO_EXTS = (".rv565",)
 _DOC_EXTS = (".md", ".txt")
 
 
@@ -190,6 +191,9 @@ def _route_for(filename):
     for ext in _IMG_EXTS:
         if fl.endswith(ext):
             return _GALLERY_DIR, "image"
+    for ext in _VIDEO_EXTS:
+        if fl.endswith(ext):
+            return _GALLERY_DIR, "video"
     for ext in _DOC_EXTS:
         if fl.endswith(ext):
             return _DOCS_DIR, "document"
@@ -649,15 +653,26 @@ def _parse_headers(head):
     return method, path, headers
 
 
+def _send_bytes(sock, data):
+    """Send the whole buffer; socket.send() may accept only a prefix."""
+    view = memoryview(data)
+    sent = 0
+    while sent < len(view):
+        n = sock.send(view[sent:])
+        if not n:
+            raise OSError("socket closed while sending")
+        sent += n
+
+
 def _send_status(sock, code, reason, body=b"", content_type="text/html; charset=utf-8"):
     head = ("HTTP/1.1 %d %s\r\n"
             "Content-Type: %s\r\n"
             "Content-Length: %d\r\n"
             "Connection: close\r\n\r\n") % (code, reason, content_type, len(body))
     try:
-        sock.send(head.encode())
+        _send_bytes(sock, head.encode())
         if body:
-            sock.send(body)
+            _send_bytes(sock, body)
     except Exception:
         pass
 
@@ -729,7 +744,7 @@ _UPLOAD_FORM = (
     b"border:1px solid var(--bord);border-radius:10px;padding:12px 14px}"
     b".thumb{width:60px;height:60px;border-radius:6px;background:var(--bg);flex-shrink:0;"
     b"display:grid;place-items:center;font-size:20px;color:var(--mute);overflow:hidden}"
-    b".thumb img{width:100%;height:100%;object-fit:cover}"
+    b".thumb img,.thumb video{width:100%;height:100%;object-fit:cover}"
     b".pmeta{flex:1;min-width:0}"
     b".pmeta .n{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}"
     b".pmeta .s{font-size:12px;color:var(--mute);margin-top:2px}"
@@ -808,13 +823,13 @@ _UPLOAD_FORM = (
     b"<span class='chip' style='background:rgba(61,220,151,.15);color:var(--teal)'>"
     b"approved &middot; <span id='okid' style='font-family:ui-monospace,monospace'>__DEVICE_ID__</span></span>"
     b"<h2>Pick a file to send</h2>"
-    b"<p class='sub'>Images convert to RGB565 in your browser before upload "
-    b"(max 240&times;240). Text and Markdown land in Reader.</p>"
+    b"<p class='sub'>Images and videos are optimised in your browser before upload. "
+    b"Video is capped at 20 seconds for smooth badge playback.</p>"
     b"<label class='drop' id='drop'>"
-    b"<input id='file' type='file' accept='image/*,.txt,.md'>"
+    b"<input id='file' type='file' accept='image/*,video/*,.txt,.md'>"
     b"<div class='icon'>&uarr;</div>"
     b"<p class='l1'>Tap to choose or drop here</p>"
-    b"<p class='l2'>PNG &middot; JPG &middot; GIF &middot; TXT &middot; MD</p></label>"
+    b"<p class='l2'>PNG &middot; JPG &middot; GIF &middot; MP4 &middot; MOV &middot; WEBM &middot; TXT &middot; MD</p></label>"
     b"<div class='preview' id='preview'>"
     b"<div class='thumb' id='thumb'>?</div>"
     b"<div class='pmeta'><div class='n' id='pname'>&mdash;</div>"
@@ -844,7 +859,7 @@ _UPLOAD_FORM = (
     b"Powered by <a href='https://oreo.elixpo.com' target='_blank'>oreo.elixpo.com</a></div>"
     b"<script>"
     b"const $=id=>document.getElementById(id);"
-    b"const MAX_DIM=240;"
+    b"const MAX_DIM=240,VIDEO_DIM=160,VIDEO_FPS=8,VIDEO_SECONDS=20,MAX_UPLOAD=8*1024*1024;"
     # The server inlined our device_id into the markup as
     # __DEVICE_ID__ before sending the page, so we just read it off
     # the DOM rather than running an auth handshake.
@@ -905,7 +920,12 @@ _UPLOAD_FORM = (
     # for too long" — surfaces the modal once so the user knows to
     # check WiFi rather than staring at a frozen yellow dot.
     b""
-    # ── file picker / preview / upload (unchanged from previous version) ──
+    # ── file picker / preview / browser-side media conversion ──
+    b"function mediaKind(file){"
+    b"  const n=file.name.toLowerCase();"
+    b"  if(file.type.startsWith('image/')||/\\.(png|jpe?g|gif|webp)$/.test(n))return'image';"
+    b"  if(file.type.startsWith('video/')||/\\.(mp4|mov|m4v|webm|avi)$/.test(n))return'video';"
+    b"  return'document';}"
     b"function onFile(file){"
     b"  if(!file)return;"
     # Estimate the on-disk size: images convert to RGB565 (240x240 max
@@ -913,8 +933,8 @@ _UPLOAD_FORM = (
     # compare to freeBytes (most recent beacon reading) before letting
     # the user hit Send — this turns 'out of space' into a clean UX
     # error instead of a half-written file + 500 from the badge.
-    b"  const isImg=file.type.startsWith('image/');"
-    b"  const estDiskBytes=isImg?(240*240*2+6):file.size;"
+    b"  const kind=mediaKind(file),isImg=kind==='image',isVid=kind==='video';"
+    b"  const estDiskBytes=isImg?(240*240*2+6):(isVid?0:file.size);"
     b"  if(freeBytes>0&&estDiskBytes+FREE_HEADROOM>freeBytes){"
     b"    showModal('Not enough space',"
     b"      'This badge only has '+fmtKB(freeBytes)+' free, which is not enough for a '+"
@@ -927,6 +947,9 @@ _UPLOAD_FORM = (
     b"  const th=$('thumb');th.innerHTML='';"
     b"  if(isImg){"
     b"    const im=document.createElement('img');im.src=URL.createObjectURL(file);th.appendChild(im);}"
+    b"  else if(isVid){"
+    b"    const v=document.createElement('video');v.src=URL.createObjectURL(file);"
+    b"    v.muted=true;v.playsInline=true;th.appendChild(v);}"
     b"  else{th.textContent=file.name.split('.').pop().toUpperCase();}"
     b"  $('go').disabled=false;}"
     b"async function imgToR565(file){"
@@ -947,13 +970,66 @@ _UPLOAD_FORM = (
     b"    const r=px[i]>>3,g=px[i+1]>>2,b=px[i+2]>>3;"
     b"    const v=(r<<11)|(g<<5)|b;out[o++]=(v>>8)&0xff;out[o++]=v&0xff;}"
     b"  return new Blob([out],{type:'application/octet-stream'});}"
+    # RV565: 12-byte header followed by length-prefixed delta frames.
+    # Each command covers 1..64 pixels: 00=unchanged, 01=literal RGB565,
+    # 10=repeated colour. Exact unchanged areas are particularly effective
+    # for UI captures and cartoons, while the resolution/FPS cap bounds
+    # worst-case photographic footage.
+    b"function encodeDelta(cur,prev){"
+    b"  const out=[];let p=0,n=cur.length;"
+    b"  while(p<n){"
+    b"    if(cur[p]===prev[p]){let k=1;while(k<64&&p+k<n&&cur[p+k]===prev[p+k])k++;"
+    b"      out.push(k-1);p+=k;continue;}"
+    b"    let run=1;while(run<64&&p+run<n&&cur[p+run]===cur[p]&&cur[p+run]!==prev[p+run])run++;"
+    b"    if(run>=3){const v=cur[p];out.push(0x80|(run-1),v>>8,v&255);p+=run;continue;}"
+    b"    const start=p;p++;"
+    b"    while(p<n&&p-start<64&&cur[p]!==prev[p]){"
+    b"      let r=1;while(r<3&&p+r<n&&cur[p+r]===cur[p]&&cur[p+r]!==prev[p+r])r++;"
+    b"      if(r>=3)break;p++;}"
+    b"    out.push(0x40|(p-start-1));"
+    b"    for(let i=start;i<p;i++){out.push(cur[i]>>8,cur[i]&255);}"
+    b"  }return new Uint8Array(out);}"
+    b"async function videoToRV565(file){"
+    b"  const url=URL.createObjectURL(file),v=document.createElement('video');"
+    b"  v.muted=true;v.playsInline=true;v.preload='auto';v.src=url;"
+    b"  try{await new Promise((r,j)=>{v.onloadeddata=r;v.onerror=()=>j(new Error('unsupported video'));});"
+    b"    const dur=Math.min(v.duration,VIDEO_SECONDS);"
+    b"    if(!isFinite(dur)||dur<=0)throw new Error('video has no readable duration');"
+    b"    const sc=Math.min(1,VIDEO_DIM/Math.max(v.videoWidth,v.videoHeight));"
+    b"    const w=Math.max(1,Math.round(v.videoWidth*sc)),h=Math.max(1,Math.round(v.videoHeight*sc));"
+    b"    const count=Math.max(1,Math.floor(dur*VIDEO_FPS));"
+    b"    const head=new Uint8Array(12);head.set([82,86,53,1]);"
+    b"    head[4]=w&255;head[5]=w>>8;head[6]=h&255;head[7]=h>>8;"
+    b"    head[8]=VIDEO_FPS;head[10]=count&255;head[11]=count>>8;"
+    b"    const chunks=[head],prev=new Uint16Array(w*h);"
+    b"    const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');"
+    b"    for(let f=0;f<count;f++){"
+    b"      const t=Math.min(f/VIDEO_FPS,Math.max(0,dur-.001));"
+    b"      if(Math.abs(v.currentTime-t)>.001){await new Promise((r,j)=>{v.onseeked=r;v.onerror=j;v.currentTime=t;});}"
+    b"      ctx.drawImage(v,0,0,w,h);const rgba=ctx.getImageData(0,0,w,h).data;"
+    b"      const cur=new Uint16Array(w*h);"
+    b"      for(let i=0,o=0;i<rgba.length;i+=4,o++)cur[o]=((rgba[i]>>3)<<11)|((rgba[i+1]>>2)<<5)|(rgba[i+2]>>3);"
+    b"      const enc=encodeDelta(cur,prev),sz=new Uint8Array(4),n=enc.length;"
+    b"      sz[0]=n&255;sz[1]=(n>>8)&255;sz[2]=(n>>16)&255;sz[3]=(n>>24)&255;"
+    b"      chunks.push(sz,enc);prev.set(cur);"
+    b"      $('pctn').textContent='Optimising '+Math.round((f+1)*100/count)+'%';"
+    b"      if((f&3)===3)await new Promise(r=>setTimeout(r,0));}"
+    b"    return new Blob(chunks,{type:'application/octet-stream'});"
+    b"  }finally{URL.revokeObjectURL(url);}}"
     b"async function send(){"
     b"  if(!picked||!did)return;$('go').disabled=true;$('pct').classList.remove('hide');"
     b"  let payload=picked,name=picked.name;"
-    b"  if(picked.type.startsWith('image/')){"
+    b"  const kind=mediaKind(picked);"
+    b"  if(kind==='image'){"
     b"    try{payload=await imgToR565(picked);name=name.replace(/\\.[^.]+$/,'')+'.r565';}"
     b"    catch(err){"
     b"      showModal('Image decode failed',String(err),'err',true);"
+    b"      $('go').disabled=false;return;}}"
+    b"  else if(kind==='video'){"
+    b"    try{payload=await videoToRV565(picked);name=name.replace(/\\.[^.]+$/,'')+'.rv565';"
+    b"      if(payload.size>MAX_UPLOAD||freeBytes>0&&payload.size+FREE_HEADROOM>freeBytes)"
+    b"        throw new Error('optimised video needs '+fmtKB(payload.size)+', but the badge does not have enough space');}"
+    b"    catch(err){showModal('Video conversion failed',String(err),'err',true);"
     b"      $('go').disabled=false;return;}}"
     b"  const fd=new FormData();fd.append('f',payload,name);"
     b"  const xhr=new XMLHttpRequest();activeXhr=xhr;"
@@ -1189,8 +1265,8 @@ def _handle_mascot(sock):
             "Cache-Control: public, max-age=86400\r\n"
             "Connection: close\r\n\r\n") % len(_MASCOT_CACHE)
     try:
-        sock.send(head.encode())
-        sock.send(_MASCOT_CACHE)
+        _send_bytes(sock, head.encode())
+        _send_bytes(sock, _MASCOT_CACHE)
     except Exception:
         pass
 
@@ -1517,7 +1593,7 @@ def _handle_upload(sock, headers, body_prefix, qs):
 
     # Surface the new file in the notification panel so the user knows
     # where it landed without having to open the Gallery or Reader.
-    target_app = "gallery" if kind == "image" else "reader"
+    target_app = "gallery" if kind in ("image", "video") else "reader"
     try:
         from oreoOS import notifications
         notifications.push("wifi",
