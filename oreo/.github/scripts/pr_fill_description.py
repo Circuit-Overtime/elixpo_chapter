@@ -26,11 +26,10 @@ from scripts._common import call_llm, github_rest  # noqa: E402
 
 REPO = os.environ["REPO"]
 PR_NUMBER = os.environ["PR_NUMBER"]
-# Word-bounded @elixpoo (rejects @elixpooo). Accepts any phrasing after it
-# — "fill the PR description", "write me a description", "draft this", etc.
-# The LLM generates the body either way; we just detect the mention and
-# strip it from the final output so the workflow doesn't re-fire on our edit.
-TRIGGER_RE = re.compile(r"@elixpoo\b", re.IGNORECASE)
+# This helper is intentionally narrower than the repository agent: ordinary
+# mentions belong to elixpo-agent.yml, while description rewriting requires an
+# explicit command and must not run merely because a PR discusses @elixpoo.
+TRIGGER_RE = re.compile(r"@elixpoo\s+fill\b", re.IGNORECASE)
 MAX_DIFF_CHARS = 18000
 
 SYSTEM_PROMPT = """\
@@ -42,10 +41,11 @@ Rules:
 - Use EXACTLY these sections in this order:
   1. `## Changes Made` — 3-7 bullets. Each bullet references a file in backticks and says what changed and why. Skip lockfiles, generated files, formatting-only noise.
   2. `## Checklist` — only include items that actually apply to this diff:
-     - `- [ ] MicroPython compat: no f-strings with `=`, no pathlib, no walrus in modules that ship to flash` (only if oreoOS/ or oreoWare/ or apps/ changed)
-     - `- [ ] App ships through \\`tools/deploy.py\\` DEPLOY list / \\`tools/build_release.py\\` SHIP_PATTERNS` (only if a new file under oreoOS/ or oreoWare/ or apps/ was added)
-     - `- [ ] No secrets committed (.env, secrets.py)` (always, but only flag if any .env*, secrets.py, or credentials.json appears in the diff)
-     - `- [ ] Flashed + smoke-tested on hardware` (always, leave a prompt for the author)
+     - `- [ ] \\`export const runtime = 'edge'\\` on any new API route` (only if new route.ts added)
+     - `- [ ] No Node built-ins imported (crypto, fs, path, stream, Buffer)` (only if src/ changed)
+     - `- [ ] New DB columns/tables have a migration in \\`src/workers/migrations/\\`` (only if D1 schema changed)
+     - `- [ ] Rate-limit middleware on new public auth endpoints` (only if new app/api/auth/** route added)
+     - `- [ ] \\`./biome.sh ci\\` clean` (always)
      - `- [ ] Tested locally: <how>` (always, leave the "how" as a prompt for the author)
   3. If the author left blockquotes (lines starting with `>`) in the original body, preserve them verbatim below Checklist. Skip the `@elixpoo fill` trigger line.
 - No marketing language. No "seamlessly", "leverages", "robust". Bullets, not paragraphs. Under 400 words total.
@@ -110,7 +110,11 @@ def main() -> int:
     )
 
     print(f"Calling {LLM_MODEL_AGENT} to draft PR description...")
-    new_body = call_llm(LLM_MODEL_AGENT, SYSTEM_PROMPT, user_msg).strip()
+    try:
+        new_body = call_llm(LLM_MODEL_AGENT, SYSTEM_PROMPT, user_msg).strip()
+    except Exception as exc:
+        print(f"Description generation unavailable ({exc}); leaving PR body unchanged.")
+        return 0
 
     # Safety: the LLM must not reintroduce the trigger, else we loop on edit.
     if TRIGGER_RE.search(new_body):

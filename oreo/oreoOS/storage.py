@@ -7,7 +7,7 @@ eating their 16 MB:
   system      OS + drivers + bundled assets (oreoOS/, oreoWare/, assets/,
               /main.py, /boot.py, /secrets.py)
   apps        per-app code/assets, EXCLUDING gallery content + caches
-  gallery     incoming + baked photos (apps/gallery/assets/raw + /optimized)
+  gallery     incoming videos + baked/uploaded photos (gallery assets)
   documents   text / markdown landed via BT or sideload (documents/)
   misc        runtime caches, OTA staging, anything we didn't classify
               (apps/*/cache.txt, apps/*/state.txt, /_ota, /.deploy_hashes…)
