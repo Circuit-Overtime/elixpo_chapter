@@ -38,20 +38,21 @@ static mp_obj_t indexed_scale(mp_obj_fun_bc_t *self, size_t n_args,
     get_buffer(args[2], &dst_info, MP_BUFFER_RW, (size_t)dw * dh * 2);
 
     const uint8_t *indices = (const uint8_t *)index_info.buf;
-    const uint8_t *palette = (const uint8_t *)palette_info.buf;
-    uint8_t *dst = (uint8_t *)dst_info.buf;
+    // MicroPython bytearray payloads are word-aligned.  A uint16_t assignment
+    // preserves the two in-memory RGB565 bytes while halving the number of
+    // stores in this hottest loop.
+    const uint16_t *palette = (const uint16_t *)palette_info.buf;
+    uint16_t *dst = (uint16_t *)dst_info.buf;
 
     mp_int_t sy = 0;
     mp_int_t yacc = 0;
     for (mp_int_t y = 0; y < dh; ++y) {
         const uint8_t *src_row = indices + sy * sw;
-        uint8_t *dst_row = dst + y * dw * 2;
+        uint16_t *dst_row = dst + y * dw;
         mp_int_t sx = 0;
         mp_int_t xacc = 0;
         for (mp_int_t x = 0; x < dw; ++x) {
-            const uint8_t *colour = palette + ((size_t)src_row[sx] << 1);
-            *dst_row++ = colour[0];
-            *dst_row++ = colour[1];
+            *dst_row++ = palette[src_row[sx]];
             xacc += sw;
             while (xacc >= dw) {
                 xacc -= dw;
@@ -94,19 +95,17 @@ static mp_obj_t rgb565_scale(mp_obj_fun_bc_t *self, size_t n_args,
     get_buffer(args[1], &dst_info, MP_BUFFER_RW,
         ((size_t)(dy + dh - 1) * stride + dx + dw) * 2);
 
-    const uint8_t *src = (const uint8_t *)src_info.buf;
-    uint8_t *dst = (uint8_t *)dst_info.buf;
+    const uint16_t *src = (const uint16_t *)src_info.buf;
+    uint16_t *dst = (uint16_t *)dst_info.buf;
     mp_int_t sy = 0;
     mp_int_t yacc = 0;
     for (mp_int_t y = 0; y < dh; ++y) {
-        const uint8_t *src_row = src + sy * sw * 2;
-        uint8_t *dst_row = dst + ((dy + y) * stride + dx) * 2;
+        const uint16_t *src_row = src + sy * sw;
+        uint16_t *dst_row = dst + (dy + y) * stride + dx;
         mp_int_t sx = 0;
         mp_int_t xacc = 0;
         for (mp_int_t x = 0; x < dw; ++x) {
-            const uint8_t *pixel = src_row + sx * 2;
-            *dst_row++ = pixel[0];
-            *dst_row++ = pixel[1];
+            *dst_row++ = src_row[sx];
             xacc += sw;
             while (xacc >= dw) {
                 xacc -= dw;

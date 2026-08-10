@@ -20,6 +20,13 @@ import oreoOS
 from oreoOS import api
 from oreoOS import theme, widgets
 
+try:
+    # Architecture-matched dynamic C module. CPython/simulator builds simply
+    # use the portable paths below because they cannot import an Xtensa .mpy.
+    from . import gallery_native as _gallery_native
+except Exception:
+    _gallery_native = None
+
 SW = api.SCREEN_W
 SH = api.SCREEN_H
 
@@ -67,12 +74,10 @@ _VIDEO_HEADER_SIZE = 12
 
 
 class _Video:
-    """Streaming RV565 decoder.
+    """Streaming RV565 decoder with legacy v1-v3 compatibility.
 
-    RV565 keeps one RGB565 frame in RAM and stores each following frame as
-    delta commands: skip unchanged pixels, copy literal pixels, or repeat one
-    colour.  Decoding directly from flash avoids allocating the whole clip and
-    makes frame delivery predictable on MicroPython.
+    V4 keeps only an 8-bit indexed frame and its RGB565 palette in RAM. The
+    Gallery native module expands it directly into the display framebuffer.
     """
 
     def __init__(self, path):
@@ -81,7 +86,7 @@ class _Video:
         self._f = open(path, "rb")
         head = self._f.read(_VIDEO_HEADER_SIZE)
         if (len(head) != _VIDEO_HEADER_SIZE or head[:3] != b"RV5" or
-                head[3] not in (1, 2, 3)):
+                head[3] not in (1, 2, 3, 4)):
             self.close()
             raise ValueError("bad RV565 header")
         self.version = head[3]
@@ -90,15 +95,26 @@ class _Video:
         self.fps = head[8]
         self.frames = head[10] | (head[11] << 8)
         if (self.w <= 0 or self.h <= 0 or self.w > 320 or self.h > 240 or
-                self.fps <= 0 or self.fps > 20 or self.frames <= 0):
+                self.fps <= 0 or self.fps > 30 or self.frames <= 0):
             self.close()
             raise ValueError("bad RV565 dimensions")
-        self.data = bytearray(self.w * self.h * 2)
+        # V4 stores one 256-colour RGB565 palette plus one byte per source
+        # pixel. C expands it directly into the LCD framebuffer in ~8 ms.
+        # Older versions retain their RGB565 frame buffer for compatibility.
+        if self.version == 4:
+            if _gallery_native is None:
+                self.close()
+                raise ValueError("native video decoder unavailable")
+            self.palette = bytearray(512)
+            self.data = bytearray(self.w * self.h)
+        else:
+            self.palette = None
+            self.data = bytearray(self.w * self.h * 2)
         # Reused compressed-frame buffer. The old decoder issued one flash
         # read per command (hundreds per frame), which reduced real playback
         # to ~0.5 FPS and starved button polling. One readinto() per frame is
         # both allocation-free and dramatically faster.
-        packed_cap = (0 if self.version == 3 else
+        packed_cap = (0 if self.version in (3, 4) else
                       len(self.data) + 1024 if self.version == 2 else
                       len(self.data) + (len(self.data) // 2) + 16)
         self._packed = bytearray(packed_cap)
@@ -136,7 +152,7 @@ class _Video:
             self.index = 0
             return
         self._f.seek(_VIDEO_HEADER_SIZE)
-        if self.version == 2:
+        if self.version in (2, 4):
             self.index = 0
             return
         # Clear in small chunks so looping a clip does not briefly allocate a
@@ -150,6 +166,23 @@ class _Video:
         """Decode one delta frame in place. Returns False on corrupt/EOF."""
         if self._f is None:
             return False
+        if self.version == 4:
+            # Raw palette + indices means two predictable flash reads and no
+            # inflater. Both bytearrays are reused for the entire clip.
+            for target in (memoryview(self.palette), memoryview(self.data)):
+                total = 0
+                try:
+                    while total < len(target):
+                        n = self._f.readinto(target[total:])
+                        if not n:
+                            break
+                        total += n
+                except Exception:
+                    return False
+                if total != len(target):
+                    return False
+            self.index += 1
+            return True
         if self.version == 3:
             if self._inflate is None:
                 return False
@@ -547,18 +580,28 @@ class App(oreoOS.App):
             d.text("broken video", (SW - 12 * 16) // 2, SH // 2 - 8,
                    theme.MUTED, scale=2)
         else:
+            # V4 is expanded and scaled straight into Display._buf by C. It
+            # avoids a 153 KB intermediate frame and all Python pixel loops.
+            native_buf = getattr(d, "_buf", None)
+            if (video.version == 4 and _gallery_native is not None and
+                    native_buf is not None):
+                _gallery_native.indexed_scale(
+                    video.data, video.palette, native_buf,
+                    video.w, video.h, SW, SH)
+                # We intentionally use the hardware buffer directly to keep
+                # the accelerator Gallery-local. Tell Display to flush it.
+                d._dirty = True
             # V2 uploads are already native LCD frames: one C-level buffer copy
             # replaces the old Python scaling loop. V1 remains readable for
             # compatibility, but re-uploading upgrades it to this fast path.
-            fullscreen = getattr(d, "blit_fullscreen", None)
-            scale2 = getattr(d, "blit_2x", None)
-            if (video.version == 2 and video.w == SW and video.h == SH and
-                    fullscreen is not None):
-                fullscreen(video.data)
-            elif scale2 is not None and video.w * 2 <= SW and video.h * 2 <= SH:
+            elif (video.version == 2 and video.w == SW and video.h == SH and
+                    getattr(d, "blit_fullscreen", None) is not None):
+                d.blit_fullscreen(video.data)
+            elif (getattr(d, "blit_2x", None) is not None and
+                    video.w * 2 <= SW and video.h * 2 <= SH):
                 px = (SW - video.w * 2) // 2
                 py = (SH - video.h * 2) // 2
-                scale2(video.data, px, py, video.w, video.h)
+                d.blit_2x(video.data, px, py, video.w, video.h)
             else:
                 px = (SW - video.w) // 2
                 py = (SH - video.h) // 2
@@ -602,9 +645,19 @@ class App(oreoOS.App):
                     view_w = pw * avail_h // phh
                 view_w = max(1, view_w)
                 view_h = max(1, view_h)
-                key = (self._names[self._idx], view_w, view_h)
-                blit_data = self._scaled_cache.get(key)
-                if blit_data is None:
+                native_buf = getattr(d, "_buf", None)
+                if _gallery_native is not None and native_buf is not None:
+                    _gallery_native.rgb565_scale(
+                        data, native_buf, pw, phh,
+                        (SW - view_w) // 2, ay + (ah - view_h) // 2,
+                        view_w, view_h, SW)
+                    d._dirty = True
+                    blit_data = None
+                else:
+                    key = (self._names[self._idx], view_w, view_h)
+                    blit_data = self._scaled_cache.get(key)
+                if blit_data is None and not (
+                        _gallery_native is not None and native_buf is not None):
                     row_src = pw * 2
                     row_dst = view_w * 2
                     out = bytearray(row_dst * view_h)
@@ -625,7 +678,8 @@ class App(oreoOS.App):
                     self._scaled_cache[key] = out
             px = (SW - view_w) // 2
             py = ay + (ah - view_h) // 2
-            d.blit(blit_data, px, py, view_w, view_h)
+            if blit_data is not None:
+                d.blit(blit_data, px, py, view_w, view_h)
         else:
             d.text("broken photo", (SW - 12 * 16) // 2, ay + 40,
                    theme.MUTED, scale=2)

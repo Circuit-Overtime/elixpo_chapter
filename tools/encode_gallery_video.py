@@ -1,13 +1,13 @@
-"""Encode a host video as a smooth, bundled Oreo Gallery stream.
+"""Encode a host video as a native-accelerated Oreo Gallery stream.
 
-The output is RV565 v3: a 12-byte header followed by one continuous zlib
-stream of native 320x240 big-endian RGB565 frames. The badge keeps a single
-inflater and one frame buffer alive for the whole clip, avoiding the per-frame
-allocator/decompressor churn of WiFi-upload format v2.
+RV565 v4 stores each frame as a 256-entry RGB565 palette followed by 8-bit
+indices. The badge reads about 30 KB per frame and its Gallery-local C module
+expands 200x150 to the 320x240 framebuffer in about 8 ms. There is no inflate
+stall and only one compact frame is kept in RAM.
 
 Usage:
     python3 tools/encode_gallery_video.py spiderman.mp4 \
-        apps/gallery/assets/optimized/spiderman.rv565 --seconds 10 --fps 15
+        apps/gallery/assets/optimized/spiderman.rv565 --seconds 10 --fps 24
 """
 
 import argparse
@@ -15,12 +15,29 @@ import shutil
 import struct
 import subprocess
 import sys
-import zlib
 from pathlib import Path
 
+from PIL import Image
 
-W = 320
-H = 240
+
+W = 200
+H = 150
+
+
+def _rgb565_palette(palette):
+    """Convert Pillow's 256xRGB palette to panel-order RGB565 bytes."""
+    out = bytearray(512)
+    # Pillow normally returns all 768 bytes, but pad defensively for images
+    # whose quantizer found fewer than 256 colours.
+    palette = list(palette or ())
+    if len(palette) < 768:
+        palette.extend([0] * (768 - len(palette)))
+    for i in range(256):
+        r, g, b = palette[i * 3:i * 3 + 3]
+        value = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
+        out[i * 2] = value >> 8
+        out[i * 2 + 1] = value & 0xff
+    return out
 
 
 def encode(source: Path, output: Path, seconds: float, fps: int):
@@ -28,36 +45,39 @@ def encode(source: Path, output: Path, seconds: float, fps: int):
         raise SystemExit("ffmpeg is required")
     if not source.is_file():
         raise SystemExit("source not found: %s" % source)
-    if fps < 1 or fps > 20:
-        raise SystemExit("fps must be between 1 and 20")
+    if fps < 1 or fps > 30:
+        raise SystemExit("fps must be between 1 and 30")
 
-    frame_bytes = W * H * 2
+    frame_bytes = W * H * 3
     vf = ("fps=%d,scale=%d:%d:force_original_aspect_ratio=increase,"
           "crop=%d:%d" % (fps, W, H, W, H))
     cmd = [
         "ffmpeg", "-v", "error", "-i", str(source),
         "-t", str(seconds), "-an", "-vf", vf,
-        "-pix_fmt", "rgb565be", "-f", "rawvideo", "-",
+        "-pix_fmt", "rgb24", "-f", "rawvideo", "-",
     ]
 
     output.parent.mkdir(parents=True, exist_ok=True)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    compressor = zlib.compressobj(level=6)
     frames = 0
     try:
         with output.open("wb+") as out:
-            out.write(b"RV5\x03" + struct.pack("<HHBBH", W, H, fps, 0, 0))
+            out.write(b"RV5\x04" + struct.pack("<HHBBH", W, H, fps, 0, 0))
             while True:
                 frame = proc.stdout.read(frame_bytes)
                 if not frame:
                     break
                 if len(frame) != frame_bytes:
                     raise RuntimeError("ffmpeg returned a partial frame")
-                chunk = compressor.compress(frame)
-                if chunk:
-                    out.write(chunk)
+                image = Image.frombytes("RGB", (W, H), frame)
+                indexed = image.quantize(
+                    colors=256,
+                    method=Image.Quantize.MEDIANCUT,
+                    dither=Image.Dither.NONE,
+                )
+                out.write(_rgb565_palette(indexed.getpalette()))
+                out.write(indexed.tobytes())
                 frames += 1
-            out.write(compressor.flush())
             out.seek(10)
             out.write(struct.pack("<H", frames))
     except Exception:
@@ -89,7 +109,7 @@ def main():
     parser.add_argument("source", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--seconds", type=float, default=10.0)
-    parser.add_argument("--fps", type=int, default=15)
+    parser.add_argument("--fps", type=int, default=24)
     args = parser.parse_args()
     encode(args.source, args.output, args.seconds, args.fps)
 
