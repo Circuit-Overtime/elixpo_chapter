@@ -16,6 +16,7 @@ env/
 node_modules/
 .next/
 out/
+.wrangler/
 
 # Environment
 .env.local
