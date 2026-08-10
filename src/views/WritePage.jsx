@@ -849,6 +849,8 @@ export default function WritePage({ slugid }) {
     const editorSnapshotTimerRef = useRef(null);
     const largeDocumentRef = useRef(false);
     const syncInFlightRef = useRef(null); // serialize saves so publish never races autosave
+    const syncRetryRef = useRef({ failures: 0, nextAttemptAt: 0 });
+    const subpageSyncInFlightRef = useRef(null);
     const coverUploadRef = useRef(null); // pending upload whose permanent URL must win over blob: preview
     const isPublished = blogVersion?.isPublished;
     const [coverZoom, setCoverZoom] = useState(1);
@@ -1090,31 +1092,56 @@ export default function WritePage({ slugid }) {
 
     // Sync any buffered subpage drafts from localStorage to cloud
     const syncSubpageDrafts = useCallback(async () => {
+        if (subpageSyncInFlightRef.current)
+            return subpageSyncInFlightRef.current;
+        const request = (async () => {
+            try {
+                const prefix = "lixblogs_subpage_";
+                const pending = [];
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (!key || !key.startsWith(prefix)) continue;
+                    const raw = localStorage.getItem(key);
+                    if (raw) pending.push({ key, raw });
+                }
+
+                // Upload sequentially so repeated autosaves cannot retain several
+                // large JSON request bodies at the same time.
+                for (const { key, raw } of pending) {
+                    const draft = JSON.parse(raw);
+                    if (!draft.editorContent && !draft.title) continue;
+                    const payload = { id: key.slice(prefix.length) };
+                    if (draft.title) payload.title = draft.title;
+                    if (draft.editorContent)
+                        payload.content = draft.editorContent;
+                    const response = await fetch("/api/subpages", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    });
+                    if (response.ok && localStorage.getItem(key) === raw)
+                        localStorage.removeItem(key);
+                }
+            } catch {}
+        })();
+        subpageSyncInFlightRef.current = request;
         try {
-            const prefix = "lixblogs_subpage_";
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (!key || !key.startsWith(prefix)) continue;
-                const subpageId = key.slice(prefix.length);
-                const raw = localStorage.getItem(key);
-                if (!raw) continue;
-                const draft = JSON.parse(raw);
-                if (!draft.editorContent && !draft.title) continue;
-                const payload = { id: subpageId };
-                if (draft.title) payload.title = draft.title;
-                if (draft.editorContent) payload.content = draft.editorContent;
-                fetch("/api/subpages", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                }).catch(() => {});
-            }
-        } catch {}
+            return await request;
+        } finally {
+            if (subpageSyncInFlightRef.current === request)
+                subpageSyncInFlightRef.current = null;
+        }
     }, []);
 
     // Cloud sync function — saves localStorage then pushes to cloud
     const syncToCloud = useCallback(
-        async ({ showToast = false, silent = false } = {}) => {
+        async ({
+            showToast = false,
+            silent = false,
+            liveSnapshot = true,
+            persistLocal = true,
+            respectBackoff = false,
+        } = {}) => {
             // Let an existing autosave finish before taking a new snapshot. If it
             // already saved the latest revision, publishing can reuse its timestamp.
             if (syncInFlightRef.current) {
@@ -1134,12 +1161,14 @@ export default function WritePage({ slugid }) {
             // BlogEditor coalesces document snapshots to avoid serializing a large
             // post on every keystroke. A cloud save must still capture the exact
             // live document when it starts.
-            const liveEditorContent = editorRef.current?.getBlocks?.();
-            if (Array.isArray(liveEditorContent)) {
-                draftDataRef.current = {
-                    ...draftDataRef.current,
-                    editorContent: liveEditorContent,
-                };
+            if (liveSnapshot) {
+                const liveEditorContent = editorRef.current?.getBlocks?.();
+                if (Array.isArray(liveEditorContent)) {
+                    draftDataRef.current = {
+                        ...draftDataRef.current,
+                        editorContent: liveEditorContent,
+                    };
+                }
             }
             const latest = draftDataRef.current;
             const data = {
@@ -1149,14 +1178,37 @@ export default function WritePage({ slugid }) {
             if (!data.title && !data.editorContent) return;
             const revision = draftRevisionRef.current;
 
-            // Always save to localStorage first
-            saveDraft(blogId, data);
-            setLastSaved(Date.now());
+            if (persistLocal) {
+                saveDraft(blogId, data);
+                setLastSaved(Date.now());
+            }
+
+            // A failed background upload used to serialize and POST the complete
+            // document every ten seconds forever. Back off those automatic retries;
+            // explicit Save/Publish calls still bypass this guard.
+            if (
+                respectBackoff &&
+                Date.now() < syncRetryRef.current.nextAttemptAt
+            )
+                return null;
 
             if (!silent) setSyncStatus("syncing");
 
             // Also sync any buffered subpage drafts
-            syncSubpageDrafts();
+            void syncSubpageDrafts();
+
+            const registerSyncFailure = () => {
+                const failures = Math.min(
+                    syncRetryRef.current.failures + 1,
+                    6,
+                );
+                syncRetryRef.current = {
+                    failures,
+                    nextAttemptAt:
+                        Date.now() +
+                        Math.min(5 * 60_000, 15_000 * 2 ** (failures - 1)),
+                };
+            };
 
             const request = (async () => {
                 try {
@@ -1167,6 +1219,10 @@ export default function WritePage({ slugid }) {
                     });
 
                     if (res.ok) {
+                        syncRetryRef.current = {
+                            failures: 0,
+                            nextAttemptAt: 0,
+                        };
                         if (draftRevisionRef.current === revision)
                             dirtyRef.current = false;
                         let updatedAt = null;
@@ -1194,11 +1250,15 @@ export default function WritePage({ slugid }) {
                             setTimeout(() => setSyncStatus("idle"), 5000);
                         }
                         return updatedAt;
-                    } else if (!silent) {
-                        setSyncStatus("local");
-                        setTimeout(() => setSyncStatus("idle"), 5000);
+                    } else {
+                        registerSyncFailure();
+                        if (!silent) {
+                            setSyncStatus("local");
+                            setTimeout(() => setSyncStatus("idle"), 5000);
+                        }
                     }
                 } catch {
+                    registerSyncFailure();
                     if (!silent) {
                         setSyncStatus("local");
                         setTimeout(() => setSyncStatus("idle"), 5000);
@@ -1536,7 +1596,12 @@ export default function WritePage({ slugid }) {
                     member_only: memberOnly,
                 });
                 setLastSaved(Date.now());
-                void syncToCloud({ silent: true });
+                void syncToCloud({
+                    silent: true,
+                    liveSnapshot: false,
+                    persistLocal: false,
+                    respectBackoff: true,
+                });
             }
         }, 1200);
         return () => clearTimeout(autoSaveTimer.current);
@@ -1563,8 +1628,14 @@ export default function WritePage({ slugid }) {
     useEffect(() => {
         if (draftLoading) return;
         const id = setInterval(() => {
-            if (dirtyRef.current) syncToCloud({ silent: true });
-        }, 10000);
+            if (dirtyRef.current)
+                void syncToCloud({
+                    silent: true,
+                    liveSnapshot: false,
+                    persistLocal: false,
+                    respectBackoff: true,
+                });
+        }, 15000);
         return () => clearInterval(id);
     }, [draftLoading, syncToCloud]);
 
