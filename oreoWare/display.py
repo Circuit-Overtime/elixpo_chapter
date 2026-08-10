@@ -190,6 +190,14 @@ class Display(api.Display):
         _scale2_kernel(sprite, self._buf, x, y, w, h, api.SCREEN_W)
         self._dirty = True
 
+    def blit_fullscreen(self, sprite):
+        """Fast opaque native-frame copy; no framebuf/chroma-key pass."""
+        n = api.SCREEN_W * api.SCREEN_H * 2
+        if len(sprite) < n:
+            return
+        self._buf[:] = memoryview(sprite)[:n]
+        self._dirty = True
+
     def blit_scale(self, sprite, x, y, w, h, scale, dim=0.0):
         """Scale sprite up by `scale` and blit. dim 0.0–1.0 blends toward BG.
 

@@ -78,14 +78,16 @@ class _Video:
     def __init__(self, path):
         self._f = open(path, "rb")
         head = self._f.read(_VIDEO_HEADER_SIZE)
-        if len(head) != _VIDEO_HEADER_SIZE or head[:4] != b"RV5\x01":
+        if (len(head) != _VIDEO_HEADER_SIZE or head[:3] != b"RV5" or
+                head[3] not in (1, 2)):
             self.close()
             raise ValueError("bad RV565 header")
+        self.version = head[3]
         self.w = head[4] | (head[5] << 8)
         self.h = head[6] | (head[7] << 8)
         self.fps = head[8]
         self.frames = head[10] | (head[11] << 8)
-        if (self.w <= 0 or self.h <= 0 or self.w > 240 or self.h > 240 or
+        if (self.w <= 0 or self.h <= 0 or self.w > 320 or self.h > 240 or
                 self.fps <= 0 or self.fps > 20 or self.frames <= 0):
             self.close()
             raise ValueError("bad RV565 dimensions")
@@ -94,7 +96,9 @@ class _Video:
         # read per command (hundreds per frame), which reduced real playback
         # to ~0.5 FPS and starved button polling. One readinto() per frame is
         # both allocation-free and dramatically faster.
-        self._packed = bytearray(len(self.data) + (len(self.data) // 2) + 16)
+        packed_cap = (len(self.data) + 1024 if self.version == 2 else
+                      len(self.data) + (len(self.data) // 2) + 16)
+        self._packed = bytearray(packed_cap)
         self.index = 0
 
     def close(self):
@@ -108,6 +112,9 @@ class _Video:
 
     def rewind(self):
         self._f.seek(_VIDEO_HEADER_SIZE)
+        if self.version == 2:
+            self.index = 0
+            return
         # Clear in small chunks so looping a clip does not briefly allocate a
         # second frame-sized object on the MicroPython heap.
         zero = b"\x00" * min(256, len(self.data))
@@ -124,8 +131,7 @@ class _Video:
             return False
         left = (size_b[0] | (size_b[1] << 8) |
                 (size_b[2] << 16) | (size_b[3] << 24))
-        # A valid stream cannot need more than raw pixels plus commands.
-        if left <= 0 or left > len(self.data) + (len(self.data) // 2) + 16:
+        if left <= 0 or left > len(self._packed):
             return False
         packed_view = memoryview(self._packed)[:left]
         try:
@@ -134,6 +140,40 @@ class _Video:
             got = 0
         if got != left:
             return False
+
+        if self.version == 2:
+            # Version 2 stores independent zlib frames at the LCD's native
+            # resolution. Inflate is native code; retaining only this frame is
+            # the lazy RAM cache, so clip length does not affect heap usage.
+            try:
+                packed = bytes(packed_view)
+                try:
+                    import deflate
+                    import io
+                    inflater = deflate.DeflateIO(io.BytesIO(packed))
+                    readinto = getattr(inflater, "readinto", None)
+                    if readinto is not None:
+                        total = 0
+                        target = memoryview(self.data)
+                        while total < len(self.data):
+                            n = readinto(target[total:])
+                            if not n:
+                                break
+                            total += n
+                        raw = None if total == len(self.data) else b""
+                    else:
+                        raw = inflater.read()
+                except ImportError:
+                    import zlib
+                    raw = zlib.decompress(packed)
+            except Exception:
+                return False
+            if raw is not None:
+                if len(raw) != self.w * self.h * 2:
+                    return False
+                self.data[:] = raw
+            self.index += 1
+            return True
 
         pixel = 0
         src = 0
@@ -466,11 +506,15 @@ class App(oreoOS.App):
             d.text("broken video", (SW - 12 * 16) // 2, SH // 2 - 8,
                    theme.MUTED, scale=2)
         else:
-            # New uploads are exactly 160×120 and use the hardware backend's
-            # native/Viper 2× path to cover all 320×240 pixels. Older clips
-            # retain their aspect ratio and are centred.
+            # V2 uploads are already native LCD frames: one C-level buffer copy
+            # replaces the old Python scaling loop. V1 remains readable for
+            # compatibility, but re-uploading upgrades it to this fast path.
+            fullscreen = getattr(d, "blit_fullscreen", None)
             scale2 = getattr(d, "blit_2x", None)
-            if scale2 is not None and video.w * 2 <= SW and video.h * 2 <= SH:
+            if (video.version == 2 and video.w == SW and video.h == SH and
+                    fullscreen is not None):
+                fullscreen(video.data)
+            elif scale2 is not None and video.w * 2 <= SW and video.h * 2 <= SH:
                 px = (SW - video.w * 2) // 2
                 py = (SH - video.h * 2) // 2
                 scale2(video.data, px, py, video.w, video.h)

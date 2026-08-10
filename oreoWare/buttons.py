@@ -29,6 +29,13 @@ _BTN_TO_GPIO = {
 class Buttons(api.Buttons):
     def __init__(self):
         self._pins = {b: Pin(g, Pin.IN, Pin.PULL_UP) for b, g in _BTN_TO_GPIO.items()}
+        self._button_index = {b: i for i, b in enumerate(api.BUTTONS)}
+        self._irq_pending = bytearray(len(api.BUTTONS))
+        self._irq_release_pending = bytearray(len(api.BUTTONS))
+        self._pressed_edges = bytearray(len(api.BUTTONS))
+        self._released_edges = bytearray(len(api.BUTTONS))
+        self._last_irq_ms = [0] * len(api.BUTTONS)
+        self._irq_handlers = []
         self._curr = {b: 1 for b in _BTN_TO_GPIO}
         self._prev = {b: 1 for b in _BTN_TO_GPIO}
         # Press-timestamp tracking — used by the run loop to synthesize
@@ -37,11 +44,41 @@ class Buttons(api.Buttons):
         # the button is up; an int = time.ticks_ms() at press edge.
         self._press_ms = {b: None for b in _BTN_TO_GPIO}
 
+        # Latch falling edges even while native video inflate/LCD transfer is
+        # running. The ISR only flips a preallocated byte; app callbacks and
+        # allocations remain in the normal OS loop where they are safe.
+        for b, p in self._pins.items():
+            idx = self._button_index[b]
+            pending = self._irq_pending
+            releases = self._irq_release_pending
+            def _edge(_pin, _idx=idx, _pending=pending,
+                      _releases=releases):
+                if _pin.value() == 0:
+                    _pending[_idx] = 1
+                else:
+                    _releases[_idx] = 1
+            self._irq_handlers.append(_edge)
+            try:
+                p.irq(trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING, handler=_edge)
+            except Exception:
+                pass
+
     def update(self):
         now = time.ticks_ms()
         for b, p in self._pins.items():
-            self._prev[b] = self._curr[b]
+            idx = self._button_index[b]
+            latched = self._irq_pending[idx]
+            self._irq_pending[idx] = 0
+            released = self._irq_release_pending[idx]
+            self._irq_release_pending[idx] = 0
             v = p.value()
+            if latched and time.ticks_diff(now, self._last_irq_ms[idx]) >= 80:
+                self._pressed_edges[idx] = 1
+                self._last_irq_ms[idx] = now
+            else:
+                self._pressed_edges[idx] = 0
+            self._released_edges[idx] = 1 if released and v == 1 else 0
+            self._prev[b] = self._curr[b]
             self._curr[b] = v
             if self._prev[b] == 1 and v == 0:
                 # Falling edge — record the press timestamp.
@@ -53,10 +90,12 @@ class Buttons(api.Buttons):
         return self._curr[btn] == 0
 
     def just_pressed(self, btn):
-        return self._curr[btn] == 0 and self._prev[btn] == 1
+        return (bool(self._pressed_edges[self._button_index[btn]]) or
+                (self._curr[btn] == 0 and self._prev[btn] == 1))
 
     def just_released(self, btn):
-        return self._curr[btn] == 1 and self._prev[btn] == 0
+        return (bool(self._released_edges[self._button_index[btn]]) or
+                (self._curr[btn] == 1 and self._prev[btn] == 0))
 
     def pressed_for_ms(self, btn):
         """Milliseconds the button has been held, or 0 if currently up.

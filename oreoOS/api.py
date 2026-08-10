@@ -87,6 +87,10 @@ class Display(ABC):
         """
         self.blit_scale(sprite, x, y, w, h, 2)
 
+    def blit_fullscreen(self, sprite):
+        """Copy one native 320×240 RGB565 frame into the display."""
+        self.blit(sprite, 0, 0, SCREEN_W, SCREEN_H)
+
     def blit_scale(self, sprite, x, y, w, h, scale, dim=0.0):
         """Draw sprite scaled up by `scale`. dim 0.0–1.0 blends toward theme BG."""
         import struct
