@@ -1,0 +1,26 @@
+{
+  "boundary_errors": {},
+  "date": "2026-08-10",
+  "execution": {
+    "doctor_status": "decided",
+    "janitor_status": "complete",
+    "solve_status": "terminated",
+    "submit_status": "submitted"
+  },
+  "generated_at": "2026-08-10T02:34:25.374640+00:00",
+  "pull_requests": {
+    "claimed": 7
+  },
+  "queue": {
+    "candidates": 20,
+    "pick_status": "no_pick",
+    "triaged": 12,
+    "vet_status": "approved"
+  },
+  "schema_version": 1,
+  "status": "complete",
+  "tokens": {
+    "by_role": {},
+    "total": 0
+  }
+}
