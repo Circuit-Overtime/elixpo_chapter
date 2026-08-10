@@ -11,6 +11,9 @@ export function getMermaidConfig(isDark) {
     securityLevel: 'strict',
     suppressErrorRendering: true,
     theme: isDark ? 'dark' : 'default',
+    // Native SVG labels avoid foreignObject sizing differences between
+    // Firefox, Chromium, and WebKit and remain measurable inside the viewport.
+    htmlLabels: false,
     themeVariables: isDark ? {
       ...sharedThemeVariables,
       primaryColor: '#25243a',
@@ -47,7 +50,7 @@ export function getMermaidConfig(isDark) {
       nodeSpacing: 48,
       rankSpacing: 56,
       curve: 'basis',
-      htmlLabels: true,
+      htmlLabels: false,
       useMaxWidth: false,
     },
     sequence: {
