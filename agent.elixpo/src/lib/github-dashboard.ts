@@ -129,8 +129,7 @@ type JsonObject = Record<string, unknown>;
 
 function token() {
   return (
-    process.env.ELIXPOO_GITHUB_PROJECT_TOKEN ||
-    process.env.ELIXPOO_GITHUB_AGENTIC_TOKEN ||
+    process.env.ELIXPO_DASHBOARD_GITHUB_TOKEN ||
     process.env.GITHUB_TOKEN ||
     ""
   );
