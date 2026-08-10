@@ -51,7 +51,9 @@ PORT          = 80
 MAX_BODY      = 8 * 1024 * 1024   # videos stream to flash; never buffered in RAM
 READ_CHUNK    = 2048
 RECV_TIMEOUT       = 3            # seconds — per-recv() during streaming
-HEAD_DEADLINE_MS   = 1500         # hard cap on header-read for tiny requests
+HEADER_RECV_TIMEOUT = 0.05        # never stall the badge input loop on an
+                                  # accepted browser socket with no data yet
+HEAD_DEADLINE_MS   = 300          # hard cap on header-read for tiny requests
                                   # (beacons / session/new). Anything slower
                                   # than this is almost certainly a TLS probe
                                   # or a stuck client and would otherwise
@@ -93,7 +95,7 @@ _transfer_enabled = True
 # Session state machine, code-gated:
 #
 #   _sessions[device_id] = {
-#       "state":     "authed" | "approved" | "denied",
+#       "state":     "authed" | "approving" | "approved" | "denied",
 #       "last_ms":   ticks_ms of last beacon hit,
 #       "addr":      requesting peer ip (for display),
 #       "uploads":   completed upload count for this session,
@@ -352,7 +354,8 @@ def list_sessions():
     """Snapshot for the WiFi/Transfer UI. Returns sessions sorted by
     last-seen so the newest beacons are on top.
 
-    Only `authed` and `approved` sessions are returned — denied ones
+    `authed`, transient `approving`, and `approved` sessions are returned;
+    denied ones
     are filtered out because the badge owner already made that call,
     and seeing them again would just be noise. Senders that haven't
     typed the correct code never enter _sessions in the first place,
@@ -386,7 +389,11 @@ def list_sessions():
 def approve(sid):
     """User tapped Allow on the WiFi/Transfer page."""
     if sid in _sessions:
-        _sessions[sid]["state"] = "approved"
+        # `approving` gives the badge immediate, one-press feedback. The next
+        # browser heartbeat promotes it to `approved`, proving that the sender
+        # has observed the decision and making the transition visible.
+        if _sessions[sid].get("state") == "authed":
+            _sessions[sid]["state"] = "approving"
         return True
     return False
 
@@ -563,7 +570,11 @@ def tick():
     except Exception:
         return
     try:
-        cli.settimeout(RECV_TIMEOUT)
+        # Header reads share the main UI loop. A browser can open a TCP socket
+        # speculatively and send nothing; using the 3-second upload timeout here
+        # used to swallow several button scans per socket. Actual body handling
+        # restores RECV_TIMEOUT after the request header has arrived.
+        cli.settimeout(HEADER_RECV_TIMEOUT)
     except Exception:
         pass
     try:
@@ -864,7 +875,7 @@ _UPLOAD_FORM = (
     # __DEVICE_ID__ before sending the page, so we just read it off
     # the DOM rather than running an auth handshake.
     b"const did=$('did').textContent.trim();"
-    b"let approved=false,beaconTimer=null,picked=null,activeXhr=null;"
+    b"let approved=false,beaconBusy=false,beaconTimer=null,picked=null,activeXhr=null;"
     # Tracked from every beacon response so file-picker can do a
     # pre-flight space check without an extra round-trip. 0 = unknown
     # (treat the badge as full and warn) until the first beacon lands.
@@ -898,7 +909,7 @@ _UPLOAD_FORM = (
     b"  location.reload();}"
     # ── beacon poll for approval ──
     b"async function beacon(){"
-    b"  if(!did||approved)return;"
+    b"  if(!did||approved||beaconBusy)return;beaconBusy=true;"
     b"  try{const r=await fetch('/beacon?id='+did);"
     b"      if(r.status===410){"           # session expired server-side
     b"        clearInterval(beaconTimer);"
@@ -914,8 +925,9 @@ _UPLOAD_FORM = (
     b"        $('wait').innerHTML=\"<h2>Denied</h2><p class='sub'>The badge "
     b"owner rejected this device.</p>"
     b"<button class='btn ghost' onclick='location.reload()'>Try again</button>\";}"
-    b"      else{setWaitStatus('live','waiting for approval on badge\\u2026');}}"
-    b"  catch(e){setWaitStatus('err','badge unreachable - check WiFi');}}"
+    b"      else{setWaitStatus('live',j.state==='approving'?'approval received\\u2026':'waiting for approval on badge\\u2026');}}"
+    b"  catch(e){setWaitStatus('err','badge unreachable - check WiFi');}"
+    b"  finally{beaconBusy=false;}}"
     # Centralised handler for "the badge stopped responding to beacons
     # for too long" — surfaces the modal once so the user knows to
     # check WiFi rather than staring at a frozen yellow dot.
@@ -1066,7 +1078,7 @@ _UPLOAD_FORM = (
     # No code-entry step any more — start the beacon poll
     # immediately so the page tracks approval state from the moment
     # it loads.
-    b"  beaconTimer=setInterval(beacon,2000);beacon();"
+    b"  beaconTimer=setInterval(beacon,500);beacon();"
     b"  $('file').addEventListener('change',e=>onFile(e.target.files[0]));"
     b"  const dz=$('drop');"
     b"  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));"
@@ -1197,6 +1209,10 @@ def _handle(sock):
     if head is None:
         _send_status(sock, 408, "Request Timeout", b"timeout")
         return
+    try:
+        sock.settimeout(RECV_TIMEOUT)
+    except Exception:
+        pass
     method, full_path, headers = _parse_headers(head)
     path, qs = _parse_query(full_path)
 
@@ -1344,6 +1360,11 @@ def _handle_beacon(sock, qs, peer_addr):
         pass
     if peer_addr:
         s["addr"] = peer_addr
+    # The owner decision is complete as soon as an authenticated browser
+    # checks back in. Return `approved` in this same response so the upload
+    # form opens without another polling interval.
+    if s.get("state") == "approving":
+        s["state"] = "approved"
     # Surface the badge's current free space on every beacon — the
     # upload page uses it for a pre-flight size check the moment the
     # user picks a file (cheap, no extra round-trip). statvfs is fast

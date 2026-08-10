@@ -5,6 +5,7 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
+*.mp4
 *.pyo
 *.pyd
 .venv/
