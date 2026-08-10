@@ -73,7 +73,7 @@
 }
 
 .blog-editor-wrapper [data-content-type="codeBlock"] [contenteditable] {
-  padding: 30px 16px 10px 52px !important;
+  padding: 30px 16px 10px !important;
   -webkit-text-decorations-in-effect: none;
   font-weight: 500;
 }
