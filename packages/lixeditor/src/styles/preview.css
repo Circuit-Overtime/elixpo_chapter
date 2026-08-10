@@ -442,13 +442,16 @@
 
 /* ===== Preview Mermaid Diagrams ===== */
 
-.blog-preview-content .preview-mermaid-block {
+.blog-preview-content .preview-mermaid-block,
+.lix-preview-content .lix-mermaid-block,
+.lix-mermaid-block {
   border: 1px solid var(--border-default);
   border-radius: 12px;
   background: var(--bg-surface);
-  padding: 20px;
+  padding: 0;
   margin: 0.75em 0;
-  min-height: 200px;
+  height: clamp(280px, 48vw, 420px);
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -456,11 +459,81 @@
   position: relative;
 }
 
-.blog-preview-content .preview-mermaid-block svg {
-  max-width: none;
+.blog-preview-content .preview-mermaid-block svg,
+.lix-mermaid-block svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+.lix-mermaid-viewport,
+.lix-mermaid-svg-container {
   width: 100%;
-  height: auto;
-  min-height: 180px;
+  height: 100%;
+}
+
+.lix-mermaid-viewport {
+  position: relative;
+  overflow: hidden;
+}
+
+.lix-mermaid-svg-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  transform-origin: center;
+  transition: transform 0.06s linear;
+}
+
+.lix-mermaid-block svg text,
+.lix-mermaid-block svg .nodeLabel,
+.lix-mermaid-block svg .edgeLabel,
+.lix-mermaid-block svg foreignObject div {
+  font-family: 'lixDefault', 'Inter', system-ui, sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.3 !important;
+}
+
+.lix-mermaid-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  box-shadow: 0 6px 20px rgba(23, 18, 42, 0.1);
+}
+
+.lix-mermaid-controls button {
+  min-width: 27px;
+  height: 27px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.lix-mermaid-controls span {
+  min-width: 38px;
+  color: var(--text-faint);
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .blog-preview-content .preview-mermaid-block,
+  .lix-mermaid-block { height: 280px; }
+  .lix-mermaid-svg-container { padding: 14px; }
 }
 
 /* ===== Preview Inline TOC Block (matches editor toc-block) ===== */

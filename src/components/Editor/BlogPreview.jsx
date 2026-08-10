@@ -5,6 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import LinkPreviewTooltip, { useLinkPreview } from './LinkPreviewTooltip';
 import { readTimeFromWords } from '../../../lib/readTime';
 import { escapeHtmlAttribute, normalizeCssColor, normalizeImageUrl, normalizeUrl } from '../../utils/linkHelper';
+import { getMermaidConfig, normalizeMermaidSource, prepareMermaidSvg } from '../../utils/mermaidConfig';
 
 function FloatingTOC({ headings }) {
   const [activeId, setActiveId] = useState('');
@@ -393,6 +394,7 @@ export default function BlogPreview({
     const root = contentRef.current;
     if (!root) return;
     const gen = ++effectGenRef.current;
+    const mermaidWindowHandlers = [];
 
     // Set the base HTML — we own the DOM from here, React won't touch it
     root.innerHTML = renderedHTML || '';
@@ -451,54 +453,7 @@ export default function BlogPreview({
       import('mermaid').then((mod) => {
         if (isStale()) return;
         const mermaid = mod.default || mod;
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: 'strict',
-          theme: isDark ? 'dark' : 'default',
-          themeVariables: isDark ? {
-            primaryColor: '#232d3f',
-            primaryTextColor: '#e4e4e7',
-            primaryBorderColor: '#c4b5fd',
-            lineColor: '#8b8fa3',
-            secondaryColor: '#1e1e2e',
-            tertiaryColor: '#141a26',
-            fontFamily: "'lixFont', sans-serif",
-            fontSize: '16px',
-            nodeTextColor: '#e4e4e7',
-            nodeBorder: '#c4b5fd',
-            mainBkg: '#232d3f',
-            clusterBkg: '#1a1f2e',
-            clusterBorder: '#333',
-            titleColor: '#c4b5fd',
-            edgeLabelBackground: '#141a26',
-            git0: '#c4b5fd', git1: '#7c5cbf', git2: '#4ade80', git3: '#f59e0b',
-            git4: '#ef4444', git5: '#3b82f6', git6: '#ec4899', git7: '#14b8a6',
-            gitBranchLabel0: '#e4e4e7', gitBranchLabel1: '#e4e4e7',
-            gitBranchLabel2: '#e4e4e7', gitBranchLabel3: '#e4e4e7',
-            gitInv0: '#141a26',
-          } : {
-            primaryColor: '#e8e0ff',
-            primaryTextColor: '#1a1a2e',
-            primaryBorderColor: '#7c5cbf',
-            lineColor: '#6b7280',
-            secondaryColor: '#f3f0ff',
-            tertiaryColor: '#f9fafb',
-            fontFamily: "'lixFont', sans-serif",
-            fontSize: '16px',
-            nodeTextColor: '#1a1a2e',
-            nodeBorder: '#7c5cbf',
-            mainBkg: '#e8e0ff',
-            clusterBkg: '#f3f0ff',
-            clusterBorder: '#d1d5db',
-            titleColor: '#7c5cbf',
-            edgeLabelBackground: '#f9fafb',
-            git0: '#7c5cbf', git1: '#9b7bf7', git2: '#16a34a', git3: '#d97706',
-            git4: '#dc2626', git5: '#2563eb', git6: '#db2777', git7: '#0d9488',
-          },
-          flowchart: { padding: 20, nodeSpacing: 50, rankSpacing: 60, curve: 'basis', htmlLabels: false, useMaxWidth: false },
-          sequence: { useMaxWidth: false, boxMargin: 10, noteMargin: 10, messageMargin: 35, mirrorActors: false },
-          gitGraph: { showBranches: true, showCommitLabel: true, mainBranchName: 'main', rotateCommitLabel: false },
-        });
+        mermaid.initialize(getMermaidConfig(isDark));
         // Render all diagrams — don't bail early on stale, just skip applying to unmounted elements
         async function openFullscreenMermaid(diagramText, isDark) {
           const overlay = document.createElement('div');
@@ -588,8 +543,8 @@ export default function BlogPreview({
           let panStart = { ...pan };
 
           const updateTransform = () => {
-            svgContainer.style.transform = `translate(\${pan.x}px, \${pan.y}px) scale(\${zoom})`;
-            zoomLabel.textContent = `\${Math.round(zoom * 100)}%`;
+            svgContainer.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`;
+            zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
           };
 
           contentEl.addEventListener('wheel', (e) => {
@@ -656,7 +611,7 @@ export default function BlogPreview({
             updateTransform();
           });
 
-          const overlayId = `fullscreen-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}`;
+          const overlayId = `fullscreen-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
           const tempOverlayDiv = document.createElement('div');
           tempOverlayDiv.id = 'container-' + overlayId;
           tempOverlayDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
@@ -666,16 +621,7 @@ export default function BlogPreview({
             const { svg } = await mermaid.render(overlayId, diagramText, tempOverlayDiv);
             tempOverlayDiv.remove();
 
-            svgContainer.innerHTML = svg;
-            const svgEl = svgContainer.querySelector('svg');
-            if (svgEl) {
-              svgEl.removeAttribute('width');
-              svgEl.removeAttribute('height');
-              svgEl.style.width = '100%';
-              svgEl.style.height = '100%';
-              svgEl.style.maxWidth = 'none';
-              svgEl.style.maxHeight = 'none';
-            }
+            svgContainer.innerHTML = prepareMermaidSvg(svg);
           } catch (err) {
             showRenderError(svgContainer, err?.message || 'Diagram error', 'pre');
             tempOverlayDiv.remove();
@@ -685,15 +631,11 @@ export default function BlogPreview({
 
         (async () => {
           for (const el of mermaidEls) {
-            const id = `preview-mermaid-\${Date.now()}-\${Math.random().toString(36).slice(2, 6)}`;
+            const id = `preview-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
             try {
-              let diagram = decodeURIComponent(el.dataset.diagram).trim();
-              diagram = diagram.replace(/^s*gitgraph/i, 'gitGraph');
-              diagram = diagram.replace(/^s*sequencediagram/i, 'sequenceDiagram');
-              diagram = diagram.replace(/^s*classDiagram/i, 'classDiagram');
-              diagram = diagram.replace(/^s*stateDiagram/i, 'stateDiagram');
-              diagram = diagram.replace(/^s*erDiagram/i, 'erDiagram');
-              diagram = diagram.replace(/^s*gantt/i, 'gantt');
+              const diagram = normalizeMermaidSource(
+                decodeURIComponent(el.dataset.diagram),
+              );
 
               const tempDiv = document.createElement('div');
               tempDiv.id = 'container-' + id;
@@ -712,15 +654,40 @@ export default function BlogPreview({
 
                 const svgContainer = document.createElement('div');
                 svgContainer.className = 'preview-mermaid-svg-container';
-                svgContainer.innerHTML = svg;
-                const svgEl = svgContainer.querySelector('svg');
-                if (svgEl) {
-                  svgEl.removeAttribute('width');
-                  svgEl.style.width = '100%';
-                  svgEl.style.maxWidth = 'none';
-                  svgEl.style.height = 'auto';
-                  svgEl.style.minHeight = '180px';
-                }
+                svgContainer.innerHTML = prepareMermaidSvg(svg);
+
+                let zoom = 1;
+                let panX = 0;
+                let panY = 0;
+                const updateView = () => {
+                  svgContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+                  zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+                };
+
+                const controls = document.createElement('div');
+                controls.className = 'preview-mermaid-controls';
+
+                const zoomOutBtn = document.createElement('button');
+                zoomOutBtn.type = 'button';
+                zoomOutBtn.title = 'Zoom out';
+                zoomOutBtn.setAttribute('aria-label', 'Zoom out');
+                zoomOutBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>';
+
+                const zoomLabel = document.createElement('span');
+                zoomLabel.className = 'preview-mermaid-zoom-label';
+                zoomLabel.textContent = '100%';
+
+                const zoomInBtn = document.createElement('button');
+                zoomInBtn.type = 'button';
+                zoomInBtn.title = 'Zoom in';
+                zoomInBtn.setAttribute('aria-label', 'Zoom in');
+                zoomInBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+
+                const resetBtn = document.createElement('button');
+                resetBtn.type = 'button';
+                resetBtn.title = 'Fit diagram';
+                resetBtn.setAttribute('aria-label', 'Fit diagram');
+                resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5"/></svg>';
 
                 const fsBtn = document.createElement('button');
                 fsBtn.className = 'preview-mermaid-fullscreen-btn';
@@ -734,8 +701,60 @@ export default function BlogPreview({
                   openFullscreenMermaid(diagram, isDark);
                 });
 
+                zoomOutBtn.addEventListener('click', () => {
+                  zoom = Math.max(0.5, zoom - 0.2);
+                  updateView();
+                });
+                zoomInBtn.addEventListener('click', () => {
+                  zoom = Math.min(3, zoom + 0.2);
+                  updateView();
+                });
+                resetBtn.addEventListener('click', () => {
+                  zoom = 1;
+                  panX = 0;
+                  panY = 0;
+                  updateView();
+                });
+
+                let dragging = false;
+                let dragX = 0;
+                let dragY = 0;
+                let startX = 0;
+                let startY = 0;
+                svgContainer.addEventListener('mousedown', (event) => {
+                  if (event.button !== 0 || zoom <= 1) return;
+                  event.preventDefault();
+                  dragging = true;
+                  startX = event.clientX;
+                  startY = event.clientY;
+                  dragX = panX;
+                  dragY = panY;
+                  wrapper.classList.add('is-panning');
+                });
+                const handleInlineMermaidMove = (event) => {
+                  if (!dragging) return;
+                  panX = dragX + event.clientX - startX;
+                  panY = dragY + event.clientY - startY;
+                  updateView();
+                };
+                const handleInlineMermaidUp = () => {
+                  dragging = false;
+                  wrapper.classList.remove('is-panning');
+                };
+                window.addEventListener('mousemove', handleInlineMermaidMove);
+                window.addEventListener('mouseup', handleInlineMermaidUp);
+                mermaidWindowHandlers.push({
+                  move: handleInlineMermaidMove,
+                  up: handleInlineMermaidUp,
+                });
+
                 wrapper.appendChild(svgContainer);
-                wrapper.appendChild(fsBtn);
+                controls.appendChild(zoomOutBtn);
+                controls.appendChild(zoomLabel);
+                controls.appendChild(zoomInBtn);
+                controls.appendChild(resetBtn);
+                controls.appendChild(fsBtn);
+                wrapper.appendChild(controls);
                 el.appendChild(wrapper);
               }
             } catch (err) {
@@ -891,6 +910,10 @@ export default function BlogPreview({
       mentionHandlers.forEach(({ el, onEnter, onLeave }) => {
         el.removeEventListener('mouseenter', onEnter);
         el.removeEventListener('mouseleave', onLeave);
+      });
+      mermaidWindowHandlers.forEach(({ move, up }) => {
+        window.removeEventListener('mousemove', move);
+        window.removeEventListener('mouseup', up);
       });
       clearTimeout(mentionTimerRef.current);
     };

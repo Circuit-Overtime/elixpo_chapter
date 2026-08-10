@@ -2758,7 +2758,7 @@ const BlogEditor = forwardRef(function BlogEditor(
                     block.appendChild(btn);
                 }
             });
-    }, []);
+    }, [editor]);
 
     // Hide BlockNote's formatting toolbar when a custom block (code, equation, mermaid, etc.) is focused
     const noToolbarTypes = useMemo(
@@ -2849,17 +2849,38 @@ const BlogEditor = forwardRef(function BlogEditor(
             });
         });
 
-        // Lightweight observer: only watch for direct children being added (new blocks),
-        // NOT subtree mutations (which fire on every keystroke inside code blocks)
+        // Code node views can rerender without changing the document block count.
+        // Watch child replacements too so the visible language control is restored.
         const wrapper = wrapperRef.current;
         if (!wrapper) return;
         const editorRoot = wrapper.querySelector(".bn-editor");
         if (!editorRoot) return;
-        const observer = new MutationObserver(() => {
-            requestAnimationFrame(patchCodeBlocks);
+        let patchFrame = null;
+        const observer = new MutationObserver((mutations) => {
+            const needsPatch = mutations.some((mutation) =>
+                [...mutation.addedNodes].some(
+                    (node) =>
+                        node.nodeType === Node.ELEMENT_NODE &&
+                        (node.matches?.('[data-content-type="codeBlock"]') ||
+                            node.querySelector?.(
+                                '[data-content-type="codeBlock"]',
+                            ) ||
+                            node.closest?.(
+                                '[data-content-type="codeBlock"]',
+                            )),
+                ),
+            );
+            if (!needsPatch || patchFrame) return;
+            patchFrame = requestAnimationFrame(() => {
+                patchFrame = null;
+                patchCodeBlocks();
+            });
         });
-        observer.observe(editorRoot, { childList: true });
-        return () => observer.disconnect();
+        observer.observe(editorRoot, { childList: true, subtree: true });
+        return () => {
+            observer.disconnect();
+            if (patchFrame) cancelAnimationFrame(patchFrame);
+        };
     }, [patchCodeBlocks, onReady, editor]);
 
     // AI sparkle star — inline element appended to last AI text block

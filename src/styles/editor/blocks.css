@@ -46,19 +46,17 @@
 
 /* Light mode code block vars */
 :root {
-  --code-bg: #f8f8fb;
-  --code-text: #3d3d50;
-  /* Darker label text on a slightly stronger chip so the language selector is
-     clearly visible in light mode (was #6b7280 on #eeeef2 — too low contrast). */
-  --code-lang-bg: #dfe3ea;
-  --code-lang-text: #44485a;
+  --code-bg: #f2f3f8;
+  --code-text: #202334;
+  --code-lang-bg: #e9e3ff;
+  --code-lang-text: #5335a8;
 }
 
 [data-theme="dark"] {
-  --code-bg: #0e1219;
-  --code-text: #c8d1e0;
-  --code-lang-bg: #1a2030;
-  --code-lang-text: #9ba8b9;
+  --code-bg: #0b1020;
+  --code-text: #e5edf9;
+  --code-lang-bg: #28213f;
+  --code-lang-text: #ddd6fe;
 }
 
 .blog-editor-wrapper [data-content-type="codeBlock"] code {
@@ -123,6 +121,11 @@
   border: none;
   transition: color 0.15s, background 0.15s;
   z-index: 5;
+  display: inline-flex !important;
+  align-items: center;
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: 0 1px 0 rgba(83, 53, 168, 0.15);
 }
 
 .code-lang-label:hover {
@@ -781,6 +784,14 @@
   font-size: 13px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
+  flex-wrap: wrap;
+}
+
+.mermaid-empty-types {
+  flex-basis: 100%;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 11px;
 }
 
 [data-theme="dark"] .mermaid-block--empty {
@@ -809,6 +820,11 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--text-muted);
+}
+
+.mermaid-supported-types {
+  color: var(--text-faint);
+  font-size: 10px;
 }
 
 .mermaid-block-textarea {
@@ -965,13 +981,13 @@
   position: relative;
   padding: 0;
   cursor: default;
-  min-height: 280px;
+  min-height: 0;
 }
 
 .mermaid-viewport {
   position: relative;
   width: 100%;
-  height: 320px;
+  height: clamp(280px, 48vw, 420px);
   overflow: hidden;
   cursor: grab;
   display: flex;
@@ -990,22 +1006,38 @@
   align-items: center;
   transition: transform 0.05s linear;
   will-change: transform;
+  width: 100%;
+  height: 100%;
   padding: 24px;
+  box-sizing: border-box;
 }
 
 .mermaid-block-svg svg {
-  max-width: none !important;
-  height: auto !important;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  overflow: visible;
 }
 
-/* Make text inside mermaid SVG bigger and more readable */
-.mermaid-block-svg svg text {
-  font-size: 15px !important;
-}
-
+.mermaid-block-svg svg text,
 .mermaid-block-svg svg .nodeLabel,
-.mermaid-block-svg svg .edgeLabel {
+.mermaid-block-svg svg .edgeLabel,
+.mermaid-block-svg svg foreignObject div {
+  font-family: 'lixDefault', 'Inter', system-ui, sans-serif !important;
   font-size: 15px !important;
+  line-height: 1.3 !important;
+}
+
+@media (max-width: 640px) {
+  .mermaid-viewport {
+    height: 280px;
+  }
+
+  .mermaid-block-svg {
+    padding: 14px;
+  }
 }
 
 /* Zoom controls */
