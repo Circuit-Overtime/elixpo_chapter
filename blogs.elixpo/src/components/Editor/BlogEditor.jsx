@@ -6,6 +6,7 @@ import {
     defaultBlockSpecs,
     defaultInlineContentSpecs,
 } from "@blocknote/core";
+import { SideMenuExtension } from "@blocknote/core/extensions";
 import { BlockNoteView } from "@blocknote/mantine";
 import {
     ColorStyleButton,
@@ -14,11 +15,14 @@ import {
     FormattingToolbarController,
     getDefaultReactSlashMenuItems,
     getFormattingToolbarItems,
+    SideMenu,
+    SideMenuController,
     SuggestionMenuController,
     TableHandlesController,
     useBlockNoteEditor,
     useCreateBlockNote,
     useEditorSelectionChange,
+    useExtensionState,
 } from "@blocknote/react";
 import { createPortal } from "react-dom";
 import { isAllowedImage } from "../../utils/allowedImageTypes";
@@ -37,7 +41,11 @@ import {
 } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { normalizeUrl } from "../../utils/linkHelper";
-import { extractMermaidFences } from "../../utils/markdownMermaid";
+import { confirmSubpageDelete } from "../../utils/subpageDelete";
+import {
+    extractMermaidFences,
+    extractMermaidPaste,
+} from "../../utils/markdownMermaid";
 import {
     createMediaUploadId,
     enqueueMediaUpload,
@@ -71,6 +79,58 @@ import MentionMenu from "./MentionMenu";
 // AI features (space-to-AI menu, AI block, AI selection toolbar, AI image gen)
 // are temporarily disabled and surfaced as "Coming soon". Flip to re-enable.
 const AI_ENABLED = false;
+
+const SPECIAL_BLOCK_LABELS = {
+    image: "image",
+    table: "table",
+    codeBlock: "code block",
+    mermaidBlock: "diagram",
+    blockEquation: "equation",
+    aiBlock: "AI block",
+    pdfEmbed: "PDF",
+    buttonBlock: "button",
+    breadcrumbs: "breadcrumbs",
+    tableOfContents: "table of contents",
+    tabsBlock: "tabs block",
+    canvasBlock: "canvas",
+};
+
+function withoutBlockIds(block) {
+    if (!block || typeof block !== "object") return block;
+    const partial = { ...block };
+    delete partial.id;
+    const children = partial.children;
+    return {
+        ...partial,
+        ...(Array.isArray(children)
+            ? { children: children.map(withoutBlockIds) }
+            : {}),
+    };
+}
+
+function EditorSideMenu({ onBlockContextMenu }) {
+    const editor = useBlockNoteEditor();
+    const block = useExtensionState(SideMenuExtension, {
+        editor,
+        selector: (state) => state?.block,
+    });
+
+    return (
+        <div
+            className="blog-editor-side-menu-host"
+            onContextMenu={(event) => {
+                const dragHandle = event.target.closest?.(
+                    '[data-test="dragHandle"], button[draggable="true"]',
+                );
+                if (!dragHandle) return;
+                if (!block || !SPECIAL_BLOCK_LABELS[block.type]) return;
+                onBlockContextMenu(event, block);
+            }}
+        >
+            <SideMenu />
+        </div>
+    );
+}
 
 // ── Schema ──
 
@@ -1120,6 +1180,7 @@ const BlogEditor = forwardRef(function BlogEditor(
     });
 
     const [pageMenu, setPageMenu] = useState(null); // {x,y} for the right-click page menu (#21)
+    const [blockMenu, setBlockMenu] = useState(null); // {x,y,blockId,blockType}
     const [showMentionMenu, setShowMentionMenu] = useState(false);
     const [mentionQuery, setMentionQuery] = useState("");
     const [mentionPos, setMentionPos] = useState({ top: 0, left: 0 });
@@ -1145,6 +1206,69 @@ const BlogEditor = forwardRef(function BlogEditor(
     const aiAbortRef = useRef(null);
     const aiBlockIdsRef = useRef(new Set());
     const aiBlockCountRef = useRef(0);
+
+    const openBlockContextMenu = useCallback(
+        (event, block) => {
+            if (!editable || !SPECIAL_BLOCK_LABELS[block?.type]) return;
+            event.preventDefault();
+            event.stopPropagation();
+            setPageMenu(null);
+            setBlockMenu({
+                x: Math.min(event.clientX, window.innerWidth - 230),
+                y: Math.min(event.clientY, window.innerHeight - 170),
+                blockId: block.id,
+                blockType: block.type,
+            });
+        },
+        [editable],
+    );
+    const CustomSideMenu = useCallback(
+        () => (
+            <EditorSideMenu onBlockContextMenu={openBlockContextMenu} />
+        ),
+        [openBlockContextMenu],
+    );
+    const removeSpecialBlock = useCallback(
+        async ({ blockId, blockType }) => {
+            const block = editor.getBlock(blockId);
+            if (!block) return;
+
+            let subpages = [];
+            if (blockType === "canvasBlock" && block.props?.subpageId) {
+                subpages = [
+                    {
+                        id: block.props.subpageId,
+                        kind: "canvas",
+                    },
+                ];
+            } else if (blockType === "tabsBlock") {
+                try {
+                    subpages = JSON.parse(block.props?.tabs || "[]")
+                        .filter((tab) => tab?.subpageId)
+                        .map((tab) => ({
+                            id: tab.subpageId,
+                            kind: tab.kind || "doc",
+                        }));
+                } catch {}
+            }
+
+            for (const subpage of subpages) {
+                const confirmed = await confirmSubpageDelete(subpage.id, {
+                    fallbackKind: subpage.kind,
+                });
+                if (!confirmed) return;
+            }
+            await Promise.all(
+                subpages.map((subpage) =>
+                    fetch(`/api/subpages?id=${subpage.id}`, {
+                        method: "DELETE",
+                    }).catch(() => null),
+                ),
+            );
+            editor.removeBlocks([blockId]);
+        },
+        [editor],
+    );
     const aiAnchorIdRef = useRef(null);
     const wrapperRef = useRef(null);
     const [showInlineLatex, setShowInlineLatex] = useState(false);
@@ -2022,84 +2146,6 @@ const BlogEditor = forwardRef(function BlogEditor(
             });
     }, [editor]);
 
-    // Inject side delete buttons on all custom blocks. Each entry is keyed by
-    // BlockNote's data-content-type. tabsBlock / canvasBlock manage their own
-    // delete UX inside their React renderers (with sub-page confirmation), so
-    // they're intentionally not in this list.
-    useEffect(() => {
-        const wrapper = wrapperRef.current;
-        if (!wrapper || !editor) return;
-
-        const DELETABLE = {
-            table: "Delete table",
-            mermaidBlock: "Delete diagram",
-            blockEquation: "Delete equation",
-            aiBlock: "Delete AI block",
-            pdfEmbed: "Delete PDF",
-            buttonBlock: "Delete button",
-            breadcrumbs: "Delete breadcrumbs",
-            tableOfContents: "Delete table of contents",
-            codeBlock: "Delete code block",
-        };
-
-        const TRASH_SVG =
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
-
-        function injectDeleteButtons() {
-            Object.entries(DELETABLE).forEach(([type, label]) => {
-                const els = wrapper.querySelectorAll(
-                    `[data-content-type="${type}"]`,
-                );
-                els.forEach((blockTypeEl) => {
-                    if (
-                        blockTypeEl.querySelector(
-                            ":scope > .block-side-delete-btn",
-                        )
-                    )
-                        return;
-                    const blockEl = blockTypeEl.closest("[data-id]");
-                    if (!blockEl) return;
-                    const blockId = blockEl.getAttribute("data-id");
-
-                    const btn = document.createElement("button");
-                    btn.className = "block-side-delete-btn";
-                    btn.title = label;
-                    btn.setAttribute("aria-label", label);
-                    btn.innerHTML = TRASH_SVG;
-                    btn.onmousedown = (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    };
-                    btn.onclick = (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        try {
-                            editor.removeBlocks([blockId]);
-                        } catch {}
-                    };
-
-                    const container =
-                        blockEl.querySelector(".bn-block-content") ||
-                        blockTypeEl;
-                    // Some blocks (table, codeBlock) keep a static `.table-delete-btn`
-                    // that's already positioned in their CSS — tables, since the new
-                    // class is `.block-side-delete-btn`, get the unified treatment.
-                    if (getComputedStyle(container).position === "static") {
-                        container.style.position = "relative";
-                    }
-                    container.appendChild(btn);
-                });
-            });
-        }
-
-        injectDeleteButtons();
-        const editorRoot = wrapper.querySelector(".bn-editor");
-        if (!editorRoot) return;
-        const observer = new MutationObserver(injectDeleteButtons);
-        observer.observe(editorRoot, { childList: true });
-        return () => observer.disconnect();
-    }, [editor]);
-
     // Handle clipboard paste — markdown auto-render + image upload
     useEffect(() => {
         const editorEl = wrapperRef.current?.querySelector(".bn-editor");
@@ -2119,6 +2165,13 @@ const BlogEditor = forwardRef(function BlogEditor(
             if (!items) return;
 
             const textData = e.clipboardData.getData("text/plain");
+            const htmlData = e.clipboardData.getData("text/html");
+            const extractedClipboardMermaid = extractMermaidPaste(
+                textData,
+                htmlData,
+            );
+            const hasClipboardMermaid =
+                extractedClipboardMermaid.diagrams.length > 0;
 
             // If pasting a bare URL, convert to a link inline
             if (
@@ -2172,10 +2225,14 @@ const BlogEditor = forwardRef(function BlogEditor(
             }
 
             // Check for plain text with markdown
-            if (textData && looksLikeMarkdown(textData)) {
-                // Only intercept if there's no HTML (which means it's raw markdown, not rich copy)
-                const htmlData = e.clipboardData.getData("text/html");
-                if (!htmlData) {
+            if (
+                textData &&
+                (looksLikeMarkdown(textData) || hasClipboardMermaid)
+            ) {
+                // Raw Markdown is intercepted normally. Rich clipboard data is
+                // intercepted only when it explicitly contains Mermaid; other
+                // rich text should continue through BlockNote's HTML parser.
+                if (!htmlData || hasClipboardMermaid) {
                     e.preventDefault();
                     e.stopPropagation();
 
@@ -2183,8 +2240,9 @@ const BlogEditor = forwardRef(function BlogEditor(
                         try {
                             // Pre-process: extract mermaid fenced blocks before BlockNote parses
                             // Use placeholder format without double underscores (markdown interprets __ as bold)
-                            const extractedMermaid =
-                                extractMermaidFences(textData);
+                            const extractedMermaid = hasClipboardMermaid
+                                ? extractedClipboardMermaid
+                                : extractMermaidFences(textData);
                             const mermaidBlocks = extractedMermaid.diagrams;
                             let processed = extractedMermaid.content;
 
@@ -2700,7 +2758,7 @@ const BlogEditor = forwardRef(function BlogEditor(
                     block.appendChild(btn);
                 }
             });
-    }, []);
+    }, [editor]);
 
     // Hide BlockNote's formatting toolbar when a custom block (code, equation, mermaid, etc.) is focused
     const noToolbarTypes = useMemo(
@@ -2791,17 +2849,38 @@ const BlogEditor = forwardRef(function BlogEditor(
             });
         });
 
-        // Lightweight observer: only watch for direct children being added (new blocks),
-        // NOT subtree mutations (which fire on every keystroke inside code blocks)
+        // Code node views can rerender without changing the document block count.
+        // Watch child replacements too so the visible language control is restored.
         const wrapper = wrapperRef.current;
         if (!wrapper) return;
         const editorRoot = wrapper.querySelector(".bn-editor");
         if (!editorRoot) return;
-        const observer = new MutationObserver(() => {
-            requestAnimationFrame(patchCodeBlocks);
+        let patchFrame = null;
+        const observer = new MutationObserver((mutations) => {
+            const needsPatch = mutations.some((mutation) =>
+                [...mutation.addedNodes].some(
+                    (node) =>
+                        node.nodeType === Node.ELEMENT_NODE &&
+                        (node.matches?.('[data-content-type="codeBlock"]') ||
+                            node.querySelector?.(
+                                '[data-content-type="codeBlock"]',
+                            ) ||
+                            node.closest?.(
+                                '[data-content-type="codeBlock"]',
+                            )),
+                ),
+            );
+            if (!needsPatch || patchFrame) return;
+            patchFrame = requestAnimationFrame(() => {
+                patchFrame = null;
+                patchCodeBlocks();
+            });
         });
-        observer.observe(editorRoot, { childList: true });
-        return () => observer.disconnect();
+        observer.observe(editorRoot, { childList: true, subtree: true });
+        return () => {
+            observer.disconnect();
+            if (patchFrame) cancelAnimationFrame(patchFrame);
+        };
     }, [patchCodeBlocks, onReady, editor]);
 
     // AI sparkle star — inline element appended to last AI text block
@@ -4205,6 +4284,7 @@ const BlogEditor = forwardRef(function BlogEditor(
                 )
                     return;
                 e.preventDefault();
+                setBlockMenu(null);
                 setPageMenu({
                     x: Math.min(e.clientX, window.innerWidth - 230),
                     y: Math.min(e.clientY, window.innerHeight - 320),
@@ -4224,9 +4304,11 @@ const BlogEditor = forwardRef(function BlogEditor(
                     editable={editable}
                     theme={isDark ? "dark" : "light"}
                     slashMenu={false}
+                    sideMenu={false}
                     filePanel={false}
                     formattingToolbar={false}
                 >
+                    <SideMenuController sideMenu={CustomSideMenu} />
                     <SuggestionMenuController
                         triggerCharacter="/"
                         getItems={getItems}
@@ -4238,11 +4320,146 @@ const BlogEditor = forwardRef(function BlogEditor(
                 </BlockNoteView>
             </BlogImageUploadContext.Provider>
 
+            {/* Special-block menu — right-click the block's left drag handle. */}
+            {blockMenu && (
+                <>
+                    <div
+                        className="editor-context-menu-dismiss"
+                        onMouseDown={() => setBlockMenu(null)}
+                        onContextMenu={(event) => {
+                            event.preventDefault();
+                            setBlockMenu(null);
+                        }}
+                    />
+                    <div
+                        className="page-context-menu block-context-menu"
+                        role="menu"
+                        aria-label={`${SPECIAL_BLOCK_LABELS[blockMenu.blockType]} block actions`}
+                        style={{
+                            position: "fixed",
+                            top: blockMenu.y,
+                            left: blockMenu.x,
+                            zIndex: 101,
+                        }}
+                    >
+                        <button
+                            type="button"
+                            role="menuitem"
+                            className="page-context-menu-item"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => {
+                                try {
+                                    const source = editor.getBlock(
+                                        blockMenu.blockId,
+                                    );
+                                    const [paragraph] = editor.insertBlocks(
+                                        [{ type: "paragraph" }],
+                                        source,
+                                        "after",
+                                    );
+                                    editor.setTextCursorPosition(
+                                        paragraph.id,
+                                        "start",
+                                    );
+                                } catch {}
+                                setBlockMenu(null);
+                            }}
+                        >
+                            <svg
+                                width="15"
+                                height="15"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                            >
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
+                            Add text below
+                        </button>
+                        {blockMenu.blockType !== "tabsBlock" &&
+                            blockMenu.blockType !== "canvasBlock" && (
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    className="page-context-menu-item"
+                                    onMouseDown={(event) =>
+                                        event.preventDefault()
+                                    }
+                                    onClick={() => {
+                                        try {
+                                            const source = editor.getBlock(
+                                                blockMenu.blockId,
+                                            );
+                                            editor.insertBlocks(
+                                                [withoutBlockIds(source)],
+                                                source,
+                                                "after",
+                                            );
+                                        } catch {}
+                                        setBlockMenu(null);
+                                    }}
+                                >
+                                    <svg
+                                        width="15"
+                                        height="15"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <rect
+                                            x="8"
+                                            y="8"
+                                            width="12"
+                                            height="12"
+                                            rx="2"
+                                        />
+                                        <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" />
+                                    </svg>
+                                    Duplicate block
+                                </button>
+                            )}
+                        <div className="block-context-menu-separator" />
+                        <button
+                            type="button"
+                            role="menuitem"
+                            className="page-context-menu-item block-context-menu-delete"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={async () => {
+                                const menu = blockMenu;
+                                setBlockMenu(null);
+                                try {
+                                    await removeSpecialBlock(menu);
+                                } catch {}
+                            }}
+                        >
+                            <svg
+                                width="15"
+                                height="15"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5" />
+                            </svg>
+                            Delete {SPECIAL_BLOCK_LABELS[blockMenu.blockType]}
+                        </button>
+                    </div>
+                </>
+            )}
+
             {/* Page context menu (#21) — quick block inserts on right-click */}
             {pageMenu && (
                 <>
                     <div
-                        style={{ position: "fixed", inset: 0, zIndex: 90 }}
+                        className="editor-context-menu-dismiss"
                         onMouseDown={() => setPageMenu(null)}
                         onContextMenu={(e) => {
                             e.preventDefault();
@@ -4255,7 +4472,7 @@ const BlogEditor = forwardRef(function BlogEditor(
                             position: "fixed",
                             top: pageMenu.y,
                             left: pageMenu.x,
-                            zIndex: 91,
+                            zIndex: 101,
                         }}
                     >
                         {[

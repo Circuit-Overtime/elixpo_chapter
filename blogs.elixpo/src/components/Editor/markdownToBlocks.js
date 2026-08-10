@@ -61,7 +61,7 @@ export function parseMarkdownToBlocks(text) {
     if (!trimmed) { i++; continue; }
 
     // Code fence: ```lang ... ``` (also match curly/smart backticks)
-    const fenceMatch = trimmed.match(/^[`\u2018\u2019\u201C\u201D]{3}(\w*)/);
+    const fenceMatch = trimmed.match(/^[`\u2018\u2019\u201C\u201D]{3}[ \t]*(\w*)/);
     if (fenceMatch) {
       const lang = (fenceMatch[1] || '').toLowerCase();
       const codeLines = [];
