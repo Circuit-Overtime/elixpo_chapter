@@ -1,6 +1,7 @@
 FROM python:3.11-slim AS builder
 
 ARG BUILDKIT_INLINE_CACHE=1
+ARG TORCH_VERSION=2.8.0
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -10,21 +11,18 @@ WORKDIR /build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    git \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 COPY package/lix_open_cache_pkg /build/lix_open_cache_pkg
 COPY --from=agent_framework / /build/agent-framework
 RUN pip install --upgrade pip setuptools wheel && \
+    pip install --index-url https://download.pytorch.org/whl/cpu "torch==${TORCH_VERSION}" && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir /build/agent-framework && \
     pip install --no-cache-dir /build/lix_open_cache_pkg
 
-RUN pip install playwright && \
-    playwright install chromium && \
-    playwright install-deps
+RUN playwright install chromium
 
 # Clean up to reduce layer size
 RUN find /usr/local/lib/python3.11/site-packages -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
