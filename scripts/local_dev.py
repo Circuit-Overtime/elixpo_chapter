@@ -37,6 +37,8 @@ REQUIRED_MODULES = (
     "yaml",
     "dotenv",
     "lix_open_cache",
+    "rtk",
+    "structlog",
 )
 
 
