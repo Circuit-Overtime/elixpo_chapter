@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/base-logo.png" alt="LixBlogs Logo" width="80" />
+<img src="public/logo.png" alt="LixBlogs Logo" width="80" />
 
 # LixBlogs
 
@@ -33,7 +33,7 @@ real-time collaboration, and organizations — all on the edge.
 <br />
 
 <div align="center">
-<img src="public/og-image.jpg" alt="LixBlogs Banner" width="100%" style="border-radius: 12px;" />
+<img src="public/banner.png" alt="LixBlogs Banner" width="100%" style="border-radius: 12px;" />
 </div>
 
 <br />
@@ -290,6 +290,11 @@ graph TB
 <br />
 
 ## Running locally
+
+Create `.env.local` with the development credentials before starting the app.
+It is the single source for local secrets used by both Next.js and the
+Cloudflare platform proxy. Do not create `.dev.vars`; Wrangler gives that file
+precedence and it can silently shadow `.env.local` with stale values.
 
 ```bash
 npm install

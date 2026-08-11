@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLixTheme } from '../hooks/useLixTheme';
 import LinkPreviewTooltip, { useLinkPreview } from '../editor/LinkPreviewTooltip';
 import { renderBlocksToHTML } from './renderBlocks';
+import { getMermaidConfig, normalizeMermaidSource, prepareMermaidSvg } from '../utils/mermaidConfig';
 
 /**
  * LixPreview — Renders BlockNote content as styled HTML with post-processing.
@@ -75,16 +76,12 @@ export default function LixPreview({ blocks, html, features = {}, className = ''
         import('mermaid').then((mod) => {
           if (isStale()) return;
           const mermaid = mod.default || mod;
-          mermaid.initialize({
-            startOnLoad: false, securityLevel: 'loose',
-            theme: isDark ? 'dark' : 'default',
-            flowchart: { useMaxWidth: false, padding: 20 },
-          });
+          mermaid.initialize(getMermaidConfig(isDark));
           (async () => {
             for (const el of mermaidEls) {
               const id = `lix-mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
               try {
-                const diagram = decodeURIComponent(el.dataset.diagram).trim();
+                const diagram = normalizeMermaidSource(decodeURIComponent(el.dataset.diagram));
                 const tempDiv = document.createElement('div');
                 tempDiv.id = 'c-' + id;
                 tempDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;opacity:0;pointer-events:none;z-index:-9999;';
@@ -92,9 +89,39 @@ export default function LixPreview({ blocks, html, features = {}, className = ''
                 const { svg } = await mermaid.render(id, diagram, tempDiv);
                 tempDiv.remove();
                 if (el.isConnected && !isStale()) {
-                  el.innerHTML = svg;
-                  const svgEl = el.querySelector('svg');
-                  if (svgEl) { svgEl.removeAttribute('width'); svgEl.style.width = '100%'; svgEl.style.height = 'auto'; }
+                  el.innerHTML = '';
+                  const viewport = document.createElement('div');
+                  viewport.className = 'lix-mermaid-viewport';
+                  const svgContainer = document.createElement('div');
+                  svgContainer.className = 'lix-mermaid-svg-container';
+                  svgContainer.innerHTML = prepareMermaidSvg(svg);
+                  const controls = document.createElement('div');
+                  controls.className = 'lix-mermaid-controls';
+                  const zoomOut = document.createElement('button');
+                  zoomOut.type = 'button';
+                  zoomOut.title = 'Zoom out';
+                  zoomOut.textContent = '−';
+                  const zoomLabel = document.createElement('span');
+                  zoomLabel.textContent = '100%';
+                  const zoomIn = document.createElement('button');
+                  zoomIn.type = 'button';
+                  zoomIn.title = 'Zoom in';
+                  zoomIn.textContent = '+';
+                  const fit = document.createElement('button');
+                  fit.type = 'button';
+                  fit.title = 'Fit diagram';
+                  fit.textContent = 'Fit';
+                  let zoom = 1;
+                  const updateZoom = () => {
+                    svgContainer.style.transform = `scale(${zoom})`;
+                    zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+                  };
+                  zoomOut.onclick = () => { zoom = Math.max(0.5, zoom - 0.2); updateZoom(); };
+                  zoomIn.onclick = () => { zoom = Math.min(3, zoom + 0.2); updateZoom(); };
+                  fit.onclick = () => { zoom = 1; updateZoom(); };
+                  controls.append(zoomOut, zoomLabel, zoomIn, fit);
+                  viewport.append(svgContainer, controls);
+                  el.appendChild(viewport);
                 }
               } catch (err) {
                 if (el.isConnected) el.innerHTML = `<pre style="color:#f87171;font-size:12px">${err.message || 'Diagram error'}</pre>`;

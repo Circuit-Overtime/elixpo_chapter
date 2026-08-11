@@ -2,24 +2,24 @@
 
 import { createReactBlockSpec } from '@blocknote/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import katex from 'katex';
+import { renderKatex } from '../../../utils/katexRenderer';
 
-// Strip \[...\], $$...$$, \(...\), $...$ delimiters — KaTeX expects the inner expression only
-function stripDelimiters(raw) {
-  let s = raw.trim();
-  if (s.startsWith('\\[') && s.endsWith('\\]')) return s.slice(2, -2).trim();
-  if (s.startsWith('$$') && s.endsWith('$$')) return s.slice(2, -2).trim();
-  if (s.startsWith('\\(') && s.endsWith('\\)')) return s.slice(2, -2).trim();
-  if (s.startsWith('$') && s.endsWith('$') && s.length > 2) return s.slice(1, -1).trim();
-  return s;
-}
+function EquationPreview({ latex, className, onClick }) {
+  const [html, setHtml] = useState('');
 
-function renderKaTeX(latex, displayMode = true) {
-  try {
-    return katex.renderToString(stripDelimiters(latex), { displayMode, throwOnError: false });
-  } catch {
-    return `<span style="color:#f87171">${latex}</span>`;
-  }
+  useEffect(() => {
+    let active = true;
+    if (!latex?.trim()) {
+      setHtml('');
+      return () => { active = false; };
+    }
+    renderKatex(latex, true).then((result) => {
+      if (active) setHtml(result);
+    });
+    return () => { active = false; };
+  }, [latex]);
+
+  return <div className={className} onClick={onClick} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 export const BlockEquation = createReactBlockSpec(
@@ -84,7 +84,7 @@ export const BlockEquation = createReactBlockSpec(
             {livePreview.trim() && (
               <div className="latex-live-preview">
                 <div className="latex-live-preview-label">Preview</div>
-                <div dangerouslySetInnerHTML={{ __html: renderKaTeX(livePreview) }} />
+                <EquationPreview latex={livePreview} />
               </div>
             )}
             <div className="mermaid-block-actions">
@@ -110,13 +110,7 @@ export const BlockEquation = createReactBlockSpec(
         );
       }
 
-      return (
-        <div
-          onClick={() => setEditing(true)}
-          className="editor-block-equation"
-          dangerouslySetInnerHTML={{ __html: renderKaTeX(latex) }}
-        />
-      );
+      return <EquationPreview latex={latex} className="editor-block-equation" onClick={() => setEditing(true)} />;
     },
   }
 );

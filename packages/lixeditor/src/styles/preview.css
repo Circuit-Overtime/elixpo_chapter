@@ -442,13 +442,16 @@
 
 /* ===== Preview Mermaid Diagrams ===== */
 
-.blog-preview-content .preview-mermaid-block {
+.blog-preview-content .preview-mermaid-block,
+.lix-preview-content .lix-mermaid-block,
+.lix-mermaid-block {
   border: 1px solid var(--border-default);
   border-radius: 12px;
   background: var(--bg-surface);
-  padding: 20px;
+  padding: 0;
   margin: 0.75em 0;
-  min-height: 200px;
+  height: clamp(280px, 48vw, 420px);
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -456,11 +459,81 @@
   position: relative;
 }
 
-.blog-preview-content .preview-mermaid-block svg {
-  max-width: none;
+.blog-preview-content .preview-mermaid-block svg,
+.lix-mermaid-block svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+.lix-mermaid-viewport,
+.lix-mermaid-svg-container {
   width: 100%;
-  height: auto;
-  min-height: 180px;
+  height: 100%;
+}
+
+.lix-mermaid-viewport {
+  position: relative;
+  overflow: hidden;
+}
+
+.lix-mermaid-svg-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  transform-origin: center;
+  transition: transform 0.06s linear;
+}
+
+.lix-mermaid-block svg text,
+.lix-mermaid-block svg .nodeLabel,
+.lix-mermaid-block svg .edgeLabel,
+.lix-mermaid-block svg foreignObject div {
+  font-family: 'lixDefault', 'Inter', system-ui, sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.3 !important;
+}
+
+.lix-mermaid-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  box-shadow: 0 6px 20px rgba(23, 18, 42, 0.1);
+}
+
+.lix-mermaid-controls button {
+  min-width: 27px;
+  height: 27px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.lix-mermaid-controls span {
+  min-width: 38px;
+  color: var(--text-faint);
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .blog-preview-content .preview-mermaid-block,
+  .lix-mermaid-block { height: 280px; }
+  .lix-mermaid-svg-container { padding: 14px; }
 }
 
 /* ===== Preview Inline TOC Block (matches editor toc-block) ===== */
@@ -617,4 +690,174 @@
   font-size: 0.85em;
   color: var(--text-faint);
   margin-top: 6px;
+}
+
+/* ===== Fullscreen Modal Overlay for Mermaid diagrams ===== */
+.mermaid-fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg-app, #ffffff);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  animation: mermaidFadeIn 0.2s ease-out;
+}
+
+[data-theme="dark"] .mermaid-fullscreen-overlay {
+  background: var(--bg-app, #0e1219);
+}
+
+.mermaid-fullscreen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-default, #eeeef2);
+  background: var(--bg-surface, #f7f7f9);
+}
+
+[data-theme="dark"] .mermaid-fullscreen-header {
+  background: var(--bg-surface, #141a26);
+}
+
+.mermaid-fullscreen-title {
+  color: var(--text-primary, #1a1a2e);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .mermaid-fullscreen-title {
+  color: var(--text-primary, #e4e4e7);
+}
+
+.mermaid-fullscreen-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mermaid-fullscreen-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default, #dcdce4);
+  background: var(--bg-surface, #f7f7f9);
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .mermaid-fullscreen-btn {
+  background: var(--bg-surface, #141a26);
+  border-color: var(--border-default, #232d3f);
+  color: var(--text-muted, #8b8fa3);
+}
+
+.mermaid-fullscreen-btn:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.04));
+  color: var(--text-primary, #1a1a2e);
+  border-color: var(--border-hover, #c4c4d0);
+}
+
+[data-theme="dark"] .mermaid-fullscreen-btn:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #e4e4e7);
+  border-color: var(--border-hover, #333d50);
+}
+
+.mermaid-fullscreen-btn:focus-visible {
+  outline: 2px solid #9b7bf7;
+  outline-offset: 2px;
+}
+
+.mermaid-fullscreen-zoom-label {
+  color: var(--text-muted, #6b7280);
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 48px;
+  text-align: center;
+}
+
+[data-theme="dark"] .mermaid-fullscreen-zoom-label {
+  color: var(--text-muted, #8b8fa3);
+}
+
+.mermaid-fullscreen-content {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mermaid-fullscreen-content:active {
+  cursor: grabbing;
+}
+
+.mermaid-fullscreen-svg-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  transition: transform 0.05s linear;
+  user-select: none;
+}
+
+.mermaid-fullscreen-svg-container svg {
+  max-width: 90vw;
+  max-height: 80vh;
+  width: auto;
+  height: auto;
+}
+
+@keyframes mermaidFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.preview-mermaid-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.preview-mermaid-fullscreen-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background-color 0.15s, color 0.15s;
+  z-index: 10;
+}
+
+.blog-preview-content .preview-mermaid-block:hover .preview-mermaid-fullscreen-btn {
+  opacity: 1;
+}
+
+.preview-mermaid-fullscreen-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }
