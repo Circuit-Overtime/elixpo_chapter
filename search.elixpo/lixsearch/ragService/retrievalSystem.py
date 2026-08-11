@@ -49,7 +49,7 @@ class RetrievalSystem:
             raise
         
         self.vector_store = VectorStore(embedding_dim=EMBEDDING_DIMENSION, embeddings_dir=EMBEDDINGS_DIR)
-        logger.info(f"[RetrievalSystem] Vector store device: {self.vector_store.device}")
+        logger.info("[RetrievalSystem] Vector store backend: Qdrant")
         
         self.semantic_cache = SemanticCache(
             session_id="global",
@@ -63,7 +63,7 @@ class RetrievalSystem:
         
         self.sessions_lock = threading.RLock()
         
-        logger.info("[RetrievalSystem] ✅ Fully initialized with GPU acceleration")
+        logger.info(f"[RetrievalSystem] ✅ Fully initialized (embeddings: {self.embedding_service.device}, vectors: Qdrant)")
     
     def create_session(self, session_id: str):
         logger.warning(f"[RetrievalSystem] Deprecated create_session() called for {session_id}. Use SessionManager instead.")
