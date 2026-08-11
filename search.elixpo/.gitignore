@@ -43,3 +43,6 @@ lix_chat.egg-info/
 *.blg
 *.fdb_latexmk
 *.egg-info/
+# Cloudflare origin TLS secrets
+/deploy/tls/*.pem
+/deploy/tls/*.key

@@ -223,6 +223,7 @@ def run_tests() -> int:
         "tester.test_local_dev",
         "tester.test_agent_runtime",
         "tester.test_agent_responses",
+        "tester.test_streaming_buffer",
         "-v",
     ]
     return subprocess.run(command, cwd=ROOT).returncode

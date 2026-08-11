@@ -11,9 +11,7 @@ from agentRuntime import AgentRunner, route_request
 class AgentRuntimeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.runner = AgentRunner(
-            models_path=ROOT.parent / "agent.elixpo" / "config" / "models.yaml"
-        )
+        cls.runner = AgentRunner()
 
     def test_zero_cost_routing_for_obvious_requests(self):
         self.assertEqual(route_request("Generate an image of a lunar city"), "image-maker")

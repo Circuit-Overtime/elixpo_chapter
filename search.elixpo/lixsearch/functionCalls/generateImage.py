@@ -15,7 +15,7 @@ from pipeline.config import POLLINATIONS_ENDPOINT_IMAGE, IMAGE_MODEL1, IMAGE_MOD
 load_local_environment()
 
 _BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://search.elixpo.com").rstrip("/")
-_IMAGE_MODELS = [IMAGE_MODEL1, IMAGE_MODEL2]
+_IMAGE_MODELS = list(dict.fromkeys([IMAGE_MODEL1, IMAGE_MODEL2]))
 
 
 async def _try_generate(prompt: str, model: str, seed: int, headers: dict, timeout: int = 60) -> tuple[bytes, str]:
