@@ -1,7 +1,12 @@
 import os
-from dotenv import load_dotenv
+from commons.environment import load_local_environment
 import re
-load_dotenv()
+load_local_environment()
+
+# Keep all Hugging Face and SentenceTransformers artifacts on persistent disk.
+MODEL_CACHE_DIR = os.path.abspath(os.getenv("MODEL_CACHE_DIR", "./data/models"))
+os.environ.setdefault("HF_HOME", MODEL_CACHE_DIR)
+os.environ.setdefault("SENTENCE_TRANSFORMERS_HOME", MODEL_CACHE_DIR)
 
 MAX_TRANSCRIPT_WORD_COUNT = 3000
 MAX_TOTAL_SCRAPE_WORD_COUNT = 3000
@@ -73,8 +78,8 @@ LEAKED_XML_TAG_RE = re.compile(
 
 LLM_MODEL = os.getenv("LLM_MODEL", "kimi")
 LLM_MODEL_FALLBACK = os.getenv("LLM_MODEL_FALLBACK", "gemini-fast")
-IMAGE_MODEL1 = os.getenv("IMAGE_MODEL1", "gptimage")
-IMAGE_MODEL2 = os.getenv("IMAGE_MODEL2", "qwen-image")
+IMAGE_MODEL1 = os.getenv("IMAGE_MODEL1", "dreamshaper")
+IMAGE_MODEL2 = os.getenv("IMAGE_MODEL2", "flux")
 VISION_MODEL = os.getenv("VISION_MODEL", "gemini-fast")
 
 

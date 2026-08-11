@@ -1,6 +1,6 @@
 ---
 name: handle-media
-description: Process visual, image-generation, YouTube, and audio requests in lixSearch. Use to find or generate images, understand an image, inspect YouTube metadata, or transcribe a YouTube video.
+description: Process visual, YouTube, and audio inspection requests in lixSearch. Use to find or generate images, understand an image, inspect YouTube metadata, or transcribe a YouTube video.
 ---
 
 # Handle Media
@@ -10,7 +10,6 @@ Choose the narrowest media operation that satisfies the request.
 ## Tool selection
 
 - Find images: `image_search`
-- Create an image: `create_image`
 - Turn an image into a search query: `generate_prompt_from_image`
 - Answer about an image: `replyFromImage`
 - Inspect a YouTube video: `youtubeMetadata`
@@ -27,7 +26,7 @@ Choose the narrowest media operation that satisfies the request.
 ## Runtime contract
 
     agent: media
-    tools: [image_search, create_image, generate_prompt_from_image, replyFromImage, youtubeMetadata, transcribe_audio]
+    tools: [image_search, generate_prompt_from_image, replyFromImage, youtubeMetadata, transcribe_audio]
     timeout_seconds: 45
     max_concurrency: 3
     output: media_bundle
