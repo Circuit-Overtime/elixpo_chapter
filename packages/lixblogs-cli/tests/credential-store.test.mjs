@@ -45,6 +45,19 @@ test("ProfileRegistry: remove drops a profile without affecting others", async (
   await fs.unlink(tmpPath).catch(() => {});
 });
 
+test("ProfileRegistry: stores and switches the active profile", async () => {
+  const tmpPath = path.join(os.tmpdir(), `lixblogs-test-registry-${Date.now()}-active.json`);
+  const registry = new ProfileRegistry(tmpPath);
+  await registry.add("personal");
+  await registry.add("work");
+  assert.equal(await registry.getActive(), "personal");
+  await registry.setActive("work");
+  assert.equal(await registry.getActive(), "work");
+  await registry.remove("work");
+  assert.equal(await registry.getActive(), "personal");
+  await fs.unlink(tmpPath).catch(() => {});
+});
+
 test("GatedCredentialStore: wraps a healthy store transparently", async () => {
   const inner = new InMemoryCredentialStore();
   const gated = new GatedCredentialStore(inner);

@@ -90,6 +90,7 @@ export class MockAuthProvider extends AuthProvider {
       deviceCode,
       userCode,
       verificationUri: "https://mock.lixblogs.local/device",
+      verificationUriComplete: `https://mock.lixblogs.local/device?user_code=${encodeURIComponent(userCode)}`,
       expiresInSeconds: scenario === "EXPIRE" ? 1 : 600,
       pollIntervalSeconds: 1,
     };

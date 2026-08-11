@@ -15,6 +15,7 @@
  * @property {string} deviceCode - Opaque code the client polls with.
  * @property {string} userCode - Short code the user enters at verificationUri.
  * @property {string} verificationUri - URL the user visits to approve login.
+ * @property {string} [verificationUriComplete] - Approval URL with user code pre-filled.
  * @property {number} expiresInSeconds - How long the device code is valid for.
  * @property {number} pollIntervalSeconds - Minimum seconds between poll attempts.
  */

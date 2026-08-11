@@ -8,6 +8,7 @@
  */
 
 import { MockAuthProvider } from "../auth/MockAuthProvider.js";
+import { ElixpoAuthProvider } from "../auth/ElixpoAuthProvider.js";
 import { assertProviderAllowed } from "../auth/productionGate.js";
 
 /**
@@ -15,12 +16,22 @@ import { assertProviderAllowed } from "../auth/productionGate.js";
  * @returns {import("../auth/AuthProvider.js").AuthProvider}
  */
 export function createAuthProvider(config) {
-  // Only MockAuthProvider exists today — ElixpoAuthProvider is not
-  // implemented yet (blocked on accounts.elixpo.com confirming device-flow
-  // support). This factory has exactly one provider to choose from right
-  // now, but the shape is here so adding the real one later doesn't change
-  // any call site.
-  const provider = new MockAuthProvider();
+  if (config.authProvider === "mock" && config.environment === "production") {
+    throw new Error("The mock auth provider cannot run in production.");
+  }
+  if (config.authProvider !== "mock" && config.authProvider !== "elixpo") {
+    throw new Error(`Unknown auth provider "${config.authProvider}".`);
+  }
+
+  const provider = config.authProvider === "mock"
+    ? new MockAuthProvider()
+    : new ElixpoAuthProvider({
+      accountsBaseUrl: config.accountsBaseUrl,
+      clientId: config.clientId,
+      audience: config.audience,
+      cliVersion: config.cliVersion || "0.1.0",
+      fetchImpl: config.fetchImpl,
+    });
 
   assertProviderAllowed({
     providerId: provider.providerId,

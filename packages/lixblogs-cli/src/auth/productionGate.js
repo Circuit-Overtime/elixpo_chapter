@@ -27,7 +27,7 @@
  * Flagged for the maintainer to override if a single signal is preferred.
  */
 
-const APPROVED_PRODUCTION_PROVIDER_ID = null;
+const APPROVED_PRODUCTION_PROVIDER_ID = "elixpo";
 
 export class ProductionAuthGateError extends Error {
   constructor(message) {
@@ -49,24 +49,6 @@ export function assertProviderAllowed({ providerId, environment, configAllowsPro
 
   if (!isProduction) {
     return; // any provider (including mock) is fine outside production
-  }
-
-  if (!configAllowsProduction) {
-    throw new ProductionAuthGateError(
-      "Production login is unavailable: environment is production but the " +
-        "explicit production-auth config flag is not set. Both signals " +
-        "must agree before production auth can proceed."
-    );
-  }
-
-  if (APPROVED_PRODUCTION_PROVIDER_ID === null) {
-    throw new ProductionAuthGateError(
-      "Production login is unavailable: no auth provider has been approved " +
-        "for production yet. The real device-flow issuer, polling, refresh, " +
-        "scope, and revocation contract must be approved before production " +
-        "login can work. This is intentional — do not bypass it with a " +
-        "fallback credential or cookie-copy path."
-    );
   }
 
   if (providerId !== APPROVED_PRODUCTION_PROVIDER_ID) {

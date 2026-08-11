@@ -35,7 +35,7 @@ import { ProfileRegistry } from "./ProfileRegistry.js";
  * @param {{ allowInsecureFallback?: boolean }} [options]
  * @returns {Promise<import("./CredentialStore.js").CredentialStore>}
  */
-export async function createCredentialStore({ allowInsecureFallback = false } = {}) {
+export async function createCredentialStore({ allowInsecureFallback = false, profileRegistry } = {}) {
   // Proactively probe availability with a real write+delete round-trip
   // rather than relying on get() to surface failures — see
   // probeKeychainAvailability's doc comment for why get() alone is not
@@ -57,7 +57,7 @@ export async function createCredentialStore({ allowInsecureFallback = false } = 
     return new InMemoryCredentialStore();
   }
 
-  const registry = new ProfileRegistry();
+  const registry = profileRegistry || new ProfileRegistry();
   const realStore = new RegistryBackedKeychainCredentialStore(registry);
   return new GatedCredentialStore(realStore);
 }

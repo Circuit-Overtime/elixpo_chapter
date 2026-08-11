@@ -32,31 +32,74 @@ export class ProfileRegistry {
 
   /** @returns {Promise<string[]>} */
   async list() {
+    return (await this._read()).profiles;
+  }
+
+  async getActive() {
+    const data = await this._read();
+    return data.activeProfile && data.profiles.includes(data.activeProfile)
+      ? data.activeProfile
+      : data.profiles[0] || null;
+  }
+
+  async setActive(profileId) {
+    validateProfileId(profileId);
+    const data = await this._read();
+    if (!data.profiles.includes(profileId)) {
+      throw new Error(`Profile "${profileId}" does not exist. Log in with it first.`);
+    }
+    await this._write(data.profiles, profileId);
+  }
+
+  async _read() {
     try {
       const raw = await fs.readFile(this._path, "utf8");
       const data = JSON.parse(raw);
-      return Array.isArray(data.profiles) ? data.profiles : [];
+      const profiles = Array.isArray(data.profiles)
+        ? data.profiles.filter((profile) => typeof profile === "string")
+        : [];
+      return {
+        profiles,
+        activeProfile: typeof data.activeProfile === "string" ? data.activeProfile : null,
+      };
     } catch (err) {
-      if (err.code === "ENOENT") return [];
+      if (err.code === "ENOENT") return { profiles: [], activeProfile: null };
       throw err;
     }
   }
 
   /** @param {string} profileId */
   async add(profileId) {
-    const profiles = new Set(await this.list());
+    validateProfileId(profileId);
+    const data = await this._read();
+    const profiles = new Set(data.profiles);
     profiles.add(profileId);
-    await this._write([...profiles]);
+    await this._write([...profiles], data.activeProfile || profileId);
   }
 
   /** @param {string} profileId */
   async remove(profileId) {
-    const profiles = (await this.list()).filter((id) => id !== profileId);
-    await this._write(profiles);
+    const data = await this._read();
+    const profiles = data.profiles.filter((id) => id !== profileId);
+    const activeProfile = data.activeProfile === profileId ? profiles[0] || null : data.activeProfile;
+    await this._write(profiles, activeProfile);
   }
 
-  async _write(profiles) {
+  async _write(profiles, activeProfile = null) {
     await fs.mkdir(path.dirname(this._path), { recursive: true });
-    await fs.writeFile(this._path, JSON.stringify({ profiles }, null, 2), "utf8");
+    const temporaryPath = `${this._path}.${process.pid}.tmp`;
+    await fs.writeFile(
+      temporaryPath,
+      JSON.stringify({ activeProfile, profiles }, null, 2),
+      { encoding: "utf8", mode: 0o600 },
+    );
+    await fs.rename(temporaryPath, this._path);
   }
+}
+
+export function validateProfileId(profileId) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(profileId || "")) {
+    throw new Error("Profile names must be 1-64 characters using letters, numbers, dot, dash, or underscore.");
+  }
+  return profileId;
 }

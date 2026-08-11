@@ -21,6 +21,7 @@
  */
 
 import { parseArgs } from "node:util";
+import { spawn } from "node:child_process";
 import { resolveConfig } from "../src/config/config.js";
 import { createAuthProvider } from "../src/config/providerFactory.js";
 import { createCredentialStore } from "../src/config/credentialStoreFactory.js";
@@ -29,6 +30,8 @@ import { authLogin } from "../src/commands/auth/login.js";
 import { authStatus } from "../src/commands/auth/status.js";
 import { authLogout } from "../src/commands/auth/logout.js";
 import { authRevoke } from "../src/commands/auth/revoke.js";
+import { authProfiles, authUse } from "../src/commands/auth/profiles.js";
+import { ProfileRegistry, validateProfileId } from "../src/config/ProfileRegistry.js";
 
 const OPTIONS = {
   profile: { type: "string" },
@@ -37,6 +40,13 @@ const OPTIONS = {
   quiet: { type: "boolean", default: false },
   yes: { type: "boolean", short: "y", default: false },
   "allow-insecure-fallback": { type: "boolean", default: false },
+  "auth-provider": { type: "string" },
+  "accounts-url": { type: "string" },
+  "api-url": { type: "string" },
+  "client-id": { type: "string" },
+  audience: { type: "string" },
+  scope: { type: "string", multiple: true },
+  open: { type: "boolean", default: false },
   help: { type: "boolean", short: "h", default: false },
 };
 
@@ -47,10 +57,17 @@ Usage:
   lixblogs auth status   [--profile <name>] [--json]
   lixblogs auth logout   [--profile <name>] [--json] [--quiet]
   lixblogs auth revoke   [--profile <name>] [--json] [--quiet] --yes
+  lixblogs auth profiles [--json]
+  lixblogs auth use <name> [--json]
 
 Global flags:
   --profile <name>            named profile to use (default: "default")
-  --env <environment>         override environment (development|production)
+  --env <environment>         override environment (development|staging|production)
+  --auth-provider <provider>  elixpo, or mock in development/test only
+  --accounts-url <url>        override the Accounts discovery origin
+  --api-url <url>             LixBlogs API origin (default: https://blogs.elixpo.com)
+  --scope <scope>             request an OAuth scope (repeatable)
+  --open                      open the complete device verification URL
   --json                      machine-readable JSON output
   --quiet                     suppress non-essential output
   --yes, -y                   auto-confirm destructive actions (required for revoke)
@@ -61,6 +78,40 @@ Global flags:
 Note: interactive confirmation prompting is not implemented yet (CLI-shell/UX
 work, a later issue) — destructive actions require --yes explicitly, always.
 `;
+
+const DEFAULT_SCOPES = [
+  "openid", "profile", "email",
+  "lixblogs:profile:read", "lixblogs:profile:write",
+  "lixblogs:blog:read", "lixblogs:blog:write", "lixblogs:blog:publish", "lixblogs:blog:delete",
+  "lixblogs:media:read", "lixblogs:media:write",
+  "lixblogs:organizations:read", "lixblogs:organizations:write",
+  "lixblogs:collaboration:read", "lixblogs:collaboration:write",
+  "lixblogs:analytics:read", "lixblogs:notifications:read",
+];
+
+function configFlags(opts) {
+  return {
+    profile: opts.profile,
+    env: opts.env,
+    authProvider: opts["auth-provider"],
+    accountsUrl: opts["accounts-url"],
+    apiUrl: opts["api-url"],
+    clientId: opts["client-id"],
+    audience: opts.audience,
+  };
+}
+
+async function selectedProfile(config, registry) {
+  if (config.profileExplicit) return validateProfileId(config.profile);
+  return (await registry.getActive()) || validateProfileId(config.profile);
+}
+
+async function openBrowser(url) {
+  const command = process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd" : "xdg-open";
+  const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
+  const child = spawn(command, args, { detached: true, stdio: "ignore" });
+  child.unref();
+}
 
 function output(opts, data) {
   if (opts.json) {
@@ -86,9 +137,12 @@ function fail(opts, message, exitCode = 1) {
  * @returns {Promise<import("../src/config/CredentialStore.js").CredentialStore | null>}
  *   null if construction failed and fail() was already called.
  */
-async function getCredentialStoreOrFail(opts) {
+async function getCredentialStoreOrFail(opts, profileRegistry) {
   try {
-    return await createCredentialStore({ allowInsecureFallback: opts["allow-insecure-fallback"] });
+    return await createCredentialStore({
+      allowInsecureFallback: opts["allow-insecure-fallback"],
+      profileRegistry,
+    });
   } catch (err) {
     fail(
       opts,
@@ -99,7 +153,9 @@ async function getCredentialStoreOrFail(opts) {
 }
 
 async function runLogin(opts) {
-  const config = resolveConfig({ flags: { profile: opts.profile, env: opts.env } });
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
 
   let provider;
   try {
@@ -108,18 +164,23 @@ async function runLogin(opts) {
     return fail(opts, err.message);
   }
 
-  const credentialStore = await getCredentialStoreOrFail(opts);
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
   if (!credentialStore) return;
 
   const result = await authLogin({
     provider,
     credentialStore,
-    profileId: config.profile,
-    scopes: ["read", "draft"], // placeholder — real scope list from elixpo/blogs.elixpo#136
+    profileId,
+    scopes: opts.scope?.length ? opts.scope : DEFAULT_SCOPES,
+    openBrowser: opts.open ? openBrowser : undefined,
     onStatus: (status) => {
-      if (opts.json || opts.quiet) return;
+      if (opts.json) {
+        output(opts, { event: status.type, ...status });
+        return;
+      }
+      if (opts.quiet) return;
       if (status.type === "verification_pending") {
-        console.log(`To log in, visit: ${status.verificationUri}`);
+        console.log(`To log in, visit: ${status.verificationUriComplete || status.verificationUri}`);
         console.log(`Enter code: ${status.userCode}`);
         console.log(`(expires in ${status.expiresInSeconds}s)`);
       } else if (status.type === "pending") {
@@ -139,6 +200,7 @@ async function runLogin(opts) {
   if (!result.ok) {
     return fail(opts, result.reason);
   }
+  await profileRegistry.setActive(result.profileId);
   output(opts, { ok: true, profile: result.profileId });
   if (!opts.json && !opts.quiet) {
     console.log(`Logged in as profile "${result.profileId}".`);
@@ -146,11 +208,13 @@ async function runLogin(opts) {
 }
 
 async function runStatus(opts) {
-  const config = resolveConfig({ flags: { profile: opts.profile, env: opts.env } });
-  const credentialStore = await getCredentialStoreOrFail(opts);
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
   if (!credentialStore) return;
 
-  const result = await authStatus({ credentialStore, profileId: config.profile });
+  const result = await authStatus({ credentialStore, profileId });
 
   output(opts, result);
   if (!opts.json) {
@@ -167,19 +231,23 @@ async function runStatus(opts) {
 }
 
 async function runLogout(opts) {
-  const config = resolveConfig({ flags: { profile: opts.profile, env: opts.env } });
-  const credentialStore = await getCredentialStoreOrFail(opts);
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
   if (!credentialStore) return;
 
-  const result = await authLogout({ credentialStore, profileId: config.profile });
+  const result = await authLogout({ credentialStore, profileId });
   output(opts, result);
   if (!opts.json && !opts.quiet) {
-    console.log(`Logged out profile "${config.profile}".`);
+    console.log(`Logged out profile "${profileId}".`);
   }
 }
 
 async function runRevoke(opts) {
-  const config = resolveConfig({ flags: { profile: opts.profile, env: opts.env } });
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
 
   // Destructive action: per #135, cannot run accidentally in a
   // non-interactive session. Interactive confirmation prompting is
@@ -199,13 +267,13 @@ async function runRevoke(opts) {
   } catch (err) {
     return fail(opts, err.message);
   }
-  const credentialStore = await getCredentialStoreOrFail(opts);
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
   if (!credentialStore) return;
 
   const result = await authRevoke({
     provider,
     credentialStore,
-    profileId: config.profile,
+    profileId,
     confirmed: true,
   });
 
@@ -214,8 +282,38 @@ async function runRevoke(opts) {
   }
   output(opts, result);
   if (!opts.json && !opts.quiet) {
-    console.log(`Revoked and logged out profile "${config.profile}".`);
+    console.log(`Revoked and logged out profile "${profileId}".`);
   }
+}
+
+async function runProfiles(opts) {
+  const profileRegistry = new ProfileRegistry();
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
+  if (!credentialStore) return;
+  const result = await authProfiles({ credentialStore, profileRegistry });
+  output(opts, result);
+  if (!opts.json) {
+    if (!result.profiles.length) console.log("No profiles. Run `lixblogs auth login` first.");
+    for (const profile of result.profiles) {
+      console.log(`${profile.active ? "*" : " "} ${profile.profileId}${profile.expired ? " (expired)" : ""}`);
+    }
+  }
+}
+
+async function runUse(opts, args) {
+  let profileId;
+  try {
+    profileId = validateProfileId(args[0]);
+  } catch (error) {
+    return fail(opts, error.message);
+  }
+  const profileRegistry = new ProfileRegistry();
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
+  if (!credentialStore) return;
+  const result = await authUse({ credentialStore, profileRegistry, profileId });
+  if (!result.ok) return fail(opts, result.reason);
+  output(opts, result);
+  if (!opts.json && !opts.quiet) console.log(`Using profile "${profileId}".`);
 }
 
 const ROUTES = {
@@ -224,6 +322,8 @@ const ROUTES = {
     status: runStatus,
     logout: runLogout,
     revoke: runRevoke,
+    profiles: runProfiles,
+    use: runUse,
   },
 };
 
@@ -272,7 +372,7 @@ async function main() {
     return;
   }
 
-  await handler(values);
+  await handler(values, positionals.slice(2));
 }
 
 main();

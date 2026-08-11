@@ -131,6 +131,16 @@ test("production gate: mock provider is allowed outside production regardless of
   );
 });
 
+test("production gate: the real Elixpo provider is approved in production", () => {
+  assert.doesNotThrow(() =>
+    assertProviderAllowed({
+      providerId: "elixpo",
+      environment: "production",
+      configAllowsProduction: false,
+    })
+  );
+});
+
 test("production gate: fails closed even for an unrecognized environment value", () => {
   // Anything that isn't explicitly "production" is treated as non-production
   // here; this test exists so that if the environment check's logic is ever

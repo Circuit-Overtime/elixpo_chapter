@@ -1,0 +1,92 @@
+import { AuthProviderError } from "./ElixpoAuthProvider.js";
+
+const DEFAULT_REFRESH_SKEW_MS = 60_000;
+const storeLocks = new WeakMap();
+
+function profileLocks(credentialStore) {
+  let locks = storeLocks.get(credentialStore);
+  if (!locks) {
+    locks = new Map();
+    storeLocks.set(credentialStore, locks);
+  }
+  return locks;
+}
+
+export class LoginRequiredError extends Error {
+  constructor(profileId) {
+    super(`Profile "${profileId}" needs to log in again.`);
+    this.name = "LoginRequiredError";
+    this.code = "login_required";
+  }
+}
+
+export class AuthenticatedClient {
+  constructor({ provider, credentialStore, profileId, fetchImpl = globalThis.fetch, refreshSkewMs = DEFAULT_REFRESH_SKEW_MS }) {
+    this.provider = provider;
+    this.credentialStore = credentialStore;
+    this.profileId = profileId;
+    this.fetchImpl = fetchImpl;
+    this.refreshSkewMs = refreshSkewMs;
+  }
+
+  async _refresh(credentials, { force = false } = {}) {
+    const locks = profileLocks(this.credentialStore);
+    const existing = locks.get(this.profileId);
+    if (existing) return existing;
+
+    const operation = (async () => {
+      const latest = (await this.credentialStore.get(this.profileId)) || credentials;
+      if (!force && latest.expiresAt - Date.now() > this.refreshSkewMs) return latest;
+      try {
+        const token = await this.provider.refresh({
+          refreshToken: latest.refreshToken,
+          scopes: latest.scopes,
+        });
+        const rotated = {
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+          expiresAt: Date.now() + token.expiresInSeconds * 1000,
+          scopes: token.scopes,
+        };
+        await this.credentialStore.set(this.profileId, rotated);
+        return rotated;
+      } catch (error) {
+        if (error instanceof AuthProviderError && error.requiresLogin) {
+          await this.credentialStore.delete(this.profileId);
+          throw new LoginRequiredError(this.profileId);
+        }
+        throw error;
+      }
+    })();
+
+    locks.set(this.profileId, operation);
+    try {
+      return await operation;
+    } finally {
+      if (locks.get(this.profileId) === operation) locks.delete(this.profileId);
+    }
+  }
+
+  async credentials({ forceRefresh = false } = {}) {
+    const stored = await this.credentialStore.get(this.profileId);
+    if (!stored) throw new LoginRequiredError(this.profileId);
+    if (forceRefresh || stored.expiresAt - Date.now() <= this.refreshSkewMs) {
+      return this._refresh(stored, { force: forceRefresh });
+    }
+    return stored;
+  }
+
+  async request(url, options = {}) {
+    let credentials = await this.credentials();
+    const send = () => this.fetchImpl(url, {
+      ...options,
+      headers: { ...options.headers, authorization: `Bearer ${credentials.accessToken}` },
+    });
+    let response = await send();
+    if (response.status === 401) {
+      credentials = await this.credentials({ forceRefresh: true });
+      response = await send();
+    }
+    return response;
+  }
+}

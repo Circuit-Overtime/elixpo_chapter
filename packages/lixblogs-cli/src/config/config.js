@@ -10,8 +10,17 @@
  */
 
 const DEFAULTS = {
-  environment: "development",
+  environment: "production",
   profile: "default",
+  accountsBaseUrl: "https://accounts.elixpo.com",
+  apiBaseUrl: "https://blogs.elixpo.com",
+};
+
+const ENVIRONMENT_CLIENTS = {
+  development: { clientId: "lixblogs-cli-dev", audience: "localhost" },
+  staging: { clientId: "lixblogs-cli-staging", audience: "staging.blogs.elixpo.com" },
+  production: { clientId: "lixblogs-cli-prod", audience: "blogs.elixpo.com" },
+  test: { clientId: "lixblogs-cli-dev", audience: "localhost" },
 };
 
 /**
@@ -27,6 +36,17 @@ export function resolveConfig({ flags = {}, env = process.env } = {}) {
   const profile =
     flags.profile ?? env.LIXBLOGS_PROFILE ?? DEFAULTS.profile;
 
+  const environmentClient = ENVIRONMENT_CLIENTS[environment] || ENVIRONMENT_CLIENTS.production;
+  const authProvider =
+    flags.authProvider ??
+    env.LIXBLOGS_AUTH_PROVIDER ??
+    (environment === "production" ? "elixpo" : "mock");
+  const accountsBaseUrl =
+    flags.accountsUrl ?? env.LIXBLOGS_ACCOUNTS_URL ?? DEFAULTS.accountsBaseUrl;
+  const apiBaseUrl = flags.apiUrl ?? env.LIXBLOGS_API_URL ?? DEFAULTS.apiBaseUrl;
+  const clientId = flags.clientId ?? env.LIXBLOGS_CLIENT_ID ?? environmentClient.clientId;
+  const audience = flags.audience ?? env.LIXBLOGS_AUDIENCE ?? environmentClient.audience;
+
   // Per the production gate design: this must be a SEPARATE explicit signal
   // from `environment`, not derived from it, so a single misconfigured
   // value can't enable production auth on its own. This only ever becomes
@@ -36,5 +56,15 @@ export function resolveConfig({ flags = {}, env = process.env } = {}) {
     flags.allowProductionAuth === true ||
     env.LIXBLOGS_ALLOW_PRODUCTION_AUTH === "true";
 
-  return { environment, profile, configAllowsProduction };
+  return {
+    environment,
+    profile,
+    profileExplicit: flags.profile !== undefined || env.LIXBLOGS_PROFILE !== undefined,
+    authProvider,
+    accountsBaseUrl,
+    apiBaseUrl,
+    clientId,
+    audience,
+    configAllowsProduction,
+  };
 }

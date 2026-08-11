@@ -36,17 +36,23 @@ export async function authLogin({
   sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   onStatus = () => {},
 }) {
-  const deviceCode = await provider.requestDeviceCode({ scopes });
+  let deviceCode;
+  try {
+    deviceCode = await provider.requestDeviceCode({ scopes });
+  } catch (err) {
+    return { ok: false, reason: redactErrorMessage(err.message) };
+  }
 
   onStatus({
     type: "verification_pending",
     verificationUri: deviceCode.verificationUri,
+    verificationUriComplete: deviceCode.verificationUriComplete,
     userCode: deviceCode.userCode,
     expiresInSeconds: deviceCode.expiresInSeconds,
   });
 
   if (openBrowser) {
-    await openBrowser(deviceCode.verificationUri);
+    await openBrowser(deviceCode.verificationUriComplete || deviceCode.verificationUri);
   }
 
   let pollIntervalMs = deviceCode.pollIntervalSeconds * 1000;
