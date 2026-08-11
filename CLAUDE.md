@@ -10,7 +10,7 @@ lixSearch is a multi-service intelligent search assistant (Python/Quart) that se
 
 ### Docker (production)
 ```bash
-./scripts/secrets.sh decrypt          # then fill in TOKEN, MODEL, HF_TOKEN
+./sops-reencrypt.sh --decrypt         # then fill in POLLINATIONS_API_KEY and optional HF_TOKEN
 ./deploy.sh build              # build image
 ./deploy.sh start 3            # start with 3 app containers
 ./deploy.sh scale 5            # scale to 5

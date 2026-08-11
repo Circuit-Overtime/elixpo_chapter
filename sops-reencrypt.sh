@@ -53,8 +53,12 @@ for project in "${PROJECTS[@]}"; do
       continue
     fi
     echo -n "$project: decrypting .env → .env.local... "
-    cd "$dir"
-    sops decrypt .env > .env.local
+    tmp_file="$(mktemp "$dir/.env.local.XXXXXX")"
+    trap 'rm -f "$tmp_file"' EXIT
+    sops decrypt --input-type dotenv --output-type dotenv "$dir/.env" > "$tmp_file"
+    chmod 600 "$tmp_file"
+    mv "$tmp_file" "$dir/.env.local"
+    trap - EXIT
     echo "✓"
     cd "$SCRIPT_DIR"
   else
@@ -64,9 +68,13 @@ for project in "${PROJECTS[@]}"; do
       continue
     fi
     echo -n "$project: encrypting .env.local → .env... "
-    cp "$dir/.env.local" "$dir/.env"
-    cd "$dir"
-    sops encrypt -i .env
+    tmp_file="$(mktemp "$dir/.env.XXXXXX")"
+    trap 'rm -f "$tmp_file"' EXIT
+    sops encrypt --input-type dotenv --output-type dotenv --filename-override "$dir/.env" "$dir/.env.local" > "$tmp_file"
+    sops decrypt --input-type dotenv --output-type dotenv "$tmp_file" > /dev/null
+    chmod 600 "$tmp_file"
+    mv "$tmp_file" "$dir/.env"
+    trap - EXIT
     echo "✓"
     cd "$SCRIPT_DIR"
   fi
