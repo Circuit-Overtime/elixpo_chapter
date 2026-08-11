@@ -13,6 +13,7 @@ from ragService.main import get_retrieval_system
 from chatEngine.main import initialize_chat_engine
 from commons.requestID import RequestIDMiddleware
 from app.gateways import health, search, session, stats, surf, completions, responses, image, export, content
+from app.auth import install_api_auth
 logger = logging.getLogger("lixsearch-api")
 
 
@@ -91,6 +92,7 @@ class lixSearch:
         self.initialization_lock = asyncio.Lock()
         
         self._setup_cors()
+        install_api_auth(self.app)
         self._setup_middleware()
         self._register_routes()
         self._register_error_handlers()
