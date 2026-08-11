@@ -2,108 +2,122 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "SnailDev/douyin-hot-hub",
-    "has_contributing": false,
+    "full_name": "rentruewang/aioway",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 3,
-    "pushed_at": "2026-08-10T07:42:22Z",
+    "open_issues": 26,
+    "pushed_at": "2026-08-11T07:08:28Z",
     "reasons": [
-      "111\u2605 python active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 111,
-    "topics": [],
-    "url": "https://github.com/SnailDev/douyin-hot-hub"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "Agions/story-fab",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 4,
-    "pushed_at": "2026-08-10T07:42:01Z",
-    "reasons": [
-      "126\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 126,
-    "topics": [
-      "ai-video-editing",
-      "automation",
-      "content-creation",
-      "desktop-application",
-      "ffmpeg",
-      "react",
-      "rust",
-      "short-video",
-      "social-media-tools",
-      "subtitle-generator",
-      "tauri",
-      "typescript",
-      "video-editing",
-      "whisper"
-    ],
-    "url": "https://github.com/Agions/story-fab"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "QVerisAI/qveris-agent-toolkit",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 7,
-    "pushed_at": "2026-08-10T07:37:51Z",
-    "reasons": [
-      "254\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 254,
-    "topics": [
-      "ai-agent",
-      "ai-tools",
-      "cli",
-      "developer-tools",
-      "mcp",
-      "model-context-protocol",
-      "openclaw",
-      "plugin",
-      "python-sdk",
-      "qveris",
-      "rest-api",
-      "tool-calling",
-      "tool-discovery",
-      "typescript"
-    ],
-    "url": "https://github.com/QVerisAI/qveris-agent-toolkit"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "grafana/docker-otel-lgtm",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 17,
-    "pushed_at": "2026-08-10T07:38:16Z",
-    "reasons": [
-      "1983\u2605 shell active",
+      "1826\u2605 python active",
       "has open issues"
     ],
     "score": 52,
-    "stars": 1983,
+    "stars": 1826,
     "topics": [
-      "grafana",
-      "loki",
-      "opentelemetry",
-      "opentelemetry-collector",
-      "prometheus",
-      "pyroscope",
-      "tempo"
+      "auto-deep-learning",
+      "compiler",
+      "explainable-ai",
+      "lazy-evaluation",
+      "neural-architecture-search",
+      "python",
+      "pytorch",
+      "relational-algebra",
+      "sql"
     ],
-    "url": "https://github.com/grafana/docker-otel-lgtm"
+    "url": "https://github.com/rentruewang/aioway"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "mazipan/baca-quran.id",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 14,
+    "pushed_at": "2026-08-11T07:07:52Z",
+    "reasons": [
+      "435\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 435,
+    "topics": [
+      "quran",
+      "quran-offline",
+      "quran-search",
+      "quran-web"
+    ],
+    "url": "https://github.com/mazipan/baca-quran.id"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "ch-bas/cctv-camera-database",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 18,
+    "pushed_at": "2026-08-11T07:07:44Z",
+    "reasons": [
+      "131\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 131,
+    "topics": [
+      "blue-iris",
+      "cctv",
+      "cctv-cameras",
+      "dahua",
+      "data-seed",
+      "frigate",
+      "frigate-nvr",
+      "frontfamily",
+      "hikvision",
+      "home-assistant",
+      "homeassistant",
+      "ip-camera",
+      "open-data",
+      "reolink",
+      "security-camera",
+      "surveillance"
+    ],
+    "url": "https://github.com/ch-bas/cctv-camera-database"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "marcusquinn/aidevops",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 16,
+    "pushed_at": "2026-08-11T07:04:12Z",
+    "reasons": [
+      "371\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 371,
+    "topics": [
+      "agents",
+      "agents-md",
+      "ai",
+      "ai-agents",
+      "ai-assistant",
+      "ai-assistants",
+      "ai-assisted-development",
+      "ai-code-review",
+      "ai-coding",
+      "ai-dev-ops",
+      "ai-devops",
+      "ai-system-admin",
+      "claude",
+      "devops",
+      "devops-tools",
+      "git-workflow",
+      "git-worktrees",
+      "opencode",
+      "opencode-plugin"
+    ],
+    "url": "https://github.com/marcusquinn/aidevops"
   },
   {
     "archived": false,
@@ -111,8 +125,8 @@
     "full_name": "joryirving/home-ops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 4,
-    "pushed_at": "2026-08-10T07:28:55Z",
+    "open_issues": 5,
+    "pushed_at": "2026-08-11T06:24:49Z",
     "reasons": [
       "222\u2605 yaml active",
       "has open issues"
@@ -134,417 +148,373 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "Q00/ouroboros",
+    "full_name": "homeassistant-ai/ha-mcp",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 45,
-    "pushed_at": "2026-08-10T07:35:23Z",
+    "open_issues": 15,
+    "pushed_at": "2026-08-11T07:07:17Z",
     "reasons": [
-      "5366\u2605 python active",
+      "4342\u2605 python active",
+      "has open issues"
+    ],
+    "score": 53,
+    "stars": 4342,
+    "topics": [
+      "ai",
+      "claude",
+      "hacs",
+      "home-assistant",
+      "home-automation",
+      "llm",
+      "mcp",
+      "model-context-protocol"
+    ],
+    "url": "https://github.com/homeassistant-ai/ha-mcp"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "middleapi/orpc",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 44,
+    "pushed_at": "2026-08-11T07:00:59Z",
+    "reasons": [
+      "5456\u2605 typescript active",
       "has open issues"
     ],
     "score": 54,
-    "stars": 5366,
+    "stars": 5456,
     "topics": [
-      "agent-os",
-      "agentic-ai",
-      "ai-agent",
-      "ai-coding-agent",
-      "claude",
-      "claude-code",
-      "cli",
-      "codex",
-      "developer-tools",
-      "github-copilot",
-      "llm-evaluation",
-      "llm-orchestration",
-      "llm-runtime",
-      "mcp",
-      "mcp-server",
-      "opencode",
-      "prompt-engineering",
-      "python",
-      "socratic-method",
-      "spec-driven-development"
-    ],
-    "url": "https://github.com/Q00/ouroboros"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "usekaneo/kaneo",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 58,
-    "pushed_at": "2026-08-10T07:39:22Z",
-    "reasons": [
-      "7960\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 56,
-    "stars": 7960,
-    "topics": [
-      "hacktoberfest",
-      "hono",
-      "issue-management",
-      "issue-tracker",
-      "jira-alternative",
-      "kanban",
-      "linear-alternative",
-      "project-management",
+      "api",
+      "bunjs",
+      "cloudflare-worker",
+      "contract-first",
+      "denojs",
+      "next-js",
+      "nodejs",
+      "openapi",
+      "pinia-vuejs",
       "react",
-      "self-hosted",
-      "typescript"
+      "rpc-api",
+      "solidjs",
+      "svelte",
+      "tanstack",
+      "typesafe",
+      "typescript",
+      "vue"
     ],
-    "url": "https://github.com/usekaneo/kaneo"
+    "url": "https://github.com/middleapi/orpc"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "gz-yami/mall4cloud",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 25,
-    "pushed_at": "2026-08-10T07:00:18Z",
-    "reasons": [
-      "6124\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 40,
-    "stars": 6124,
-    "topics": [
-      "java",
-      "mall",
-      "springboot4",
-      "springcloud",
-      "vue3"
-    ],
-    "url": "https://github.com/gz-yami/mall4cloud"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "0xNyk/council-of-high-intelligence",
+    "full_name": "GladysAssistant/Gladys",
     "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 25,
-    "pushed_at": "2026-08-10T05:47:15Z",
+    "language": "JavaScript",
+    "open_issues": 47,
+    "pushed_at": "2026-08-11T07:04:18Z",
     "reasons": [
-      "3851\u2605 shell active",
+      "3099\u2605 javascript active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 3851,
+    "stars": 3099,
     "topics": [
-      "agent-skill",
-      "ai-agents",
-      "claude-code",
-      "codex",
-      "decision-making",
-      "deliberation",
-      "gemini-cli",
-      "llm-routing",
-      "multi-agent-systems",
-      "multi-llm",
-      "open-source",
-      "opencode",
-      "prompt-engineering",
-      "structured-debate"
+      "assistant",
+      "automation",
+      "gladys",
+      "home",
+      "home-automation",
+      "iot",
+      "nodejs",
+      "raspberry-pi",
+      "smarthome"
     ],
-    "url": "https://github.com/0xNyk/council-of-high-intelligence"
+    "url": "https://github.com/GladysAssistant/Gladys"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "usnistgov/macos_security",
+    "full_name": "bitnami/containers",
     "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 14,
+    "pushed_at": "2026-08-11T04:44:51Z",
+    "reasons": [
+      "4449\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 53,
+    "stars": 4449,
+    "topics": [
+      "bitnami",
+      "containers",
+      "docker",
+      "docker-image",
+      "non-root",
+      "vmware"
+    ],
+    "url": "https://github.com/bitnami/containers"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "onedr0p/home-ops",
+    "has_contributing": false,
     "language": "YAML",
-    "open_issues": 22,
-    "pushed_at": "2026-07-29T17:55:23Z",
-    "reasons": [
-      "2435\u2605 yaml active",
-      "has open issues"
-    ],
-    "score": 48,
-    "stars": 2435,
-    "topics": [
-      "apple",
-      "bash",
-      "compliance",
-      "macos",
-      "mdm",
-      "mscp",
-      "python3",
-      "zsh"
-    ],
-    "url": "https://github.com/usnistgov/macos_security"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "wanshuiyin/Auto-claude-code-research-in-sleep",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 59,
-    "pushed_at": "2026-08-10T07:39:58Z",
-    "reasons": [
-      "14457\u2605 python active",
-      "has open issues"
-    ],
-    "score": 60,
-    "stars": 14457,
-    "topics": [
-      "ai-research",
-      "ai-tools",
-      "aris",
-      "autonomous-agent",
-      "claude",
-      "claude-code",
-      "claude-code-skills",
-      "codex",
-      "deep-learning",
-      "gpt",
-      "idea-generation",
-      "llm",
-      "machine-learning",
-      "mcp",
-      "mcp-server",
-      "ml-research",
-      "openai",
-      "paper-review",
-      "paper-writing",
-      "research-automation"
-    ],
-    "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "liketrek/TREK",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 57,
-    "pushed_at": "2026-08-10T07:41:24Z",
-    "reasons": [
-      "12007\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 59,
-    "stars": 12007,
-    "topics": [
-      "budget-tracker",
-      "collaborative",
-      "open-source",
-      "opensource",
-      "packing-list",
-      "poi",
-      "real-time",
-      "routes",
-      "self-hosted",
-      "travel",
-      "travel-app",
-      "travel-planner",
-      "traveling",
-      "trip",
-      "trip-planner",
-      "tripit",
-      "wanderlog",
-      "wanderlust",
-      "webapplication"
-    ],
-    "url": "https://github.com/liketrek/TREK"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "earthtojake/text-to-cad",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 15,
-    "pushed_at": "2026-08-10T06:47:06Z",
-    "reasons": [
-      "13181\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 59,
-    "stars": 13181,
-    "topics": [
-      "agents",
-      "ai-agents",
-      "cad",
-      "mechanical-engineering",
-      "robotics",
-      "step",
-      "stl",
-      "stp",
-      "text-to-cad"
-    ],
-    "url": "https://github.com/earthtojake/text-to-cad"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "pystardust/ani-cli",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 7,
-    "pushed_at": "2026-08-09T16:57:12Z",
-    "reasons": [
-      "13467\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 59,
-    "stars": 13467,
-    "topics": [
-      "anime",
-      "cli",
-      "fzf",
-      "linux",
-      "mac",
-      "posix",
-      "rofi",
-      "shell",
-      "steamdeck",
-      "syncplay",
-      "terminal",
-      "termux",
-      "webscraping",
-      "windows"
-    ],
-    "url": "https://github.com/pystardust/ani-cli"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "jvxiao/speed-github",
-    "has_contributing": false,
-    "language": "Python",
     "open_issues": 3,
-    "pushed_at": "2026-08-10T07:42:11Z",
+    "pushed_at": "2026-08-11T04:48:40Z",
     "reasons": [
-      "348\u2605 python active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 348,
-    "topics": [],
-    "url": "https://github.com/jvxiao/speed-github"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "tornikebolokadze1-cyber/awesome-ai-pulse-georgia",
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 9,
-    "pushed_at": "2026-08-10T07:42:25Z",
-    "reasons": [
-      "133\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 133,
-    "topics": [
-      "ai-agents",
-      "ai-tools",
-      "automation",
-      "awesome",
-      "awesome-list",
-      "claude-code",
-      "curated-list",
-      "georgia",
-      "mcp"
-    ],
-    "url": "https://github.com/tornikebolokadze1-cyber/awesome-ai-pulse-georgia"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "Lawin0129/LawinServer",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 25,
-    "pushed_at": "2026-08-10T07:40:40Z",
-    "reasons": [
-      "177\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 177,
-    "topics": [
-      "backend",
-      "fortnite"
-    ],
-    "url": "https://github.com/Lawin0129/LawinServer"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "hotyue/IP-Sentinel",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 8,
-    "pushed_at": "2026-08-10T07:41:45Z",
-    "reasons": [
-      "1627\u2605 shell active",
+      "2861\u2605 yaml active",
       "has open issues"
     ],
     "score": 37,
-    "stars": 1627,
+    "stars": 2861,
+    "topics": [
+      "flux",
+      "gitops",
+      "justfile",
+      "kubernetes",
+      "kubesearch",
+      "mise",
+      "renovate",
+      "selfhosted",
+      "talos"
+    ],
+    "url": "https://github.com/onedr0p/home-ops"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "zubair-trabzada/geo-seo-claude",
+    "has_contributing": true,
+    "language": "Python",
+    "open_issues": 20,
+    "pushed_at": "2026-08-11T06:35:11Z",
+    "reasons": [
+      "9313\u2605 python active",
+      "has open issues"
+    ],
+    "score": 57,
+    "stars": 9313,
     "topics": [],
-    "url": "https://github.com/hotyue/IP-Sentinel"
+    "url": "https://github.com/zubair-trabzada/geo-seo-claude"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "mindfold-ai/Trellis",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 35,
+    "pushed_at": "2026-08-11T06:56:48Z",
+    "reasons": [
+      "13817\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 60,
+    "stars": 13817,
+    "topics": [
+      "agentic-coding",
+      "ai-workflow",
+      "claudecode",
+      "codex",
+      "harness"
+    ],
+    "url": "https://github.com/mindfold-ai/Trellis"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "webpack/webpack-bundle-analyzer",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 26,
+    "pushed_at": "2026-08-11T05:59:03Z",
+    "reasons": [
+      "12661\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 59,
+    "stars": 12661,
+    "topics": [
+      "analyze",
+      "bundle",
+      "chart",
+      "interactive",
+      "size",
+      "treemap",
+      "webpack",
+      "webpack-bundle-analyzer"
+    ],
+    "url": "https://github.com/webpack/webpack-bundle-analyzer"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "DaoCloud/public-image-mirror",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 6,
+    "pushed_at": "2026-08-11T02:48:38Z",
+    "reasons": [
+      "14810\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 45,
+    "stars": 14810,
+    "topics": [
+      "mirror",
+      "speedup"
+    ],
+    "url": "https://github.com/DaoCloud/public-image-mirror"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "billimek/k8s-gitops",
+    "full_name": "lightseekorg/tokenspeed",
+    "has_contributing": true,
+    "language": "Python",
+    "open_issues": 43,
+    "pushed_at": "2026-08-11T07:07:55Z",
+    "reasons": [
+      "1843\u2605 python active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 1843,
+    "topics": [
+      "blackwell",
+      "deepseek",
+      "glm",
+      "gpt-oss",
+      "inkling",
+      "kimi",
+      "lightseek",
+      "llm",
+      "minimax",
+      "qwen",
+      "speed-of-light",
+      "tokenspeed",
+      "vlm"
+    ],
+    "url": "https://github.com/lightseekorg/tokenspeed"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "Ocyss/boss-helper",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 31,
+    "pushed_at": "2026-08-11T07:08:26Z",
+    "reasons": [
+      "1909\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 1909,
+    "topics": [],
+    "url": "https://github.com/Ocyss/boss-helper"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "magento/pwa-studio",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 7,
+    "pushed_at": "2026-08-11T07:06:40Z",
+    "reasons": [
+      "1084\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 1084,
+    "topics": [
+      "magento",
+      "pwa",
+      "pwa-storefront",
+      "pwa-studio",
+      "venia"
+    ],
+    "url": "https://github.com/magento/pwa-studio"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "altstackHQ/altstack-data",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 6,
+    "pushed_at": "2026-08-11T07:01:25Z",
+    "reasons": [
+      "319\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 319,
+    "topics": [
+      "awesome",
+      "awesome-list",
+      "devops",
+      "docker",
+      "open-source",
+      "productivity",
+      "saas-alternatives",
+      "self-hosted"
+    ],
+    "url": "https://github.com/altstackHQ/altstack-data"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "waifulabs/infrastructure",
     "has_contributing": false,
     "language": "YAML",
     "open_issues": 4,
-    "pushed_at": "2026-08-10T06:31:08Z",
+    "pushed_at": "2026-08-11T05:06:09Z",
     "reasons": [
-      "776\u2605 yaml active",
+      "221\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 776,
+    "stars": 221,
     "topics": [
-      "flux",
-      "gitops",
-      "helm",
-      "k8s",
+      "ansible",
+      "home-assistant",
+      "home-automation",
+      "k3s",
       "k8s-at-home",
-      "kubernetes"
+      "kubernetes",
+      "node-red",
+      "renovate"
     ],
-    "url": "https://github.com/billimek/k8s-gitops"
+    "url": "https://github.com/waifulabs/infrastructure"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "bethington/ghidra-mcp",
+    "full_name": "modelscope/ms-agent",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 19,
-    "pushed_at": "2026-08-10T07:27:35Z",
+    "open_issues": 22,
+    "pushed_at": "2026-08-11T07:06:49Z",
     "reasons": [
-      "3244\u2605 python active",
+      "4358\u2605 python active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 3244,
+    "stars": 4358,
     "topics": [
-      "ai",
-      "binary-analysis",
-      "ghidra",
-      "ghidra-extension",
-      "java",
-      "mcp",
-      "mcp-server",
-      "model-context-protocol",
-      "python",
-      "reverse-engineering",
-      "static-analysis"
+      "agentic-insight",
+      "agentic-search",
+      "chat-bot",
+      "code-generation",
+      "deep-research",
+      "memory"
     ],
-    "url": "https://github.com/bethington/ghidra-mcp"
+    "url": "https://github.com/modelscope/ms-agent"
   }
 ]
