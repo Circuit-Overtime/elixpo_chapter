@@ -10,10 +10,10 @@ from quart import Response, jsonify, request
 
 from agentRuntime import AGENT_SPECS, AgentRunner
 from agentRuntime.runner import response_content
+from pipeline.streaming import TaskAwareChunkBuffer
+from pipeline.config import AGENT_STREAM_CHUNK_CHARS, AGENT_STREAM_DEFAULT
 from agentRuntime.state import (
     ResponseStateStore,
-    canonical_conversation_id,
-    new_conversation_id,
     new_message_id,
     new_response_id,
 )
@@ -187,29 +187,130 @@ def _sse(event: str, payload: dict[str, Any]) -> str:
     return f"event: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
+async def _stream_response(data: dict[str, Any], state: ResponseStateStore):
+    input_messages = _input_messages(data.get("input"))
+    user_positions = [i for i, item in enumerate(input_messages) if item["role"] == "user"]
+    if not user_positions:
+        raise ValueError("input must contain a user message")
+    last_user = user_positions[-1]
+    prompt = input_messages[last_user]["content"]
+    request_history = [item for item in input_messages[:last_user] if item["role"] in {"user", "assistant"}]
+    previous_response_id = data.get("previous_response_id") or None
+    requested_conversation = _conversation_id(data.get("conversation"))
+    conversation_id, stored_history = await asyncio.to_thread(
+        state.resolve_context, previous_response_id=previous_response_id, conversation_id=requested_conversation
+    )
+    if not stored_history and requested_conversation:
+        stored_history = await _recall_durable(conversation_id, prompt)
+    history = stored_history + request_history
+    if data.get("instructions"):
+        prompt = f'{data["instructions"]}\n\n{prompt}'
+    requested_model = str(data.get("model") or "auto")
+    agent = requested_model if requested_model in AGENT_SPECS and requested_model != "decision" else "auto"
+    response_id, message_id = new_response_id(), new_message_id()
+    store = data.get("store", True) is not False
+
+    async def events():
+        sequence = 0
+
+        def emit(event, payload):
+            nonlocal sequence
+            sequence += 1
+            return _sse(event, {**payload, "sequence_number": sequence})
+
+        created = {
+            "id": response_id, "object": "response", "created_at": int(time.time()),
+            "status": "in_progress", "output": [], "previous_response_id": previous_response_id,
+            "conversation": {"id": conversation_id}, "store": store, "model": requested_model,
+        }
+        yield emit("response.created", {"type": "response.created", "response": created})
+        buffer = TaskAwareChunkBuffer(AGENT_STREAM_CHUNK_CHARS)
+        content_parts = []
+        final_result = {"agent": agent, "model": requested_model, "response": {}}
+        try:
+            async for event in AgentRunner().stream(agent, prompt, history=history):
+                if event.get("type") == "done":
+                    final_result = event.get("result") or final_result
+                    continue
+                for kind, value in buffer.feed(event.get("content", "")):
+                    if kind == "task":
+                        yield emit("response.task", {
+                            "type": "response.task", "response_id": response_id,
+                            "task": value, "done": value == "<TASK>DONE</TASK>",
+                        })
+                    else:
+                        content_parts.append(value)
+                        yield emit("response.output_text.delta", {
+                            "type": "response.output_text.delta", "item_id": message_id,
+                            "output_index": 0, "content_index": 0, "delta": value,
+                        })
+            for kind, value in buffer.flush():
+                if kind == "text":
+                    content_parts.append(value)
+                    yield emit("response.output_text.delta", {
+                        "type": "response.output_text.delta", "item_id": message_id,
+                        "output_index": 0, "content_index": 0, "delta": value,
+                    })
+            content = "".join(content_parts)
+            if not content:
+                raise RuntimeError("Agent returned no output text")
+            full_messages = [*history, {"role": "user", "content": prompt}, {"role": "assistant", "content": content}]
+            if store:
+                await asyncio.to_thread(
+                    state.save, response_id=response_id, conversation_id=conversation_id,
+                    previous_response_id=previous_response_id, messages=full_messages,
+                    model=final_result.get("model", requested_model), agent=final_result.get("agent", agent),
+                )
+                await _remember_turn(conversation_id, response_id, prompt, content)
+            result = _response_object(
+                response_id=response_id, message_id=message_id, conversation_id=conversation_id,
+                previous_response_id=previous_response_id, result=final_result, content=content, store=store,
+            )
+            yield emit("response.output_text.done", {
+                "type": "response.output_text.done", "item_id": message_id,
+                "output_index": 0, "content_index": 0, "text": content,
+            })
+            yield emit("response.completed", {"type": "response.completed", "response": result})
+        except Exception as exc:
+            yield emit("response.failed", {
+                "type": "response.failed", "response": {**created, "status": "failed",
+                "error": {"code": "server_error", "message": str(exc)}},
+            })
+        yield "data: [DONE]\n\n"
+
+    return events()
+
+
 async def responses(pipeline_initialized: bool):
     if not pipeline_initialized:
         return _error("Server not initialized", status=503)
     data = await request.get_json(silent=True)
     if not isinstance(data, dict):
         return _error("Request body required")
+
+    state = ResponseStateStore()
+    stream = data.get("stream", AGENT_STREAM_DEFAULT) is not False
+    if stream:
+        try:
+            event_stream = await _stream_response(data, state)
+        except KeyError as exc:
+            return _error(f"Previous response '{exc.args[0]}' was not found or expired", param="previous_response_id")
+        except ValueError as exc:
+            return _error(str(exc))
+        except Exception:
+            return jsonify({"error": {"message": "Internal server error", "type": "server_error", "param": None, "code": None}}), 500
+        return Response(
+            event_stream,
+            content_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     try:
-        result = await _run_response(data, ResponseStateStore())
+        result = await _run_response(data, state)
     except KeyError as exc:
         return _error(f"Previous response '{exc.args[0]}' was not found or expired", param="previous_response_id")
     except ValueError as exc:
         return _error(str(exc))
     except Exception:
         return jsonify({"error": {"message": "Internal server error", "type": "server_error", "param": None, "code": None}}), 500
-
-    if data.get("stream") is True:
-        async def events():
-            yield _sse("response.created", {"type": "response.created", "response": {**result, "status": "in_progress", "output": []}})
-            text = result["output_text"]
-            yield _sse("response.output_text.delta", {"type": "response.output_text.delta", "item_id": result["output"][0]["id"], "output_index": 0, "content_index": 0, "delta": text})
-            yield _sse("response.output_text.done", {"type": "response.output_text.done", "item_id": result["output"][0]["id"], "output_index": 0, "content_index": 0, "text": text})
-            yield _sse("response.completed", {"type": "response.completed", "response": result})
-            yield "data: [DONE]\n\n"
-        return Response(events(), content_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
-
     return Response(json.dumps(result, ensure_ascii=False), content_type="application/json")

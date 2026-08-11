@@ -9,7 +9,7 @@ const LINKS = {
   pollinations: 'https://pollinations.ai',
   github: 'https://github.com/Circuit-Overtime/lixSearch',
   pypiCache: 'https://pypi.org/project/lix-open-cache/',
-  paper: 'https://github.com/Circuit-Overtime/lixSearch/blob/main/docs/paper/lix_cache_paper.pdf',
+  paper: '/paper.pdf',
 };
 
 function CopyButton({ text }: { text: string }) {
@@ -90,14 +90,13 @@ const jsonLd = {
   '@type': 'WebApplication',
   name: 'lixSearch',
   url: 'https://search.elixpo.com',
-  description: 'Open-source AI-powered search engine that searches the web, fetches content, and synthesizes answers with real sources and citations.',
+  description: 'Open-source multi-agent research system with skill-backed routing, grounded search, OpenAI-compatible APIs, buffered streaming, and Redis plus Qdrant memory.',
   applicationCategory: 'SearchApplication',
   operatingSystem: 'Any',
-  author: {
-    '@type': 'Person',
-    name: 'Ayushman Bhattacharya',
-    url: 'https://github.com/elixpo',
-  },
+  author: [
+    { '@type': 'Person', name: 'Ayushman Bhattacharya', url: 'https://github.com/elixpo' },
+    { '@type': 'Person', name: 'Nihal Gazi', email: 'info@nihalgazi.com', affiliation: { '@type': 'Organization', name: 'Pollinations.ai', url: 'https://pollinations.ai' } },
+  ],
   offers: {
     '@type': 'Offer',
     price: '0',
@@ -107,10 +106,11 @@ const jsonLd = {
     'Multi-source web search',
     'Deep search with query decomposition',
     'Real citations and source verification',
-    'Semantic caching with vector embeddings',
-    'Session memory with hybrid storage',
-    'OpenAI-compatible API',
-    'Server-Sent Events streaming',
+    'Specialized multi-agent routing',
+    'Redis response-chain continuity',
+    'Qdrant durable semantic memory',
+    'OpenAI-compatible Chat Completions and Responses APIs',
+    'Buffered Server-Sent Events streaming',
   ],
 };
 
@@ -170,8 +170,8 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-lg md:text-xl text-white/40 max-w-2xl mx-auto mb-6 leading-relaxed">
-            An intelligent search assistant that searches the web, fetches content,
-            and synthesizes answers with real sources and citations.
+            A fast multi-agent research system that routes each request to a specialized agent,
+            searches live sources, and streams grounded answers with citations.
           </p>
           <p className="text-sm text-white/25 max-w-lg mx-auto mb-10">
             Currently in internal beta. Public access opening soon.
@@ -204,7 +204,7 @@ export default function LandingPage() {
 
           {/* Stats */}
           <div className="flex items-center justify-center gap-12 md:gap-16">
-            <StatBadge value="18+" label="API Endpoints" />
+            <StatBadge value="8" label="Specialized Agents" />
             <div className="w-px h-8 bg-white/10" />
             <StatBadge value="SSE" label="Streaming" />
             <div className="w-px h-8 bg-white/10" />
@@ -263,8 +263,8 @@ export default function LandingPage() {
             />
             <FeatureCard
               icon={Zap}
-              title="Deep search"
-              description="Decomposes complex queries into sub-questions, researches each one, and merges findings into a cohesive answer."
+              title="Fast agent routing"
+              description="Routes coding, writing, web research, media, image, PDF, memory, and synthesis work to focused skill-backed agents."
             />
             <FeatureCard
               icon={Globe}
@@ -277,17 +277,17 @@ export default function LandingPage() {
             <FeatureCard
               icon={Database}
               title="Semantic caching"
-              description="Three-layer Redis caching with vector embeddings for near-instant responses to similar queries."
+              description="Redis keeps hot response chains fast while Qdrant stores durable summaries and semantic memories."
             />
             <FeatureCard
               icon={Shield}
               title="Session memory"
-              description="Conversations persist across messages with a hybrid hot/cold storage system and smart context retrieval."
+              description="Continue Responses API turns with previous_response_id; hot context lives in Redis and durable memory in Qdrant."
             />
             <FeatureCard
               icon={Sparkles}
               title="OpenAI compatible"
-              description="Drop-in replacement API compatible with OpenAI's chat completions format. Use your existing tools and SDKs."
+              description="Chat Completions and Responses API support, including buffered SSE, store: false, and stateful response chains."
             />
           </div>
         </section>
@@ -304,10 +304,10 @@ export default function LandingPage() {
               <span className="ml-2 text-xs text-white/30 font-mono">curl</span>
             </div>
             <pre className="p-5 text-sm font-mono text-white/60 overflow-x-auto leading-relaxed">
-              <code>{`curl -X POST https://search.elixpo.com/api/search \\
+              <code>{`curl -N https://search.elixpo.com/v1/responses \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
-  -d '{"query": "how does RLHF work?", "stream": true}'`}</code>
+  -d '{"model":"web-search","input":"How does RLHF work?"}'`}</code>
             </pre>
           </div>
         </section>
@@ -318,7 +318,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <img src="/favicon.png" alt="lixSearch" className="w-5 h-5 opacity-40" />
               <span className="text-sm text-white/30">
-                Built by <span className="text-white/50">Ayushman</span> with{' '}
+                Built by <span className="text-white/50">Ayushman Bhattacharya &amp; Nihal Gazi</span> with{' '}
                 <a href={LINKS.pollinations} target="_blank" rel="noopener noreferrer" className="pollinations-shimmer hover:opacity-80 transition-opacity">Pollinations.ai</a>
               </span>
             </div>

@@ -77,9 +77,9 @@ LEAKED_XML_TAG_RE = re.compile(
     re.IGNORECASE,
 )
 
-LLM_MODEL = os.getenv("LLM_MODEL", "kimi")
-LLM_MODEL_FALLBACK = os.getenv("LLM_MODEL_FALLBACK", "gemini-fast")
-IMAGE_MODEL1 = os.getenv("IMAGE_MODEL1", "dreamshaper")
+LLM_MODEL = os.getenv("LLM_MODEL", "nova-fast")
+LLM_MODEL_FALLBACK = os.getenv("LLM_MODEL_FALLBACK", "nova")
+IMAGE_MODEL1 = os.getenv("IMAGE_MODEL1", "flux")
 IMAGE_MODEL2 = os.getenv("IMAGE_MODEL2", "flux")
 VISION_MODEL = os.getenv("VISION_MODEL", "gemini-fast")
 
@@ -242,6 +242,8 @@ SESSION_CONTEXT_WINDOW_REDIS_DB = 2
 AGENT_STATE_REDIS_DB = int(os.getenv("AGENT_STATE_REDIS_DB", "3"))
 AGENT_RESPONSE_TTL_SECONDS = int(os.getenv("AGENT_RESPONSE_TTL_SECONDS", "86400"))
 AGENT_HISTORY_MAX_MESSAGES = int(os.getenv("AGENT_HISTORY_MAX_MESSAGES", "20"))
+AGENT_STREAM_CHUNK_CHARS = int(os.getenv("AGENT_STREAM_CHUNK_CHARS", "96"))
+AGENT_STREAM_DEFAULT = os.getenv("AGENT_STREAM_DEFAULT", "true").lower() in {"1", "true", "yes"}
 SESSION_CONTEXT_WINDOW_TTL_SECONDS = int(os.getenv("SESSION_CONTEXT_WINDOW_TTL", "86400"))  # 24h — Redis hot tier; refreshed on every access
 SESSION_CONTEXT_WINDOW_SIZE = 20
 SESSION_CONTEXT_WINDOW_MAX_TOKENS = None

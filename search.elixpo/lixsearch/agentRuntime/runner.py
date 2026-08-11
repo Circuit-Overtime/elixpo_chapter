@@ -5,7 +5,6 @@ from dataclasses import asdict, dataclass
 import json
 import os
 from pathlib import Path
-import sys
 from typing import Any, Iterable
 
 import yaml
@@ -15,8 +14,8 @@ from commons.environment import load_local_environment
 from agentRuntime.specs import AGENT_SPECS
 from skillRegistry import SkillRegistry, get_skill_registry
 
-ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OREOFLOW_ROOT = ROOT.parent / "agent.elixpo"
+AGENT_RUNTIME_ROOT = Path(__file__).resolve().parent
+DEFAULT_MODELS_CONFIG = AGENT_RUNTIME_ROOT / "models.yaml"
 
 
 class AgentRuntimeError(RuntimeError):
@@ -41,9 +40,9 @@ class AgentRunner:
     def __init__(self, *, registry: SkillRegistry | None = None, models_path: str | Path | None = None) -> None:
         self.registry = registry or get_skill_registry()
         configured = os.getenv("OREOFLOW_MODELS_CONFIG")
-        self.models_path = Path(models_path or configured or DEFAULT_OREOFLOW_ROOT / "config" / "models.yaml")
+        self.models_path = Path(models_path or configured or DEFAULT_MODELS_CONFIG)
         if not self.models_path.is_file():
-            raise AgentRuntimeError(f"OreoFlow models config not found: {self.models_path}")
+            raise AgentRuntimeError(f"Agent models config not found: {self.models_path}")
         self.models = yaml.safe_load(self.models_path.read_text(encoding="utf-8"))
 
     def prepare(
@@ -88,6 +87,62 @@ class AgentRunner:
             return await self._call(self.prepare(selected, prompt, history))
         return await self._call(prepared)
 
+    async def stream(self, agent_name: str, prompt: str, history: Iterable[dict[str, str]] | None = None):
+        prepared = self.prepare(agent_name, prompt, history)
+        if prepared.agent == "decision":
+            decision = await self._call(prepared)
+            prepared = self.prepare(_parse_decision(decision), prompt, history)
+        async for event in self._stream_call(prepared):
+            yield event
+
+    async def _stream_call(self, prepared: PreparedRun):
+        Router, Message, ToolDef = _oreoflow_types()
+        load_local_environment()
+        api_key = os.getenv("POLLINATIONS_API_KEY")
+        if not api_key:
+            raise AgentRuntimeError("Set POLLINATIONS_API_KEY in .env.local before a live agent run")
+        router = Router(task_id=f"lixsearch-{prepared.agent}", models=self.models, api_key=api_key)
+        content_parts = []
+        usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        finish_reason = None
+        try:
+            async for chunk in router.stream(
+                prepared.role,
+                [Message.model_validate(message) for message in prepared.messages],
+                tools=[ToolDef.model_validate(tool) for tool in prepared.tools] or None,
+                effort="low",
+                max_tokens=prepared.max_tokens,
+            ):
+                if chunk.usage:
+                    usage = chunk.usage.model_dump(mode="json")
+                for choice in chunk.choices:
+                    if choice.delta.content:
+                        content_parts.append(choice.delta.content)
+                        yield {"type": "delta", "content": choice.delta.content}
+                    if choice.finish_reason:
+                        finish_reason = choice.finish_reason
+            if not usage.get("total_tokens"):
+                content = "".join(content_parts)
+                usage = {
+                    "prompt_tokens": 0,
+                    "completion_tokens": len(content) // 4,
+                    "total_tokens": len(content) // 4,
+                }
+            yield {
+                "type": "done",
+                "result": {
+                    "agent": prepared.agent,
+                    "role": prepared.role,
+                    "model": prepared.model,
+                    "response": {
+                        "choices": [{"message": {"role": "assistant", "content": "".join(content_parts)}, "finish_reason": finish_reason or "stop"}],
+                        "usage": usage,
+                    },
+                },
+            }
+        finally:
+            await router.aclose()
+
     async def _call(self, prepared: PreparedRun) -> dict[str, Any]:
         Router, Message, ToolDef = _oreoflow_types()
         load_local_environment()
@@ -122,14 +177,7 @@ def response_content(result: dict[str, Any]) -> str:
 
 
 def _oreoflow_types():
-    oreoflow_root = Path(os.getenv("OREOFLOW_ROOT", DEFAULT_OREOFLOW_ROOT)).resolve()
-    if str(oreoflow_root) not in sys.path:
-        sys.path.insert(0, str(oreoflow_root))
-    try:
-        from rtk.models import Message, ToolDef
-        from rtk.router import Router
-    except ImportError as exc:
-        raise AgentRuntimeError(f"Unable to import OreoFlow from {oreoflow_root}: {exc}") from exc
+    from oreoflow import Message, Router, ToolDef
     return Router, Message, ToolDef
 
 

@@ -22,7 +22,10 @@ export default function PaperPage() {
               A Three-Layer Caching Architecture for Low-Latency LLM Web Search
             </h1>
             <p className="text-xs text-white/40 mt-0.5">
-              Ayushman Bhattacharya, 2026
+              Ayushman Bhattacharya and Nihal Gazi, 2026
+            </p>
+            <p className="text-[11px] text-white/30 mt-0.5">
+              ayushman@pollinations.ai · info@nihalgazi.com · Pollinations.ai
             </p>
           </div>
         </div>

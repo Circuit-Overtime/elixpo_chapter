@@ -7,10 +7,13 @@ from datetime import datetime, timezone
 from quart import request, jsonify, Response
 from pipeline.searchPipeline import run_elixposearch_pipeline
 from pipeline.config import (
+    AGENT_STREAM_CHUNK_CHARS,
+    AGENT_STREAM_DEFAULT,
     REQUEST_ID_HEX_SLICE_SIZE,
     LOG_MESSAGE_QUERY_TRUNCATE,
     RESPONSE_MODEL,
 )
+from pipeline.streaming import TaskAwareChunkBuffer
 from app.gateways.image import store_image
 
 logger = logging.getLogger("lixsearch-api")
@@ -96,7 +99,7 @@ async def chat_completions(pipeline_initialized: bool):
         if not messages or not isinstance(messages, list):
             return jsonify({"error": {"message": "messages array is required", "type": "invalid_request_error"}}), 400
 
-        stream = data.get("stream", False)
+        stream = data.get("stream", AGENT_STREAM_DEFAULT) is not False
         # OpenAI Chat Completions is stateless: continuity comes only from messages.
         session_id = _ephemeral_session_id()
 
@@ -149,6 +152,15 @@ async def chat_completions(pipeline_initialized: bool):
 
         if stream:
             async def stream_generator():
+                buffer = TaskAwareChunkBuffer(AGENT_STREAM_CHUNK_CHARS)
+
+                def formatted(events):
+                    for kind, value in events:
+                        yield _format_chunk(
+                            request_id, value,
+                            event_type="RESPONSE" if kind == "text" else "INFO",
+                        )
+
                 async for chunk in run_elixposearch_pipeline(
                     user_query=user_query,
                     user_image=image_url,
@@ -161,7 +173,7 @@ async def chat_completions(pipeline_initialized: bool):
                     chunk_str = chunk if isinstance(chunk, str) else chunk.decode("utf-8")
 
                     try:
-                        lines = chunk_str.strip().split("\n")
+                        lines = chunk_str.splitlines()
                         event_type = None
                         event_data_lines = []
                         for line in lines:
@@ -175,13 +187,27 @@ async def chat_completions(pipeline_initialized: bool):
 
                         event_data = "\n".join(event_data_lines) if event_data_lines else None
                         if event_type and event_data is not None:
-                            yield _format_chunk(request_id, event_data, event_type=event_type,
-                                                finish_reason="stop" if event_type == "INFO" and "<TASK>DONE</TASK>" in event_data else None)
+                            if event_type == "RESPONSE":
+                                for output in formatted(buffer.feed(event_data)):
+                                    yield output
+                            else:
+                                for output in formatted(buffer.flush()):
+                                    yield output
+                                yield _format_chunk(request_id, event_data, event_type=event_type)
                         else:
+                            for output in formatted(buffer.flush()):
+                                yield output
                             yield chunk_str
                     except Exception as e:
                         logger.warning(f"[{request_id}] session={session_id} Failed to parse SSE: {e}")
+                        for output in formatted(buffer.flush()):
+                            yield output
                         yield chunk_str
+
+                for output in formatted(buffer.flush()):
+                    yield output
+                yield _format_chunk(request_id, "", finish_reason="stop")
+                yield "data: [DONE]\n\n"
 
             return Response(
                 stream_generator(),

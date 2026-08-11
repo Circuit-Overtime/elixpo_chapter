@@ -17,7 +17,7 @@ const spaceGrotesk = Space_Grotesk({
 const SITE_URL = 'https://search.elixpo.com';
 const TITLE = 'lixSearch — AI-Powered Search Engine';
 const DESCRIPTION =
-  'Open-source intelligent search assistant that searches the web, fetches content, and synthesizes answers with real sources and citations. Built with Pollinations AI.';
+  'Open-source multi-agent research system with skill-backed routing, grounded search, OpenAI-compatible APIs, buffered streaming, and Redis plus Qdrant memory. Built with Pollinations AI.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -37,9 +37,16 @@ export const metadata: Metadata = {
     'web search API',
     'deep search',
     'citation search',
+    'multi-agent system',
+    'OpenAI Responses API',
+    'Qdrant memory',
+    'Redis conversation state',
   ],
-  authors: [{ name: 'Ayushman Bhattacharya', url: 'https://github.com/elixpo' }],
-  creator: 'Ayushman Bhattacharya',
+  authors: [
+    { name: 'Ayushman Bhattacharya', url: 'https://github.com/elixpo' },
+    { name: 'Nihal Gazi', url: 'mailto:info@nihalgazi.com' },
+  ],
+  creator: 'Ayushman Bhattacharya and Nihal Gazi',
   publisher: 'Elixpo',
   icons: {
     icon: '/favicon.png',

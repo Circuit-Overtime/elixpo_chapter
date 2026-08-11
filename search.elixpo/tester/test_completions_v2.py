@@ -15,6 +15,8 @@ import time
 import base64
 import sys
 import os
+from pathlib import Path
+from dotenv import dotenv_values
 
 BASE_URL = "http://localhost"
 ENDPOINT = "/v1/chat/completions"
@@ -29,7 +31,9 @@ URL = f"{BASE_URL}{ENDPOINT}"
 TEST_IMAGE_URL = "https://thewildlylife.com/wp-content/uploads/2025/01/trocadero-steps-2-1-scaled.jpg"
 
 # API key: from env, CLI, or default to none (port 80 internal server has no auth)
-API_KEY = os.getenv("LIXSEARCH_API_KEY", "")
+_ROOT = Path(__file__).resolve().parents[1]
+_ENV = dotenv_values(_ROOT / ".env.local")
+API_KEY = os.getenv("LIXSEARCH_API_KEY") or _ENV.get("API_KEY", "")
 if len(sys.argv) > 2 and sys.argv[1] == "--api-key":
     API_KEY = sys.argv[2]
 elif len(sys.argv) > 4 and sys.argv[3] == "--api-key":
@@ -88,12 +92,13 @@ def collect_stream(resp):
     return content, chunks, got_done, raw
 
 
-# ── 1. Simple text, no session, non-streaming (default) ─────────
+# ── 1. Simple text, no session, explicit non-streaming ─────────
 
 def test_simple_text():
     print("\n1. Simple text query (no session, stream=false)")
     payload = {
         "messages": [{"role": "user", "content": "What is the capital of France?"}],
+        "stream": False,
     }
     t0 = time.perf_counter()
     r = post(payload)

@@ -3,8 +3,11 @@ from pathlib import Path
 import unittest
 from unittest.mock import AsyncMock, patch
 from quart import Quart
+from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parents[1]
+ENV = dotenv_values(ROOT / ".env.local")
+API_KEY = ENV.get("API_KEY", "")
 sys.path.insert(0, str(ROOT / "lixsearch"))
 
 from agentRuntime.state import ResponseStateStore, canonical_conversation_id
@@ -13,6 +16,10 @@ import importlib.util
 _spec = importlib.util.spec_from_file_location("responses_gateway", ROOT / "lixsearch" / "app" / "gateways" / "responses.py")
 responses = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(responses)
+
+_auth_spec = importlib.util.spec_from_file_location("app_auth", ROOT / "lixsearch" / "app" / "auth.py")
+app_auth = importlib.util.module_from_spec(_auth_spec)
+_auth_spec.loader.exec_module(app_auth)
 
 
 class FakePipeline:
@@ -43,6 +50,15 @@ class FakeRedis:
 class FakeRunner:
     calls = []
 
+    async def stream(self, agent, prompt, history=None):
+        self.calls.append((agent, prompt, list(history or [])))
+        for content in ("answer:", prompt[:2], prompt[2:]):
+            yield {"type": "delta", "content": content}
+        yield {"type": "done", "result": {
+            "agent": "coding", "role": "code", "model": "qwen-coder",
+            "response": {"usage": {"prompt_tokens": 4, "completion_tokens": 2}},
+        }}
+
     async def run(self, agent, prompt, history=None):
         self.calls.append((agent, prompt, list(history or [])))
         return {
@@ -62,6 +78,10 @@ class AgentResponseTests(unittest.IsolatedAsyncioTestCase):
         self.redis = FakeRedis()
         self.state = ResponseStateStore(client=self.redis, ttl_seconds=60)
         self.app = Quart(__name__)
+        app_auth.install_api_auth(self.app)
+        if not API_KEY:
+            self.fail("API_KEY is required in .env.local for conversation API tests")
+
 
         async def endpoint():
             return await responses.responses(True)
@@ -85,17 +105,22 @@ class AgentResponseTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(self.state.get_response(result["id"]))
         remember.assert_not_awaited()
 
+    async def test_conversation_endpoint_rejects_missing_api_key(self):
+        client = self.app.test_client()
+        reply = await client.post("/v1/responses", json={"input": "hello"})
+        self.assertEqual(reply.status_code, 401)
+
     async def test_http_json_and_sse_contracts(self):
         with patch.object(responses, "AgentRunner", FakeRunner), patch.object(responses, "ResponseStateStore", return_value=self.state), patch.object(responses, "_remember_turn", AsyncMock()):
             client = self.app.test_client()
-            reply = await client.post("/v1/responses", json={"model": "coding", "input": "hello"})
+            reply = await client.post("/v1/responses", json={"model": "coding", "input": "hello", "stream": False}, headers={"Authorization": f"Bearer {API_KEY}"})
             self.assertEqual(reply.status_code, 200)
             body = await reply.get_json()
             self.assertEqual(body["object"], "response")
             self.assertTrue(body["id"].startswith("resp_"))
             self.assertEqual(body["output"][0]["content"][0]["type"], "output_text")
 
-            streamed = await client.post("/v1/responses", json={"input": "stream me", "stream": True})
+            streamed = await client.post("/v1/responses", json={"input": "stream me", "stream": True}, headers={"Authorization": f"Bearer {API_KEY}"})
             stream_body = (await streamed.get_data()).decode()
             self.assertIn("event: response.created", stream_body)
             self.assertIn("event: response.output_text.delta", stream_body)

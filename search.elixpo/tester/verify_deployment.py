@@ -1,12 +1,22 @@
-import requests
+from pathlib import Path
 
-r = requests.post(
+import requests
+from dotenv import dotenv_values
+
+ROOT = Path(__file__).resolve().parents[1]
+API_KEY = dotenv_values(ROOT / ".env.local").get("API_KEY")
+if not API_KEY:
+    raise RuntimeError("API_KEY is required in .env.local")
+
+response = requests.post(
     "https://search.elixpo.com/v1/chat/completions",
-    headers={"Authorization": "Bearer 45e79d739c635215c56550a50e041f8ffba3a6ee2e79a9be1421c23eb193f23a"},
+    headers={"Authorization": f"Bearer {API_KEY}"},
     json={
         "model": "lixsearch",
         "messages": [{"role": "user", "content": "What are the latest developments in AI?"}],
         "stream": False,
     },
+    timeout=300,
 )
-print(r.json()["choices"][0]["message"]["content"])
+response.raise_for_status()
+print(response.json()["choices"][0]["message"]["content"])
