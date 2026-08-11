@@ -47,6 +47,7 @@ operator references live under `docs/`, including the
 | Path | Purpose |
 |------|---------|
 | `agents/` | independent OreoFlow, repository response, operations, and synchronization squads |
+| `oreoflow/` | stable public framework API for application agents |
 | `rtk/` | the token economy over Pollinations (router, budget, cache, ledger, shrinkers) |
 | `lib/` | shared plumbing: github, tools, state (issues + board + json), scorer, config |
 | `config/` | `models.yaml` (role→model), `languages.yaml`, `budgets.yaml` |
@@ -63,6 +64,35 @@ cp .env.example .env.local     # fill in secrets
 pytest                         # every squad is individually testable
 python -m agents.scout         # run one squad
 ```
+
+### Use OreoFlow as a framework
+
+Applications install this repository as a Python package and import only the
+stable `oreoflow` surface:
+
+```bash
+pip install "git+https://github.com/elixpo/agent.elixpo.git@v0.2.0"
+```
+
+```python
+import os
+
+from oreoflow import Message, Router, load_models_config
+
+router = Router(
+    "my-task",
+    models=load_models_config("models.yaml"),
+    api_key=os.environ["POLLINATIONS_API_KEY"],
+)
+response = await router.call(
+    role="code",
+    messages=[Message(role="user", content="Write a URL validator")],
+)
+```
+
+`rtk` remains the implementation package. Consumer applications should use
+`oreoflow` so internal refactors do not break them. During local development,
+install the sibling checkout with `pip install -e ../agent.elixpo`.
 
 ### Manual Solve test
 
