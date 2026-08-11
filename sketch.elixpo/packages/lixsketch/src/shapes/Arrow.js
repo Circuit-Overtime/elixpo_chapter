@@ -56,6 +56,8 @@ class Arrow {
         this.labelElement = null;
         this.labelColor = options.labelColor || '#e0e0e0';
         this.labelFontSize = options.labelFontSize || 12;
+        this.labelBg = options.labelBg !== false; // labelBg:false → no knockout rect behind label
+        this.labelOffsetY = options.labelOffsetY || 0; // shift label along the perpendicular of the line, e.g. lift it clear of the stroke
         this._isEditingLabel = false;
         this._hitArea = null;
         this._labelBg = null;
@@ -469,14 +471,34 @@ class Arrow {
         }
 
         const mid = this._getMidpoint();
-        this.labelElement.setAttribute('x', mid.x);
-        this.labelElement.setAttribute('y', mid.y);
+        let lx = mid.x, ly = mid.y;
+        if (this.labelOffsetY) {
+            // Offset perpendicular to the line direction so the label lifts
+            // clear of the stroke instead of sitting centered on top of it.
+            const dx = this.endPoint.x - this.startPoint.x;
+            const dy = this.endPoint.y - this.startPoint.y;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            lx += (-dy / len) * this.labelOffsetY;
+            ly += (dx / len) * this.labelOffsetY;
+        }
+        this.labelElement.setAttribute('x', lx);
+        this.labelElement.setAttribute('y', ly);
         this.labelElement.setAttribute('text-anchor', 'middle');
         this.labelElement.setAttribute('dominant-baseline', 'central');
         this.labelElement.setAttribute('fill', this.labelColor);
         this.labelElement.setAttribute('font-size', this.labelFontSize);
         this.labelElement.setAttribute('font-family', 'lixFont, sans-serif');
         this.labelElement.textContent = this.label;
+
+        if (!this.labelBg) {
+            if (this._labelBg && this._labelBg.parentNode === this.group) {
+                this.group.removeChild(this._labelBg);
+                this._labelBg = null;
+            }
+            if (this.labelElement.parentNode === this.group) this.group.removeChild(this.labelElement);
+            this.group.appendChild(this.labelElement);
+            return;
+        }
 
         // Background knockout rect - hides the arrow behind the text
         const canvasBg = window.getComputedStyle(svg).backgroundColor || '#000';
@@ -490,8 +512,8 @@ class Arrow {
         const charWidth = this.labelFontSize * 0.6;
         const bgW = this.label.length * charWidth + hPadding * 2;
         const bgH = this.labelFontSize + vPadding * 2;
-        this._labelBg.setAttribute('x', mid.x - bgW / 2);
-        this._labelBg.setAttribute('y', mid.y - bgH / 2);
+        this._labelBg.setAttribute('x', lx - bgW / 2);
+        this._labelBg.setAttribute('y', ly - bgH / 2);
         this._labelBg.setAttribute('width', bgW);
         this._labelBg.setAttribute('height', bgH);
         this._labelBg.setAttribute('rx', 2);
