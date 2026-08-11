@@ -1,5 +1,4 @@
 """OreoFlow adapter for skill-scoped lixSearch agents."""
-
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -7,13 +6,13 @@ import json
 import os
 from pathlib import Path
 import sys
-from typing import Any
+from typing import Any, Iterable
 
 import yaml
 
 from agentRuntime.routing import route_request
 from commons.environment import load_local_environment
-from agentRuntime.specs import AGENT_SPECS, AgentSpec
+from agentRuntime.specs import AGENT_SPECS
 from skillRegistry import SkillRegistry, get_skill_registry
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -39,12 +38,7 @@ class PreparedRun:
 
 
 class AgentRunner:
-    def __init__(
-        self,
-        *,
-        registry: SkillRegistry | None = None,
-        models_path: str | Path | None = None,
-    ) -> None:
+    def __init__(self, *, registry: SkillRegistry | None = None, models_path: str | Path | None = None) -> None:
         self.registry = registry or get_skill_registry()
         configured = os.getenv("OREOFLOW_MODELS_CONFIG")
         self.models_path = Path(models_path or configured or DEFAULT_OREOFLOW_ROOT / "config" / "models.yaml")
@@ -52,7 +46,12 @@ class AgentRunner:
             raise AgentRuntimeError(f"OreoFlow models config not found: {self.models_path}")
         self.models = yaml.safe_load(self.models_path.read_text(encoding="utf-8"))
 
-    def prepare(self, agent_name: str, prompt: str) -> PreparedRun:
+    def prepare(
+        self,
+        agent_name: str,
+        prompt: str,
+        history: Iterable[dict[str, str]] | None = None,
+    ) -> PreparedRun:
         if agent_name == "auto":
             agent_name = route_request(prompt)
         try:
@@ -65,26 +64,28 @@ class AgentRunner:
         resolved = self.registry.resolve(spec.skills)
         skill_text = "\n\n".join(skill.instructions for skill in resolved)
         system = f"{spec.system_prompt}\n\n{skill_text}".strip()
+        prior = tuple(
+            {"role": item["role"], "content": str(item["content"])}
+            for item in (history or ())
+            if item.get("role") in {"user", "assistant"} and item.get("content")
+        )
         tools = self.registry.tool_catalog(spec.skills)
         return PreparedRun(
             agent=spec.name,
             role=spec.role,
             model=model_spec["model"],
             skills=tuple(skill.name for skill in resolved),
-            messages=(
-                {"role": "system", "content": system},
-                {"role": "user", "content": prompt},
-            ),
+            messages=({"role": "system", "content": system}, *prior, {"role": "user", "content": prompt}),
             tools=tools,
             max_tokens=spec.max_tokens,
         )
 
-    async def run(self, agent_name: str, prompt: str) -> dict[str, Any]:
-        prepared = self.prepare(agent_name, prompt)
+    async def run(self, agent_name: str, prompt: str, history: Iterable[dict[str, str]] | None = None) -> dict[str, Any]:
+        prepared = self.prepare(agent_name, prompt, history)
         if prepared.agent == "decision":
             decision = await self._call(prepared)
             selected = _parse_decision(decision)
-            return await self._call(self.prepare(selected, prompt))
+            return await self._call(self.prepare(selected, prompt, history))
         return await self._call(prepared)
 
     async def _call(self, prepared: PreparedRun) -> dict[str, Any]:
@@ -93,11 +94,7 @@ class AgentRunner:
         api_key = os.getenv("POLLINATIONS_API_KEY")
         if not api_key:
             raise AgentRuntimeError("Set POLLINATIONS_API_KEY in .env.local before a live agent run")
-        router = Router(
-            task_id=f"lixsearch-{prepared.agent}",
-            models=self.models,
-            api_key=api_key,
-        )
+        router = Router(task_id=f"lixsearch-{prepared.agent}", models=self.models, api_key=api_key)
         try:
             response = await router.call(
                 prepared.role,
@@ -117,6 +114,13 @@ class AgentRunner:
             await router.aclose()
 
 
+def response_content(result: dict[str, Any]) -> str:
+    try:
+        return result["response"]["choices"][0]["message"]["content"] or ""
+    except (KeyError, IndexError, TypeError):
+        return ""
+
+
 def _oreoflow_types():
     oreoflow_root = Path(os.getenv("OREOFLOW_ROOT", DEFAULT_OREOFLOW_ROOT)).resolve()
     if str(oreoflow_root) not in sys.path:
@@ -131,10 +135,9 @@ def _oreoflow_types():
 
 def _parse_decision(result: dict[str, Any]) -> str:
     try:
-        content = result["response"]["choices"][0]["message"]["content"]
-        payload = json.loads(content)
+        payload = json.loads(response_content(result))
         selected = payload["agent"]
-    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+    except (KeyError, TypeError, json.JSONDecodeError) as exc:
         raise AgentRuntimeError("Decision agent returned invalid JSON") from exc
     if selected not in AGENT_SPECS or selected == "decision":
         raise AgentRuntimeError(f"Decision agent returned unknown specialist '{selected}'")

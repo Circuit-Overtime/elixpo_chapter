@@ -45,10 +45,10 @@ info:
       -d '{"messages": [{"role": "user", "content": "Latest AI news"}], "stream": true}'
     ```
 
-    ## Sessions
+    ## Conversation state
 
-    Pass `session_id` to persist conversation context across requests.
-    Without it, each request is stateless (ephemeral session, no history saved).
+    `/v1/chat/completions` is stateless; resend prior messages on every call.
+    `/v1/responses` supports `previous_response_id`, `conversation`, and `store: false`.
 
     ## Images
 
@@ -103,7 +103,7 @@ paths:
         - Last user message is used as the search query
         - Earlier messages provide conversation context
         - `stream` defaults to `false`
-        - `session_id` is optional (omit for stateless usage)
+        - Conversation history is supplied entirely through `messages`
       tags: [Chat]
       requestBody:
         required: true
@@ -126,7 +126,7 @@ paths:
                       content: "Latest developments in AI"
                   stream: true
               multi_turn:
-                summary: Multi-turn with session
+                summary: Multi-turn through messages
                 value:
                   messages:
                     - role: user
@@ -135,7 +135,6 @@ paths:
                       content: "Tokyo is the capital of Japan..."
                     - role: user
                       content: "What about the food scene there?"
-                  session_id: "my-session-123"
               image_url:
                 summary: Image input (URL)
                 value:
@@ -184,6 +183,33 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/NotInitialized'
+
+  /v1/responses:
+    post:
+      operationId: createResponse
+      summary: Create a stateful agent response
+      description: OpenAI-compatible Responses endpoint using previous_response_id or conversation for continuity.
+      tags: [Chat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResponseRequest'
+      responses:
+        '200':
+          description: Completed response or Responses SSE stream
+          content:
+            application/json:
+              schema:
+                type: object
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '503':
           $ref: '#/components/responses/NotInitialized'
 
@@ -300,8 +326,8 @@ paths:
       operationId: createSession
       summary: Create session
       description: |
-        Create a new named session. Returns a `session_id` that can be passed
-        to `/v1/chat/completions` or `/api/search` for multi-turn context.
+        Create a legacy search session for `/api/search`. Agent conversations use
+        `conversation` or `previous_response_id` through `/v1/responses`.
       tags: [Sessions]
       parameters:
         - name: query
@@ -596,17 +622,46 @@ components:
           type: boolean
           default: false
           description: Enable SSE streaming
-        session_id:
-          type: string
-          description: |
-            Session ID for multi-turn context persistence.
-            Omit for stateless (ephemeral) requests.
         temperature:
           type: number
           description: Accepted for compatibility, not used
         max_tokens:
           type: integer
           description: Accepted for compatibility, not used
+
+    ResponseRequest:
+      type: object
+      required: [input]
+      properties:
+        model:
+          type: string
+          description: Agent name such as coding, writing, web-search, or auto.
+          default: auto
+        input:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+        previous_response_id:
+          type: string
+          pattern: "^resp_"
+        conversation:
+          oneOf:
+            - type: string
+            - type: object
+              properties:
+                id:
+                  type: string
+                  pattern: "^conv_"
+        store:
+          type: boolean
+          default: true
+        stream:
+          type: boolean
+          default: false
+        instructions:
+          type: string
 
     ChatResponse:
       type: object

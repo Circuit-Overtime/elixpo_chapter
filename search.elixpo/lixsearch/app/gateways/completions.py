@@ -97,7 +97,8 @@ async def chat_completions(pipeline_initialized: bool):
             return jsonify({"error": {"message": "messages array is required", "type": "invalid_request_error"}}), 400
 
         stream = data.get("stream", False)
-        session_id = data.get("session_id", "").strip() if data.get("session_id") else ""
+        # OpenAI Chat Completions is stateless: continuity comes only from messages.
+        session_id = _ephemeral_session_id()
 
         # Extract the last user message as the query
         user_query = ""
@@ -136,11 +137,7 @@ async def chat_completions(pipeline_initialized: bool):
                     content = " ".join(text_parts)
                 chat_history.append({"role": role, "content": content})
 
-        # Auto-generate session_id if not provided
-        is_ephemeral = not session_id
-        if not session_id:
-            session_id = _ephemeral_session_id()
-            logger.info(f"[completions] No session_id provided, using ephemeral: {session_id}")
+        is_ephemeral = True
 
         image_url = image_urls[0] if image_urls else None
 

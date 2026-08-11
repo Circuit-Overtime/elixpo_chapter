@@ -221,6 +221,8 @@ def run_tests() -> int:
         "tester.test_core_service_manager",
         "tester.test_model_cache",
         "tester.test_local_dev",
+        "tester.test_agent_runtime",
+        "tester.test_agent_responses",
         "-v",
     ]
     return subprocess.run(command, cwd=ROOT).returncode

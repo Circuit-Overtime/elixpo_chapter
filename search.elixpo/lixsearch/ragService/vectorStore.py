@@ -106,20 +106,20 @@ class VectorStore:
             points = []
             for chunk in chunks:
                 point_id = str(uuid.uuid4())
+                payload = {key: value for key, value in chunk.items() if key != "embedding"}
+                payload["text"] = chunk["text"]
+                payload["url"] = chunk["url"]
+                payload["chunk_id"] = str(chunk.get("chunk_id", point_id))
+                payload["timestamp"] = chunk.get("timestamp", datetime.now().isoformat())
                 points.append(models.PointStruct(
                     id=point_id,
                     vector=self._normalize(chunk["embedding"]),
-                    payload={
-                        "text": chunk["text"],
-                        "url": chunk["url"],
-                        "chunk_id": str(chunk.get("chunk_id", point_id)),
-                        "timestamp": chunk.get("timestamp", datetime.now().isoformat()),
-                    },
+                    payload=payload,
                 ))
             self.client.upsert(collection_name=self.collection_name, points=points, wait=True)
             self.chunk_count = self.client.count(collection_name=self.collection_name, exact=True).count
 
-    def search(self, query_embedding: np.ndarray, top_k: int = 5) -> List[Dict]:
+    def search(self, query_embedding: np.ndarray, top_k: int = 5, conversation_id: str | None = None) -> List[Dict]:
         if not self._ensure_ready() or self.chunk_count == 0:
             return []
         with self.lock:
@@ -128,6 +128,7 @@ class VectorStore:
                 query=self._normalize(query_embedding),
                 limit=min(top_k, self.chunk_count),
                 with_payload=True,
+                query_filter=(models.Filter(must=[models.FieldCondition(key="conversation_id", match=models.MatchValue(value=conversation_id))]) if conversation_id else None),
                 search_params=models.SearchParams(
                     quantization=models.QuantizationSearchParams(rescore=True)
                 ),
