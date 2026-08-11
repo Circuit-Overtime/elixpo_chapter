@@ -440,7 +440,8 @@ function addSelectionOutline() {
     const centerX = x + width / 2;
     const centerY = y + height / 2;
 
-    const selectionPadding = Math.max(4, width * 0.08);
+    const zoom = window.currentZoom || 1;
+    const selectionPadding = 8 / zoom;
     const expandedX = x - selectionPadding;
     const expandedY = y - selectionPadding;
     const expandedWidth = width + 2 * selectionPadding;
@@ -589,8 +590,8 @@ function addResizeAnchors(x, y, width, height, centerX, centerY, iconWidth, rota
     if (!svg) return;
 
     const zoom = window.currentZoom || 1;
-    const anchorSize = Math.max(8, Math.min(16, iconWidth * 0.15)) / zoom;
-    const anchorStrokeWidth = Math.max(1.5, anchorSize * 0.15);
+    const anchorSize = 10 / zoom;
+    const anchorStrokeWidth = 2 / zoom;
 
     const positions = [
         { x: x, y: y, cursor: "nw-resize" },
@@ -608,6 +609,7 @@ function addResizeAnchors(x, y, width, height, centerX, centerY, iconWidth, rota
         anchor.setAttribute("fill", "#121212");
         anchor.setAttribute("stroke", "#5B57D1");
         anchor.setAttribute("stroke-width", anchorStrokeWidth);
+        anchor.setAttribute("vector-effect", "non-scaling-stroke");
         anchor.setAttribute("class", "resize-anchor");
         anchor.setAttribute("transform", `rotate(${rotation}, ${centerX}, ${centerY})`);
         anchor.style.cursor = pos.cursor;
@@ -623,9 +625,10 @@ function addRotationAnchor(x, y, width, height, centerX, centerY, iconWidth, rot
     const svg = getSVGElement();
     if (!svg) return;
 
-    const anchorRadius = Math.max(6, Math.min(12, iconWidth * 0.12));
-    const anchorStrokeWidth = Math.max(1.5, anchorRadius * 0.2);
-    const rotationDistance = Math.max(25, iconWidth * 0.4);
+    const zoom = window.currentZoom || 1;
+    const anchorRadius = 5 / zoom;
+    const anchorStrokeWidth = 2 / zoom;
+    const rotationDistance = 30 / zoom;
 
     const rotationAnchorX = x + width / 2;
     const rotationAnchorY = y - rotationDistance;
@@ -638,6 +641,7 @@ function addRotationAnchor(x, y, width, height, centerX, centerY, iconWidth, rot
     rotationAnchor.setAttribute('fill', '#121212');
     rotationAnchor.setAttribute('stroke', '#5B57D1');
     rotationAnchor.setAttribute('stroke-width', anchorStrokeWidth);
+    rotationAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
     rotationAnchor.setAttribute('style', 'pointer-events: all; cursor: grab;');
     rotationAnchor.setAttribute('transform', `rotate(${rotation}, ${centerX}, ${centerY})`);
 
