@@ -5,6 +5,7 @@ load_local_environment()
 
 # Keep all Hugging Face and SentenceTransformers artifacts on persistent disk.
 MODEL_CACHE_DIR = os.path.abspath(os.getenv("MODEL_CACHE_DIR", "./data/models"))
+MODEL_LOCAL_FILES_ONLY = os.getenv("MODEL_LOCAL_FILES_ONLY", "false").lower() in {"1", "true", "yes"}
 os.environ.setdefault("HF_HOME", MODEL_CACHE_DIR)
 os.environ.setdefault("SENTENCE_TRANSFORMERS_HOME", MODEL_CACHE_DIR)
 

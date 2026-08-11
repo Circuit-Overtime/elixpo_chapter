@@ -146,6 +146,13 @@ class VectorStore:
         except Exception:
             return False
 
+    def close(self) -> None:
+        with self.lock:
+            if self.client is not None:
+                self.client.close()
+            self.client = None
+            self._ready = False
+
     def reconnect(self) -> None:
         with self.lock:
             if self.client is not None:

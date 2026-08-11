@@ -104,6 +104,20 @@ def redis_config(env: dict[str, str]) -> str:
     )
 
 
+def redis_is_ready(env: dict[str, str]) -> bool:
+    import redis
+    try:
+        return bool(redis.Redis(
+            host="127.0.0.1",
+            port=int(env["REDIS_PORT"]),
+            password=env.get("REDIS_PASSWORD") or None,
+            socket_connect_timeout=1,
+            socket_timeout=1,
+        ).ping())
+    except redis.RedisError:
+        return False
+
+
 def wait_for_port(host: str, port: int, process: subprocess.Popen, timeout: float) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -155,10 +169,14 @@ class LocalStack:
         for directory in (LOG_DIR, REDIS_DIR, QDRANT_DIR, LOCAL_DIR, Path(self.env["MODEL_CACHE_DIR"])):
             directory.mkdir(parents=True, exist_ok=True)
 
-        redis_conf = LOCAL_DIR / "redis.conf"
-        redis_conf.write_text(redis_config(self.env), encoding="utf-8")
-        redis_process = self._spawn("redis", ["redis-server", str(redis_conf)])
-        wait_for_port("127.0.0.1", int(self.env["REDIS_PORT"]), redis_process, 15)
+        if redis_is_ready(self.env):
+            print(f"[local] reusing Redis at 127.0.0.1:{self.env['REDIS_PORT' ]}")
+        else:
+            redis_conf = LOCAL_DIR / "redis.conf"
+            redis_conf.write_text(redis_config(self.env), encoding="utf-8")
+            redis_conf.chmod(0o600)
+            redis_process = self._spawn("redis", ["redis-server", str(redis_conf)])
+            wait_for_port("127.0.0.1", int(self.env["REDIS_PORT"]), redis_process, 15)
 
         if infrastructure_only:
             print("[local] Redis and persistent local Qdrant are ready")
