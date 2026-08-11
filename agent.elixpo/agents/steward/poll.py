@@ -48,14 +48,24 @@ def _eligible_comments(record, comments: list[dict], bot_username: str) -> list[
     ]
 
 
-async def _discover_mentions(api, memory, *, ttl_days: int) -> dict[str, str]:
+async def _discover_mentions(notification_api, subject_api, memory, *, ttl_days: int) -> dict[str, str]:
     """Create bounded intake records from the bot account's GitHub notifications."""
     thread_ids: dict[str, str] = {}
-    notifications = await api._request(
-        "GET",
-        "/notifications",
-        params={"participating": "true", "all": "false", "per_page": 50},
-    )
+    try:
+        notifications = await notification_api._request(
+            "GET",
+            "/notifications",
+            params={"participating": "true", "all": "false", "per_page": 50},
+        )
+    except Exception as exc:
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        if status != 403:
+            raise
+        log.warning(
+            "steward.notifications_unavailable",
+            reason="GitHub notifications require a classic token; reconciling tracked work only",
+        )
+        return thread_ids
     for notification in notifications or []:
         if notification.get("reason") not in {"mention", "team_mention"}:
             continue
@@ -69,9 +79,9 @@ async def _discover_mentions(api, memory, *, ttl_days: int) -> dict[str, str]:
         if key in memory.active:
             continue
         if kind == "pull_request":
-            subject = await api.get_pull(owner, repo, number)
+            subject = await subject_api.get_pull(owner, repo, number)
         else:
-            subject = await api.get_issue(owner, repo, number)
+            subject = await subject_api.get_issue(owner, repo, number)
         memory.upsert(
             FollowupRecord.create(
                 repository=repository,
@@ -96,11 +106,15 @@ async def reconcile(
     max_replies: int = 2,
     control_repo: str = "",
     mention_policy: MentionPolicy | None = None,
+    notification_api=None,
 ) -> dict:
     mention_policy = mention_policy or MentionPolicy.from_env()
     memory = await gist.load()
     expired = memory.prune_expired()
-    notification_threads = await _discover_mentions(api, memory, ttl_days=ttl_days)
+    notification_client = notification_api or api
+    notification_threads = await _discover_mentions(
+        notification_client, api, memory, ttl_days=ttl_days
+    )
     replies = 0
     dispatched = 0
     terminal = 0
@@ -282,7 +296,7 @@ async def reconcile(
             replies += 1
             thread_id = notification_threads.get(key)
             if thread_id:
-                await api._request("PATCH", f"/notifications/threads/{thread_id}")
+                await notification_client._request("PATCH", f"/notifications/threads/{thread_id}")
 
     await gist.save(memory)
     return {
@@ -310,6 +324,8 @@ async def _run() -> int:
         )
         return 1
     github = GitHubAPI.from_token(settings.github.token)
+    notifications_token = os.getenv("ELIXPOO_GITHUB_NOTIFICATIONS_TOKEN", "").strip()
+    notifications = GitHubAPI.from_token(notifications_token) if notifications_token else github
     gist_api = GitHubAPI.from_token(settings.followups.gist_token)
     router = Router.from_settings("steward", budget=Budget("steward", limit=12_000))
     try:
@@ -320,12 +336,15 @@ async def _run() -> int:
             bot_username=settings.github.bot_username,
             ttl_days=settings.followups.ttl_days,
             control_repo=settings.github.control_repo or os.getenv("GITHUB_REPOSITORY", ""),
+            notification_api=notifications,
         )
     except Exception as exc:
         log.error("steward.poll_failed", error=str(exc))
         return 1
     finally:
         await github.close()
+        if notifications is not github:
+            await notifications.close()
         await gist_api.close()
         await router.aclose()
     log.info("steward.poll_done", **result)

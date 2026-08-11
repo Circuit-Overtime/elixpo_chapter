@@ -22,22 +22,29 @@ class DiscussionMemory(BaseModel):
 
     def remember(self, source_id: object) -> None:
         value = str(source_id)
-        if value and value not in self.handled_source_ids:
-            self.handled_source_ids.append(value)
-            self.handled_source_ids = self.handled_source_ids[-HANDLED_SOURCE_LIMIT:]
+        if not value or value in self.handled_source_ids:
+            return
+        self.handled_source_ids.append(value)
+        self.handled_source_ids = self.handled_source_ids[-HANDLED_SOURCE_LIMIT:]
         self.touch()
 
     def set_thread_cursor(self, cursor: str | None) -> None:
+        if cursor == self.thread_cursor:
+            return
         self.thread_cursor = cursor
         self.touch()
 
     def set_comment_cursor(self, discussion_id: str, cursor: str | None) -> None:
         if cursor:
+            if self.comment_cursors.get(discussion_id) == cursor:
+                return
             self.comment_cursors[discussion_id] = cursor
             if len(self.comment_cursors) > COMMENT_CURSOR_LIMIT:
                 oldest = next(iter(self.comment_cursors))
                 self.comment_cursors.pop(oldest, None)
         else:
+            if discussion_id not in self.comment_cursors:
+                return
             self.comment_cursors.pop(discussion_id, None)
         self.touch()
 

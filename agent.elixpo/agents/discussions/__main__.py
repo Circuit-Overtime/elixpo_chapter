@@ -337,7 +337,14 @@ async def _handle_response(
     draft = await reply_draft(router, discussion, mention, comments)
     reply = public_body(draft, marker)
     await safety_check(router, reply)
-    reply_to = comment.get("node_id") if comment else None
+    reply_to = None
+    if comment:
+        # GitHub accepts replies only to a top-level Discussion comment. Polling
+        # supplies that GraphQL node ID for nested mentions; webhook payloads
+        # with a parent but no parent node ID safely fall back to a top-level reply.
+        reply_to = comment.get("reply_to_node_id")
+        if reply_to is None and not comment.get("parent_id"):
+            reply_to = comment.get("node_id")
     created = await discussions.add_comment(discussion["node_id"], reply, reply_to)
     if memory is not None:
         memory.remember(source_id)
@@ -388,13 +395,13 @@ async def _poll_mentions(discussions, router, bot_username: str, memory=None) ->
             comment_page = await discussions.comment_page(raw_discussion["number"], cursor=comment_cursor)
             comments = comment_page.nodes
             sources = [
-                item
+                (item, comment.get("id"))
                 for comment in comments
                 for item in (comment, *comment.get("replies", {}).get("nodes", []))
             ]
             if not comment_cursor and _created_at(raw_discussion) >= cutoff:
-                sources.insert(0, raw_discussion)
-            for raw_source in sources:
+                sources.insert(0, (raw_discussion, None))
+            for raw_source, reply_to_node_id in sources:
                 if handled >= 5:
                     capped = True
                     break
@@ -404,6 +411,7 @@ async def _poll_mentions(discussions, router, bot_username: str, memory=None) ->
                 if raw_source is not raw_discussion:
                     comment = {
                         "node_id": raw_source["id"],
+                        "reply_to_node_id": reply_to_node_id,
                         "body": raw_source.get("body", ""),
                         "user": _webhook_actor(raw_source),
                     }
@@ -459,6 +467,9 @@ async def _run(mode: str, *, dry_run: bool = False) -> int:
     result = None
     memory_gist = None
     memory_api = None
+    memory = None
+    memory_before = None
+    memory_loaded = False
     try:
         if mode == "merge":
             result = await _handle_merge(api, discussions, router, event, dry_run=dry_run)
@@ -469,19 +480,33 @@ async def _run(mode: str, *, dry_run: bool = False) -> int:
                 raise RuntimeError("respond requires ELIXPOO_GIST_AGENTIC_TOKEN and ELIXPOO_FOLLOWUP_GIST_ID")
             memory_api = GitHubAPI.from_token(settings.followups.gist_token)
             memory_gist = DiscussionGist(memory_api, settings.followups.gist_id)
-            memory = await memory_gist.load()
+            try:
+                memory = await memory_gist.load()
+                memory_loaded = True
+            except Exception as exc:
+                from lib.state.discussions import DiscussionMemory
+
+                log.warning("discussions.memory_unavailable", operation="load", error=str(exc))
+                memory = DiscussionMemory()
+            memory_before = memory.model_dump(mode="json")
             result = await _handle_response(
                 discussions, router, event, settings.github.bot_username, memory=memory
             )
-            await memory_gist.save(memory)
         elif mode == "poll-mentions":
             if not settings.followups.gist_token or not settings.followups.gist_id:
                 raise RuntimeError("poll-mentions requires ELIXPOO_GIST_AGENTIC_TOKEN and ELIXPOO_FOLLOWUP_GIST_ID")
             memory_api = GitHubAPI.from_token(settings.followups.gist_token)
             memory_gist = DiscussionGist(memory_api, settings.followups.gist_id)
-            memory = await memory_gist.load()
+            try:
+                memory = await memory_gist.load()
+                memory_loaded = True
+            except Exception as exc:
+                from lib.state.discussions import DiscussionMemory
+
+                log.warning("discussions.memory_unavailable", operation="load", error=str(exc))
+                memory = DiscussionMemory()
+            memory_before = memory.model_dump(mode="json")
             result = await _poll_mentions(discussions, router, settings.github.bot_username, memory)
-            await memory_gist.save(memory)
         elif mode == "pulse":
             result = await _handle_pulse(api, discussions, router, event, dry_run=dry_run)
         elif mode == "verify-config":
@@ -496,6 +521,18 @@ async def _run(mode: str, *, dry_run: bool = False) -> int:
             }
         else:
             raise RuntimeError(f"unsupported discussions mode: {mode}")
+        if (
+            memory_gist is not None
+            and memory is not None
+            and memory_loaded
+            and memory.model_dump(mode="json") != memory_before
+        ):
+            try:
+                await memory_gist.save(memory)
+            except Exception as exc:
+                # Public reply markers remain the final idempotency guard. A
+                # memory outage may increase bounded reads but cannot duplicate a post.
+                log.warning("discussions.memory_unavailable", operation="save", error=str(exc))
     except UnsafeDraft as exc:
         log.warning("discussions.post_blocked", reason=str(exc))
         return 0

@@ -45,6 +45,8 @@ restricted_secrets:
     - steward-fix.yml
   ELIXPOO_GITHUB_DISCUSSIONS_TOKEN:
     - discussions.yml
+  ELIXPOO_GITHUB_NOTIFICATIONS_TOKEN:
+    - steward.yml
   ELIXPOO_GITHUB_PROJECT_TOKEN:
     - project.yml
   ELIXPOO_GIST_AGENTIC_TOKEN:
