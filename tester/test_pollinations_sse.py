@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
-TOKEN = os.getenv("TOKEN")
+POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY")
 
 URL = "https://gen.pollinations.ai/v1/chat/completions"
 payload = {
@@ -15,7 +15,7 @@ payload = {
     "stream": True,
     "max_tokens": 500,
 }
-headers = {"Content-Type": "application/json", "Authorization": f"Bearer {TOKEN}"}
+headers = {"Content-Type": "application/json", "Authorization": f"Bearer {POLLINATIONS_API_KEY}"}
 
 print(f"POST {URL}")
 print(f"stream=true\n")

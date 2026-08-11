@@ -4,11 +4,11 @@ import asyncio
 import requests
 import random
 from pipeline.config import POLLINATIONS_ENDPOINT, LOG_MESSAGE_PREVIEW_TRUNCATE, LLM_MODEL
-from dotenv import load_dotenv
+from commons.environment import load_local_environment
 import os
-load_dotenv()
+load_local_environment()
 
-POLLINATIONS_TOKEN = os.getenv("TOKEN")
+POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY")
 MODEL = LLM_MODEL
 class ChatEngine:
     
@@ -58,7 +58,7 @@ class ChatEngine:
                 json=payload,
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {POLLINATIONS_TOKEN}"
+                    "Authorization": f"Bearer {POLLINATIONS_API_KEY}"
                 },
                 timeout=30
             )

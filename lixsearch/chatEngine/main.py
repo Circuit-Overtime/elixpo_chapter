@@ -1,9 +1,9 @@
 import os
 from typing import Optional
-from dotenv import load_dotenv
+from commons.environment import load_local_environment
 from loguru import logger
 from .chat_engine import ChatEngine
-load_dotenv()
+load_local_environment()
 
 _chat_engine: Optional[ChatEngine] = None
 

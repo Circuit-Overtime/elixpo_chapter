@@ -21,7 +21,7 @@ from dotenv import dotenv_values
 ROOT = Path(__file__).resolve().parents[1]
 VENV_PYTHON = ROOT / "venv" / "bin" / "python"
 CHROMA_BIN = ROOT / "venv" / "bin" / "chroma"
-ENV_FILE = ROOT / ".env"
+ENV_FILE = ROOT / ".env.local"
 LOG_DIR = ROOT / "data" / "logs" / "local"
 REDIS_DIR = ROOT / "data" / "redis"
 CHROMA_DIR = ROOT / "data" / "embeddings"
@@ -73,7 +73,7 @@ def preflight() -> list[str]:
     if sys.version_info[:2] != (3, 11):
         errors.append(f"Use Python 3.11; current interpreter is {sys.version.split()[0]}")
     if not ENV_FILE.is_file():
-        errors.append("Root .env file is missing")
+        errors.append("Root .env.local file is missing")
     if not VENV_PYTHON.is_file():
         errors.append("Python virtual environment is missing at ./venv")
     if not CHROMA_BIN.is_file():
@@ -91,7 +91,7 @@ def preflight() -> list[str]:
 def redis_config(env: dict[str, str]) -> str:
     password = env.get("REDIS_PASSWORD", "")
     if not password:
-        raise LocalStackError("REDIS_PASSWORD is blank in .env")
+        raise LocalStackError("REDIS_PASSWORD is blank in .env.local")
     return "\n".join(
         (
             "bind 127.0.0.1",
@@ -187,8 +187,8 @@ class LocalStack:
         app_url = f"http://127.0.0.1:{self.env['WORKER_PORT']}/api/health"
         wait_for_http(app_url, app_process, 300)
         print(f"[local] lixSearch ready at http://127.0.0.1:{self.env['WORKER_PORT']}")
-        if not self.env.get("TOKEN"):
-            print("[local] warning: TOKEN is blank; provider-backed requests will fail until it is set")
+        if not self.env.get("POLLINATIONS_API_KEY"):
+            print("[local] warning: POLLINATIONS_API_KEY is blank; provider-backed requests will fail until it is set")
 
     def monitor(self) -> None:
         while True:
@@ -242,8 +242,8 @@ def main() -> int:
         env = load_environment()
         print("[local] Python 3.11 environment is ready")
         print(f"[local] model cache: {env['MODEL_CACHE_DIR']}")
-        if not env.get("TOKEN"):
-            print("[local] warning: TOKEN is blank")
+        if not env.get("POLLINATIONS_API_KEY"):
+            print("[local] warning: POLLINATIONS_API_KEY is blank")
         return 0
     if args.command == "test":
         return run_tests()

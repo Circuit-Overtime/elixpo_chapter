@@ -12,6 +12,7 @@ from typing import Any
 import yaml
 
 from agentRuntime.routing import route_request
+from commons.environment import load_local_environment
 from agentRuntime.specs import AGENT_SPECS, AgentSpec
 from skillRegistry import SkillRegistry, get_skill_registry
 
@@ -88,13 +89,10 @@ class AgentRunner:
 
     async def _call(self, prepared: PreparedRun) -> dict[str, Any]:
         Router, Message, ToolDef = _oreoflow_types()
-        api_key = (
-            os.getenv("TOKEN")
-            or os.getenv("POLLINATIONS_API_KEY")
-            or os.getenv("ELIXPO_POLLINATIONS_API_KEY")
-        )
+        load_local_environment()
+        api_key = os.getenv("POLLINATIONS_API_KEY")
         if not api_key:
-            raise AgentRuntimeError("Set TOKEN or POLLINATIONS_API_KEY before a live agent run")
+            raise AgentRuntimeError("Set POLLINATIONS_API_KEY in .env.local before a live agent run")
         router = Router(
             task_id=f"lixsearch-{prepared.agent}",
             models=self.models,

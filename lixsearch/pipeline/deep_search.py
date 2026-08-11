@@ -6,7 +6,7 @@ import requests
 import os
 from datetime import datetime, timezone
 from loguru import logger
-from dotenv import load_dotenv
+from commons.environment import load_local_environment
 
 from pipeline.config import *
 from pipeline.instruction import (
@@ -26,10 +26,10 @@ from pipeline.utils import format_sse
 from sessions.conversation_cache import ConversationCacheManager
 from ragService.semanticCacheRedis import SemanticCacheRedis as SemanticCache, SessionContextWindow
 
-load_dotenv()
+load_local_environment()
 
 MODEL = LLM_MODEL
-POLLINATIONS_TOKEN = os.getenv("TOKEN")
+POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY")
 
 import re as _re
 
@@ -477,7 +477,7 @@ async def _run_deep_search_pipeline(
     current_utc_time = datetime.now(timezone.utc)
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {POLLINATIONS_TOKEN}",
+        "Authorization": f"Bearer {POLLINATIONS_API_KEY}",
     }
 
     core_service = None

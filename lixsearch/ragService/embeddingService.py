@@ -10,9 +10,9 @@ import warnings
 import os 
 from loguru import logger
 import logging
-from dotenv import load_dotenv
+from commons.environment import load_local_environment
 
-load_dotenv()
+load_local_environment()
 warnings.filterwarnings('ignore', message='Can\'t initialize NVML')
 os.environ['CHROMA_TELEMETRY_DISABLED'] = '1'
 logging.getLogger('chromadb').setLevel(logging.ERROR)

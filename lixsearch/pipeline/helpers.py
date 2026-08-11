@@ -6,7 +6,7 @@ import asyncio
 import requests
 import os
 from loguru import logger
-from dotenv import load_dotenv
+from commons.environment import load_local_environment
 
 from pipeline.config import (
     LEAKED_TOOL_RE,
@@ -20,10 +20,10 @@ from pipeline.config import (
 )
 from pipeline.sse_messages import get_status_message
 
-load_dotenv()
+load_local_environment()
 
 MODEL = LLM_MODEL
-POLLINATIONS_TOKEN = os.getenv("TOKEN")
+POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY")
 
 
 def _scrub_tool_names(text: str) -> str:

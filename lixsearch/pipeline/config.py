@@ -1,7 +1,7 @@
 import os
-from dotenv import load_dotenv
+from commons.environment import load_local_environment
 import re
-load_dotenv()
+load_local_environment()
 
 # Keep all Hugging Face and SentenceTransformers artifacts on persistent disk.
 MODEL_CACHE_DIR = os.path.abspath(os.getenv("MODEL_CACHE_DIR", "./data/models"))
