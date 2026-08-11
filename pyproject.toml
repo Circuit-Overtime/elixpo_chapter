@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "elixpoo"
-version = "0.1.0"
+version = "0.2.0"
 description = "elixpoo — autonomous GitHub-contributor agent (modular squads over Pollinations)"
 readme = "README.md"
 license = "MIT"
@@ -36,12 +36,12 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["agents", "rtk", "lib", "mcp_server"]
+packages = ["agents", "oreoflow", "rtk", "lib", "mcp_server"]
 
 [tool.ruff]
 target-version = "py311"
 line-length = 120
-src = ["agents", "rtk", "lib", "mcp_server", "tests"]
+src = ["agents", "oreoflow", "rtk", "lib", "mcp_server", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]

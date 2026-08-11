@@ -14,7 +14,7 @@ With no injection it builds itself from global settings + config/models.yaml.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -153,6 +153,55 @@ class Router:
             used=used, spent=self.budget.spent, remaining=self.budget.remaining(),
         )
         return resp
+
+    async def stream(
+        self,
+        role: str,
+        messages: list[Message],
+        tools: list[ToolDef] | None = None,
+        effort: Effort | str | None = None,
+        max_tokens: int | None = None,
+    ) -> AsyncIterator[Any]:
+        """Stream provider chunks while preserving budget and ledger accounting."""
+        spec = self.resolve(role)
+        model = spec["model"]
+        if spec.get("tools") is False:
+            tools = None
+        eff = Effort(effort) if effort else Effort(
+            self._models.get("defaults", {}).get("effort", self._default_effort)
+        )
+        temperature = EFFORT_TEMPERATURE[eff]
+        estimated_input = count_messages(messages)
+        self.budget.check(estimated_input)
+        completion_chars = 0
+        final_usage = None
+        completed = False
+        try:
+            async for chunk in self._client(model).chat_stream(
+                messages=messages, tools=tools, temperature=temperature, max_tokens=max_tokens,
+            ):
+                if chunk.usage and chunk.usage.total_tokens:
+                    final_usage = chunk.usage
+                for choice in chunk.choices:
+                    completion_chars += len(choice.delta.content or "")
+                yield chunk
+            completed = True
+        finally:
+            if completed:
+                estimated_output = max(0, completion_chars // 4)
+                usage = final_usage or Usage(
+                    prompt_tokens=estimated_input,
+                    completion_tokens=estimated_output,
+                    total_tokens=estimated_input + estimated_output,
+                )
+                used = usage.total_tokens or estimated_input
+                self.budget.charge(used)
+                if self.ledger is not None:
+                    self.ledger.record(task_id=self.task_id, role=role, model=model, usage=usage)
+                log.debug(
+                    "rtk.stream", role=role, model=model, effort=eff.value,
+                    used=used, spent=self.budget.spent, remaining=self.budget.remaining(),
+                )
 
     def record_external_usage(
         self,
