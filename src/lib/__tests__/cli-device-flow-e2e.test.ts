@@ -10,7 +10,7 @@ import { POST as issueDevice } from "../../../app/api/auth/device/authorize/rout
 import { POST as denyDevice } from "../../../app/api/auth/device/deny/route";
 import { POST as revokeToken } from "../../../app/api/auth/revoke/route";
 import { POST as exchangeToken } from "../../../app/api/auth/token/route";
-import { createAccessToken } from "../jwt";
+import { createAccessToken, verifyJWT } from "../jwt";
 
 vi.mock("@/lib/d1-client", async () => {
     const { env: testEnv } = await import("cloudflare:test");
@@ -25,10 +25,11 @@ declare global {
     }
 }
 
-const CLIENT_ID = "lixblogs-cli-e2e";
+const CLIENT_ID = "lixblogs-cli-prod";
 const USER_ID = "cli-e2e-user";
 const USER_EMAIL = "cli-e2e@example.com";
-const AUDIENCE = "api.lixblogs.test";
+const AUDIENCE = "blogs.elixpo.com";
+const OLD_AUDIENCE = "api.lixblogs.com";
 const SCOPES = "openid profile email lixblogs:blog:read";
 const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
@@ -136,7 +137,7 @@ async function setupDatabase() {
         ).bind(
             CLIENT_ID,
             "unused-public-client-secret",
-            "LixBlogs CLI E2E",
+            "LixBlogs CLI (Prod)",
             JSON.stringify(SCOPES.split(" ")),
             USER_ID,
             AUDIENCE,
@@ -203,6 +204,7 @@ describe("LixBlogs CLI device-flow contract", () => {
         expect(exchanged.status).toBe(200);
         const firstTokens = await exchanged.json<TokenResponse>();
         expect(firstTokens.scope).toBe(SCOPES);
+        expect((await verifyJWT(firstTokens.access_token))?.aud).toBe(AUDIENCE);
 
         const rotated = await exchangeToken(
             formRequest("https://accounts.test/api/auth/token", {
@@ -212,6 +214,10 @@ describe("LixBlogs CLI device-flow contract", () => {
             }),
         );
         expect(rotated.status).toBe(200);
+        const rotatedTokens = await rotated.json<TokenResponse>();
+        expect((await verifyJWT(rotatedTokens.access_token))?.aud).toBe(
+            AUDIENCE,
+        );
 
         const replay = await exchangeToken(
             formRequest("https://accounts.test/api/auth/token", {
@@ -231,6 +237,21 @@ describe("LixBlogs CLI device-flow contract", () => {
             "SELECT event_type FROM audit_logs WHERE event_type = 'refresh_token_reuse_detected'",
         ).first<{ event_type: string }>();
         expect(audit?.event_type).toBe("refresh_token_reuse_detected");
+    });
+
+    it("rejects the obsolete production resource audience", async () => {
+        const response = await issueDevice(
+            jsonRequest("https://accounts.test/api/auth/device/authorize", {
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                audience: OLD_AUDIENCE,
+            }),
+        );
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: "invalid_request",
+        });
     });
 
     it("covers denial and expiry responses", async () => {

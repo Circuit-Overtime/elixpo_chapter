@@ -172,12 +172,12 @@ describe("device authorization with D1", () => {
 
     it("stores only the client's registered audience", async () => {
         await insertClient(PUBLIC_CLIENT_ID, {
-            audience: "api.lixblogs.com",
+            audience: "blogs.elixpo.com",
         });
 
         await createDeviceAuthorization(env.DB, {
             clientId: PUBLIC_CLIENT_ID,
-            audience: "api.lixblogs.com",
+            audience: "blogs.elixpo.com",
             ipAddress: "203.0.113.10",
             appUrl: "https://accounts.elixpo.com",
         });
@@ -186,12 +186,12 @@ describe("device authorization with D1", () => {
         )
             .bind(PUBLIC_CLIENT_ID)
             .first<{ audience: string }>();
-        expect(row?.audience).toBe("api.lixblogs.com");
+        expect(row?.audience).toBe("blogs.elixpo.com");
     });
 
     it("rejects an audience not registered to the client", async () => {
         await insertClient(PUBLIC_CLIENT_ID, {
-            audience: "api.lixblogs.com",
+            audience: "blogs.elixpo.com",
         });
 
         await expect(
