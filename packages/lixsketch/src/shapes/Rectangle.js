@@ -50,6 +50,7 @@ class Rectangle {
         this.labelElement = null;
         this.labelColor = options.labelColor || '#e0e0e0';
         this.labelFontSize = options.labelFontSize || 14;
+        this.labelBg = options.labelBg !== false; // set labelBg:false to render plain text with no pill backdrop
         this._isEditingLabel = false;
         this._hitArea = null;
         this._labelBg = null;
@@ -245,7 +246,19 @@ class Rectangle {
         this.labelElement.setAttribute('font-family', 'lixFont, sans-serif');
         this.labelElement.textContent = this.label;
 
-        // Background padding rect behind text (like arrows have)
+        // Background padding rect behind text (like arrows have) — skippable
+        // via labelBg:false for dense multi-row content (e.g. mermaid ER
+        // attribute rows) where a pill backdrop looks out of place and
+        // doesn't match the SVG preview.
+        if (!this.labelBg) {
+            if (this._labelBg && this._labelBg.parentNode === this.group) {
+                this.group.removeChild(this._labelBg);
+                this._labelBg = null;
+            }
+            if (this.labelElement.parentNode === this.group) this.group.removeChild(this.labelElement);
+            this.group.appendChild(this.labelElement);
+            return;
+        }
         const canvasBg = window.getComputedStyle(svg).backgroundColor || '#000';
         if (!this._labelBg) {
             this._labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');

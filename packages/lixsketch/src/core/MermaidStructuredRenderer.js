@@ -354,16 +354,16 @@ export function renderEROnCanvas(diagram) {
         const x = origin.x + entity.x;
         const y = origin.y + entity.y;
         const header = push(new window.Rectangle(x, y, entity.width, entity.headerHeight, {
-            stroke: entity.color.stroke, strokeWidth: 1.5, fill: entity.color.fill, fillStyle: 'solid', roughness: 1,
-            label: entity.name, labelColor: contrastText(entity.color.fill), labelFontSize: 15,
+            stroke: entity.color.stroke, strokeWidth: 1.5, fill: entity.color.fill, fillStyle: 'solid', roughness: 0, fillWeight: 0.5,
+            label: entity.name, labelColor: contrastText(entity.color.fill), labelFontSize: 15, labelBg: false,
         }), frame);
         if (!first) first = header;
         entityShapes.set(entity.name, { shape: header, x, y, width: entity.width, height: entity.headerHeight });
         const attributes = entity.attributes.length ? entity.attributes : [{ type: '', name: 'No attributes', key: '' }];
         attributes.forEach((attribute, row) => push(new window.Rectangle(
             x, y + entity.headerHeight + row * entity.rowHeight, entity.width, entity.rowHeight,
-            { stroke: TK.frame, strokeWidth: 1, fill: TK.panel, fillStyle: 'solid', roughness: .4,
-                label: [attribute.type, attribute.name, attribute.key].filter(Boolean).join('  '), labelColor: TK.text, labelFontSize: 11 }
+            { stroke: TK.frame, strokeWidth: 1, fill: TK.panel, fillStyle: 'solid', roughness: 0, fillWeight: 0.5,
+                label: [attribute.type, attribute.name, attribute.key].filter(Boolean).join('  '), labelColor: TK.text, labelFontSize: 11, labelBg: false }
         ), frame));
     }
 
@@ -371,11 +371,20 @@ export function renderEROnCanvas(diagram) {
         const from = entityShapes.get(relation.from);
         const to = entityShapes.get(relation.to);
         if (!from || !to) continue;
-        const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
-        const end = { x: to.x + to.width / 2, y: to.y + to.height / 2 };
+        const fromCenter = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
+        const toCenter = { x: to.x + to.width / 2, y: to.y + to.height / 2 };
+        // Anchor the arrow at the actual box boundary (not the box center) so
+        // it terminates at the entity edge instead of drawing through — and
+        // over — the header label, and so autoAttach's nearest-side check
+        // (which compares against this point) resolves to the side actually
+        // facing the other entity rather than whichever side happens to be
+        // closest to the geometric center on a short, wide header box.
+        const start = rectBoundaryPoint(from, toCenter);
+        const end = rectBoundaryPoint(to, fromCenter);
         const arrow = push(new window.Arrow(start, end, {
-            stroke: TK.line, strokeWidth: 1.5, roughness: 1,
-            label: `${relation.fromCardinality} ${relation.label} ${relation.toCardinality}`, labelColor: TK.text,
+            stroke: TK.line, strokeWidth: 1.5, roughness: 0,
+            label: `${relation.fromCardinality} ${relation.label} ${relation.toCardinality}`,
+            labelColor: TK.text, labelBg: false, labelOffsetY: -12,
         }), frame);
         if (arrow && window.__autoAttach) {
             window.__autoAttach(arrow, from.shape, true, start);
@@ -384,6 +393,21 @@ export function renderEROnCanvas(diagram) {
     }
     if (first?.selectShape) { window.currentShape = first; first.selectShape(); }
     return true;
+}
+
+// Intersection of the line from `box`'s center toward `target` with box's
+// own rectangular boundary. Used to anchor ER relationship arrows exactly
+// at the entity edge instead of the entity center.
+function rectBoundaryPoint(box, target) {
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    const dx = target.x - cx;
+    const dy = target.y - cy;
+    const hw = box.width / 2;
+    const hh = box.height / 2;
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    const scale = 1 / Math.max(Math.abs(dx) / hw, Math.abs(dy) / hh);
+    return { x: cx + dx * scale, y: cy + dy * scale };
 }
 
 export function renderChartOnCanvas(chart) {
