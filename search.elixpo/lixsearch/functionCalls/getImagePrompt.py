@@ -1,14 +1,14 @@
 import requests
 import base64
 import asyncio
-from dotenv import load_dotenv
+from commons.environment import load_local_environment
 import os
 import re
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pipeline.config import IMAGE_SEARCH_QUERY_WORDS_LIMIT, VISION_MODEL, POLLINATIONS_ENDPOINT
 
-load_dotenv()
+load_local_environment()
 
 
 def image_url_to_base64(image_url):
@@ -33,7 +33,7 @@ def _call_vision_model(messages, max_tokens=300):
     api_url = POLLINATIONS_ENDPOINT
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.getenv('TOKEN')}"
+        "Authorization": f"Bearer {os.getenv('POLLINATIONS_API_KEY')}"
     }
     data = {
         "model": VISION_MODEL,

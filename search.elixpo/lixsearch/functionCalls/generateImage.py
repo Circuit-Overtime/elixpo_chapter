@@ -4,7 +4,7 @@ import os
 import uuid
 import requests
 from urllib.parse import quote
-from dotenv import load_dotenv
+from commons.environment import load_local_environment
 from loguru import logger
 import sys
 import time
@@ -12,7 +12,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pipeline.config import POLLINATIONS_ENDPOINT_IMAGE, IMAGE_MODEL1, IMAGE_MODEL2
 
-load_dotenv()
+load_local_environment()
 
 _BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://search.elixpo.com").rstrip("/")
 _IMAGE_MODELS = [IMAGE_MODEL1, IMAGE_MODEL2]
@@ -43,7 +43,7 @@ async def create_image_from_prompt(prompt: str) -> str:
     seed = random.randint(0, 10000)
     image_id = str(uuid.uuid4())
     url = f"{_BASE_URL}/api/image/{image_id}.png"
-    headers = {"Authorization": f"Bearer {os.getenv('TOKEN')}"}
+    headers = {"Authorization": f"Bearer {os.getenv('POLLINATIONS_API_KEY')}"}
 
     t0 = time.perf_counter()
     last_error = None

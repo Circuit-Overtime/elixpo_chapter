@@ -10,7 +10,7 @@ lixSearch is a multi-service intelligent search assistant (Python/Quart) that se
 
 ### Docker (production)
 ```bash
-cp .env.example .env          # then fill in TOKEN, MODEL, HF_TOKEN
+./scripts/secrets.sh decrypt          # then fill in TOKEN, MODEL, HF_TOKEN
 ./deploy.sh build              # build image
 ./deploy.sh start 3            # start with 3 app containers
 ./deploy.sh scale 5            # scale to 5
@@ -252,8 +252,8 @@ wrangler secret put SSO_CLIENT_SECRET        # OAuth client secret from accounts
 
 ## Environment Variables
 
-### Backend (.env)
-Required: `TOKEN`, `MODEL`, `IMAGE_MODEL`, `HF_TOKEN`
+### Backend (.env.local)
+Required: `POLLINATIONS_API_KEY`; optional: `HF_TOKEN`
 Optional overrides: `REDIS_HOST`, `REDIS_PORT`, `CHROMA_SERVER_HOST`, `CHROMA_SERVER_PORT`, `IPC_HOST`, `IPC_PORT`, `WORKERS` (Hypercorn workers per container, default 10), `WORKER_PORT` (default 9002), `LOG_LEVEL`
 
 ### Frontend (wrangler.toml vars + secrets)

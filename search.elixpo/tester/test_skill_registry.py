@@ -12,9 +12,9 @@ from skillRegistry import SkillRegistry, SkillRegistryError, get_skill_registry
 class SkillRegistryTests(unittest.TestCase):
     def test_loads_all_skills_and_tools(self):
         registry = SkillRegistry.load(ROOT / "skills")
-        self.assertEqual(len(registry), 6)
+        self.assertEqual(len(registry), 9)
         self.assertEqual(registry.for_tool("web_search").name, "research-web")
-        self.assertEqual(registry.for_tool("create_image").name, "handle-media")
+        self.assertEqual(registry.for_tool("create_image").name, "make-images")
         self.assertEqual(registry.for_tool("export_to_pdf").name, "export-documents")
 
     def test_filters_tool_catalog(self):
@@ -26,7 +26,6 @@ class SkillRegistryTests(unittest.TestCase):
             {
                 "get_session_conversation_history",
                 "image_search",
-                "create_image",
                 "generate_prompt_from_image",
                 "replyFromImage",
                 "youtubeMetadata",

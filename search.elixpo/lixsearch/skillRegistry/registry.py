@@ -229,7 +229,7 @@ def _parse_skill(path: Path) -> SkillDefinition:
     return SkillDefinition(
         name=name,
         description=description,
-        instructions=text[frontmatter_match.end():].strip(),
+        instructions=text[frontmatter_match.end():runtime_match.start()].strip(),
         agent=_required_string(runtime, "agent", path),
         tools=tools,
         timeout_seconds=float(timeout),

@@ -33,7 +33,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH=/app/.venv/bin:$PATH \
     PYTHONPATH=/app \
-    REDIS_PORT=9530
+    REDIS_PORT=9530 \
+    MODEL_CACHE_DIR=/app/data/models \
+    HF_HOME=/app/data/models \
+    SENTENCE_TRANSFORMERS_HOME=/app/data/models
 
 WORKDIR /app
 
@@ -59,9 +62,9 @@ COPY public /app/public
 COPY version.cfg requirements.txt openapi.yaml /app/
 
 RUN chmod +x /app/entrypoint.sh && \
-    mkdir -p /app/logs /app/models \
+    mkdir -p /app/logs \
              /app/data/cache/images /app/data/cache/content /app/data/cache/conversation \
-             /app/data/conversations /app/data/embeddings \
+             /app/data/conversations /app/data/embeddings /app/data/models \
              /app/tmp/cache
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
