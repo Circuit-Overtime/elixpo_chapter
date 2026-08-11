@@ -5,7 +5,7 @@ import time
 import os
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env.local'))
 POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY")
 
 URL = "https://gen.pollinations.ai/v1/chat/completions"

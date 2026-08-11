@@ -49,10 +49,10 @@ error() {
 }
 
 check_env() {
-    if [ ! -f ".env" ]; then
-        error ".env file not found in root directory"
-        info "Use the root .env file with:"
-        echo "  TOKEN=your_token"
+    if [ ! -f ".env.local" ]; then
+        error ".env.local file not found in root directory"
+        info "Use the root .env.local file with:"
+        echo "  POLLINATIONS_API_KEY=your_key"
         echo "  MODEL=your_model"
         echo "  IMAGE_MODEL=your_image_model"
         echo "  HF_TOKEN=your_hf_token"
@@ -394,19 +394,19 @@ release_pypi() {
 }
 
 release_docker() {
-    # Load credentials from .env
-    if [ -f ".env" ]; then
+    # Load credentials from .env.local
+    if [ -f ".env.local" ]; then
         set -a
-        source .env
+        source .env.local
         set +a
     fi
 
     if [ -z "$GITHUB_TOKEN" ]; then
-        error "GITHUB_TOKEN not set in .env"
+        error "GITHUB_TOKEN not set in .env.local"
         exit 1
     fi
     if [ -z "$DOCKER_HUB_API" ]; then
-        warning "DOCKER_HUB_API not set in .env — skipping Docker Hub push"
+        warning "DOCKER_HUB_API not set in .env.local — skipping Docker Hub push"
     fi
 
     local ghcr_image="ghcr.io/${GITHUB_USER:-Circuit-Overtime}/lixsearch"
@@ -709,14 +709,14 @@ ${YELLOW}Examples:${NC}
   ./deploy.sh frontend deploy             # Build + deploy to Cloudflare Pages
 
 ${YELLOW}Environment:${NC}
-  Use the root .env file with required variables:
-    TOKEN=your_token
+  Use the root .env.local file with required variables:
+    POLLINATIONS_API_KEY=your_key
     MODEL=your_model
     IMAGE_MODEL=your_image_model
     HF_TOKEN=your_hf_token
 
 ${YELLOW}Quick Start:${NC}
-  1. Ensure .env exists in root directory
+  1. Ensure .env.local exists in root directory
   2. ./deploy.sh start              # builds + starts 5 containers
   3. ./deploy.sh health
 
