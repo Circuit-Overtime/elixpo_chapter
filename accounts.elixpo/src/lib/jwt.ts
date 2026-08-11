@@ -1,4 +1,5 @@
 import * as jose from "jose";
+import { generateUUID } from "./webcrypto";
 
 export interface JWTPayload {
     sub: string;
@@ -88,6 +89,7 @@ export async function createRefreshToken(
 
     let builder = new jose.SignJWT(payload)
         .setProtectedHeader({ alg: "EdDSA" })
+        .setJti(generateUUID())
         .setIssuedAt()
         .setExpirationTime(`${expiresInDays}d`);
 
