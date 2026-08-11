@@ -7,7 +7,6 @@ import warnings
 from .session_manager import SessionManager
 
 warnings.filterwarnings('ignore', message='Can\'t initialize NVML')
-os.environ['CHROMA_TELEMETRY_DISABLED'] = '1'
 
 
 def initialize_session_manager(max_sessions: int = 1000, ttl_minutes: int = 30):
