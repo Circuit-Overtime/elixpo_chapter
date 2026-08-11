@@ -6,6 +6,8 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+import httpx
+
 from lib.state.followups import FollowupMemory
 
 FOLLOWUP_FILENAME = "elixpoo-followups.json"
@@ -59,9 +61,19 @@ class RevisionedGist:
         headers = {"If-Match": current.etag} if current.etag else {}
         payload = {name: {"content": content} for name, content in files.items()}
         if hasattr(self.api, "request_json_with_headers"):
-            gist, response_headers = await self.api.request_json_with_headers(
-                "PATCH", f"/gists/{self.gist_id}", json={"files": payload}, headers=headers
-            )
+            try:
+                gist, response_headers = await self.api.request_json_with_headers(
+                    "PATCH", f"/gists/{self.gist_id}", json={"files": payload}, headers=headers
+                )
+            except httpx.HTTPStatusError as exc:
+                try:
+                    detail = str(exc.response.json().get("message") or "request rejected")
+                except (ValueError, AttributeError):
+                    detail = "request rejected"
+                raise RuntimeError(
+                    f"GitHub rejected Gist memory update ({exc.response.status_code}): {detail}; "
+                    "ELIXPOO_GIST_AGENTIC_TOKEN needs Gists user permission: write"
+                ) from exc
             merged = dict(current.files)
             merged.update(files)
             return GistSnapshot(

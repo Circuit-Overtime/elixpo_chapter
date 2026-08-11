@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agents.solve.models import FileEdit
 from mcp_server.tools._fs import safe_path
+
+from agents.solve.models import FileEdit
 
 
 class EditRejected(RuntimeError):

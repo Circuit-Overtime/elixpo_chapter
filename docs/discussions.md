@@ -55,7 +55,9 @@ publisher independently enforces the safety, disclosure, and duplicate checks.
 4. Add the Actions secret `ELIXPO_POLLINATIONS_API_KEY`. This is the only model
    provider key used by the squad.
 5. Reuse `ELIXPOO_GIST_AGENTIC_TOKEN` and `ELIXPOO_FOLLOWUP_GIST_ID` for the
-   revision-checked Discussion cursor and handled-source file.
+   revision-checked Discussion cursor and handled-source file. Grant the token
+   Gists user read/write permission (or classic `gist` scope). Public reply
+   markers keep polling idempotent if memory is temporarily unavailable.
 
 The production alias check on 2026-08-09 resolved `Announcements`, `Q&A`, and
 `Polls` successfully in `elixpo/elixpo`.

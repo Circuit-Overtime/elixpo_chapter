@@ -5,8 +5,8 @@ project:
   node_version: "20"
 
 ci:
-  lint_cmd: "cd core && ruff check ."
-  test_cmd: "cd core && pytest -v"
+  lint_cmd: "ruff check agents rtk lib mcp_server tests"
+  test_cmd: "pytest -q"
   build_cmd: ""
 
 maintainers:

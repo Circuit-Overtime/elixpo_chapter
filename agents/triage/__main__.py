@@ -40,7 +40,7 @@ log = structlog.get_logger()
 
 MAX_REPOS = 16      # cover most of Scout's size-diverse list before giving up
 PER_REPO = 30       # free fetch depth; the narrow age gate may reject most results
-SHORTLIST = 12      # issues that get the (paid) LLM deep pass
+SHORTLIST = 6       # changed issues that may need the bounded model deep pass
 AVAILABILITY_POOL_FACTOR = 3  # free GitHub checks absorb occupied issues before model calls
 
 
@@ -93,6 +93,7 @@ async def triage_candidates(
     per_repo: int = PER_REPO,
     shortlist: int = SHORTLIST,
     rejections=None,
+    model_cache: dict[str, dict] | None = None,
 ) -> list[TriagedIssue]:
     """Score candidate issues. Injectable api + router → testable in isolation."""
     now = now or datetime.now(timezone.utc)
@@ -204,13 +205,29 @@ async def triage_candidates(
             continue
         verified.append((candidate, comments, comment_det))
 
-    sem = asyncio.Semaphore(4)  # cap concurrent LLM calls → fewer rate limits
+    sem = asyncio.Semaphore(3)  # bounded first-pass cost and fewer rate limits
+    cache = model_cache if model_cache is not None else {}
 
     async def _extract(x, comments, comment_det):
-        async with sem:
-            extracted = await extract_issue_signals(router, x["issue"], comments, now)
+        key = f"{x['repo']}#{x['issue']['number']}"
+        revision = str(x["issue"].get("updated_at") or "")
+        cached = cache.get(key) or {}
+        if cached.get("issue_updated_at") == revision and isinstance(cached.get("signals"), dict):
+            log.info("triage.model_cache_hit", key=key)
+            extracted = dict(cached["signals"])
             extracted.update(comment_det)
             return extracted
+        async with sem:
+            extracted = await extract_issue_signals(router, x["issue"], comments, now)
+        if extracted:
+            cache[key] = {
+                "issue_updated_at": revision,
+                "cached_at": now.isoformat(),
+                "signals": extracted,
+            }
+        result = dict(extracted)
+        result.update(comment_det)
+        return result
 
     llm_results = await gather_safe(
         [_extract(x, comments, comment_det) for x, comments, comment_det in verified],
@@ -259,11 +276,11 @@ async def _run() -> int:
     if not settings.github.token:
         log.error("triage.no_token", hint="set GITHUB_TOKEN in .env.local")
         return 1
-    if not settings.pollinations.api_key:
-        log.error("triage.no_pollinations_key")
-        return 1
-
     store = StateStore(settings.state_dir)
+    cache_payload = store.read_state(
+        "triage_cache.json", {}, expected_producer="triage-cache"
+    ) or {}
+    model_cache = dict(cache_payload.get("entries") or {})
     candidates = store.read_state(
         "candidates.json",
         [],
@@ -271,7 +288,21 @@ async def _run() -> int:
         max_age=timedelta(hours=24),
     )
     if not candidates:
-        log.warning("triage.no_candidates", hint="run agents.scout first")
+        now = datetime.now(timezone.utc)
+        store.write_state(
+            "triage_cache.json",
+            {"schema_version": 1, "entries": model_cache},
+            producer="triage-cache",
+            ttl=timedelta(days=90),
+            now=now,
+        )
+        store.write_state(
+            "triaged.json", [], producer="triage", ttl=timedelta(hours=24), now=now
+        )
+        log.info("triage.done", scored=0, spent=0, reason="candidate queue is empty")
+        return 0
+    if not settings.pollinations.api_key:
+        log.error("triage.no_pollinations_key")
         return 1
 
     now = datetime.now(timezone.utc)
@@ -285,6 +316,7 @@ async def _run() -> int:
             candidates,
             now,
             rejections=rejections,
+            model_cache=model_cache,
         )
     finally:
         await api.close()
@@ -292,6 +324,20 @@ async def _run() -> int:
 
     remember_triage_verdicts(triaged, rejections, now)
     rejections.save(store)
+    bounded_cache = dict(
+        sorted(
+            model_cache.items(),
+            key=lambda item: str(item[1].get("cached_at") or ""),
+            reverse=True,
+        )[:500]
+    )
+    store.write_state(
+        "triage_cache.json",
+        {"schema_version": 1, "entries": bounded_cache},
+        producer="triage-cache",
+        ttl=timedelta(days=90),
+        now=now,
+    )
     store.write_state(
         "triaged.json",
         [t.model_dump() for t in triaged],

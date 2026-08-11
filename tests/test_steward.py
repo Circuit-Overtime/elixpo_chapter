@@ -352,6 +352,36 @@ async def test_reconcile_posts_progress_then_safe_reply_and_marks_source_handled
 
 
 @pytest.mark.asyncio
+async def test_reconcile_continues_tracked_work_when_fine_grained_token_cannot_read_notifications():
+    class ForbiddenNotifications:
+        async def _request(self, method, path, **kwargs):
+            error = RuntimeError("forbidden")
+            error.response = SimpleNamespace(status_code=403)
+            raise error
+
+    api = FollowupAPI()
+    gist = MemoryGist(_tracked_memory())
+    router = FakeRouter(
+        "SAFE",
+        "I’ve recorded the requested adjustment for the repository workflow.",
+        "SAFE",
+        "SAFE",
+    )
+
+    result = await reconcile(
+        api,
+        gist,
+        router,
+        bot_username="elixpoo",
+        ttl_days=360,
+        notification_api=ForbiddenNotifications(),
+    )
+
+    assert result["replies"] == 1
+    assert gist.saves == 1
+
+
+@pytest.mark.asyncio
 async def test_untrusted_elixpo_mention_creates_approval_without_source_reply_or_generation():
     api = FollowupAPI()
     api.comment["user"]["login"] = "visitor"

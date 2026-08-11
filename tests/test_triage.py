@@ -348,6 +348,40 @@ async def test_triage_candidates_scores_and_ranks():
 
 
 @pytest.mark.asyncio
+async def test_triage_reuses_model_verdict_for_unchanged_issue_revision():
+    from agents.triage.__main__ import triage_candidates
+
+    issue = _issue(1)
+    cached_signals = {
+        "has_acceptance_criterion": True,
+        "tractable": True,
+        "complexity": "small",
+        "estimated_files": 2,
+        "confidence": 0.9,
+        "needs_maintainer_decision": False,
+        "needs_external_access": False,
+        "needs_specialized_hardware": False,
+        "rationale": "cached bounded issue",
+    }
+    cache = {
+        "o/r#1": {
+            "issue_updated_at": issue["updated_at"],
+            "cached_at": NOW.isoformat(),
+            "signals": cached_signals,
+        }
+    }
+    router = FakeRouter({})
+
+    out = await triage_candidates(
+        FakeAPI([issue]), router, [{"full_name": "o/r"}], NOW, model_cache=cache
+    )
+
+    assert router.calls == 0
+    assert out[0].easy is True
+    assert out[0].rationale == "cached bounded issue"
+
+
+@pytest.mark.asyncio
 async def test_triage_considers_unlabelled_reproducible_bug():
     from agents.triage.__main__ import triage_candidates
 
@@ -651,7 +685,6 @@ async def test_triage_lets_model_reject_current_claim():
 @pytest.mark.asyncio
 async def test_triage_lets_model_interpret_maintainer_resolution():
     from agents.triage.__main__ import triage_candidates
-    from lib.state.rejections import RejectionLedger
 
     comments = [
         {

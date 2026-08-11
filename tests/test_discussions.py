@@ -89,6 +89,22 @@ def test_discussion_memory_bounds_handled_ids_and_comment_cursors():
     assert len(memory.comment_cursors) == 100
 
 
+def test_discussion_memory_does_not_dirty_unchanged_cursors_or_duplicate_ids():
+    memory = DiscussionMemory(
+        thread_cursor="thread-1",
+        comment_cursors={"discussion-1": "comment-1"},
+        handled_source_ids=["source-1"],
+        updated_at="2026-08-10T00:00:00+00:00",
+    )
+
+    memory.set_thread_cursor("thread-1")
+    memory.set_comment_cursor("discussion-1", "comment-1")
+    memory.set_comment_cursor("missing", None)
+    memory.remember("source-1")
+
+    assert memory.updated_at == "2026-08-10T00:00:00+00:00"
+
+
 def test_discussion_workflow_keeps_ten_minute_authoritative_poll():
     workflow = Path(".github/workflows/discussions.yml").read_text()
     assert 'cron: "*/10 * * * *"' in workflow
@@ -475,7 +491,7 @@ async def test_mention_poll_isolates_failed_thread_and_handles_nested_reply():
     memory = DiscussionMemory()
     handled = await _poll_mentions(discussions, router, "elixpoo", memory)
     assert handled == 1
-    assert discussions.added == [("healthy-id", "nested-id")]
+    assert discussions.added == [("healthy-id", "parent-id")]
     assert memory.handled("nested-id")
 
 
