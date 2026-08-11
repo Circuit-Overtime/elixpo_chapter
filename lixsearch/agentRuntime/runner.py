@@ -88,6 +88,62 @@ class AgentRunner:
             return await self._call(self.prepare(selected, prompt, history))
         return await self._call(prepared)
 
+    async def stream(self, agent_name: str, prompt: str, history: Iterable[dict[str, str]] | None = None):
+        prepared = self.prepare(agent_name, prompt, history)
+        if prepared.agent == "decision":
+            decision = await self._call(prepared)
+            prepared = self.prepare(_parse_decision(decision), prompt, history)
+        async for event in self._stream_call(prepared):
+            yield event
+
+    async def _stream_call(self, prepared: PreparedRun):
+        Router, Message, ToolDef = _oreoflow_types()
+        load_local_environment()
+        api_key = os.getenv("POLLINATIONS_API_KEY")
+        if not api_key:
+            raise AgentRuntimeError("Set POLLINATIONS_API_KEY in .env.local before a live agent run")
+        router = Router(task_id=f"lixsearch-{prepared.agent}", models=self.models, api_key=api_key)
+        content_parts = []
+        usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        finish_reason = None
+        try:
+            async for chunk in router.stream(
+                prepared.role,
+                [Message.model_validate(message) for message in prepared.messages],
+                tools=[ToolDef.model_validate(tool) for tool in prepared.tools] or None,
+                effort="low",
+                max_tokens=prepared.max_tokens,
+            ):
+                if chunk.usage:
+                    usage = chunk.usage.model_dump(mode="json")
+                for choice in chunk.choices:
+                    if choice.delta.content:
+                        content_parts.append(choice.delta.content)
+                        yield {"type": "delta", "content": choice.delta.content}
+                    if choice.finish_reason:
+                        finish_reason = choice.finish_reason
+            if not usage.get("total_tokens"):
+                content = "".join(content_parts)
+                usage = {
+                    "prompt_tokens": 0,
+                    "completion_tokens": len(content) // 4,
+                    "total_tokens": len(content) // 4,
+                }
+            yield {
+                "type": "done",
+                "result": {
+                    "agent": prepared.agent,
+                    "role": prepared.role,
+                    "model": prepared.model,
+                    "response": {
+                        "choices": [{"message": {"role": "assistant", "content": "".join(content_parts)}, "finish_reason": finish_reason or "stop"}],
+                        "usage": usage,
+                    },
+                },
+            }
+        finally:
+            await router.aclose()
+
     async def _call(self, prepared: PreparedRun) -> dict[str, Any]:
         Router, Message, ToolDef = _oreoflow_types()
         load_local_environment()

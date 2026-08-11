@@ -50,6 +50,15 @@ class FakeRedis:
 class FakeRunner:
     calls = []
 
+    async def stream(self, agent, prompt, history=None):
+        self.calls.append((agent, prompt, list(history or [])))
+        for content in ("answer:", prompt[:2], prompt[2:]):
+            yield {"type": "delta", "content": content}
+        yield {"type": "done", "result": {
+            "agent": "coding", "role": "code", "model": "qwen-coder",
+            "response": {"usage": {"prompt_tokens": 4, "completion_tokens": 2}},
+        }}
+
     async def run(self, agent, prompt, history=None):
         self.calls.append((agent, prompt, list(history or [])))
         return {
@@ -104,7 +113,7 @@ class AgentResponseTests(unittest.IsolatedAsyncioTestCase):
     async def test_http_json_and_sse_contracts(self):
         with patch.object(responses, "AgentRunner", FakeRunner), patch.object(responses, "ResponseStateStore", return_value=self.state), patch.object(responses, "_remember_turn", AsyncMock()):
             client = self.app.test_client()
-            reply = await client.post("/v1/responses", json={"model": "coding", "input": "hello"}, headers={"Authorization": f"Bearer {API_KEY}"})
+            reply = await client.post("/v1/responses", json={"model": "coding", "input": "hello", "stream": False}, headers={"Authorization": f"Bearer {API_KEY}"})
             self.assertEqual(reply.status_code, 200)
             body = await reply.get_json()
             self.assertEqual(body["object"], "response")

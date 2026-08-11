@@ -92,12 +92,13 @@ def collect_stream(resp):
     return content, chunks, got_done, raw
 
 
-# ── 1. Simple text, no session, non-streaming (default) ─────────
+# ── 1. Simple text, no session, explicit non-streaming ─────────
 
 def test_simple_text():
     print("\n1. Simple text query (no session, stream=false)")
     payload = {
         "messages": [{"role": "user", "content": "What is the capital of France?"}],
+        "stream": False,
     }
     t0 = time.perf_counter()
     r = post(payload)
