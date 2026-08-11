@@ -1,7 +1,7 @@
 import numpy as np
 from loguru import logger
 from pathlib import Path
-from pipeline.config import MODEL_CACHE_DIR
+from pipeline.config import MODEL_CACHE_DIR, MODEL_LOCAL_FILES_ONLY
 from sentence_transformers import SentenceTransformer
 import torch
 import threading
@@ -9,13 +9,10 @@ from typing import List, Union
 import warnings
 import os 
 from loguru import logger
-import logging
 from commons.environment import load_local_environment
 
 load_local_environment()
 warnings.filterwarnings('ignore', message='Can\'t initialize NVML')
-os.environ['CHROMA_TELEMETRY_DISABLED'] = '1'
-logging.getLogger('chromadb').setLevel(logging.ERROR)
 Path(MODEL_CACHE_DIR).mkdir(parents=True, exist_ok=True)
 
 class EmbeddingService:
@@ -28,7 +25,8 @@ class EmbeddingService:
             self.model = SentenceTransformer(
                 model_name, 
                 cache_folder=MODEL_CACHE_DIR,
-                token=os.getenv("HF_TOKEN"),
+                token=os.getenv("HF_TOKEN") or None,
+                local_files_only=MODEL_LOCAL_FILES_ONLY,
                 device=self.device
             )
         except Exception as e:
@@ -41,7 +39,8 @@ class EmbeddingService:
                     self.model = SentenceTransformer(
                         model_name, 
                         cache_folder=MODEL_CACHE_DIR,
-                        token=os.getenv("HF_TOKEN"),
+                        token=os.getenv("HF_TOKEN") or None,
+                local_files_only=MODEL_LOCAL_FILES_ONLY,
                         device="cpu"
                     )
                 except Exception as cpu_e:

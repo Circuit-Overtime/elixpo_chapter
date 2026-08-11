@@ -20,18 +20,17 @@ from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parents[1]
 VENV_PYTHON = ROOT / "venv" / "bin" / "python"
-CHROMA_BIN = ROOT / "venv" / "bin" / "chroma"
 ENV_FILE = ROOT / ".env.local"
 LOG_DIR = ROOT / "data" / "logs" / "local"
 REDIS_DIR = ROOT / "data" / "redis"
-CHROMA_DIR = ROOT / "data" / "embeddings"
+QDRANT_DIR = ROOT / "data" / "qdrant"
 LOCAL_DIR = ROOT / "data" / "local"
 
 REQUIRED_MODULES = (
     "quart",
     "hypercorn",
     "redis",
-    "chromadb",
+    "qdrant_client",
     "sentence_transformers",
     "playwright",
     "yaml",
@@ -58,9 +57,8 @@ def load_environment() -> dict[str, str]:
             "WORKER_PORT": values.get("WORKER_PORT") or "9002",
             "REDIS_HOST": "127.0.0.1",
             "REDIS_PORT": values.get("REDIS_PORT") or "9530",
-            "CHROMA_API_IMPL": "http",
-            "CHROMA_SERVER_HOST": "127.0.0.1",
-            "CHROMA_SERVER_PORT": values.get("CHROMA_SERVER_PORT") or "9001",
+            "QDRANT_MODE": "local",
+            "QDRANT_PATH": values.get("QDRANT_PATH") or str(QDRANT_DIR),
             "MODEL_CACHE_DIR": values.get("MODEL_CACHE_DIR") or str(ROOT / "data" / "models"),
             "PYTHONPATH": str(ROOT / "lixsearch"),
         }
@@ -76,8 +74,6 @@ def preflight() -> list[str]:
         errors.append("Root .env.local file is missing")
     if not VENV_PYTHON.is_file():
         errors.append("Python virtual environment is missing at ./venv")
-    if not CHROMA_BIN.is_file():
-        errors.append("Chroma CLI is missing from ./venv/bin")
     if shutil.which("redis-server") is None:
         errors.append("redis-server is not installed")
     for module_name in REQUIRED_MODULES:
@@ -106,6 +102,20 @@ def redis_config(env: dict[str, str]) -> str:
             "", 
         )
     )
+
+
+def redis_is_ready(env: dict[str, str]) -> bool:
+    import redis
+    try:
+        return bool(redis.Redis(
+            host="127.0.0.1",
+            port=int(env["REDIS_PORT"]),
+            password=env.get("REDIS_PASSWORD") or None,
+            socket_connect_timeout=1,
+            socket_timeout=1,
+        ).ping())
+    except redis.RedisError:
+        return False
 
 
 def wait_for_port(host: str, port: int, process: subprocess.Popen, timeout: float) -> None:
@@ -156,31 +166,20 @@ class LocalStack:
         return process
 
     def start(self, infrastructure_only: bool = False) -> None:
-        for directory in (LOG_DIR, REDIS_DIR, CHROMA_DIR, LOCAL_DIR, Path(self.env["MODEL_CACHE_DIR"])):
+        for directory in (LOG_DIR, REDIS_DIR, QDRANT_DIR, LOCAL_DIR, Path(self.env["MODEL_CACHE_DIR"])):
             directory.mkdir(parents=True, exist_ok=True)
 
-        redis_conf = LOCAL_DIR / "redis.conf"
-        redis_conf.write_text(redis_config(self.env), encoding="utf-8")
-        redis_process = self._spawn("redis", ["redis-server", str(redis_conf)])
-        wait_for_port("127.0.0.1", int(self.env["REDIS_PORT"]), redis_process, 15)
-
-        chroma_process = self._spawn(
-            "chroma",
-            [
-                str(CHROMA_BIN),
-                "run",
-                "--host",
-                "127.0.0.1",
-                "--port",
-                self.env["CHROMA_SERVER_PORT"],
-                "--path",
-                str(CHROMA_DIR),
-            ],
-        )
-        wait_for_port("127.0.0.1", int(self.env["CHROMA_SERVER_PORT"]), chroma_process, 30)
+        if redis_is_ready(self.env):
+            print(f"[local] reusing Redis at 127.0.0.1:{self.env['REDIS_PORT' ]}")
+        else:
+            redis_conf = LOCAL_DIR / "redis.conf"
+            redis_conf.write_text(redis_config(self.env), encoding="utf-8")
+            redis_conf.chmod(0o600)
+            redis_process = self._spawn("redis", ["redis-server", str(redis_conf)])
+            wait_for_port("127.0.0.1", int(self.env["REDIS_PORT"]), redis_process, 15)
 
         if infrastructure_only:
-            print("[local] Redis and Chroma are ready")
+            print("[local] Redis and persistent local Qdrant are ready")
             return
 
         app_process = self._spawn("app", [str(VENV_PYTHON), "lixsearch/app/main.py"])

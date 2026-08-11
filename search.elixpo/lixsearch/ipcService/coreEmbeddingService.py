@@ -212,7 +212,8 @@ class CoreEmbeddingService:
         self._shutdown_event.set()
         try:
             self.vector_store.persist_to_disk()
+            self.vector_store.close()
         except Exception as e:
-            logger.warning(f"[CORE] Final persist failed: {e}")
+            logger.warning(f"[CORE] Final vector-store shutdown failed: {e}")
         self.executor.shutdown(wait=False, cancel_futures=True)
         self._persist_thread.join(timeout=2)

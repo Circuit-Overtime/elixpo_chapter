@@ -14,7 +14,7 @@ class LocalDevTests(unittest.TestCase):
         self.assertEqual(env["CORE_SERVICE_BACKEND"], "local")
         self.assertEqual(env["WORKERS"], "1")
         self.assertEqual(env["REDIS_HOST"], "127.0.0.1")
-        self.assertEqual(env["CHROMA_SERVER_HOST"], "127.0.0.1")
+        self.assertEqual(env["QDRANT_MODE"], "local")
 
     def test_redis_configuration_is_local_and_persistent(self):
         config = local_dev.redis_config(
