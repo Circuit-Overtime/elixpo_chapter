@@ -592,7 +592,8 @@ function addSelectionOutline() {
     const width = parseFloat(selectedImage.getAttribute('width'));
     const height = parseFloat(selectedImage.getAttribute('height'));
 
-    const selectionPadding = 8; // Padding around the selection
+    const zoom = window.currentZoom || 1;
+    const selectionPadding = 8 / zoom; // Padding around the selection
     const expandedX = x - selectionPadding;
     const expandedY = y - selectionPadding;
     const expandedWidth = width + 2 * selectionPadding;
@@ -651,7 +652,7 @@ function removeSelectionOutline() {
 function addResizeAnchors(x, y, width, height, centerX, centerY) {
     const zoom = window.currentZoom || 1;
     const anchorSize = 10 / zoom;
-    const anchorStrokeWidth = 2;
+    const anchorStrokeWidth = 2 / zoom;
 
     const positions = [
         { x: x, y: y }, // Top-left
@@ -669,6 +670,7 @@ function addResizeAnchors(x, y, width, height, centerX, centerY) {
         anchor.setAttribute("fill", "#121212");
         anchor.setAttribute("stroke", "#5B57D1");
         anchor.setAttribute("stroke-width", anchorStrokeWidth);
+        anchor.setAttribute("vector-effect", "non-scaling-stroke");
         anchor.setAttribute("class", "resize-anchor");
         anchor.style.cursor = ["nw-resize", "ne-resize", "sw-resize", "se-resize"][i];
 
@@ -684,17 +686,19 @@ function addResizeAnchors(x, y, width, height, centerX, centerY) {
 }
 
 function addRotationAnchor(x, y, width, height, centerX, centerY) {
-    const anchorStrokeWidth = 2;
-    const rotationAnchorPos = { x: x + width / 2, y: y - 30 };
+    const zoom = window.currentZoom || 1;
+    const anchorStrokeWidth = 2 / zoom;
+    const rotationAnchorPos = { x: x + width / 2, y: y - 30 / zoom };
     
     const rotationAnchor = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     rotationAnchor.setAttribute('cx', rotationAnchorPos.x);
     rotationAnchor.setAttribute('cy', rotationAnchorPos.y);
-    rotationAnchor.setAttribute('r', 8);
+    rotationAnchor.setAttribute('r', 5 / zoom);
     rotationAnchor.setAttribute('class', 'rotation-anchor');
     rotationAnchor.setAttribute('fill', '#121212');
     rotationAnchor.setAttribute('stroke', '#5B57D1');
     rotationAnchor.setAttribute('stroke-width', anchorStrokeWidth);
+    rotationAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
     rotationAnchor.setAttribute('style', 'pointer-events: all;');
     
     // Apply the same rotation as the image

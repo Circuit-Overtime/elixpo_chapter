@@ -358,7 +358,8 @@ class Circle {
     updateSelectionControls() {
         if (!this.selectionOutline || this.anchors.length === 0) return;
 
-        const anchorSize = 10;
+        const zoom = window.currentZoom || 1;
+        const anchorSize = 10 / zoom;
         const expandedX = -this.rx - this.selectionPadding;
         const expandedY = -this.ry - this.selectionPadding;
         const expandedWidth = this.rx * 2 + 2 * this.selectionPadding;
@@ -393,7 +394,7 @@ class Circle {
 
         if (this.rotationAnchor) {
             this.rotationAnchor.setAttribute('cx', expandedX + expandedWidth / 2);
-            this.rotationAnchor.setAttribute('cy', expandedY - 30);
+            this.rotationAnchor.setAttribute('cy', expandedY - 30 / zoom);
         }
     }
 
