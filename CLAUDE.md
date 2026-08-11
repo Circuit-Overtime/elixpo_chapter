@@ -254,7 +254,7 @@ wrangler secret put SSO_CLIENT_SECRET        # OAuth client secret from accounts
 
 ### Backend (.env.local)
 Required: `POLLINATIONS_API_KEY`; optional: `HF_TOKEN`
-Optional overrides: `REDIS_HOST`, `REDIS_PORT`, `CHROMA_SERVER_HOST`, `CHROMA_SERVER_PORT`, `IPC_HOST`, `IPC_PORT`, `WORKERS` (Hypercorn workers per container, default 10), `WORKER_PORT` (default 9002), `LOG_LEVEL`
+Optional overrides: `REDIS_HOST`, `REDIS_PORT`, `QDRANT_MODE`, `QDRANT_URL`, `QDRANT_PATH`, `QDRANT_COLLECTION`, `IPC_HOST`, `IPC_PORT`, `WORKERS` (Hypercorn workers per container, default 10), `WORKER_PORT` (default 9002), `LOG_LEVEL`
 
 ### Frontend (wrangler.toml vars + secrets)
 Vars: `BACKEND_URL`, `GUEST_REQUEST_LIMIT`, `SSO_REDIRECT_URI`

@@ -150,9 +150,15 @@ IMAGE_SEARCH_QUERY_WORDS_LIMIT = 15
 ERROR_MESSAGE_TRUNCATE = 100
 ERROR_CONTEXT_TRUNCATE = 150
 
-CHROMA_API_IMPL = os.getenv("CHROMA_API_IMPL")
-CHROMA_SERVER_HOST = os.getenv("CHROMA_SERVER_HOST")
-CHROMA_SERVER_PORT = int(os.getenv("CHROMA_SERVER_PORT"))
+QDRANT_MODE = os.getenv("QDRANT_MODE", "server").strip().lower()
+QDRANT_URL = os.getenv("QDRANT_URL", "http://127.0.0.1:6333")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
+QDRANT_PATH = os.path.abspath(os.getenv("QDRANT_PATH", "./data/qdrant"))
+QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "document_embeddings")
+QDRANT_ON_DISK = os.getenv("QDRANT_ON_DISK", "true").lower() in {"1", "true", "yes"}
+QDRANT_QUANTILE = float(os.getenv("QDRANT_QUANTILE", "0.99"))
+QDRANT_ALWAYS_RAM = os.getenv("QDRANT_ALWAYS_RAM", "true").lower() in {"1", "true", "yes"}
+QDRANT_TIMEOUT = int(os.getenv("QDRANT_TIMEOUT", "30"))
 
 VECTOR_DB_POOL_SIZE = 20
 VECTOR_DB_QUERY_TIMEOUT = 30

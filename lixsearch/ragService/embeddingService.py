@@ -9,13 +9,10 @@ from typing import List, Union
 import warnings
 import os 
 from loguru import logger
-import logging
 from commons.environment import load_local_environment
 
 load_local_environment()
 warnings.filterwarnings('ignore', message='Can\'t initialize NVML')
-os.environ['CHROMA_TELEMETRY_DISABLED'] = '1'
-logging.getLogger('chromadb').setLevel(logging.ERROR)
 Path(MODEL_CACHE_DIR).mkdir(parents=True, exist_ok=True)
 
 class EmbeddingService:
@@ -28,7 +25,7 @@ class EmbeddingService:
             self.model = SentenceTransformer(
                 model_name, 
                 cache_folder=MODEL_CACHE_DIR,
-                token=os.getenv("HF_TOKEN"),
+                token=os.getenv("HF_TOKEN") or None,
                 device=self.device
             )
         except Exception as e:
@@ -41,7 +38,7 @@ class EmbeddingService:
                     self.model = SentenceTransformer(
                         model_name, 
                         cache_folder=MODEL_CACHE_DIR,
-                        token=os.getenv("HF_TOKEN"),
+                        token=os.getenv("HF_TOKEN") or None,
                         device="cpu"
                     )
                 except Exception as cpu_e:

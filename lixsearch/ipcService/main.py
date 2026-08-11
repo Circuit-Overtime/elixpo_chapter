@@ -13,9 +13,7 @@ from ipcService.searchPortManager import accessSearchAgents, _ensure_background_
 from pipeline.config import IPC_HOST, IPC_PORT, IPC_AUTHKEY
 
 warnings.filterwarnings('ignore', message='Can\'t initialize NVML')
-os.environ['CHROMA_TELEMETRY_DISABLED'] = '1'
 
-logging.getLogger('chromadb').setLevel(logging.ERROR)
 
 if __name__ == "__main__":
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

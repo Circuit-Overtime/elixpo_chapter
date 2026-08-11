@@ -29,22 +29,22 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ── ChromaDB — vector store ──────────────────────────────────────────
-  chroma-server:
-    image: chromadb/chroma:1.5.2
-    container_name: lixsearch-chroma
-    command: ["run", "--host", "0.0.0.0", "--port", "9001", "--path", "/chroma_data"]
+  # ── Qdrant — production vector store
+  qdrant:
+    image: qdrant/qdrant:v1.18.3
+    container_name: lixsearch-qdrant
     environment:
-      - ANONYMIZED_TELEMETRY=FALSE
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
     volumes:
-      - ./data/embeddings:/chroma_data
+      - ./data/qdrant:/qdrant/storage
     networks:
       - elixpo-network
     expose:
-      - "9001"
+      - "6333"
+      - "6334"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9001'"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/6333'"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -76,8 +76,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=9530
       - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme_redis_secret}
-      - CHROMA_SERVER_HOST=chroma-server
-      - CHROMA_SERVER_PORT=9001
+      - QDRANT_MODE=server
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
       - IPC_HOST=0.0.0.0
       - IPC_PORT=9510
       - IPC_AUTHKEY=${IPC_AUTHKEY:-changeme_ipc_secret}
@@ -95,7 +96,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      chroma-server:
+      qdrant:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python -c 'import socket; s=socket.socket(); s.settimeout(5); s.connect((\"localhost\", 9510)); s.close()'"]
@@ -168,9 +169,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=9530
       - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme_redis_secret}
-      - CHROMA_API_IMPL=http
-      - CHROMA_SERVER_HOST=chroma-server
-      - CHROMA_SERVER_PORT=9001
+      - QDRANT_MODE=server
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
       - WORKER_TIMEOUT=120
       - WORKER_PORT=9002
       - WORKERS=10
@@ -194,7 +195,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      chroma-server:
+      qdrant:
         condition: service_healthy
       ipc-service:
         condition: service_healthy
@@ -245,8 +246,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=9530
       - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme_redis_secret}
-      - CHROMA_SERVER_HOST=chroma-server
-      - CHROMA_SERVER_PORT=9001
+      - QDRANT_MODE=server
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
       - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
