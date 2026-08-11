@@ -3,6 +3,11 @@ from dotenv import load_dotenv
 import re
 load_dotenv()
 
+# Keep all Hugging Face and SentenceTransformers artifacts on persistent disk.
+MODEL_CACHE_DIR = os.path.abspath(os.getenv("MODEL_CACHE_DIR", "./data/models"))
+os.environ.setdefault("HF_HOME", MODEL_CACHE_DIR)
+os.environ.setdefault("SENTENCE_TRANSFORMERS_HOME", MODEL_CACHE_DIR)
+
 MAX_TRANSCRIPT_WORD_COUNT = 3000
 MAX_TOTAL_SCRAPE_WORD_COUNT = 3000
 MAX_IMAGES_TO_INCLUDE = 10

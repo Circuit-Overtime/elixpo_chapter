@@ -1,5 +1,7 @@
 import numpy as np
 from loguru import logger
+from pathlib import Path
+from pipeline.config import MODEL_CACHE_DIR
 from sentence_transformers import SentenceTransformer
 import torch
 import threading
@@ -14,6 +16,7 @@ load_dotenv()
 warnings.filterwarnings('ignore', message='Can\'t initialize NVML')
 os.environ['CHROMA_TELEMETRY_DISABLED'] = '1'
 logging.getLogger('chromadb').setLevel(logging.ERROR)
+Path(MODEL_CACHE_DIR).mkdir(parents=True, exist_ok=True)
 
 class EmbeddingService:
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
@@ -24,7 +27,7 @@ class EmbeddingService:
         try:
             self.model = SentenceTransformer(
                 model_name, 
-                cache_folder="./model_cache", 
+                cache_folder=MODEL_CACHE_DIR,
                 token=os.getenv("HF_TOKEN"),
                 device=self.device
             )
@@ -37,7 +40,7 @@ class EmbeddingService:
                 try:
                     self.model = SentenceTransformer(
                         model_name, 
-                        cache_folder="./model_cache", 
+                        cache_folder=MODEL_CACHE_DIR,
                         token=os.getenv("HF_TOKEN"),
                         device="cpu"
                     )
