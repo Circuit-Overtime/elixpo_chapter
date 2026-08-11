@@ -87,15 +87,30 @@ function Empty({ children }: { children: React.ReactNode }) {
 function AgentPulse({ snapshot }: { snapshot: DashboardSnapshot }) {
   const active = snapshot.runs.filter((run) => run.status === "in_progress" || run.status === "queued");
   const recent = snapshot.runs.slice(0, 8);
-  const recentFailures = recent.filter((run) => ["failure", "timed_out", "action_required"].includes(run.conclusion || ""));
-  const mood = active.length ? "In motion" : recentFailures.length ? "Watchful" : recent.length ? "Steady" : "Resting";
+  const snapshotTime = Date.parse(snapshot.generatedAt);
+  const recentHour = snapshot.runs.filter((run) => snapshotTime - Date.parse(run.updatedAt) <= 60 * 60 * 1000);
+  const unresolvedFailures = uniqueRuntimeRoute(snapshot.runs, 20).filter(
+    (run) =>
+      snapshotTime - Date.parse(run.updatedAt) <= 6 * 60 * 60 * 1000
+      && ["failure", "timed_out", "action_required"].includes(run.conclusion || ""),
+  );
+  const mood = active.length
+    ? "In motion"
+    : unresolvedFailures.length
+      ? "Needs attention"
+      : recentHour.length
+        ? "Active recently"
+        : recent.length
+          ? "Steady"
+          : "Resting";
   const focus = active[0] || snapshot.runs[0];
+  const activityCount = active.length || recentHour.length;
   return (
     <section className={`agent-pulse ${active.length ? "agent-pulse-live" : ""}`}>
       <span className="agent-pulse-orb"><Bot size={19} /><i /></span>
       <span><small>Operational mood</small><strong>{mood}</strong></span>
       <span className="agent-pulse-focus"><small>{active.length ? "Current focus" : "Latest focus"}</small><strong>{focus ? focus.name : "No GitHub activity returned"}</strong><em>{focus ? `${status(focus)} · ${time(focus.updatedAt)}` : "Waiting for the next recorded event"}</em></span>
-      <span className="agent-pulse-count"><strong>{active.length}</strong><small>live now</small></span>
+      <span className="agent-pulse-count"><strong>{activityCount}</strong><small>{active.length ? "live now" : "runs · last hour"}</small></span>
     </section>
   );
 }

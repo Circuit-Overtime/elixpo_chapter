@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Radio } from "lucide-react";
 import { BuildingDashboard, FloorDirectoryView, FloorView, JournalView, RunsView, SecurityView, WorkView } from "@/components/dashboard-views";
 import type { DashboardSnapshot, FloorDefinition } from "@/lib/dashboard-model";
@@ -20,19 +20,36 @@ export function LiveDashboard({ view, floor }: { view: DashboardView; floor?: Fl
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const hasSnapshot = useRef(false);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetch(`${dashboardApiRoot()}/snapshot`, { signal: controller.signal, headers: { accept: "application/json" } })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`Dashboard API returned ${response.status}`);
-        return response.json() as Promise<DashboardSnapshot>;
-      })
-      .then(setSnapshot)
-      .catch((reason: unknown) => {
-        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Dashboard API request failed");
-      });
-    return () => controller.abort();
+    let controller: AbortController | null = null;
+    const refresh = () => {
+      controller?.abort();
+      controller = new AbortController();
+      fetch(`${dashboardApiRoot()}/snapshot`, { signal: controller.signal, headers: { accept: "application/json" } })
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`Dashboard API returned ${response.status}`);
+          return response.json() as Promise<DashboardSnapshot>;
+        })
+        .then((nextSnapshot) => {
+          hasSnapshot.current = true;
+          setSnapshot(nextSnapshot);
+          setError("");
+        })
+        .catch((reason: unknown) => {
+          if (!controller?.signal.aborted && !hasSnapshot.current) {
+            setError(reason instanceof Error ? reason.message : "Dashboard API request failed");
+          }
+        });
+    };
+
+    refresh();
+    const interval = window.setInterval(refresh, 30_000);
+    return () => {
+      window.clearInterval(interval);
+      controller?.abort();
+    };
   }, [attempt]);
 
   if (error) return <main className="real-page"><section className="live-data-state live-data-error"><AlertTriangle size={24} /><div><strong>Live GitHub data is unavailable</strong><p>{error}</p></div><button onClick={() => { setError(""); setSnapshot(null); setAttempt((value) => value + 1); }}>Retry</button></section></main>;
