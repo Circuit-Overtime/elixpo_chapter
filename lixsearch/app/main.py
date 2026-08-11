@@ -12,7 +12,7 @@ from sessions.main import get_session_manager
 from ragService.main import get_retrieval_system
 from chatEngine.main import initialize_chat_engine
 from commons.requestID import RequestIDMiddleware
-from app.gateways import health, search, session, stats, surf, completions, image, export, content
+from app.gateways import health, search, session, stats, surf, completions, responses, image, export, content
 logger = logging.getLogger("lixsearch-api")
 
 
@@ -140,6 +140,10 @@ class lixSearch:
         async def completions_wrapper():
             return await completions.chat_completions(self.pipeline_initialized)
         self.app.route('/v1/chat/completions', methods=['POST'])(completions_wrapper)
+
+        async def responses_wrapper():
+            return await responses.responses(self.pipeline_initialized)
+        self.app.route('/v1/responses', methods=['POST'])(responses_wrapper)
 
         async def models_list():
             from pipeline.config import RESPONSE_MODEL

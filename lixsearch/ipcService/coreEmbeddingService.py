@@ -160,6 +160,23 @@ class CoreEmbeddingService:
     
     def get_vector_store_stats(self) -> Dict:
         return self.vector_store.get_stats()
+
+    def remember_turn(self, conversation_id: str, response_id: str, user_text: str, assistant_text: str) -> None:
+        summary = f"User: {user_text[:1000]}\nAssistant: {assistant_text[:2000]}"
+        embedding = self.embedding_service.embed_single(summary)
+        self.vector_store.add_chunks([{
+            "text": summary,
+            "url": f"memory://{conversation_id}/{response_id}",
+            "chunk_id": response_id,
+            "conversation_id": conversation_id,
+            "response_id": response_id,
+            "kind": "conversation_turn",
+            "embedding": embedding,
+        }])
+
+    def recall_turns(self, conversation_id: str, query: str, top_k: int = 4) -> List[Dict]:
+        embedding = self.embedding_service.embed_single(query)
+        return self.vector_store.search(embedding, top_k=top_k, conversation_id=conversation_id)
     
     def get_semantic_cache_stats(self) -> Dict:
         return self.semantic_cache.get_stats()
