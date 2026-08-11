@@ -5,7 +5,6 @@ from dataclasses import asdict, dataclass
 import json
 import os
 from pathlib import Path
-import sys
 from typing import Any, Iterable
 
 import yaml
@@ -15,8 +14,8 @@ from commons.environment import load_local_environment
 from agentRuntime.specs import AGENT_SPECS
 from skillRegistry import SkillRegistry, get_skill_registry
 
-ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OREOFLOW_ROOT = ROOT.parent / "agent.elixpo"
+AGENT_RUNTIME_ROOT = Path(__file__).resolve().parent
+DEFAULT_MODELS_CONFIG = AGENT_RUNTIME_ROOT / "models.yaml"
 
 
 class AgentRuntimeError(RuntimeError):
@@ -41,9 +40,9 @@ class AgentRunner:
     def __init__(self, *, registry: SkillRegistry | None = None, models_path: str | Path | None = None) -> None:
         self.registry = registry or get_skill_registry()
         configured = os.getenv("OREOFLOW_MODELS_CONFIG")
-        self.models_path = Path(models_path or configured or DEFAULT_OREOFLOW_ROOT / "config" / "models.yaml")
+        self.models_path = Path(models_path or configured or DEFAULT_MODELS_CONFIG)
         if not self.models_path.is_file():
-            raise AgentRuntimeError(f"OreoFlow models config not found: {self.models_path}")
+            raise AgentRuntimeError(f"Agent models config not found: {self.models_path}")
         self.models = yaml.safe_load(self.models_path.read_text(encoding="utf-8"))
 
     def prepare(
@@ -178,14 +177,7 @@ def response_content(result: dict[str, Any]) -> str:
 
 
 def _oreoflow_types():
-    oreoflow_root = Path(os.getenv("OREOFLOW_ROOT", DEFAULT_OREOFLOW_ROOT)).resolve()
-    if str(oreoflow_root) not in sys.path:
-        sys.path.insert(0, str(oreoflow_root))
-    try:
-        from rtk.models import Message, ToolDef
-        from rtk.router import Router
-    except ImportError as exc:
-        raise AgentRuntimeError(f"Unable to import OreoFlow from {oreoflow_root}: {exc}") from exc
+    from oreoflow import Message, Router, ToolDef
     return Router, Message, ToolDef
 
 
