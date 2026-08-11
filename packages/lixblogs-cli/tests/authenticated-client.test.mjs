@@ -67,7 +67,20 @@ test("authenticated requests target the supplied Blogs URL with bearer auth", as
       return new Response(null, { status: 200 });
     },
   });
-  await client.request("https://blogs.elixpo.com/api/v1/blogs");
+  await client.request("/api/v1/blogs");
   assert.equal(calls[0].url, "https://blogs.elixpo.com/api/v1/blogs");
   assert.equal(calls[0].options.headers.authorization, "Bearer current-access");
+});
+
+test("authenticated requests cannot send a bearer token to Accounts or another origin", async () => {
+  const credentialStore = new InMemoryCredentialStore();
+  await credentialStore.set("default", {
+    ...expiredCredentials(),
+    expiresAt: Date.now() + 600_000,
+  });
+  const client = new AuthenticatedClient({ provider: {}, credentialStore, profileId: "default" });
+  await assert.rejects(
+    () => client.request("https://accounts.elixpo.com/api/auth/me"),
+    /restricted to the configured LixBlogs/,
+  );
 });

@@ -21,10 +21,18 @@ export class LoginRequiredError extends Error {
 }
 
 export class AuthenticatedClient {
-  constructor({ provider, credentialStore, profileId, fetchImpl = globalThis.fetch, refreshSkewMs = DEFAULT_REFRESH_SKEW_MS }) {
+  constructor({
+    provider,
+    credentialStore,
+    profileId,
+    apiBaseUrl = "https://blogs.elixpo.com",
+    fetchImpl = globalThis.fetch,
+    refreshSkewMs = DEFAULT_REFRESH_SKEW_MS,
+  }) {
     this.provider = provider;
     this.credentialStore = credentialStore;
     this.profileId = profileId;
+    this.apiBaseUrl = new URL(apiBaseUrl);
     this.fetchImpl = fetchImpl;
     this.refreshSkewMs = refreshSkewMs;
   }
@@ -77,8 +85,12 @@ export class AuthenticatedClient {
   }
 
   async request(url, options = {}) {
+    const target = new URL(url, this.apiBaseUrl);
+    if (target.origin !== this.apiBaseUrl.origin || !target.pathname.startsWith("/api/v1/")) {
+      throw new Error("Authenticated CLI requests are restricted to the configured LixBlogs /api/v1 resource server.");
+    }
     let credentials = await this.credentials();
-    const send = () => this.fetchImpl(url, {
+    const send = () => this.fetchImpl(target.toString(), {
       ...options,
       headers: { ...options.headers, authorization: `Bearer ${credentials.accessToken}` },
     });

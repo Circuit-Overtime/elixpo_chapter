@@ -13,7 +13,7 @@
     "THREAT_MODEL.md"
   ],
   "scripts": {
-    "test": "node --test \"tests/**/*.test.mjs\""
+    "test": "node --test tests/*.test.mjs"
   },
   "engines": {
     "node": ">=18"

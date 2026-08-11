@@ -72,7 +72,7 @@ export class AuthProvider {
 
   /**
    * Exchange a refresh token for a new access token.
-   * @param {{ refreshToken: string }} params
+   * @param {{ refreshToken: string, scopes?: string[] }} params
    * @returns {Promise<TokenResponse>}
    */
   async refresh(_params) {

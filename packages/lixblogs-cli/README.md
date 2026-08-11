@@ -35,6 +35,10 @@ node bin/lixblogs.mjs auth login
 # Check login status
 node bin/lixblogs.mjs auth status
 
+# List profiles and choose the active one
+node bin/lixblogs.mjs auth profiles
+node bin/lixblogs.mjs auth use work
+
 # Log out (clears local credentials only)
 node bin/lixblogs.mjs auth logout
 
@@ -44,25 +48,34 @@ node bin/lixblogs.mjs auth revoke --yes
 
 Global flags:
 - `--profile <name>` — named profile to use (default: `"default"`)
-- `--env <environment>` — override environment (`development` | `production`)
+- `--env <environment>` — override environment (`development` | `staging` | `production`)
+- `--scope <scope>` — request an additional/alternate OAuth scope; repeatable
+- `--open` — open the verification URL with the device code pre-filled
+- `--accounts-url <url>` — override the Accounts issuer for local/staging tests
+- `--api-url <url>` — override the LixBlogs API origin; production defaults to
+  `https://blogs.elixpo.com`
 - `--json` — machine-readable JSON output
 - `--quiet` — suppress non-essential output
 - `--yes`, `-y` — auto-confirm destructive actions (required for `revoke`)
 - `--allow-insecure-fallback` — explicit opt-in: if the OS keychain is
   unavailable, use a non-persistent in-memory store instead of failing
 
-### Important: no real login yet
+### Service boundary
 
-Authentication currently runs against a **deterministic mock provider**
-only. There is no real login against `accounts.elixpo.com` yet — device-flow
-support there isn't confirmed (tracked separately). Production login is
-intentionally hard-disabled until a real, approved provider exists; see
-`src/auth/productionGate.js`.
+- `https://accounts.elixpo.com` issues, refreshes, and revokes OAuth tokens.
+- `https://blogs.elixpo.com/api/v1` is the only production resource API.
+- The CLI discovers Accounts endpoints before login and rejects incompatible
+  contract versions or endpoints on an unexpected origin.
+- The mock provider is available only with an explicit non-production
+  environment, for example `--env development --auth-provider mock`.
+
+The production client is public and has no client secret. Never add one to
+CLI configuration, package files, or GitHub secrets.
 
 ## Development
 
 ```bash
-npm test          # runs the full test suite (46 tests as of writing)
+npm test          # runs the full CLI test suite
 ```
 
 Tests exercise both a mocked auth provider and, where relevant, the real
@@ -75,8 +88,8 @@ for known platform-specific behavior (e.g. a documented WSL/keyring-rs quirk).
 ```
 bin/lixblogs.mjs         CLI entry point (Node's native util.parseArgs, no
                          third-party parsing dependency)
-src/auth/                AuthProvider interface + MockAuthProvider +
-                         production safety gate
+src/auth/                Accounts provider, development mock, refresh-safe
+                         authenticated client, and production safety gate
 src/commands/auth/       Command logic (login, status, logout, revoke) —
                          framework-agnostic, testable independently of the CLI shell
 src/config/              Credential storage (real keychain + gated fallback),
@@ -95,14 +108,11 @@ tests.
 See [#135](https://github.com/elixpo/blogs.elixpo/issues/135) for the full
 scope. Rough remaining order:
 
-1. Real device-flow support against `accounts.elixpo.com` (blocked on their
-   confirmed implementation — see linked accounts-service issue)
-2. Finalize the versioned bearer-token API contract
+1. Finalize the versioned bearer-token API contract
    ([#136](https://github.com/elixpo/blogs.elixpo/issues/136))
-3. Wire the real `ElixpoAuthProvider`, including automatic token refresh
-4. Profile selection UX, interactive/browser login flow polish
-5. Blog, media, organization, and stats commands
-6. Agent skill packages, packaging, and full documentation
+2. Blog, media, organization, and stats commands
+3. Interactive/browser login polish and packaging
+4. Agent skill packages and cross-repository E2E coverage
 
 ## Contributing
 

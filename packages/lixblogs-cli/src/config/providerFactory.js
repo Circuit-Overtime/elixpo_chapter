@@ -12,7 +12,7 @@ import { ElixpoAuthProvider } from "../auth/ElixpoAuthProvider.js";
 import { assertProviderAllowed } from "../auth/productionGate.js";
 
 /**
- * @param {{ environment: string, configAllowsProduction: boolean }} config
+ * @param {{ environment: string, authProvider: string, accountsBaseUrl?: string, clientId?: string, audience?: string }} config
  * @returns {import("../auth/AuthProvider.js").AuthProvider}
  */
 export function createAuthProvider(config) {
@@ -36,7 +36,6 @@ export function createAuthProvider(config) {
   assertProviderAllowed({
     providerId: provider.providerId,
     environment: config.environment,
-    configAllowsProduction: config.configAllowsProduction,
   });
 
   return provider;

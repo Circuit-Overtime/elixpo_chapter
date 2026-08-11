@@ -10,21 +10,9 @@
  * and continue. Every call site that constructs an AuthProvider must route
  * through assertProviderAllowed() first.
  *
- * APPROVED_PRODUCTION_PROVIDER_ID stays null until the real ElixpoAuthProvider
- * is implemented and approved — at that point this becomes "elixpo" and
- * this file's behavior flips from "reject everything in production" to
- * "reject everything except elixpo in production." Do not set this early.
- *
- * --- Open question from elixpo/blogs.elixpo#137, resolved by implementer ---
- * "Config flag, environment check, or both?" — both, required to agree.
- * Rationale: a single signal (just an env var, or just a config flag) is
- * one misconfiguration away from silently allowing production auth. This
- * function requires the caller to supply both an explicit `environment`
- * and an explicit `configAllowsProduction` flag, and only proceeds past
- * the "is this production" check if both are consistent. This is defense
- * in depth, not a claim that either signal alone is untrustworthy — the
- * point is that fixing one doesn't matter if the other was wrong.
- * Flagged for the maintainer to override if a single signal is preferred.
+ * Accounts now publishes the approved RFC 8628 contract, so production is
+ * enabled only for ElixpoAuthProvider. The deterministic mock remains usable
+ * in explicit development/test environments and can never cross this gate.
  */
 
 const APPROVED_PRODUCTION_PROVIDER_ID = "elixpo";
@@ -37,14 +25,10 @@ export class ProductionAuthGateError extends Error {
 }
 
 /**
- * @param {{ providerId: string, environment: string, configAllowsProduction: boolean }} params
+ * @param {{ providerId: string, environment: string }} params
  *   `environment` should come from explicit config, not inferred/guessed.
- *   `configAllowsProduction` is a second, independent explicit flag (e.g. a
- *   dedicated config key, not derived from `environment` itself) — both
- *   must be checked so a single misconfigured value can't silently enable
- *   production auth.
  */
-export function assertProviderAllowed({ providerId, environment, configAllowsProduction }) {
+export function assertProviderAllowed({ providerId, environment }) {
   const isProduction = environment === "production";
 
   if (!isProduction) {

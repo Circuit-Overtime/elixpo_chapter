@@ -81,12 +81,7 @@ work, a later issue) — destructive actions require --yes explicitly, always.
 
 const DEFAULT_SCOPES = [
   "openid", "profile", "email",
-  "lixblogs:profile:read", "lixblogs:profile:write",
-  "lixblogs:blog:read", "lixblogs:blog:write", "lixblogs:blog:publish", "lixblogs:blog:delete",
-  "lixblogs:media:read", "lixblogs:media:write",
-  "lixblogs:organizations:read", "lixblogs:organizations:write",
-  "lixblogs:collaboration:read", "lixblogs:collaboration:write",
-  "lixblogs:analytics:read", "lixblogs:notifications:read",
+  "lixblogs:profile:read", "lixblogs:blog:read",
 ];
 
 function configFlags(opts) {
@@ -110,6 +105,7 @@ async function openBrowser(url) {
   const command = process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd" : "xdg-open";
   const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
   const child = spawn(command, args, { detached: true, stdio: "ignore" });
+  child.on("error", () => {});
   child.unref();
 }
 
@@ -200,6 +196,7 @@ async function runLogin(opts) {
   if (!result.ok) {
     return fail(opts, result.reason);
   }
+  await profileRegistry.add(result.profileId);
   await profileRegistry.setActive(result.profileId);
   output(opts, { ok: true, profile: result.profileId });
   if (!opts.json && !opts.quiet) {

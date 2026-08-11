@@ -27,9 +27,9 @@ areas #137 itself named. Flagged for the maintainer to expand or narrow.
 
 - Scopes are least-privilege by default; publishing and destructive actions
   require scopes distinct from read/draft scopes (per #135).
-- The full scope list is owned by elixpo/blogs.elixpo#136 (API contract),
-  not this issue — this threat model assumes that list exists and each
-  scope is independently revocable.
+- Accounts publishes the registered LixBlogs scope list. Login defaults to
+  identity plus profile/blog read scopes; broader scopes must be requested
+  explicitly and remain bounded by the public client's registration.
 - Risk: an overly broad default scope grant (e.g. `login` implicitly
   granting `publish`) would mean any compromised session can publish
   without the user having explicitly consented to that. Mitigation: the
@@ -42,9 +42,8 @@ areas #137 itself named. Flagged for the maintainer to expand or narrow.
   scopes that specific token holds, until it's revoked or naturally
   expires (access tokens are short-lived; refresh tokens are the more
   valuable target).
-- Mitigations already in scope: `lixblogs auth revoke`, refresh rotation
-  (a used refresh token should not be reusable — this needs a test once the
-  real provider exists, not just the mock), multi-profile isolation (below).
+- Mitigations already in scope: `lixblogs auth revoke`, tested refresh
+  rotation/reuse rejection, and multi-profile isolation (below).
 - Not yet mitigated / open for later work: there's no mechanism yet for a
   user to see "which sessions/devices currently hold a valid token for my
   account" and revoke just one — this would materially reduce blast radius
@@ -79,10 +78,9 @@ areas #137 itself named. Flagged for the maintainer to expand or narrow.
   profiles already logged in, but must also never leak which other profiles
   exist to a scope that shouldn't know (e.g. `--json` output for one
   profile shouldn't enumerate other profiles' identifiers).
-- Not yet implemented/tested: this document assumes profile isolation as a
-  requirement; the actual profile-storage code doesn't exist yet in this
-  scaffold (auth provider + mock only, so far) — tracking as a known gap
-  for the CLI shell/command work that builds on this.
+- The active profile is non-sensitive registry metadata. Each profile's
+  credentials remain isolated in its own OS-keychain entry, and concurrent
+  refreshes for one profile share a single rotation operation.
 
 ## Explicitly out of scope for this document
 

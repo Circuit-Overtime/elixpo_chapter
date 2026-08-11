@@ -97,7 +97,7 @@ test("revoke is idempotent — revoking twice does not throw", async () => {
   await provider.revoke({ token: "some-token" }); // should not throw
 });
 
-test("production gate: mock provider is rejected in production even if config allows it (nothing approved yet)", () => {
+test("production gate: mock provider is rejected in production", () => {
   assert.throws(
     () =>
       assertProviderAllowed({
@@ -109,7 +109,7 @@ test("production gate: mock provider is rejected in production even if config al
   );
 });
 
-test("production gate: rejected in production if config flag disagrees, even before reaching the 'no approved provider' check", () => {
+test("production gate: mock rejection does not depend on legacy config flags", () => {
   assert.throws(
     () =>
       assertProviderAllowed({

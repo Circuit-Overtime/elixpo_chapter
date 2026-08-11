@@ -47,15 +47,6 @@ export function resolveConfig({ flags = {}, env = process.env } = {}) {
   const clientId = flags.clientId ?? env.LIXBLOGS_CLIENT_ID ?? environmentClient.clientId;
   const audience = flags.audience ?? env.LIXBLOGS_AUDIENCE ?? environmentClient.audience;
 
-  // Per the production gate design: this must be a SEPARATE explicit signal
-  // from `environment`, not derived from it, so a single misconfigured
-  // value can't enable production auth on its own. This only ever becomes
-  // relevant once a real provider is approved (see productionGate.js) —
-  // until then, production auth is refused regardless of this flag.
-  const configAllowsProduction =
-    flags.allowProductionAuth === true ||
-    env.LIXBLOGS_ALLOW_PRODUCTION_AUTH === "true";
-
   return {
     environment,
     profile,
@@ -65,6 +56,5 @@ export function resolveConfig({ flags = {}, env = process.env } = {}) {
     apiBaseUrl,
     clientId,
     audience,
-    configAllowsProduction,
   };
 }
