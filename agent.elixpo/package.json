@@ -1,7 +1,33 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "@elixpo/agent.elixpo",
+  "version": "1.2.1",
   "private": true,
+  "description": "OreoFlow live agent operations dashboard and framework documentation.",
+  "license": "MIT",
+  "author": {
+    "name": "Ayushman Bhattacharya",
+    "email": "ayushman@pollinations.ai",
+    "url": "https://github.com/Circuit-Overtime"
+  },
+  "homepage": "https://agent.elixpo.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elixpo/agent.elixpo.git",
+    "directory": "agent.elixpo"
+  },
+  "bugs": {
+    "url": "https://github.com/elixpo/agent.elixpo/issues"
+  },
+  "keywords": [
+    "oreoflow",
+    "agent",
+    "operations",
+    "dashboard",
+    "elixpo"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
