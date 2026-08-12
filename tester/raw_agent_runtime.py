@@ -23,6 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--agent", default="coding", help="coding, writing, web-search, auto, etc.")
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
+    parser.add_argument("--effort", choices=("low", "medium", "high"), default="low")
     parser.add_argument("--live", action="store_true", help="Perform a Pollinations request")
     parser.add_argument("--stream", action="store_true", help="Print streamed text deltas")
     return parser.parse_args()
@@ -43,13 +44,13 @@ async def run(args: argparse.Namespace) -> None:
         print("dry-run=ok (add --live to call OreoFlow/Pollinations)")
         return
     if args.stream:
-        async for event in runner.stream(args.agent, args.prompt):
+        async for event in runner.stream(args.agent, args.prompt, effort=args.effort):
             if event["type"] == "delta":
                 print(event["content"], end="", flush=True)
             elif event["type"] == "done":
                 print("\n" + json.dumps(event["result"]["response"]["usage"], indent=2))
         return
-    result = await runner.run(args.agent, args.prompt)
+    result = await runner.run(args.agent, args.prompt, effort=args.effort)
     print(response_content(result))
     print(json.dumps(result["response"]["usage"], indent=2))
 
