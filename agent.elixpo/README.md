@@ -72,7 +72,7 @@ Applications install this repository as a Python package and import only the
 stable `oreoflow` surface:
 
 ```bash
-pip install "git+https://github.com/elixpo/agent.elixpo.git@v0.2.0"
+pip install "git+https://github.com/elixpo/agent.elixpo.git@v1.2.1"
 ```
 
 ```python

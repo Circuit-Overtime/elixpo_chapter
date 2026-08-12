@@ -22,6 +22,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { CodeBlock } from "@/components/code-block";
 import { pageMetadata } from "@/lib/site-metadata";
 
 export const metadata: Metadata = pageMetadata(
@@ -67,8 +68,8 @@ const sections = [
   ["test", "Raw testing"],
 ] as const;
 
-function Code({ children }: { children: string }) {
-  return <pre className="docs-code"><code>{children}</code></pre>;
+function Code({ children, language = "text", title }: { children: string; language?: string; title?: string }) {
+  return <CodeBlock code={children} language={language} title={title} />;
 }
 
 function SectionTitle({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
@@ -79,7 +80,7 @@ export default function DocsPage() {
   return (
     <main className="docs-page">
       <aside className="docs-sidebar">
-        <div className="docs-sidebar-head"><Library size={18} /><span><strong>OreoFlow</strong><small>Framework v0.2.0</small></span></div>
+        <div className="docs-sidebar-head"><Library size={18} /><span><strong>OreoFlow</strong><small>Framework v1.2.1</small></span></div>
         <nav aria-label="Framework documentation">
           {sections.map(([id, label]) => <a href={`#${id}`} key={id}>{label}</a>)}
         </nav>
@@ -94,7 +95,7 @@ export default function DocsPage() {
           <h1>Build agents on the<br /><em>OreoFlow runtime.</em></h1>
           <p>A small, typed Python boundary for model routing, OpenAI-compatible calls, streaming, tool schemas, budgets, and usage accounting.</p>
           <div className="docs-actions">
-            <a href="#install">Install v0.2.0 <ArrowRight size={15} /></a>
+            <a href="#install">Install v1.2.1 <ArrowRight size={15} /></a>
             <a className="docs-action-secondary" href="https://github.com/elixpo/agent.elixpo" target="_blank" rel="noreferrer">View source <ExternalLink size={14} /></a>
           </div>
           <div className="docs-facts">
@@ -116,8 +117,8 @@ export default function DocsPage() {
         <section className="docs-section" id="install">
           <SectionTitle eyebrow="01 · Install" title="Pin the released framework">Use the Git tag in production and an editable sibling checkout while developing both repositories.</SectionTitle>
           <div className="docs-two-code">
-            <div><h3><GitBranch size={16} /> Released tag</h3><Code>{`python -m pip install \\\n  "git+https://github.com/elixpo/agent.elixpo.git@v0.2.0"`}</Code></div>
-            <div><h3><FileCode2 size={16} /> Local development</h3><Code>{`python -m pip install -e ../agent.elixpo`}</Code></div>
+            <div><h3><GitBranch size={16} /> Released tag</h3><Code language="shell" title="Install from GitHub release">{`python -m pip install \\\n  "git+https://github.com/elixpo/agent.elixpo.git@v1.2.1"`}</Code></div>
+            <div><h3><FileCode2 size={16} /> Local development</h3><Code language="shell" title="Editable checkout">{`python -m pip install -e ../agent.elixpo`}</Code></div>
           </div>
           <p className="docs-prose">The distribution name is <code>elixpoo</code>. The supported application import is <code>oreoflow</code>. Search&apos;s Docker build installs the sibling repository through a named BuildKit context.</p>
         </section>
@@ -125,7 +126,7 @@ export default function DocsPage() {
         <section className="docs-section" id="configure">
           <SectionTitle eyebrow="02 · Configure" title="Route capabilities, not model names">Agents request a logical role. A small YAML file decides which provider model serves it.</SectionTitle>
           <div className="docs-split">
-            <Code>{`base_url: https://gen.pollinations.ai/v1
+            <Code language="yaml" title="models.yaml">{`base_url: https://gen.pollinations.ai/v1
 defaults:
   effort: low
 roles:
@@ -137,13 +138,13 @@ roles:
         </section>
 
         <section className="docs-section" id="api">
-          <SectionTitle eyebrow="03 · Reference" title="The v0.2.0 public surface">These names are re-exported from <code>oreoflow</code> and form the current compatibility contract.</SectionTitle>
+          <SectionTitle eyebrow="03 · Reference" title="The v1.2.1 public surface">These names are re-exported from <code>oreoflow</code> and form the current compatibility contract.</SectionTitle>
           <div className="docs-api-grid">{publicApi.map(([name, description]) => <div key={name}><code>{name}</code><p>{description}</p></div>)}</div>
         </section>
 
         <section className="docs-section" id="calls">
           <SectionTitle eyebrow="04 · Execute" title="One router, calls or chunks">A router keeps one HTTP client per selected model. Reuse it for related work and close it during shutdown.</SectionTitle>
-          <Code>{`import asyncio, os
+          <Code language="python" title="agent.py">{`import asyncio, os
 from dotenv import load_dotenv
 from oreoflow import Budget, Message, Router, load_models_config
 
@@ -168,7 +169,7 @@ async def main():
 
 asyncio.run(main())`}</Code>
           <h3 className="docs-subheading"><Zap size={17} /> Stream provider chunks</h3>
-          <Code>{`async for chunk in router.stream("prose", messages, effort="low"):
+          <Code language="python" title="Streaming">{`async for chunk in router.stream("prose", messages, effort="low"):
     for choice in chunk.choices:
         if choice.delta.content:
             print(choice.delta.content, end="", flush=True)`}</Code>
@@ -177,7 +178,7 @@ asyncio.run(main())`}</Code>
 
         <section className="docs-section" id="tools">
           <SectionTitle eyebrow="05 · Tools" title="Declare in OreoFlow, execute in your app">The runtime validates OpenAI function schemas. It intentionally does not authorize or execute application functions.</SectionTitle>
-          <Code>{`tool = ToolDef.model_validate({
+          <Code language="python" title="Function tool">{`tool = ToolDef.model_validate({
   "type": "function",
   "function": {
     "name": "lookup_weather",
@@ -195,7 +196,7 @@ asyncio.run(main())`}</Code>
         <section className="docs-section" id="budgets">
           <SectionTitle eyebrow="06 · Control" title="Bound every model task">The soft limit is visible to the application; the multiplied hard ceiling is the runaway kill switch.</SectionTitle>
           <div className="docs-control-grid"><div><Gauge /><strong>Soft budget</strong><p><code>remaining()</code> reports capacity. Crossing the soft limit is advisory.</p></div><div><ShieldCheck /><strong>Hard ceiling</strong><p>A pre-call estimate past <code>limit × kill_multiple</code> raises <code>BudgetExceeded</code>.</p></div><div><CircleDollarSign /><strong>Token ledger</strong><p>Completed calls append model, role, cached, prompt, completion, and total usage to JSONL.</p></div></div>
-          <Code>{`budget = Budget("task-42", limit=10_000, kill_multiple=3)
+          <Code language="python" title="Budget and ledger">{`budget = Budget("task-42", limit=10_000, kill_multiple=3)
 ledger = TokenLedger("state/token_log.jsonl")
 router = Router("task-42", models=models, api_key=key,
                 budget=budget, ledger=ledger)`}</Code>
@@ -210,7 +211,7 @@ router = Router("task-42", models=models, api_key=key,
 
         <section className="docs-section" id="responses">
           <SectionTitle eyebrow="OpenAI compatibility" title="User-selectable response effort">Search maps the Responses API reasoning control directly into OreoFlow for decision and specialist calls.</SectionTitle>
-          <Code>{`curl https://search.elixpo.com/v1/responses \\\n  -H "Authorization: Bearer $API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{
+          <Code language="shell" title="Responses API">{`curl https://search.elixpo.com/v1/responses \\\n  -H "Authorization: Bearer $API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{
     "model": "writing",
     "input": "Write a concise release announcement.",
     "reasoning": {"effort": "medium"},
@@ -220,7 +221,7 @@ router = Router("task-42", models=models, api_key=key,
         </section>
 
         <section className="docs-section" id="boundaries">
-          <SectionTitle eyebrow="Honest boundary" title="What v0.2.0 does not provide">These remain application responsibilities or roadmap work—not hidden framework features.</SectionTitle>
+          <SectionTitle eyebrow="Honest boundary" title="What v1.2.1 does not provide">These remain application responsibilities or roadmap work—not hidden framework features.</SectionTitle>
           <ul className="docs-no-list">
             {[
               "Multi-agent scheduling, rooms, floors, delegation, or A2A transport",
@@ -236,14 +237,14 @@ router = Router("task-42", models=models, api_key=key,
 
         <section className="docs-section" id="test">
           <SectionTitle eyebrow="Verify" title="Raw Python tests">Resolve roles without network access, then opt into one bounded live provider call.</SectionTitle>
-          <div className="docs-two-code"><div><h3><TerminalSquare size={16} /> Framework</h3><Code>{`cd ~/agent.elixpo
+          <div className="docs-two-code"><div><h3><TerminalSquare size={16} /> Framework</h3><Code language="shell" title="Framework smoke test">{`cd ~/agent.elixpo
 python examples/raw_oreoflow.py --role code
 
-python examples/raw_oreoflow.py \\\n  --role prose --live --stream \\\n  --env-file ../search.elixpo/.env.local \\\n  --prompt "Reply with exactly: ready."`}</Code></div><div><h3><Workflow size={16} /> Search agent</h3><Code>{`cd ~/search.elixpo
+python examples/raw_oreoflow.py \\\n  --role prose --live --stream \\\n  --env-file ../search.elixpo/.env.local \\\n  --prompt "Reply with exactly: ready."`}</Code></div><div><h3><Workflow size={16} /> Search agent</h3><Code language="shell" title="Search integration test">{`cd ~/search.elixpo
 python tester/raw_agent_runtime.py \\\n  --agent coding \\\n  --effort medium \\\n  --live --stream \\\n  --prompt "Write a URL validator"`}</Code></div></div>
         </section>
 
-        <footer className="docs-footer"><Braces size={18} /><span><strong>OreoFlow v0.2.0</strong><small>Source contracts over marketing claims.</small></span><a href="https://github.com/elixpo/agent.elixpo" target="_blank" rel="noreferrer">GitHub <ExternalLink size={13} /></a></footer>
+        <footer className="docs-footer"><Braces size={18} /><span><strong>OreoFlow v1.2.1</strong><small>Source contracts over marketing claims.</small></span><a href="https://github.com/elixpo/agent.elixpo" target="_blank" rel="noreferrer">GitHub <ExternalLink size={13} /></a></footer>
       </article>
     </main>
   );
