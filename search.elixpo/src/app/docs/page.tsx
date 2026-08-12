@@ -821,7 +821,7 @@ twine upload dist/*`}</Code>
           <div className="mt-24 pt-8 border-t border-white/[0.06]">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <img src="/search.elixpo.png" alt="lixSearch" className="w-5 h-5 opacity-40" />
+                <img src="/favicon.png" alt="lixSearch" className="w-5 h-5 opacity-40" />
                 <span className="text-sm text-white/30">
                   Built by <span className="text-white/50">Ayushman Bhattacharya &amp; Nihal Gazi</span> with{' '}
                   <a href="https://pollinations.ai" target="_blank" rel="noopener noreferrer" className="pollinations-shimmer hover:opacity-80 transition-opacity">Pollinations.ai</a>

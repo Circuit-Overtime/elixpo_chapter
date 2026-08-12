@@ -27,7 +27,7 @@ export default function OreoLookLanding() {
     <main className="site-shell">
       <header className="site-nav">
         <Link href="/" className="site-brand" aria-label="OreoLook home">
-          <img src="/search.elixpo.png" alt="" width="38" height="38" />
+          <img src="/favicon.png" alt="" width="38" height="38" />
           <span><strong>OreoLook</strong><small>AI search with receipts</small></span>
         </Link>
         <nav aria-label="Main navigation">
@@ -122,7 +122,7 @@ export default function OreoLookLanding() {
       </section>
 
       <footer className="site-footer">
-        <div className="site-brand"><img src="/search.elixpo.png" alt="" width="30" height="30" /><span><strong>OreoLook</strong><small>Search smarter. Verify everything.</small></span></div>
+        <div className="site-brand"><img src="/favicon.png" alt="" width="30" height="30" /><span><strong>OreoLook</strong><small>Search smarter. Verify everything.</small></span></div>
         <p>Built by Ayushman Bhattacharya and Nihal Gazi with <a href="https://pollinations.ai">Pollinations AI</a>.</p>
         <div><Link href="/docs">Docs</Link><Link href="/paper">Paper</Link><a href="https://github.com/pollinations/lixsearch">GitHub</a></div>
       </footer>

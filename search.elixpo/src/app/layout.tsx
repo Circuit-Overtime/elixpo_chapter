@@ -58,8 +58,12 @@ export const metadata: Metadata = {
   applicationName: 'OreoLook',
   category: 'technology',
   icons: {
-    icon: '/search.elixpo.png',
-    apple: '/search.elixpo.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png', sizes: '512x512' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: { url: '/favicon.png', sizes: '512x512', type: 'image/png' },
   },
   openGraph: {
     type: 'website',
