@@ -54,7 +54,7 @@
 | [`LixSearch`](https://hub.docker.com/r/elixpo/lixsearch) | Docker Hub / GHCR | `docker pull elixpo/lixsearch` OR `docker pull ghcr.io/circuit-overtime/lixsearch` | Full self-hostable search engine (API + Redis + ChromaDB + Playwright) both on Docker Hub and GitHub Container Registry |
 
 - **lix-open-cache** — standalone caching library, works independently with just Redis. No server needed. Only depends on `redis`, `numpy`, `loguru`.
-- **LixSearch Docker** — the full search engine. Run `docker compose up` and get a working API.
+- **LixSearch Docker** — the full search engine. Run `docker compose --env-file .env.local up` and get a working API.
 
 ---
 

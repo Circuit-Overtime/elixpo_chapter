@@ -15,7 +15,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 COPY package/lix_open_cache_pkg /build/lix_open_cache_pkg
-COPY --from=agent_framework / /build/agent-framework
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --index-url https://download.pytorch.org/whl/cpu "torch==${TORCH_VERSION}" && \
     pip install --no-cache-dir -r requirements.txt && \

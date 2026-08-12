@@ -1,4 +1,5 @@
 aiofiles
+elixpoo @ https://github.com/elixpo/agent.elixpo/archive/refs/tags/v1.2.1.tar.gz
 aiohappyeyeballs
 aiohttp
 aiosignal
