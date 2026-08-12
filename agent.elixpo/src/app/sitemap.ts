@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { floors } from "@/lib/dashboard-model";
 import { absoluteUrl, SOCIAL_IMAGE } from "@/lib/site-metadata";
 
+
+export const dynamic = "force-static";
 export default function sitemap(): MetadataRoute.Sitemap {
   const generatedAt = new Date();
   const routes = [
@@ -11,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/work", priority: 0.8 },
     { path: "/journal", priority: 0.7 },
     { path: "/security", priority: 0.7 },
+    { path: "/docs", priority: 0.9 },
     ...floors.map((floor) => ({ path: `/floors/${floor.slug}`, priority: 0.8 })),
   ];
 
