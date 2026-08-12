@@ -16,9 +16,10 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Documentation — lix_open_cache',
+  title: 'OreoLook Documentation — OpenAI-compatible AI Search API',
   description:
-    'Full documentation for lix_open_cache — a reusable multi-layer caching and session management package for conversational AI.',
+    'Build with OreoLook: OpenAI-compatible APIs, streaming web research, cited answers, Redis continuity, Qdrant memory, and lix-open-cache.',
+  alternates: { canonical: '/docs' },
 };
 
 /* ── tiny helpers ─────────────────────────────────────────────────── */
@@ -41,8 +42,8 @@ function Badge({ children, color = 'indigo' }: { children: React.ReactNode; colo
 
 function Code({ children }: { children: string }) {
   return (
-    <pre className="relative rounded-xl bg-[#111318] border border-white/[0.06] overflow-x-auto text-[13px] leading-relaxed">
-      <code className="block p-5 text-white/70 font-mono whitespace-pre">{children}</code>
+    <pre className="relative rounded-xl bg-[#ffc] border border-white/[0.06] overflow-x-auto text-[13px] leading-relaxed">
+      <code className="block p-5 text-black/70 font-mono whitespace-pre">{children}</code>
     </pre>
   );
 }
@@ -96,7 +97,7 @@ const NAV = [
 
 export default function DocsPage() {
   return (
-    <div className="min-h-screen bg-[#0a0c14] text-white">
+    <div className="agent-theme min-h-screen">
       {/* Background glow */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-indigo-600/[0.05] rounded-full blur-[120px]" />
