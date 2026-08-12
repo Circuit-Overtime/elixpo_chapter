@@ -1,5 +1,13 @@
 # OreoFlow Python framework
 
+## Browse the documentation
+
+The agent.elixpo frontend publishes this reference as a static developer route at
+[`/docs`](https://agent.elixpo.com/docs). The route includes installation, public
+API contracts, streaming, tools, budgets, Search integration, Responses effort,
+current boundaries, and raw tests. This Markdown file remains the repository
+source of truth for review and version control.
+
 ## What is released
 
 `agent.elixpo` publishes the Python distribution **`elixpoo`**. Applications use
