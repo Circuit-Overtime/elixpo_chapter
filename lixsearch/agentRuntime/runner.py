@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from typing import Any, Iterable
 
+import structlog
 import yaml
 
 from agentRuntime.routing import route_request
@@ -16,6 +17,8 @@ from skillRegistry import SkillRegistry, get_skill_registry
 
 AGENT_RUNTIME_ROOT = Path(__file__).resolve().parent
 DEFAULT_MODELS_CONFIG = AGENT_RUNTIME_ROOT / "models.yaml"
+logger = structlog.get_logger("oreolook.runtime")
+_SEARCH_TOKEN_LIMITS = {"quick": 350, "standard": 700, "deep": 1800}
 
 
 class AgentRuntimeError(RuntimeError):
@@ -31,6 +34,7 @@ class PreparedRun:
     messages: tuple[dict[str, str], ...]
     tools: tuple[dict[str, Any], ...]
     max_tokens: int
+    search_depth: str = "none"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -50,6 +54,8 @@ class AgentRunner:
         agent_name: str,
         prompt: str,
         history: Iterable[dict[str, str]] | None = None,
+        *,
+        search_depth: str = "none",
     ) -> PreparedRun:
         if agent_name == "auto":
             agent_name = route_request(prompt)
@@ -62,7 +68,15 @@ class AgentRunner:
             raise AgentRuntimeError(f"OreoFlow role '{spec.role}' has no model")
         resolved = self.registry.resolve(spec.skills)
         skill_text = "\n\n".join(skill.instructions for skill in resolved)
-        system = f"{spec.system_prompt}\n\n{skill_text}".strip()
+        if search_depth not in {"none", "quick", "standard", "deep"}:
+            raise AgentRuntimeError(f"Unknown search depth '{search_depth}'")
+        depth_instruction = ""
+        if spec.name == "web-search":
+            depth_instruction = (
+                f"\n\nRuntime decision: use {search_depth} search depth. "
+                "Respect the optimization skill's hard ceilings."
+            )
+        system = f"{spec.system_prompt}\n\n{skill_text}{depth_instruction}".strip()
         prior = tuple(
             {"role": item["role"], "content": str(item["content"])}
             for item in (history or ())
@@ -76,7 +90,9 @@ class AgentRunner:
             skills=tuple(skill.name for skill in resolved),
             messages=({"role": "system", "content": system}, *prior, {"role": "user", "content": prompt}),
             tools=tools,
-            max_tokens=spec.max_tokens,
+            max_tokens=_SEARCH_TOKEN_LIMITS.get(search_depth, spec.max_tokens)
+            if spec.name == "web-search" else spec.max_tokens,
+            search_depth=search_depth,
         )
 
     async def run(
@@ -90,8 +106,12 @@ class AgentRunner:
         prepared = self.prepare(agent_name, prompt, history)
         if prepared.agent == "decision":
             decision = await self._call(prepared, effort=effort)
-            selected = _parse_decision(decision)
-            return await self._call(self.prepare(selected, prompt, history), effort=effort)
+            selected, search_depth = _parse_decision(decision)
+            logger.info("route.selected", agent=selected, search_depth=search_depth)
+            return await self._call(
+                self.prepare(selected, prompt, history, search_depth=search_depth),
+                effort=effort,
+            )
         return await self._call(prepared, effort=effort)
 
     async def stream(
@@ -105,7 +125,9 @@ class AgentRunner:
         prepared = self.prepare(agent_name, prompt, history)
         if prepared.agent == "decision":
             decision = await self._call(prepared, effort=effort)
-            prepared = self.prepare(_parse_decision(decision), prompt, history)
+            selected, search_depth = _parse_decision(decision)
+            logger.info("route.selected", agent=selected, search_depth=search_depth)
+            prepared = self.prepare(selected, prompt, history, search_depth=search_depth)
         async for event in self._stream_call(prepared, effort=effort):
             yield event
 
@@ -174,6 +196,19 @@ class AgentRunner:
                 max_tokens=prepared.max_tokens,
                 tool_choice="auto" if prepared.tools else None,
             )
+            usage = response.usage.model_dump(mode="json") if response.usage else {}
+            logger.info(
+                "model.completed",
+                agent=prepared.agent,
+                role=prepared.role,
+                model=prepared.model,
+                search_depth=prepared.search_depth,
+                effort=effort,
+                max_tokens=prepared.max_tokens,
+                history_messages=max(0, len(prepared.messages) - 2),
+                tools=[tool["function"]["name"] for tool in prepared.tools],
+                usage=usage,
+            )
             return {
                 "agent": prepared.agent,
                 "role": prepared.role,
@@ -197,12 +232,19 @@ def _oreoflow_types():
     return Router, Message, ToolDef
 
 
-def _parse_decision(result: dict[str, Any]) -> str:
+def _parse_decision(result: dict[str, Any]) -> tuple[str, str]:
     try:
         payload = json.loads(response_content(result))
         selected = payload["agent"]
+        search_depth = payload.get("search_depth", "none")
     except (KeyError, TypeError, json.JSONDecodeError) as exc:
         raise AgentRuntimeError("Decision agent returned invalid JSON") from exc
     if selected not in AGENT_SPECS or selected == "decision":
         raise AgentRuntimeError(f"Decision agent returned unknown specialist '{selected}'")
-    return selected
+    if search_depth not in {"none", "quick", "standard", "deep"}:
+        raise AgentRuntimeError(f"Decision agent returned unknown search depth '{search_depth}'")
+    if selected != "web-search":
+        search_depth = "none"
+    elif search_depth == "none":
+        search_depth = "quick"
+    return selected, search_depth
