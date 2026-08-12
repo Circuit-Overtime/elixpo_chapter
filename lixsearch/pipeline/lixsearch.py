@@ -470,14 +470,12 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                                 status_tracker.touch()
                             elif _stype == "content":
                                 _streamed_content += _sdata
-                                _safe = _tag_filter.feed(_sdata)
-                                if _safe:
-                                    yield format_sse("RESPONSE", _safe)
+                                # Hold synthesis until the complete answer can
+                                # be checked for placeholders and grounding.
+                                _tag_filter.feed(_sdata)
                                 status_tracker.touch()
                             elif _stype == "done":
                                 _tail = _tag_filter.flush()
-                                if _tail:
-                                    yield format_sse("RESPONSE", _tail)
                                 assistant_message = _sdata
                         if assistant_message and assistant_message.get("content"):
                             break  # success
@@ -489,6 +487,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         continue
                 if not assistant_message:
                     break
+                # Nothing has been emitted yet; final formatting owns delivery.
+                _streamed_content = ""
             else:
                 # --- Non-streaming path: blocking call with keepalive + fallback ---
                 response_data = None
@@ -570,7 +570,10 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
                 if not tool_calls:
                     is_reasoning_leak = _looks_like_internal_reasoning(raw_content)
-                    is_placeholder = raw_content.strip() in ("Processing your request...", "I'll help you with that.", "")
+                    is_placeholder = (
+                        raw_content.strip() in ("Processing your request...", "I'll help you with that.", "")
+                        or is_placeholder_or_fallback(raw_content)
+                    )
                     has_useful_context = bool(collected_sources) or tool_call_count > 0
 
                     # If PDF was already generated, don't force synthesis — just use the response or build one
@@ -778,6 +781,26 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     status_tracker.touch()
 
             messages.extend(tool_outputs)
+
+            # A fetch result is evidence, not a user-facing answer. Always make
+            # the following turn a tool-free synthesis turn so the model must
+            # ground its answer in the returned content. Previously, any
+            # non-empty post-fetch draft bypassed synthesis, which allowed
+            # unresolved values such as "[Accurate temperature details]".
+            usable_fetches = [
+                output for output in tool_outputs
+                if output.get("name") == "fetch_full_text"
+                and output.get("content") not in ("", "No result")
+            ]
+            if usable_fetches:
+                force_synthesis = True
+                logger.info(
+                    "[runtime] synthesis_required reason=fetched_evidence sources=%s",
+                    len(usable_fetches),
+                )
+                if event_id:
+                    yield format_sse("INFO", get_user_message("synthesizing"))
+                    status_tracker.touch()
 
         # ==================== FORCED SYNTHESIS ====================
         if not final_message_content and current_iteration >= max_iterations:
