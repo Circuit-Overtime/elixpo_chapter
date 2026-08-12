@@ -662,6 +662,15 @@ components:
           default: false
         instructions:
           type: string
+        reasoning:
+          type: object
+          description: Controls OreoFlow reasoning effort for this response.
+          properties:
+            effort:
+              type: string
+              enum: [low, medium, high]
+              default: low
+          additionalProperties: true
 
     ChatResponse:
       type: object
