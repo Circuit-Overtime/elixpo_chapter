@@ -2,7 +2,7 @@
   "name": "@elixpo/lixsearch-landing",
   "version": "3.2.5",
   "private": true,
-  "description": "LixSearch — an open-source AI-powered search engine that searches the web, fetches content, and synthesizes answers with real sources and citations.",
+  "description": "OreoLook — a curious open-source AI search scout that searches the web and synthesizes grounded answers.",
   "author": {
     "name": "Ayushman Bhattacharya",
     "email": "ayushman@elixpo.com",

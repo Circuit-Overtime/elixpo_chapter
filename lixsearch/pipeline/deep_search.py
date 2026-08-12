@@ -396,7 +396,7 @@ async def _deep_search_final_synthesis(
 ) -> str:
 
     system_msg = (
-        "You are lixSearch. Write a cohesive summary that ties together research findings. "
+        "You are OreoLook. Write a cohesive summary that ties together research findings. "
         "Never mention sub-queries, research threads, findings, or internal processes. "
         "NEVER mention internal tool names, function calls, or cache operations. "
         "NEVER include your thinking or reasoning — output only the final answer."
@@ -551,13 +551,8 @@ async def _run_deep_search_pipeline(
     )
     logger.info(f"[DeepSearch] Decomposed into {len(sub_queries)} sub-queries: {sub_queries}")
 
-    if len(sub_queries) <= 1:
-        from pipeline.queryDecomposition import QueryAnalyzer
-        analyzer = QueryAnalyzer()
-        proposed = analyzer.propose_decomposition(user_query)
-        if len(proposed) > 1:
-            sub_queries = [sq.text for sq in proposed[:DEEP_SEARCH_MAX_SUB_QUERIES]]
-            logger.info(f"[DeepSearch] Aspect-based fallback: {len(sub_queries)} sub-queries")
+    # A single model-produced sub-query is valid. Do not replace the model's
+    # decision with keyword/aspect heuristics.
 
     plan_event = emit_event(
         "INFO",

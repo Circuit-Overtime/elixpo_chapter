@@ -19,6 +19,7 @@ AGENT_RUNTIME_ROOT = Path(__file__).resolve().parent
 DEFAULT_MODELS_CONFIG = AGENT_RUNTIME_ROOT / "models.yaml"
 logger = structlog.get_logger("oreolook.runtime")
 _SEARCH_TOKEN_LIMITS = {"quick": 350, "standard": 700, "deep": 1800}
+_HISTORY_TOKEN_LIMIT = 3000
 
 
 class AgentRuntimeError(RuntimeError):
@@ -77,11 +78,20 @@ class AgentRunner:
                 "Respect the optimization skill's hard ceilings."
             )
         system = f"{spec.system_prompt}\n\n{skill_text}{depth_instruction}".strip()
-        prior = tuple(
+        eligible_prior = tuple(
             {"role": item["role"], "content": str(item["content"])}
             for item in (history or ())
             if item.get("role") in {"user", "assistant"} and item.get("content")
         )
+        prior_reversed: list[dict[str, str]] = []
+        history_tokens = 0
+        for item in reversed(eligible_prior):
+            estimated = max(1, len(item["content"]) // 4)
+            if history_tokens + estimated > _HISTORY_TOKEN_LIMIT:
+                break
+            prior_reversed.append(item)
+            history_tokens += estimated
+        prior = tuple(reversed(prior_reversed))
         tools = self.registry.tool_catalog(spec.skills)
         return PreparedRun(
             agent=spec.name,
@@ -164,6 +174,18 @@ class AgentRunner:
                     "completion_tokens": len(content) // 4,
                     "total_tokens": len(content) // 4,
                 }
+            logger.info(
+                "model.stream_completed",
+                agent=prepared.agent,
+                role=prepared.role,
+                model=prepared.model,
+                search_depth=prepared.search_depth,
+                effort=effort,
+                max_tokens=prepared.max_tokens,
+                history_messages=max(0, len(prepared.messages) - 2),
+                tools=[tool["function"]["name"] for tool in prepared.tools],
+                usage=usage,
+            )
             yield {
                 "type": "done",
                 "result": {

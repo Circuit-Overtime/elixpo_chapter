@@ -134,12 +134,6 @@ async def _stream_llm_call(payload: dict, headers: dict):
         message["tool_calls"] = tool_calls
     yield ("done", message)
 
-_DETAIL_RE = re.compile(
-    r"\b(detail(?:ed|s)?|comprehensive|in[- ]?depth|thorough|extensive|elaborate|full|complete|everything about|deep dive|lengthy|long)\b",
-    re.IGNORECASE,
-)
-
-
 async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: str = None,
                                      session_id: str = None, user_images: list = None,
                                      chat_history: list = None, is_ephemeral: bool = False):
@@ -173,7 +167,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
     if initial_event:
         yield initial_event
 
-    is_detailed_mode = bool(_DETAIL_RE.search(original_user_query))
+    # Search depth comes from scoped model tool calls, never keyword matching.
+    is_detailed_mode = False
     active_min_links = MIN_LINKS_TO_TAKE_DETAILED if is_detailed_mode else MIN_LINKS_TO_TAKE
     active_max_links = MAX_LINKS_TO_TAKE_DETAILED if is_detailed_mode else MAX_LINKS_TO_TAKE
     active_max_tokens = LLM_MAX_TOKENS_DETAILED if is_detailed_mode else LLM_MAX_TOKENS
@@ -608,6 +603,10 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
             for tc in tool_calls:
                 fn_name = tc["function"]["name"]
+                logger.info(
+                    "[runtime] tool_selected=%s iteration=%s max_links=%s max_tokens=%s",
+                    fn_name, current_iteration, active_max_links, active_max_tokens,
+                )
                 if fn_name == "deep_research":
                     _deep_research_call = tc
                 elif fn_name == "fetch_full_text":
