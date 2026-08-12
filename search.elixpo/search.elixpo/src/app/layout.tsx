@@ -15,7 +15,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const SITE_URL = 'https://search.elixpo.com';
-const TITLE = 'lixSearch — AI-Powered Search Engine';
+const TITLE = 'OreoLook — Your Curious AI Search Scout';
 const DESCRIPTION =
   'Open-source multi-agent research system with skill-backed routing, grounded search, OpenAI-compatible APIs, buffered streaming, and Redis plus Qdrant memory. Built with Pollinations AI.';
 
@@ -23,10 +23,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: TITLE,
-    template: '%s | lixSearch',
+    template: '%s | OreoLook',
   },
   description: DESCRIPTION,
   keywords: [
+    'OreoLook',
     'lixSearch',
     'AI search engine',
     'semantic search',
@@ -56,7 +57,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: SITE_URL,
-    siteName: 'lixSearch',
+    siteName: 'OreoLook',
     title: TITLE,
     description: DESCRIPTION,
     images: [
@@ -64,7 +65,7 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'lixSearch — Search, synthesize, understand.',
+        alt: 'OreoLook — Search, synthesize, understand.',
       },
     ],
   },

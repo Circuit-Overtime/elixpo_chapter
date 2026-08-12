@@ -88,7 +88,7 @@ function StatBadge({ value, label }: { value: string; label: string }) {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'lixSearch',
+  name: 'OreoLook',
   url: 'https://search.elixpo.com',
   description: 'Open-source multi-agent research system with skill-backed routing, grounded search, OpenAI-compatible APIs, buffered streaming, and Redis plus Qdrant memory.',
   applicationCategory: 'SearchApplication',
@@ -131,8 +131,8 @@ export default function LandingPage() {
         {/* Nav */}
         <nav className="flex items-center justify-between px-6 md:px-12 py-5 max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
-            <img src="/favicon.png" alt="lixSearch" className="w-8 h-8" />
-            <span className="text-lg font-display font-semibold tracking-tight">lixSearch</span>
+            <img src="/favicon.png" alt="OreoLook" className="w-8 h-8" />
+            <span className="text-lg font-display font-semibold tracking-tight">OreoLook</span>
           </div>
           <div className="flex items-center gap-3">
             <a
@@ -181,7 +181,7 @@ export default function LandingPage() {
             <span
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600/50 text-white/60 font-medium cursor-default"
             >
-              Try lixSearch
+              Try OreoLook
               <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-white/40 font-semibold">Public access coming soon</span>
             </span>
             <a
@@ -316,7 +316,7 @@ export default function LandingPage() {
         <footer className="px-6 md:px-12 py-10 max-w-6xl mx-auto border-t border-white/[0.06]">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <img src="/favicon.png" alt="lixSearch" className="w-5 h-5 opacity-40" />
+              <img src="/favicon.png" alt="OreoLook" className="w-5 h-5 opacity-40" />
               <span className="text-sm text-white/30">
                 Built by <span className="text-white/50">Ayushman Bhattacharya &amp; Nihal Gazi</span> with{' '}
                 <a href={LINKS.pollinations} target="_blank" rel="noopener noreferrer" className="pollinations-shimmer hover:opacity-80 transition-opacity">Pollinations.ai</a>

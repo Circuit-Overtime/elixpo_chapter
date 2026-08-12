@@ -64,8 +64,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      additional_contexts:
-        agent_framework: ../agent.elixpo
       args:
         - BUILDKIT_INLINE_CACHE=1
     container_name: lixsearch-ipc
@@ -168,8 +166,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      additional_contexts:
-        agent_framework: ../agent.elixpo
       args:
         - BUILDKIT_INLINE_CACHE=1
     env_file:
@@ -249,8 +245,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      additional_contexts:
-        agent_framework: ../agent.elixpo
     container_name: lixsearch-monitor
     init: true
     mem_limit: 256m

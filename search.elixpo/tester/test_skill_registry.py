@@ -12,7 +12,9 @@ from skillRegistry import SkillRegistry, SkillRegistryError, get_skill_registry
 class SkillRegistryTests(unittest.TestCase):
     def test_loads_all_skills_and_tools(self):
         registry = SkillRegistry.load(ROOT / "skills")
-        self.assertEqual(len(registry), 9)
+        self.assertEqual(len(registry), 11)
+        self.assertIn("optimize-search-runtime", registry.names())
+        self.assertIn("oreolook-persona", registry.names())
         self.assertEqual(registry.for_tool("web_search").name, "research-web")
         self.assertEqual(registry.for_tool("create_image").name, "make-images")
         self.assertEqual(registry.for_tool("export_to_pdf").name, "export-documents")
@@ -39,6 +41,14 @@ class SkillRegistryTests(unittest.TestCase):
         self.assertEqual(
             tuple(skill.name for skill in resolved),
             ("synthesize-answer", "export-documents"),
+        )
+
+    def test_web_research_resolves_runtime_policy_first(self):
+        registry = SkillRegistry.load(ROOT / "skills")
+        resolved = registry.resolve(["research-web"])
+        self.assertEqual(
+            tuple(skill.name for skill in resolved),
+            ("optimize-search-runtime", "research-web"),
         )
 
     def test_registry_is_cached(self):
