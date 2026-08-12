@@ -12,6 +12,6 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#f7f5f2',
     theme_color: '#e53935',
-    icons: [{ src: '/favicon.png', sizes: '512x512', type: 'image/png' }],
+    icons: [{ src: '/search.elixpo.png', sizes: '512x512', type: 'image/png' }],
   };
 }

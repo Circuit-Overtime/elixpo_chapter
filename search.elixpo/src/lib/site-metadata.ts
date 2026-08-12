@@ -7,8 +7,8 @@ export const SITE_DESCRIPTION =
   'OreoLook is an open-source AI answer engine that searches live sources, reads the useful pages, and streams a grounded answer with citations. Use it through Pollinations or any OpenAI-compatible client.';
 export const SOCIAL_IMAGE = {
   url: '/og-image.png',
-  width: 1200,
-  height: 630,
+  width: 1280,
+  height: 720,
   alt: 'OreoLook — the open-source AI answer engine with receipts.',
 };
 

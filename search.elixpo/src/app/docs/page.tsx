@@ -16,9 +16,10 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Documentation — lix_open_cache',
+  title: 'OreoLook Documentation — OpenAI-compatible AI Search API',
   description:
-    'Full documentation for lix_open_cache — a reusable multi-layer caching and session management package for conversational AI.',
+    'Build with OreoLook: OpenAI-compatible APIs, streaming web research, cited answers, Redis continuity, Qdrant memory, and lix-open-cache.',
+  alternates: { canonical: '/docs' },
 };
 
 /* ── tiny helpers ─────────────────────────────────────────────────── */
@@ -96,7 +97,7 @@ const NAV = [
 
 export default function DocsPage() {
   return (
-    <div className="min-h-screen bg-[#0a0c14] text-white">
+    <div className="agent-theme min-h-screen">
       {/* Background glow */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-indigo-600/[0.05] rounded-full blur-[120px]" />
@@ -820,7 +821,7 @@ twine upload dist/*`}</Code>
           <div className="mt-24 pt-8 border-t border-white/[0.06]">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <img src="/favicon.png" alt="lixSearch" className="w-5 h-5 opacity-40" />
+                <img src="/search.elixpo.png" alt="lixSearch" className="w-5 h-5 opacity-40" />
                 <span className="text-sm text-white/30">
                   Built by <span className="text-white/50">Ayushman Bhattacharya &amp; Nihal Gazi</span> with{' '}
                   <a href="https://pollinations.ai" target="_blank" rel="noopener noreferrer" className="pollinations-shimmer hover:opacity-80 transition-opacity">Pollinations.ai</a>

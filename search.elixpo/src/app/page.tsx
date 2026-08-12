@@ -1,9 +1,9 @@
-'use client';
-
-import dynamic from 'next/dynamic';
-
-const LandingPage = dynamic(() => import('@/components/LandingPage'), { ssr: false });
+import OreoLookLanding from "@/components/OreoLookLanding";
+import StructuredData from "@/components/StructuredData";
 
 export default function HomePage() {
-  return <LandingPage />;
+  return <>
+    <StructuredData />
+    <OreoLookLanding />
+  </>;
 }

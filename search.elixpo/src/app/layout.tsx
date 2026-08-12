@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DM_Sans, Space_Grotesk } from 'next/font/google';
 import './globals.css';
+import './theme.css';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -15,9 +16,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const SITE_URL = 'https://search.elixpo.com';
-const TITLE = 'OreoLook — Your Curious AI Search Scout';
+const TITLE = 'OreoLook — Search the web. Get the answer. Keep the receipts.';
 const DESCRIPTION =
-  'Open-source multi-agent research system with skill-backed routing, grounded search, OpenAI-compatible APIs, buffered streaming, and Redis plus Qdrant memory. Built with Pollinations AI.';
+  'OreoLook is an open-source AI answer engine that searches live sources, reads what matters, and streams grounded answers with citations through an OpenAI-compatible API.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -42,6 +43,11 @@ export const metadata: Metadata = {
     'OpenAI Responses API',
     'Qdrant memory',
     'Redis conversation state',
+    'answer engine',
+    'AI research assistant',
+    'real-time web research',
+    'Perplexity alternative',
+    'search with sources',
   ],
   authors: [
     { name: 'Ayushman Bhattacharya', url: 'https://github.com/elixpo' },
@@ -49,9 +55,11 @@ export const metadata: Metadata = {
   ],
   creator: 'Ayushman Bhattacharya and Nihal Gazi',
   publisher: 'Elixpo',
+  applicationName: 'OreoLook',
+  category: 'technology',
   icons: {
-    icon: '/favicon.png',
-    apple: '/favicon.png',
+    icon: '/search.elixpo.png',
+    apple: '/search.elixpo.png',
   },
   openGraph: {
     type: 'website',
@@ -86,9 +94,8 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  alternates: {
-    canonical: SITE_URL,
-  },
+  alternates: { canonical: '/' },
+  manifest: '/manifest.webmanifest',
 };
 
 export default function RootLayout({
@@ -98,7 +105,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${dmSans.variable} ${spaceGrotesk.variable}`}>
-      <body className="font-body bg-[#0a0c14] text-txt-primary">
+      <body className="font-body">
         {children}
       </body>
     </html>
