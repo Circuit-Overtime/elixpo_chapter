@@ -234,6 +234,16 @@ _XML_LEAK_HINTS = (
     "<|tool_call",
 )
 
+_REASONING_BLOCK_RE = re.compile(
+    r"<(?P<tag>thinking|reasoning|analysis)\b[^>]*>.*?</(?P=tag)\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def strip_internal_reasoning_blocks(content: str) -> str:
+    """Remove complete model reasoning blocks without touching normal markup."""
+    return _REASONING_BLOCK_RE.sub("", content or "").strip()
+
 
 class StreamingTagFilter:
     # Suppresses XML/special-token tool-call leakage from streamed content so
@@ -294,6 +304,8 @@ def get_user_message(operation: str) -> str:
 def _looks_like_internal_reasoning(content: str) -> bool:
     if not content:
         return False
+    if re.search(r"</?(?:thinking|reasoning|analysis)\b", content, re.IGNORECASE):
+        return True
     probe = content[:2500].lower()
     matches = sum(1 for p in INTERNAL_LEAK_PATTERNS if re.search(p, probe, re.MULTILINE))
     if matches >= 2:
@@ -357,6 +369,11 @@ def _evaluate_fetch_quality(tool_outputs: list) -> tuple[int, int]:
 async def sanitize_final_response(content: str, query: str, sources: list[str], headers: dict) -> str:
     if not _looks_like_internal_reasoning(content):
         return content
+
+    without_blocks = strip_internal_reasoning_blocks(content)
+    if without_blocks and not _looks_like_internal_reasoning(without_blocks):
+        logger.warning("[FINAL] Removed internal reasoning block locally")
+        return without_blocks
 
     logger.warning("[FINAL] Detected internal reasoning leakage; rewriting final response")
     rewrite_prompt = [
