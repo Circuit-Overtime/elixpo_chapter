@@ -2,122 +2,115 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "rentruewang/aioway",
-    "has_contributing": true,
+    "full_name": "jvxiao/speed-github",
+    "has_contributing": false,
     "language": "Python",
-    "open_issues": 26,
-    "pushed_at": "2026-08-11T07:08:28Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-12T07:25:13Z",
     "reasons": [
-      "1826\u2605 python active",
+      "348\u2605 python active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 348,
+    "topics": [],
+    "url": "https://github.com/jvxiao/speed-github"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "Stack-Cairn/LiveAgent",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 55,
+    "pushed_at": "2026-08-12T07:24:45Z",
+    "reasons": [
+      "1730\u2605 typescript active",
       "has open issues"
     ],
     "score": 52,
-    "stars": 1826,
+    "stars": 1730,
     "topics": [
-      "auto-deep-learning",
-      "compiler",
-      "explainable-ai",
-      "lazy-evaluation",
-      "neural-architecture-search",
-      "python",
-      "pytorch",
-      "relational-algebra",
-      "sql"
+      "ai-agents",
+      "ai-tools",
+      "claude-code",
+      "claude-desktop",
+      "codex",
+      "codex-app",
+      "desktop-app",
+      "fable",
+      "hermes",
+      "hermes-agent",
+      "mcp",
+      "oepnclaw",
+      "open-source",
+      "skills",
+      "tauri",
+      "typescript",
+      "webui"
     ],
-    "url": "https://github.com/rentruewang/aioway"
+    "url": "https://github.com/Stack-Cairn/LiveAgent"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "mazipan/baca-quran.id",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 14,
-    "pushed_at": "2026-08-11T07:07:52Z",
-    "reasons": [
-      "435\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 435,
-    "topics": [
-      "quran",
-      "quran-offline",
-      "quran-search",
-      "quran-web"
-    ],
-    "url": "https://github.com/mazipan/baca-quran.id"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "ch-bas/cctv-camera-database",
+    "full_name": "openyida/openyida",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 18,
-    "pushed_at": "2026-08-11T07:07:44Z",
+    "open_issues": 52,
+    "pushed_at": "2026-08-12T07:23:21Z",
     "reasons": [
-      "131\u2605 javascript active",
+      "202\u2605 javascript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 131,
+    "stars": 202,
     "topics": [
-      "blue-iris",
-      "cctv",
-      "cctv-cameras",
-      "dahua",
-      "data-seed",
-      "frigate",
-      "frigate-nvr",
-      "frontfamily",
-      "hikvision",
-      "home-assistant",
-      "homeassistant",
-      "ip-camera",
-      "open-data",
-      "reolink",
-      "security-camera",
-      "surveillance"
+      "agent",
+      "ai",
+      "assistant",
+      "low-code-platform",
+      "skills",
+      "yida"
     ],
-    "url": "https://github.com/ch-bas/cctv-camera-database"
+    "url": "https://github.com/openyida/openyida"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "marcusquinn/aidevops",
+    "full_name": "asklokesh/loki-mode",
     "has_contributing": true,
     "language": "Shell",
-    "open_issues": 16,
-    "pushed_at": "2026-08-11T07:04:12Z",
+    "open_issues": 6,
+    "pushed_at": "2026-08-12T07:19:17Z",
     "reasons": [
-      "371\u2605 shell active",
+      "1038\u2605 shell active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 371,
+    "stars": 1038,
     "topics": [
-      "agents",
-      "agents-md",
-      "ai",
       "ai-agents",
-      "ai-assistant",
-      "ai-assistants",
-      "ai-assisted-development",
-      "ai-code-review",
-      "ai-coding",
-      "ai-dev-ops",
-      "ai-devops",
-      "ai-system-admin",
+      "aider",
+      "anthropic",
+      "autonomous",
+      "ci-cd",
       "claude",
+      "cline",
+      "code-review",
       "devops",
-      "devops-tools",
-      "git-workflow",
-      "git-worktrees",
-      "opencode",
-      "opencode-plugin"
+      "gemini",
+      "github-action",
+      "github-issues",
+      "loki-mode",
+      "multi-agent",
+      "openai-codex",
+      "openapi",
+      "pull-request-review",
+      "sdlc",
+      "spec-driven-development"
     ],
-    "url": "https://github.com/marcusquinn/aidevops"
+    "url": "https://github.com/asklokesh/loki-mode"
   },
   {
     "archived": false,
@@ -125,14 +118,14 @@
     "full_name": "joryirving/home-ops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 5,
-    "pushed_at": "2026-08-11T06:24:49Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-12T07:24:53Z",
     "reasons": [
-      "222\u2605 yaml active",
+      "223\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 222,
+    "stars": 223,
     "topics": [
       "flux",
       "gitops",
@@ -148,373 +141,389 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "homeassistant-ai/ha-mcp",
+    "full_name": "vitali87/code-graph-rag",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 15,
-    "pushed_at": "2026-08-11T07:07:17Z",
+    "open_issues": 44,
+    "pushed_at": "2026-08-12T07:24:47Z",
     "reasons": [
-      "4342\u2605 python active",
+      "3930\u2605 python active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 4342,
+    "stars": 3930,
     "topics": [
       "ai",
-      "claude",
-      "hacs",
-      "home-assistant",
-      "home-automation",
+      "ast",
+      "claude-code",
+      "code-analysis",
+      "code-understanding",
+      "codebase-search",
+      "developer-tools",
+      "graph-database",
+      "knowledge-graph",
       "llm",
       "mcp",
-      "model-context-protocol"
+      "mcp-server",
+      "memgraph",
+      "monorepo",
+      "multi-language",
+      "python",
+      "rag",
+      "retrieval-augmented-generation",
+      "semantic-search",
+      "tree-sitter"
     ],
-    "url": "https://github.com/homeassistant-ai/ha-mcp"
+    "url": "https://github.com/vitali87/code-graph-rag"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "middleapi/orpc",
+    "full_name": "firebase/firebaseui-web",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 44,
-    "pushed_at": "2026-08-11T07:00:59Z",
+    "open_issues": 9,
+    "pushed_at": "2026-08-12T07:25:13Z",
     "reasons": [
-      "5456\u2605 typescript active",
+      "4872\u2605 typescript active",
       "has open issues"
     ],
     "score": 54,
-    "stars": 5456,
-    "topics": [
-      "api",
-      "bunjs",
-      "cloudflare-worker",
-      "contract-first",
-      "denojs",
-      "next-js",
-      "nodejs",
-      "openapi",
-      "pinia-vuejs",
-      "react",
-      "rpc-api",
-      "solidjs",
-      "svelte",
-      "tanstack",
-      "typesafe",
-      "typescript",
-      "vue"
-    ],
-    "url": "https://github.com/middleapi/orpc"
+    "stars": 4872,
+    "topics": [],
+    "url": "https://github.com/firebase/firebaseui-web"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "GladysAssistant/Gladys",
+    "full_name": "IsmaelMartinez/teams-for-linux",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 47,
-    "pushed_at": "2026-08-11T07:04:18Z",
+    "open_issues": 35,
+    "pushed_at": "2026-08-12T07:14:53Z",
     "reasons": [
-      "3099\u2605 javascript active",
+      "4923\u2605 javascript active",
       "has open issues"
     ],
-    "score": 53,
-    "stars": 3099,
+    "score": 54,
+    "stars": 4923,
     "topics": [
-      "assistant",
-      "automation",
-      "gladys",
-      "home",
-      "home-automation",
-      "iot",
-      "nodejs",
-      "raspberry-pi",
-      "smarthome"
+      "electron",
+      "linux",
+      "microsoft",
+      "teams"
     ],
-    "url": "https://github.com/GladysAssistant/Gladys"
+    "url": "https://github.com/IsmaelMartinez/teams-for-linux"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "bitnami/containers",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 14,
-    "pushed_at": "2026-08-11T04:44:51Z",
-    "reasons": [
-      "4449\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 53,
-    "stars": 4449,
-    "topics": [
-      "bitnami",
-      "containers",
-      "docker",
-      "docker-image",
-      "non-root",
-      "vmware"
-    ],
-    "url": "https://github.com/bitnami/containers"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "onedr0p/home-ops",
+    "full_name": "garylab/dnmp",
     "has_contributing": false,
-    "language": "YAML",
-    "open_issues": 3,
-    "pushed_at": "2026-08-11T04:48:40Z",
+    "language": "Shell",
+    "open_issues": 48,
+    "pushed_at": "2026-08-12T06:36:39Z",
     "reasons": [
-      "2861\u2605 yaml active",
+      "4087\u2605 shell active",
       "has open issues"
     ],
-    "score": 37,
-    "stars": 2861,
+    "score": 38,
+    "stars": 4087,
     "topics": [
-      "flux",
-      "gitops",
-      "justfile",
-      "kubernetes",
-      "kubesearch",
-      "mise",
-      "renovate",
-      "selfhosted",
-      "talos"
+      "docker",
+      "lnmp",
+      "lnmp-dockerfile",
+      "mysql",
+      "nginx",
+      "php",
+      "redis"
     ],
-    "url": "https://github.com/onedr0p/home-ops"
+    "url": "https://github.com/garylab/dnmp"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "usnistgov/macos_security",
+    "has_contributing": true,
+    "language": "YAML",
+    "open_issues": 23,
+    "pushed_at": "2026-07-29T17:55:23Z",
+    "reasons": [
+      "2437\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 48,
+    "stars": 2437,
+    "topics": [
+      "apple",
+      "bash",
+      "compliance",
+      "macos",
+      "mdm",
+      "mscp",
+      "python3",
+      "zsh"
+    ],
+    "url": "https://github.com/usnistgov/macos_security"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "zubair-trabzada/geo-seo-claude",
+    "full_name": "bitsandbytes-foundation/bitsandbytes",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 20,
-    "pushed_at": "2026-08-11T06:35:11Z",
+    "open_issues": 57,
+    "pushed_at": "2026-08-12T07:14:42Z",
     "reasons": [
-      "9313\u2605 python active",
+      "8413\u2605 python active",
       "has open issues"
     ],
-    "score": 57,
-    "stars": 9313,
-    "topics": [],
-    "url": "https://github.com/zubair-trabzada/geo-seo-claude"
+    "score": 56,
+    "stars": 8413,
+    "topics": [
+      "llm",
+      "machine-learning",
+      "pytorch",
+      "qlora",
+      "quantization"
+    ],
+    "url": "https://github.com/bitsandbytes-foundation/bitsandbytes"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "mindfold-ai/Trellis",
+    "full_name": "liketrek/TREK",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 35,
-    "pushed_at": "2026-08-11T06:56:48Z",
+    "open_issues": 53,
+    "pushed_at": "2026-08-12T07:08:47Z",
     "reasons": [
-      "13817\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 60,
-    "stars": 13817,
-    "topics": [
-      "agentic-coding",
-      "ai-workflow",
-      "claudecode",
-      "codex",
-      "harness"
-    ],
-    "url": "https://github.com/mindfold-ai/Trellis"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "webpack/webpack-bundle-analyzer",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 26,
-    "pushed_at": "2026-08-11T05:59:03Z",
-    "reasons": [
-      "12661\u2605 javascript active",
+      "12071\u2605 typescript active",
       "has open issues"
     ],
     "score": 59,
-    "stars": 12661,
+    "stars": 12071,
     "topics": [
-      "analyze",
-      "bundle",
-      "chart",
-      "interactive",
-      "size",
-      "treemap",
-      "webpack",
-      "webpack-bundle-analyzer"
+      "budget-tracker",
+      "collaborative",
+      "open-source",
+      "opensource",
+      "packing-list",
+      "poi",
+      "real-time",
+      "routes",
+      "self-hosted",
+      "travel",
+      "travel-app",
+      "travel-planner",
+      "traveling",
+      "trip",
+      "trip-planner",
+      "tripit",
+      "wanderlog",
+      "wanderlust",
+      "webapplication"
     ],
-    "url": "https://github.com/webpack/webpack-bundle-analyzer"
+    "url": "https://github.com/liketrek/TREK"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "DaoCloud/public-image-mirror",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 6,
-    "pushed_at": "2026-08-11T02:48:38Z",
-    "reasons": [
-      "14810\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 45,
-    "stars": 14810,
-    "topics": [
-      "mirror",
-      "speedup"
-    ],
-    "url": "https://github.com/DaoCloud/public-image-mirror"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "lightseekorg/tokenspeed",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 43,
-    "pushed_at": "2026-08-11T07:07:55Z",
-    "reasons": [
-      "1843\u2605 python active",
-      "has open issues"
-    ],
-    "score": 52,
-    "stars": 1843,
-    "topics": [
-      "blackwell",
-      "deepseek",
-      "glm",
-      "gpt-oss",
-      "inkling",
-      "kimi",
-      "lightseek",
-      "llm",
-      "minimax",
-      "qwen",
-      "speed-of-light",
-      "tokenspeed",
-      "vlm"
-    ],
-    "url": "https://github.com/lightseekorg/tokenspeed"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "Ocyss/boss-helper",
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 31,
-    "pushed_at": "2026-08-11T07:08:26Z",
-    "reasons": [
-      "1909\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1909,
-    "topics": [],
-    "url": "https://github.com/Ocyss/boss-helper"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "magento/pwa-studio",
+    "full_name": "marcelscruz/public-apis",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 7,
-    "pushed_at": "2026-08-11T07:06:40Z",
+    "open_issues": 49,
+    "pushed_at": "2026-08-12T06:04:35Z",
     "reasons": [
-      "1084\u2605 javascript active",
+      "9328\u2605 javascript active",
       "has open issues"
     ],
-    "score": 51,
-    "stars": 1084,
+    "score": 57,
+    "stars": 9328,
     "topics": [
-      "magento",
-      "pwa",
-      "pwa-storefront",
-      "pwa-studio",
-      "venia"
-    ],
-    "url": "https://github.com/magento/pwa-studio"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "altstackHQ/altstack-data",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 6,
-    "pushed_at": "2026-08-11T07:01:25Z",
-    "reasons": [
-      "319\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 319,
-    "topics": [
+      "apis",
       "awesome",
       "awesome-list",
-      "devops",
-      "docker",
+      "hacktoberfest",
+      "lists",
       "open-source",
-      "productivity",
-      "saas-alternatives",
-      "self-hosted"
+      "public-api",
+      "public-apis",
+      "resources"
     ],
-    "url": "https://github.com/altstackHQ/altstack-data"
+    "url": "https://github.com/marcelscruz/public-apis"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "pystardust/ani-cli",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 8,
+    "pushed_at": "2026-08-11T09:19:47Z",
+    "reasons": [
+      "13487\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 59,
+    "stars": 13487,
+    "topics": [
+      "anime",
+      "cli",
+      "fzf",
+      "linux",
+      "mac",
+      "posix",
+      "rofi",
+      "shell",
+      "steamdeck",
+      "syncplay",
+      "terminal",
+      "termux",
+      "webscraping",
+      "windows"
+    ],
+    "url": "https://github.com/pystardust/ani-cli"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "waifulabs/infrastructure",
+    "full_name": "jjang-ai/vmlx",
     "has_contributing": false,
-    "language": "YAML",
-    "open_issues": 4,
-    "pushed_at": "2026-08-11T05:06:09Z",
+    "language": "Python",
+    "open_issues": 37,
+    "pushed_at": "2026-08-12T07:24:40Z",
     "reasons": [
-      "221\u2605 yaml active",
+      "800\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 221,
+    "stars": 800,
     "topics": [
+      "anthropic-api",
+      "kvcache-compression",
+      "kvcache-optimization",
+      "kvcache-reuse",
+      "llm",
+      "lmstudio",
+      "macbook",
+      "mcp-server",
+      "mlx",
+      "mlxllm",
+      "mlxstudio",
+      "omlx",
+      "omlx-alternative",
+      "openai-api",
+      "openclaw",
+      "openclaw-agent",
+      "persistent-memory",
+      "prefix-cache",
+      "vmlx"
+    ],
+    "url": "https://github.com/jjang-ai/vmlx"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "pacifio/atlas",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 25,
+    "pushed_at": "2026-08-12T07:24:58Z",
+    "reasons": [
+      "380\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 380,
+    "topics": [],
+    "url": "https://github.com/pacifio/atlas"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "Sudo-Ali-Dev/Rankistan",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 19,
+    "pushed_at": "2026-08-12T07:22:46Z",
+    "reasons": [
+      "139\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 139,
+    "topics": [],
+    "url": "https://github.com/Sudo-Ali-Dev/Rankistan"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "mirceanton/home-ops",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 8,
+    "pushed_at": "2026-08-12T07:18:40Z",
+    "reasons": [
+      "111\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 111,
+    "topics": [
+      "gitops",
+      "k8s-at-home"
+    ],
+    "url": "https://github.com/mirceanton/home-ops"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "Mafyuh/iac",
+    "has_contributing": false,
+    "language": "YAML",
+    "open_issues": 8,
+    "pushed_at": "2026-08-12T01:08:07Z",
+    "reasons": [
+      "808\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 808,
+    "topics": [
+      "actions",
       "ansible",
-      "home-assistant",
-      "home-automation",
-      "k3s",
+      "devops",
+      "docker",
+      "docker-compose",
+      "gitops",
+      "iac",
+      "k8s",
       "k8s-at-home",
       "kubernetes",
-      "node-red",
-      "renovate"
+      "kubesearch",
+      "nixos",
+      "opentofu",
+      "packer",
+      "terraform"
     ],
-    "url": "https://github.com/waifulabs/infrastructure"
+    "url": "https://github.com/Mafyuh/iac"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "modelscope/ms-agent",
-    "has_contributing": true,
+    "full_name": "wbh604/UZI-Skill",
+    "has_contributing": false,
     "language": "Python",
-    "open_issues": 22,
-    "pushed_at": "2026-08-11T07:06:49Z",
+    "open_issues": 7,
+    "pushed_at": "2026-08-12T07:20:34Z",
     "reasons": [
-      "4358\u2605 python active",
+      "6164\u2605 python active",
       "has open issues"
     ],
-    "score": 53,
-    "stars": 4358,
-    "topics": [
-      "agentic-insight",
-      "agentic-search",
-      "chat-bot",
-      "code-generation",
-      "deep-research",
-      "memory"
-    ],
-    "url": "https://github.com/modelscope/ms-agent"
+    "score": 40,
+    "stars": 6164,
+    "topics": [],
+    "url": "https://github.com/wbh604/UZI-Skill"
   }
 ]
