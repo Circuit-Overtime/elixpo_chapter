@@ -11,7 +11,7 @@ source of truth for review and version control.
 ## What is released
 
 `agent.elixpo` publishes the Python distribution **`elixpoo`**. Applications use
-its stable import namespace **`oreoflow`**. Version `v0.2.0` exposes the model
+its stable import namespace **`oreoflow`**. Version `v1.2.1` exposes the model
 runtime used by Elixpo agents; it is not yet the complete multi-agent building
 planned in [ecosystem-framework.md](ecosystem-framework.md).
 
@@ -24,7 +24,7 @@ application agent
 ```
 
 The stable namespace prevents applications from depending directly on internal
-`rtk` modules. In `v0.2.0`, it exports:
+`rtk` modules. In `v1.2.1`, it exports:
 
 | Export | Contract |
 | --- | --- |
@@ -50,7 +50,7 @@ Released tag:
 
 ```bash
 python -m pip install \
-  "git+https://github.com/elixpo/agent.elixpo.git@v0.2.0"
+  "git+https://github.com/elixpo/agent.elixpo.git@v1.2.1"
 ```
 
 Sibling development checkout:
@@ -242,7 +242,7 @@ Both `AgentRunner._call()` and `AgentRunner._stream_call()` construct the router
 with `POLLINATIONS_API_KEY`, use the role/model selected from Search's local
 configuration, and close it in `finally`.
 
-## What v0.2.0 does not provide
+## What v1.2.1 does not provide
 
 Do not treat these as implemented framework features yet:
 
