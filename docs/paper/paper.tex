@@ -55,13 +55,13 @@
 
 
 \begin{abstract}
-The past two years have seen a hike in AI-powered search products like OpenAI's SearchGPT (now integrated into ChatGPT), Google's AI Overviews, and Perplexity's real-time answer. Each engine offering LLM-synthesized answers grounded in live web results. For end users, these are transformative but for developers building on top of them, the economics are punishing. OpenAI's web search API costs \$0.03--0.10 per query (base fee plus injected context tokens), Google's Gemini with grounding starts at \$35/1K queries, and Perplexity's Sonar API runs \$5--18/1K requests depending on tier~\cite{perplexity_pricing}. We set out to build an open-source alternative that could search the web with LLMs at a fraction of the cost, using automated browser agents and open-provider LLM inference---running entirely on CPU architecture.  The system worked, but as users grew, so did the problems. Sessions lost context between turns. Semantically identical queries triggered redundant LLM calls. The same URLs were embedded over and over across sessions. On a resource-constrained 8-vCPU server, every wasted computation mattered.
+AI-powered search products such as ChatGPT search, Google's AI Overviews, and Perplexity provide LLM-synthesized answers grounded in live web results. We developed OreoLook (formerly lixSearch), an open-source answer engine using automated browser agents and provider-routed LLM inference. Its local search, caching, session-management, and embedding stack runs on commodity CPU hardware; answer synthesis is performed by a remote inference provider. As usage grew, sessions lost context, equivalent queries triggered redundant work, and URLs were repeatedly embedded across sessions.
 
-This paper tells the story of how we solved those problems. We present a three-layer caching architecture designed to sustain indefinitely long conversations without degradation: (1)~a \emph{Session Context Window} maintaining a rolling window of recent messages in Redis with automatic overflow to Huffman-compressed disk archives; (2)~a \emph{Semantic Query Cache} catches rephrasings via cosine similarity on embedding vectors, eliminating redundant LLM invocations; and (3)~a \emph{URL Embedding Cache} that deduplicates embedding computations across sessions. Deployed on a single 8-vCPU Intel Cascade Lake server (2\,GHz, 32\,GB RAM) running 30 Hypercorn worker processes across three containerized replicas, the system achieves an 89.3\% Redis-level cache hit rate with 0.1\,ms read latency and just 1.38\,MB of memory overhead. A background LRU eviction daemon migrates idle sessions from Redis to disk and re-hydrates them on demand, enabling conversations that can be resumed hours or days later with full context preserved.
+We present a three-layer caching architecture: (1)~a \emph{Session Context Window} maintaining a rolling window of recent messages in Redis with automatic overflow to Huffman-compressed disk archives; (2)~a \emph{Semantic Query Cache} catches rephrasings via cosine similarity on embedding vectors, eliminating redundant LLM invocations; and (3)~a \emph{URL Embedding Cache} that deduplicates embedding computations across sessions. Deployed on a single 8-vCPU Intel Cascade Lake server (2\,GHz, 32\,GB RAM) running 30 Hypercorn worker processes across three containerized replicas, the evaluated system reported an 89.3\% aggregate Redis keyspace hit rate with 0.1\,ms read latency and just 1.38\,MB of memory overhead. A background LRU eviction daemon migrates idle sessions from Redis to disk and re-hydrates them on demand, enabling conversations that can be resumed hours or days later under the configured retention policy.
 \end{abstract}
 
 \begin{IEEEkeywords}
-LLM caching architecture, AI-powered web search, semantic query deduplication, conversational session management, Redis multi-tier cache, Huffman compression, embedding reuse, retrieval-augmented generation, commodity CPU inference, cost-efficient search
+LLM caching architecture, AI-powered web search, semantic query deduplication, conversational session management, Redis multi-tier cache, Huffman compression, embedding reuse, retrieval-augmented generation, commodity CPU infrastructure, cost-efficient search
 \end{IEEEkeywords}
 
 
@@ -77,9 +77,9 @@ We wanted to build something different: a search assistant that could browse the
 
 \subsection{The First Version: Raw Search + LLM}
 
-So we built our search assistant from scratch. The initial version was deliberately simple. Instead of paying per-query fees to a proprietary search based API, we used automated headless browser agents to perform web searches directly-the same way a human would. The agents navigated search engines, extracted results, fetched full page content, and fed it to an open LLM for synthesis. There was no retrieval-augmented generation (RAG), no vector database, no caching layer. Just a search agent pool, a language model, and a pipeline connecting them.
+So we built OreoLook (formerly lixSearch) from scratch. The initial version was deliberately simple. Instead of paying per-query fees to a proprietary search API, we used automated headless browser agents to perform web searches directly---the same way a human would. The agents navigated search engines, extracted results, fetched full-page content, and sent it to provider-routed LLM inference for synthesis. There was no retrieval-augmented generation (RAG), no vector database, no caching layer. Just a search agent pool, a language model, and a pipeline connecting them.
 
-It worked. The per-query cost dropped dramatically---from \$0.03--0.10 with SearchGPT to ${\sim}$\$0.02 with open-provider LLM inference (no per-query search API fees, only token costs for LLM calls). But as users grew and conversations got longer, three problems emerged that threatened the cost advantage we had built:
+It worked. The per-query cost dropped dramatically---from \$0.03--0.10 with SearchGPT to ${\sim}$\$0.02 with open-provider LLM inference (without per-query search API fees; only provider inference was billed). But as users grew and conversations got longer, three problems emerged that threatened the cost advantage we had built:
 
 \begin{enumerate}
 \item \textbf{``What did we just talk about?''} Users expected the system to remember context across turns. Storing entire conversation histories in memory did not scale across thousands of concurrent sessions. Without context, the assistant repeated itself, missed follow-up nuances, and frustrated users.
@@ -88,6 +88,10 @@ It worked. The per-query cost dropped dramatically---from \$0.03--0.10 with Sear
 
 \item \textbf{``We already embedded this URL.''} As we added RAG capabilities to improve answer quality, the same popular URLs were fetched and embedded by multiple sessions. Computing a 384-dimensional embedding (${\sim}200$\,ms per URL) redundantly across sessions wasted the compute budget we had fought so hard to minimize.
 \end{enumerate}
+
+\subsection{System and Artifact Naming}
+
+The deployed answer engine is named \emph{OreoLook}; earlier versions and historical measurements used \emph{lixSearch}. The reusable cache implementation evaluated here is \texttt{lix-open-cache}. We do not bind the design to a transient synthesis-model alias: provider models are selected through a routing layer, while the evaluated local embedding model is \texttt{sentence-transformers/all-MiniLM-L6-v2}.
 
 \subsection{The Solution: A Three-Tier Cache Architecture}
 
@@ -540,21 +544,21 @@ We chose re-entrant locks specifically because the call graph is nested: flushin
 \section{Evaluation}
 \label{sec:evaluation}
 
-The real test of any caching system is whether it actually delivers in production, especially on modest hardware. Our entire stack runs on a single 8-vCPU Intel Cascade Lake cloud instance (2\,GHz, 32\,GB RAM, no GPU). The search assistant runs as three containerized replicas (2\,vCPU, 2\,GB RAM limit each) with 10 Hypercorn worker processes per replica (30 total), each handling multiple concurrent async requests. Redis 7.4 runs in its own container capped at 2\,GB, and an nginx load balancer sits in front. All measurements below were taken from this live system in production.
+The evaluation reports a historical production snapshot rather than the current deployment. At measurement time, the local stack ran on a single 8-vCPU Intel Cascade Lake cloud instance (2\,GHz, 32\,GB RAM, no GPU). The search assistant ran as three containerized replicas (2\,vCPU, 2\,GB RAM limit each) with 10 Hypercorn worker processes per replica (30 total), each handling multiple concurrent async requests. Redis 7.4 ran in its own container capped at 2\,GB, and an nginx load balancer sits in front. The no-GPU characterization applies to local infrastructure; provider-routed LLM synthesis was remote.
 
-\subsection{Cost Comparison: Commercial AI Search vs.\ lixSearch}
+\subsection{Cost Comparison: Commercial AI Search vs.\ OreoLook}
 
 The original motivation for building the search assistant was cost. The fundamental difference is that commercial providers charge per-query API fees, while our system amortizes a fixed infrastructure cost.
 
 \textbf{Commercial AI search pricing.} OpenAI's web search API charges \$10--30 per thousand calls (varying by model and context tier) plus ${\sim}$8{,}000 tokens of injected context at standard input rates. In practice, a single query costs \$0.03--0.10 depending on the model~\cite{openai_search_pricing, openai_search_billing}. Perplexity's Sonar API charges \$5/1K for the base search tier and \$18/1K for Sonar Pro~\cite{perplexity_pricing}. Google's Gemini with grounding charges \$35/1K for the Pro model and \$14/1K for Flash~\cite{google_grounding_pricing}. All scale linearly with volume-no economies of scale for the developer.
 
-\textbf{Our cost breakdown.} Our system has two cost components: (1)~a fixed infrastructure cost and (2)~a variable LLM inference cost. Web search is performed by automated headless browser agents that navigate search engines directly---no search API subscription required. Embedding computation (sentence-transformers, all-MiniLM-L6-v2) runs locally on CPU. The infrastructure cost is an 8-vCPU cloud instance at ${\sim}$\$96/month. The LLM cost comes from open-provider token pricing: at 0.6 pollen/M input tokens and 3.0 pollen/M output tokens, a typical query consuming ${\sim}$10K input and ${\sim}$2.5K output tokens costs ${\sim}$\$0.014 in LLM inference. Combined with the amortized server cost, a standard query costs ${\sim}$\$0.015. Critically, the 89.3\% cache hit rate means only ${\sim}$11\% of queries incur any LLM cost at all---cached responses are served directly from Redis with zero inference.
+\textbf{Our cost breakdown.} Our system has two cost components: (1)~a fixed infrastructure cost and (2)~a variable LLM inference cost. Web search is performed by automated headless browser agents that navigate search engines directly---no search API subscription required. Embedding computation (sentence-transformers, all-MiniLM-L6-v2) runs locally on CPU. The infrastructure cost is an 8-vCPU cloud instance at ${\sim}$\$96/month. The LLM cost comes from open-provider token pricing: at 0.6 pollen/M input tokens and 3.0 pollen/M output tokens, a typical query consuming ${\sim}$10K input and ${\sim}$2.5K output tokens costs ${\sim}$\$0.014 in LLM inference. Combined with the amortized server cost, a standard query costs ${\sim}$\$0.015. The provider rates and resulting cost estimate are a measurement-period snapshot, not current pricing. The 89.3\% Redis keyspace hit rate is not a query-level semantic-cache hit rate and is not used to estimate avoided inference cost.
 
 Table~\ref{tab:cost} and Fig.~\ref{fig:cost} show the comparison across query volumes.
 
 \begin{table}[h]
 \centering
-\caption{Cost comparison: commercial AI search APIs vs.\ lixSearch}
+\caption{Measurement-period cost comparison vs.\ OreoLook}
 \label{tab:cost}
 {\scriptsize
 \begin{tabular}{@{}lrrl@{}}
@@ -567,13 +571,12 @@ Google Gemini (Flash) & \$0.014 & \$1{,}400 & per-query \\
 Perplexity Sonar Pro & \$0.018 & \$1{,}800 & per-query \\
 Perplexity Sonar & \$0.005 & \$500 & per-query \\
 \midrule
-lixSearch (uncached) & \$0.015 & \$1{,}596 & infra + LLM \\
-lixSearch (w/ 89\% cache) & \$0.002 & \$255 & infra + LLM \\
+OreoLook (uncached) & \$0.015 & \$1{,}596 & infra + LLM \\
 \bottomrule
 \end{tabular}}
 \end{table}
 
-Commercial providers charge linearly per query---costs scale with volume. lixSearch combines a fixed infrastructure cost (\$96/month) with a variable LLM cost (${\sim}$\$0.014/query), but the semantic cache eliminates LLM costs for 89\% of queries. At 100{,}000 queries per month, lixSearch with caching costs ${\sim}$\$255---\textbf{12--39$\times$} less than SearchGPT, \textbf{14$\times$} less than Google Gemini Pro, and \textbf{2$\times$} less than Perplexity Sonar. Even without caching, lixSearch remains \textbf{2--7$\times$} cheaper than commercial alternatives.
+The uncached estimate combines fixed infrastructure with variable inference. We do not derive an effective cached cost from the Redis keyspace hit rate because it counts internal Redis operations and cannot be converted into the fraction of user queries that bypass inference. Request-level measurement of semantic-cache hits and avoided provider tokens remains future work.
 
 \begin{figure}[h]
 \centering
@@ -591,7 +594,7 @@ Commercial providers charge linearly per query---costs scale with volume. lixSea
     ymin=0.0001, ymax=1,
     ytick={0.0001, 0.001, 0.01, 0.1, 1},
     yticklabels={\$0.0001, \$0.001, \$0.01, \$0.10, \$1.00},
-    symbolic x coords={{SearchGPT}, {Google Gemini}, {Perplexity}, {lixSearch}, {lixSearch (cached)}},
+    symbolic x coords={{SearchGPT}, {Google Gemini}, {Perplexity}, {OreoLook}},
     xtick=data,
     x tick label style={font=\scriptsize, rotate=20, anchor=east},
     y tick label style={font=\scriptsize},
@@ -606,13 +609,12 @@ Commercial providers charge linearly per query---costs scale with volume. lixSea
 ({SearchGPT}, 0.10) [\$0.10]
 ({Google Gemini}, 0.035) [\$0.035]
 ({Perplexity}, 0.005) [\$0.005]
-({lixSearch}, 0.015) [\$0.015]
-({lixSearch (cached)}, 0.002) [\$0.002]
+({OreoLook}, 0.015) [\$0.015]
 };
 \end{axis}
 \end{tikzpicture}%
 }
-\caption{Per-query cost comparison (log scale). lixSearch includes both infrastructure (\$96/mo amortized) and LLM inference costs. With 89\% cache hit rate, effective cost drops to \$0.002/query---50$\times$ cheaper than SearchGPT and 2.5$\times$ cheaper than Perplexity Sonar.}
+\caption{Measurement-period per-query estimates (log scale). OreoLook includes amortized local infrastructure and provider inference; no cached-cost estimate is inferred from the Redis keyspace hit rate.}
 \label{fig:cost}
 \end{figure}
 
@@ -760,7 +762,7 @@ This is the \emph{Redis-level} aggregate hit rate across all three databases, re
 
 \subsubsection{Per-Layer Contribution}
 
-To understand each layer's contribution, we analyzed the production key distribution and access patterns over the measurement window:
+To form exploratory estimates of each layer's contribution, rather than controlled request-level measurements, we analyzed the production key distribution and access patterns over the measurement window:
 
 \begin{itemize}
 \item \textbf{Layer 1 (Session Context Window)} accounts for the majority of hits. Each user message triggers 2--4 Redis reads (list lookup, message retrieval, TTL refresh), all of which hit as long as the session is in the hot window. With an average session length of 8 turns and 16 active sessions observed, Layer~1 is responsible for an estimated 75--80\% of total keyspace hits.
@@ -774,13 +776,13 @@ To understand each layer's contribution, we analyzed the production key distribu
 \section{Conclusion}
 \label{sec:conclusion}
 
-We set out to build a search assistant that could match commercial offerings without their per-query price tags, running entirely on commodity CPU hardware. The real engineering challenge turned out not to be searching the web or calling an LLM, but managing the state that accumulates around multi-turn conversations at scale.
+We set out to build a search assistant that could match commercial offerings without their per-query price tags, running its local search, cache, and embedding infrastructure on commodity CPU hardware. The real engineering challenge turned out not to be searching the web or calling an LLM, but managing the state that accumulates around multi-turn conversations at scale.
 
 The three-layer caching architecture presented in this paper---session context, semantic query deduplication, and URL embedding reuse---addresses this challenge. As demonstrated in Section~\ref{sec:evaluation}, the system achieves sub-millisecond cache reads, effective compression for disk archival, and transparent session lifecycle management, all within a minimal Redis memory footprint.
 
-The key insight is that forever-continuous conversations---sessions that can span hours, days, or weeks without losing context---are not a feature of the LLM itself, but of the infrastructure around it. By combining a bounded hot window with unbounded cold storage, aggressive semantic deduplication, and cross-session embedding reuse, conversation length is no longer a constraint.
+The key insight is that resumable conversations are not a feature of the LLM alone, but of the infrastructure around it. A bounded hot window combined with bounded-retention, disk-backed cold storage, semantic deduplication, and cross-session embedding reuse supports long-running sessions without retaining their full histories in memory.
 
-Our evaluation is based on a single production deployment on one hardware configuration; the reported hit rates and latency numbers are representative of our workload but may vary under different query distributions or concurrency patterns. The semantic cache uses brute-force cosine similarity ($O(n)$, $n \leq 50$), which suffices at current scale but would require a vector index for significantly larger deployments. The pure-Python Huffman codec trades throughput (${\sim}$800\,KB/s) for zero native dependencies---acceptable for typical conversation archives under 10\,KB, though a C extension would be warranted for megabyte-scale payloads. Conversation archives are compressed but not encrypted at rest; deployments handling sensitive data should layer filesystem-level or application-level encryption. Looking ahead, potential improvements include an optional native Huffman extension for larger archives, pluggable vector databases (FAISS, Chroma) for the semantic cache, adaptive TTL policies that learn optimal cache lifetimes from observed query patterns, and cross-session knowledge transfer where insights from one conversation can inform responses in another.
+Our evaluation is based on a single historical production snapshot on one hardware configuration; the reported hit rates and latency numbers are representative of our workload but may vary under different query distributions or concurrency patterns. Redis keyspace hits must not be interpreted as query-level cache hits. The semantic cache uses brute-force cosine similarity ($O(n)$, $n \leq 50$), which suffices at current scale but would require a vector index for significantly larger deployments. The pure-Python Huffman codec trades throughput (${\sim}$800\,KB/s) for zero native dependencies---acceptable for typical conversation archives under 10\,KB, though a C extension would be warranted for megabyte-scale payloads. Conversation archives are compressed but not encrypted at rest; deployments handling sensitive data should layer filesystem-level or application-level encryption. Looking ahead, potential improvements include an optional native Huffman extension for larger archives, pluggable vector storage such as Qdrant for the semantic cache, adaptive TTL policies that learn optimal cache lifetimes from observed query patterns, and cross-session knowledge transfer where insights from one conversation can inform responses in another.
 
 
 
