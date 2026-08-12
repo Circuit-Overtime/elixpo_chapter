@@ -1,11 +1,16 @@
-'use client';
-
+import type { Metadata } from 'next';
 import { ArrowLeft, Download, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
+export const metadata: Metadata = {
+  title: 'Research Paper — Low-Latency LLM Web Search',
+  description: 'Read the OreoLook research paper on a three-layer caching architecture for low-latency, source-grounded LLM web search on commodity CPU hardware.',
+  alternates: { canonical: '/paper' },
+};
+
 export default function PaperPage() {
   return (
-    <div className="min-h-screen bg-[#0a0c14] text-white flex flex-col">
+    <div className="paper-shell flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-6 md:px-12 py-4 border-b border-white/[0.06] max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-4">
@@ -34,7 +39,7 @@ export default function PaperPage() {
             href="https://github.com/pollinations/lixSearch"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors"
+            className="paper-github-button"
           >
             <ExternalLink size={12} />
             GitHub
@@ -42,7 +47,7 @@ export default function PaperPage() {
           <a
             href="/paper.pdf"
             download="lix_cache_paper.pdf"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/30 border border-indigo-500/30 text-sm text-indigo-300 hover:bg-indigo-600/50 transition-all"
+            className="paper-download-button"
           >
             <Download size={14} />
             Download PDF

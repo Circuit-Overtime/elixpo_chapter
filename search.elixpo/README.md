@@ -1,8 +1,8 @@
 <div align="center">
 
-<h1 style="display: flex; align-items: center; justify-content: center; gap: 10px; color: #6391F8;"> <img src="./public/images/icon.png" height="48px" width=48px" alt="searchIcon"> LixSearch </h1>
+<h1 style="display: flex; align-items: center; justify-content: center; gap: 10px; color: #6391F8;"> <img src="./public/images/icon.png" height="48px" width="48px" alt="OreoLook icon"> OreoLook </h1>
 
-**Intelligent search assistant with real-time web research, RAG, and OpenAI-compatible API**
+**A curious, open-source AI search scout with real-time web research, RAG, and an OpenAI-compatible API.**
 <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
 
 [![Pollinations Attribute](https://img.shields.io/badge/Built%20with-Pollinations-8a2be2?style=for-the-badge)](https://img.shields.io/badge/Built%20with-Pollinations-8a2be2?style=for-the-badge)
@@ -26,7 +26,7 @@
 
 <br/>
 
-<img src="./search.elixpo/public/og-image.png" alt="lixSearch" width="100%" />
+<img src="./search.elixpo/public/og-image.png" alt="OreoLook" width="100%" />
 
 </div>
 
@@ -34,15 +34,15 @@
 
 
 
-## ✨ What Makes lixSearch Different?
+## ✨ What Makes OreoLook Different?
 
-- Don't wait for search results. lixSearch remembers what you've already asked about and serves up answers instantly from its memory. Same question, instant answer.
+- Don't wait for search results. OreoLook remembers what you've already asked about and serves up answers instantly from its memory. Same question, instant answer.
 
-- Unlike regular search engines, lixSearch understands what you're really asking for. It searches the web, watches YouTube videos, analyzes images, and pieces everything together into a coherent answer.
+- Unlike regular search engines, OreoLook understands what you're really asking for. It searches the web, watches YouTube videos, analyzes images, and pieces everything together into a coherent answer.
 
 - Every answer comes with sources. Read the original articles, watch the videos, see exactly where the information came from. No fluff, no guessing.
 
-- Ask a follow-up question and lixSearch remembers what you were just talking about. It's like chatting with someone who actually paid attention to the conversation.
+- Ask a follow-up question and OreoLook remembers what you were just talking about. It's like chatting with someone who actually paid attention to the conversation.
 
 ---
 
@@ -61,10 +61,10 @@
 
 ## ⚙️ How It Works
 
-When you ask lixSearch a question, here's what happens behind the scenes:
+When you ask OreoLook a question, here's what happens behind the scenes:
 
 1. **You Ask** - Type your question naturally, like you're talking to a friend
-2. **We Understand** - lixSearch breaks down your question into its key parts
+2. **We Understand** - OreoLook breaks down your question into its key parts
 3. **We Search** - Multiple search agents fan out across the web, YouTube, and images simultaneously
 4. **We Read** - Automatically extract the important information from articles and videos
 5. **We Synthesize** - An AI reads through everything and writes a clear, concise answer
@@ -150,9 +150,22 @@ flowchart TD
 
 ## 📖 API Usage 
 
-> Right now we have stopped public access, but it will be available soon with [Pollinations.ai API] (https://enter.pollinations.ai). In the meantime, you can run your own instance of lixSearch and use the same API.
+OreoLook is available through [Pollinations.ai](https://pollinations.ai) and can also be self-hosted.
 
-lixSearch exposes an **OpenAI-compatible** API. Any client that works with OpenAI works with lixSearch.
+OreoLook exposes an **OpenAI-compatible** API. Keep using `lixsearch` as the model ID for direct and Pollinations-routed requests.
+
+### Use through Pollinations
+
+```bash
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "lixsearch",
+    "messages": [{"role": "user", "content": "What changed in AI today?"}],
+    "stream": true
+  }'
+```
 
 ### Basic search
 ```bash

@@ -1,5 +1,5 @@
 {
-  "name": "@elixpo/lixsearch-landing",
+  "name": "@elixpo/oreolook-landing",
   "version": "3.2.5",
   "private": true,
   "description": "OreoLook — a curious open-source AI search scout that searches the web and synthesizes grounded answers.",
@@ -29,6 +29,7 @@
     "url": "https://github.com/pollinations/lixsearch/issues"
   },
   "keywords": [
+    "oreolook",
     "lixsearch",
     "elixpo",
     "ai-search",

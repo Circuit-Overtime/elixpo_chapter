@@ -609,8 +609,17 @@ frontend_build() {
 
     npx next build || { cd ..; error "Frontend build failed"; exit 1; }
     cd ..
+    [ -s search.elixpo/out/index.html ] || { error "Frontend export is missing search.elixpo/out/index.html"; exit 1; }
     success "Frontend built — search.elixpo/out/"
-    info "Restart nginx/docker to pick up changes"
+
+    # Next.js replaces the out directory during static export. A running bind
+    # mount keeps the old directory inode, so restart is insufficient: recreate
+    # Nginx to attach the newly generated export.
+    if compose ps -q nginx 2>/dev/null | grep -q .; then
+        info "Refreshing nginx frontend bind mount..."
+        compose up -d --no-deps --force-recreate nginx
+        success "Nginx recreated with the new frontend export"
+    fi
 }
 
 frontend_install_node() {
@@ -632,8 +641,7 @@ frontend_deploy() {
     npx wrangler pages deploy out || { cd ..; error "Pages deploy failed"; exit 1; }
     cd ..
     success "Frontend deployed to Cloudflare Pages"
-    docker restart lixsearch-nginx
-    success "Nginx restarted to serve new frontend"
+    success "Nginx is serving the frontend export"
 }
 
 # ── Version display ────────────────────────────────────
