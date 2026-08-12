@@ -42,8 +42,8 @@ function Badge({ children, color = 'indigo' }: { children: React.ReactNode; colo
 
 function Code({ children }: { children: string }) {
   return (
-    <pre className="relative rounded-xl bg-[#111318] border border-white/[0.06] overflow-x-auto text-[13px] leading-relaxed">
-      <code className="block p-5 text-white/70 font-mono whitespace-pre">{children}</code>
+    <pre className="relative rounded-xl bg-[#ffc] border border-white/[0.06] overflow-x-auto text-[13px] leading-relaxed">
+      <code className="block p-5 text-black/70 font-mono whitespace-pre">{children}</code>
     </pre>
   );
 }

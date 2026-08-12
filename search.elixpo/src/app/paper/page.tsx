@@ -39,7 +39,7 @@ export default function PaperPage() {
             href="https://github.com/pollinations/lixSearch"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-white bg-[#333] transition-color"
           >
             <ExternalLink size={12} />
             GitHub
@@ -47,7 +47,7 @@ export default function PaperPage() {
           <a
             href="/paper.pdf"
             download="lix_cache_paper.pdf"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#151515] border border-[#151515] text-sm !text-white hover:bg-[#e53935] transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#151515] border border-[#151515] text-sm !text-white hover:bg-[#111] transition-all"
           >
             <Download size={14} />
             Download PDF
