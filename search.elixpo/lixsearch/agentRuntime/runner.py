@@ -79,23 +79,37 @@ class AgentRunner:
             max_tokens=spec.max_tokens,
         )
 
-    async def run(self, agent_name: str, prompt: str, history: Iterable[dict[str, str]] | None = None) -> dict[str, Any]:
+    async def run(
+        self,
+        agent_name: str,
+        prompt: str,
+        history: Iterable[dict[str, str]] | None = None,
+        *,
+        effort: str = "low",
+    ) -> dict[str, Any]:
         prepared = self.prepare(agent_name, prompt, history)
         if prepared.agent == "decision":
-            decision = await self._call(prepared)
+            decision = await self._call(prepared, effort=effort)
             selected = _parse_decision(decision)
-            return await self._call(self.prepare(selected, prompt, history))
-        return await self._call(prepared)
+            return await self._call(self.prepare(selected, prompt, history), effort=effort)
+        return await self._call(prepared, effort=effort)
 
-    async def stream(self, agent_name: str, prompt: str, history: Iterable[dict[str, str]] | None = None):
+    async def stream(
+        self,
+        agent_name: str,
+        prompt: str,
+        history: Iterable[dict[str, str]] | None = None,
+        *,
+        effort: str = "low",
+    ):
         prepared = self.prepare(agent_name, prompt, history)
         if prepared.agent == "decision":
-            decision = await self._call(prepared)
+            decision = await self._call(prepared, effort=effort)
             prepared = self.prepare(_parse_decision(decision), prompt, history)
-        async for event in self._stream_call(prepared):
+        async for event in self._stream_call(prepared, effort=effort):
             yield event
 
-    async def _stream_call(self, prepared: PreparedRun):
+    async def _stream_call(self, prepared: PreparedRun, *, effort: str = "low"):
         Router, Message, ToolDef = _oreoflow_types()
         load_local_environment()
         api_key = os.getenv("POLLINATIONS_API_KEY")
@@ -110,7 +124,7 @@ class AgentRunner:
                 prepared.role,
                 [Message.model_validate(message) for message in prepared.messages],
                 tools=[ToolDef.model_validate(tool) for tool in prepared.tools] or None,
-                effort="low",
+                effort=effort,
                 max_tokens=prepared.max_tokens,
             ):
                 if chunk.usage:
@@ -134,6 +148,7 @@ class AgentRunner:
                     "agent": prepared.agent,
                     "role": prepared.role,
                     "model": prepared.model,
+                    "effort": effort,
                     "response": {
                         "choices": [{"message": {"role": "assistant", "content": "".join(content_parts)}, "finish_reason": finish_reason or "stop"}],
                         "usage": usage,
@@ -143,7 +158,7 @@ class AgentRunner:
         finally:
             await router.aclose()
 
-    async def _call(self, prepared: PreparedRun) -> dict[str, Any]:
+    async def _call(self, prepared: PreparedRun, *, effort: str = "low") -> dict[str, Any]:
         Router, Message, ToolDef = _oreoflow_types()
         load_local_environment()
         api_key = os.getenv("POLLINATIONS_API_KEY")
@@ -155,7 +170,7 @@ class AgentRunner:
                 prepared.role,
                 [Message.model_validate(message) for message in prepared.messages],
                 tools=[ToolDef.model_validate(tool) for tool in prepared.tools] or None,
-                effort="low",
+                effort=effort,
                 max_tokens=prepared.max_tokens,
                 tool_choice="auto" if prepared.tools else None,
             )
@@ -163,6 +178,7 @@ class AgentRunner:
                 "agent": prepared.agent,
                 "role": prepared.role,
                 "model": prepared.model,
+                "effort": effort,
                 "response": response.model_dump(mode="json"),
             }
         finally:

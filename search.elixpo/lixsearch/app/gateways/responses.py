@@ -63,6 +63,18 @@ def _conversation_id(value: Any) -> str | None:
     return None
 
 
+def _reasoning_effort(data: dict[str, Any]) -> str:
+    reasoning = data.get("reasoning")
+    if reasoning is None:
+        return "low"
+    if not isinstance(reasoning, dict):
+        raise ValueError("reasoning must be an object")
+    effort = reasoning.get("effort", "low")
+    if effort not in {"low", "medium", "high"}:
+        raise ValueError("reasoning.effort must be one of: low, medium, high")
+    return effort
+
+
 def _usage(result: dict[str, Any]) -> dict[str, int]:
     raw = result.get("response", {}).get("usage") or {}
     input_tokens = int(raw.get("prompt_tokens") or 0)
@@ -94,6 +106,7 @@ def _response_object(
         }],
         "output_text": content,
         "parallel_tool_calls": True,
+        "reasoning": {"effort": result.get("effort", "low"), "summary": None},
         "previous_response_id": previous_response_id,
         "conversation": {"id": conversation_id},
         "store": store,
@@ -127,8 +140,9 @@ async def _run_response(data: dict[str, Any], state: ResponseStateStore) -> dict
         prompt = f"{instructions}\n\n{prompt}"
 
     requested_model = str(data.get("model") or "auto")
+    effort = _reasoning_effort(data)
     agent = requested_model if requested_model in AGENT_SPECS and requested_model != "decision" else "auto"
-    result = await AgentRunner().run(agent, prompt, history=history)
+    result = await AgentRunner().run(agent, prompt, history=history, effort=effort)
     content = response_content(result)
     if not content:
         raise RuntimeError("Agent returned no output text")
@@ -206,6 +220,7 @@ async def _stream_response(data: dict[str, Any], state: ResponseStateStore):
     if data.get("instructions"):
         prompt = f'{data["instructions"]}\n\n{prompt}'
     requested_model = str(data.get("model") or "auto")
+    effort = _reasoning_effort(data)
     agent = requested_model if requested_model in AGENT_SPECS and requested_model != "decision" else "auto"
     response_id, message_id = new_response_id(), new_message_id()
     store = data.get("store", True) is not False
@@ -222,13 +237,14 @@ async def _stream_response(data: dict[str, Any], state: ResponseStateStore):
             "id": response_id, "object": "response", "created_at": int(time.time()),
             "status": "in_progress", "output": [], "previous_response_id": previous_response_id,
             "conversation": {"id": conversation_id}, "store": store, "model": requested_model,
+            "reasoning": {"effort": effort, "summary": None},
         }
         yield emit("response.created", {"type": "response.created", "response": created})
         buffer = TaskAwareChunkBuffer(AGENT_STREAM_CHUNK_CHARS)
         content_parts = []
-        final_result = {"agent": agent, "model": requested_model, "response": {}}
+        final_result = {"agent": agent, "model": requested_model, "effort": effort, "response": {}}
         try:
-            async for event in AgentRunner().stream(agent, prompt, history=history):
+            async for event in AgentRunner().stream(agent, prompt, history=history, effort=effort):
                 if event.get("type") == "done":
                     final_result = event.get("result") or final_result
                     continue

@@ -50,21 +50,22 @@ class FakeRedis:
 class FakeRunner:
     calls = []
 
-    async def stream(self, agent, prompt, history=None):
-        self.calls.append((agent, prompt, list(history or [])))
+    async def stream(self, agent, prompt, history=None, *, effort="low"):
+        self.calls.append((agent, prompt, list(history or []), effort))
         for content in ("answer:", prompt[:2], prompt[2:]):
             yield {"type": "delta", "content": content}
         yield {"type": "done", "result": {
-            "agent": "coding", "role": "code", "model": "qwen-coder",
+            "agent": "coding", "role": "code", "model": "qwen-coder", "effort": effort,
             "response": {"usage": {"prompt_tokens": 4, "completion_tokens": 2}},
         }}
 
-    async def run(self, agent, prompt, history=None):
-        self.calls.append((agent, prompt, list(history or [])))
+    async def run(self, agent, prompt, history=None, *, effort="low"):
+        self.calls.append((agent, prompt, list(history or []), effort))
         return {
             "agent": "coding",
             "role": "code",
             "model": "qwen-coder",
+            "effort": effort,
             "response": {
                 "choices": [{"message": {"role": "assistant", "content": f"answer:{prompt}"}}],
                 "usage": {"prompt_tokens": 4, "completion_tokens": 2, "total_tokens": 6},
@@ -126,6 +127,40 @@ class AgentResponseTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("event: response.output_text.delta", stream_body)
             self.assertIn("event: response.completed", stream_body)
             self.assertIn("data: [DONE]", stream_body)
+
+
+    async def test_reasoning_effort_reaches_non_streaming_and_streaming_runner(self):
+        with patch.object(responses, "AgentRunner", FakeRunner), patch.object(responses, "ResponseStateStore", return_value=self.state), patch.object(responses, "_remember_turn", AsyncMock()):
+            client = self.app.test_client()
+            headers = {"Authorization": f"Bearer {API_KEY}"}
+            reply = await client.post("/v1/responses", json={
+                "model": "coding", "input": "think", "stream": False,
+                "reasoning": {"effort": "high"},
+            }, headers=headers)
+            self.assertEqual(reply.status_code, 200)
+            body = await reply.get_json()
+            self.assertEqual(body["reasoning"]["effort"], "high")
+            self.assertEqual(FakeRunner.calls[-1][3], "high")
+
+            streamed = await client.post("/v1/responses", json={
+                "model": "coding", "input": "stream", "stream": True,
+                "reasoning": {"effort": "medium"},
+            }, headers=headers)
+            self.assertEqual(streamed.status_code, 200)
+            await streamed.get_data()
+            self.assertEqual(FakeRunner.calls[-1][3], "medium")
+
+    async def test_invalid_reasoning_effort_returns_openai_error(self):
+        with patch.object(responses, "AgentRunner", FakeRunner), patch.object(responses, "ResponseStateStore", return_value=self.state):
+            client = self.app.test_client()
+            reply = await client.post("/v1/responses", json={
+                "input": "hello", "stream": False,
+                "reasoning": {"effort": "extreme"},
+            }, headers={"Authorization": f"Bearer {API_KEY}"})
+            self.assertEqual(reply.status_code, 400)
+            body = await reply.get_json()
+            self.assertEqual(body["error"]["type"], "invalid_request_error")
+            self.assertIn("reasoning.effort", body["error"]["message"])
 
     def test_cli_session_alias_is_stable_and_private(self):
         first = canonical_conversation_id("my-project")
