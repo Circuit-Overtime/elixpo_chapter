@@ -9,9 +9,10 @@ PAGES_BRANCH="${PAGES_BRANCH:-main}"
 
 usage() {
   cat <<'EOF'
-Usage: ./deploy.sh [pages|worker|all|build|status]
+Usage: ./deploy.sh [deploy|pages|worker|all|build|status]
 
-  pages   Build and deploy the static frontend to agent-elixpo-web (default)
+  deploy  Run the package deploy script exactly as `npm run deploy` (default)
+  pages   Build and deploy with explicit project and production-branch handling
   worker  Deploy the read-only agent-elixpo-api Worker
   all     Deploy the API Worker, then the Pages frontend
   build   Build and validate the static export without deploying
@@ -74,6 +75,13 @@ ensure_pages_project() {
   npx wrangler pages project create "$PAGES_PROJECT" --production-branch "$PAGES_BRANCH"
 }
 
+deploy_package() {
+  ensure_node
+  ensure_dependencies "$SCRIPT_DIR"
+  echo "==> Running package deployment: npm run deploy"
+  (cd "$SCRIPT_DIR" && npm run deploy)
+}
+
 deploy_pages() {
   build_pages
   echo "==> Deploying out/ to Cloudflare Pages project $PAGES_PROJECT"
@@ -105,9 +113,10 @@ status() {
   printf '\n'
 }
 
-command="${1:-pages}"
+command="${1:-deploy}"
 case "$command" in
-  pages|deploy) deploy_pages ;;
+  deploy) deploy_package ;;
+  pages) deploy_pages ;;
   worker) deploy_worker ;;
   all) deploy_worker; deploy_pages ;;
   build) build_pages ;;
