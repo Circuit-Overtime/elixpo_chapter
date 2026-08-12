@@ -13,13 +13,13 @@ class AgentRuntimeTests(unittest.TestCase):
     def setUpClass(cls):
         cls.runner = AgentRunner()
 
-    def test_zero_cost_routing_for_obvious_requests(self):
-        self.assertEqual(route_request("Generate an image of a lunar city"), "image-maker")
-        self.assertEqual(route_request("Debug this Python function"), "coding")
-        self.assertEqual(route_request("Export this report as a PDF"), "pdf-maker")
-        self.assertEqual(route_request("Find today's weather online"), "web-search")
-        self.assertEqual(route_request("Rewrite this email"), "writing")
-        self.assertEqual(route_request("What did we discuss earlier?"), "memory")
+    def test_auto_routing_is_always_model_driven(self):
+        self.assertEqual(route_request("Generate an image of a lunar city"), "decision")
+        self.assertEqual(route_request("Debug this Python function"), "decision")
+        self.assertEqual(route_request("Export this report as a PDF"), "decision")
+        self.assertEqual(route_request("Find today's weather online"), "decision")
+        self.assertEqual(route_request("Rewrite this email"), "decision")
+        self.assertEqual(route_request("What did we discuss earlier?"), "decision")
         self.assertEqual(route_request("Explain entropy"), "decision")
 
     def test_web_agent_uses_cheapest_role_and_scoped_tools(self):
@@ -49,12 +49,19 @@ class AgentRuntimeTests(unittest.TestCase):
         run = self.runner.prepare("writing", prompt)
         self.assertEqual(run.messages[-1], {"role": "user", "content": prompt})
 
-    def test_auto_uses_decision_only_when_ambiguous(self):
+    def test_auto_always_uses_bounded_decision_agent(self):
         obvious = self.runner.prepare("auto", "Create an image of Saturn")
         ambiguous = self.runner.prepare("auto", "Explain entropy")
-        self.assertEqual(obvious.agent, "image-maker")
+        self.assertEqual(obvious.agent, "decision")
         self.assertEqual(ambiguous.agent, "decision")
-        self.assertEqual(ambiguous.max_tokens, 96)
+        self.assertEqual(ambiguous.max_tokens, 120)
+
+    def test_search_depth_enforces_output_budget(self):
+        quick = self.runner.prepare("web-search", "Weather", search_depth="quick")
+        deep = self.runner.prepare("web-search", "Investigate", search_depth="deep")
+        self.assertEqual(quick.max_tokens, 350)
+        self.assertEqual(deep.max_tokens, 1800)
+        self.assertIn("use quick search depth", quick.messages[0]["content"])
 
 
 if __name__ == "__main__":

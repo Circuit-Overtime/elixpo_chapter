@@ -20,6 +20,11 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 COMPOSE_FILE="docker-compose.yml"
+COMPOSE_ENV_FILE=".env.local"
+
+compose() {
+    docker compose --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
+}
 
 # Only validate container count for commands that use it
 case "${1:-help}" in
@@ -76,7 +81,7 @@ start_services() {
     # Unchanged containers (redis, chroma, nginx) stay untouched — no data loss,
     # no renaming, no extra disk usage.
     info "Starting lixSearch with $count app container(s)..."
-    docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --scale lixsearch-app="$count"
+    compose up -d --remove-orphans --scale lixsearch-app="$count"
 
     info "Waiting for services to be healthy (30 seconds)..."
     sleep 30
@@ -93,9 +98,9 @@ build_image() {
     
     if [ "$no_cache" = "true" ]; then
         info "Building with --no-cache flag (smallest image)..."
-        docker compose -f "$COMPOSE_FILE" build --no-cache
+        compose build --no-cache
     else
-        docker compose -f "$COMPOSE_FILE" build
+        compose build
     fi
 
     success "Image built successfully"
@@ -110,7 +115,7 @@ scale_containers() {
     check_docker
 
     info "Scaling to $count container(s)..."
-    docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --scale lixsearch-app="$count"
+    compose up -d --remove-orphans --scale lixsearch-app="$count"
 
     sleep 10
     success "Scaled to $count container(s)"
@@ -120,7 +125,7 @@ scale_containers() {
 stop_services() {
     check_docker
     info "Stopping all services..."
-    docker compose -f "$COMPOSE_FILE" down --remove-orphans
+    compose down --remove-orphans
     success "Services stopped"
 }
 
@@ -131,14 +136,14 @@ clean_volumes() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         info "Removing containers and volumes..."
-        docker compose -f "$COMPOSE_FILE" down -v --remove-orphans
+        compose down -v --remove-orphans
         success "Cleaned up"
     fi
 }
 
 show_status() {
     echo ""
-    docker compose -f "$COMPOSE_FILE" ps
+    compose ps
     echo ""
 }
 
@@ -148,16 +153,16 @@ show_logs() {
 
     case "$service" in
         app|lixsearch)
-            docker compose -f "$COMPOSE_FILE" logs -f lixsearch-app
+            compose logs -f lixsearch-app
             ;;
         redis)
-            docker compose -f "$COMPOSE_FILE" logs -f redis
+            compose logs -f redis
             ;;
         chroma)
-            docker compose -f "$COMPOSE_FILE" logs -f chroma-server
+            compose logs -f chroma-server
             ;;
         *)
-            docker compose -f "$COMPOSE_FILE" logs -f nginx
+            compose logs -f nginx
             ;;
     esac
 }
@@ -166,7 +171,7 @@ check_compose_health() {
     local service="$1"
     local label="$2"
     local cid
-    cid=$(docker compose -f "$COMPOSE_FILE" ps -q "$service" 2>/dev/null)
+    cid=$(compose ps -q "$service" 2>/dev/null)
     if [ -z "$cid" ]; then
         error "$label: NOT RUNNING"
         return
@@ -212,7 +217,7 @@ check_health() {
 restart_services() {
     check_docker
     info "Restarting all services..."
-    docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --force-recreate
+    compose up -d --remove-orphans --force-recreate
     sleep 10
     success "Services restarted"
     check_health
@@ -226,11 +231,11 @@ backup_redis() {
     mkdir -p "$backup_dir"
 
     info "Backing up Redis data..."
-    docker compose -f "$COMPOSE_FILE" exec redis redis-cli BGSAVE > /dev/null 2>&1
+    compose exec redis redis-cli BGSAVE > /dev/null 2>&1
 
     sleep 2
 
-    docker compose -f "$COMPOSE_FILE" cp redis:/data/dump.rdb \
+    compose cp redis:/data/dump.rdb \
         "$backup_dir/redis_dump_${timestamp}.rdb" 2>/dev/null || true
 
     success "Redis backed up to $backup_dir/redis_dump_${timestamp}.rdb"
@@ -739,8 +744,8 @@ case "${1:-help}" in
         info "Quick restart — rebuild app image only, rolling restart..."
         check_env
         check_docker
-        docker compose -f "$COMPOSE_FILE" build lixsearch-app
-        docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --no-deps --scale lixsearch-app="${CONTAINER_COUNT}" lixsearch-app
+        compose build lixsearch-app
+        compose up -d --remove-orphans --no-deps --scale lixsearch-app="${CONTAINER_COUNT}" lixsearch-app
         info "Waiting for health..."
         sleep 30
         success "App containers restarted (${CONTAINER_COUNT} replicas)"
@@ -749,7 +754,7 @@ case "${1:-help}" in
     hotfix)
         info "Hotfix — copying code into running containers (no rebuild)..."
         check_docker
-        containers=$(docker compose -f "$COMPOSE_FILE" ps -q lixsearch-app 2>/dev/null)
+        containers=$(compose ps -q lixsearch-app 2>/dev/null)
         if [ -z "$containers" ]; then
             error "No running app containers found"
             exit 1
@@ -764,13 +769,13 @@ case "${1:-help}" in
             count=$((count + 1))
         done
         # Also update ipc-service if running
-        ipc_cid=$(docker compose -f "$COMPOSE_FILE" ps -q ipc-service 2>/dev/null)
+        ipc_cid=$(compose ps -q ipc-service 2>/dev/null)
         if [ -n "$ipc_cid" ]; then
             docker cp lixsearch/. "$ipc_cid":/app/lixsearch/
             info "  Updated ipc-service"
         fi
         info "Restarting $count app container(s)..."
-        docker compose -f "$COMPOSE_FILE" restart lixsearch-app
+        compose restart lixsearch-app
         sleep 15
         success "Hotfix applied to $count container(s)"
         show_status

@@ -13,7 +13,6 @@ from commons.minimal import cleanQuery
 from functionCalls.getYoutubeDetails import transcribe_audio, youtubeMetadata
 from pipeline.utils import get_model_server, cached_web_search_key
 from pipeline.config import MAX_IMAGES_TO_INCLUDE, LOG_MESSAGE_QUERY_TRUNCATE, LOG_MESSAGE_PREVIEW_TRUNCATE, ERROR_MESSAGE_TRUNCATE, REQUEST_ID_HEX_SLICE_SIZE, FETCH_MIN_USEFUL_CHARS
-from pipeline.queryDecomposition import QueryAnalyzer, DecompositionEvaluator
 from pipeline.formalOptimization import ConstrainedOptimizer
 from commons.robustnessFramework import ToolOutputSanitizer, SanitizationPolicy
 from urllib.parse import urlparse
@@ -405,30 +404,6 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
             except Exception as e:
                 logger.error(f"URL fetch error for {url}: {e}")
                 yield f"[ERROR] Failed to fetch {url}: {str(e)[:ERROR_MESSAGE_TRUNCATE]}"
-
-        elif function_name == "analyze_query_complexity":
-            logger.info("[Pipeline] Analyzing query complexity")
-            query = function_args.get("query")
-            try:
-                analyzer = QueryAnalyzer()
-                should_decompose, reason, confidence = analyzer.should_decompose(query)
-                complexity = analyzer.detect_query_complexity(query)
-                aspects = analyzer._detect_aspects(query)
-                
-                result = {
-                    "query": query,
-                    "complexity_level": complexity.value,
-                    "aspects_detected": list(aspects),
-                    "should_decompose": should_decompose,
-                    "reasoning": reason,
-                    "confidence": confidence
-                }
-                
-                logger.info(f"[Pipeline] Query analysis: complexity={complexity.value}, decompose={should_decompose}")
-                yield json.dumps(result, indent=2)
-            except Exception as e:
-                logger.error(f"Query complexity analysis error: {e}")
-                yield f"[ERROR] Failed to analyze query: {str(e)[:ERROR_MESSAGE_TRUNCATE]}"
 
         elif function_name == "evaluate_response_quality":
             logger.info("[Pipeline] Evaluating response quality")

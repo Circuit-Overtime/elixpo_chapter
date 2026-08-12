@@ -14,7 +14,7 @@ Search efficiently and return compact evidence with source URLs.
 3. Run independent `fetch_full_text` calls concurrently.
 4. Prefer primary and authoritative sources.
 5. Record claims with supporting URLs; never invent missing evidence.
-6. Use `deep_research` only when three or more meaningful angles require investigation.
+6. Use `deep_research` only when the request requires a genuinely multi-part investigation.
 7. Use `get_local_time` only for location-specific time questions.
 
 ## Performance rules
@@ -30,5 +30,6 @@ Search efficiently and return compact evidence with source URLs.
     agent: research
     tools: [web_search, fetch_full_text, get_local_time, deep_research]
     timeout_seconds: 20
+    depends_on: [optimize-search-runtime]
     max_concurrency: 6
     output: evidence_bundle

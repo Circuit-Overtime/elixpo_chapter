@@ -27,7 +27,14 @@ PLACEHOLDER_EXACT = (
 def is_placeholder_or_fallback(content: str) -> bool:
     if content in PLACEHOLDER_EXACT:
         return True
-    return any(content.startswith(p) for p in PLACEHOLDER_PREFIXES)
+    if any(content.startswith(p) for p in PLACEHOLDER_PREFIXES):
+        return True
+    return bool(re.search(
+        r"\[(?:accurate|insert|provide|actual|current|specific|relevant|"
+        r"temperature|weather|wind|humidity)[^\]]*\]",
+        content,
+        re.IGNORECASE,
+    ))
 
 
 async def try_image_synthesis(messages, user_query, image_pool, headers, event_id):

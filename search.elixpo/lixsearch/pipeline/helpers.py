@@ -363,7 +363,7 @@ async def sanitize_final_response(content: str, query: str, sources: list[str], 
         {
             "role": "system",
             "content": (
-                "You are lixSearch. Rewrite drafts into final user-facing answers only. "
+                "You are OreoLook. Rewrite drafts into final user-facing answers only. "
                 "Never reveal internal reasoning, planning, tool strategy, cache logic, or step-by-step deliberation."
             ),
         },
