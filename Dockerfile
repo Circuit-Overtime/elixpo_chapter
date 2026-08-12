@@ -18,7 +18,6 @@ COPY package/lix_open_cache_pkg /build/lix_open_cache_pkg
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --index-url https://download.pytorch.org/whl/cpu "torch==${TORCH_VERSION}" && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir /build/agent-framework && \
     pip install --no-cache-dir /build/lix_open_cache_pkg
 
 RUN playwright install chromium
