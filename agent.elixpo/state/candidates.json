@@ -2,115 +2,90 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "jvxiao/speed-github",
+    "full_name": "OpenBMB/StaffDeck",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 3,
-    "pushed_at": "2026-08-12T07:25:13Z",
+    "open_issues": 33,
+    "pushed_at": "2026-08-13T07:26:15Z",
     "reasons": [
-      "348\u2605 python active",
+      "1544\u2605 python active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 348,
+    "score": 37,
+    "stars": 1544,
     "topics": [],
-    "url": "https://github.com/jvxiao/speed-github"
+    "url": "https://github.com/OpenBMB/StaffDeck"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "Stack-Cairn/LiveAgent",
+    "full_name": "Undertone0809/rudder",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 55,
-    "pushed_at": "2026-08-12T07:24:45Z",
+    "open_issues": 4,
+    "pushed_at": "2026-08-13T07:27:22Z",
     "reasons": [
-      "1730\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 52,
-    "stars": 1730,
-    "topics": [
-      "ai-agents",
-      "ai-tools",
-      "claude-code",
-      "claude-desktop",
-      "codex",
-      "codex-app",
-      "desktop-app",
-      "fable",
-      "hermes",
-      "hermes-agent",
-      "mcp",
-      "oepnclaw",
-      "open-source",
-      "skills",
-      "tauri",
-      "typescript",
-      "webui"
-    ],
-    "url": "https://github.com/Stack-Cairn/LiveAgent"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "openyida/openyida",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 52,
-    "pushed_at": "2026-08-12T07:23:21Z",
-    "reasons": [
-      "202\u2605 javascript active",
+      "280\u2605 typescript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 202,
-    "topics": [
-      "agent",
-      "ai",
-      "assistant",
-      "low-code-platform",
-      "skills",
-      "yida"
-    ],
-    "url": "https://github.com/openyida/openyida"
+    "stars": 280,
+    "topics": [],
+    "url": "https://github.com/Undertone0809/rudder"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "asklokesh/loki-mode",
+    "full_name": "LaoFeng-mouse/flyingmouse-format",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 17,
+    "pushed_at": "2026-08-13T07:22:10Z",
+    "reasons": [
+      "1699\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 1699,
+    "topics": [
+      "desktop-app",
+      "electron",
+      "ffmpeg",
+      "file-converter",
+      "format-converter",
+      "libreoffice",
+      "ocr",
+      "pdf",
+      "windows",
+      "wps"
+    ],
+    "url": "https://github.com/LaoFeng-mouse/flyingmouse-format"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "altstackHQ/altstack-data",
     "has_contributing": true,
     "language": "Shell",
     "open_issues": 6,
-    "pushed_at": "2026-08-12T07:19:17Z",
+    "pushed_at": "2026-08-13T07:22:40Z",
     "reasons": [
-      "1038\u2605 shell active",
+      "320\u2605 shell active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 1038,
+    "stars": 320,
     "topics": [
-      "ai-agents",
-      "aider",
-      "anthropic",
-      "autonomous",
-      "ci-cd",
-      "claude",
-      "cline",
-      "code-review",
+      "awesome",
+      "awesome-list",
       "devops",
-      "gemini",
-      "github-action",
-      "github-issues",
-      "loki-mode",
-      "multi-agent",
-      "openai-codex",
-      "openapi",
-      "pull-request-review",
-      "sdlc",
-      "spec-driven-development"
+      "docker",
+      "open-source",
+      "productivity",
+      "saas-alternatives",
+      "self-hosted"
     ],
-    "url": "https://github.com/asklokesh/loki-mode"
+    "url": "https://github.com/altstackHQ/altstack-data"
   },
   {
     "archived": false,
@@ -119,7 +94,7 @@
     "has_contributing": false,
     "language": "YAML",
     "open_issues": 3,
-    "pushed_at": "2026-08-12T07:24:53Z",
+    "pushed_at": "2026-08-13T07:25:10Z",
     "reasons": [
       "223\u2605 yaml active",
       "has open issues"
@@ -141,389 +116,359 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "vitali87/code-graph-rag",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 44,
-    "pushed_at": "2026-08-12T07:24:47Z",
-    "reasons": [
-      "3930\u2605 python active",
-      "has open issues"
-    ],
-    "score": 53,
-    "stars": 3930,
-    "topics": [
-      "ai",
-      "ast",
-      "claude-code",
-      "code-analysis",
-      "code-understanding",
-      "codebase-search",
-      "developer-tools",
-      "graph-database",
-      "knowledge-graph",
-      "llm",
-      "mcp",
-      "mcp-server",
-      "memgraph",
-      "monorepo",
-      "multi-language",
-      "python",
-      "rag",
-      "retrieval-augmented-generation",
-      "semantic-search",
-      "tree-sitter"
-    ],
-    "url": "https://github.com/vitali87/code-graph-rag"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "firebase/firebaseui-web",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 9,
-    "pushed_at": "2026-08-12T07:25:13Z",
-    "reasons": [
-      "4872\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 4872,
-    "topics": [],
-    "url": "https://github.com/firebase/firebaseui-web"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "IsmaelMartinez/teams-for-linux",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 35,
-    "pushed_at": "2026-08-12T07:14:53Z",
-    "reasons": [
-      "4923\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 4923,
-    "topics": [
-      "electron",
-      "linux",
-      "microsoft",
-      "teams"
-    ],
-    "url": "https://github.com/IsmaelMartinez/teams-for-linux"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "garylab/dnmp",
+    "full_name": "cactus-compute/needle",
     "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 48,
-    "pushed_at": "2026-08-12T06:36:39Z",
+    "language": "Python",
+    "open_issues": 27,
+    "pushed_at": "2026-08-13T07:25:52Z",
     "reasons": [
-      "4087\u2605 shell active",
+      "4474\u2605 python active",
       "has open issues"
     ],
     "score": 38,
-    "stars": 4087,
+    "stars": 4474,
     "topics": [
-      "docker",
-      "lnmp",
-      "lnmp-dockerfile",
-      "mysql",
-      "nginx",
-      "php",
-      "redis"
+      "cactus",
+      "gemini",
+      "gemma",
+      "llm",
+      "on-device-ai"
     ],
-    "url": "https://github.com/garylab/dnmp"
+    "url": "https://github.com/cactus-compute/needle"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "usnistgov/macos_security",
-    "has_contributing": true,
-    "language": "YAML",
-    "open_issues": 23,
-    "pushed_at": "2026-07-29T17:55:23Z",
-    "reasons": [
-      "2437\u2605 yaml active",
-      "has open issues"
-    ],
-    "score": 48,
-    "stars": 2437,
-    "topics": [
-      "apple",
-      "bash",
-      "compliance",
-      "macos",
-      "mdm",
-      "mscp",
-      "python3",
-      "zsh"
-    ],
-    "url": "https://github.com/usnistgov/macos_security"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "bitsandbytes-foundation/bitsandbytes",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 57,
-    "pushed_at": "2026-08-12T07:14:42Z",
-    "reasons": [
-      "8413\u2605 python active",
-      "has open issues"
-    ],
-    "score": 56,
-    "stars": 8413,
-    "topics": [
-      "llm",
-      "machine-learning",
-      "pytorch",
-      "qlora",
-      "quantization"
-    ],
-    "url": "https://github.com/bitsandbytes-foundation/bitsandbytes"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "liketrek/TREK",
+    "full_name": "facebook/memlab",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 53,
-    "pushed_at": "2026-08-12T07:08:47Z",
+    "open_issues": 13,
+    "pushed_at": "2026-08-13T07:24:40Z",
     "reasons": [
-      "12071\u2605 typescript active",
+      "5023\u2605 typescript active",
       "has open issues"
     ],
-    "score": 59,
-    "stars": 12071,
+    "score": 54,
+    "stars": 5023,
     "topics": [
-      "budget-tracker",
-      "collaborative",
-      "open-source",
-      "opensource",
-      "packing-list",
-      "poi",
-      "real-time",
-      "routes",
-      "self-hosted",
-      "travel",
-      "travel-app",
-      "travel-planner",
-      "traveling",
-      "trip",
-      "trip-planner",
-      "tripit",
-      "wanderlog",
-      "wanderlust",
-      "webapplication"
+      "detector",
+      "e2e",
+      "facebook",
+      "heap",
+      "hermes",
+      "javascript",
+      "leak",
+      "memory",
+      "nodejs",
+      "perf-tools",
+      "performance",
+      "snapshot",
+      "v8"
     ],
-    "url": "https://github.com/liketrek/TREK"
+    "url": "https://github.com/facebook/memlab"
   },
   {
     "archived": false,
-    "band": "large",
-    "full_name": "marcelscruz/public-apis",
-    "has_contributing": true,
+    "band": "mid",
+    "full_name": "prettier/eslint-config-prettier",
+    "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 49,
-    "pushed_at": "2026-08-12T06:04:35Z",
+    "open_issues": 18,
+    "pushed_at": "2026-08-13T06:49:34Z",
     "reasons": [
-      "9328\u2605 javascript active",
+      "5886\u2605 javascript active",
       "has open issues"
     ],
-    "score": 57,
-    "stars": 9328,
+    "score": 39,
+    "stars": 5886,
     "topics": [
-      "apis",
-      "awesome",
-      "awesome-list",
-      "hacktoberfest",
-      "lists",
-      "open-source",
-      "public-api",
-      "public-apis",
-      "resources"
+      "eslint",
+      "eslint-config",
+      "prettier",
+      "react"
     ],
-    "url": "https://github.com/marcelscruz/public-apis"
+    "url": "https://github.com/prettier/eslint-config-prettier"
   },
   {
     "archived": false,
-    "band": "large",
-    "full_name": "pystardust/ani-cli",
+    "band": "mid",
+    "full_name": "liquidprompt/liquidprompt",
     "has_contributing": true,
     "language": "Shell",
-    "open_issues": 8,
-    "pushed_at": "2026-08-11T09:19:47Z",
+    "open_issues": 29,
+    "pushed_at": "2026-08-13T03:04:14Z",
     "reasons": [
-      "13487\u2605 shell active",
+      "4672\u2605 shell active",
       "has open issues"
     ],
-    "score": 59,
-    "stars": 13487,
+    "score": 54,
+    "stars": 4672,
     "topics": [
-      "anime",
-      "cli",
-      "fzf",
-      "linux",
-      "mac",
-      "posix",
-      "rofi",
-      "shell",
-      "steamdeck",
-      "syncplay",
-      "terminal",
-      "termux",
-      "webscraping",
-      "windows"
+      "bash",
+      "linux-shell",
+      "powerline",
+      "prompt",
+      "prompt-toolkit",
+      "prompt-tuning",
+      "shell-prompt",
+      "shell-theme",
+      "zsh"
     ],
-    "url": "https://github.com/pystardust/ani-cli"
+    "url": "https://github.com/liquidprompt/liquidprompt"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "onedr0p/home-ops",
+    "has_contributing": false,
+    "language": "YAML",
+    "open_issues": 3,
+    "pushed_at": "2026-08-13T03:13:12Z",
+    "reasons": [
+      "2863\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 2863,
+    "topics": [
+      "flux",
+      "gitops",
+      "justfile",
+      "kubernetes",
+      "kubesearch",
+      "mise",
+      "renovate",
+      "selfhosted",
+      "talos"
+    ],
+    "url": "https://github.com/onedr0p/home-ops"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "optuna/optuna",
+    "has_contributing": true,
+    "language": "Python",
+    "open_issues": 20,
+    "pushed_at": "2026-08-13T07:22:49Z",
+    "reasons": [
+      "14653\u2605 python active",
+      "has open issues"
+    ],
+    "score": 60,
+    "stars": 14653,
+    "topics": [
+      "distributed",
+      "hyperparameter-optimization",
+      "machine-learning",
+      "parallel",
+      "python"
+    ],
+    "url": "https://github.com/optuna/optuna"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "web-infra-dev/midscene",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 92,
+    "pushed_at": "2026-08-13T06:58:02Z",
+    "reasons": [
+      "14562\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 14562,
+    "topics": [
+      "ai",
+      "ai-test",
+      "browser-use",
+      "computer-use",
+      "gpt-operator",
+      "javascript",
+      "phone-use",
+      "testing"
+    ],
+    "url": "https://github.com/web-infra-dev/midscene"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "shipshapecode/shepherd",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 48,
+    "pushed_at": "2026-08-13T07:26:29Z",
+    "reasons": [
+      "13779\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 60,
+    "stars": 13779,
+    "topics": [
+      "hacktoberfest",
+      "shepherd",
+      "tour"
+    ],
+    "url": "https://github.com/shipshapecode/shepherd"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "juewuy/ShellCrash",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 36,
+    "pushed_at": "2026-08-12T18:23:36Z",
+    "reasons": [
+      "13170\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 44,
+    "stars": 13170,
+    "topics": [],
+    "url": "https://github.com/juewuy/ShellCrash"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "jjang-ai/vmlx",
+    "full_name": "nix-community/NUR",
     "has_contributing": false,
     "language": "Python",
     "open_issues": 37,
-    "pushed_at": "2026-08-12T07:24:40Z",
+    "pushed_at": "2026-08-13T07:25:19Z",
     "reasons": [
-      "800\u2605 python active",
+      "1917\u2605 python active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 1917,
+    "topics": [
+      "nix-packages",
+      "nixpkgs",
+      "nur",
+      "overlays"
+    ],
+    "url": "https://github.com/nix-community/NUR"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "Softeria/ms-365-mcp-server",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 9,
+    "pushed_at": "2026-08-13T07:26:47Z",
+    "reasons": [
+      "911\u2605 typescript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 800,
-    "topics": [
-      "anthropic-api",
-      "kvcache-compression",
-      "kvcache-optimization",
-      "kvcache-reuse",
-      "llm",
-      "lmstudio",
-      "macbook",
-      "mcp-server",
-      "mlx",
-      "mlxllm",
-      "mlxstudio",
-      "omlx",
-      "omlx-alternative",
-      "openai-api",
-      "openclaw",
-      "openclaw-agent",
-      "persistent-memory",
-      "prefix-cache",
-      "vmlx"
-    ],
-    "url": "https://github.com/jjang-ai/vmlx"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "pacifio/atlas",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 25,
-    "pushed_at": "2026-08-12T07:24:58Z",
-    "reasons": [
-      "380\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 380,
+    "stars": 911,
     "topics": [],
-    "url": "https://github.com/pacifio/atlas"
+    "url": "https://github.com/Softeria/ms-365-mcp-server"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "Sudo-Ali-Dev/Rankistan",
+    "full_name": "Premshaw23/Learnova",
     "has_contributing": false,
     "language": "JavaScript",
     "open_issues": 19,
-    "pushed_at": "2026-08-12T07:22:46Z",
+    "pushed_at": "2026-08-13T07:25:38Z",
     "reasons": [
-      "139\u2605 javascript active",
+      "101\u2605 javascript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 139,
-    "topics": [],
-    "url": "https://github.com/Sudo-Ali-Dev/Rankistan"
+    "stars": 101,
+    "topics": [
+      "aichatbot",
+      "emailjs-com",
+      "faceapi-js",
+      "firebase",
+      "framer-motion",
+      "lucide-icons",
+      "mongodb",
+      "nextjs",
+      "pwa",
+      "react",
+      "seo-optimization",
+      "shadcn",
+      "tailwindcss"
+    ],
+    "url": "https://github.com/Premshaw23/Learnova"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "mirceanton/home-ops",
+    "full_name": "Nitrux/luv-icon-theme",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 8,
-    "pushed_at": "2026-08-12T07:18:40Z",
+    "open_issues": 17,
+    "pushed_at": "2026-08-13T07:23:27Z",
     "reasons": [
-      "111\u2605 shell active",
+      "927\u2605 shell active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 111,
+    "stars": 927,
     "topics": [
-      "gitops",
-      "k8s-at-home"
+      "icon-theme",
+      "icons",
+      "luv",
+      "theme",
+      "wallpapers"
     ],
-    "url": "https://github.com/mirceanton/home-ops"
+    "url": "https://github.com/Nitrux/luv-icon-theme"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "Mafyuh/iac",
+    "full_name": "waifulabs/infrastructure",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 8,
-    "pushed_at": "2026-08-12T01:08:07Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-13T06:15:30Z",
     "reasons": [
-      "808\u2605 yaml active",
+      "222\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 808,
+    "stars": 222,
     "topics": [
-      "actions",
       "ansible",
-      "devops",
-      "docker",
-      "docker-compose",
-      "gitops",
-      "iac",
-      "k8s",
+      "home-assistant",
+      "home-automation",
+      "k3s",
       "k8s-at-home",
       "kubernetes",
-      "kubesearch",
-      "nixos",
-      "opentofu",
-      "packer",
-      "terraform"
+      "node-red",
+      "renovate"
     ],
-    "url": "https://github.com/Mafyuh/iac"
+    "url": "https://github.com/waifulabs/infrastructure"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "wbh604/UZI-Skill",
+    "full_name": "Alexey-T/CudaText",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 7,
-    "pushed_at": "2026-08-12T07:20:34Z",
+    "open_issues": 38,
+    "pushed_at": "2026-08-13T07:22:07Z",
     "reasons": [
-      "6164\u2605 python active",
+      "3144\u2605 python active",
       "has open issues"
     ],
-    "score": 40,
-    "stars": 6164,
-    "topics": [],
-    "url": "https://github.com/wbh604/UZI-Skill"
+    "score": 38,
+    "stars": 3144,
+    "topics": [
+      "cross-platform",
+      "lazarus",
+      "pascal",
+      "text-editor"
+    ],
+    "url": "https://github.com/Alexey-T/CudaText"
   }
 ]
