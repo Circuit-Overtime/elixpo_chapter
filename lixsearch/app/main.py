@@ -45,7 +45,7 @@ def _run_redis_memory_check() -> None:
                     f"({info.get('used_memory_human')}/{info.get('maxmemory_human')})"
                 )
                 # Trigger active expiry scan on all DBs
-                for db in range(3):
+                for db in range(5):
                     try:
                         db_client = create_redis_client(db=db)
                         expired = 0
@@ -67,6 +67,22 @@ def _run_redis_memory_check() -> None:
             logger.debug(f"[APP] Redis memory: {info.get('used_memory_human', 'unknown')} (no maxmemory set)")
     except Exception as e:
         logger.debug(f"[APP] Redis memory check failed: {e}")
+
+
+def _run_global_memory_maintenance() -> None:
+    """Doctor health snapshot plus idempotent Janitor expiry cleanup."""
+    try:
+        from agentRuntime.global_memory import get_global_memory_store
+        store = get_global_memory_store()
+        removed = store.janitor_cleanup()
+        status = store.doctor_status()
+        logger.info(
+            "[GlobalMemory] Doctor healthy=%s promoted=%s candidates=%s; "
+            "Janitor removed=%s",
+            status["healthy"], status["promoted"], status["candidates"], removed,
+        )
+    except Exception as e:
+        logger.warning(f"[GlobalMemory] Maintenance failed: {e}")
 
 
 def _run_content_cleanup() -> None:
@@ -266,6 +282,7 @@ class lixSearch:
                     from pipeline.config import HYBRID_STARTUP_CLEANUP
                     if HYBRID_STARTUP_CLEANUP:
                         await asyncio.to_thread(_run_archive_cleanup)
+                        await asyncio.to_thread(_run_global_memory_maintenance)
                 except Exception as e:
                     logger.warning(f"[APP] Archive startup cleanup failed (non-fatal): {e}")
 
@@ -278,6 +295,7 @@ class lixSearch:
                             await asyncio.to_thread(_run_archive_cleanup)
                             await asyncio.to_thread(_run_content_cleanup)
                             await asyncio.to_thread(_run_redis_memory_check)
+                            await asyncio.to_thread(_run_global_memory_maintenance)
                             logger.info("[APP] Periodic maintenance completed")
                         except Exception as e:
                             logger.warning(f"[APP] Periodic maintenance error: {e}")

@@ -326,6 +326,14 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             except Exception:
                 logger.warning("[Pipeline] Vector store retrieval failed")
 
+        # --- One bounded DB4 lookup shared by every replica; fail open. ---
+        global_revelations = ""
+        try:
+            from agentRuntime.global_memory import get_global_memory_store
+            global_revelations = await asyncio.to_thread(get_global_memory_store().get_context)
+        except Exception as e:
+            logger.debug(f"[GlobalMemory] Read skipped: {e}")
+
         # --- Compact mood signals reuse already-loaded history; no extra model or Redis call. ---
         _signal_messages = chat_history if chat_history is not None else previous_messages
         _prior_user_turns = sum(1 for _m in _signal_messages if _m.get("role") == "user")
@@ -352,7 +360,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
         messages = [
             {"role": "system", "name": "elixposearch-agent-system",
-             "content": system_instruction(rag_context, current_utc_time, is_detailed=is_detailed_mode, session_id=session_id, interaction_signals=interaction_signals)},
+             "content": system_instruction(rag_context, current_utc_time, is_detailed=is_detailed_mode, session_id=session_id, interaction_signals=interaction_signals, global_revelations=global_revelations)},
         ]
 
         # --- Inject conversation history ---

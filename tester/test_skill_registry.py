@@ -12,7 +12,7 @@ from skillRegistry import SkillRegistry, SkillRegistryError, get_skill_registry
 class SkillRegistryTests(unittest.TestCase):
     def test_loads_all_skills_and_tools(self):
         registry = SkillRegistry.load(ROOT / "skills")
-        self.assertEqual(len(registry), 11)
+        self.assertEqual(len(registry), 12)
         self.assertIn("optimize-search-runtime", registry.names())
         self.assertIn("oreolook-persona", registry.names())
         self.assertEqual(registry.for_tool("web_search").name, "research-web")
