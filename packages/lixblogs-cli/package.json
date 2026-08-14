@@ -15,7 +15,7 @@
   ],
   "type": "module",
   "bin": {
-    "lixblogs": "./bin/lixblogs.mjs"
+    "lixblogs": "bin/lixblogs.mjs"
   },
   "files": [
     "src",
