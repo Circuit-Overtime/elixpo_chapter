@@ -15,6 +15,7 @@ from pipeline.instruction import system_instruction, user_instruction, synthesis
 from pipeline.optimized_tool_execution import optimized_tool_execution
 from pipeline.utils import format_sse, clean_url, clean_source_list
 from pipeline.sse_messages import SSEStatusTracker
+from pipeline.streaming import TaskAwareChunkBuffer
 from pipeline.helpers import (
     _scrub_tool_names,
     get_user_message,
@@ -451,8 +452,9 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             if _stale_event:
                 yield _stale_event
 
-            # --- Streaming path: stream content tokens when synthesizing ---
-            _use_streaming = force_synthesis and event_id
+            # Stream the initial model pass too. Structured tool-call deltas carry no
+            # user-facing text; direct answers no longer wait for completion.
+            _use_streaming = bool(event_id)
             _streamed_content = ""
 
             if _use_streaming:
@@ -462,6 +464,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         _stream_payload = {**payload, "model": _stream_model}
                         _streamed_content = ""
                         _tag_filter = StreamingTagFilter()
+                        _chunk_buffer = TaskAwareChunkBuffer(chunk_chars=64)
                         async for _stype, _sdata in _stream_llm_call(_stream_payload, headers):
                             if _stype == "keepalive":
                                 _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
@@ -470,15 +473,22 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                                 status_tracker.touch()
                             elif _stype == "content":
                                 _streamed_content += _sdata
-                                # Hold synthesis until the complete answer can
-                                # be checked for placeholders and grounding.
-                                _tag_filter.feed(_sdata)
+                                safe_text = _tag_filter.feed(_sdata)
+                                for _kind, _buffered in _chunk_buffer.feed(safe_text):
+                                    if _kind == "text" and _buffered:
+                                        yield format_sse("RESPONSE", _buffered)
                                 status_tracker.touch()
                             elif _stype == "done":
                                 _tail = _tag_filter.flush()
+                                for _kind, _buffered in _chunk_buffer.feed(_tail):
+                                    if _kind == "text" and _buffered:
+                                        yield format_sse("RESPONSE", _buffered)
+                                for _kind, _buffered in _chunk_buffer.flush():
+                                    if _kind == "text" and _buffered:
+                                        yield format_sse("RESPONSE", _buffered)
                                 assistant_message = _sdata
-                        if assistant_message and assistant_message.get("content"):
-                            break  # success
+                        if assistant_message and (assistant_message.get("content") or assistant_message.get("tool_calls")):
+                            break  # direct answer or structured tool call
                         logger.warning(f"Streaming model={_stream_model} returned empty, trying fallback")
                     except Exception as e:
                         logger.warning(f"Streaming API error with model={_stream_model}: {e}")
@@ -487,8 +497,10 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         continue
                 if not assistant_message:
                     break
-                # Nothing has been emitted yet; final formatting owns delivery.
-                _streamed_content = ""
+                # Direct text is already delivered. Tool-call streams normally contain no
+                # content and continue through the tool loop.
+                if assistant_message.get("tool_calls"):
+                    _streamed_content = ""
             else:
                 # --- Non-streaming path: blocking call with keepalive + fallback ---
                 response_data = None
