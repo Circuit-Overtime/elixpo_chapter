@@ -412,7 +412,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
         ]
         direct_prompt = direct_system_instruction(
             current_utc_time, session_id=session_id, interaction_signals=interaction_signals,
-            global_revelations=global_revelations, rag_context=rag_context,
+            global_revelations=global_revelations, rag_context="",
         )
 
         # --- Inject conversation history ---
