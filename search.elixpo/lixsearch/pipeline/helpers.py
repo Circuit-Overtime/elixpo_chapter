@@ -246,55 +246,88 @@ def strip_internal_reasoning_blocks(content: str) -> str:
 
 
 class StreamingTagFilter:
-    # Suppresses XML/special-token tool-call leakage from streamed content so
-    # the user never sees raw `<function_calls>…</function_calls>` deltas.
-    # Once a leak prefix is detected, the rest of the stream is silenced;
-    # the post-stream `extract_leaked_tool_call` recovery still sees the full
-    # raw content and re-issues the call.
+    """Remove internal protocol and reasoning markup before SSE emission.
 
-    __slots__ = ("_buffer", "_silenced")
+    Tool-call XML silences the remaining stream so it can be recovered by the
+    structured-call parser. Reasoning blocks are discarded, including when
+    their opening or closing tags are split across provider chunks; ordinary
+    answer text after a reasoning block continues streaming.
+    """
+
+    __slots__ = ("_buffer", "_silenced", "_reasoning_close")
+
+    _REASONING_TAGS = ("thinking", "reasoning", "analysis")
 
     def __init__(self) -> None:
         self._buffer = ""
         self._silenced = False
+        self._reasoning_close = None
 
     def feed(self, chunk: str) -> str:
         if self._silenced or not chunk:
             return ""
         self._buffer += chunk
+        output = []
 
-        idx = self._buffer.find("<")
-        if idx == -1:
-            out = self._buffer
-            self._buffer = ""
-            return out
+        while self._buffer:
+            if self._reasoning_close:
+                lower = self._buffer.lower()
+                closing = lower.find(self._reasoning_close)
+                if closing < 0:
+                    # Discard reasoning while retaining only enough suffix to
+                    # recognize a closing tag split across chunks.
+                    keep = min(len(self._buffer), len(self._reasoning_close) - 1)
+                    self._buffer = self._buffer[-keep:] if keep else ""
+                    break
+                self._buffer = self._buffer[closing + len(self._reasoning_close):]
+                self._reasoning_close = None
+                continue
 
-        out = self._buffer[:idx]
-        tail = self._buffer[idx:]
+            opening = self._buffer.find("<")
+            if opening < 0:
+                output.append(self._buffer)
+                self._buffer = ""
+                break
+            if opening > 0:
+                output.append(self._buffer[:opening])
+                self._buffer = self._buffer[opening:]
+                continue
 
-        # Tail starts a known leak prefix → silence the rest of the stream.
-        if any(tail.startswith(h) for h in _XML_LEAK_HINTS):
-            self._silenced = True
-            self._buffer = ""
-            return out
+            lower = self._buffer.lower()
+            if any(lower.startswith(h.lower()) for h in _XML_LEAK_HINTS):
+                self._silenced = True
+                self._buffer = ""
+                break
+            if any(h.lower().startswith(lower) for h in _XML_LEAK_HINTS):
+                break
 
-        # Tail might be a partial leak prefix waiting for more data → buffer it.
-        if any(h.startswith(tail) for h in _XML_LEAK_HINTS):
-            self._buffer = tail
-            return out
+            reasoning_match = re.match(
+                r"^<(thinking|reasoning|analysis)\b[^>]*>",
+                self._buffer,
+                re.IGNORECASE,
+            )
+            if reasoning_match:
+                tag = reasoning_match.group(1).lower()
+                self._reasoning_close = f"</{tag}>"
+                self._buffer = self._buffer[reasoning_match.end():]
+                continue
 
-        # Plain '<' that isn't a leak — emit it and re-scan the rest.
-        out += tail[0]
-        self._buffer = tail[1:]
-        return out + self.feed("")
+            possible_reasoning = tuple(f"<{tag}" for tag in self._REASONING_TAGS)
+            if any(prefix.startswith(lower) for prefix in possible_reasoning):
+                break
+
+            output.append("<")
+            self._buffer = self._buffer[1:]
+
+        return "".join(output)
 
     def flush(self) -> str:
-        if self._silenced or not self._buffer:
+        if self._silenced or self._reasoning_close:
             self._buffer = ""
             return ""
-        out = self._buffer
+        output = self._buffer
         self._buffer = ""
-        return out
+        return output
 
 
 def get_user_message(operation: str) -> str:
