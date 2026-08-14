@@ -465,6 +465,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         _streamed_content = ""
                         _tag_filter = StreamingTagFilter()
                         _chunk_buffer = TaskAwareChunkBuffer(chunk_chars=64)
+                        _visible_streamed_content = ""
                         async for _stype, _sdata in _stream_llm_call(_stream_payload, headers):
                             if _stype == "keepalive":
                                 _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
@@ -476,17 +477,21 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                                 safe_text = _tag_filter.feed(_sdata)
                                 for _kind, _buffered in _chunk_buffer.feed(safe_text):
                                     if _kind == "text" and _buffered:
+                                        _visible_streamed_content += _buffered
                                         yield format_sse("RESPONSE", _buffered)
                                 status_tracker.touch()
                             elif _stype == "done":
                                 _tail = _tag_filter.flush()
                                 for _kind, _buffered in _chunk_buffer.feed(_tail):
                                     if _kind == "text" and _buffered:
+                                        _visible_streamed_content += _buffered
                                         yield format_sse("RESPONSE", _buffered)
                                 for _kind, _buffered in _chunk_buffer.flush():
                                     if _kind == "text" and _buffered:
+                                        _visible_streamed_content += _buffered
                                         yield format_sse("RESPONSE", _buffered)
                                 assistant_message = _sdata
+                                assistant_message["content"] = _visible_streamed_content
                         if assistant_message and (assistant_message.get("content") or assistant_message.get("tool_calls")):
                             break  # direct answer or structured tool call
                         logger.warning(f"Streaming model={_stream_model} returned empty, trying fallback")
@@ -501,6 +506,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 # content and continue through the tool loop.
                 if assistant_message.get("tool_calls"):
                     _streamed_content = ""
+                else:
+                    _streamed_content = assistant_message.get("content", "")
             else:
                 # --- Non-streaming path: blocking call with keepalive + fallback ---
                 response_data = None
