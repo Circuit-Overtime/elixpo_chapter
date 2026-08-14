@@ -100,7 +100,7 @@ export class ElixpoAuthProvider extends AuthProvider {
     accountsBaseUrl = "https://accounts.elixpo.com",
     clientId = "lixblogs-cli-prod",
     audience = "blogs.elixpo.com",
-    cliVersion = "0.1.0",
+    cliVersion = "1.1.0",
     fetchImpl = globalThis.fetch,
     timeoutMs = DEFAULT_TIMEOUT_MS,
   } = {}) {
