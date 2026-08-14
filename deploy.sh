@@ -325,7 +325,11 @@ do_release() {
     _VSCE_PAT="${VSCE_PAT:-}"
 
     # Validate tokens based on targets
-    if { $RELEASE_NPM || $RELEASE_CLI; } && [ -z "$_NPM_TOKEN" ]; then echo "Error: NPM_TOKEN not set in .env"; exit 1; fi
+    if $RELEASE_NPM && [ -z "$_NPM_TOKEN" ]; then echo "Error: NPM_TOKEN not set in .env"; exit 1; fi
+    if $RELEASE_CLI && [ -z "$_NPM_TOKEN" ] && ! npm whoami >/dev/null 2>&1; then
+      echo "Error: publish authentication unavailable. Set NPM_TOKEN in .env or run npm login."
+      exit 1
+    fi
     if $RELEASE_GITHUB && [ -z "$_GH_TOKEN" ]; then echo "Error: GITHUB_ACCESS_TOKEN not set in .env"; exit 1; fi
     if $RELEASE_VSCODE && [ -z "$_VSCE_PAT" ]; then echo "Error: VSCE_PAT not set in .env"; exit 1; fi
 
@@ -403,14 +407,27 @@ do_release() {
       echo "[dry-run] cd '$SCRIPT_DIR/packages/lixblogs-cli' && npm publish --access public --registry https://registry.npmjs.org/ --<npm-auth-redacted>"
       echo "    ✓ lixblogs-cli@${CLI_VERSION} would be published"
     elif [ -n "${NPM_OTP:-}" ]; then
-      (cd "$SCRIPT_DIR/packages/lixblogs-cli" && npm publish --access public --registry https://registry.npmjs.org/ "--//registry.npmjs.org/:_authToken=$_NPM_TOKEN" "--otp=${NPM_OTP}") || {
-        echo "    ✗ CLI publish failed. Check the npm token permissions and NPM_OTP."
+      if [ -n "$_NPM_TOKEN" ]; then
+        (cd "$SCRIPT_DIR/packages/lixblogs-cli" && npm publish --access public --registry https://registry.npmjs.org/ "--//registry.npmjs.org/:_authToken=$_NPM_TOKEN" "--otp=${NPM_OTP}") || {
+          echo "    ✗ CLI publish failed. Check the npm token permissions and NPM_OTP."
+          exit 1
+        }
+      else
+        (cd "$SCRIPT_DIR/packages/lixblogs-cli" && npm publish --access public --registry https://registry.npmjs.org/ "--otp=${NPM_OTP}") || {
+          echo "    ✗ CLI publish failed. Check the active npm login and NPM_OTP."
+          exit 1
+        }
+      fi
+      echo "    ✓ lixblogs-cli@${CLI_VERSION} published"
+    elif [ -n "$_NPM_TOKEN" ]; then
+      (cd "$SCRIPT_DIR/packages/lixblogs-cli" && npm publish --access public --registry https://registry.npmjs.org/ "--//registry.npmjs.org/:_authToken=$_NPM_TOKEN") || {
+        echo "    ✗ CLI publish failed. Use an npm granular token with publish permission and 2FA bypass, or set a current NPM_OTP."
         exit 1
       }
       echo "    ✓ lixblogs-cli@${CLI_VERSION} published"
     else
-      (cd "$SCRIPT_DIR/packages/lixblogs-cli" && npm publish --access public --registry https://registry.npmjs.org/ "--//registry.npmjs.org/:_authToken=$_NPM_TOKEN") || {
-        echo "    ✗ CLI publish failed. Use an npm granular token with publish permission and 2FA bypass, or set a current NPM_OTP."
+      (cd "$SCRIPT_DIR/packages/lixblogs-cli" && npm publish --access public --registry https://registry.npmjs.org/) || {
+        echo "    ✗ CLI publish failed. Check the active npm login; if the account requires 2FA, set NPM_OTP."
         exit 1
       }
       echo "    ✓ lixblogs-cli@${CLI_VERSION} published"
