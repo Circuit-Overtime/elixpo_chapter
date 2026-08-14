@@ -1,6 +1,7 @@
 import { blocksToMarkdown } from '../../content/markdown.js';
 import { BlogApiError } from '../../api/BlogClient.js';
 import { metadataFromOptions, resolveMarkdownInput } from './input.js';
+import { validateBlogInput } from '../../content/validate.js';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
@@ -17,6 +18,7 @@ export async function blogGet({ client, id }) {
 export async function blogCreate({ client, options, stdin }) {
   const source = await resolveMarkdownInput(options, { stdin });
   const input = { ...metadataFromOptions(options), content: source?.blocks || [] };
+  validateBlogInput(input);
   if (options['dry-run']) return { dryRun: true, input, markdown: source?.markdown || '' };
   return client.create(input, { idempotencyKey: options['idempotency-key'] });
 }
@@ -27,6 +29,7 @@ export async function blogEdit({ client, id, options, stdin }) {
   const source = await resolveMarkdownInput(options, { stdin, initial: blocksToMarkdown(current.content) });
   const input = { ...metadataFromOptions(options), ...(source ? { content: source.blocks } : {}) };
   if (!Object.keys(input).length) throw new Error('No blog changes were provided.');
+  validateBlogInput(input);
   if (options['dry-run']) return { dryRun: true, id, etag: current.etag, input, markdown: source?.markdown };
   try {
     return await client.update(id, input, { etag: options.etag || current.etag });
@@ -50,6 +53,7 @@ export async function blogEdit({ client, id, options, stdin }) {
 export async function blogPublish({ client, id, options }) {
   if (!id) throw new Error('A blog ID is required.');
   const current = await client.get(id);
+  validateBlogInput(current, { publishing: true });
   if (options['dry-run']) return { dryRun: true, id, from: current.status, to: 'published' };
   return client.publish(id, { etag: options.etag || current.etag, idempotencyKey: options['idempotency-key'] });
 }

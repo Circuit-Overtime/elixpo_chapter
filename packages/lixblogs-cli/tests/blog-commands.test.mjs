@@ -6,6 +6,7 @@ import path from 'node:path';
 import { BlogApiError } from '../src/api/BlogClient.js';
 import { blogCreate, blogDelete, blogEdit } from '../src/commands/blog/index.js';
 import { blocksToMarkdown, markdownToBlocks } from '../src/content/markdown.js';
+import { validateBlogInput } from '../src/content/validate.js';
 
 test('Markdown conversion retains supported structural blocks', () => {
   const markdown = '# Title\n\n- One\n\n```mermaid\ngraph TD\n A-->B\n```';
@@ -23,6 +24,15 @@ test('create dry-run validates input without calling the API', async () => {
   assert.equal(called, false);
   assert.equal(result.input.title, 'Post');
   assert.equal(result.input.content[0].type, 'paragraph');
+});
+
+test('local validation rejects oversized metadata and short publishing content', () => {
+  assert.throws(() => validateBlogInput({ title: 'x'.repeat(301), content: [] }), /300/);
+  assert.throws(() => validateBlogInput({ title: 'Post', content: markdownToBlocks('too short') }, { publishing: true }), /20 words/);
+  assert.doesNotThrow(() => validateBlogInput({
+    title: 'Post',
+    content: markdownToBlocks('one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty'),
+  }, { publishing: true }));
 });
 
 test('delete fails closed without explicit confirmation', async () => {

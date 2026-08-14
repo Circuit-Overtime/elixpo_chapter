@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { blogEntityTag } from '../lib/api/v1/entityTag.js';
-import { countBlockWords, normalizeBlogInput, normalizeTags, slugify } from '../lib/api/v1/blogInput.js';
+import {
+  countBlockWords,
+  isBlogOwner,
+  normalizeBlogInput,
+  normalizeTags,
+  requirePublishTarget,
+  slugify,
+} from '../lib/api/v1/blogInput.js';
 import { decodeCursor, encodeCursor, parsePage } from '../lib/api/v1/pagination.js';
 import { checkIfMatch } from '../lib/api/v1/preconditions.js';
 import {
@@ -56,6 +63,24 @@ test('write preconditions require and compare strong entity tags', async () => {
     headers: { 'if-match': etag },
   }), blog);
   assert.equal(current.ok, true);
+});
+
+test('publication targets require a write-capable organization relationship', async () => {
+  const denied = { prepare: () => ({ bind: () => ({ first: async () => null }) }) };
+  await assert.rejects(
+    requirePublishTarget(denied, 'user-1', 'org:org-1'),
+    (error) => error.code === 'publication_forbidden',
+  );
+
+  const allowed = {
+    prepare(sql) {
+      return { bind: () => ({ first: async () => /org_members/.test(sql) ? { ok: 1 } : null }) };
+    },
+  };
+  assert.deepEqual(await requirePublishTarget(allowed, 'user-1', 'org:org-1'), {
+    publishedAs: 'org:org-1', collectionId: null,
+  });
+  assert.equal(await isBlogOwner(allowed, { author_id: 'user-1' }, 'user-1'), true);
 });
 
 function idempotencyDb() {
