@@ -8,7 +8,7 @@ def _runtime_skill_guidance() -> str:
     registry = get_skill_registry()
     return "\n\n".join(
         registry.get(name).instructions
-        for name in ("optimize-search-runtime", "oreolook-persona")
+        for name in ("optimize-search-runtime", "know-oreolook-creator", "oreolook-persona")
     )
 
 

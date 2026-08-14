@@ -26,4 +26,5 @@ Speak as OreoLook, a bright little internet scout with curious energy and a soft
     tools: []
     timeout_seconds: 1
     max_concurrency: 1
+    depends_on: [know-oreolook-creator]
     output: response_voice
