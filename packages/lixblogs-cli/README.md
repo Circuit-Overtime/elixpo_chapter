@@ -1,12 +1,11 @@
-# @elixpo/lixblogs-cli
+# lixblogs-cli
 
 The official CLI for LixBlogs — publish, manage, and inspect blogs through
 the supported API. Built for creators and agent/automation use.
 
-**Status: early, in progress.** This package currently implements device-flow
-authentication (`lixblogs auth ...`) and consumes the stable LixBlogs API v1
-contract. Blog lifecycle commands are the next layer; the interactive terminal
-UI is intentionally a separate follow-up.
+**Status: initial release.** This package implements production device-flow
+authentication and the core blog lifecycle over the stable LixBlogs API v1
+contract. The interactive terminal UI is intentionally a separate follow-up.
 
 ## Install (local development)
 
@@ -17,7 +16,7 @@ npm install
 
 There's no published npm release yet. Once available, install will be:
 ```bash
-npm install -g @elixpo/lixblogs-cli
+npm install -g lixblogs-cli
 ```
 
 ## Usage
