@@ -15,12 +15,13 @@ set -euo pipefail
 #
 # Release Commands:
 #   release [targets]   Full release with version bump + changelog + publish
-#                       Targets: editor, web, all (default: all)
+#                       Targets: editor, cli, web, all (default: all)
 #
 # Options (for release):
 #   --patch     Patch version bump (default)
 #   --minor     Minor version bump
 #   --major     Major version bump
+#   --no-bump   Publish the version already present in package.json
 #   --dry-run   Print what would happen, don't execute
 #   --skip-changelog  Skip changelog generation
 #
@@ -35,6 +36,7 @@ set -euo pipefail
 #   ./deploy.sh deploy                    # Quick website deploy
 #   ./deploy.sh release all --minor       # Release everything with minor bump
 #   ./deploy.sh release editor --patch   # Publish lixeditor to npm + GitHub
+#   ./deploy.sh release cli --no-bump    # Publish current lixblogs-cli version
 #   ./deploy.sh release web               # Deploy website only
 #   ./deploy.sh release all --dry-run     # Preview full release
 #   ./deploy.sh all                       # Infra: secrets + worker + deploy
@@ -266,7 +268,9 @@ do_release() {
   local BUMP="patch"
   local DRY_RUN=false
   local SKIP_CHANGELOG=false
+  local NO_BUMP=false
   local RELEASE_NPM=false
+  local RELEASE_CLI=false
   local RELEASE_GITHUB=false
   local RELEASE_VSCODE=false
   local RELEASE_WEB=false
@@ -278,9 +282,11 @@ do_release() {
       --patch)  BUMP="patch" ;;
       --minor)  BUMP="minor" ;;
       --major)  BUMP="major" ;;
+      --no-bump) NO_BUMP=true ;;
       --dry-run) DRY_RUN=true ;;
       --skip-changelog) SKIP_CHANGELOG=true ;;
       editor) TARGETS+=("editor") ;;
+      cli)    TARGETS+=("cli") ;;
       npm)    TARGETS+=("npm") ;;
       github) TARGETS+=("github") ;;
       vscode) TARGETS+=("vscode") ;;
@@ -297,43 +303,66 @@ do_release() {
   for t in "${TARGETS[@]}"; do
     case "$t" in
       editor) RELEASE_NPM=true; RELEASE_GITHUB=true ;;
+      cli)    RELEASE_CLI=true ;;
       npm)    RELEASE_NPM=true ;;
       github) RELEASE_GITHUB=true ;;
       vscode) RELEASE_VSCODE=true ;;
       web)    RELEASE_WEB=true ;;
-      all)    RELEASE_NPM=true; RELEASE_GITHUB=true; RELEASE_VSCODE=true; RELEASE_WEB=true ;;
+      all)    RELEASE_NPM=true; RELEASE_CLI=true; RELEASE_GITHUB=true; RELEASE_VSCODE=true; RELEASE_WEB=true ;;
     esac
   done
 
   # ── Load tokens from .env ──
-  load_env
-  local _NPM_TOKEN="${NPM_TOKEN:-}"
-  local _GH_TOKEN="${GITHUB_ACCESS_TOKEN:-}"
-  local _VSCE_PAT="${VSCE_PAT:-}"
+  local _NPM_TOKEN=""
+  local _GH_TOKEN=""
+  local _VSCE_PAT=""
+  if $DRY_RUN; then
+    echo "==> Dry run: skipping credential loading and validation"
+  else
+    load_env
+    _NPM_TOKEN="${NPM_TOKEN:-}"
+    _GH_TOKEN="${GITHUB_ACCESS_TOKEN:-}"
+    _VSCE_PAT="${VSCE_PAT:-}"
 
-  # Validate tokens based on targets
-  if $RELEASE_NPM && [ -z "$_NPM_TOKEN" ]; then echo "Error: NPM_TOKEN not set in .env"; exit 1; fi
-  if $RELEASE_GITHUB && [ -z "$_GH_TOKEN" ]; then echo "Error: GITHUB_ACCESS_TOKEN not set in .env"; exit 1; fi
-  if $RELEASE_VSCODE && [ -z "$_VSCE_PAT" ]; then echo "Error: VSCE_PAT not set in .env"; exit 1; fi
+    # Validate tokens based on targets
+    if { $RELEASE_NPM || $RELEASE_CLI; } && [ -z "$_NPM_TOKEN" ]; then echo "Error: NPM_TOKEN not set in .env"; exit 1; fi
+    if $RELEASE_GITHUB && [ -z "$_GH_TOKEN" ]; then echo "Error: GITHUB_ACCESS_TOKEN not set in .env"; exit 1; fi
+    if $RELEASE_VSCODE && [ -z "$_VSCE_PAT" ]; then echo "Error: VSCE_PAT not set in .env"; exit 1; fi
 
-  echo "==> Tokens loaded from .env"
+    echo "==> Tokens loaded from .env"
+  fi
 
   # ── Version Bump ──
-  echo "==> Bumping versions ($BUMP)..."
+  if $NO_BUMP; then
+    echo "==> Keeping versions from package manifests (--no-bump)..."
+  else
+    echo "==> Bumping versions ($BUMP)..."
+  fi
 
-  if $RELEASE_NPM || $RELEASE_GITHUB; then
+  if ! $NO_BUMP && { $RELEASE_NPM || $RELEASE_GITHUB; }; then
     dry_run "cd '$SCRIPT_DIR/packages/lixeditor' &&  npm version $BUMP --no-git-tag-version && cd '$SCRIPT_DIR'"
   fi
-  if $RELEASE_WEB; then
+  if ! $NO_BUMP && $RELEASE_CLI; then
+    dry_run "cd '$SCRIPT_DIR/packages/lixblogs-cli' && npm version $BUMP --no-git-tag-version && cd '$SCRIPT_DIR'"
+  fi
+  if ! $NO_BUMP && $RELEASE_WEB; then
     dry_run " npm version $BUMP --no-git-tag-version"
   fi
 
+  local CLI_VERSION=""
   if $RELEASE_NPM || $RELEASE_GITHUB; then
     NEW_VERSION=$(node -p "require('./packages/lixeditor/package.json').version" 2>/dev/null || echo "0.0.0")
+  elif $RELEASE_CLI; then
+    NEW_VERSION=$(node -p "require('./packages/lixblogs-cli/package.json').version" 2>/dev/null || echo "0.0.0")
   elif $RELEASE_VSCODE; then
     NEW_VERSION=$(node -p "require('./packages/vscode-lixeditor/package.json').version" 2>/dev/null || echo "0.0.0")
   else
     NEW_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+  fi
+
+  if $RELEASE_CLI; then
+    CLI_VERSION=$(node -p "require('./packages/lixblogs-cli/package.json').version" 2>/dev/null || echo "0.0.0")
+    echo "==> LixBlogs CLI version: v${CLI_VERSION}"
   fi
 
   echo "==> New version: v${NEW_VERSION}"
@@ -349,6 +378,13 @@ do_release() {
     echo "    ✓ Build complete"
   fi
 
+  if $RELEASE_CLI; then
+    echo ""
+    echo "==> Verifying lixblogs-cli..."
+    dry_run "cd '$SCRIPT_DIR/packages/lixblogs-cli' && npm test && npm pack --dry-run"
+    echo "    ✓ CLI tests and package verification complete"
+  fi
+
   # ── Publish to npm ──
   if $RELEASE_NPM; then
     echo ""
@@ -357,6 +393,28 @@ do_release() {
     dry_run "cd '$SCRIPT_DIR/packages/lixeditor' &&  npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
     if [ $? -eq 0 ]; then echo "    ✓ npm publish complete"; else echo "    ✗ npm publish failed"; fi
     set -e
+  fi
+
+  # ── Publish LixBlogs CLI to npm ──
+  if $RELEASE_CLI; then
+    echo ""
+    echo "==> Publishing lixblogs-cli@${CLI_VERSION} to npm..."
+    if $DRY_RUN; then
+      echo "[dry-run] cd '$SCRIPT_DIR/packages/lixblogs-cli' && npm publish --access public --registry https://registry.npmjs.org/ --<npm-auth-redacted>"
+      echo "    ✓ lixblogs-cli@${CLI_VERSION} would be published"
+    elif [ -n "${NPM_OTP:-}" ]; then
+      (cd "$SCRIPT_DIR/packages/lixblogs-cli" && npm publish --access public --registry https://registry.npmjs.org/ "--//registry.npmjs.org/:_authToken=$_NPM_TOKEN" "--otp=${NPM_OTP}") || {
+        echo "    ✗ CLI publish failed. Check the npm token permissions and NPM_OTP."
+        exit 1
+      }
+      echo "    ✓ lixblogs-cli@${CLI_VERSION} published"
+    else
+      (cd "$SCRIPT_DIR/packages/lixblogs-cli" && npm publish --access public --registry https://registry.npmjs.org/ "--//registry.npmjs.org/:_authToken=$_NPM_TOKEN") || {
+        echo "    ✗ CLI publish failed. Use an npm granular token with publish permission and 2FA bypass, or set a current NPM_OTP."
+        exit 1
+      }
+      echo "    ✓ lixblogs-cli@${CLI_VERSION} published"
+    fi
   fi
 
   # ── Publish to GitHub Packages ──
@@ -417,7 +475,12 @@ do_release() {
   echo "==> Committing and tagging v${NEW_VERSION}..."
   dry_run " git add -A"
   dry_run " git commit -m 'release: v${NEW_VERSION}' || true"
-  dry_run " git tag 'v${NEW_VERSION}'"
+  if $RELEASE_NPM || $RELEASE_GITHUB || $RELEASE_VSCODE || $RELEASE_WEB; then
+    dry_run " git tag 'v${NEW_VERSION}'"
+  fi
+  if $RELEASE_CLI; then
+    dry_run " git tag 'lixblogs-cli-v${CLI_VERSION}'"
+  fi
   dry_run " git push \"\$(auth_remote)\" main --tags"
 
   # ── GitHub Release (skipped — using GitHub Packages instead) ──
@@ -427,6 +490,13 @@ do_release() {
   echo "  Release v${NEW_VERSION} complete!"
   echo ""
   $RELEASE_NPM    && echo "  - @elixpo/lixeditor published to npm"
+  if $RELEASE_CLI; then
+    if $DRY_RUN; then
+      echo "  - lixblogs-cli@${CLI_VERSION} would be published to npm"
+    else
+      echo "  - lixblogs-cli@${CLI_VERSION} published to npm"
+    fi
+  fi
   $RELEASE_GITHUB && echo "  - @elixpo/lixeditor published to GitHub Packages"
   $RELEASE_VSCODE && echo "  - LixEditor VS Code extension published"
   $RELEASE_WEB    && echo "  - Website deployed to Cloudflare Pages"
@@ -447,12 +517,13 @@ usage() {
   echo ""
   echo "Release Commands:"
   echo "  release [targets]   Full release with version bump + changelog + publish"
-  echo "                      Targets: editor (npm+github), npm, github, web, all"
+  echo "                      Targets: editor (npm+github), cli, npm, github, web, all"
   echo ""
   echo "Release Options:"
   echo "  --patch             Patch version bump (default)"
   echo "  --minor             Minor version bump"
   echo "  --major             Major version bump"
+  echo "  --no-bump           Publish versions already present in package manifests"
   echo "  --dry-run           Preview without executing"
   echo "  --skip-changelog    Skip changelog generation"
   echo ""
@@ -464,6 +535,7 @@ usage() {
   echo "  ./deploy.sh deploy                     # Quick website deploy"
   echo "  ./deploy.sh release all --minor        # Release everything"
   echo "  ./deploy.sh release editor --patch     # Publish lixeditor to npm + GitHub"
+  echo "  ./deploy.sh release cli --no-bump      # Publish lixblogs-cli at its current version"
   echo "  ./deploy.sh release npm --patch        # Publish lixeditor to npm only"
   echo "  ./deploy.sh release github --patch     # Publish lixeditor to GitHub Packages only"
   echo "  ./deploy.sh release all --dry-run      # Preview full release"
