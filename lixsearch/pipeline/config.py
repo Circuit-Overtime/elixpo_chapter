@@ -79,6 +79,9 @@ LEAKED_XML_TAG_RE = re.compile(
 
 LLM_MODEL = os.getenv("LLM_MODEL", "nova-fast")
 LLM_MODEL_FALLBACK = os.getenv("LLM_MODEL_FALLBACK", "nova")
+LLM_DECISION_MODEL = os.getenv("LLM_DECISION_MODEL", LLM_MODEL)
+LLM_DECISION_TIMEOUT_SECONDS = float(os.getenv("LLM_DECISION_TIMEOUT_SECONDS", "1.8"))
+SSE_CHUNK_CHARS = int(os.getenv("SSE_CHUNK_CHARS", "32"))
 IMAGE_MODEL1 = os.getenv("IMAGE_MODEL1", "flux")
 IMAGE_MODEL2 = os.getenv("IMAGE_MODEL2", "flux")
 VISION_MODEL = os.getenv("VISION_MODEL", "gemini-fast")

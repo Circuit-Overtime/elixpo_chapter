@@ -50,6 +50,51 @@ MODEL = LLM_MODEL
 MODEL_FALLBACK = LLM_MODEL_FALLBACK
 
 
+_DECISION_INSTRUCTION = """Classify whether this request needs OreoLook tools.
+Return exactly DIRECT or TOOLS, with no explanation.
+TOOLS: live or current web facts, search, URL reading, time zones, images, audio, YouTube, PDF export, or multi-step research.
+DIRECT: greetings, casual conversation, opinions, explanations, writing, coding, math, and stable knowledge that needs no external action.
+Attached images require TOOLS. Never answer the request."""
+
+
+def _parse_decision_mode(content: str) -> str:
+    match = re.search(r"\b(DIRECT|TOOLS)\b", content or "", re.IGNORECASE)
+    return match.group(1).lower() if match else "tools"
+
+
+async def _decide_request_mode(user_query: str, image_count: int, headers: dict) -> str:
+    """Run the cheap routing decision while local context is prepared."""
+    query = user_query or "(no text)"
+    if image_count:
+        query += f"\n[Attached images: {image_count}]"
+    payload = {
+        "model": LLM_DECISION_MODEL,
+        "messages": [
+            {"role": "system", "content": _DECISION_INSTRUCTION},
+            {"role": "user", "content": query},
+        ],
+        "max_tokens": 6,
+        "temperature": 0,
+    }
+
+    def _call():
+        response = requests.post(
+            POLLINATIONS_ENDPOINT, json=payload, headers=headers,
+            timeout=LLM_DECISION_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        message = response.json()["choices"][0]["message"]
+        return _parse_decision_mode(message.get("content", ""))
+
+    try:
+        mode = await asyncio.to_thread(_call)
+        logger.debug(f"[pipeline] request_mode={mode}")
+        return mode
+    except Exception as exc:
+        logger.debug(f"[pipeline] decision fallback=tools error={exc}")
+        return "tools"
+
+
 async def _stream_llm_call(payload: dict, headers: dict):
     """Stream an LLM call from Pollinations. Yields ("content", str) for text
     deltas and ("done", assistant_message_dict) when finished. Tool call deltas
@@ -184,6 +229,9 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
         current_utc_time = datetime.now(timezone.utc)
         headers = {"Content-Type": "application/json",
                    "Authorization": f"Bearer {POLLINATIONS_API_KEY}"}
+        decision_task = asyncio.create_task(
+            _decide_request_mode(original_user_query, len(user_images), headers)
+        )
 
         try:
             from ipcService.coreServiceManager import get_core_embedding_service
@@ -424,6 +472,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
         messages.append({"role": "user", "content": user_msg_content})
         force_synthesis = False
+        request_mode = await decision_task
 
         # Detect meta-queries (summaries, recaps)
         _query_lower = user_query.lower()
@@ -471,6 +520,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         _mc.pop("tool_calls", None)
                     _synth_messages.append(_mc)
                 payload = {"model": MODEL, "messages": _synth_messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
+            elif request_mode == "direct" and current_iteration == 1:
+                payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
             else:
                 payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
                 payload["tools"] = tools
@@ -493,7 +544,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         _stream_payload = {**payload, "model": _stream_model}
                         _streamed_content = ""
                         _tag_filter = StreamingTagFilter()
-                        _chunk_buffer = TaskAwareChunkBuffer(chunk_chars=64)
+                        _chunk_buffer = TaskAwareChunkBuffer(chunk_chars=SSE_CHUNK_CHARS)
                         _visible_streamed_content = ""
                         async for _stype, _sdata in _stream_llm_call(_stream_payload, headers):
                             if _stype == "keepalive":
