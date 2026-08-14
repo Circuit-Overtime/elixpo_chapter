@@ -11,7 +11,7 @@ from sessions.conversation_cache import ConversationCacheManager
 import os
 from commons.environment import load_local_environment
 from pipeline.config import *
-from pipeline.instruction import system_instruction, user_instruction, synthesis_instruction
+from pipeline.instruction import direct_system_instruction, system_instruction, user_instruction, synthesis_instruction
 from pipeline.optimized_tool_execution import optimized_tool_execution
 from pipeline.utils import format_sse, clean_url, clean_source_list
 from pipeline.sse_messages import SSEStatusTracker
@@ -410,6 +410,10 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             {"role": "system", "name": "elixposearch-agent-system",
              "content": system_instruction(rag_context, current_utc_time, is_detailed=is_detailed_mode, session_id=session_id, interaction_signals=interaction_signals, global_revelations=global_revelations)},
         ]
+        direct_prompt = direct_system_instruction(
+            current_utc_time, session_id=session_id, interaction_signals=interaction_signals,
+            global_revelations=global_revelations, rag_context="",
+        )
 
         # --- Inject conversation history ---
         _injected_history = 0
@@ -521,7 +525,9 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     _synth_messages.append(_mc)
                 payload = {"model": MODEL, "messages": _synth_messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
             elif request_mode == "direct" and current_iteration == 1:
-                payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
+                _direct_messages = [dict(message) for message in messages]
+                _direct_messages[0] = {"role": "system", "name": "oreolook-direct-system", "content": direct_prompt}
+                payload = {"model": MODEL, "messages": _direct_messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
             else:
                 payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
                 payload["tools"] = tools
