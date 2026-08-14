@@ -50,6 +50,51 @@ MODEL = LLM_MODEL
 MODEL_FALLBACK = LLM_MODEL_FALLBACK
 
 
+_DECISION_INSTRUCTION = """Classify whether this request needs OreoLook tools.
+Return exactly DIRECT or TOOLS, with no explanation.
+TOOLS: live or current web facts, search, URL reading, time zones, images, audio, YouTube, PDF export, or multi-step research.
+DIRECT: greetings, casual conversation, opinions, explanations, writing, coding, math, and stable knowledge that needs no external action.
+Attached images require TOOLS. Never answer the request."""
+
+
+def _parse_decision_mode(content: str) -> str:
+    match = re.search(r"\b(DIRECT|TOOLS)\b", content or "", re.IGNORECASE)
+    return match.group(1).lower() if match else "tools"
+
+
+async def _decide_request_mode(user_query: str, image_count: int, headers: dict) -> str:
+    """Run the cheap routing decision while local context is prepared."""
+    query = user_query or "(no text)"
+    if image_count:
+        query += f"\n[Attached images: {image_count}]"
+    payload = {
+        "model": LLM_DECISION_MODEL,
+        "messages": [
+            {"role": "system", "content": _DECISION_INSTRUCTION},
+            {"role": "user", "content": query},
+        ],
+        "max_tokens": 6,
+        "temperature": 0,
+    }
+
+    def _call():
+        response = requests.post(
+            POLLINATIONS_ENDPOINT, json=payload, headers=headers,
+            timeout=LLM_DECISION_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        message = response.json()["choices"][0]["message"]
+        return _parse_decision_mode(message.get("content", ""))
+
+    try:
+        mode = await asyncio.to_thread(_call)
+        logger.debug(f"[pipeline] request_mode={mode}")
+        return mode
+    except Exception as exc:
+        logger.debug(f"[pipeline] decision fallback=tools error={exc}")
+        return "tools"
+
+
 async def _stream_llm_call(payload: dict, headers: dict):
     """Stream an LLM call from Pollinations. Yields ("content", str) for text
     deltas and ("done", assistant_message_dict) when finished. Tool call deltas
@@ -184,6 +229,9 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
         current_utc_time = datetime.now(timezone.utc)
         headers = {"Content-Type": "application/json",
                    "Authorization": f"Bearer {POLLINATIONS_API_KEY}"}
+        decision_task = asyncio.create_task(
+            _decide_request_mode(original_user_query, len(user_images), headers)
+        )
 
         try:
             from ipcService.coreServiceManager import get_core_embedding_service
@@ -200,6 +248,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
         # --- Session context (skip for ephemeral — no history to load or persist) ---
         session_context = None
+        previous_messages = []
         if session_id and not is_ephemeral:
             try:
                 session_context = SessionContextWindow(session_id=session_id)
@@ -325,6 +374,33 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             except Exception:
                 logger.warning("[Pipeline] Vector store retrieval failed")
 
+        # --- One bounded DB4 lookup shared by every replica; fail open. ---
+        global_revelations = ""
+        try:
+            from agentRuntime.global_memory import get_global_memory_store
+            global_revelations = await asyncio.to_thread(get_global_memory_store().get_context)
+        except Exception as e:
+            logger.debug(f"[GlobalMemory] Read skipped: {e}")
+
+        # --- Compact mood signals reuse already-loaded history; no extra model or Redis call. ---
+        _signal_messages = chat_history if chat_history is not None else previous_messages
+        _prior_user_turns = sum(1 for _m in _signal_messages if _m.get("role") == "user")
+        _signal_last_ts = next((_m.get("timestamp") for _m in reversed(_signal_messages) if _m.get("timestamp")), None)
+        _minutes_since_last = "unknown"
+        _continuity = "new" if _prior_user_turns == 0 else "continuing"
+        if _signal_last_ts:
+            try:
+                _gap_seconds = max(0, current_utc_time.timestamp() - float(_signal_last_ts))
+                _minutes_since_last = str(int(_gap_seconds / 60))
+                if _gap_seconds >= 3600:
+                    _continuity = "returning"
+            except (TypeError, ValueError):
+                pass
+        interaction_signals = (
+            f"request_number={_prior_user_turns + 1}; continuity={_continuity}; "
+            f"minutes_since_last={_minutes_since_last}"
+        )
+
         # --- Build initial messages ---
         user_msg_content = user_instruction(user_query, user_image if not image_analysis_result else None, is_detailed=is_detailed_mode)
         if image_analysis_result:
@@ -332,7 +408,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
         messages = [
             {"role": "system", "name": "elixposearch-agent-system",
-             "content": system_instruction(rag_context, current_utc_time, is_detailed=is_detailed_mode, session_id=session_id)},
+             "content": system_instruction(rag_context, current_utc_time, is_detailed=is_detailed_mode, session_id=session_id, interaction_signals=interaction_signals, global_revelations=global_revelations)},
         ]
 
         # --- Inject conversation history ---
@@ -396,6 +472,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
         messages.append({"role": "user", "content": user_msg_content})
         force_synthesis = False
+        request_mode = await decision_task
 
         # Detect meta-queries (summaries, recaps)
         _query_lower = user_query.lower()
@@ -443,6 +520,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         _mc.pop("tool_calls", None)
                     _synth_messages.append(_mc)
                 payload = {"model": MODEL, "messages": _synth_messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
+            elif request_mode == "direct" and current_iteration == 1:
+                payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
             else:
                 payload = {"model": MODEL, "messages": messages, "seed": random.randint(1000, 9999), "max_tokens": active_max_tokens}
                 payload["tools"] = tools
@@ -452,9 +531,10 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             if _stale_event:
                 yield _stale_event
 
-            # Stream the initial model pass too. Structured tool-call deltas carry no
-            # user-facing text; direct answers no longer wait for completion.
-            _use_streaming = bool(event_id)
+            # Provider-routed tool selection is currently non-streaming: both configured
+            # models reject stream=true with this tool catalog (HTTP 400). Final
+            # synthesis has no tools and remains progressively streamed.
+            _use_streaming = bool(event_id) and not payload.get("tools")
             _streamed_content = ""
 
             if _use_streaming:
@@ -464,7 +544,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                         _stream_payload = {**payload, "model": _stream_model}
                         _streamed_content = ""
                         _tag_filter = StreamingTagFilter()
-                        _chunk_buffer = TaskAwareChunkBuffer(chunk_chars=64)
+                        _chunk_buffer = TaskAwareChunkBuffer(chunk_chars=SSE_CHUNK_CHARS)
+                        _visible_streamed_content = ""
                         async for _stype, _sdata in _stream_llm_call(_stream_payload, headers):
                             if _stype == "keepalive":
                                 _ke = emit_event("INFO", "<TASK>Thinking</TASK>")
@@ -476,17 +557,21 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                                 safe_text = _tag_filter.feed(_sdata)
                                 for _kind, _buffered in _chunk_buffer.feed(safe_text):
                                     if _kind == "text" and _buffered:
+                                        _visible_streamed_content += _buffered
                                         yield format_sse("RESPONSE", _buffered)
                                 status_tracker.touch()
                             elif _stype == "done":
                                 _tail = _tag_filter.flush()
                                 for _kind, _buffered in _chunk_buffer.feed(_tail):
                                     if _kind == "text" and _buffered:
+                                        _visible_streamed_content += _buffered
                                         yield format_sse("RESPONSE", _buffered)
                                 for _kind, _buffered in _chunk_buffer.flush():
                                     if _kind == "text" and _buffered:
+                                        _visible_streamed_content += _buffered
                                         yield format_sse("RESPONSE", _buffered)
                                 assistant_message = _sdata
+                                assistant_message["content"] = _visible_streamed_content
                         if assistant_message and (assistant_message.get("content") or assistant_message.get("tool_calls")):
                             break  # direct answer or structured tool call
                         logger.warning(f"Streaming model={_stream_model} returned empty, trying fallback")
@@ -501,6 +586,8 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                 # content and continue through the tool loop.
                 if assistant_message.get("tool_calls"):
                     _streamed_content = ""
+                else:
+                    _streamed_content = assistant_message.get("content", "")
             else:
                 # --- Non-streaming path: blocking call with keepalive + fallback ---
                 response_data = None
