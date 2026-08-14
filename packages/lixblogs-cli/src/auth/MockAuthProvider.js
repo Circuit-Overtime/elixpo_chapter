@@ -58,7 +58,7 @@ function nextId(prefix) {
 export class MockAuthProvider extends AuthProvider {
   constructor() {
     super();
-    /** @type {Map<string, { scenario: string, pollCount: number, createdAt: number }>} */
+    /** @type {Map<string, { scenario: string, pollCount: number, createdAt: number, scopes: string[] }>} */
     this._devicesCodes = new Map();
     /** @type {Set<string>} revoked tokens */
     this._revoked = new Set();
@@ -75,7 +75,7 @@ export class MockAuthProvider extends AuthProvider {
    *   `scenario` lets tests/dev deterministically choose which path this
    *   device code will take. Defaults to APPROVE_IMMEDIATELY.
    */
-  async requestDeviceCode({ scopes: _scopes, scenario = "APPROVE_IMMEDIATELY" }) {
+  async requestDeviceCode({ scopes, scenario = "APPROVE_IMMEDIATELY" }) {
     const prefix = SCENARIO_PREFIX[scenario] ?? SCENARIO_PREFIX.APPROVE_IMMEDIATELY;
     const deviceCode = nextId(prefix);
     const userCode = deviceCode.slice(-6).toUpperCase();
@@ -84,6 +84,7 @@ export class MockAuthProvider extends AuthProvider {
       scenario,
       pollCount: 0,
       createdAt: Date.now(),
+      scopes: [...scopes],
     });
 
     return {
@@ -137,12 +138,12 @@ export class MockAuthProvider extends AuthProvider {
         accessToken: `mock-access-${deviceCode}`,
         refreshToken: `mock-refresh-${deviceCode}`,
         expiresInSeconds: 3600,
-        scopes: ["read", "draft"], // placeholder — real scope list defined in elixpo/blogs.elixpo#136
+        scopes: record.scopes,
       },
     };
   }
 
-  async refresh({ refreshToken }) {
+  async refresh({ refreshToken, scopes = [] }) {
     if (this._revoked.has(refreshToken)) {
       throw new Error("refresh token has been revoked");
     }
@@ -153,7 +154,7 @@ export class MockAuthProvider extends AuthProvider {
       accessToken: `mock-access-refreshed-${refreshToken}`,
       refreshToken,
       expiresInSeconds: 3600,
-      scopes: ["read", "draft"],
+      scopes,
     };
   }
 

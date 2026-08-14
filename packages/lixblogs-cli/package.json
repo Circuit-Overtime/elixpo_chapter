@@ -10,6 +10,7 @@
     "src",
     "bin",
     "README.md",
+    "API.md",
     "THREAT_MODEL.md"
   ],
   "scripts": {

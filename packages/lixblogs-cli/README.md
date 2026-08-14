@@ -3,10 +3,10 @@
 The official CLI for LixBlogs — publish, manage, and inspect blogs through
 the supported API. Built for creators and agent/automation use.
 
-**Status: early, in progress.** This package currently implements the
-device-flow authentication foundation (`lixblogs auth ...`) only. Blog
-publishing, media, organizations, and analytics commands are not yet
-implemented — see the [Roadmap](#roadmap) below.
+**Status: early, in progress.** This package currently implements device-flow
+authentication (`lixblogs auth ...`) and consumes the stable LixBlogs API v1
+contract. Blog lifecycle commands are the next layer; the interactive terminal
+UI is intentionally a separate follow-up.
 
 ## Install (local development)
 
@@ -68,6 +68,8 @@ Global flags:
   contract versions or endpoints on an unexpected origin.
 - The mock provider is available only with an explicit non-production
   environment, for example `--env development --auth-provider mock`.
+- The resource contract, scopes, pagination, errors, and mutation guarantees
+  are documented in [API.md](API.md).
 
 The production client is public and has no client secret. Never add one to
 CLI configuration, package files, or GitHub secrets.
@@ -108,11 +110,12 @@ tests.
 See [#135](https://github.com/elixpo/blogs.elixpo/issues/135) for the full
 scope. Rough remaining order:
 
-1. Finalize the versioned bearer-token API contract
-   ([#136](https://github.com/elixpo/blogs.elixpo/issues/136))
-2. Blog, media, organization, and stats commands
-3. Interactive/browser login polish and packaging
-4. Agent skill packages and cross-repository E2E coverage
+1. Blog lifecycle commands over API v1
+   ([#169](https://github.com/elixpo/blogs.elixpo/issues/169))
+2. Media, organization, and stats commands
+3. Packaging and release automation
+4. Interactive terminal UI and branding in a separate issue
+5. Agent skill packages and cross-repository E2E coverage
 
 ## Contributing
 
