@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { blogEntityTag } from '../lib/api/v1/entityTag.js';
+import { countBlockWords, normalizeBlogInput, normalizeTags, slugify } from '../lib/api/v1/blogInput.js';
 import { decodeCursor, encodeCursor, parsePage } from '../lib/api/v1/pagination.js';
+import { checkIfMatch } from '../lib/api/v1/preconditions.js';
 import {
   beginIdempotentOperation,
   completeIdempotentOperation,
@@ -25,6 +27,35 @@ test('blog entity tags are stable and change with writable content', async () =>
   const blog = { id: 'blog-1', title: 'Title', content: 'one', updated_at: 1 };
   assert.equal(await blogEntityTag(blog), await blogEntityTag({ ...blog }));
   assert.notEqual(await blogEntityTag(blog), await blogEntityTag({ ...blog, content: 'two' }));
+});
+
+test('blog input is bounded and normalized for API writes', () => {
+  assert.deepEqual(normalizeTags([' Tech ', 'tech', 'Web']), ['tech', 'web']);
+  assert.equal(slugify(' A Better CLI! '), 'a-better-cli');
+  assert.equal(countBlockWords([{ content: [{ type: 'text', text: 'one two three' }] }]), 3);
+  assert.deepEqual(normalizeBlogInput({ title: ' Draft ', content: [], memberOnly: false }), {
+    title: 'Draft',
+    content: [],
+    tags: undefined,
+    memberOnly: false,
+  });
+  assert.throws(() => normalizeBlogInput({ content: 'markdown' }), /block array/);
+  assert.throws(() => normalizeBlogInput({ content: [], coverUrl: 'http://example.com/image.png' }), /HTTPS/);
+});
+
+test('write preconditions require and compare strong entity tags', async () => {
+  const blog = { id: 'blog-1', title: 'Title', content: 'one', updated_at: 1 };
+  const etag = await blogEntityTag(blog);
+  const missing = await checkIfMatch(new Request('https://blogs.elixpo.com/api/v1/blogs/blog-1'), blog);
+  assert.equal(missing.status, 428);
+  const stale = await checkIfMatch(new Request('https://blogs.elixpo.com/api/v1/blogs/blog-1', {
+    headers: { 'if-match': '"stale"' },
+  }), blog);
+  assert.equal(stale.status, 412);
+  const current = await checkIfMatch(new Request('https://blogs.elixpo.com/api/v1/blogs/blog-1', {
+    headers: { 'if-match': etag },
+  }), blog);
+  assert.equal(current.ok, true);
 });
 
 function idempotencyDb() {

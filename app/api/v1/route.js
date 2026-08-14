@@ -16,6 +16,10 @@ export async function GET() {
     },
     resources: {
       blogs: '/api/v1/blogs',
+      blog: '/api/v1/blogs/{id}',
+      publish: '/api/v1/blogs/{id}/publish',
+      unpublish: '/api/v1/blogs/{id}/unpublish',
+      restore: '/api/v1/blogs/{id}/restore',
     },
   });
 }
