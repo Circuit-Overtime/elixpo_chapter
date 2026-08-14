@@ -200,6 +200,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
         # --- Session context (skip for ephemeral — no history to load or persist) ---
         session_context = None
+        previous_messages = []
         if session_id and not is_ephemeral:
             try:
                 session_context = SessionContextWindow(session_id=session_id)
@@ -325,6 +326,25 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             except Exception:
                 logger.warning("[Pipeline] Vector store retrieval failed")
 
+        # --- Compact mood signals reuse already-loaded history; no extra model or Redis call. ---
+        _signal_messages = chat_history if chat_history is not None else previous_messages
+        _prior_user_turns = sum(1 for _m in _signal_messages if _m.get("role") == "user")
+        _signal_last_ts = next((_m.get("timestamp") for _m in reversed(_signal_messages) if _m.get("timestamp")), None)
+        _minutes_since_last = "unknown"
+        _continuity = "new" if _prior_user_turns == 0 else "continuing"
+        if _signal_last_ts:
+            try:
+                _gap_seconds = max(0, current_utc_time.timestamp() - float(_signal_last_ts))
+                _minutes_since_last = str(int(_gap_seconds / 60))
+                if _gap_seconds >= 3600:
+                    _continuity = "returning"
+            except (TypeError, ValueError):
+                pass
+        interaction_signals = (
+            f"request_number={_prior_user_turns + 1}; continuity={_continuity}; "
+            f"minutes_since_last={_minutes_since_last}"
+        )
+
         # --- Build initial messages ---
         user_msg_content = user_instruction(user_query, user_image if not image_analysis_result else None, is_detailed=is_detailed_mode)
         if image_analysis_result:
@@ -332,7 +352,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
         messages = [
             {"role": "system", "name": "elixposearch-agent-system",
-             "content": system_instruction(rag_context, current_utc_time, is_detailed=is_detailed_mode, session_id=session_id)},
+             "content": system_instruction(rag_context, current_utc_time, is_detailed=is_detailed_mode, session_id=session_id, interaction_signals=interaction_signals)},
         ]
 
         # --- Inject conversation history ---
@@ -452,9 +472,10 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             if _stale_event:
                 yield _stale_event
 
-            # Stream the initial model pass too. Structured tool-call deltas carry no
-            # user-facing text; direct answers no longer wait for completion.
-            _use_streaming = bool(event_id)
+            # Provider-routed tool selection is currently non-streaming: both configured
+            # models reject stream=true with this tool catalog (HTTP 400). Final
+            # synthesis has no tools and remains progressively streamed.
+            _use_streaming = bool(event_id) and not payload.get("tools")
             _streamed_content = ""
 
             if _use_streaming:
