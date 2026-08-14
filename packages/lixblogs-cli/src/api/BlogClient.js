@@ -55,7 +55,7 @@ export class BlogClient {
         }
         return parseResponse(response);
       } catch (error) {
-        if (!retryable || attempt > 0 || error instanceof BlogApiError) throw error;
+        if (!retryable || attempt > 0 || error instanceof BlogApiError || error?.code) throw error;
         await this.sleep(250);
       }
     }

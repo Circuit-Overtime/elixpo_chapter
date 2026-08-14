@@ -5,6 +5,7 @@ import { authorizeApiRequest } from '../../../../../../lib/api/v1/authorize';
 import { countBlockWords } from '../../../../../../lib/api/v1/blogInput';
 import { blogEntityTag } from '../../../../../../lib/api/v1/entityTag';
 import {
+  abandonIdempotentOperation,
   beginIdempotentOperation,
   completeIdempotentOperation,
   hashApiRequest,
@@ -16,6 +17,8 @@ import { getBlogCanonicalPath } from '../../../../../../lib/blogUrl';
 import { decompressBlogContent } from '../../../../../../lib/compress';
 import { canEditBlog } from '../../../../../../lib/permissions';
 import { findProfanity } from '../../../../../../lib/validate';
+import { readTimeFromWords } from '../../../../../../lib/readTime';
+import { invalidateBlogLifecycleCaches } from '../../../../../../lib/api/v1/blogCache';
 
 export async function POST(request, { params }) {
   const context = requestContext();
@@ -31,12 +34,6 @@ export async function POST(request, { params }) {
     if (!blog || !(await canEditBlog(db, id, auth.userId)).ok) {
       return apiError(context, 'blog_not_found', 'The blog was not found.', 404, { headers: rateHeaders });
     }
-    const precondition = await checkIfMatch(request, blog);
-    if (!precondition.ok) {
-      return apiError(context, precondition.code, 'The blog changed after it was loaded.', precondition.status, {
-        details: { currentEtag: precondition.current }, headers: { ...rateHeaders, ETag: precondition.current },
-      });
-    }
     let content;
     try { content = decompressBlogContent(blog.content) || []; } catch { content = []; }
     if (!blog.title?.trim()) return apiError(context, 'title_required', 'A title is required before publishing.', 400, { headers: rateHeaders });
@@ -47,17 +44,27 @@ export async function POST(request, { params }) {
       return apiError(context, 'content_too_short', 'A post needs at least 20 words before publishing.', 400, { headers: rateHeaders });
     }
 
-    const requestHash = await hashApiRequest({ id, etag: precondition.current });
+    const requestHash = await hashApiRequest({ id, etag: request.headers.get('if-match') });
     const reservation = await beginIdempotentOperation(db, {
       userId: auth.userId, operation: 'blogs.publish', key: idempotencyKey, requestHash,
     });
     if (reservation.state === 'replay') {
       return apiSuccess(context, reservation.body.data, { status: reservation.status, headers: { ...rateHeaders, 'Idempotent-Replayed': 'true' } });
     }
+    const precondition = await checkIfMatch(request, blog);
+    if (!precondition.ok) {
+      await abandonIdempotentOperation(db, {
+        userId: auth.userId, operation: 'blogs.publish', key: idempotencyKey, requestHash,
+      });
+      return apiError(context, precondition.code, 'The blog changed after it was loaded.', precondition.status, {
+        details: { currentEtag: precondition.current }, headers: { ...rateHeaders, ETag: precondition.current },
+      });
+    }
     const now = Math.floor(Date.now() / 1000);
     await db.prepare(`
-      UPDATE blogs SET status = 'published', published_at = COALESCE(published_at, ?), updated_at = ? WHERE id = ?
-    `).bind(now, now, id).run();
+      UPDATE blogs SET status = 'published', published_at = COALESCE(published_at, ?),
+        read_time_minutes = ?, updated_at = ? WHERE id = ?
+    `).bind(now, readTimeFromWords(countBlockWords(content)), now, id).run();
     const updated = await db.prepare('SELECT * FROM blogs WHERE id = ?').bind(id).first();
     const etag = await blogEntityTag(updated);
     const path = await getBlogCanonicalPath(db, id);
@@ -74,6 +81,7 @@ export async function POST(request, { params }) {
       const { notifyPendingBlogCollaborators } = await import('../../../../../../lib/blogInviteNotifications');
       await notifyPendingBlogCollaborators(db, id, updated.author_id);
     } catch {}
+    await invalidateBlogLifecycleCaches(id);
     await recordApiAudit(db, {
       requestId: context.requestId, userId: auth.userId, clientId: auth.clientId,
       action: 'blogs.publish', resourceType: 'blog', resourceId: id,

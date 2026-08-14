@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { authorizeApiRequest } from '../../../../../lib/api/v1/authorize';
 import {
+  countBlockWords,
   inputErrorResponse,
   isBlogOwner,
   normalizeBlogInput,
@@ -10,6 +11,7 @@ import {
   requirePublishTarget,
   slugify,
 } from '../../../../../lib/api/v1/blogInput';
+import { invalidateBlogLifecycleCaches } from '../../../../../lib/api/v1/blogCache';
 import { blogEntityTag } from '../../../../../lib/api/v1/entityTag';
 import { recordApiAudit } from '../../../../../lib/api/v1/operations';
 import { checkIfMatch } from '../../../../../lib/api/v1/preconditions';
@@ -18,6 +20,7 @@ import { compressBlogContent, decompressBlogContent } from '../../../../../lib/c
 import { excerptFromBlocks } from '../../../../../lib/excerpt';
 import { ensureUniqueBlogSlug } from '../../../../../lib/namespace';
 import { canEditBlog } from '../../../../../lib/permissions';
+import { readTimeFromWords } from '../../../../../lib/readTime';
 
 const READ_SCOPE = 'lixblogs:blog:read';
 
@@ -144,13 +147,15 @@ export async function PATCH(request, { params }) {
 
     await db.prepare(`
       UPDATE blogs SET title = ?, subtitle = ?, slug = ?, content = ?, excerpt = ?, published_as = ?,
-        collection_id = ?, page_emoji = ?, cover_image_r2_key = ?, secret = ?, member_only = ?, updated_at = ?
+        collection_id = ?, page_emoji = ?, cover_image_r2_key = ?, secret = ?, member_only = ?,
+        read_time_minutes = ?, updated_at = ?
       WHERE id = ?
     `).bind(
       input.title ?? current.title ?? '', input.subtitle ?? current.subtitle ?? '', slug,
       compressBlogContent(content), excerptFromBlocks(content), target.publishedAs, target.collectionId,
       input.emoji ?? current.page_emoji ?? '', input.coverUrl ?? current.cover_image_r2_key ?? '',
-      secret ? 1 : 0, (input.memberOnly ?? Boolean(current.member_only)) ? 1 : 0, now, id,
+      secret ? 1 : 0, (input.memberOnly ?? Boolean(current.member_only)) ? 1 : 0,
+      readTimeFromWords(countBlockWords(content)), now, id,
     ).run();
     if (input.tags !== undefined) {
       await db.prepare('DELETE FROM blog_tags WHERE blog_id = ?').bind(id).run();
@@ -160,6 +165,15 @@ export async function PATCH(request, { params }) {
     }
     const updated = await db.prepare('SELECT * FROM blogs WHERE id = ?').bind(id).first();
     const etag = await blogEntityTag(updated);
+    if (input.content !== undefined) {
+      try {
+        const { snapshotVersion } = await import('../../../../../lib/blogVersions');
+        await snapshotVersion(db, id, updated.content, {
+          label: 'cli-edit', userId: auth.userId, throttleSeconds: 300,
+        });
+      } catch {}
+    }
+    if (updated.status !== 'draft') await invalidateBlogLifecycleCaches(id);
     await recordApiAudit(db, {
       requestId: context.requestId, userId: auth.userId, clientId: auth.clientId,
       action: 'blogs.update', resourceType: 'blog', resourceId: id,
@@ -226,6 +240,7 @@ export async function DELETE(request, { params }) {
         UPDATE blogs SET pre_delete_status = status, status = 'trashed', deleted_at = ?, updated_at = ? WHERE id = ?
       `).bind(now, now, id).run();
     }
+    await invalidateBlogLifecycleCaches(id);
     await recordApiAudit(db, {
       requestId: context.requestId, userId: auth.userId, clientId: auth.clientId,
       action: permanent ? 'blogs.delete.permanent' : 'blogs.delete', resourceType: 'blog', resourceId: id,

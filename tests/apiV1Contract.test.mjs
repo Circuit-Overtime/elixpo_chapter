@@ -12,6 +12,7 @@ import {
 import { decodeCursor, encodeCursor, parsePage } from '../lib/api/v1/pagination.js';
 import { checkIfMatch } from '../lib/api/v1/preconditions.js';
 import {
+  abandonIdempotentOperation,
   beginIdempotentOperation,
   completeIdempotentOperation,
   hashApiRequest,
@@ -96,8 +97,11 @@ function idempotencyDb() {
               if (/DELETE FROM api_idempotency_keys/.test(sql)) {
                 const key = rowKey(values);
                 const row = rows.get(key);
-                if (row && row.expires_at <= values[3]) rows.delete(key);
-                return { meta: { changes: row ? 1 : 0 } };
+                const removable = /status_code IS NULL/.test(sql)
+                  ? row && row.request_hash === values[3] && row.status_code === null
+                  : row && row.expires_at <= values[3];
+                if (removable) rows.delete(key);
+                return { meta: { changes: removable ? 1 : 0 } };
               }
               if (/INSERT OR IGNORE/.test(sql)) {
                 const key = rowKey(values);
@@ -160,4 +164,17 @@ test('idempotency rejects a key reused for different input', async () => {
     (error) => error.code === 'idempotency_key_reused',
   );
   assert.throws(() => validateIdempotencyKey('short'), /between 8 and 128/);
+});
+
+test('an uncommitted idempotency reservation can be abandoned after validation fails', async () => {
+  const db = idempotencyDb();
+  const input = {
+    userId: 'user-1',
+    operation: 'blogs.publish',
+    key: 'publish-request',
+    requestHash: await hashApiRequest({ id: 'blog-1', etag: '"old"' }),
+  };
+  assert.equal((await beginIdempotentOperation(db, input)).state, 'started');
+  await abandonIdempotentOperation(db, input);
+  assert.equal((await beginIdempotentOperation(db, input)).state, 'started');
 });

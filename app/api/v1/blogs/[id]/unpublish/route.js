@@ -7,6 +7,7 @@ import { recordApiAudit } from '../../../../../../lib/api/v1/operations';
 import { checkIfMatch } from '../../../../../../lib/api/v1/preconditions';
 import { apiError, apiSuccess, requestContext } from '../../../../../../lib/api/v1/responses';
 import { canEditBlog } from '../../../../../../lib/permissions';
+import { invalidateBlogLifecycleCaches } from '../../../../../../lib/api/v1/blogCache';
 
 export async function POST(request, { params }) {
   const context = requestContext();
@@ -29,6 +30,7 @@ export async function POST(request, { params }) {
     await db.prepare("UPDATE blogs SET status = 'draft', updated_at = ? WHERE id = ?").bind(now, id).run();
     const updated = await db.prepare('SELECT * FROM blogs WHERE id = ?').bind(id).first();
     const etag = await blogEntityTag(updated);
+    await invalidateBlogLifecycleCaches(id);
     await recordApiAudit(db, {
       requestId: context.requestId, userId: auth.userId, clientId: auth.clientId,
       action: 'blogs.unpublish', resourceType: 'blog', resourceId: id,
