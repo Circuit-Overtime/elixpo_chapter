@@ -24,6 +24,11 @@ EXCLUSIVE ARTIFACTS IN THIS REPOSITORY
     to Elixpo; forks must publish under a different name (the MIT-licensed source
     may of course be reused).
 
+  CLI package
+    lixblogs-cli is published from this repository (packages/lixblogs-cli/).
+    The published package name lixblogs-cli on the npm registry is reserved to
+    Elixpo; forks must publish under a different name.
+
   VS Code extension
     elixpo.lixeditor on the VS Code Marketplace - publisher "elixpo", extension
     "lixeditor" (packages/vscode-lixeditor/) - is reserved to Elixpo. The
