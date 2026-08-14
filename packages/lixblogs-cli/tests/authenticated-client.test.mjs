@@ -84,3 +84,18 @@ test("authenticated requests cannot send a bearer token to Accounts or another o
     /restricted to the configured LixBlogs/,
   );
 });
+
+test("requireScopes fails locally before an under-scoped API operation", async () => {
+  const credentialStore = new InMemoryCredentialStore();
+  await credentialStore.set("default", {
+    accessToken: "access",
+    refreshToken: "refresh",
+    expiresAt: Date.now() + 120_000,
+    scopes: ["lixblogs:blog:read"],
+  });
+  const client = new AuthenticatedClient({ provider: {}, credentialStore, profileId: "default" });
+  await assert.rejects(
+    client.requireScopes(["lixblogs:blog:write"]),
+    (error) => error.code === "insufficient_scope" && error.missingScopes[0] === "lixblogs:blog:write",
+  );
+});

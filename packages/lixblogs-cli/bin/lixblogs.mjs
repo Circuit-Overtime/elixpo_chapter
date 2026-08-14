@@ -32,6 +32,18 @@ import { authLogout } from "../src/commands/auth/logout.js";
 import { authRevoke } from "../src/commands/auth/revoke.js";
 import { authProfiles, authUse } from "../src/commands/auth/profiles.js";
 import { ProfileRegistry, validateProfileId } from "../src/config/ProfileRegistry.js";
+import { AuthenticatedClient } from "../src/auth/AuthenticatedClient.js";
+import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
+import {
+  blogCreate,
+  blogDelete,
+  blogEdit,
+  blogGet,
+  blogList,
+  blogPublish,
+  blogRestore,
+  blogUnpublish,
+} from "../src/commands/blog/index.js";
 
 const OPTIONS = {
   profile: { type: "string" },
@@ -47,6 +59,30 @@ const OPTIONS = {
   audience: { type: "string" },
   scope: { type: "string", multiple: true },
   open: { type: "boolean", default: false },
+  status: { type: "string" },
+  limit: { type: "string" },
+  cursor: { type: "string" },
+  file: { type: "string" },
+  stdin: { type: "boolean", default: false },
+  content: { type: "string" },
+  editor: { type: "boolean", default: false },
+  title: { type: "string" },
+  subtitle: { type: "string" },
+  slug: { type: "string" },
+  tag: { type: "string", multiple: true },
+  emoji: { type: "string" },
+  publication: { type: "string" },
+  collection: { type: "string" },
+  cover: { type: "string" },
+  "member-only": { type: "boolean", default: false },
+  "no-member-only": { type: "boolean", default: false },
+  secret: { type: "boolean", default: false },
+  "not-secret": { type: "boolean", default: false },
+  "dry-run": { type: "boolean", default: false },
+  "no-input": { type: "boolean", default: false },
+  etag: { type: "string" },
+  permanent: { type: "boolean", default: false },
+  "idempotency-key": { type: "string" },
   help: { type: "boolean", short: "h", default: false },
 };
 
@@ -59,6 +95,14 @@ Usage:
   lixblogs auth revoke   [--profile <name>] [--json] [--quiet] --yes
   lixblogs auth profiles [--json]
   lixblogs auth use <name> [--json]
+  lixblogs blog list      [--status <status>] [--limit <n>] [--cursor <cursor>] [--json]
+  lixblogs blog get <id>  [--json]
+  lixblogs blog create    [--file <post.md>|--stdin|--content <markdown>|--editor] [metadata]
+  lixblogs blog edit <id> [--file <post.md>|--stdin|--content <markdown>|--editor] [metadata]
+  lixblogs blog publish <id>   [--dry-run] [--json]
+  lixblogs blog unpublish <id> [--dry-run] [--json]
+  lixblogs blog delete <id> --yes [--permanent] [--dry-run] [--json]
+  lixblogs blog restore <id>   [--dry-run] [--json]
 
 Global flags:
   --profile <name>            named profile to use (default: "default")
@@ -67,6 +111,16 @@ Global flags:
   --accounts-url <url>        override the Accounts discovery origin
   --api-url <url>             LixBlogs API origin (default: https://blogs.elixpo.com)
   --scope <scope>             request an OAuth scope (repeatable)
+  --file <path>               read blog Markdown from a file
+  --stdin                     read blog Markdown from stdin
+  --content <markdown>        use inline Markdown
+  --editor                    open the current blog in $EDITOR
+  --title/--subtitle/--slug   update blog metadata
+  --tag <tag>                 set a tag (repeatable, up to five)
+  --publication <target>      personal or org:<id>
+  --collection <id>           organization collection ID
+  --dry-run                   validate and show the intended action without writing
+  --permanent                 permanently delete instead of moving to trash
   --open                      open the complete device verification URL
   --json                      machine-readable JSON output
   --quiet                     suppress non-essential output
@@ -313,6 +367,63 @@ async function runUse(opts, args) {
   if (!opts.json && !opts.quiet) console.log(`Using profile "${profileId}".`);
 }
 
+const BLOG_COMMANDS = {
+  list: blogList,
+  get: blogGet,
+  create: blogCreate,
+  edit: blogEdit,
+  publish: blogPublish,
+  unpublish: blogUnpublish,
+  delete: blogDelete,
+  restore: blogRestore,
+};
+
+async function runBlog(opts, args, action) {
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
+  if (!credentialStore) return;
+  let provider;
+  try { provider = createAuthProvider(config); } catch (error) { return fail(opts, error.message); }
+  const http = new AuthenticatedClient({
+    provider, credentialStore, profileId, apiBaseUrl: config.apiBaseUrl,
+  });
+  const client = new BlogClient(http);
+  const normalized = {
+    ...opts,
+    limit: opts.limit === undefined ? undefined : Number.parseInt(opts.limit, 10),
+  };
+  try {
+    const result = await BLOG_COMMANDS[action]({
+      client, id: args[0], options: normalized, stdin: process.stdin,
+    });
+    output(opts, { ok: true, ...result });
+    if (!opts.json && !opts.quiet) {
+      if (action === 'list') {
+        for (const blog of result.data || []) console.log(`${blog.id}\t${blog.status}\t${blog.title || '(untitled)'}`);
+        if (result.meta?.nextCursor) console.log(`Next cursor: ${result.meta.nextCursor}`);
+      } else if (action === 'get') {
+        console.log(`${result.title || '(untitled)'} [${result.status}]\n${result.markdown || ''}`);
+      } else if (result.dryRun) {
+        console.log(`Dry run: ${action} validated; no changes sent.`);
+      } else {
+        console.log(result.url || `${action} completed for ${result.id}.`);
+      }
+    }
+  } catch (error) {
+    if (opts.json && error instanceof BlogApiError) {
+      process.stdout.write(safeJsonStringify({
+        ok: false,
+        error: { code: error.code, message: error.message, requestId: error.requestId, details: error.details },
+      }) + '\n');
+      process.exitCode = error.status === 412 ? 3 : 1;
+      return;
+    }
+    return fail(opts, `${error.message}${error.requestId ? ` (request ${error.requestId})` : ''}`, error.status === 412 ? 3 : 1);
+  }
+}
+
 const ROUTES = {
   auth: {
     login: runLogin,
@@ -322,6 +433,10 @@ const ROUTES = {
     profiles: runProfiles,
     use: runUse,
   },
+  blog: Object.fromEntries(Object.keys(BLOG_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runBlog(opts, args, action),
+  ])),
 };
 
 async function main() {

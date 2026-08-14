@@ -46,6 +46,40 @@ node bin/lixblogs.mjs auth logout
 node bin/lixblogs.mjs auth revoke --yes
 ```
 
+### Blog lifecycle
+
+Request the permissions needed for the operations you intend to use:
+
+```bash
+node bin/lixblogs.mjs auth login \
+  --scope openid --scope profile --scope lixblogs:blog:read \
+  --scope lixblogs:blog:write --scope lixblogs:blog:publish \
+  --scope lixblogs:blog:delete
+```
+
+Then work with Markdown without any database or Cloudflare credentials:
+
+```bash
+lixblogs blog list --status draft
+lixblogs blog create --file post.md --title "A new post" --tag engineering
+lixblogs blog get <id> --json
+lixblogs blog edit <id> --editor
+lixblogs blog publish <id>
+lixblogs blog unpublish <id>
+lixblogs blog delete <id> --yes
+lixblogs blog list --status trashed
+lixblogs blog restore <id>
+```
+
+`create`, `edit`, `publish`, `unpublish`, `delete`, and `restore` accept
+`--dry-run`. Content input is mutually exclusive: `--file`, `--stdin`,
+`--content`, or `--editor`. Permanent deletion additionally requires
+`--permanent --yes` and the `lixblogs:blog:delete:permanent` scope.
+
+Edits use the server ETag automatically. If another editor wins the race, the
+command exits with code 3 and retains both versions under
+`.lixblogs-conflicts/`; it never overwrites the newer server revision.
+
 Global flags:
 - `--profile <name>` — named profile to use (default: `"default"`)
 - `--env <environment>` — override environment (`development` | `staging` | `production`)
@@ -94,6 +128,9 @@ src/auth/                Accounts provider, development mock, refresh-safe
                          authenticated client, and production safety gate
 src/commands/auth/       Command logic (login, status, logout, revoke) —
                          framework-agnostic, testable independently of the CLI shell
+src/commands/blog/       Blog lifecycle commands and Markdown/editor input
+src/api/                 Versioned LixBlogs resource client and stable errors
+src/content/             Dependency-free Markdown/block conversion
 src/config/              Credential storage (real keychain + gated fallback),
                          profile registry, config resolution, token redaction
 tests/                   Full test suite
@@ -110,12 +147,10 @@ tests.
 See [#135](https://github.com/elixpo/blogs.elixpo/issues/135) for the full
 scope. Rough remaining order:
 
-1. Blog lifecycle commands over API v1
-   ([#169](https://github.com/elixpo/blogs.elixpo/issues/169))
-2. Media, organization, and stats commands
-3. Packaging and release automation
-4. Interactive terminal UI and branding in a separate issue
-5. Agent skill packages and cross-repository E2E coverage
+1. Media, organization, and stats commands
+2. Packaging and release automation
+3. Interactive terminal UI and branding in a separate issue
+4. Agent skill packages and cross-repository E2E coverage
 
 ## Contributing
 

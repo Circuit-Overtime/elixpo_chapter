@@ -101,4 +101,16 @@ export class AuthenticatedClient {
     }
     return response;
   }
+
+  async requireScopes(required) {
+    const credentials = await this.credentials();
+    const missing = required.filter((scope) => !credentials.scopes.includes(scope));
+    if (missing.length) {
+      const error = new Error(`Login again with the required scope${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`);
+      error.name = 'InsufficientScopeError';
+      error.code = 'insufficient_scope';
+      error.missingScopes = missing;
+      throw error;
+    }
+  }
 }
