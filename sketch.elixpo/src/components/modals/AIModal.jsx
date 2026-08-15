@@ -809,25 +809,11 @@ export default function AIModal() {
     const validEquations = equations.filter(eq => eq.expression && eq.expression.trim())
     if (validEquations.length === 0) return
 
-    // If editing existing graph frame, remove old one
-    if (editingFrame && editingFrame._frameType === 'graph') {
-      try {
-        const contained = editingFrame.containedShapes ? [...editingFrame.containedShapes] : []
-        if (typeof editingFrame.destroy === 'function') editingFrame.destroy()
-        contained.forEach(s => {
-          if (!s) return
-          const idx = window.shapes?.indexOf(s)
-          if (idx !== -1) window.shapes.splice(idx, 1)
-          if (s.group?.parentNode) s.group.parentNode.removeChild(s.group)
-        })
-        const idx = window.shapes?.indexOf(editingFrame)
-        if (idx !== -1) window.shapes.splice(idx, 1)
-      } catch {}
-    }
-
     handleClose()
     if (window.__graphRenderer) {
-      const success = window.__graphRenderer(equations, graphSettings)
+      // Updating an existing graph keeps its canvas geometry intact.
+      const graphToUpdate = editingFrame?._frameType === 'graph' ? editingFrame : null
+      const success = window.__graphRenderer(equations, graphSettings, graphToUpdate)
       if (!success) {
         setToast({ status: 'error', message: 'Failed to render graph' })
         return
@@ -1179,7 +1165,7 @@ export default function AIModal() {
                         { label: 'LR Flow', code: 'graph LR\n  A[Input] --> B(Process)\n  B --> C((Output))\n  B --> D{Check}\n  D --> A' },
                         { label: 'Sequence', code: 'sequenceDiagram\n  Alice ->> Bob: Hello Bob\n  Bob -->> Alice: Hi Alice\n  Alice ->> Bob: How are you?\n  Bob -->> Alice: Great!' },
                         { label: 'ER Diagram', code: 'erDiagram\n  CUSTOMER ||--o{ ORDER : places\n  CUSTOMER {\n    string name\n    string email\n  }\n  ORDER {\n    int id PK\n    float total\n  }' },
-                        { label: 'Bar Chart', code: 'xychart-beta\n  title "Weekly Focus"\n  x-axis [Mon, Tue, Wed, Thu, Fri]\n  bar [4, 7, 5, 8, 6]\n  line [3, 5, 6, 7, 8]' },
+                        { label: 'Bar Chart', code: 'xychart-beta\n  title "Weekly Focus"\n  x-axis [Mon, Tue, Wed, Thu, Fri]\n  bar [4, 7, 5, 8, 6]' },
                         { label: 'Pie Chart', code: 'pie title Project Time\n  "Design" : 35\n  "Build" : 45\n  "Review" : 20' },
                       ].map((preset) => (
                         <button

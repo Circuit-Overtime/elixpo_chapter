@@ -10,6 +10,15 @@ export default function ImageSidebar() {
   const { t } = useTranslation()
   const selectedShapeSidebar = useSketchStore((s) => s.selectedShapeSidebar)
   const toggleImageGenerateModal = useUIStore((s) => s.toggleImageGenerateModal)
+  const toggleAIModal = useUIStore((s) => s.toggleAIModal)
+  const isGraph = typeof window !== 'undefined' && window.currentShape?._frameType === 'graph'
+
+  const handleEditGraph = useCallback(() => {
+    const shape = window.currentShape
+    if (!shape || shape._frameType !== 'graph') return
+    window.__aiEditTargetFrame = shape
+    toggleAIModal()
+  }, [toggleAIModal])
 
   const handleEditWithAI = useCallback(() => {
     const shape = window.currentShape
@@ -36,31 +45,45 @@ export default function ImageSidebar() {
 
   return (
     <ShapeSidebar visible={selectedShapeSidebar === 'image'}>
+      {isGraph && (
+        <>
+          <button
+            onClick={handleEditGraph}
+            title="Edit graph"
+            className="h-9 flex cursor-pointer items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-accent hover:bg-accent/10 transition-all duration-100"
+          >
+            <i className="bx bx-line-chart text-base" />
+            <span className="text-xs">Edit graph</span>
+          </button>
+          <Divider />
+        </>
+      )}
+
       {/* Edit with AI */}
-      <button
-        onClick={handleEditWithAI}
-        title="Edit with AI"
-        className="h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-100"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-          <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" />
-        </svg>
-        <span className="text-xs">AI Edit</span>
-      </button>
-
-      <Divider />
-
-      {/* Replace image */}
-      <button
-        onClick={handleReplace}
-        title="Replace image"
-        className="h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
-      >
-        <i className="bx bx-upload text-base" />
-        <span className="text-xs">Replace</span>
-      </button>
-
-      <Divider />
+      {!isGraph && (
+        <>
+          <button
+            onClick={handleEditWithAI}
+            title="Edit with AI"
+            className="h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-100"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z" />
+            </svg>
+            <span className="text-xs">AI Edit</span>
+          </button>
+          <Divider />
+          <button
+            onClick={handleReplace}
+            title="Replace image"
+            className="h-9 flex items-center gap-1.5 px-3 rounded-lg text-text-muted hover:text-white hover:bg-white/[0.06] transition-all duration-100"
+          >
+            <i className="bx bx-upload text-base" />
+            <span className="text-xs">Replace</span>
+          </button>
+          <Divider />
+        </>
+      )}
 
       {/* Layer controls */}
       <LayerControls />

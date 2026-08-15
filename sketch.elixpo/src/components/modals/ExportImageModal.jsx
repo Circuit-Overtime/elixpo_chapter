@@ -2,63 +2,28 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import useUIStore from '@/store/useUIStore'
+import {
+  canvasToLosslessPNG,
+  createExportSVG,
+  downloadBlob,
+  getExportBackground,
+  renderExportCanvas,
+} from '@/utils/canvasExport'
 
-const SCALES = [1, 2, 3]
-
-function getCleanSVG() {
-  const svgEl = window.svg
-  if (!svgEl) return null
-  const clone = svgEl.cloneNode(true)
-  clone.querySelectorAll(
-    '[data-selection], .selection-handle, .resize-handle, .rotation-handle, .anchor, .rotate-anchor'
-  ).forEach((el) => el.remove())
-  return clone
-}
-
-function renderToCanvas(clone, scale, bgColor) {
-  return new Promise((resolve) => {
-    const svgData = new XMLSerializer().serializeToString(clone)
-    const vb = window.svg.viewBox.baseVal
-    const canvas = document.createElement('canvas')
-    canvas.width = vb.width * scale
-    canvas.height = vb.height * scale
-    const ctx = canvas.getContext('2d')
-    ctx.scale(scale, scale)
-
-    const img = new Image()
-    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-
-    img.onload = () => {
-      if (bgColor) {
-        ctx.fillStyle = bgColor
-        ctx.fillRect(0, 0, vb.width, vb.height)
-      }
-      ctx.drawImage(img, 0, 0, vb.width, vb.height)
-      URL.revokeObjectURL(url)
-      resolve(canvas)
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve(null)
-    }
-    img.src = url
-  })
-}
+const SCALES = [1, 2, 4, 8]
 
 export default function ExportImageModal() {
   const open = useUIStore((s) => s.exportImageModalOpen)
   const toggleModal = useUIStore((s) => s.toggleExportImageModal)
+  const resolvedTheme = useUIStore((s) => s.resolvedTheme)
 
-  const [scale, setScale] = useState(2)
+  const [scale, setScale] = useState(4)
   const [bgMode, setBgMode] = useState('dark') // 'dark' | 'light' | 'none'
   const [previewUrl, setPreviewUrl] = useState(null)
   const previewRef = useRef(null)
 
   const getBgColor = useCallback(() => {
-    if (bgMode === 'dark') return '#121212'
-    if (bgMode === 'light') return '#ffffff'
-    return null // transparent
+    return getExportBackground(bgMode)
   }, [bgMode])
 
   // Generate preview whenever settings change
@@ -67,79 +32,51 @@ export default function ExportImageModal() {
     let cancelled = false
 
     const generate = async () => {
-      const clone = getCleanSVG()
+      const clone = createExportSVG(bgMode, resolvedTheme)
       if (!clone) return
       // Preview at 1x for speed
-      const canvas = await renderToCanvas(clone, 1, getBgColor())
+      const canvas = await renderExportCanvas(clone, 1)
       if (cancelled || !canvas) return
       setPreviewUrl(canvas.toDataURL('image/png'))
     }
     generate()
 
     return () => { cancelled = true }
-  }, [open, bgMode, getBgColor])
+  }, [open, bgMode, resolvedTheme])
 
   if (!open) return null
 
   const handleExportPNG = async () => {
-    const clone = getCleanSVG()
+    const clone = createExportSVG(bgMode, resolvedTheme)
     if (!clone) return
-    const canvas = await renderToCanvas(clone, scale, getBgColor())
-    if (!canvas) return
-
-    canvas.toBlob((blob) => {
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `lixsketch-export-${scale}x.png`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-    }, 'image/png')
+    const canvas = await renderExportCanvas(clone, scale)
+    const blob = await canvasToLosslessPNG(canvas)
+    downloadBlob(blob, `lixsketch-export-${scale}x.png`)
     toggleModal()
   }
 
   const handleExportSVG = () => {
-    const clone = getCleanSVG()
+    const clone = createExportSVG(bgMode, resolvedTheme)
     if (!clone) return
-    // Apply background as a rect if needed
-    const bg = getBgColor()
-    if (bg) {
-      const ns = 'http://www.w3.org/2000/svg'
-      const rect = document.createElementNS(ns, 'rect')
-      const vb = window.svg.viewBox.baseVal
-      rect.setAttribute('width', vb.width)
-      rect.setAttribute('height', vb.height)
-      rect.setAttribute('fill', bg)
-      clone.insertBefore(rect, clone.firstChild)
-    }
     const svgData = new XMLSerializer().serializeToString(clone)
     const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'lixsketch-export.svg'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    downloadBlob(blob, 'lixsketch-export.svg')
     toggleModal()
   }
 
   const handleCopyPNG = async () => {
-    const clone = getCleanSVG()
+    const clone = createExportSVG(bgMode, resolvedTheme)
     if (!clone) return
-    const canvas = await renderToCanvas(clone, scale, getBgColor())
-    if (!canvas) return
-
-    canvas.toBlob((blob) => {
-      if (!blob) return
-      navigator.clipboard
-        .write([new ClipboardItem({ 'image/png': blob })])
-        .catch((err) => console.warn('Clipboard write failed:', err))
-    }, 'image/png')
+    const canvas = await renderExportCanvas(clone, scale)
+    const blob = await canvasToLosslessPNG(canvas)
+    navigator.clipboard
+      .write([new ClipboardItem({ 'image/png': blob })])
+      .catch((err) => console.warn('Clipboard write failed:', err))
     toggleModal()
   }
 
   const handleCopySVG = () => {
-    const clone = getCleanSVG()
+    const clone = createExportSVG(bgMode, resolvedTheme)
     if (!clone) return
     const svgData = new XMLSerializer().serializeToString(clone)
     navigator.clipboard.writeText(svgData).catch((err) =>
@@ -238,6 +175,9 @@ export default function ExportImageModal() {
                   </button>
                 ))}
               </div>
+              <p className="text-text-dim text-[10px] mt-2 leading-relaxed">
+                Lossless PNG at full selected resolution.
+              </p>
             </div>
 
             <hr className="border-border-light" />

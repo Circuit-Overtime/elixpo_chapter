@@ -7,6 +7,13 @@ import LandingNav from '@/components/landing/LandingNav'
 import LandingFooter from '@/components/landing/LandingFooter'
 import useAuth from '@/hooks/useAuth'
 import useAuthStore from '@/store/useAuthStore'
+import {
+  clearRememberedCanvasId,
+  createCanvasSessionId,
+  getRememberedCanvasId,
+  hasLocalSavedWorkspace,
+  hasStoredCanvasKey,
+} from '@/utils/canvasSession'
 
 // ── WebGL Particle Constellation ──────────────────────────────────────────────
 // Lightweight dot-grid with faint connections. Runs at native RAF, ~0.5ms/frame.
@@ -347,12 +354,86 @@ export default function LandingPage() {
   const { scrollYProgress } = useScroll()
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.92])
   const heroBlur = useTransform(scrollYProgress, [0, 0.15], [0, 8])
+  const heroFilter = useTransform(heroBlur, v => `blur(${v}px)`)
   const heroY = useTransform(scrollYProgress, [0, 0.15], [0, -40])
 
   const [newSessionId, setNewSessionId] = useState('')
+  const [checkingSavedCanvas, setCheckingSavedCanvas] = useState(true)
   useEffect(() => {
-    setNewSessionId(`lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`)
+    // The auth callback owns navigation when sign-in started from a canvas.
+    if (window.__lixAuthRedirecting) return
+
+    let cancelled = false
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 2000)
+
+    const showLandingPage = () => {
+      if (cancelled) return
+      setNewSessionId(createCanvasSessionId())
+      setCheckingSavedCanvas(false)
+    }
+
+    // An explicit logo click is a request to see the landing page. Normal
+    // visits still resume the last restorable canvas below.
+    if (new URLSearchParams(window.location.search).has('noredirect')) {
+      clearTimeout(timeout)
+      showLandingPage()
+      return () => {
+        cancelled = true
+        controller.abort()
+      }
+    }
+
+    const restoreRememberedCanvas = async () => {
+      const rememberedCanvasId = getRememberedCanvasId()
+      if (!rememberedCanvasId) {
+        clearRememberedCanvasId()
+        showLandingPage()
+        return
+      }
+
+      if (hasLocalSavedWorkspace(rememberedCanvasId)) {
+        window.location.replace(`/c/${encodeURIComponent(rememberedCanvasId)}`)
+        return
+      }
+
+      // A cloud-saved canvas can outlive its local scene buffer. Resume it
+      // only when this browser still has the E2E key required to decrypt it.
+      try {
+        const response = await fetch(`/api/scenes/load?sessionId=${encodeURIComponent(rememberedCanvasId)}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        })
+        const savedWorkspace = response.ok ? await response.json() : null
+        if (savedWorkspace?.encryptedData && hasStoredCanvasKey(rememberedCanvasId)) {
+          window.location.replace(`/c/${encodeURIComponent(rememberedCanvasId)}`)
+          return
+        }
+        if (savedWorkspace?.missing || (savedWorkspace?.encryptedData && !hasStoredCanvasKey(rememberedCanvasId))) {
+          clearRememberedCanvasId(rememberedCanvasId)
+        }
+      } catch {
+        // Keep the pointer on transient network failure so a later visit can retry.
+      }
+
+      showLandingPage()
+    }
+
+    restoreRememberedCanvas()
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+      controller.abort()
+    }
   }, [])
+
+  if (checkingSavedCanvas) {
+    return (
+      <div className="min-h-screen bg-[#120e1a] text-white flex items-center justify-center font-[lixFont]">
+        <i className="bx bx-loader-alt animate-spin text-2xl text-accent-blue" aria-label="Checking saved canvas" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#120e1a] text-white font-[lixFont] overflow-x-hidden">
@@ -363,7 +444,7 @@ export default function LandingPage() {
         style={{
           scale: heroScale,
           y: heroY,
-          filter: useTransform(heroBlur, v => `blur(${v}px)`),
+          filter: heroFilter,
         }}
         className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden"
       >
@@ -442,7 +523,7 @@ export default function LandingPage() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link
-              href={newSessionId ? `/c/${newSessionId}` : '#'}
+              href={newSessionId ? `/c/${newSessionId}?new=1&preserveLocal=1` : '#'}
               className={`px-8 py-3.5 bg-accent-blue hover:bg-accent-blue-hover text-white rounded-xl text-base transition-all duration-200 hover:shadow-xl hover:shadow-accent-blue/25 flex items-center gap-2 ${!newSessionId ? 'opacity-50 pointer-events-none' : ''}`}
             >
               <i className="bx bx-palette text-xl" />
@@ -733,7 +814,7 @@ export default function LandingPage() {
             No sign-up. No paywall. Just open the canvas and start creating.
           </p>
           <Link
-            href={newSessionId ? `/c/${newSessionId}` : '#'}
+            href={newSessionId ? `/c/${newSessionId}?new=1&preserveLocal=1` : '#'}
             className={`inline-flex items-center gap-2 px-10 py-4 bg-accent-blue hover:bg-accent-blue-hover text-white rounded-xl text-lg transition-all duration-200 hover:shadow-xl hover:shadow-accent-blue/25 ${!newSessionId ? 'opacity-50 pointer-events-none' : ''}`}
           >
             <i className="bx bx-palette text-2xl" />

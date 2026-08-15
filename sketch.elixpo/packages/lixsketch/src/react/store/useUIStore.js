@@ -1,5 +1,11 @@
 import { create } from 'zustand'
 
+export const MAX_WORKSPACE_NAME_LENGTH = 20
+
+function limitWorkspaceName(name) {
+  return String(name ?? '').slice(0, MAX_WORKSPACE_NAME_LENGTH)
+}
+
 /**
  * Swap black↔white colors on all shapes when theme changes.
  * prevTheme / nextTheme are resolved ('dark' | 'light').
@@ -67,19 +73,15 @@ function applyTheme(theme) {
 
 const useUIStore = create((set, get) => ({
   // --- Modals ---
-  shortcutsModalOpen: false,
   saveModalOpen: false,
   aiModalOpen: false,
   graphModalOpen: false,
   commandPaletteOpen: false,
-  helpModalOpen: false,
   exportImageModalOpen: false,
   findBarOpen: false,
   canvasPropertiesOpen: false,
   imageGenerateModalOpen: false,
 
-  toggleShortcutsModal: () =>
-    set((s) => ({ shortcutsModalOpen: !s.shortcutsModalOpen })),
   toggleSaveModal: () =>
     set((s) => ({ saveModalOpen: !s.saveModalOpen })),
   toggleAIModal: () =>
@@ -88,8 +90,6 @@ const useUIStore = create((set, get) => ({
     set((s) => ({ graphModalOpen: !s.graphModalOpen })),
   toggleCommandPalette: () =>
     set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
-  toggleHelpModal: () =>
-    set((s) => ({ helpModalOpen: !s.helpModalOpen })),
   toggleExportImageModal: () =>
     set((s) => ({ exportImageModalOpen: !s.exportImageModalOpen })),
   toggleFindBar: () =>
@@ -103,7 +103,7 @@ const useUIStore = create((set, get) => ({
   closeImageGenerateModal: () =>
     set({ imageGenerateModalOpen: false }),
   closeAllModals: () =>
-    set({ shortcutsModalOpen: false, saveModalOpen: false, aiModalOpen: false, graphModalOpen: false, commandPaletteOpen: false, helpModalOpen: false, exportImageModalOpen: false, findBarOpen: false, canvasPropertiesOpen: false, imageGenerateModalOpen: false }),
+    set({ saveModalOpen: false, aiModalOpen: false, graphModalOpen: false, commandPaletteOpen: false, exportImageModalOpen: false, findBarOpen: false, canvasPropertiesOpen: false, imageGenerateModalOpen: false }),
 
   // --- Menu ---
   menuOpen: false,
@@ -113,10 +113,11 @@ const useUIStore = create((set, get) => ({
   // --- Workspace ---
   workspaceName: '',
   setWorkspaceName: (name) => {
+    const workspaceName = limitWorkspaceName(name)
     if (typeof window !== 'undefined') {
-      localStorage.setItem('lixsketch-workspace-name', name)
+      try { localStorage.setItem('lixsketch-workspace-name', workspaceName) } catch {}
     }
-    set({ workspaceName: name })
+    set({ workspaceName })
   },
 
   // --- Save Status ---

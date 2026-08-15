@@ -118,6 +118,34 @@ export function installEngineShortcuts(engine, options = {}) {
         // selection is empty, but skip when the user is typing.
         const isMod = e.ctrlKey || e.metaKey;
 
+        // Own the standard browser zoom keys while the canvas engine is
+        // active. This keeps the surrounding page at 100% and zooms the
+        // infinite canvas from its center instead. Handle both the main
+        // keyboard and numpad variants, across Ctrl and Cmd platforms.
+        if (isMod) {
+            const zoomDirection = (key === '+' || key === '=' || e.code === 'NumpadAdd')
+                ? 1
+                : (key === '-' || e.code === 'NumpadSubtract')
+                    ? -1
+                    : 0;
+            if (zoomDirection !== 0) {
+                if (!e.defaultPrevented) {
+                    e.preventDefault();
+                    if (typeof window.zoomFromCenter === 'function') {
+                        window.zoomFromCenter(zoomDirection);
+                    }
+                }
+                return;
+            }
+            if (key === '0' || e.code === 'Numpad0') {
+                if (!e.defaultPrevented) {
+                    e.preventDefault();
+                    if (typeof window.zoomReset === 'function') window.zoomReset();
+                }
+                return;
+            }
+        }
+
         if (isTypingTarget(e.target)) return;
         if (document.querySelector('.text-edit-overlay:not(.hidden)')) return;
         if (skipWhen && skipWhen(e)) return;

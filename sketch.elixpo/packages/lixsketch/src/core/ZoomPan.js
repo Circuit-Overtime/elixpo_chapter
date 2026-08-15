@@ -1,7 +1,10 @@
 /* eslint-disable */
+import { installScreenSpaceControlSync } from './ScreenSpaceControls.js';
 // Zoom and Pan controls - combined from zoomFunction.js + panCanvas.js
 // Depends on globals: svg, freehandCanvas, currentZoom, currentViewBox, isPanningToolActive, isPanning
 // Depends on globals: minScale, maxScale, zoomInBtn, zoomOutBtn, zoomPercentSpan, panStart, startCanvasX, startCanvasY
+
+installScreenSpaceControlSync(freehandCanvas);
 
 // === Zoom Functions ===
 let currentY = 0;

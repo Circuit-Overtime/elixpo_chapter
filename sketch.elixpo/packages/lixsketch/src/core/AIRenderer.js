@@ -44,14 +44,25 @@ export function parseMermaid(src) {
     const classDefs = new Map();   // classDef name -> { fill, stroke, strokeWidth }
     const classAssigns = [];        // { nodeIds: [...], className }
     const nodeStyles = new Map();   // Mermaid `style A fill:...,stroke:...`
-    const palette = [
-        { fill: '#eee9f7', stroke: '#7667a8' },
-        { fill: '#e6def2', stroke: '#8875b5' },
-        { fill: '#ddd2eb', stroke: '#6f5f9c' },
-        { fill: '#f2edf8', stroke: '#9a88bf' },
-        { fill: '#e2daf0', stroke: '#806cab' },
-        { fill: '#ebe4f5', stroke: '#705d9c' },
-    ];
+    const darkTheme = typeof document === 'undefined'
+        || document.body?.classList.contains('theme-dark');
+    const palette = darkTheme
+        ? [
+            { fill: '#352b52', stroke: '#9d86df' },
+            { fill: '#403260', stroke: '#ad92ed' },
+            { fill: '#2f2948', stroke: '#927fd1' },
+            { fill: '#493568', stroke: '#b195e8' },
+            { fill: '#322747', stroke: '#9b83d7' },
+            { fill: '#3d2e58', stroke: '#a88add' },
+        ]
+        : [
+            { fill: '#eee9f7', stroke: '#7667a8' },
+            { fill: '#e6def2', stroke: '#8875b5' },
+            { fill: '#ddd2eb', stroke: '#6f5f9c' },
+            { fill: '#f2edf8', stroke: '#9a88bf' },
+            { fill: '#e2daf0', stroke: '#806cab' },
+            { fill: '#ebe4f5', stroke: '#705d9c' },
+        ];
 
     function parseStyleProps(value) {
         const props = {};
@@ -1432,6 +1443,7 @@ export function adaptCanvasContrast(background) {
         }
         if (shape.shapeName === 'frame' && generated && shape.options) {
             shape.options.stroke = muted;
+            shape.options.labelColor = foreground;
         }
         if ('labelColor' in shape && generated) {
             shape.labelColor = solidFill ? readableColor(shape.labelColor || foreground, fill, 4.5) : foreground;

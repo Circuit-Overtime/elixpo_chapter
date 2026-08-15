@@ -2,6 +2,7 @@
 // Icon tool event handlers - extracted from icons.js
 import { pushCreateAction, pushDeleteAction, pushTransformAction, pushFrameAttachmentAction } from '../core/UndoRedo.js';
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 
 
 let isDraggingIcon = false;
@@ -646,6 +647,7 @@ function addRotationAnchor(x, y, width, height, centerX, centerY, iconWidth, rot
     rotationAnchor.setAttribute('transform', `rotate(${rotation}, ${centerX}, ${centerY})`);
 
     svg.appendChild(rotationAnchor);
+    registerRotationAnchor(rotationAnchor, { radius: 5, edgeY: y });
 
     rotationAnchor.addEventListener('pointerdown', startRotation);
     rotationAnchor.addEventListener('pointerup', stopRotation);
