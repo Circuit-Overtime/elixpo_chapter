@@ -446,9 +446,16 @@ export default function AppShell({ children }) {
               <span className="whitespace-nowrap text-base font-bold tracking-tight font-kanit sm:text-xl" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
             </Link>
             {showIndependenceTheme && (
-              <span className="independence-day-label hidden sm:inline-flex" title="India Independence Day">
+              <span
+                className="independence-day-label hidden sm:inline-flex"
+                tabIndex={0}
+                aria-describedby="independence-day-tooltip"
+              >
                 <span aria-hidden="true" className="independence-day-wheel" />
                 15 August
+                <span id="independence-day-tooltip" role="tooltip" className="independence-day-tooltip">
+                  India Independence Day theme
+                </span>
               </span>
             )}
           </div>

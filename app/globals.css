@@ -244,6 +244,7 @@ body {
 }
 
 .independence-day-label {
+  position: relative;
   align-items: center;
   gap: 0.4rem;
   border: 1px solid transparent;
@@ -258,6 +259,64 @@ body {
   font-weight: 600;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.independence-day-label:hover,
+.independence-day-label:focus-visible {
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--india-navy) 16%, transparent);
+  transform: translateY(-1px);
+}
+
+.independence-day-label:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--india-navy) 60%, transparent);
+  outline-offset: 2px;
+}
+
+.independence-day-tooltip {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 0.65rem);
+  left: 50%;
+  width: max-content;
+  max-width: 15rem;
+  padding: 0.45rem 0.65rem;
+  transform: translate(-50%, -0.25rem);
+  border: 1px solid color-mix(in srgb, var(--india-navy) 20%, var(--border-default));
+  border-radius: 0.55rem;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--dropdown-bg) 96%, transparent);
+  box-shadow: var(--shadow-md);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  line-height: 1.25;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
+}
+
+.independence-day-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  transform: translate(-50%, 50%) rotate(45deg);
+  border-top: 1px solid color-mix(in srgb, var(--india-navy) 20%, var(--border-default));
+  border-left: 1px solid color-mix(in srgb, var(--india-navy) 20%, var(--border-default));
+  background: var(--dropdown-bg);
+}
+
+.independence-day-label:hover .independence-day-tooltip,
+.independence-day-label:focus-visible .independence-day-tooltip {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  visibility: visible;
 }
 
 .independence-day-wheel {
