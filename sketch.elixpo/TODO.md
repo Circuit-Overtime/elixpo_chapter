@@ -51,6 +51,7 @@
 - [x] Place canvas rulers below the header and to the right of the left toolbar.
 - [x] Add live X/Y ruler guides and coordinate markers that follow the canvas pointer.
 - [x] Keep rotation handles at a constant screen-space size and offset while zooming.
+- [x] Ship an India-focused three-tier pricing page and keep the AI connector marked Coming soon.
 - [x] Make save/export previews honor dark, light, and transparent canvas modes and export lossless high-resolution images.
 - [x] Make placed graphs viewport-sized, selectable, movable, resizable, editable, and persistent.
 - [x] Let explicit logo clicks open the landing page without automatic canvas restoration.
