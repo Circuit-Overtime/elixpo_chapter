@@ -11,6 +11,7 @@ import {
     updateSelectedElement
 } from '../core/UndoRedo.js';
 import { cleanupAttachments, updateAttachedArrows } from './arrowTool.js';
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 
 function getThemeStroke() { if (typeof document === "undefined") return "#fff"; return document.body && document.body.classList.contains("theme-dark") ? "#fff" : "#1a1a2e"; }
 import {
@@ -516,6 +517,7 @@ function createSelectionFeedback(groupElement) {
     rotationAnchor.style.cursor = 'grab';
     rotationAnchor.setAttribute('pointer-events', 'all');
     groupElement.appendChild(rotationAnchor);
+    registerRotationAnchor(rotationAnchor, { radius: 8, edgeY: selY });
 
     resizeHandles.rotate = rotationAnchor;
 
@@ -593,7 +595,7 @@ function updateSelectionFeedback() {
 
     const rotationAnchor = resizeHandles.rotate;
     if (rotationAnchor) {
-        const rotationAnchorPos = { x: selX + selWidth / 2, y: selY - 30 };
+        const rotationAnchorPos = { x: selX + selWidth / 2, y: selY - 30 / zoom2 };
         rotationAnchor.setAttribute('cx', rotationAnchorPos.x);
         rotationAnchor.setAttribute('cy', rotationAnchorPos.y);
     }

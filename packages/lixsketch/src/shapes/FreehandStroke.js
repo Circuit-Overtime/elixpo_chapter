@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { getStroke } from "perfect-freehand";
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 // FreehandStroke shape class - extracted from canvasStroke.js
 // Depends on globals: svg, shapes, currentShape, currentZoom, currentViewBox
 
@@ -608,6 +609,7 @@ class FreehandStroke {
     rotationAnchor.style.pointerEvents = 'all';
     
     this.group.appendChild(rotationAnchor);
+    registerRotationAnchor(rotationAnchor, { radius: 5, edgeY: expandedY });
     this.rotationAnchor = rotationAnchor;
 
     // Create selection outline

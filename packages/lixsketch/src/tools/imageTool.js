@@ -4,6 +4,7 @@ import { pushCreateAction, pushDeleteAction, pushTransformAction, pushFrameAttac
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
 import { compressImage } from '../utils/imageCompressor.js';
 import { isAllowedImage, IMAGE_ACCEPT_ATTR } from '../utils/allowedImageTypes.js';
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 
 
 let isDraggingImage = false;
@@ -705,6 +706,7 @@ function addRotationAnchor(x, y, width, height, centerX, centerY) {
     rotationAnchor.setAttribute('transform', `rotate(${imageRotation}, ${centerX}, ${centerY})`);
     
     svg.appendChild(rotationAnchor);
+    registerRotationAnchor(rotationAnchor, { radius: 5, edgeY: y });
 
     // Add event listeners for rotation
     rotationAnchor.addEventListener('pointerdown', startRotation);

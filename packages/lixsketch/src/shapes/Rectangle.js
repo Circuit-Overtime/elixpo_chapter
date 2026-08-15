@@ -1,4 +1,5 @@
 /* eslint-disable */
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 // Rectangle shape class - extracted from drawSquare.js
 // Depends on globals: svg, shapes, rough, currentShape, currentZoom, rc
 
@@ -521,6 +522,7 @@ class Rectangle {
         this.rotationAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
         this.rotationAnchor.setAttribute('style', 'pointer-events: all;');
         this.group.appendChild(this.rotationAnchor);
+        registerRotationAnchor(this.rotationAnchor, { radius: 8, edgeY: expandedY });
 
         this.rotationAnchor.addEventListener('mouseover', function () {
              if (!isResizingShapeSquare && !isDraggingShapeSquare && !isRotatingShapeSquare) {

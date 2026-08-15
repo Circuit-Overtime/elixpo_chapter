@@ -50,3 +50,4 @@
 - [x] Position the text-tool editor at the clicked canvas point across pan, zoom, and split view.
 - [x] Place canvas rulers below the header and to the right of the left toolbar.
 - [x] Add live X/Y ruler guides and coordinate markers that follow the canvas pointer.
+- [x] Keep rotation handles at a constant screen-space size and offset while zooming.
