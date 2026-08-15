@@ -169,6 +169,10 @@ html[data-seasonal-theme='india-independence-day'] .bg-\[\#9b7bf7\] {
   background-color: var(--india-green) !important;
 }
 
+html[data-seasonal-theme='india-independence-day'] :is(button, a).bg-\[\#9b7bf7\] {
+  color: #ffffff !important;
+}
+
 html[data-seasonal-theme='india-independence-day'] .hover\:bg-\[\#8b6ae6\]:hover,
 html[data-seasonal-theme='india-independence-day'] .hover\:bg-\[\#b69aff\]:hover {
   background-color: #0f7007 !important;
