@@ -10,6 +10,12 @@ let selectedElement = null;
 let updateSelectionFeedback = null;
 let svg = null;
 
+function notifyCollaboration() {
+    if (typeof window !== 'undefined' && typeof window.__collabSceneChanged === 'function') {
+        window.__collabSceneChanged();
+    }
+}
+
 // Function to set references from other modules
 export function setTextReferences(element, updateFn, svgElement) {
     selectedElement = element;
@@ -36,6 +42,7 @@ export function pushCreateAction(shape) {
     
     // Clear redo stack when new action is performed
     redoStack.length = 0;
+    notifyCollaboration();
 }
 
 export function pushDeleteAction(shape, meta = null) {
@@ -49,6 +56,7 @@ export function pushDeleteAction(shape, meta = null) {
 
     // Clear redo stack when new action is performed
     redoStack.length = 0;
+    notifyCollaboration();
 }
 
 // Enhanced delete action to clean up attached arrows
@@ -77,6 +85,7 @@ export function pushDeleteActionWithAttachments(shape) {
     
     // Clear redo stack when new action is performed
     redoStack.length = 0;
+    notifyCollaboration();
 }
 
 export function pushFrameAttachmentAction(frame, shape, action, oldFrame = null) {
@@ -98,6 +107,7 @@ export function pushFrameAttachmentAction(frame, shape, action, oldFrame = null)
     
     // Clear redo stack when new action is performed
     redoStack.length = 0;
+    notifyCollaboration();
 }
 
 export function pushCreateActionWithAttachments(shape) {
@@ -110,6 +120,7 @@ export function pushCreateActionWithAttachments(shape) {
     
     // Clear redo stack when new action is performed
     redoStack.length = 0;
+    notifyCollaboration();
 }
 
 export function pushTransformAction(shape, oldPos, newPos) {
@@ -409,6 +420,7 @@ export function pushTransformAction(shape, oldPos, newPos) {
     
     // Clear redo stack when new action is performed
     redoStack.length = 0;
+    notifyCollaboration();
 }
 
 export function pushOptionsChangeAction(shape, oldOptions) {
@@ -420,6 +432,7 @@ export function pushOptionsChangeAction(shape, oldOptions) {
     
     // Clear redo stack when new action is performed
     redoStack.length = 0;
+    notifyCollaboration();
 }
 
 // Issue #34 bug #4: refresh the multi-selection outline + handles so it
@@ -917,7 +930,10 @@ export function undo() {
         redoStack.push(action);
         return;
     }
-    } finally { refreshSelectionAfterAction(); }
+    } finally {
+        refreshSelectionAfterAction();
+        notifyCollaboration();
+    }
 }
 
 export function redo() {
@@ -1395,7 +1411,10 @@ export function redo() {
         undoStack.push(action);
         return;
     }
-    } finally { refreshSelectionAfterAction(); }
+    } finally {
+        refreshSelectionAfterAction();
+        notifyCollaboration();
+    }
 }
 
 // Optional: Keyboard shortcuts

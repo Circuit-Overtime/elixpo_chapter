@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import useUIStore from '@/store/useUIStore'
+import useUIStore, { MAX_WORKSPACE_NAME_LENGTH } from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
-import useAuthStore from '@/store/useAuthStore'
+import useAuthStore, { WORKER_URL } from '@/store/useAuthStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
 import { persistLayoutMode } from '@/hooks/useDocAutoSave'
-import { generateKey, encrypt, decrypt } from '@/utils/encryption'
+import { triggerCloudSync } from '@/hooks/useAutoSave'
+import { getSessionID } from '@/hooks/useSessionID'
+import { decrypt } from '@/utils/encryption'
 import { showToast } from '@/utils/toast'
 
 function LayoutModeToggle() {
@@ -41,7 +43,7 @@ function LayoutModeToggle() {
             title={m.title}
             aria-selected={active}
             role="tab"
-            className={`group flex items-center gap-1.5 h-7 px-2.5 rounded-md transition-all duration-150 ${
+            className={`group flex items-center gap-1.5 h-7 px-2.5 rounded-md transition-all duration-150 cursor-pointer ${
               active
                 ? 'bg-accent-blue text-white'
                 : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
@@ -58,14 +60,60 @@ function LayoutModeToggle() {
   )
 }
 
+function ProfileStatusAvatar({ avatar }) {
+  const saveStatus = useUIStore((s) => s.saveStatus)
+  const [pulsing, setPulsing] = useState(false)
+
+  useEffect(() => {
+    let timer
+    window.__onLocalSave = () => {
+      setPulsing(true)
+      clearTimeout(timer)
+      timer = setTimeout(() => setPulsing(false), 800)
+    }
+    return () => {
+      window.__onLocalSave = null
+      clearTimeout(timer)
+    }
+  }, [])
+
+  const synced = saveStatus === 'cloud'
+  const statusTitle = {
+    cloud: 'Synced to cloud — Ctrl+S to force sync',
+    local: 'Saved locally — waiting for cloud sync',
+    failed: 'Cloud sync failed — canvas remains stored locally',
+    idle: 'Not synced yet',
+  }[saveStatus] || 'Not synced yet'
+  const statusBorder = synced ? 'border-green-400' : 'border-yellow-400'
+
+  return avatar ? (
+    <img
+      src={avatar}
+      alt=""
+      title={statusTitle}
+      className={`w-7 h-7 rounded-md border-[3px] ${statusBorder} transition-colors duration-300 ${pulsing ? 'animate-pulse' : ''}`}
+      referrerPolicy="no-referrer"
+    />
+  ) : (
+    <div
+      title={statusTitle}
+      className={`w-7 h-7 rounded-md border-[3px] ${statusBorder} bg-accent-blue/20 flex items-center justify-center transition-colors duration-300 ${pulsing ? 'animate-pulse' : ''}`}
+    >
+      <i className="bx bx-user text-xs text-accent-blue" />
+    </div>
+  )
+}
+
 function ProfileDropdown() {
   const profile = useProfileStore((s) => s.profile)
   const setDisplayName = useProfileStore((s) => s.setDisplayName)
   const regenerateProfile = useProfileStore((s) => s.regenerateProfile)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const authUser = useAuthStore((s) => s.user)
+  const closeMenu = useUIStore((s) => s.closeMenu)
   const [open, setOpen] = useState(false)
   const [testingE2E, setTestingE2E] = useState(false)
+  const [e2eResult, setE2EResult] = useState('idle')
   const ref = useRef(null)
 
   useEffect(() => {
@@ -82,21 +130,75 @@ function ProfileDropdown() {
   const avatar = isAuthenticated ? authUser?.avatar : profile?.avatar
   const isGuest = !isAuthenticated
 
+  const toggleProfileDropdown = () => {
+    if (!open) closeMenu()
+    setOpen((current) => !current)
+  }
+
   if (!profile && !isAuthenticated) return null
 
   const testE2E = async () => {
     if (testingE2E) return
     setTestingE2E(true)
+    setE2EResult('idle')
     try {
-      const probe = `lixsketch-e2e-${Date.now()}`
-      const key = await generateKey()
-      const ciphertext = await encrypt(probe, key)
-      const plaintext = await decrypt(ciphertext, key)
-      if (plaintext !== probe || ciphertext === probe) throw new Error('Encryption round trip failed')
-      showToast('E2E encryption test passed', { tone: 'success', duration: 2200 })
+      if (!window.isSecureContext || !window.crypto?.subtle) {
+        throw new Error('A secure browser context is required')
+      }
+
+      const sessionId = getSessionID()
+      if (!sessionId) throw new Error('Canvas session is not ready')
+
+      // Exercise the real persistence path: serialize the current canvas,
+      // encrypt it with its stable session key, and write it to the scene DB.
+      const synced = await triggerCloudSync()
+      if (!synced) throw new Error('Cloud sync was unavailable or rate limited')
+
+      const encryptionStore = useUIStore.getState()
+      const key = encryptionStore.loadEncryptionKeyForSession?.(sessionId)
+        || encryptionStore.sessionEncryptionKey
+      if (!key) throw new Error('The browser-held session key is missing')
+
+      // Read back exactly what the server stores. The key is deliberately not
+      // included in this request; it never leaves the browser.
+      const response = await fetch(
+        `${WORKER_URL}/api/scenes/load?sessionId=${encodeURIComponent(sessionId)}`,
+        { cache: 'no-store' },
+      )
+      if (!response.ok) throw new Error(`Encrypted reload failed (${response.status})`)
+      const stored = await response.json()
+      if (!stored.encryptedData || stored.missing) throw new Error('No encrypted cloud payload was returned')
+
+      const plaintext = await decrypt(stored.encryptedData, key)
+      const scene = JSON.parse(plaintext)
+      if (scene?.format !== 'lixsketch' || !Array.isArray(scene.shapes)) {
+        throw new Error('Decrypted payload is not a valid LixSketch scene')
+      }
+      if (scene.shapes.length !== (window.shapes?.length || 0)) {
+        throw new Error('Cloud payload does not match the current canvas')
+      }
+
+      // AES-GCM must reject any modified byte. This checks authentication,
+      // not just whether encryption and decryption happen to round-trip.
+      const index = Math.floor(stored.encryptedData.length / 2)
+      const replacement = stored.encryptedData[index] === 'A' ? 'B' : 'A'
+      const tampered = stored.encryptedData.slice(0, index)
+        + replacement
+        + stored.encryptedData.slice(index + 1)
+      let tamperRejected = false
+      try {
+        await decrypt(tampered, key)
+      } catch {
+        tamperRejected = true
+      }
+      if (!tamperRejected) throw new Error('Ciphertext authentication check failed')
+
+      setE2EResult('passed')
+      showToast(`E2E verified · ${scene.shapes.length} encrypted shape${scene.shapes.length === 1 ? '' : 's'} reloaded`, { tone: 'success', duration: 3200 })
     } catch (error) {
       console.error('[E2E Test] failed:', error)
-      showToast('E2E encryption test failed', { tone: 'warn', duration: 2600 })
+      setE2EResult('failed')
+      showToast(`E2E test failed · ${error?.message || 'unknown error'}`, { tone: 'warn', duration: 3600 })
     } finally {
       setTestingE2E(false)
     }
@@ -105,21 +207,11 @@ function ProfileDropdown() {
   return (
     <div ref={ref} className="relative flex items-center rounded-lg border border-border-light bg-surface/70">
       <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-l-lg hover:bg-surface-hover transition-all duration-200"
+        onClick={toggleProfileDropdown}
+        className="flex items-center gap-1.5 pl-1 pr-1.5 py-0.5 rounded-l-lg hover:bg-surface-hover transition-all duration-200 cursor-pointer"
         title={`${displayName} · canvas and encryption status`}
       >
-        {avatar ? (
-          <img src={avatar} alt="" className="w-6 h-6 rounded-md" referrerPolicy="no-referrer" />
-        ) : (
-          <div className="w-6 h-6 rounded-md bg-accent-blue/20 flex items-center justify-center">
-            <i className="bx bx-user text-xs text-accent-blue" />
-          </div>
-        )}
-        <span className="text-text-muted text-xs max-w-[80px] truncate hidden sm:block">
-          {displayName}
-        </span>
-        <SaveStatusDot />
+        <ProfileStatusAvatar avatar={avatar} />
         <span className="e2e-badge flex items-center gap-0.5 px-1.5 py-0.5 rounded border select-none" title="End-to-end encryption enabled">
           <i className="bx bxs-shield text-[11px]" />
           <span className="text-[9px] font-medium">E2E</span>
@@ -127,25 +219,29 @@ function ProfileDropdown() {
         <i className={`bx bx-chevron-down text-text-dim text-xs transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
       </button>
 
+      <span className="w-px h-6 bg-border-light shrink-0" aria-hidden="true" />
+
       <button
         onClick={testE2E}
         disabled={testingE2E}
-        className="h-8 px-2 flex items-center justify-center gap-1 border-l border-border-light rounded-r-lg text-text-muted hover:text-accent hover:bg-surface-hover transition-all disabled:opacity-50"
-        title="Test E2E encryption"
+        className={`h-8 px-2 flex items-center justify-center gap-1 rounded-r-lg hover:bg-surface-hover transition-all cursor-pointer disabled:cursor-wait disabled:opacity-50 ${
+          e2eResult === 'passed' ? 'text-green-400' : e2eResult === 'failed' ? 'text-red-400' : 'text-text-muted hover:text-accent'
+        }`}
+        title={e2eResult === 'passed' ? 'E2E database round-trip verified' : 'Test E2E encryption and database round-trip'}
         aria-label="Test E2E encryption"
       >
-        <i className={`bx ${testingE2E ? 'bx-loader-alt animate-spin' : 'bx-lock-alt'} text-sm`} />
-        <span className="text-[10px] hidden lg:inline">Test</span>
+        <i className={`bx ${testingE2E ? 'bx-loader-alt animate-spin' : e2eResult === 'passed' ? 'bx-check-shield' : e2eResult === 'failed' ? 'bx-error-circle' : 'bx-lock-alt'} text-sm`} />
+        <span className="text-[10px] hidden lg:inline">{e2eResult === 'passed' ? 'Verified' : e2eResult === 'failed' ? 'Retry' : 'Test'}</span>
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-2 w-[220px] bg-surface/90 backdrop-blur-lg border border-border-light rounded-xl p-3 z-[1002] font-[lixFont]">
-          <div className="flex items-center gap-2.5 mb-3">
+        <div className="absolute top-full right-0 mt-2 w-[244px] overflow-hidden bg-surface/95 backdrop-blur-xl border border-border-light rounded-xl p-2 z-[1002] font-[lixFont] shadow-2xl shadow-black/35">
+          <div className="flex items-center gap-3 px-2 py-2">
             {avatar ? (
-              <img src={avatar} alt="" className="w-10 h-10 rounded-lg" referrerPolicy="no-referrer" />
+              <img src={avatar} alt="" className="w-11 h-11 rounded-xl border border-border-light" referrerPolicy="no-referrer" />
             ) : (
-              <div className="w-10 h-10 rounded-lg bg-accent-blue/20 flex items-center justify-center">
-                <i className="bx bx-user text-lg text-accent-blue" />
+              <div className="w-11 h-11 rounded-xl border border-border-light bg-accent-blue/15 flex items-center justify-center">
+                <i className="bx bx-user text-xl text-accent" />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -154,66 +250,60 @@ function ProfileDropdown() {
                   type="text"
                   value={profile?.displayName || ''}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full bg-transparent text-text-primary text-sm outline-none border-b border-transparent focus:border-accent-blue transition-all"
+                  aria-label="Profile display name"
+                  className="w-full bg-transparent text-text-primary text-sm outline-none border-b border-transparent focus:border-accent transition-colors cursor-text"
                   spellCheck={false}
                 />
               ) : (
-                <p className="text-text-primary text-sm truncate">{displayName}</p>
+                <p className="text-text-primary text-sm truncate" title={displayName}>{displayName}</p>
               )}
-              <span className="text-text-dim text-[10px]">
+              <span className="mt-1 inline-flex items-center rounded-full border border-border-light bg-surface-hover/70 px-1.5 py-0.5 text-text-dim text-[9px] uppercase tracking-wider">
                 {isGuest ? 'Guest' : 'Signed in'}
               </span>
               {!isGuest && authUser?.email && (
-                <p className="text-text-dim text-[10px] truncate">{authUser.email}</p>
+                <p className="mt-1 text-text-dim text-[10px] truncate" title={authUser.email}>{authUser.email}</p>
               )}
             </div>
           </div>
 
-          <div className="border-t border-white/[0.06] mt-2 pt-2 flex flex-col gap-0.5">
-            <a
-              href="/docs/blog/e2e-encryption"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
-            >
-              <i className="bx bxs-shield text-sm text-accent" />
-              How E2E encryption works
-            </a>
-
+          <div className="mt-1 border-t border-border-light">
             <Link
               href="/profile"
               onClick={() => setOpen(false)}
-              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+              className="w-full flex items-center gap-2.5 px-2 py-2.5 rounded-lg text-text-secondary text-xs hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
             >
-              <i className="bx bx-user text-sm" />
+              <i className="bx bx-user text-base text-text-muted" />
               Profile & Usage
             </Link>
+          </div>
 
-            {isGuest && (
+          {isGuest && (
+            <div className="border-t border-border-light">
               <button
                 onClick={() => { regenerateProfile(); setOpen(false) }}
-                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-text-secondary text-xs hover:bg-surface-hover transition-all duration-200"
+                className="w-full flex items-center gap-2.5 px-2 py-2.5 rounded-lg text-text-secondary text-xs hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
               >
-                <i className="bx bx-refresh text-sm" />
+                <i className="bx bx-refresh text-base text-text-muted" />
                 New identity
               </button>
-            )}
+            </div>
+          )}
 
+          <div className="border-t border-border-light">
             {isGuest ? (
               <button
                 onClick={() => { useAuthStore.getState().login(); setOpen(false) }}
-                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-accent-blue text-xs hover:bg-accent-blue/10 transition-all duration-200"
+                className="w-full flex items-center gap-2.5 px-2 py-2.5 rounded-lg text-accent text-xs hover:bg-accent/10 transition-colors cursor-pointer"
               >
-                <i className="bx bx-log-in text-sm" />
+                <i className="bx bx-log-in text-base" />
                 Sign in
               </button>
             ) : (
               <button
                 onClick={() => { useAuthStore.getState().logout(); setOpen(false) }}
-                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-red-400/70 text-xs hover:bg-red-500/10 transition-all duration-200"
+                className="w-full flex items-center gap-2.5 px-2 py-2.5 rounded-lg text-red-400/80 text-xs hover:bg-red-500/10 hover:text-red-300 transition-colors cursor-pointer"
               >
-                <i className="bx bx-log-out text-sm" />
+                <i className="bx bx-log-out text-base" />
                 Sign out
               </button>
             )}
@@ -224,53 +314,23 @@ function ProfileDropdown() {
   )
 }
 
-function SaveStatusDot() {
-  const saveStatus = useUIStore((s) => s.saveStatus)
-  const [pulsing, setPulsing] = useState(false)
-
-  // Listen for local save events to trigger a pulse
-  useEffect(() => {
-    let timer
-    window.__onLocalSave = () => {
-      setPulsing(true)
-      clearTimeout(timer)
-      timer = setTimeout(() => setPulsing(false), 800)
-    }
-    return () => {
-      window.__onLocalSave = null
-      clearTimeout(timer)
-    }
-  }, [])
-
-  const colorMap = {
-    idle: 'bg-yellow-400',
-    cloud: 'bg-green-400',
-    local: 'bg-yellow-400',
-    failed: 'bg-red-400',
-  }
-  const titleMap = {
-    idle: 'Not saved yet',
-    cloud: 'Synced to cloud — Ctrl+S to force sync',
-    local: 'Saved locally — auto-syncs every 5min or press Ctrl+S',
-    failed: 'Sync failed — will retry automatically',
-  }
-  return (
-    <span
-      className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${colorMap[saveStatus] || 'bg-yellow-400'} ${pulsing ? 'animate-pulse' : ''}`}
-      title={titleMap[saveStatus] || ''}
-    />
-  )
-}
-
 export default function Header() {
   const workspaceName = useUIStore((s) => s.workspaceName)
   const setWorkspaceName = useUIStore((s) => s.setWorkspaceName)
+  const workspaceNameAtFocus = useRef(workspaceName)
   const toggleMenu = useUIStore((s) => s.toggleMenu)
   const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette)
-  const toggleHelpModal = useUIStore((s) => s.toggleHelpModal)
   const toggleSaveModal = useUIStore((s) => s.toggleSaveModal)
   const viewMode = useSketchStore((s) => s.viewMode)
   const zenMode = useSketchStore((s) => s.zenMode)
+
+  const finishWorkspaceNameEdit = () => {
+    if (workspaceName === workspaceNameAtFocus.current) return
+    workspaceNameAtFocus.current = workspaceName
+    useUIStore.getState().setSaveStatus('local')
+    void triggerCloudSync()
+    showToast('Workspace name updated', { tone: 'success', duration: 1800 })
+  }
 
   // View mode or Zen mode: only show the menu button floating in top-right
   if (viewMode || zenMode) {
@@ -278,7 +338,7 @@ export default function Header() {
       <div className="fixed top-3 right-4 z-[1001] font-[lixFont]">
         <button
           onClick={toggleMenu}
-          className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200 cursor-pointer"
         >
           <i className="bx bx-menu text-xl" />
         </button>
@@ -295,11 +355,7 @@ export default function Header() {
         {/* Logo */}
         <div
           onClick={() => {
-            if (window.location.pathname === '/') {
-              window.location.reload()
-            } else {
-              window.location.href = '/'
-            }
+            window.location.href = '/?noredirect=1'
           }}
           className="w-[26px] h-[26px] rounded-md bg-contain bg-no-repeat bg-center cursor-pointer"
           style={{ backgroundImage: "url('/icon.png')" }}
@@ -308,13 +364,26 @@ export default function Header() {
         <div className="w-px h-5 bg-border-light" />
 
         {/* Workspace name */}
-        <input
-          type="text"
-          value={workspaceName}
-          onChange={(e) => setWorkspaceName(e.target.value)}
-          className="bg-transparent text-text-secondary text-sm border-none outline-none w-40 px-1.5 py-1 rounded hover:bg-surface-hover/50 focus:bg-surface-hover/50 transition-all duration-200 font-[lixFont]"
-          spellCheck={false}
-        />
+        <label className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-surface-hover/50 focus-within:bg-surface-hover/50 transition-all duration-200 cursor-pointer" title="Edit workspace name">
+          <i className="bx bx-pencil text-sm text-text-dim pointer-events-none" aria-hidden="true" />
+          <input
+            type="text"
+            value={workspaceName}
+            maxLength={MAX_WORKSPACE_NAME_LENGTH}
+            onChange={(e) => setWorkspaceName(e.target.value)}
+            onFocus={() => { workspaceNameAtFocus.current = workspaceName }}
+            onBlur={finishWorkspaceNameEdit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                e.currentTarget.blur()
+              }
+            }}
+            className="bg-transparent text-text-secondary text-sm border-none outline-none w-40 px-0.5 py-0.5 font-[lixFont] cursor-pointer focus:cursor-text"
+            aria-label="Workspace name"
+            spellCheck={false}
+          />
+        </label>
 
       </div>
 
@@ -323,28 +392,21 @@ export default function Header() {
         {/* Profile pill owns identity, save state, and E2E status. */}
         <ProfileDropdown />
 
-        {/* Help */}
-        <button
-          onClick={toggleHelpModal}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
-          title="Help"
-          aria-label="Help"
-        >
-          <i className="bx bx-help-circle text-lg" />
-        </button>
-
         {/* Command palette */}
         <button
           onClick={toggleCommandPalette}
-          className="px-2.5 py-1.5 bg-surface hover:bg-surface-hover text-text-muted text-sm rounded-lg border border-border transition-all duration-200 font-[lixFont]"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-surface hover:bg-surface-hover text-text-muted text-sm rounded-lg border border-border transition-all duration-200 font-[lixFont] cursor-pointer"
+          title="Open command center"
+          aria-label="Open command center (Ctrl + /)"
         >
-          Ctrl+/
+          <i className="bx bx-command text-base" aria-hidden="true" />
+          <span>Ctrl + /</span>
         </button>
 
         {/* Share */}
         <button
           onClick={toggleSaveModal}
-          className="px-3.5 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 font-[lixFont]"
+          className="px-3.5 py-1.5 bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 font-[lixFont] cursor-pointer"
         >
           Share
         </button>
@@ -352,7 +414,7 @@ export default function Header() {
         {/* Hamburger is the far-right control. */}
         <button
           onClick={toggleMenu}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200 cursor-pointer"
         >
           <i className="bx bx-menu text-xl" />
         </button>

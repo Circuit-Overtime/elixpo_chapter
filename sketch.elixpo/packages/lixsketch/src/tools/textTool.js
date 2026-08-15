@@ -11,6 +11,7 @@ import {
     updateSelectedElement
 } from '../core/UndoRedo.js';
 import { cleanupAttachments, updateAttachedArrows } from './arrowTool.js';
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 
 function getThemeStroke() { if (typeof document === "undefined") return "#fff"; return document.body && document.body.classList.contains("theme-dark") ? "#fff" : "#1a1a2e"; }
 import {
@@ -215,7 +216,7 @@ function makeTextEditable(textElement, groupElement) {
     }
 
     input.value = textContent;
-    input.style.position = "absolute";
+    input.style.position = "fixed";
     input.style.outline = "none";
     input.style.padding = "1px";
     input.style.margin = "0";
@@ -226,26 +227,34 @@ function makeTextEditable(textElement, groupElement) {
     input.style.minHeight = "1.2em";
     input.style.zIndex = "10000";
 
-    // Use the group element's own screenCTM which includes group transform + SVG viewBox transform
-    const textBBox = textElement.getBBox();
-    let pt = svg.createSVGPoint();
-    pt.x = textBBox.x;
-    pt.y = textBBox.y;
-
-    const groupCTM = groupElement.getScreenCTM() || svg.getScreenCTM();
-    let screenPt = pt.matrixTransform(groupCTM);
-
-    input.style.left = `${screenPt.x}px`;
-    input.style.top = `${screenPt.y}px`;
-
-    const svgZoomFactor = svg.getScreenCTM() ? svg.getScreenCTM().a : 1;
-    input.style.width = "auto";
-    input.style.height = "auto";
-
     const currentFontSize = textElement.getAttribute("font-size") || "20px";
     const currentFontFamily = textElement.getAttribute("font-family") || "lixFont";
     const currentFill = textElement.getAttribute("fill") || "#fff";
     const currentAnchor = textElement.getAttribute("text-anchor") || "start";
+
+    // Anchor the HTML editor to the SVG text origin, transformed into viewport
+    // coordinates. A newly-created <text> is empty, so getBoundingClientRect()
+    // reports the SVG's top-left corner instead of the clicked canvas point.
+    // The CTM remains valid for empty text and also accounts for pan, zoom,
+    // split-view cropping, and frame transforms.
+    const groupCTM = groupElement.getScreenCTM() || svg.getScreenCTM();
+    const textOrigin = svg.createSVGPoint();
+    textOrigin.x = parseFloat(textElement.getAttribute("x")) || 0;
+    textOrigin.y = parseFloat(textElement.getAttribute("y")) || 0;
+    const screenOrigin = groupCTM
+        ? textOrigin.matrixTransform(groupCTM)
+        : { x: 0, y: 0 };
+    const anchorTranslateX = currentAnchor === "middle" ? "-50%" : currentAnchor === "end" ? "-100%" : "0";
+
+    input.style.left = `${screenOrigin.x}px`;
+    input.style.top = `${screenOrigin.y}px`;
+    input.style.transform = `translateX(${anchorTranslateX})`;
+    input.style.transformOrigin = "top left";
+
+    const svgZoomFactor = groupCTM ? Math.hypot(groupCTM.a, groupCTM.b) : 1;
+    input.style.width = "auto";
+    input.style.height = "auto";
+
     // Scale font-size by zoom so the textarea matches what the user sees on canvas
     const rawSize = parseFloat(currentFontSize) || 20;
     const scaledFontSize = `${rawSize * svgZoomFactor}px`;
@@ -508,6 +517,7 @@ function createSelectionFeedback(groupElement) {
     rotationAnchor.style.cursor = 'grab';
     rotationAnchor.setAttribute('pointer-events', 'all');
     groupElement.appendChild(rotationAnchor);
+    registerRotationAnchor(rotationAnchor, { radius: 8, edgeY: selY });
 
     resizeHandles.rotate = rotationAnchor;
 
@@ -585,7 +595,7 @@ function updateSelectionFeedback() {
 
     const rotationAnchor = resizeHandles.rotate;
     if (rotationAnchor) {
-        const rotationAnchorPos = { x: selX + selWidth / 2, y: selY - 30 };
+        const rotationAnchorPos = { x: selX + selWidth / 2, y: selY - 30 / zoom2 };
         rotationAnchor.setAttribute('cx', rotationAnchorPos.x);
         rotationAnchor.setAttribute('cy', rotationAnchorPos.y);
     }

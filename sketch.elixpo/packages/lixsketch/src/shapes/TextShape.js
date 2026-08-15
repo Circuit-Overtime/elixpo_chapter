@@ -237,7 +237,13 @@ class TextShape {
 
     // Add methods for frame compatibility
     removeSelection() {
-        if (selectedElement === this.group) {
+        // Selection is owned by textTool (selectShape delegates to it below),
+        // so deselection must go through the same controller. Updating this
+        // module's fallback-only selectedElement left the real text handles
+        // visible when another shape was selected without Ctrl/Meta.
+        if (typeof window !== 'undefined' && window.__deselectTextElement) {
+            window.__deselectTextElement();
+        } else if (selectedElement === this.group) {
             deselectElement();
         }
     }

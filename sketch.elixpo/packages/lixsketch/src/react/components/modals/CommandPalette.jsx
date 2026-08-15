@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import useUIStore from '../../store/useUIStore'
 import useSketchStore, { TOOLS } from '../../store/useSketchStore'
 
-const COMMANDS = [
+const CANVAS_COMMANDS = [
   // --- App ---
   { label: 'Library', icon: 'bx-library', section: 'App' },
   { label: 'Find on canvas', icon: 'bx-search', section: 'App', shortcut: 'Ctrl+F', action: 'findOnCanvas' },
@@ -20,30 +20,30 @@ const COMMANDS = [
   { label: 'Open scene file', icon: 'bx-folder-open', section: 'Export', shortcut: 'Ctrl+O', action: 'load' },
 
   // --- Editor ---
-  { label: 'Undo', icon: 'bx-undo', section: 'Editor', action: 'undo' },
-  { label: 'Redo', icon: 'bx-redo', section: 'Editor', action: 'redo' },
+  { label: 'Undo', icon: 'bx-undo', section: 'Editor', shortcut: 'Ctrl+Z', action: 'undo' },
+  { label: 'Redo', icon: 'bx-redo', section: 'Editor', shortcut: 'Ctrl+Shift+Z', action: 'redo' },
   { label: 'Zoom in', icon: 'bx-plus', section: 'Editor', shortcut: 'Ctrl++' },
   { label: 'Zoom out', icon: 'bx-minus', section: 'Editor', shortcut: 'Ctrl+-' },
   { label: 'Reset zoom', icon: 'bx-reset', section: 'Editor', shortcut: 'Ctrl+0' },
   { label: 'Zoom to fit all elements', icon: 'bx-fullscreen', section: 'Editor', shortcut: 'Shift+1' },
   { label: 'Toggle grid', icon: 'bx-grid-alt', section: 'Editor', shortcut: "Ctrl+'", action: 'toggleGrid' },
-  { label: 'Shortcuts & help', icon: 'bx-help-circle', section: 'Editor', shortcut: '?', action: 'help' },
+  { label: 'Toggle rulers', icon: 'bx-ruler', section: 'Editor', shortcut: 'Shift+R', action: 'toggleRulers' },
   { label: 'Select all', icon: 'bx-select-multiple', section: 'Editor', shortcut: 'Ctrl+A', action: 'selectAll' },
   { label: 'Reset canvas', icon: 'bx-trash', section: 'Editor', shortcut: 'Ctrl+Delete', action: 'resetCanvas' },
   { label: 'Canvas background', icon: 'bx-palette', section: 'Editor', action: 'openMenu' },
 
   // --- Tools ---
   { label: 'Hand (panning tool)', icon: 'bx-hand', section: 'Tools', shortcut: 'H', action: 'tool:pan' },
-  { label: 'Selection', icon: 'bx-pointer', section: 'Tools', shortcut: 'V', action: 'tool:select' },
-  { label: 'Rectangle', icon: 'bx-rectangle', section: 'Tools', shortcut: 'R', action: 'tool:rectangle' },
-  { label: 'Diamond', icon: 'bx-diamond', section: 'Tools', shortcut: 'D', action: 'tool:diamond' },
-  { label: 'Circle', icon: 'bx-circle', section: 'Tools', shortcut: 'O', action: 'tool:circle' },
-  { label: 'Arrow', icon: 'bx-right-arrow-alt', section: 'Tools', shortcut: 'A', action: 'tool:arrow' },
-  { label: 'Line', icon: 'bx-minus', section: 'Tools', shortcut: 'L', action: 'tool:line' },
-  { label: 'Draw', icon: 'bx-pencil', section: 'Tools', shortcut: 'P', action: 'tool:freehand' },
-  { label: 'Text', icon: 'bx-text', section: 'Tools', shortcut: 'T', action: 'tool:text' },
+  { label: 'Selection', icon: 'bx-pointer', section: 'Tools', shortcut: 'V / 1', action: 'tool:select' },
+  { label: 'Rectangle', icon: 'bx-rectangle', section: 'Tools', shortcut: 'R / 2', action: 'tool:rectangle' },
+  { label: 'Diamond', icon: 'bx-diamond', section: 'Tools', shortcut: '3', action: 'tool:diamond' },
+  { label: 'Circle', icon: 'bx-circle', section: 'Tools', shortcut: 'O / 4', action: 'tool:circle' },
+  { label: 'Arrow', icon: 'bx-right-arrow-alt', section: 'Tools', shortcut: 'A / 5', action: 'tool:arrow' },
+  { label: 'Line', icon: 'bx-minus', section: 'Tools', shortcut: 'L / 6', action: 'tool:line' },
+  { label: 'Freehand', icon: 'bx-pencil', section: 'Tools', shortcut: 'P / 7', action: 'tool:freehand' },
+  { label: 'Text', icon: 'bx-text', section: 'Tools', shortcut: 'T / 8', action: 'tool:text' },
   { label: 'Insert image', icon: 'bx-image-add', section: 'Tools', shortcut: '9', action: 'tool:image' },
-  { label: 'Eraser', icon: 'bx-eraser', section: 'Tools', shortcut: 'E', action: 'tool:eraser' },
+  { label: 'Eraser', icon: 'bx-eraser', section: 'Tools', shortcut: 'E / 0', action: 'tool:eraser' },
   { label: 'Laser pointer', icon: 'bxs-magic-wand', section: 'Tools', shortcut: 'K', action: 'tool:laser' },
   { label: 'Frame tool', icon: 'bx-border-all', section: 'Tools', shortcut: 'F', action: 'tool:frame' },
   // AI entries removed — feature is hidden behind a coming-soon screen.
@@ -53,6 +53,45 @@ const COMMANDS = [
   // --- Links ---
   { label: 'GitHub', icon: 'bxl-github', section: 'Links', action: 'link:github' },
   { label: 'Report an issue', icon: 'bx-bug', section: 'Links', action: 'link:issues' },
+
+  // --- Shortcut reference previously shown in the standalone help modal ---
+  { label: 'Group selection', icon: 'bx-group', section: 'Selection shortcuts', shortcut: 'Ctrl+G' },
+  { label: 'Ungroup selection', icon: 'bx-unlink', section: 'Selection shortcuts', shortcut: 'Ctrl+Shift+G' },
+  { label: 'Duplicate selection', icon: 'bx-copy', section: 'Selection shortcuts', shortcut: 'Ctrl+D' },
+  { label: 'Copy selection', icon: 'bx-copy-alt', section: 'Selection shortcuts', shortcut: 'Ctrl+C' },
+  { label: 'Paste selection', icon: 'bx-paste', section: 'Selection shortcuts', shortcut: 'Ctrl+V' },
+  { label: 'Deselect', icon: 'bx-x', section: 'Selection shortcuts', shortcut: 'Esc' },
+  { label: 'Delete selection', icon: 'bx-trash', section: 'Selection shortcuts', shortcut: 'Del / Backspace' },
+  { label: 'Pan canvas (hold)', icon: 'bx-hand', section: 'Drawing shortcuts', shortcut: 'Space' },
+  { label: 'Draw straight (hold)', icon: 'bx-line-chart', section: 'Drawing shortcuts', shortcut: 'Shift' },
+  { label: 'Open command center', icon: 'bx-command', section: 'View shortcuts', shortcut: 'Ctrl+/' },
+]
+
+const DOCUMENT_COMMANDS = [
+  { label: 'Heading 1', icon: 'bx-heading', section: 'Block shortcuts', shortcut: '# Space' },
+  { label: 'Heading 2', icon: 'bx-heading', section: 'Block shortcuts', shortcut: '## Space' },
+  { label: 'Heading 3', icon: 'bx-heading', section: 'Block shortcuts', shortcut: '### Space' },
+  { label: 'Quote', icon: 'bxs-quote-alt-left', section: 'Block shortcuts', shortcut: '> Space' },
+  { label: 'Bulleted list', icon: 'bx-list-ul', section: 'Block shortcuts', shortcut: '- Space' },
+  { label: 'Numbered list', icon: 'bx-list-ol', section: 'Block shortcuts', shortcut: '1. Space' },
+  { label: 'Checklist', icon: 'bx-list-check', section: 'Block shortcuts', shortcut: '[] Space' },
+  { label: 'Code block', icon: 'bx-code-block', section: 'Block shortcuts', shortcut: '``` Space' },
+  { label: 'Divider', icon: 'bx-minus', section: 'Block shortcuts', shortcut: '--- Enter' },
+  { label: 'Block menu', icon: 'bx-command', section: 'Block shortcuts', shortcut: '/' },
+  { label: 'Bold', icon: 'bx-bold', section: 'Formatting shortcuts', shortcut: 'Ctrl+B' },
+  { label: 'Italic', icon: 'bx-italic', section: 'Formatting shortcuts', shortcut: 'Ctrl+I' },
+  { label: 'Underline', icon: 'bx-underline', section: 'Formatting shortcuts', shortcut: 'Ctrl+U' },
+  { label: 'Strikethrough', icon: 'bx-strikethrough', section: 'Formatting shortcuts', shortcut: 'Ctrl+Shift+S' },
+  { label: 'Inline code', icon: 'bx-code', section: 'Formatting shortcuts', shortcut: 'Ctrl+E' },
+  { label: 'Indent block', icon: 'bx-right-indent', section: 'Formatting shortcuts', shortcut: 'Tab' },
+  { label: 'Outdent block', icon: 'bx-left-indent', section: 'Formatting shortcuts', shortcut: 'Shift+Tab' },
+  { label: 'Undo', icon: 'bx-undo', section: 'Formatting shortcuts', shortcut: 'Ctrl+Z' },
+  { label: 'Redo', icon: 'bx-redo', section: 'Formatting shortcuts', shortcut: 'Ctrl+Shift+Z' },
+]
+
+const TABS = [
+  { id: 'canvas', label: 'Canvas', icon: 'bx-pen' },
+  { id: 'document', label: 'Document', icon: 'bxs-notepad' },
 ]
 
 const TOOL_ACTION_MAP = {
@@ -75,6 +114,7 @@ export default function CommandPalette() {
   const open = useUIStore((s) => s.commandPaletteOpen)
   const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette)
   const [query, setQuery] = useState('')
+  const [activeTab, setActiveTab] = useState('canvas')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef(null)
   const listRef = useRef(null)
@@ -82,6 +122,7 @@ export default function CommandPalette() {
   useEffect(() => {
     if (open) {
       setQuery('')
+      setActiveTab('canvas')
       setSelectedIndex(0)
       setTimeout(() => inputRef.current?.focus(), 50)
     }
@@ -97,15 +138,16 @@ export default function CommandPalette() {
   // Reset selection on query change
   useEffect(() => {
     setSelectedIndex(0)
-  }, [query])
+  }, [query, activeTab])
 
   if (!open) return null
 
+  const commands = activeTab === 'canvas' ? CANVAS_COMMANDS : DOCUMENT_COMMANDS
   const filtered = query
-    ? COMMANDS.filter((c) =>
+    ? commands.filter((c) =>
         c.label.toLowerCase().includes(query.toLowerCase())
       )
-    : COMMANDS
+    : commands
 
   // Group into sections preserving order
   const sectionOrder = []
@@ -119,10 +161,10 @@ export default function CommandPalette() {
   })
 
   const handleCommand = (cmd) => {
-    toggleCommandPalette()
     const action = cmd.action
 
     if (!action) return
+    toggleCommandPalette()
 
     // Tool switching
     if (action.startsWith('tool:')) {
@@ -151,6 +193,9 @@ export default function CommandPalette() {
       }
       case 'toggleGrid':
         useSketchStore.getState().toggleGrid()
+        break
+      case 'toggleRulers':
+        useSketchStore.getState().toggleRulers()
         break
       case 'save': {
         const name = useUIStore.getState().workspaceName || 'Untitled'
@@ -193,9 +238,6 @@ export default function CommandPalette() {
       }
       case 'findOnCanvas':
         useUIStore.getState().toggleFindBar()
-        break
-      case 'help':
-        useUIStore.getState().toggleHelpModal()
         break
       case 'aiModal':
         useUIStore.getState().toggleAIModal()
@@ -244,10 +286,28 @@ export default function CommandPalette() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search commands..."
+            placeholder={`Search ${activeTab} actions and shortcuts...`}
             className="flex-1 bg-transparent text-text-primary text-sm outline-none placeholder:text-text-dim font-[lixFont]"
             onKeyDown={handleKeyDown}
           />
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5 p-2 border-b border-border-light bg-surface-dark/40">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-accent-blue/20 text-accent-blue border border-accent-blue/35'
+                  : 'text-text-muted border border-transparent hover:bg-surface-hover hover:text-text-primary'
+              }`}
+            >
+              <i className={`bx ${tab.icon} text-base`} />
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Results */}
@@ -285,14 +345,9 @@ export default function CommandPalette() {
                     </span>
                     {cmd.shortcut && (
                       <div className="flex items-center gap-0.5">
-                        {cmd.shortcut.split('+').map((key, i) => (
-                          <span key={i}>
-                            {i > 0 && <span className="text-text-dim text-xs mx-0.5">+</span>}
-                            <kbd className="px-1.5 py-0.5 bg-surface-dark rounded text-text-dim text-xs border border-border">
-                              {key.trim()}
-                            </kbd>
-                          </span>
-                        ))}
+                        <kbd className="px-2 py-0.5 bg-surface-dark rounded text-text-dim text-xs border border-border">
+                          {cmd.shortcut}
+                        </kbd>
                       </div>
                     )}
                   </button>

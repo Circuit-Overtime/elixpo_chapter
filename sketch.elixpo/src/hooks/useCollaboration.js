@@ -4,11 +4,14 @@ import { useEffect, useRef } from 'react'
 import useCollabStore from '@/store/useCollabStore'
 import useAuthStore from '@/store/useAuthStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
+import useUIStore from '@/store/useUIStore'
+import { encrypt, decrypt } from '@/utils/encryption'
 
 import { COLLAB_URL } from '@/lib/env'
 const PING_INTERVAL = 25000
 const RECONNECT_BASE = 1000
 const RECONNECT_MAX = 30000
+const SCENE_SYNC_DEBOUNCE = 120
 
 export default function useCollaboration(roomId) {
   const wsRef = useRef(null)
@@ -16,16 +19,40 @@ export default function useCollaboration(roomId) {
   const reconnectRef = useRef(null)
   const reconnectDelay = useRef(RECONNECT_BASE)
   const intentionalClose = useRef(false)
+  const syncTimerRef = useRef(null)
+  const applyingRemoteRef = useRef(false)
+  const clientSeqRef = useRef(0)
+  const lastServerSeqRef = useRef(0)
+  const messageChainRef = useRef(Promise.resolve())
+  const anonymousIdRef = useRef(null)
+
+  if (!anonymousIdRef.current && typeof crypto !== 'undefined') {
+    anonymousIdRef.current = `anon-${crypto.randomUUID().slice(0, 12)}`
+  }
 
   useEffect(() => {
     if (!roomId) return
+    intentionalClose.current = false
+    let disposed = false
+    let engineWaitTimer = null
+
+    function getRoomKey() {
+      let key = useUIStore.getState().sessionEncryptionKey
+      if (!key) {
+        const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+        key = hash.get('key') || useUIStore.getState().loadEncryptionKeyForSession(roomId)
+      }
+      if (key) useUIStore.getState().setSessionEncryptionKey(key, roomId)
+      return key
+    }
 
     // Wait for engine to be ready
     const waitForEngine = () => {
+      if (disposed) return
       if (window.__sketchStoreApi) {
         connect()
       } else {
-        setTimeout(waitForEngine, 200)
+        engineWaitTimer = setTimeout(waitForEngine, 200)
       }
     }
 
@@ -33,7 +60,7 @@ export default function useCollaboration(roomId) {
       const authUser = useAuthStore.getState().user
       const profile = useProfileStore.getState().profile
       return {
-        userId: authUser?.id || profile?.id || `anon-${Date.now().toString(36)}`,
+        userId: authUser?.id || profile?.id || anonymousIdRef.current || 'anonymous',
         displayName: authUser?.displayName || profile?.displayName || 'Anonymous',
         avatar: authUser?.avatar || profile?.avatar || '',
         authToken: useAuthStore.getState().sessionToken || '',
@@ -41,27 +68,39 @@ export default function useCollaboration(roomId) {
     }
 
     function connect() {
-      if (wsRef.current?.readyState === WebSocket.OPEN) return
+      if (wsRef.current?.readyState === WebSocket.OPEN
+        || wsRef.current?.readyState === WebSocket.CONNECTING) return
+
+      const roomKey = getRoomKey()
+      if (!roomKey) {
+        useCollabStore.getState().setError('This collaboration link is missing its encryption key.')
+        return
+      }
 
       const { userId, displayName, avatar, authToken } = getIdentity()
+      const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
 
       const params = new URLSearchParams({
         userId,
         displayName: btoa(encodeURIComponent(displayName)),
         avatar: avatar || '',
+        workspaceName: btoa(encodeURIComponent(workspaceName)),
       })
       if (authToken) params.set('authToken', authToken)
 
-      const wsUrl = `${COLLAB_URL}/room/${roomId}?${params}`
-      console.log('[Collab] Connecting to', wsUrl)
+      const wsUrl = `${COLLAB_URL.replace(/\/$/, '')}/room/${encodeURIComponent(roomId)}?${params}`
+      console.log('[Collab] Connecting to room', roomId)
 
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
-      useCollabStore.getState().setWs(ws)
+      const collabStore = useCollabStore.getState()
+      collabStore.setConnecting(true)
+      collabStore.setWs(ws)
 
       ws.onopen = () => {
         console.log('[Collab] Connected')
         useCollabStore.getState().setConnected(true)
+        useCollabStore.getState().setError(null)
         reconnectDelay.current = RECONNECT_BASE
 
         // Start ping keepalive
@@ -79,13 +118,24 @@ export default function useCollaboration(roomId) {
         } catch {
           return
         }
-        handleMessage(msg, ws)
+        // Keep encrypted scene updates in server order even when decrypting
+        // one payload takes longer than the next.
+        messageChainRef.current = messageChainRef.current
+          .then(() => handleMessage(msg, ws))
+          .catch((error) => {
+            console.error('[Collab] Failed to process message:', error)
+            useCollabStore.getState().setError('Could not apply a collaboration update.')
+          })
       }
 
       ws.onclose = (event) => {
         console.log('[Collab] Disconnected:', event.code, event.reason)
         cleanup()
         useCollabStore.getState().setConnected(false)
+        if (wsRef.current === ws) {
+          wsRef.current = null
+          useCollabStore.getState().setWs(null)
+        }
 
         if (!intentionalClose.current) {
           scheduleReconnect()
@@ -97,7 +147,7 @@ export default function useCollaboration(roomId) {
       }
     }
 
-    function handleMessage(msg, ws) {
+    async function handleMessage(msg, ws) {
       const store = useCollabStore.getState()
 
       switch (msg.type) {
@@ -135,8 +185,9 @@ export default function useCollaboration(roomId) {
           break
 
         case 'op':
-          // Remote operation — apply to local scene
-          applyRemoteOp(msg)
+          if (msg.serverSeq && msg.serverSeq <= lastServerSeqRef.current) break
+          lastServerSeqRef.current = msg.serverSeq || lastServerSeqRef.current
+          await applyScenePayload(msg.payload)
           break
 
         case 'sync-needed': {
@@ -144,10 +195,11 @@ export default function useCollaboration(roomId) {
           const serializer = window.__sceneSerializer
           if (serializer) {
             const sceneData = serializer.save()
+            const payload = await encrypt(JSON.stringify(sceneData), getRoomKey())
             ws.send(JSON.stringify({
               type: 'sync-response',
               targetUserId: msg.requestedBy,
-              payload: JSON.stringify(sceneData),
+              payload,
             }))
           }
           break
@@ -158,8 +210,8 @@ export default function useCollaboration(roomId) {
           const serializer = window.__sceneSerializer
           if (serializer && msg.payload) {
             try {
-              const sceneData = JSON.parse(msg.payload)
-              serializer.load(sceneData)
+              await applyScenePayload(msg.payload)
+              lastServerSeqRef.current = Math.max(lastServerSeqRef.current, msg.serverSeq || 0)
               console.log('[Collab] Scene synced from peer')
             } catch (e) {
               console.error('[Collab] Failed to load synced scene:', e)
@@ -191,24 +243,65 @@ export default function useCollaboration(roomId) {
           ws.close()
           break
 
+        case 'error':
+          console.warn('[Collab] Server error:', msg.code)
+          store.setError(humanizeServerError(msg.code))
+          if (['ROOM_EXPIRED', 'ROOM_IDLE_TIMEOUT', 'ROOM_CLOSED'].includes(msg.code)) {
+            intentionalClose.current = true
+            ws.close(1000, msg.code)
+          }
+          break
+
         case 'pong':
           break
       }
     }
 
-    function applyRemoteOp(msg) {
-      // For now, ops carry the full shape payload
-      // The CollaborationBridge (Phase 4) will handle granular ops
-      // This is a simple relay for initial implementation
-      if (msg.payload && window.__sceneSerializer) {
-        try {
-          const op = JSON.parse(msg.payload)
-          // Dispatch to engine when CollaborationBridge is ready
-          if (window.__applyRemoteOp) {
-            window.__applyRemoteOp(op)
-          }
-        } catch {}
+    async function applyScenePayload(payload) {
+      if (!payload || !window.__sceneSerializer) return
+      const plaintext = await decrypt(payload, getRoomKey())
+      const sceneData = JSON.parse(plaintext)
+      applyingRemoteRef.current = true
+      try {
+        window.__sceneSerializer.load(sceneData)
+      } finally {
+        applyingRemoteRef.current = false
       }
+    }
+
+    async function sendSceneSnapshot() {
+      const ws = wsRef.current
+      const serializer = window.__sceneSerializer
+      if (!ws || ws.readyState !== WebSocket.OPEN || !serializer || applyingRemoteRef.current) return
+      try {
+        const sceneData = serializer.save(useUIStore.getState().workspaceName || 'Untitled')
+        const payload = await encrypt(JSON.stringify(sceneData), getRoomKey())
+        ws.send(JSON.stringify({
+          type: 'op',
+          seq: ++clientSeqRef.current,
+          payload,
+        }))
+      } catch (error) {
+        console.error('[Collab] Failed to publish scene update:', error)
+        useCollabStore.getState().setError('Could not publish the latest canvas update.')
+      }
+    }
+
+    function scheduleSceneSnapshot() {
+      if (applyingRemoteRef.current) return
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+      syncTimerRef.current = setTimeout(() => {
+        syncTimerRef.current = null
+        sendSceneSnapshot()
+      }, SCENE_SYNC_DEBOUNCE)
+    }
+
+    window.__collabSceneChanged = scheduleSceneSnapshot
+    window.__applyRemoteOp = (sceneData) => {
+      if (!sceneData || !window.__sceneSerializer) return
+      applyingRemoteRef.current = true
+      try { window.__sceneSerializer.load(sceneData) }
+      finally { applyingRemoteRef.current = false }
     }
 
     // --- Cursor rendering ---
@@ -304,9 +397,11 @@ export default function useCollaboration(roomId) {
     // --- Reconnection ---
 
     function scheduleReconnect() {
+      if (intentionalClose.current || reconnectRef.current) return
       const delay = reconnectDelay.current
       console.log(`[Collab] Reconnecting in ${delay}ms...`)
       reconnectRef.current = setTimeout(() => {
+        reconnectRef.current = null
         reconnectDelay.current = Math.min(delay * 2, RECONNECT_MAX)
         connect()
       }, delay)
@@ -321,11 +416,21 @@ export default function useCollaboration(roomId) {
 
     waitForEngine()
 
+    window.__disconnectCollaboration = () => {
+      intentionalClose.current = true
+      if (reconnectRef.current) clearTimeout(reconnectRef.current)
+      reconnectRef.current = null
+      if (wsRef.current) wsRef.current.close(1000, 'session-ended')
+    }
+
     return () => {
+      disposed = true
       intentionalClose.current = true
       document.removeEventListener('mousemove', onMouseMove)
       cleanup()
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
       if (reconnectRef.current) clearTimeout(reconnectRef.current)
+      if (engineWaitTimer) clearTimeout(engineWaitTimer)
       // Clean up cursors
       cursors.forEach((el) => el.remove())
       cursors.clear()
@@ -334,6 +439,20 @@ export default function useCollaboration(roomId) {
         wsRef.current = null
       }
       useCollabStore.getState().reset()
+      delete window.__collabSceneChanged
+      delete window.__applyRemoteOp
+      delete window.__disconnectCollaboration
     }
   }, [roomId])
+}
+
+function humanizeServerError(code) {
+  switch (code) {
+    case 'ROOM_EXPIRED': return 'This collaboration room has expired.'
+    case 'ROOM_IDLE_TIMEOUT': return 'This collaboration room closed after being idle.'
+    case 'ROOM_FULL': return 'This collaboration room is full.'
+    case 'NOT_AUTHORIZED': return 'You are not allowed to perform that action.'
+    case 'INVALID_OPERATION': return 'A collaboration update was rejected.'
+    default: return 'The collaboration server reported an error.'
+  }
 }

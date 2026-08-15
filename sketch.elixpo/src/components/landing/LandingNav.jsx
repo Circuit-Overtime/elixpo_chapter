@@ -111,7 +111,7 @@ export default function LandingNav() {
     >
       <div className="backdrop-blur-xl bg-[#120e1a]/85 px-6 py-3 flex items-center justify-between max-w-7xl mx-auto">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3">
+        <Link href="/?noredirect=1" className="flex items-center gap-3">
           <img src="/icon.png" alt="LixSketch" className="w-7 h-7 rounded-md" />
           <span className="text-lg tracking-wide text-text-secondary">LixSketch</span>
         </Link>

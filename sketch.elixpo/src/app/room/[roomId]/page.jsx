@@ -8,11 +8,9 @@ import useUIStore from '@/store/useUIStore'
 import Toolbar from '@/components/toolbar/Toolbar'
 import Footer from '@/components/footer/Footer'
 import AppMenu from '@/components/menu/AppMenu'
-import ShortcutsModal from '@/components/modals/ShortcutsModal'
 import SaveModal from '@/components/modals/SaveModal'
 import AIModal from '@/components/modals/AIModal'
 import CommandPalette from '@/components/modals/CommandPalette'
-import HelpModal from '@/components/modals/HelpModal'
 import ExportImageModal from '@/components/modals/ExportImageModal'
 import CanvasPropertiesModal from '@/components/modals/CanvasPropertiesModal'
 import RectangleSidebar from '@/components/sidebars/RectangleSidebar'
@@ -79,11 +77,9 @@ export default function RoomPage() {
       <MultiSelectActions />
       <Footer />
       <AppMenu />
-      <ShortcutsModal />
       <SaveModal />
       <AIModal />
       <CommandPalette />
-      <HelpModal />
       <ExportImageModal />
       <CanvasPropertiesModal />
       <ImageSourcePicker />

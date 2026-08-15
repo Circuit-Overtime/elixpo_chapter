@@ -284,8 +284,8 @@ export function renderFlowchartSVG(diagram, opts = {}) {
 
         // Node label (supports multi-line via \n)
         if (n.label) {
-            let labelFill = nFill && nFill !== 'transparent' && nFill !== THEME.nodeBg ? getContrastColor(nFill) : nStroke;
-            if (isColorTooDark(labelFill)) labelFill = '#d0d0d0';
+            const hasSolidFill = nFill && nFill !== 'transparent' && nFill !== 'none';
+            const labelFill = n.labelColor || (hasSolidFill ? getContrastColor(nFill) : THEME.nodeText);
 
             const labelLines = n.label.split('\n');
             if (labelLines.length === 1) {
@@ -342,13 +342,6 @@ function getEdgePoint(node, target) {
     }
     if (dx > 0) return { x: node.x + node.w, y: node.cy };
     return { x: node.x, y: node.cy };
-}
-
-function isColorTooDark(hex) {
-    if (!hex || hex === 'transparent' || hex === 'none') return false;
-    const rgb = parseColor(hex);
-    if (!rgb) return false;
-    return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) < 80;
 }
 
 function parseColor(hex) {

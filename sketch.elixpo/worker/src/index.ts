@@ -371,6 +371,8 @@ async function handleAuthRefresh(request: Request, env: Env): Promise<Response> 
 // Scene Handlers
 // =============================================================================
 
+const MAX_WORKSPACE_NAME_LENGTH = 20;
+
 async function handleSceneSave(request: Request, env: Env): Promise<Response> {
   try {
     const body = await request.json() as {
@@ -385,6 +387,8 @@ async function handleSceneSave(request: Request, env: Env): Promise<Response> {
       return json({ error: 'Missing sessionId or encryptedData' }, 400);
     }
 
+    const workspaceName = String(body.workspaceName || 'Untitled').slice(0, MAX_WORKSPACE_NAME_LENGTH);
+
     const ownerType = body.createdBy && !body.createdBy.startsWith('guest-') ? 'user' : 'guest';
     const maxWorkspaces = ownerType === 'user' ? 3 : 1;
 
@@ -398,7 +402,7 @@ async function handleSceneSave(request: Request, env: Env): Promise<Response> {
       await env.DB.prepare(
         `UPDATE scenes SET encrypted_data = ?, workspace_name = ?, updated_at = datetime('now'),
          last_accessed_at = datetime('now'), size_bytes = ?, owner_type = ? WHERE id = ?`
-      ).bind(body.encryptedData, body.workspaceName || 'Untitled', sizeBytes, ownerType, existing.id).run();
+      ).bind(body.encryptedData, workspaceName, sizeBytes, ownerType, existing.id).run();
 
       const perm = await env.DB.prepare(
         `SELECT token FROM scene_permissions WHERE scene_id = ?`
@@ -432,7 +436,7 @@ async function handleSceneSave(request: Request, env: Env): Promise<Response> {
       env.DB.prepare(
         `INSERT INTO scenes (id, session_id, workspace_name, encrypted_data, permission, created_by, size_bytes, owner_type, last_accessed_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
-      ).bind(sceneId, body.sessionId, body.workspaceName || 'Untitled', body.encryptedData, body.permission || 'view', body.createdBy || null, sizeBytes, ownerType),
+      ).bind(sceneId, body.sessionId, workspaceName, body.encryptedData, body.permission || 'view', body.createdBy || null, sizeBytes, ownerType),
       env.DB.prepare(
         `INSERT INTO scene_permissions (id, scene_id, token, permission)
          VALUES (?, ?, ?, ?)`
@@ -500,12 +504,37 @@ async function handleSceneLoad(request: Request, env: Env): Promise<Response> {
 async function handleSceneDelete(request: Request, env: Env): Promise<Response> {
   try {
     const body = await request.json() as {
-      token: string;
-      sessionId: string;
+      token?: string;
+      sessionId?: string;
+      createdBy?: string;
     };
 
-    if (!body.token || !body.sessionId) {
-      return json({ error: 'Missing token or sessionId' }, 400);
+    if (!body.sessionId) {
+      return json({ error: 'Missing sessionId' }, 400);
+    }
+
+    // Workspace-owner deletion used by the canvas menu/profile. This is
+    // intentionally separate from token revocation so users can delete the
+    // editable workspace even when no share token is stored in the browser.
+    if (body.createdBy) {
+      const scene = await env.DB.prepare(
+        `SELECT id, created_by FROM scenes WHERE session_id = ?`
+      ).bind(body.sessionId).first<{ id: string; created_by: string | null }>();
+
+      if (!scene) return json({ error: 'Workspace not found' }, 404);
+      if (scene.created_by !== body.createdBy) return json({ error: 'Unauthorized' }, 403);
+
+      await env.DB.batch([
+        env.DB.prepare(`DELETE FROM canvas_docs WHERE session_id = ?`).bind(body.sessionId),
+        env.DB.prepare(`DELETE FROM scene_permissions WHERE scene_id = ?`).bind(scene.id),
+        env.DB.prepare(`DELETE FROM scenes WHERE id = ?`).bind(scene.id),
+      ]);
+
+      return json({ success: true });
+    }
+
+    if (!body.token) {
+      return json({ error: 'Missing token or owner identity' }, 400);
     }
 
     // Verify the token belongs to the session before deleting

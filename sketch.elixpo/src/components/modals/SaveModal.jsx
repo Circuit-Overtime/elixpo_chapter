@@ -1,54 +1,18 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import useUIStore from '@/store/useUIStore'
+import useUIStore, { MAX_WORKSPACE_NAME_LENGTH } from '@/store/useUIStore'
 import useCollabStore from '@/store/useCollabStore'
 import { getSessionID } from '@/hooks/useSessionID'
 import { generateKey, encrypt } from '@/utils/encryption'
 import { WORKER_URL } from '@/lib/env'
-
-// ── Export helpers ────────────────────────────────────────────
-
-function getCleanSVG() {
-  const svgEl = window.svg
-  if (!svgEl) return null
-  const clone = svgEl.cloneNode(true)
-  clone.querySelectorAll(
-    '[data-selection], .selection-handle, .resize-handle, .rotation-handle, .anchor, .rotate-anchor'
-  ).forEach((el) => el.remove())
-  return clone
-}
-
-function renderToCanvas(clone, scale, bgColor) {
-  return new Promise((resolve) => {
-    const svgData = new XMLSerializer().serializeToString(clone)
-    const vb = window.svg.viewBox.baseVal
-    const canvas = document.createElement('canvas')
-    canvas.width = vb.width * scale
-    canvas.height = vb.height * scale
-    const ctx = canvas.getContext('2d')
-    ctx.scale(scale, scale)
-
-    const img = new Image()
-    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-
-    img.onload = () => {
-      if (bgColor) {
-        ctx.fillStyle = bgColor
-        ctx.fillRect(0, 0, vb.width, vb.height)
-      }
-      ctx.drawImage(img, 0, 0, vb.width, vb.height)
-      URL.revokeObjectURL(url)
-      resolve(canvas)
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve(null)
-    }
-    img.src = url
-  })
-}
+import {
+  canvasToLosslessPNG,
+  createExportSVG,
+  downloadBlob,
+  getExportBackground,
+  renderExportCanvas,
+} from '@/utils/canvasExport'
 
 // ── Component ────────────────────────────────────────────────
 
@@ -57,6 +21,7 @@ export default function SaveModal() {
   const toggleSaveModal = useUIStore((s) => s.toggleSaveModal)
   const workspaceName = useUIStore((s) => s.workspaceName)
   const setWorkspaceName = useUIStore((s) => s.setWorkspaceName)
+  const resolvedTheme = useUIStore((s) => s.resolvedTheme)
 
   // Live collab state
   const [collabLink, setCollabLink] = useState('')
@@ -64,6 +29,7 @@ export default function SaveModal() {
   const [startingCollab, setStartingCollab] = useState(false)
   const [collabError, setCollabError] = useState('')
   const collabConnected = useCollabStore((s) => s.connected)
+  const collabRuntimeError = useCollabStore((s) => s.error)
 
   // Issue #24 bug #9: one-time view-only share link. Creates a separate
   // read-only snapshot of the current scene that anyone with the link can
@@ -75,13 +41,11 @@ export default function SaveModal() {
 
   // Export state
   const [bgMode, setBgMode] = useState('dark')
-  const [exportScale, setExportScale] = useState(2)
+  const [exportScale, setExportScale] = useState(4)
   const [previewUrl, setPreviewUrl] = useState(null)
 
   const getBgColor = useCallback(() => {
-    if (bgMode === 'dark') return '#121212'
-    if (bgMode === 'light') return '#ffffff'
-    return null
+    return getExportBackground(bgMode)
   }, [bgMode])
 
   // Generate preview when modal opens or bg changes
@@ -89,15 +53,15 @@ export default function SaveModal() {
     if (!saveModalOpen) return
     let cancelled = false
     const generate = async () => {
-      const clone = getCleanSVG()
+      const clone = createExportSVG(bgMode, resolvedTheme)
       if (!clone) return
-      const canvas = await renderToCanvas(clone, 1, getBgColor())
+      const canvas = await renderExportCanvas(clone, 1)
       if (cancelled || !canvas) return
       setPreviewUrl(canvas.toDataURL('image/png'))
     }
     generate()
     return () => { cancelled = true }
-  }, [saveModalOpen, bgMode, getBgColor])
+  }, [saveModalOpen, bgMode, resolvedTheme])
 
   if (!saveModalOpen) return null
 
@@ -122,6 +86,7 @@ export default function SaveModal() {
       const origin = window.location.origin
       const link = `${origin}/room/${roomId}#key=${key}`
 
+      useCollabStore.getState().startRoom(roomId)
       setCollabLink(link)
       setCollabCopied(false)
     } catch (err) {
@@ -199,11 +164,8 @@ export default function SaveModal() {
   }
 
   const handleEndSession = () => {
-    const ws = useCollabStore.getState().ws
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.close()
-    }
-    useCollabStore.getState().reset()
+    window.__disconnectCollaboration?.()
+    useCollabStore.getState().stopRoom()
     setCollabLink('')
     setCollabCopied(false)
   }
@@ -220,45 +182,20 @@ export default function SaveModal() {
   }
 
   const handleExportPNG = async () => {
-    const clone = getCleanSVG()
+    const clone = createExportSVG(bgMode, resolvedTheme)
     if (!clone) return
-    const canvas = await renderToCanvas(clone, exportScale, getBgColor())
-    if (!canvas) return
-
-    canvas.toBlob((blob) => {
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `${fileName}-${exportScale}x.png`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-    }, 'image/png')
+    const canvas = await renderExportCanvas(clone, exportScale)
+    const blob = await canvasToLosslessPNG(canvas)
+    downloadBlob(blob, `${fileName}-${exportScale}x.png`)
     toggleSaveModal()
   }
 
   const handleExportSVG = () => {
-    const clone = getCleanSVG()
+    const clone = createExportSVG(bgMode, resolvedTheme)
     if (!clone) return
-
-    const bg = getBgColor()
-    if (bg) {
-      const ns = 'http://www.w3.org/2000/svg'
-      const rect = document.createElementNS(ns, 'rect')
-      const vb = window.svg.viewBox.baseVal
-      rect.setAttribute('width', vb.width)
-      rect.setAttribute('height', vb.height)
-      rect.setAttribute('fill', bg)
-      clone.insertBefore(rect, clone.firstChild)
-    }
-
     const svgData = new XMLSerializer().serializeToString(clone)
     const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `${fileName}.svg`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    downloadBlob(blob, `${fileName}.svg`)
     toggleSaveModal()
   }
 
@@ -298,10 +235,14 @@ export default function SaveModal() {
         <div className="px-6 pb-6 flex flex-col gap-4">
           {/* Workspace Name */}
           <div>
-            <label className="text-text-dim text-xs uppercase tracking-wider mb-1.5 block">Workspace Name</label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-text-dim text-xs uppercase tracking-wider">Workspace Name</label>
+              <span className="text-[10px] text-text-dim">{workspaceName.length}/{MAX_WORKSPACE_NAME_LENGTH}</span>
+            </div>
             <input
               type="text"
               value={workspaceName}
+              maxLength={MAX_WORKSPACE_NAME_LENGTH}
               onChange={(e) => setWorkspaceName(e.target.value)}
               placeholder="e.g. cosmic-penguin"
               className="w-full bg-surface text-text-primary text-sm border border-border-light rounded-lg px-3 py-2 outline-none focus:border-accent-blue transition-all duration-200"
@@ -361,7 +302,7 @@ export default function SaveModal() {
             <div className="flex items-center gap-3 mb-3">
               <p className="text-text-dim text-[10px] uppercase tracking-wider shrink-0">Scale</p>
               <div className="flex items-center gap-1 flex-1">
-                {[1, 2, 3].map((s) => (
+                {[1, 2, 4, 8].map((s) => (
                   <button
                     key={s}
                     onClick={() => setExportScale(s)}
@@ -376,6 +317,9 @@ export default function SaveModal() {
                 ))}
               </div>
             </div>
+            <p className="text-text-dim text-[10px] mb-3">
+              PNG exports are lossless and rendered at the selected full resolution.
+            </p>
 
             {/* Format buttons */}
             <div className="grid grid-cols-2 gap-2">
@@ -471,8 +415,8 @@ export default function SaveModal() {
               </button>
             )}
 
-            {collabError && (
-              <p className="text-red-400 text-[10px] mt-2">{collabError}</p>
+            {(collabError || collabRuntimeError) && (
+              <p className="text-red-400 text-[10px] mt-2">{collabError || collabRuntimeError}</p>
             )}
           </div>
 

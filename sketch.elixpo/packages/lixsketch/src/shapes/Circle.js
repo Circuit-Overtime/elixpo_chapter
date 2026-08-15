@@ -1,4 +1,5 @@
 /* eslint-disable */
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 // Circle shape class - extracted from drawCircle.js
 // Depends on globals: svg, shapes, rough, currentShape, currentZoom, rc
 
@@ -325,6 +326,7 @@ class Circle {
         this.rotationAnchor.setAttribute('vector-effect', 'non-scaling-stroke');
         this.rotationAnchor.setAttribute('style', 'pointer-events: all;');
         this.group.appendChild(this.rotationAnchor);
+        registerRotationAnchor(this.rotationAnchor, { radius: 8, edgeY: expandedY });
 
         this.rotationAnchor.addEventListener('mouseover', function () {
              if (!isResizingShapeCircle && !isDraggingShapeCircle && !isRotatingShapeCircle) {

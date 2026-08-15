@@ -54,7 +54,6 @@ export default function SplitLayout({ canvas, docs }) {
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
       try { localStorage.setItem(STORAGE_KEY, String(ratio)) } catch {}
-      window.dispatchEvent(new Event('resize'))
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
@@ -63,13 +62,6 @@ export default function SplitLayout({ canvas, docs }) {
       window.removeEventListener('mouseup', onUp)
     }
   }, [ratio])
-
-  // Fire resize whenever the layout mode changes so consumers (sketch
-  // engine, BlockNote etc.) can re-measure their viewports.
-  useEffect(() => {
-    const id = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
-    return () => cancelAnimationFrame(id)
-  }, [layoutMode])
 
   // Compute pane widths per mode (single JSX tree below).
   let leftWidth, rightWidth, handleVisible, paddingTop

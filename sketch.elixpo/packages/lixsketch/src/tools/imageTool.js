@@ -4,6 +4,7 @@ import { pushCreateAction, pushDeleteAction, pushTransformAction, pushFrameAttac
 import { updateAttachedArrows as updateArrowsForShape, cleanupAttachments } from './arrowTool.js';
 import { compressImage } from '../utils/imageCompressor.js';
 import { isAllowedImage, IMAGE_ACCEPT_ATTR } from '../utils/allowedImageTypes.js';
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 
 
 let isDraggingImage = false;
@@ -537,8 +538,8 @@ const handleMouseUpImage = (e) => {
     }
 };
 
-function selectImage(event) {
-    if (!isSelectionToolActive) return;
+function selectImage(event, force = false) {
+    if (!isSelectionToolActive && !force) return;
 
     event.stopPropagation(); // Prevent click from propagating to the SVG
 
@@ -705,6 +706,7 @@ function addRotationAnchor(x, y, width, height, centerX, centerY) {
     rotationAnchor.setAttribute('transform', `rotate(${imageRotation}, ${centerX}, ${centerY})`);
     
     svg.appendChild(rotationAnchor);
+    registerRotationAnchor(rotationAnchor, { radius: 5, edgeY: y });
 
     // Add event listeners for rotation
     rotationAnchor.addEventListener('pointerdown', startRotation);
@@ -1318,6 +1320,14 @@ document.addEventListener('keydown', (e) => {
 
 // Expose upload pipeline globally so generated/pasted images can use it
 window.uploadImageToCloudinary = uploadImageToCloudinary;
+
+// Programmatic selection bridge used by generated vector-image shapes.
+// Keeping the selection state in this module prevents a second, divergent
+// implementation of image dragging and screen-space resize controls.
+window.__selectImageElement = function(element, { force = false } = {}) {
+    if (!element) return;
+    selectImage({ target: element, stopPropagation: () => {} }, force);
+};
 
 // Window bridge: allow React UI to trigger the file picker
 window.openImageFilePicker = function() {

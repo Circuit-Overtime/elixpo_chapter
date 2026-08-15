@@ -228,7 +228,7 @@ export default function CommunityPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#120e1a]/90 backdrop-blur-xl border-b border-[#49385e]">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <Link href="/?noredirect=1" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <img src="/icon.png" alt="LixSketch" className="w-7 h-7 rounded-md" />
               <span className="text-white font-medium font-[lixFont]">LixSketch</span>
             </Link>

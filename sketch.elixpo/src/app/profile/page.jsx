@@ -7,6 +7,23 @@ import Link from 'next/link'
 import useAuthStore from '@/store/useAuthStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
 import { WORKER_URL } from '@/lib/env'
+import { getRememberedCanvasId } from '@/utils/canvasSession'
+
+function reconcileActiveWorkspaceName(workspaces) {
+  if (typeof window === 'undefined' || !Array.isArray(workspaces)) return workspaces || []
+  try {
+    const activeCanvasId = getRememberedCanvasId()
+    const localWorkspaceName = localStorage.getItem('lixsketch-workspace-name')?.trim()
+    if (!activeCanvasId || !localWorkspaceName) return workspaces
+    return workspaces.map((workspace) => (
+      workspace.session_id === activeCanvasId
+        ? { ...workspace, workspace_name: localWorkspaceName }
+        : workspace
+    ))
+  } catch {
+    return workspaces
+  }
+}
 
 // ── Dot grid background ──────────────────────────────────────────────────────
 
@@ -267,7 +284,7 @@ export default function ProfilePage() {
         }
         if (wsRes.ok) {
           const w = await wsRes.json()
-          setWorkspaces(w.workspaces || [])
+          setWorkspaces(reconcileActiveWorkspaceName(w.workspaces))
         }
       } catch (err) {
         console.warn('[Profile] Failed to fetch data:', err)

@@ -147,7 +147,11 @@ function serializeShape(shape) {
                 width: shape.width,
                 height: shape.height,
                 rotation: shape.rotation,
-                href: el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || ''
+                href: el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '',
+                frameType: shape._frameType || null,
+                graphData: shape._frameType === 'graph' && shape._graphData
+                    ? cloneOptions(shape._graphData)
+                    : null
             };
         }
 
@@ -388,6 +392,15 @@ function createShapeFromData(data, offsetX, offsetY) {
             svgEl.appendChild(imgEl);
             const imageShape = new ImageShape(imgEl);
             imageShape.rotation = data.rotation;
+            if (data.frameType === 'graph' && data.graphData) {
+                if (typeof window.__hydrateGraphShape === 'function') {
+                    window.__hydrateGraphShape(imageShape, data.graphData);
+                } else {
+                    imageShape._frameType = 'graph';
+                    imageShape._graphData = cloneOptions(data.graphData);
+                    imageShape.element.setAttribute('data-graph-shape', 'true');
+                }
+            }
             return imageShape;
         }
 

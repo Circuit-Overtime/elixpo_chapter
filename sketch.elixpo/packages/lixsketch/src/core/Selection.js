@@ -4,6 +4,7 @@
 import { cleanupAttachments } from '../tools/arrowTool.js';
 import { pushTransformAction, pushFrameAttachmentAction, pushDeleteAction } from './UndoRedo.js';
 import { calculateSnap, clearSnapGuides } from './SnapGuides.js';
+import { registerRotationAnchor } from './ScreenSpaceControls.js';
 
 let isMultiSelecting = false;
 let multiSelectionStart = { x: 0, y: 0 };
@@ -545,6 +546,12 @@ class MultiSelection {
 
         this.group.appendChild(this.rotationLine);
         this.group.appendChild(this.rotationAnchor);
+        registerRotationAnchor(this.rotationAnchor, {
+            radius: 8,
+            edgeY: y,
+            line: this.rotationLine,
+            lineEnd: '1',
+        });
     }
 
     removeControls() {

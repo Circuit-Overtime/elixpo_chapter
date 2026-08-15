@@ -38,13 +38,13 @@ export default function Footer() {
   if (viewMode || zenMode) return null
 
   return (
-    <div className="absolute bottom-1 right-5 flex items-center gap-2.5 z-[1000] font-[lixFont]">
+    <div className="absolute bottom-4 right-5 flex items-center gap-2.5 z-[1000] font-[lixFont]">
       {/* Undo/Redo */}
       <div className="flex items-center bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm">
         <button
           onClick={handleUndo}
           title="Undo (Ctrl+Z)"
-          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200 cursor-pointer"
         >
           <i className="bx bx-undo text-lg" />
         </button>
@@ -52,7 +52,7 @@ export default function Footer() {
         <button
           onClick={handleRedo}
           title="Redo (Ctrl+Shift+Z)"
-          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200 cursor-pointer"
         >
           <i className="bx bx-redo text-lg" />
         </button>
@@ -64,7 +64,7 @@ export default function Footer() {
           onClick={handleZoomFit}
           aria-label="Fit canvas to content"
           title="Fit to Content (Shift+1)"
-          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200 cursor-pointer"
         >
           <i className="bx bx-target-lock text-lg" />
         </button>
@@ -72,7 +72,7 @@ export default function Footer() {
         <button
           onClick={handleZoomOut}
           title="Zoom Out (Ctrl+-)"
-          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200 cursor-pointer"
         >
           <i className="bx bx-minus text-lg" />
         </button>
@@ -80,7 +80,7 @@ export default function Footer() {
         <button
           onClick={handleZoomReset}
           title="Reset Zoom (Ctrl+0)"
-          className="min-w-[52px] h-9 flex items-center justify-center text-text-secondary text-sm px-2 hover:bg-surface-hover transition-all duration-200"
+          className="min-w-[52px] h-9 flex items-center justify-center text-text-secondary text-sm px-2 hover:bg-surface-hover transition-all duration-200 cursor-pointer"
         >
           {zoomPercent}%
         </button>
@@ -88,7 +88,7 @@ export default function Footer() {
         <button
           onClick={handleZoomIn}
           title="Zoom In (Ctrl++)"
-          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          className="w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200 cursor-pointer"
         >
           <i className="bx bx-plus text-lg" />
         </button>

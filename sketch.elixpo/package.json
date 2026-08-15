@@ -1,6 +1,6 @@
 {
   "name": "lixsketch",
-  "version": "5.4.46",
+  "version": "5.4.51",
   "description": "Open-source infinite canvas sketching with a hand-drawn aesthetic and a Notion-like docs editor",
   "author": {
     "name": "Ayushman Bhattacharya",
@@ -38,12 +38,13 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "predev": "npm run db:migrate:local",
     "dev": "concurrently -k -n next,worker -c blue,magenta \"npm run dev:next\" \"npm run dev:rooms\"",
     "dev:next": "next dev --turbo",
-    "dev:rooms": "wrangler dev worker/src/index.ts --persist-to .wrangler/state --local --port 8787",
+    "dev:rooms": "wrangler dev --config wrangler.dev.toml --persist-to .wrangler/state --local --port 8787",
     "build": "next build",
     "start": "next start",
-    "worker:dev": "wrangler dev --port 8787 --local",
+    "worker:dev": "wrangler dev --config wrangler.dev.toml --persist-to .wrangler/state --port 8787 --local",
     "worker:deploy": "wrangler deploy",
     "db:create": "wrangler d1 create lixsketch",
     "db:migrate": "node scripts/db-migrate.mjs --remote",
@@ -55,7 +56,7 @@
     "@blocknote/mantine": "^0.47.1",
     "@blocknote/react": "^0.47.1",
     "@cloudflare/next-on-pages": "^1.13.16",
-    "@elixpo/lixeditor": "^2.6.7",
+    "@elixpo/lixeditor": "^2.7.11",
     "@elixpo/lixsketch": "workspace:*",
     "@mantine/core": "^8.3.11",
     "@mantine/hooks": "^8.3.11",

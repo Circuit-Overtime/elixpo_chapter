@@ -3,6 +3,7 @@
 // Depends on globals: svg, shapes, currentShape, currentZoom
 
 import { cleanupAttachments } from '../tools/arrowTool.js';
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 
 function getSVGCoordsFromMouse(e) {
     const viewBox = svg.viewBox.baseVal;
@@ -474,7 +475,7 @@ move(dx, dy) {
     labelText.setAttribute("x", this.x + 5);
     labelText.setAttribute("y", this.y - 10);
     labelText.setAttribute("font-size", `${16 / currentZoom}px`);
-    labelText.setAttribute("fill", this.options.stroke);
+    labelText.setAttribute("fill", this.options.labelColor || this.options.stroke);
     labelText.setAttribute("font-family", "lixFont");
     labelText.textContent = this.frameName || "Frame";
     labelText.style.cursor = "pointer";
@@ -775,6 +776,12 @@ startLabelEdit(labelElement) {
             }
             
             this.group.appendChild(rotationLine);
+            registerRotationAnchor(anchor, {
+                radius: 8,
+                edgeY: this.y,
+                line: rotationLine,
+                lineEnd: '2',
+            });
         } else {
             // Create resize handle (rectangle)
             anchor = document.createElementNS("http://www.w3.org/2000/svg", "rect");

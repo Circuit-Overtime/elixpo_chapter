@@ -1,12 +1,13 @@
 "use client"
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import useUIStore from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
-import useAuthStore from '@/store/useAuthStore'
-import { triggerCloudSync, writeLocalScene } from '@/hooks/useAutoSave'
-import { triggerDocCloudSync, persistLayoutMode } from '@/hooks/useDocAutoSave'
+import useAuthStore, { WORKER_URL } from '@/store/useAuthStore'
+import { useProfileStore } from '@/hooks/useGuestProfile'
+import { beginWorkspaceDeletion, triggerCloudSync, writeLocalScene } from '@/hooks/useAutoSave'
+import { discardPendingDocChanges } from '@/hooks/useDocAutoSave'
 import { useTranslation } from '@/hooks/useTranslation'
 // Issue #38 follow-up: swatches are paired per theme. The light set
 // pairs with the soothing warm-off-white canvas; the dark set restores
@@ -27,6 +28,86 @@ const CANVAS_BACKGROUNDS_DARK = [
   { color: '#1B1615', label: 'menu.canvasBg.darkBrown' },
 ]
 
+function DangerWarningDialog({ action, busy, error, workspaceName, onCancel, onConfirm }) {
+  useEffect(() => {
+    if (!action || busy) return undefined
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [action, busy, onCancel])
+
+  if (!action) return null
+
+  const deleting = action === 'delete'
+  const title = deleting ? 'Delete workspace?' : 'Reset canvas?'
+  const description = deleting
+    ? `“${workspaceName || 'Untitled'}” will be permanently removed from cloud storage and this browser.`
+    : 'Every shape on this canvas will be removed. The workspace and its document will remain available.'
+  const warning = deleting
+    ? 'This cannot be undone. Shared links to this workspace will stop working, and you will be moved to a new blank workspace.'
+    : 'This cannot be undone after the empty canvas is saved or synced.'
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[10020] flex items-center justify-center p-4 font-[lixFont]"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="danger-warning-title"
+      onClick={() => { if (!busy) onCancel() }}
+    >
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-[480px] rounded-2xl border border-red-500/35 bg-surface-card p-5 shadow-2xl shadow-black/50"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/15 text-red-400">
+            <i className={`bx ${deleting ? 'bx-trash' : 'bx-reset'} text-xl`} />
+          </div>
+          <div>
+            <h2 id="danger-warning-title" className="text-base text-text-primary">{title}</h2>
+            <p className="mt-1 text-xs leading-5 text-text-secondary">{description}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-xs leading-5 text-red-300">
+          <i className="bx bx-error-circle mr-1.5" />
+          {warning}
+        </div>
+
+        {error && (
+          <p className="mt-3 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+            {error}
+          </p>
+        )}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={busy}
+            className="rounded-lg border border-border-light px-3 py-2 text-xs text-text-secondary hover:bg-surface-hover cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            className="flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-2 text-xs text-white hover:bg-red-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {busy && <i className="bx bx-loader-alt animate-spin" />}
+            {deleting ? 'Delete workspace' : 'Reset canvas'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 export default function AppMenu() {
   const { t, language } = useTranslation()
 
@@ -39,7 +120,8 @@ export default function AppMenu() {
   const PREFERENCE_ITEMS = [
     { label: t('prefs.toolLock'), shortcut: 'Q', id: 'toolLock' },
     { label: t('prefs.snapObjects'), shortcut: 'Alt+S', id: 'snapObjects' },
-    { label: t('prefs.toggleGrid'), shortcut: "Ctrl+'", id: 'toggleGrid' },
+    { label: t('menu.showGrid'), shortcut: "Ctrl+'", id: 'toggleGrid' },
+    { label: 'Show rulers', shortcut: 'Shift+R', id: 'toggleRulers' },
     { label: t('prefs.zenMode'), shortcut: 'Alt+Z', id: 'zenMode' },
     { label: t('prefs.viewMode'), shortcut: 'Alt+R', id: 'viewMode' },
     { label: t('prefs.canvasShapeProps'), shortcut: 'Alt+/', id: 'properties' },
@@ -50,8 +132,6 @@ export default function AppMenu() {
   const menuOpen = useUIStore((s) => s.menuOpen)
   const closeMenu = useUIStore((s) => s.closeMenu)
   const toggleSaveModal = useUIStore((s) => s.toggleSaveModal)
-  const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette)
-  const toggleHelpModal = useUIStore((s) => s.toggleHelpModal)
   const toggleExportImageModal = useUIStore((s) => s.toggleExportImageModal)
   const theme = useUIStore((s) => s.theme)
   const resolvedTheme = useUIStore((s) => s.resolvedTheme)
@@ -63,6 +143,8 @@ export default function AppMenu() {
   const clearHistory = useSketchStore((s) => s.clearHistory)
   const gridEnabled = useSketchStore((s) => s.gridEnabled)
   const toggleGrid = useSketchStore((s) => s.toggleGrid)
+  const rulersEnabled = useSketchStore((s) => s.rulersEnabled)
+  const toggleRulers = useSketchStore((s) => s.toggleRulers)
 
   const viewMode = useSketchStore((s) => s.viewMode)
   const zenMode = useSketchStore((s) => s.zenMode)
@@ -73,14 +155,6 @@ export default function AppMenu() {
   const toggleToolLock = useSketchStore((s) => s.toggleToolLock)
   const toggleSnapToObjects = useSketchStore((s) => s.toggleSnapToObjects)
 
-  const layoutMode = useSketchStore((s) => s.layoutMode)
-  const setLayoutMode = useSketchStore((s) => s.setLayoutMode)
-  const handleSetLayout = (mode) => {
-    if (mode === layoutMode) return
-    setLayoutMode(mode)
-    persistLayoutMode(mode)
-  }
-
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const authUser = useAuthStore((s) => s.user)
   const login = useAuthStore((s) => s.login)
@@ -89,11 +163,20 @@ export default function AppMenu() {
   const [prefsOpen, setPrefsOpen] = useState(false)
   // Flyouts render through a portal so the vertically scrolling menu never
   // needs overflow-visible. This keeps its bottom edge inside the viewport.
-  const [docOpen, setDocOpen] = useState(false)
-  const [docFlyoutPosition, setDocFlyoutPosition] = useState({ top: 0, left: 0 })
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const [actionsFlyoutPosition, setActionsFlyoutPosition] = useState({ top: 0, left: 0 })
   const [prefsFlyoutPosition, setPrefsFlyoutPosition] = useState({ top: 0, left: 0 })
-  const docButtonRef = useRef(null)
+  const [dangerAction, setDangerAction] = useState(null)
+  const [dangerBusy, setDangerBusy] = useState(false)
+  const [dangerError, setDangerError] = useState('')
+  const actionsButtonRef = useRef(null)
   const prefsButtonRef = useRef(null)
+
+  useEffect(() => {
+    if (menuOpen) return
+    setActionsOpen(false)
+    setPrefsOpen(false)
+  }, [menuOpen])
 
   const flyoutPosition = (button, width, estimatedHeight) => {
     const rect = button?.getBoundingClientRect()
@@ -104,16 +187,16 @@ export default function AppMenu() {
     }
   }
 
-  const toggleDocumentFlyout = () => {
-    const opening = !docOpen
+  const toggleActionsFlyout = () => {
+    const opening = !actionsOpen
     setPrefsOpen(false)
-    setDocOpen(opening)
-    if (opening) setDocFlyoutPosition(flyoutPosition(docButtonRef.current, 220, 126))
+    setActionsOpen(opening)
+    if (opening) setActionsFlyoutPosition(flyoutPosition(actionsButtonRef.current, 230, 190))
   }
 
   const togglePreferencesFlyout = () => {
     const opening = !prefsOpen
-    setDocOpen(false)
+    setActionsOpen(false)
     setPrefsOpen(opening)
     if (opening) setPrefsFlyoutPosition(flyoutPosition(prefsButtonRef.current, 240, Math.min(window.innerHeight * .6, 420)))
   }
@@ -122,6 +205,7 @@ export default function AppMenu() {
     (item.id === 'toolLock' && toolLock) ||
     (item.id === 'snapObjects' && snapToObjects) ||
     (item.id === 'toggleGrid' && gridEnabled) ||
+    (item.id === 'toggleRulers' && rulersEnabled) ||
     (item.id === 'zenMode' && zenMode) ||
     (item.id === 'viewMode' && viewMode) ||
     item.toggle
@@ -130,8 +214,10 @@ export default function AppMenu() {
     if (item.id === 'toolLock') toggleToolLock()
     else if (item.id === 'snapObjects') toggleSnapToObjects()
     else if (item.id === 'toggleGrid') toggleGrid()
+    else if (item.id === 'toggleRulers') toggleRulers()
     else if (item.id === 'zenMode') { toggleZenMode(); closeMenu() }
     else if (item.id === 'viewMode') { toggleViewMode(); closeMenu() }
+    else if (item.id === 'properties') { useUIStore.getState().toggleCanvasProperties(); closeMenu() }
   }
 
   // Menu is always accessible (via floating button in view/zen mode)
@@ -149,163 +235,142 @@ export default function AppMenu() {
     closeMenu()
   }
 
+  const handleQuickSave = () => {
+    const serializer = window.__sceneSerializer
+    if (serializer) {
+      const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
+      const sceneData = serializer.save(workspaceName)
+      const sessionId = window.__sessionID
+      if (sessionId) {
+        writeLocalScene(`lixsketch-autosave-${sessionId}`, sceneData)
+      }
+      useUIStore.getState().setSaveStatus('local')
+      triggerCloudSync()
+    }
+    closeMenu()
+  }
+
+  const actionItems = [
+    { label: t('menu.quickSave'), icon: 'bx-check-circle', shortcut: 'Ctrl+S', onClick: handleQuickSave },
+    { label: t('menu.open'), icon: 'bx-folder-open', shortcut: 'Ctrl+O', onClick: handleOpen },
+    { label: t('menu.saveShare'), icon: 'bx-save', shortcut: 'Ctrl+Shift+S', onClick: () => { toggleSaveModal(); closeMenu() } },
+    { label: t('menu.exportImage'), icon: 'bx-image', shortcut: 'Ctrl+Shift+E', onClick: () => { toggleExportImageModal(); closeMenu() } },
+    { label: t('menu.findText'), icon: 'bx-search', shortcut: 'Ctrl+F', onClick: () => { useUIStore.getState().toggleFindBar(); closeMenu() } },
+  ]
+
+  const openDangerWarning = (action) => {
+    setDangerError('')
+    setDangerAction(action)
+    closeMenu()
+  }
+
+  const closeDangerWarning = () => {
+    if (dangerBusy) return
+    setDangerError('')
+    setDangerAction(null)
+  }
+
+  const clearLocalWorkspace = (sessionId) => {
+    const keys = [
+      'lixsketch-autosave',
+      'lixsketch-autosave-meta',
+      'lixsketch-doc-autosave',
+      'lixsketch-doc-autosave-meta',
+      'lixsketch-workspace-name',
+    ]
+    if (sessionId) {
+      keys.push(
+        `lixsketch-autosave-${sessionId}`,
+        `lixsketch-autosave-meta-${sessionId}`,
+        `lixsketch-doc-autosave-${sessionId}`,
+        `lixsketch-doc-autosave-meta-${sessionId}`,
+        `lixsketch-enc-key-${sessionId}`,
+      )
+    }
+    keys.forEach((key) => localStorage.removeItem(key))
+  }
+
+  const handleDangerConfirm = async () => {
+    if (!dangerAction || dangerBusy) return
+    setDangerBusy(true)
+    setDangerError('')
+
+    try {
+      const serializer = window.__sceneSerializer
+      if (dangerAction === 'reset') {
+        serializer?.resetCanvas?.()
+        clearShapes()
+        clearHistory()
+        useUIStore.getState().setSaveStatus('local')
+        setDangerAction(null)
+        return
+      }
+
+      const sessionId = window.__sessionID
+      if (!sessionId) throw new Error('The current workspace session is not ready yet.')
+
+      const profile = useProfileStore.getState().profile
+      const createdBy = isAuthenticated && authUser?.id
+        ? authUser.id
+        : (profile?.id || localStorage.getItem('lixsketch-guest-session'))
+
+      const response = await fetch(`${WORKER_URL}/api/scenes/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, createdBy }),
+      })
+
+      const localDevelopment = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)
+      const ignorableLocalBackendFailure = localDevelopment && response.status >= 500
+      if (!response.ok && response.status !== 404 && !ignorableLocalBackendFailure) {
+        const body = await response.json().catch(() => ({}))
+        throw new Error(body.error || 'Cloud deletion failed. The workspace was not removed.')
+      }
+
+      beginWorkspaceDeletion()
+      discardPendingDocChanges()
+      window.__disconnectCollaboration?.()
+      clearLocalWorkspace(sessionId)
+      serializer?.resetCanvas?.()
+      clearShapes()
+      clearHistory()
+      useUIStore.getState().setSaveStatus('idle')
+      const nextSessionId = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+      window.location.assign(`/c/${nextSessionId}?new=1&preserveLocal=1`)
+    } catch (error) {
+      setDangerError(error.message || 'The workspace could not be deleted.')
+    } finally {
+      setDangerBusy(false)
+    }
+  }
+
   return (
     <>
       {menuOpen && (
         <div
           className="fixed inset-0 z-999"
-          onClick={() => { closeMenu(); setPrefsOpen(false); setDocOpen(false) }}
+          onClick={() => { closeMenu(); setActionsOpen(false); setPrefsOpen(false) }}
         />
       )}
       <div
-        onScroll={() => { setPrefsOpen(false); setDocOpen(false) }}
+        onScroll={() => { setActionsOpen(false); setPrefsOpen(false) }}
         className={`absolute top-14 right-4 w-[230px] max-h-[calc(100vh-72px)] overflow-y-auto overscroll-contain no-scrollbar bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-1.5 font-[lixFont] text-[13px] transition-all duration-200 ${
           menuOpen
             ? 'opacity-100 blur-0 pointer-events-auto'
             : 'opacity-0 blur-[20px] pointer-events-none'
         }`}
       >
-        {/* Open */}
+        {/* File/search actions */}
         <button
-          onClick={handleOpen}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          ref={actionsButtonRef}
+          onClick={toggleActionsFlyout}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${actionsOpen ? 'bg-surface-hover' : ''}`}
         >
           <span className="flex items-center gap-2">
-            <i className="bx bx-folder-open text-sm" />
-            {t('menu.open')}
+            <i className="bx bx-bolt-circle text-sm" />
+            Actions
           </span>
-          <span className="text-text-dim text-xs">Ctrl+O</span>
-        </button>
-
-        {/* Quick Save */}
-        <button
-          onClick={() => {
-            const serializer = window.__sceneSerializer
-            if (serializer) {
-              const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
-              const sceneData = serializer.save(workspaceName)
-              const sessionId = window.__sessionID
-              if (sessionId) {
-                writeLocalScene(`lixsketch-autosave-${sessionId}`, sceneData)
-              }
-              useUIStore.getState().setSaveStatus('local')
-              triggerCloudSync()
-            }
-            closeMenu()
-          }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-check-circle text-sm" />
-            {t('menu.quickSave')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+S</span>
-        </button>
-
-        {/* Save & Share */}
-        <button
-          onClick={() => { toggleSaveModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-save text-sm" />
-            {t('menu.saveShare')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+Shift+S</span>
-        </button>
-
-        {/* Export Image */}
-        <button
-          onClick={() => { toggleExportImageModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-image text-sm" />
-            {t('menu.exportImage')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+Shift+E</span>
-        </button>
-
-        <hr className="border-border-light my-1" />
-
-        {/* Commands - highlighted */}
-        <button
-          onClick={() => { toggleCommandPalette(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-accent-blue bg-accent-blue/10 hover:bg-accent-blue/20 cursor-pointer"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-command text-sm" />
-            {t('menu.commands')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+/</span>
-        </button>
-
-        {/* Find Text */}
-        <button
-          onClick={() => { useUIStore.getState().toggleFindBar(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-search text-sm" />
-            {t('menu.findText')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+F</span>
-        </button>
-
-        {/* Canvas Properties */}
-        <button
-          onClick={() => { useUIStore.getState().toggleCanvasProperties(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-info-circle text-sm" />
-            {t('menu.canvasProperties')}
-          </span>
-        </button>
-
-        {/* Help */}
-        <button
-          onClick={() => { toggleHelpModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-help-circle text-sm" />
-            {t('menu.help')}
-          </span>
-        </button>
-
-        <hr className="border-border-light my-1" />
-
-        <div className="relative">
-          {/* The flyout is portalled below so this menu remains scrollable. */}
-          <button
-            ref={docButtonRef}
-            onClick={toggleDocumentFlyout}
-            className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${docOpen ? 'bg-surface-hover' : ''}`}
-          >
-            <span className="flex items-center gap-2">
-              <i className="bx bx-file-blank text-sm" />
-              Document
-            </span>
-            <i className="bx bx-chevron-left text-sm text-text-dim" />
-          </button>
-
-        </div>
-
-        {/* Sync doc now (Ctrl+S triggers both, but explicit action is useful from menu) */}
-        <button
-          onClick={() => {
-            triggerCloudSync()
-            triggerDocCloudSync()
-            closeMenu()
-          }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-cloud-upload text-sm" />
-            Sync canvas + doc
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+S</span>
+          <i className="bx bx-chevron-left text-sm text-text-dim" />
         </button>
 
         <hr className="border-border-light my-1" />
@@ -325,35 +390,6 @@ export default function AppMenu() {
 
         </div>
 
-        {/* Grid toggle */}
-        <button
-          onClick={toggleGrid}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-grid-alt text-sm" />
-            {t('menu.showGrid')}
-          </span>
-          <div className={`w-7 h-4 rounded-full transition-all duration-150 relative ${gridEnabled ? 'bg-accent-blue' : 'bg-white/10'}`}>
-            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-150 ${gridEnabled ? 'left-3.5' : 'left-0.5'}`} />
-          </div>
-        </button>
-
-        {/* Reset The Canvas */}
-        <button
-          onClick={() => {
-            const serializer = window.__sceneSerializer
-            if (serializer?.resetCanvas) serializer.resetCanvas()
-            clearShapes(); clearHistory(); closeMenu()
-          }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-red-400 text-xs hover:bg-red-500/10 cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-reset text-sm" />
-            {t('menu.resetCanvas')}
-          </span>
-        </button>
-
         <hr className="border-border-light my-1" />
 
         {/* Links */}
@@ -372,6 +408,26 @@ export default function AppMenu() {
             </a>
           )
         })}
+
+        <hr className="border-border-light my-1" />
+
+        <div className="rounded-xl border border-red-500/25 bg-red-500/[0.04] p-1">
+          <p className="px-2 py-1 text-[10px] uppercase tracking-wider text-red-400/80">Danger zone</p>
+          <button
+            onClick={() => openDangerWarning('reset')}
+            className="w-full flex items-center gap-2 border-b border-red-500/20 px-2 py-2 text-left text-xs text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
+          >
+            <i className="bx bx-reset text-sm" />
+            {t('menu.resetCanvas')}
+          </button>
+          <button
+            onClick={() => openDangerWarning('delete')}
+            className="w-full flex items-center gap-2 px-2 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+          >
+            <i className="bx bx-trash text-sm" />
+            Delete workspace
+          </button>
+        </div>
 
         <hr className="border-border-light my-1" />
 
@@ -399,7 +455,7 @@ export default function AppMenu() {
         ) : (
           <button
             onClick={() => { login(); closeMenu() }}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-text-secondary hover:bg-surface-hover"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-text-secondary hover:bg-surface-hover cursor-pointer"
           >
             <span className="flex items-center gap-2">
               <i className="bx bx-log-in text-sm" />
@@ -458,35 +514,29 @@ export default function AppMenu() {
             ))}
           </div>
         </div>
+
       </div>
 
       {menuOpen && typeof document !== 'undefined' && createPortal(
         <>
-          {docOpen && (
+          {actionsOpen && (
             <div
-              className="fixed w-[220px] bg-surface-card border border-border-light rounded-2xl p-1.5 shadow-2xl shadow-black/40 z-[1001] font-[lixFont]"
-              style={docFlyoutPosition}
+              className="fixed w-[230px] bg-surface-card border border-border-light rounded-2xl p-1.5 shadow-2xl shadow-black/40 z-[1001] font-[lixFont]"
+              style={actionsFlyoutPosition}
             >
-              {[
-                { key: 'canvas', icon: 'bx-pen', label: 'Canvas' },
-                { key: 'split', icon: 'bx-layout', label: 'Split' },
-                { key: 'docs', icon: 'bxs-notepad', label: 'Docs' },
-              ].map((mode) => {
-                const active = layoutMode === mode.key
-                return (
-                  <button
-                    key={mode.key}
-                    onClick={() => { handleSetLayout(mode.key); setDocOpen(false) }}
-                    className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-                  >
-                    <span className="flex items-center gap-2">
-                      {active && <i className="bx bx-check text-sm text-accent-blue" />}
-                      <i className={`bx ${mode.icon} text-xs ${active ? 'text-accent-blue' : 'text-text-muted'}`} />
-                      {mode.label}
-                    </span>
-                  </button>
-                )
-              })}
+              {actionItems.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => { setActionsOpen(false); item.onClick() }}
+                  className="w-full flex items-center justify-between px-3 py-2 border-b border-border-light last:border-b-0 text-text-secondary text-[11.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+                >
+                  <span className="flex items-center gap-2">
+                    <i className={`bx ${item.icon} text-sm text-text-muted`} />
+                    {item.label}
+                  </span>
+                  <span className="text-text-dim text-[10px]">{item.shortcut}</span>
+                </button>
+              ))}
             </div>
           )}
 
@@ -495,7 +545,7 @@ export default function AppMenu() {
               className="fixed w-[240px] max-h-[60vh] overflow-y-auto overscroll-contain no-scrollbar bg-surface-card border border-border-light rounded-2xl p-1.5 shadow-2xl shadow-black/40 z-[1001] font-[lixFont]"
               style={prefsFlyoutPosition}
             >
-              <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px]">
+              <div className="w-full flex items-center justify-between px-3 py-2 border-b border-border-light text-text-secondary text-[11px]">
                 <span>{t('prefs.language')}</span>
                 <select
                   className="bg-surface-hover text-text-primary text-[10px] rounded px-1 outline-none border border-border-light"
@@ -512,7 +562,7 @@ export default function AppMenu() {
                 <button
                   key={item.id}
                   onClick={() => handlePreference(item)}
-                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+                  className="w-full flex items-center justify-between px-3 py-2 border-b border-border-light last:border-b-0 text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
                 >
                   <span className="flex items-center gap-2">
                     {preferenceIsActive(item) && <i className="bx bx-check text-sm text-accent-blue" />}
@@ -526,6 +576,15 @@ export default function AppMenu() {
         </>,
         document.body,
       )}
+
+      <DangerWarningDialog
+        action={dangerAction}
+        busy={dangerBusy}
+        error={dangerError}
+        workspaceName={useUIStore.getState().workspaceName}
+        onCancel={closeDangerWarning}
+        onConfirm={handleDangerConfirm}
+      />
     </>
   )
 }

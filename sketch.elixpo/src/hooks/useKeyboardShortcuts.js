@@ -18,11 +18,9 @@ export default function useKeyboardShortcuts() {
       if (e.key === 'Escape') {
         const uiStore = useUIStore.getState()
         const hasOpenModal = [
-          uiStore.shortcutsModalOpen,
           uiStore.saveModalOpen,
           uiStore.aiModalOpen,
           uiStore.commandPaletteOpen,
-          uiStore.helpModalOpen,
           uiStore.exportImageModalOpen,
           uiStore.findBarOpen,
           uiStore.canvasPropertiesOpen,
@@ -38,6 +36,27 @@ export default function useKeyboardShortcuts() {
 
       // Global Ctrl shortcuts (work even when typing)
       if (e.ctrlKey || e.metaKey) {
+        const zoomDirection = (key === '+' || key === '=' || e.code === 'NumpadAdd')
+          ? 1
+          : (key === '-' || e.code === 'NumpadSubtract')
+            ? -1
+            : 0
+        if (zoomDirection !== 0) {
+          if (!e.defaultPrevented) {
+            e.preventDefault()
+            if (typeof window.zoomFromCenter === 'function') {
+              window.zoomFromCenter(zoomDirection)
+            }
+          }
+          return
+        }
+        if (key === '0' || e.code === 'Numpad0') {
+          if (!e.defaultPrevented) {
+            e.preventDefault()
+            if (typeof window.zoomReset === 'function') window.zoomReset()
+          }
+          return
+        }
         if (key === 's' && e.shiftKey) {
           e.preventDefault()
           useUIStore.getState().toggleSaveModal()
@@ -262,6 +281,13 @@ export default function useKeyboardShortcuts() {
           useSketchStore.getState().toggleSnapToObjects()
           return
         }
+        return
+      }
+
+      if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && key === 'r') {
+        e.preventDefault()
+        store.toggleRulers()
+        showToast(store.rulersEnabled ? 'Rulers hidden' : 'Rulers shown', { tone: 'info' })
         return
       }
 
