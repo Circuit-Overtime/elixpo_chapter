@@ -1,0 +1,16 @@
+/* Theme styles stay scoped to their data-seasonal-theme value. */
+@import './india-independence-day.css';
+
+html[data-seasonal-theme] {
+  --accent: var(--seasonal-primary);
+  --accent-hover: var(--seasonal-primary-hover);
+  --accent-subtle: color-mix(in srgb, var(--seasonal-primary) 9%, transparent);
+  --accent-text: var(--seasonal-primary);
+  --input-focus: var(--seasonal-focus);
+  --selection-bg: color-mix(in srgb, var(--seasonal-secondary) 20%, transparent);
+}
+
+html[data-theme='dark'][data-seasonal-theme] {
+  --accent-subtle: color-mix(in srgb, var(--seasonal-primary) 13%, transparent);
+  --selection-bg: color-mix(in srgb, var(--seasonal-secondary) 25%, transparent);
+}

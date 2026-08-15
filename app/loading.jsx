@@ -1,10 +1,11 @@
 import { LOADING_MESSAGES } from '../src/utils/siteTips';
-import { isIndianIndependenceDay } from '../src/utils/seasonalTheme';
+import { getActiveSeasonalTheme } from '../src/themes/seasonal/index';
 
 export default function Loading() {
   const day = Math.floor(Date.now() / 86_400_000);
   const message = LOADING_MESSAGES[day % LOADING_MESSAGES.length];
-  const showIndependenceTheme = isIndianIndependenceDay();
+  const activeTheme = getActiveSeasonalTheme();
+  const showIndependenceTheme = activeTheme?.id === 'india-independence-day';
 
   return (
     <main className={`min-h-screen flex items-center justify-center px-6${showIndependenceTheme ? ' independence-loader-page' : ''}`} style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)' }}>

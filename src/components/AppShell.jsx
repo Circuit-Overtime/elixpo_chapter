@@ -9,7 +9,7 @@ import { generatePixelAvatar } from '../utils/pixelAvatar';
 import JoinedToast from './JoinedToast';
 import { CreatorBadgeMark } from './CreatorBadge';
 import { CREATOR_BADGE_MAP } from '../../lib/badgeDefinitions';
-import { isIndianIndependenceDay } from '../utils/seasonalTheme';
+import { useSeasonalTheme } from '../themes/seasonal/SeasonalThemeProvider';
 
 // ─── Notification type config ───
 const NOTIF_CONFIG = {
@@ -427,7 +427,8 @@ export default function AppShell({ children }) {
   const pathname = usePathname();
   const { user, loading, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const showIndependenceTheme = isIndianIndependenceDay();
+  const { activeTheme } = useSeasonalTheme();
+  const showIndependenceTheme = activeTheme?.id === 'india-independence-day';
 
   function handleLogin() {
     // Server route generates the CSRF state + sets an httpOnly cookie, then redirects.
@@ -442,7 +443,7 @@ export default function AppShell({ children }) {
         <div className="max-w-[1400px] mx-auto px-3 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 sm:gap-3" aria-label="LixBlogs home">
-              <img src="/logo-mark.png" alt="" className="h-7 w-7 rounded-full sm:h-8 sm:w-8" />
+              <img src={activeTheme?.icon || '/logo-mark.png'} alt="" className={`h-7 w-7 rounded-full object-cover sm:h-8 sm:w-8${activeTheme ? ' seasonal-brand-icon' : ''}`} />
               <span className="whitespace-nowrap text-base font-bold tracking-tight font-kanit sm:text-xl" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
             </Link>
             {showIndependenceTheme && (
@@ -452,9 +453,9 @@ export default function AppShell({ children }) {
                 aria-describedby="independence-day-tooltip"
               >
                 <span aria-hidden="true" className="independence-day-wheel" />
-                15 August
+                {activeTheme.shortLabel}
                 <span id="independence-day-tooltip" role="tooltip" className="independence-day-tooltip">
-                  India Independence Day theme
+                  {activeTheme.description}
                 </span>
               </span>
             )}
