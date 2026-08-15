@@ -1,6 +1,9 @@
 import './globals.css';
+import '../src/themes/seasonal/seasonal.css';
 import { AuthProvider } from '../src/context/AuthContext';
 import { ThemeProvider } from '../src/context/ThemeContext';
+import { SeasonalThemeProvider } from '../src/themes/seasonal/SeasonalThemeProvider';
+import { seasonalThemeBootstrapScript } from '../src/themes/seasonal/index';
 
 const SITE_URL = 'https://blogs.elixpo.com';
 const SITE_NAME = 'LixBlogs';
@@ -125,8 +128,10 @@ const SITE_JSONLD = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Apply date-based themes before first paint; the provider keeps it current. */}
+        <script dangerouslySetInnerHTML={{ __html: seasonalThemeBootstrapScript() }} />
         <link rel="alternate" type="application/rss+xml" title="LixBlogs recent stories" href="/feed.xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -180,11 +185,13 @@ export default function RootLayout({ children }) {
         `}} />
       </head>
       <body className="antialiased" style={{ fontFamily: "'Source Serif 4', 'Georgia', serif" }}>
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
+        <SeasonalThemeProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ThemeProvider>
+        </SeasonalThemeProvider>
         <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js" defer />
         <script noModule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js" defer />
       </body>

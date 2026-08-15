@@ -297,7 +297,7 @@ function AccountTab({ user, refetchUser }) {
       {/* ── Save ── */}
       <div className="flex items-center gap-3">
         <button onClick={handleSave} disabled={saving}
-          className="px-6 py-2.5 bg-[#9b7bf7] text-[var(--text-primary)] font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40">
+          className="px-6 py-2.5 bg-[#9b7bf7] text-white font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40">
           {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Profile'}
         </button>
         {saved && <span className="text-[12px] text-[#4ade80] flex items-center gap-1"><ion-icon name="checkmark-circle" style={{ fontSize: '14px' }} /> Profile updated</span>}
