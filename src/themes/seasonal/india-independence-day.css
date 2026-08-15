@@ -7,20 +7,20 @@ html[data-seasonal-theme='india-independence-day'] {
   --india-saffron: #ff9933;
   --india-green: #138808;
   --india-navy: #1a4b8c;
+  --independence-page-gradient: linear-gradient(
+    112deg,
+    color-mix(in srgb, var(--india-saffron) 9%, transparent) 0%,
+    color-mix(in srgb, var(--india-saffron) 5%, transparent) 25%,
+    color-mix(in srgb, var(--india-navy) 2.5%, transparent) 50%,
+    color-mix(in srgb, var(--india-green) 5%, transparent) 75%,
+    color-mix(in srgb, var(--india-green) 9%, transparent) 100%
+  );
 }
 
-html[data-seasonal-theme='india-independence-day'] body {
-  background-image:
-    radial-gradient(ellipse 70% 44% at 0% 12%, rgba(255, 153, 51, 0.055), transparent 70%),
-    radial-gradient(ellipse 70% 48% at 100% 88%, rgba(19, 136, 8, 0.05), transparent 70%);
-  background-attachment: fixed;
-}
-
-.independence-day-shell {
-  background-image:
-    radial-gradient(ellipse 75% 48% at 0% 8%, color-mix(in srgb, var(--india-saffron) 8%, transparent), transparent 68%),
-    radial-gradient(ellipse 75% 52% at 100% 92%, color-mix(in srgb, var(--india-green) 7%, transparent), transparent 68%),
-    linear-gradient(135deg, color-mix(in srgb, var(--india-saffron) 2.5%, transparent), transparent 42%, transparent 58%, color-mix(in srgb, var(--india-green) 2.5%, transparent));
+html[data-seasonal-theme='india-independence-day'] body,
+.independence-day-shell,
+html[data-seasonal-theme='india-independence-day'] .edit-page {
+  background-image: var(--independence-page-gradient);
   background-attachment: fixed;
   background-position: center;
   background-repeat: no-repeat;
@@ -126,17 +126,7 @@ html[data-seasonal-theme='india-independence-day'] .seasonal-themed-header {
 }
 
 .independence-day-sidebar {
-  background-image:
-    radial-gradient(ellipse at 15% 4%, color-mix(in srgb, var(--india-saffron) 10%, transparent), transparent 43%),
-    radial-gradient(ellipse at 15% 96%, color-mix(in srgb, var(--india-green) 9%, transparent), transparent 43%),
-    linear-gradient(180deg, var(--india-saffron) 0%, #ffb568 28%, color-mix(in srgb, #ffffff 76%, var(--border-default)) 46%, color-mix(in srgb, #ffffff 88%, var(--border-default)) 50%, color-mix(in srgb, #ffffff 76%, var(--border-default)) 54%, #48a84e 72%, var(--india-green) 100%);
-  background-position: center, center, right top;
-  background-repeat: no-repeat;
-  background-size: 100% 100%, 100% 100%, 3px 100%;
-}
-
-.independence-day-sidebar a[aria-current='page'] {
-  box-shadow: inset 3px 0 0 var(--india-navy);
+  background: transparent;
 }
 
 .independence-day-sidebar nav a:nth-child(3n + 1) ion-icon { color: var(--india-saffron); }
@@ -149,11 +139,15 @@ html[data-seasonal-theme='india-independence-day'] .seasonal-themed-header {
   background-blend-mode: screen, screen, normal;
 }
 
-[data-theme='dark'] .independence-day-shell {
-  background-image:
-    radial-gradient(ellipse 75% 48% at 0% 8%, color-mix(in srgb, var(--india-saffron) 9%, transparent), transparent 68%),
-    radial-gradient(ellipse 75% 52% at 100% 92%, color-mix(in srgb, var(--india-green) 9%, transparent), transparent 68%),
-    linear-gradient(135deg, rgba(255, 153, 51, 0.025), transparent 44%, transparent 56%, rgba(19, 136, 8, 0.03));
+html[data-theme='dark'][data-seasonal-theme='india-independence-day'] {
+  --independence-page-gradient: linear-gradient(
+    112deg,
+    rgba(255, 153, 51, 0.075) 0%,
+    rgba(255, 153, 51, 0.035) 25%,
+    rgba(65, 108, 158, 0.025) 50%,
+    rgba(19, 136, 8, 0.04) 75%,
+    rgba(19, 136, 8, 0.08) 100%
+  );
 }
 
 /* Shared controls pick up green actions, saffron selection and navy focus. */
