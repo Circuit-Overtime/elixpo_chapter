@@ -205,6 +205,21 @@ body {
   --india-saffron: #ff9933;
   --india-green: #138808;
   --india-navy: #1a4b8c;
+  /* Ambient colour stays behind content and does not create layout boxes. */
+  background-image:
+    radial-gradient(ellipse 75% 48% at 0% 8%, color-mix(in srgb, var(--india-saffron) 8%, transparent), transparent 68%),
+    radial-gradient(ellipse 75% 52% at 100% 92%, color-mix(in srgb, var(--india-green) 7%, transparent), transparent 68%),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--india-saffron) 2.5%, transparent),
+      transparent 42%,
+      transparent 58%,
+      color-mix(in srgb, var(--india-green) 2.5%, transparent)
+    );
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .independence-day-navbar {
@@ -282,6 +297,13 @@ body {
 [data-theme='dark'] .independence-day-navbar,
 [data-theme='dark'] .independence-day-sidebar {
   background-blend-mode: screen, screen, normal;
+}
+
+[data-theme='dark'] .independence-day-shell {
+  background-image:
+    radial-gradient(ellipse 75% 48% at 0% 8%, color-mix(in srgb, var(--india-saffron) 9%, transparent), transparent 68%),
+    radial-gradient(ellipse 75% 52% at 100% 92%, color-mix(in srgb, var(--india-green) 9%, transparent), transparent 68%),
+    linear-gradient(135deg, rgba(255, 153, 51, 0.025), transparent 44%, transparent 56%, rgba(19, 136, 8, 0.03));
 }
 
 /* Markdown document pages (/privacy, /terms, /docs) — full-width, spaced. */
