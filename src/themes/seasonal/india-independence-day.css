@@ -7,21 +7,6 @@ html[data-seasonal-theme='india-independence-day'] {
   --india-saffron: #ff9933;
   --india-green: #138808;
   --india-navy: #1a4b8c;
-  --accent: var(--india-green);
-  --accent-hover: #0f7007;
-  --accent-subtle: rgba(19, 136, 8, 0.09);
-  --accent-text: #0f7007;
-  --input-focus: var(--india-navy);
-  --selection-bg: rgba(255, 153, 51, 0.2);
-}
-
-html[data-theme='dark'][data-seasonal-theme='india-independence-day'] {
-  --accent: #4dbb45;
-  --accent-hover: #65cb5e;
-  --accent-subtle: rgba(77, 187, 69, 0.1);
-  --accent-text: #73d66c;
-  --input-focus: #6d9dd4;
-  --selection-bg: rgba(255, 153, 51, 0.25);
 }
 
 html[data-seasonal-theme='india-independence-day'] body {
