@@ -200,6 +200,100 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
+/* India Independence Day — enabled by AppShell only on 15 August in IST. */
+.independence-day-shell {
+  --india-saffron: #ff9933;
+  --india-green: #138808;
+  --india-navy: #1a4b8c;
+}
+
+.independence-day-navbar {
+  isolation: isolate;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--india-saffron) 10%, transparent),
+    transparent 38%,
+    transparent 62%,
+    color-mix(in srgb, var(--india-green) 10%, transparent)
+  );
+}
+
+.independence-day-navbar::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 3px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--india-saffron) 0 33.333%,
+    #f7f7f7 33.333% 66.666%,
+    var(--india-green) 66.666% 100%
+  );
+  box-shadow: 0 1px 5px color-mix(in srgb, var(--india-navy) 16%, transparent);
+}
+
+.independence-day-label {
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--india-navy) 22%, var(--border-default));
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--bg-surface) 84%, transparent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.independence-day-wheel {
+  width: 0.48rem;
+  height: 0.48rem;
+  border: 1.5px solid var(--india-navy);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--india-navy) 0 18%, transparent 21%);
+}
+
+.independence-day-sidebar {
+  position: relative;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--india-saffron) 7%, transparent),
+    transparent 35%,
+    transparent 65%,
+    color-mix(in srgb, var(--india-green) 7%, transparent)
+  );
+}
+
+.independence-day-sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -1px;
+  bottom: 0;
+  width: 3px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    var(--india-saffron) 0 33.333%,
+    color-mix(in srgb, #ffffff 72%, var(--border-default)) 33.333% 66.666%,
+    var(--india-green) 66.666% 100%
+  );
+}
+
+.independence-day-sidebar a[aria-current='page'] {
+  box-shadow: inset 3px 0 0 var(--india-navy);
+}
+
+[data-theme='dark'] .independence-day-navbar,
+[data-theme='dark'] .independence-day-sidebar {
+  background-blend-mode: screen;
+}
+
 /* Markdown document pages (/privacy, /terms, /docs) — full-width, spaced. */
 .legal-md { color: var(--text-secondary); line-height: 1.7; }
 .legal-md h1 { font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.25rem; }
