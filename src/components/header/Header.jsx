@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import useUIStore, { MAX_WORKSPACE_NAME_LENGTH } from '@/store/useUIStore'
 import useSketchStore from '@/store/useSketchStore'
-import useAuthStore from '@/store/useAuthStore'
+import useAuthStore, { WORKER_URL } from '@/store/useAuthStore'
 import { useProfileStore } from '@/hooks/useGuestProfile'
 import { persistLayoutMode } from '@/hooks/useDocAutoSave'
 import { triggerCloudSync } from '@/hooks/useAutoSave'
-import { generateKey, encrypt, decrypt } from '@/utils/encryption'
+import { getSessionID } from '@/hooks/useSessionID'
+import { decrypt } from '@/utils/encryption'
 import { showToast } from '@/utils/toast'
 
 function LayoutModeToggle() {
@@ -112,6 +113,7 @@ function ProfileDropdown() {
   const closeMenu = useUIStore((s) => s.closeMenu)
   const [open, setOpen] = useState(false)
   const [testingE2E, setTestingE2E] = useState(false)
+  const [e2eResult, setE2EResult] = useState('idle')
   const ref = useRef(null)
 
   useEffect(() => {
@@ -138,16 +140,65 @@ function ProfileDropdown() {
   const testE2E = async () => {
     if (testingE2E) return
     setTestingE2E(true)
+    setE2EResult('idle')
     try {
-      const probe = `lixsketch-e2e-${Date.now()}`
-      const key = await generateKey()
-      const ciphertext = await encrypt(probe, key)
-      const plaintext = await decrypt(ciphertext, key)
-      if (plaintext !== probe || ciphertext === probe) throw new Error('Encryption round trip failed')
-      showToast('E2E encryption test passed', { tone: 'success', duration: 2200 })
+      if (!window.isSecureContext || !window.crypto?.subtle) {
+        throw new Error('A secure browser context is required')
+      }
+
+      const sessionId = getSessionID()
+      if (!sessionId) throw new Error('Canvas session is not ready')
+
+      // Exercise the real persistence path: serialize the current canvas,
+      // encrypt it with its stable session key, and write it to the scene DB.
+      const synced = await triggerCloudSync()
+      if (!synced) throw new Error('Cloud sync was unavailable or rate limited')
+
+      const encryptionStore = useUIStore.getState()
+      const key = encryptionStore.loadEncryptionKeyForSession?.(sessionId)
+        || encryptionStore.sessionEncryptionKey
+      if (!key) throw new Error('The browser-held session key is missing')
+
+      // Read back exactly what the server stores. The key is deliberately not
+      // included in this request; it never leaves the browser.
+      const response = await fetch(
+        `${WORKER_URL}/api/scenes/load?sessionId=${encodeURIComponent(sessionId)}`,
+        { cache: 'no-store' },
+      )
+      if (!response.ok) throw new Error(`Encrypted reload failed (${response.status})`)
+      const stored = await response.json()
+      if (!stored.encryptedData || stored.missing) throw new Error('No encrypted cloud payload was returned')
+
+      const plaintext = await decrypt(stored.encryptedData, key)
+      const scene = JSON.parse(plaintext)
+      if (scene?.format !== 'lixsketch' || !Array.isArray(scene.shapes)) {
+        throw new Error('Decrypted payload is not a valid LixSketch scene')
+      }
+      if (scene.shapes.length !== (window.shapes?.length || 0)) {
+        throw new Error('Cloud payload does not match the current canvas')
+      }
+
+      // AES-GCM must reject any modified byte. This checks authentication,
+      // not just whether encryption and decryption happen to round-trip.
+      const index = Math.floor(stored.encryptedData.length / 2)
+      const replacement = stored.encryptedData[index] === 'A' ? 'B' : 'A'
+      const tampered = stored.encryptedData.slice(0, index)
+        + replacement
+        + stored.encryptedData.slice(index + 1)
+      let tamperRejected = false
+      try {
+        await decrypt(tampered, key)
+      } catch {
+        tamperRejected = true
+      }
+      if (!tamperRejected) throw new Error('Ciphertext authentication check failed')
+
+      setE2EResult('passed')
+      showToast(`E2E verified · ${scene.shapes.length} encrypted shape${scene.shapes.length === 1 ? '' : 's'} reloaded`, { tone: 'success', duration: 3200 })
     } catch (error) {
       console.error('[E2E Test] failed:', error)
-      showToast('E2E encryption test failed', { tone: 'warn', duration: 2600 })
+      setE2EResult('failed')
+      showToast(`E2E test failed · ${error?.message || 'unknown error'}`, { tone: 'warn', duration: 3600 })
     } finally {
       setTestingE2E(false)
     }
@@ -173,12 +224,14 @@ function ProfileDropdown() {
       <button
         onClick={testE2E}
         disabled={testingE2E}
-        className="h-8 px-2 flex items-center justify-center gap-1 rounded-r-lg text-text-muted hover:text-accent hover:bg-surface-hover transition-all cursor-pointer disabled:cursor-wait disabled:opacity-50"
-        title="Test E2E encryption"
+        className={`h-8 px-2 flex items-center justify-center gap-1 rounded-r-lg hover:bg-surface-hover transition-all cursor-pointer disabled:cursor-wait disabled:opacity-50 ${
+          e2eResult === 'passed' ? 'text-green-400' : e2eResult === 'failed' ? 'text-red-400' : 'text-text-muted hover:text-accent'
+        }`}
+        title={e2eResult === 'passed' ? 'E2E database round-trip verified' : 'Test E2E encryption and database round-trip'}
         aria-label="Test E2E encryption"
       >
-        <i className={`bx ${testingE2E ? 'bx-loader-alt animate-spin' : 'bx-lock-alt'} text-sm`} />
-        <span className="text-[10px] hidden lg:inline">Test</span>
+        <i className={`bx ${testingE2E ? 'bx-loader-alt animate-spin' : e2eResult === 'passed' ? 'bx-check-shield' : e2eResult === 'failed' ? 'bx-error-circle' : 'bx-lock-alt'} text-sm`} />
+        <span className="text-[10px] hidden lg:inline">{e2eResult === 'passed' ? 'Verified' : e2eResult === 'failed' ? 'Retry' : 'Test'}</span>
       </button>
 
       {open && (
@@ -302,11 +355,7 @@ export default function Header() {
         {/* Logo */}
         <div
           onClick={() => {
-            if (window.location.pathname === '/') {
-              window.location.reload()
-            } else {
-              window.location.href = '/'
-            }
+            window.location.href = '/?noredirect=1'
           }}
           className="w-[26px] h-[26px] rounded-md bg-contain bg-no-repeat bg-center cursor-pointer"
           style={{ backgroundImage: "url('/icon.png')" }}

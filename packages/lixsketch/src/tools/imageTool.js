@@ -538,8 +538,8 @@ const handleMouseUpImage = (e) => {
     }
 };
 
-function selectImage(event) {
-    if (!isSelectionToolActive) return;
+function selectImage(event, force = false) {
+    if (!isSelectionToolActive && !force) return;
 
     event.stopPropagation(); // Prevent click from propagating to the SVG
 
@@ -1320,6 +1320,14 @@ document.addEventListener('keydown', (e) => {
 
 // Expose upload pipeline globally so generated/pasted images can use it
 window.uploadImageToCloudinary = uploadImageToCloudinary;
+
+// Programmatic selection bridge used by generated vector-image shapes.
+// Keeping the selection state in this module prevents a second, divergent
+// implementation of image dragging and screen-space resize controls.
+window.__selectImageElement = function(element, { force = false } = {}) {
+    if (!element) return;
+    selectImage({ target: element, stopPropagation: () => {} }, force);
+};
 
 // Window bridge: allow React UI to trigger the file picker
 window.openImageFilePicker = function() {

@@ -112,6 +112,18 @@ function recordDbSave() {
   _dbSaveTimestamps.push(Date.now())
 }
 
+async function getOrCreateSessionEncryptionKey(sessionId) {
+  const store = useUIStore.getState()
+  // Resolve by session ID first. A global in-memory key may belong to the
+  // canvas visited immediately before this one during SPA navigation.
+  const existingKey = store.loadEncryptionKeyForSession?.(sessionId)
+  if (existingKey) return existingKey
+
+  const key = await generateKey()
+  store.setSessionEncryptionKey?.(key, sessionId)
+  return key
+}
+
 // ── Save to localStorage (the buffer) ──
 function saveToLocalStorage() {
   if (_workspaceDeletionInProgress) return false
@@ -192,7 +204,9 @@ async function saveToDb({ force = false } = {}) {
       sceneJSON = JSON.stringify(sceneData)
     }
 
-    const key = await generateKey()
+    // Reuse the session key so existing encrypted canvas links remain valid
+    // after subsequent saves. Generate it only for the first cloud write.
+    const key = await getOrCreateSessionEncryptionKey(sessionId)
     const encryptedData = await encrypt(sceneJSON, key)
 
     const createdBy = authState.isAuthenticated
@@ -619,10 +633,9 @@ export default function useAutoSave() {
         const sceneData = serializer.save(workspaceName)
         const sceneJSON = JSON.stringify(sceneData)
 
-        const key = await generateKey()
-        const encryptedData = await encrypt(sceneJSON, key)
-
         const sessionId = getSessionID()
+        const key = await getOrCreateSessionEncryptionKey(sessionId)
+        const encryptedData = await encrypt(sceneJSON, key)
         const createdBy = authState.isAuthenticated
           ? (authState.user?.id || 'anonymous')
           : (useProfileStore.getState().profile?.id || localStorage.getItem('lixsketch-guest-session') || 'anonymous')

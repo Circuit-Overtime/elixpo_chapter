@@ -373,6 +373,17 @@ export default function LandingPage() {
       setCheckingSavedCanvas(false)
     }
 
+    // An explicit logo click is a request to see the landing page. Normal
+    // visits still resume the last restorable canvas below.
+    if (new URLSearchParams(window.location.search).has('noredirect')) {
+      clearTimeout(timeout)
+      showLandingPage()
+      return () => {
+        cancelled = true
+        controller.abort()
+      }
+    }
+
     const restoreRememberedCanvas = async () => {
       const rememberedCanvasId = getRememberedCanvasId()
       if (!rememberedCanvasId) {

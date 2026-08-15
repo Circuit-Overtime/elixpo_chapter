@@ -180,6 +180,10 @@ function serializeShape(shape) {
                 width: shape.width, height: shape.height,
                 rotation: shape.rotation,
                 href: el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '',
+                frameType: shape._frameType || null,
+                graphData: shape._frameType === 'graph' && shape._graphData
+                    ? cloneOptions(shape._graphData)
+                    : null,
             };
         }
 
@@ -304,6 +308,15 @@ function deserializeShape(data) {
             const shape = new ImageShape(imgEl);
             if (data.rotation) shape.rotation = data.rotation;
             if (data.shapeID) shape.shapeID = data.shapeID;
+            if (data.frameType === 'graph' && data.graphData) {
+                if (typeof window.__hydrateGraphShape === 'function') {
+                    window.__hydrateGraphShape(shape, data.graphData);
+                } else {
+                    shape._frameType = 'graph';
+                    shape._graphData = cloneOptions(data.graphData);
+                    shape.element.setAttribute('data-graph-shape', 'true');
+                }
+            }
             return shape;
         }
 

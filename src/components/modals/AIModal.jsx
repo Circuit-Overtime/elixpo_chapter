@@ -809,25 +809,11 @@ export default function AIModal() {
     const validEquations = equations.filter(eq => eq.expression && eq.expression.trim())
     if (validEquations.length === 0) return
 
-    // If editing existing graph frame, remove old one
-    if (editingFrame && editingFrame._frameType === 'graph') {
-      try {
-        const contained = editingFrame.containedShapes ? [...editingFrame.containedShapes] : []
-        if (typeof editingFrame.destroy === 'function') editingFrame.destroy()
-        contained.forEach(s => {
-          if (!s) return
-          const idx = window.shapes?.indexOf(s)
-          if (idx !== -1) window.shapes.splice(idx, 1)
-          if (s.group?.parentNode) s.group.parentNode.removeChild(s.group)
-        })
-        const idx = window.shapes?.indexOf(editingFrame)
-        if (idx !== -1) window.shapes.splice(idx, 1)
-      } catch {}
-    }
-
     handleClose()
     if (window.__graphRenderer) {
-      const success = window.__graphRenderer(equations, graphSettings)
+      // Updating an existing graph keeps its canvas geometry intact.
+      const graphToUpdate = editingFrame?._frameType === 'graph' ? editingFrame : null
+      const success = window.__graphRenderer(equations, graphSettings, graphToUpdate)
       if (!success) {
         setToast({ status: 'error', message: 'Failed to render graph' })
         return

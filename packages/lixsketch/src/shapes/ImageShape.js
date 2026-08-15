@@ -262,8 +262,12 @@ class ImageShape {
     }
 
     selectShape() {
-        // Select the image
-        selectImage({ target: this.element, stopPropagation: () => {} });
+        // Image interaction state lives in imageTool. Use its bridge so
+        // programmatically-created images (graphs, restored scenes, paste)
+        // receive the same drag/resize controls as pointer-selected images.
+        if (typeof window.__selectImageElement === 'function') {
+            window.__selectImageElement(this.element, { force: true });
+        }
     }
 }
 

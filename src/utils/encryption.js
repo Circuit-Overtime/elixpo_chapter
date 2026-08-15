@@ -12,27 +12,25 @@
  * only people with the link (which includes the key) can read it.
  */
 
-import { isLocalhost } from '@/lib/env';
+function requireWebCrypto() {
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    throw new Error('Web Crypto API is unavailable; E2E encryption cannot run in this browser context')
+  }
+  return crypto
+}
 
 /**
  * Generate a new AES-GCM 256-bit encryption key.
  * Returns the key as a base64url string for embedding in URLs.
  */
 export async function generateKey() {
-  if (typeof crypto === 'undefined' || !crypto.subtle) {
-    if (!isLocalhost()) {
-      console.error("SECURITY WARNING: Web Crypto API not available in this context. Encryption is bypassed. This should only happen in local dev!");
-    } else {
-      console.warn("Web Crypto API not available. Using fallback key for local dev.");
-    }
-    return btoa('fallback-key-for-local-development').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-  }
-  const key = await crypto.subtle.generateKey(
+  const webCrypto = requireWebCrypto()
+  const key = await webCrypto.subtle.generateKey(
     { name: 'AES-GCM', length: 256 },
     true,
     ['encrypt', 'decrypt']
   )
-  const raw = await crypto.subtle.exportKey('raw', key)
+  const raw = await webCrypto.subtle.exportKey('raw', key)
   return bufToBase64url(new Uint8Array(raw))
 }
 
@@ -41,31 +39,20 @@ export async function generateKey() {
  * Returns base64url-encoded ciphertext (iv + encrypted data).
  */
 export async function encrypt(plaintext, keyBase64url) {
-  if (typeof crypto === 'undefined' || !crypto.subtle) {
-    if (!isLocalhost()) {
-      console.error("SECURITY WARNING: Web Crypto API not available in this context. Encryption is bypassed. This should only happen in local dev!");
-    } else {
-      console.warn("Web Crypto API not available in unsecure context. Skipping encryption for local dev.");
-    }
-    const encoded = new TextEncoder().encode(plaintext);
-    const iv = new Uint8Array(12);
-    const combined = new Uint8Array(iv.length + encoded.length);
-    combined.set(iv);
-    combined.set(encoded, iv.length);
-    return bufToBase64url(combined);
-  }
+  const webCrypto = requireWebCrypto()
 
   const keyBuf = base64urlToBuf(keyBase64url)
-  const key = await crypto.subtle.importKey(
+  if (keyBuf.byteLength !== 32) throw new Error('Invalid AES-256 key length')
+  const key = await webCrypto.subtle.importKey(
     'raw', keyBuf,
     { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt']
   )
 
-  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const iv = webCrypto.getRandomValues(new Uint8Array(12))
   const encoded = new TextEncoder().encode(plaintext)
-  const ciphertext = await crypto.subtle.encrypt(
+  const ciphertext = await webCrypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     key,
     encoded
@@ -84,19 +71,11 @@ export async function encrypt(plaintext, keyBase64url) {
  * Returns the original plaintext string.
  */
 export async function decrypt(ciphertextBase64url, keyBase64url) {
-  if (typeof crypto === 'undefined' || !crypto.subtle) {
-    if (!isLocalhost()) {
-      console.error("SECURITY WARNING: Web Crypto API not available in this context. Decryption is bypassed. This should only happen in local dev!");
-    } else {
-      console.warn("Web Crypto API not available. Skipping decryption for local dev.");
-    }
-    const combined = base64urlToBuf(ciphertextBase64url)
-    const ciphertext = combined.slice(12)
-    return new TextDecoder().decode(ciphertext)
-  }
+  const webCrypto = requireWebCrypto()
 
   const keyBuf = base64urlToBuf(keyBase64url)
-  const key = await crypto.subtle.importKey(
+  if (keyBuf.byteLength !== 32) throw new Error('Invalid AES-256 key length')
+  const key = await webCrypto.subtle.importKey(
     'raw', keyBuf,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -104,10 +83,11 @@ export async function decrypt(ciphertextBase64url, keyBase64url) {
   )
 
   const combined = base64urlToBuf(ciphertextBase64url)
+  if (combined.byteLength < 28) throw new Error('Invalid AES-GCM ciphertext')
   const iv = combined.slice(0, 12)
   const ciphertext = combined.slice(12)
 
-  const decrypted = await crypto.subtle.decrypt(
+  const decrypted = await webCrypto.subtle.decrypt(
     { name: 'AES-GCM', iv },
     key,
     ciphertext
