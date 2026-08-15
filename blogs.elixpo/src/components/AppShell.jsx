@@ -9,6 +9,7 @@ import { generatePixelAvatar } from '../utils/pixelAvatar';
 import JoinedToast from './JoinedToast';
 import { CreatorBadgeMark } from './CreatorBadge';
 import { CREATOR_BADGE_MAP } from '../../lib/badgeDefinitions';
+import { useSeasonalTheme } from '../themes/seasonal/SeasonalThemeProvider';
 
 // ─── Notification type config ───
 const NOTIF_CONFIG = {
@@ -426,6 +427,8 @@ export default function AppShell({ children }) {
   const pathname = usePathname();
   const { user, loading, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { activeTheme } = useSeasonalTheme();
+  const showIndependenceTheme = activeTheme?.id === 'india-independence-day';
 
   function handleLogin() {
     // Server route generates the CSRF state + sets an httpOnly cookie, then redirects.
@@ -433,16 +436,29 @@ export default function AppShell({ children }) {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
+    <div className={`min-h-screen${showIndependenceTheme ? ' independence-day-shell' : ''}`} style={{ backgroundColor: 'var(--bg-app)' }}>
       <JoinedToast />
       {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-md" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-app) 92%, transparent)', borderBottom: '1px solid var(--border-default)' }}>
+      <header className={`sticky top-0 z-50 backdrop-blur-md${showIndependenceTheme ? ' independence-day-navbar' : ''}`} style={{ backgroundColor: 'color-mix(in srgb, var(--bg-app) 92%, transparent)', borderBottom: '1px solid var(--border-default)' }}>
         <div className="max-w-[1400px] mx-auto px-3 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 sm:gap-3" aria-label="LixBlogs home">
-              <img src="/logo-mark.png" alt="" className="h-7 w-7 rounded-full sm:h-8 sm:w-8" />
+              <img src={activeTheme?.icon || '/logo-mark.png'} alt="" className={`h-7 w-7 rounded-full object-cover sm:h-8 sm:w-8${activeTheme ? ' seasonal-brand-icon' : ''}`} />
               <span className="whitespace-nowrap text-base font-bold tracking-tight font-kanit sm:text-xl" style={{ color: 'var(--text-primary)' }}>LixBlogs</span>
             </Link>
+            {showIndependenceTheme && (
+              <span
+                className="independence-day-label hidden sm:inline-flex"
+                tabIndex={0}
+                aria-describedby="independence-day-tooltip"
+              >
+                <span aria-hidden="true" className="independence-day-wheel" />
+                {activeTheme.shortLabel}
+                <span id="independence-day-tooltip" role="tooltip" className="independence-day-tooltip">
+                  {activeTheme.description}
+                </span>
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <GitHubStars />
@@ -489,7 +505,7 @@ export default function AppShell({ children }) {
       {/* Layout with sidebar */}
       <div className="max-w-[1400px] mx-auto flex">
         {/* Left Sidebar */}
-        <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] px-4 py-6 justify-between" style={{ borderRight: '1px solid var(--border-default)' }}>
+        <aside className={`hidden lg:flex flex-col w-[220px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] px-4 py-6 justify-between${showIndependenceTheme ? ' independence-day-sidebar' : ''}`} style={{ borderRight: '1px solid var(--border-default)' }}>
           <nav className="flex flex-col gap-1">
             {NAV_ITEMS.filter((item) => user || item.href === '/').map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -497,6 +513,7 @@ export default function AppShell({ children }) {
                 <Link
                   key={item.label}
                   href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors"
                   style={{
                     color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
@@ -514,6 +531,7 @@ export default function AppShell({ children }) {
             {user && (
             <Link
               href="/settings"
+              aria-current={pathname.startsWith('/settings') ? 'page' : undefined}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors"
               style={{
                 color: pathname.startsWith('/settings') ? 'var(--text-primary)' : 'var(--text-muted)',

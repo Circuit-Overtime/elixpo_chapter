@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useSeasonalTheme } from "../themes/seasonal/SeasonalThemeProvider";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import "../styles/editor/editor.css";
@@ -780,6 +781,7 @@ function EditorOutline({ editorContent }) {
 export default function WritePage({ slugid }) {
     const { user, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
+    const { activeTheme } = useSeasonalTheme();
     const editorRef = useRef(null);
     const autoSaveTimer = useRef(null);
     const [mode, setMode] = useState("edit");
@@ -2611,14 +2613,18 @@ export default function WritePage({ slugid }) {
     return (
         <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] edit-page">
             {/* Header */}
-            <header className="fixed top-0 left-0 w-full h-14 border-b border-[var(--border-default)] flex items-center justify-between px-5 bg-[var(--bg-app)]/95 backdrop-blur-md z-50">
+            <header className="seasonal-themed-header fixed top-0 left-0 w-full h-14 border-b border-[var(--border-default)] flex items-center justify-between px-5 bg-[var(--bg-app)]/95 backdrop-blur-md z-50">
                 {/* Left: Logo + breadcrumb */}
                 <div className="flex items-center gap-3 min-w-0">
                     <Link
                         href="/"
                         className="flex items-center gap-2.5 flex-shrink-0"
                     >
-                        <div className="h-7 w-7 rounded-full bg-[url('/logo.png')] bg-cover" />
+                        <img
+                            src={activeTheme?.icon || "/logo.png"}
+                            alt=""
+                            className={`h-7 w-7 rounded-full object-cover${activeTheme ? " seasonal-brand-icon" : ""}`}
+                        />
                         <span className="text-lg font-bold font-kanit text-[var(--text-primary)] hidden sm:block">
                             LixBlogs
                         </span>

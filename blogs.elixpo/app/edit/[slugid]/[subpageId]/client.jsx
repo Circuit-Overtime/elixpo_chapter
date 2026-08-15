@@ -352,7 +352,7 @@ export default function SubpageClient({ params }) {
   return (
     <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] edit-page">
       {/* Header */}
-      <header className="fixed top-0 left-0 w-full h-14 border-b border-[var(--border-default)] flex items-center justify-between px-5 bg-[var(--bg-app)]/95 backdrop-blur-md z-50">
+      <header className="seasonal-themed-header fixed top-0 left-0 w-full h-14 border-b border-[var(--border-default)] flex items-center justify-between px-5 bg-[var(--bg-app)]/95 backdrop-blur-md z-50">
         {/* Left: back + breadcrumb */}
         <div className="flex items-center gap-3 min-w-0">
           <Link href={`/edit/${slugid}`} className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0">

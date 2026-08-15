@@ -3,11 +3,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
+import { useSeasonalTheme } from '../themes/seasonal/SeasonalThemeProvider';
 
 const TABS = ['Overview', 'Posts', 'Audience', 'Acquisition'];
 const RANGES = [
   ['7d', '7 days'], ['30d', '30 days'], ['90d', '90 days'], ['12m', '12 months'], ['custom', 'Custom'],
 ];
+
+const DEFAULT_ANALYTICS_PALETTE = {
+  primary: '#9b7bf7', blue: '#60a5fa', green: '#4ade80', orange: '#f59e0b',
+  cyan: '#22d3ee', sky: '#38bdf8', rose: '#f472b6', violet: '#a78bfa',
+  categories: ['#9b7bf7', '#60a5fa', '#f472b6', '#4ade80', '#f59e0b'],
+};
+
+const INDEPENDENCE_ANALYTICS_PALETTE = {
+  primary: '#1a4b8c', blue: '#2874a6', green: '#138808', orange: '#ff9933',
+  cyan: '#2b7a78', sky: '#3f78a8', rose: '#df7828', violet: '#315f99',
+  categories: ['#ff9933', '#1a4b8c', '#138808', '#f2b36f', '#4f7ea8'],
+};
 
 const fmt = (value) => new Intl.NumberFormat('en', { notation: Number(value) >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(Number(value) || 0);
 
@@ -102,7 +115,7 @@ function TrendChart({ labels = [], values = [], color = '#9b7bf7', chartRef }) {
   );
 }
 
-function Breakdown({ title, rows = [], empty = 'No data yet' }) {
+function Breakdown({ title, rows = [], empty = 'No data yet', accent = '#9b7bf7' }) {
   const max = Math.max(...rows.map(row => Number(row.value)), 1);
   return (
     <section className="rounded-2xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
@@ -110,15 +123,14 @@ function Breakdown({ title, rows = [], empty = 'No data yet' }) {
       {rows.length ? <div className="space-y-4">{rows.map(row => (
         <div key={row.label || 'Unknown'}>
           <div className="flex justify-between text-[12px] mb-1.5"><span style={{ color: 'var(--text-body)' }}>{row.label || 'Unknown'}</span><span className="font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(row.value)}</span></div>
-          <div className="h-1.5 rounded-full" style={{ background: 'var(--bg-elevated)' }}><div className="h-full rounded-full bg-[#9b7bf7]" style={{ width: `${Math.max(3, (Number(row.value) / max) * 100)}%` }} /></div>
+          <div className="h-1.5 rounded-full" style={{ background: 'var(--bg-elevated)' }}><div className="h-full rounded-full" style={{ width: `${Math.max(3, (Number(row.value) / max) * 100)}%`, background: accent }} /></div>
         </div>
       ))}</div> : <p className="text-[13px] py-10 text-center" style={{ color: 'var(--text-faint)' }}>{empty}</p>}
     </section>
   );
 }
 
-function DonutBreakdown({ title, rows = [] }) {
-  const colors = ['#9b7bf7', '#60a5fa', '#f472b6', '#4ade80', '#f59e0b'];
+function DonutBreakdown({ title, rows = [], colors = DEFAULT_ANALYTICS_PALETTE.categories }) {
   const total = rows.reduce((sum, row) => sum + Number(row.value || 0), 0);
   let cursor = 0;
   const stops = rows.map((row, index) => {
@@ -140,7 +152,7 @@ function DonutBreakdown({ title, rows = [] }) {
   </section>;
 }
 
-function FunnelGraph({ rows = [] }) {
+function FunnelGraph({ rows = [], colors = DEFAULT_ANALYTICS_PALETTE.categories }) {
   const max = Math.max(...rows.map(row => Number(row.value || 0)), 1);
   return <section className="rounded-[22px] border p-5 sm:p-6 min-h-[390px] flex flex-col" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
     <div><h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Conversion funnel</h2><p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>From discovery to retained audience</p></div>
@@ -151,23 +163,23 @@ function FunnelGraph({ rows = [] }) {
       const ratio = previous ? value / previous : 1;
       const comparison = ratio > 1 ? `${ratio.toFixed(1)}× stage volume` : `${Math.round(ratio * 100)}% retained`;
       return <div key={row.label} className="text-center">
-        {index > 0 && <div className="h-7 flex items-center justify-center gap-2 text-[9px] tabular-nums" style={{ color: ratio > 1 ? '#8b5cf6' : 'var(--text-faint)' }}><span className="h-4 w-px" style={{ background: 'var(--border-default)' }} /><span>{ratio > 1 ? '↑' : '↓'} {comparison}</span></div>}
-        <div className="mx-auto min-w-[170px] h-11 px-4 flex items-center justify-between gap-3 transition-all" style={{ width: `${width}%`, clipPath: 'polygon(3% 0, 97% 0, 100% 50%, 97% 100%, 3% 100%, 0 50%)', background: `linear-gradient(90deg, rgba(155,123,247,${Math.max(.16, .38 - index * .04)}), rgba(96,165,250,${Math.max(.10, .25 - index * .03)}))`, color: 'var(--text-primary)' }}><span className="text-[11px] font-medium truncate">{row.label}</span><span className="text-[12px] font-bold tabular-nums">{fmt(value)}</span></div>
+        {index > 0 && <div className="h-7 flex items-center justify-center gap-2 text-[9px] tabular-nums" style={{ color: ratio > 1 ? colors[1] : 'var(--text-faint)' }}><span className="h-4 w-px" style={{ background: 'var(--border-default)' }} /><span>{ratio > 1 ? '↑' : '↓'} {comparison}</span></div>}
+        <div className="mx-auto min-w-[170px] h-11 px-4 flex items-center justify-between gap-3 transition-all" style={{ width: `${width}%`, clipPath: 'polygon(3% 0, 97% 0, 100% 50%, 97% 100%, 3% 100%, 0 50%)', background: `linear-gradient(90deg, color-mix(in srgb, ${colors[index % colors.length]} ${Math.max(22, 46 - index * 5)}%, transparent), color-mix(in srgb, ${colors[(index + 1) % colors.length]} ${Math.max(16, 34 - index * 4)}%, transparent))`, color: 'var(--text-primary)' }}><span className="text-[11px] font-medium truncate">{row.label}</span><span className="text-[12px] font-bold tabular-nums">{fmt(value)}</span></div>
       </div>;
     })}</div>
   </section>;
 }
 
-function ContentInventory({ published, drafts }) {
+function ContentInventory({ published, drafts, accent = '#9b7bf7' }) {
   const total = Number(published || 0) + Number(drafts || 0);
   const publishedShare = total ? (Number(published) / total) * 100 : 0;
-  return <article className="col-span-2 rounded-[22px] border p-5 sm:p-6 flex flex-col justify-between" style={{ background: 'linear-gradient(130deg, rgba(148,163,184,.1), var(--bg-surface))', borderColor: 'var(--border-default)' }}><div><p className="text-[11px] uppercase tracking-[.12em] font-semibold" style={{ color: 'var(--text-muted)' }}>Content inventory</p><p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>Publishing balance across your workspace</p></div><div className="grid grid-cols-2 gap-5 my-5"><div><p className="text-3xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(published)}</p><p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>Published</p></div><div><p className="text-3xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(drafts)}</p><p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>Drafts</p></div></div><div className="h-2.5 rounded-full overflow-hidden flex" style={{ background: 'var(--bg-elevated)' }}><span style={{ width: `${publishedShare}%`, background: '#9b7bf7' }} /><span className="flex-1 bg-[#94a3b8]/30" /></div></article>;
+  return <article className="col-span-2 rounded-[22px] border p-5 sm:p-6 flex flex-col justify-between" style={{ background: `linear-gradient(130deg, color-mix(in srgb, ${accent} 9%, transparent), var(--bg-surface))`, borderColor: 'var(--border-default)' }}><div><p className="text-[11px] uppercase tracking-[.12em] font-semibold" style={{ color: 'var(--text-muted)' }}>Content inventory</p><p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>Publishing balance across your workspace</p></div><div className="grid grid-cols-2 gap-5 my-5"><div><p className="text-3xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(published)}</p><p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>Published</p></div><div><p className="text-3xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(drafts)}</p><p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>Drafts</p></div></div><div className="h-2.5 rounded-full overflow-hidden flex" style={{ background: 'var(--bg-elevated)' }}><span style={{ width: `${publishedShare}%`, background: accent }} /><span className="flex-1 bg-[#94a3b8]/30" /></div></article>;
 }
 
-function CollectingNotice() {
+function CollectingNotice({ accent = '#9b7bf7' }) {
   return (
-    <div className="rounded-xl border px-4 py-3 flex items-start gap-3" style={{ background: 'rgba(155,123,247,.07)', borderColor: 'rgba(155,123,247,.22)' }}>
-      <ion-icon name="hourglass-outline" style={{ color: '#9b7bf7', fontSize: '18px', marginTop: 1 }} />
+    <div className="rounded-xl border px-4 py-3 flex items-start gap-3" style={{ background: `color-mix(in srgb, ${accent} 7%, transparent)`, borderColor: `color-mix(in srgb, ${accent} 24%, var(--border-default))` }}>
+      <ion-icon name="hourglass-outline" style={{ color: accent, fontSize: '18px', marginTop: 1 }} />
       <div><p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Dimensional analytics are collecting</p><p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Historical totals remain available. Audience, device, country, source, completion, and share insights fill in from this deployment onward.</p></div>
     </div>
   );
@@ -175,6 +187,8 @@ function CollectingNotice() {
 
 export default function StatsPage() {
   const { user, loading } = useAuth();
+  const { activeTheme } = useSeasonalTheme();
+  const palette = activeTheme?.id === 'india-independence-day' ? INDEPENDENCE_ANALYTICS_PALETTE : DEFAULT_ANALYTICS_PALETTE;
   const [tab, setTab] = useState('Overview');
   const [range, setRange] = useState('30d');
   const [scope, setScope] = useState('personal');
@@ -244,14 +258,14 @@ export default function StatsPage() {
       const context = canvas.getContext('2d');
       const roundRect = (x, y, width, height, radius, fill, stroke = '#e8e5ef') => { context.beginPath(); context.roundRect(x, y, width, height, radius); context.fillStyle = fill; context.fill(); context.strokeStyle = stroke; context.lineWidth = 2; context.stroke(); };
       context.fillStyle = '#faf9fc'; context.fillRect(0, 0, canvas.width, canvas.height);
-      context.fillStyle = '#8b5cf6'; context.font = '600 22px sans-serif'; context.fillText('LIXBLOGS · CREATOR ANALYTICS', 80, 82);
+      context.fillStyle = palette.primary; context.font = '600 22px sans-serif'; context.fillText('LIXBLOGS · CREATOR ANALYTICS', 80, 82);
       context.fillStyle = '#17131f'; context.font = '700 58px Georgia, serif'; context.fillText('Performance snapshot', 80, 150);
       context.fillStyle = '#746d80'; context.font = '24px Georgia, serif'; context.fillText(`${data?.scope?.label || 'Personal'} · ${RANGES.find(item => item[0] === range)?.[1] || range}`, 80, 194);
       const cards = [
-        ['Views', totals.views, data?.changes?.views, '#8b5cf6'],
-        ['Unique visitors', totals.uniqueVisitors, data?.changes?.uniqueVisitors, '#3b82f6'],
-        ['Reads', totals.reads, data?.changes?.reads, '#22c55e'],
-        ['Engagement', `${fmt(totals.engagementRate)}%`, data?.changes?.engagementRate, '#ec4899'],
+        ['Views', totals.views, data?.changes?.views, palette.primary],
+        ['Unique visitors', totals.uniqueVisitors, data?.changes?.uniqueVisitors, palette.orange],
+        ['Reads', totals.reads, data?.changes?.reads, palette.green],
+        ['Engagement', `${fmt(totals.engagementRate)}%`, data?.changes?.engagementRate, palette.blue],
       ];
       cards.forEach(([label, value, change, color], index) => {
         const x = 80 + index * 415;
@@ -286,7 +300,7 @@ export default function StatsPage() {
     <AppShell>
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-7">
-          <div><p className="text-[11px] uppercase tracking-[.18em] font-semibold text-[#9b7bf7] mb-2">Creator dashboard</p><h1 className="text-3xl sm:text-4xl font-bold" style={{ color: 'var(--text-primary)' }}>Analytics</h1><p className="text-[13px] mt-2" style={{ color: 'var(--text-muted)' }}>Understand reach, reading quality, audience, and growth.</p></div>
+          <div><p className="text-[11px] uppercase tracking-[.18em] font-semibold mb-2" style={{ color: palette.primary }}>Creator dashboard</p><h1 className="text-3xl sm:text-4xl font-bold" style={{ color: 'var(--text-primary)' }}>Analytics</h1><p className="text-[13px] mt-2" style={{ color: 'var(--text-muted)' }}>Understand reach, reading quality, audience, and growth.</p></div>
           <div className="flex flex-wrap gap-2">
             <select value={scope} onChange={event => setScope(event.target.value)} className="rounded-lg px-3 py-2 text-[12px]" style={{ background: 'var(--bg-surface)', color: 'var(--text-body)', border: '1px solid var(--border-default)' }} aria-label="Analytics scope"><option value="personal">Personal</option>{orgs.map(org => <option key={org.id} value={`org:${org.id}`}>{org.name}</option>)}</select>
             <button onClick={exportCSV} disabled={!data} className="rounded-lg px-3 py-2 text-[12px] border disabled:opacity-40" style={{ borderColor: 'var(--border-default)', color: 'var(--text-body)', background: 'var(--bg-surface)' }}><ion-icon name="download-outline" /> CSV</button>
@@ -295,36 +309,36 @@ export default function StatsPage() {
         </header>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6 border-b" style={{ borderColor: 'var(--border-default)' }}>
-          <nav className="flex overflow-x-auto" aria-label="Analytics sections">{TABS.map(item => <button key={item} onClick={() => setTab(item)} className="px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2" style={{ color: tab === item ? '#9b7bf7' : 'var(--text-muted)', borderColor: tab === item ? '#9b7bf7' : 'transparent' }}>{item}</button>)}</nav>
-          <div className="flex items-center gap-1.5 pb-3 md:pb-0 overflow-x-auto">{RANGES.map(([value, label]) => <button key={value} onClick={() => setRange(value)} className="px-2.5 py-1.5 rounded-md text-[11px] whitespace-nowrap" style={{ background: range === value ? '#9b7bf720' : 'transparent', color: range === value ? '#9b7bf7' : 'var(--text-faint)' }}>{label}</button>)}</div>
+          <nav className="flex overflow-x-auto" aria-label="Analytics sections">{TABS.map(item => <button key={item} onClick={() => setTab(item)} className="px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2" style={{ color: tab === item ? palette.primary : 'var(--text-muted)', borderColor: tab === item ? palette.primary : 'transparent' }}>{item}</button>)}</nav>
+          <div className="flex items-center gap-1.5 pb-3 md:pb-0 overflow-x-auto">{RANGES.map(([value, label]) => <button key={value} onClick={() => setRange(value)} className="px-2.5 py-1.5 rounded-md text-[11px] whitespace-nowrap" style={{ background: range === value ? `color-mix(in srgb, ${palette.green} 12%, transparent)` : 'transparent', color: range === value ? palette.green : 'var(--text-faint)' }}>{label}</button>)}</div>
         </div>
 
         {range === 'custom' && <div className="flex flex-wrap gap-3 mb-5"><label className="text-[12px]" style={{ color: 'var(--text-muted)' }}>From <input type="date" value={customFrom} onChange={event => setCustomFrom(event.target.value)} className="ml-2 rounded-lg px-3 py-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }} /></label><label className="text-[12px]" style={{ color: 'var(--text-muted)' }}>To <input type="date" value={customTo} onChange={event => setCustomTo(event.target.value)} className="ml-2 rounded-lg px-3 py-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }} /></label></div>}
 
         {error && <div className="rounded-xl border border-red-400/30 bg-red-400/10 text-red-300 px-4 py-3 text-[13px] mb-5 flex justify-between"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss">×</button></div>}
-        {data?.dimensionsCollecting && <div className="mb-5"><CollectingNotice /></div>}
-        {data && <div className="fixed -left-[10000px] top-0 w-[900px] pointer-events-none" aria-hidden="true"><TrendChart chartRef={chartRef} labels={data.trend.labels} values={data.trend[metric]} color={metric === 'views' ? '#9b7bf7' : '#4ade80'} /></div>}
+        {data?.dimensionsCollecting && <div className="mb-5"><CollectingNotice accent={palette.orange} /></div>}
+        {data && <div className="fixed -left-[10000px] top-0 w-[900px] pointer-events-none" aria-hidden="true"><TrendChart chartRef={chartRef} labels={data.trend.labels} values={data.trend[metric]} color={metric === 'views' ? palette.primary : palette.green} /></div>}
 
         {fetching ? <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-28 rounded-2xl animate-pulse bg-[var(--bg-elevated)]" />)}</div> : data && <>
           {tab === 'Overview' && <div className="space-y-6">
-            <div className="grid grid-cols-4 rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}>{[['Reach', 'Views & visitors'], ['Read', 'Depth & time'], ['Engage', 'Actions & completion'], ['Retain', 'Follower growth']].map(([step, detail], index) => <div key={step} className="relative px-3 py-2.5 border-r last:border-r-0" style={{ borderColor: 'var(--border-default)' }}><p className="text-[9px] uppercase tracking-[.14em] font-bold text-[#9b7bf7]">0{index + 1} · {step}</p><p className="hidden sm:block text-[10px] mt-0.5 truncate" style={{ color: 'var(--text-faint)' }}>{detail}</p></div>)}</div>
+            <div className="grid grid-cols-4 rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}>{[['Reach', 'Views & visitors'], ['Read', 'Depth & time'], ['Engage', 'Actions & completion'], ['Retain', 'Follower growth']].map(([step, detail], index) => <div key={step} className="relative px-3 py-2.5 border-r last:border-r-0" style={{ borderColor: 'var(--border-default)' }}><p className="text-[9px] uppercase tracking-[.14em] font-bold" style={{ color: palette.categories[index % palette.categories.length] }}>0{index + 1} · {step}</p><p className="hidden sm:block text-[10px] mt-0.5 truncate" style={{ color: 'var(--text-faint)' }}>{detail}</p></div>)}</div>
             <div className="grid grid-cols-2 lg:grid-cols-4 auto-rows-fr items-stretch gap-3 sm:gap-4">
-              <MetricCard featured trend={data.trend.views} label="Views" value={totals.views} previous={data.previous.views} change={data.changes.views} definition={definitions.views} />
-              <MetricCard label="Unique visitors" value={totals.uniqueVisitors} previous={data.previous.uniqueVisitors} change={data.changes.uniqueVisitors} definition={definitions.uniqueVisitors} accent="#60a5fa" />
-              <MetricCard label="Reads" value={totals.reads} previous={data.previous.reads} change={data.changes.reads} definition={definitions.reads} accent="#4ade80" />
-              <RatioCard label="Completion" value={totals.completionRate} previous={data.previous.completionRate} change={data.changes.completionRate} definition={definitions.completionRate} accent="#f59e0b" />
-              <MetricCard label="Avg. reading depth" value={totals.avgReadProgress} previous={data.previous.avgReadProgress} suffix="%" change={data.changes.avgReadProgress} definition={definitions.avgReadProgress} accent="#22d3ee" />
-              <MetricCard label="Avg. read time" value={totals.avgReadTime} previous={data.previous.avgReadTime} suffix="s" change={data.changes.avgReadTime} definition={definitions.avgReadTime} accent="#38bdf8" />
-              <RatioCard label="Engagement rate" value={totals.engagementRate} previous={data.previous.engagementRate} change={data.changes.engagementRate} definition={definitions.engagementRate} accent="#f472b6" />
-              <MetricCard label="Followers gained" value={totals.followers} previous={data.previous.followers} change={data.changes.followers} definition={definitions.followers} accent="#a78bfa" />
+              <MetricCard featured trend={data.trend.views} label="Views" value={totals.views} previous={data.previous.views} change={data.changes.views} definition={definitions.views} accent={palette.primary} />
+              <MetricCard label="Unique visitors" value={totals.uniqueVisitors} previous={data.previous.uniqueVisitors} change={data.changes.uniqueVisitors} definition={definitions.uniqueVisitors} accent={palette.orange} />
+              <MetricCard label="Reads" value={totals.reads} previous={data.previous.reads} change={data.changes.reads} definition={definitions.reads} accent={palette.green} />
+              <RatioCard label="Completion" value={totals.completionRate} previous={data.previous.completionRate} change={data.changes.completionRate} definition={definitions.completionRate} accent={palette.orange} />
+              <MetricCard label="Avg. reading depth" value={totals.avgReadProgress} previous={data.previous.avgReadProgress} suffix="%" change={data.changes.avgReadProgress} definition={definitions.avgReadProgress} accent={palette.cyan} />
+              <MetricCard label="Avg. read time" value={totals.avgReadTime} previous={data.previous.avgReadTime} suffix="s" change={data.changes.avgReadTime} definition={definitions.avgReadTime} accent={palette.sky} />
+              <RatioCard label="Engagement rate" value={totals.engagementRate} previous={data.previous.engagementRate} change={data.changes.engagementRate} definition={definitions.engagementRate} accent={palette.rose} />
+              <MetricCard label="Followers gained" value={totals.followers} previous={data.previous.followers} change={data.changes.followers} definition={definitions.followers} accent={palette.violet} />
               <MetricCard label="Followers lost" value={totals.followersLost} previous={data.previous.followersLost} change={data.changes.followersLost} accent="#f87171" />
-              <ContentInventory published={totals.published} drafts={totals.drafts} />
+              <ContentInventory published={totals.published} drafts={totals.drafts} accent={palette.green} />
             </div>
             <section className="rounded-2xl border p-4 sm:p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
               <div className="flex items-center justify-between mb-4"><div><h2 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Performance over time</h2><p className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>Daily totals in the selected period</p></div><select value={metric} onChange={event => setMetric(event.target.value)} className="rounded-lg px-3 py-1.5 text-[12px]" style={{ background: 'var(--bg-elevated)', color: 'var(--text-body)' }}><option value="views">Views</option><option value="reads">Reads</option></select></div>
-              <TrendChart labels={data.trend.labels} values={data.trend[metric]} color={metric === 'views' ? '#9b7bf7' : '#4ade80'} />
+              <TrendChart labels={data.trend.labels} values={data.trend[metric]} color={metric === 'views' ? palette.primary : palette.green} />
             </section>
-            <div className="grid md:grid-cols-2 gap-4 items-stretch"><DonutBreakdown title="Engagement mix" rows={[['Likes', totals.likes], ['Comments', totals.comments], ['Bookmarks', totals.bookmarks], ['Shares', totals.shares], ['Claps', totals.claps]].map(([label, value]) => ({ label, value }))} /><FunnelGraph rows={data.funnel} /></div>
+            <div className="grid md:grid-cols-2 gap-4 items-stretch"><DonutBreakdown title="Engagement mix" colors={palette.categories} rows={[['Likes', totals.likes], ['Comments', totals.comments], ['Bookmarks', totals.bookmarks], ['Shares', totals.shares], ['Claps', totals.claps]].map(([label, value]) => ({ label, value }))} /><FunnelGraph rows={data.funnel} colors={palette.categories} /></div>
           </div>}
 
           {tab === 'Posts' && <section className="rounded-2xl border overflow-hidden" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
@@ -332,9 +346,9 @@ export default function StatsPage() {
             <div className="overflow-x-auto"><table className="w-full min-w-[820px] text-left"><thead><tr className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-faint)' }}>{['Post', 'Views', 'Unique', 'Reads', 'Depth', 'Engagement'].map(label => <th key={label} className="px-4 py-3 font-semibold text-right first:text-left">{label}</th>)}</tr></thead><tbody>{posts.map(post => <tr key={post.id} className="border-t" style={{ borderColor: 'var(--border-default)' }}><td className="px-4 py-4"><p className="text-[13px] font-medium max-w-[300px] truncate" style={{ color: 'var(--text-primary)' }}>{post.title}</p><p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>{post.publishedAt ? new Date(post.publishedAt * 1000).toLocaleDateString() : 'Draft'}</p></td><td className="px-4 py-4 text-right text-[12px]">{fmt(post.views)}</td><td className="px-4 py-4 text-right text-[12px]">{fmt(post.uniqueVisitors)}</td><td className="px-4 py-4 text-right text-[12px]">{fmt(post.reads)}</td><td className="px-4 py-4 text-right text-[12px]">{post.avgReadProgress}%</td><td className="px-4 py-4 text-right text-[12px]">{post.engagementRate}%</td></tr>)}</tbody></table>{!posts.length && <p className="text-center py-16 text-[13px]" style={{ color: 'var(--text-faint)' }}>No matching published posts.</p>}</div>
           </section>}
 
-          {tab === 'Audience' && <div className="space-y-5"><div className="grid grid-cols-2 lg:grid-cols-4 gap-4"><MetricCard label="New readers" value={data.audience.newReaders} change={0} accent="#4ade80" /><MetricCard label="Returning readers" value={data.audience.returningReaders} change={0} accent="#60a5fa" /><MetricCard label="Signed-in readers" value={data.audience.signedIn} change={0} /><MetricCard label="Anonymous readers" value={data.audience.anonymous} change={0} accent="#94a3b8" /></div><div className="grid md:grid-cols-2 gap-4"><Breakdown title="Devices" rows={data.audience.devices} /><Breakdown title="Countries" rows={data.audience.countries} /></div></div>}
+          {tab === 'Audience' && <div className="space-y-5"><div className="grid grid-cols-2 lg:grid-cols-4 gap-4"><MetricCard label="New readers" value={data.audience.newReaders} change={0} accent={palette.green} /><MetricCard label="Returning readers" value={data.audience.returningReaders} change={0} accent={palette.orange} /><MetricCard label="Signed-in readers" value={data.audience.signedIn} change={0} accent={palette.primary} /><MetricCard label="Anonymous readers" value={data.audience.anonymous} change={0} accent="#94a3b8" /></div><div className="grid md:grid-cols-2 gap-4"><Breakdown title="Devices" rows={data.audience.devices} accent={palette.primary} /><Breakdown title="Countries" rows={data.audience.countries} accent={palette.green} /></div></div>}
 
-          {tab === 'Acquisition' && <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4"><Breakdown title="Traffic sources" rows={data.acquisition.sources} /><Breakdown title="Top referrers" rows={data.acquisition.referrers} /><Breakdown title="UTM campaigns" rows={data.acquisition.campaigns} /></div>}
+          {tab === 'Acquisition' && <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4"><Breakdown title="Traffic sources" rows={data.acquisition.sources} accent={palette.orange} /><Breakdown title="Top referrers" rows={data.acquisition.referrers} accent={palette.primary} /><Breakdown title="UTM campaigns" rows={data.acquisition.campaigns} accent={palette.green} /></div>}
         </>}
       </main>
     </AppShell>
