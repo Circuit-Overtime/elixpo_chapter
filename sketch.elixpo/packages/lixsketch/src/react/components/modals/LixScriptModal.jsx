@@ -43,7 +43,7 @@ export default function LixScriptModal() {
         <div className="mx-auto mb-5 w-12 h-12 rounded-xl bg-accent-blue/10 border border-accent-blue/25 flex items-center justify-center">
           <i className="bx bx-plug text-2xl text-accent-blue" />
         </div>
-        <span className="inline-flex px-2.5 py-1 rounded-full bg-[#a97852]/15 text-[#8f6244] text-[10px] font-semibold uppercase tracking-wider">
+        <span className="inline-flex px-2.5 py-1 rounded-full bg-accent-blue/10 text-accent-blue text-[10px] font-semibold uppercase tracking-wider">
           Coming soon
         </span>
         <h2 id="lixscript-coming-soon-title" className="mt-4 text-text-primary text-xl font-medium">LixScript MCP</h2>
