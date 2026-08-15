@@ -3,6 +3,7 @@
 // Depends on globals: svg, shapes, currentShape, currentZoom
 
 import { cleanupAttachments } from '../tools/arrowTool.js';
+import { registerRotationAnchor } from '../core/ScreenSpaceControls.js';
 
 function getSVGCoordsFromMouse(e) {
     const viewBox = svg.viewBox.baseVal;
@@ -775,6 +776,12 @@ startLabelEdit(labelElement) {
             }
             
             this.group.appendChild(rotationLine);
+            registerRotationAnchor(anchor, {
+                radius: 8,
+                edgeY: this.y,
+                line: rotationLine,
+                lineEnd: '2',
+            });
         } else {
             // Create resize handle (rectangle)
             anchor = document.createElementNS("http://www.w3.org/2000/svg", "rect");
