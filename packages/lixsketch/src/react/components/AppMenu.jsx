@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import useUIStore from '../store/useUIStore'
 import useSketchStore from '../store/useSketchStore'
 import { useAuthStore } from '../hooks/inertStores'
 import { triggerCloudSync } from '../hooks/inertStores'
-import { triggerDocCloudSync, persistLayoutMode } from '../hooks/inertStores'
 import { useTranslation } from '../hooks/useTranslation'
 
 // Issue #38 follow-up: theme-paired swatches. The menu picks the
@@ -25,6 +25,75 @@ const CANVAS_BACKGROUNDS_DARK = [
   { color: '#1B1615', label: 'menu.canvasBg.darkBrown' },
 ]
 
+function DangerWarningDialog({ action, workspaceName, onCancel, onConfirm }) {
+  useEffect(() => {
+    if (!action) return undefined
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [action, onCancel])
+
+  if (!action) return null
+  const deleting = action === 'delete'
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[10020] flex items-center justify-center p-4 font-[lixFont]"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="danger-warning-title"
+      onClick={onCancel}
+    >
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-[480px] rounded-2xl border border-red-500/35 bg-surface-card p-5 shadow-2xl shadow-black/50"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/15 text-red-400">
+            <i className={`bx ${deleting ? 'bx-trash' : 'bx-reset'} text-xl`} />
+          </div>
+          <div>
+            <h2 id="danger-warning-title" className="text-base text-text-primary">
+              {deleting ? 'Delete workspace?' : 'Reset canvas?'}
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-text-secondary">
+              {deleting
+                ? `“${workspaceName || 'Untitled'}” will be removed from this browser.`
+                : 'Every shape on this canvas will be removed. The workspace shell remains available.'}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-xs leading-5 text-red-300">
+          <i className="bx bx-error-circle mr-1.5" />
+          {deleting
+            ? 'This cannot be undone. Persistence managed by the host application is not deleted by the offline package.'
+            : 'This cannot be undone after the empty canvas is saved.'}
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-border-light px-3 py-2 text-xs text-text-secondary hover:bg-surface-hover cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-lg bg-red-500 px-3 py-2 text-xs text-white hover:bg-red-600 cursor-pointer"
+          >
+            {deleting ? 'Delete workspace' : 'Reset canvas'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 export default function AppMenu() {
   const { t, language } = useTranslation()
 
@@ -37,7 +106,8 @@ export default function AppMenu() {
   const PREFERENCE_ITEMS = [
     { label: t('prefs.toolLock'), shortcut: 'Q', id: 'toolLock' },
     { label: t('prefs.snapObjects'), shortcut: 'Alt+S', id: 'snapObjects' },
-    { label: t('prefs.toggleGrid'), shortcut: "Ctrl+'", id: 'toggleGrid' },
+    { label: t('menu.showGrid'), shortcut: "Ctrl+'", id: 'toggleGrid' },
+    { label: 'Show rulers', shortcut: 'Shift+R', id: 'toggleRulers' },
     { label: t('prefs.zenMode'), shortcut: 'Alt+Z', id: 'zenMode' },
     { label: t('prefs.viewMode'), shortcut: 'Alt+R', id: 'viewMode' },
     { label: t('prefs.canvasShapeProps'), shortcut: 'Alt+/', id: 'properties' },
@@ -48,8 +118,6 @@ export default function AppMenu() {
   const menuOpen = useUIStore((s) => s.menuOpen)
   const closeMenu = useUIStore((s) => s.closeMenu)
   const toggleSaveModal = useUIStore((s) => s.toggleSaveModal)
-  const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette)
-  const toggleHelpModal = useUIStore((s) => s.toggleHelpModal)
   const toggleExportImageModal = useUIStore((s) => s.toggleExportImageModal)
   const theme = useUIStore((s) => s.theme)
   const setTheme = useUIStore((s) => s.setTheme)
@@ -60,6 +128,8 @@ export default function AppMenu() {
   const clearHistory = useSketchStore((s) => s.clearHistory)
   const gridEnabled = useSketchStore((s) => s.gridEnabled)
   const toggleGrid = useSketchStore((s) => s.toggleGrid)
+  const rulersEnabled = useSketchStore((s) => s.rulersEnabled)
+  const toggleRulers = useSketchStore((s) => s.toggleRulers)
 
   const viewMode = useSketchStore((s) => s.viewMode)
   const zenMode = useSketchStore((s) => s.zenMode)
@@ -70,20 +140,35 @@ export default function AppMenu() {
   const toggleToolLock = useSketchStore((s) => s.toggleToolLock)
   const toggleSnapToObjects = useSketchStore((s) => s.toggleSnapToObjects)
 
-  const layoutMode = useSketchStore((s) => s.layoutMode)
-  const setLayoutMode = useSketchStore((s) => s.setLayoutMode)
-  const handleSetLayout = (mode) => {
-    if (mode === layoutMode) return
-    setLayoutMode(mode)
-    persistLayoutMode(mode)
-  }
-
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const authUser = useAuthStore((s) => s.user)
   const login = useAuthStore((s) => s.login)
   const logout = useAuthStore((s) => s.logout)
 
   const [prefsOpen, setPrefsOpen] = useState(false)
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const [actionsFlyoutPosition, setActionsFlyoutPosition] = useState({ top: 0, left: 0 })
+  const actionsButtonRef = useRef(null)
+  const [dangerAction, setDangerAction] = useState(null)
+
+  useEffect(() => {
+    if (menuOpen) return
+    setActionsOpen(false)
+    setPrefsOpen(false)
+  }, [menuOpen])
+
+  const toggleActionsFlyout = () => {
+    const opening = !actionsOpen
+    setPrefsOpen(false)
+    setActionsOpen(opening)
+    if (!opening || typeof window === 'undefined') return
+    const rect = actionsButtonRef.current?.getBoundingClientRect()
+    if (!rect) return
+    setActionsFlyoutPosition({
+      top: Math.max(8, Math.min(rect.top, window.innerHeight - 198)),
+      left: Math.max(8, rect.left - 238),
+    })
+  }
 
   // Menu is always accessible (via floating button in view/zen mode)
 
@@ -100,177 +185,90 @@ export default function AppMenu() {
     closeMenu()
   }
 
+  const handleQuickSave = () => {
+    const serializer = window.__sceneSerializer
+    if (serializer) {
+      const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
+      const sceneData = serializer.save(workspaceName)
+      const sessionId = window.__sessionID
+      const key = sessionId ? `lixsketch-autosave-${sessionId}` : 'lixsketch-autosave'
+      localStorage.setItem(key, JSON.stringify(sceneData))
+      useUIStore.getState().setSaveStatus('local')
+      triggerCloudSync()
+    }
+    closeMenu()
+  }
+
+  const actionItems = [
+    { label: t('menu.quickSave'), icon: 'bx-check-circle', shortcut: 'Ctrl+S', onClick: handleQuickSave },
+    { label: t('menu.open'), icon: 'bx-folder-open', shortcut: 'Ctrl+O', onClick: handleOpen },
+    { label: t('menu.saveShare'), icon: 'bx-save', shortcut: 'Ctrl+Shift+S', onClick: () => { toggleSaveModal(); closeMenu() } },
+    { label: t('menu.exportImage'), icon: 'bx-image', shortcut: 'Ctrl+Shift+E', onClick: () => { toggleExportImageModal(); closeMenu() } },
+    { label: t('menu.findText'), icon: 'bx-search', shortcut: 'Ctrl+F', onClick: () => { useUIStore.getState().toggleFindBar(); closeMenu() } },
+  ]
+
+  const openDangerWarning = (action) => {
+    setDangerAction(action)
+    closeMenu()
+  }
+
+  const handleDangerConfirm = () => {
+    const serializer = window.__sceneSerializer
+    if (dangerAction === 'delete') {
+      const sessionId = window.__sessionID
+      const keys = [
+        'lixsketch-autosave',
+        'lixsketch-autosave-meta',
+        'lixsketch-doc-autosave',
+        'lixsketch-doc-autosave-meta',
+        'lixsketch-workspace-name',
+      ]
+      if (sessionId) {
+        keys.push(
+          `lixsketch-autosave-${sessionId}`,
+          `lixsketch-autosave-meta-${sessionId}`,
+          `lixsketch-doc-autosave-${sessionId}`,
+          `lixsketch-doc-autosave-meta-${sessionId}`,
+          `lixsketch-enc-key-${sessionId}`,
+        )
+      }
+      keys.forEach((key) => localStorage.removeItem(key))
+      useUIStore.getState().setWorkspaceName?.('Untitled')
+      useUIStore.getState().setSaveStatus?.('idle')
+    }
+    serializer?.resetCanvas?.()
+    clearShapes()
+    clearHistory()
+    setDangerAction(null)
+  }
+
   return (
     <>
       {menuOpen && (
         <div
           className="fixed inset-0 z-[999]"
-          onClick={() => { closeMenu(); setPrefsOpen(false) }}
+          onClick={() => { closeMenu(); setActionsOpen(false); setPrefsOpen(false) }}
         />
       )}
       <div
+        onScroll={() => setActionsOpen(false)}
         className={`absolute top-14 right-4 w-[230px] max-h-[calc(100vh-140px)] overflow-y-auto no-scrollbar bg-surface/75 backdrop-blur-lg rounded-2xl z-[1000] border border-border-light p-1.5 font-[lixFont] text-[13px] transition-all duration-200 ${
           menuOpen
             ? 'opacity-100 blur-0 pointer-events-auto'
             : 'opacity-0 blur-[20px] pointer-events-none'
         }`}
       >
-        {/* Open */}
+        {/* File/search actions */}
         <button
-          onClick={handleOpen}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+          ref={actionsButtonRef}
+          onClick={toggleActionsFlyout}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200 ${actionsOpen ? 'bg-surface-hover' : ''}`}
         >
           <span className="flex items-center gap-2">
-            <i className="bx bx-folder-open text-sm" />
-            {t('menu.open')}
+            <i className="bx bx-bolt-circle text-sm" />
+            Actions
           </span>
-          <span className="text-text-dim text-xs">Ctrl+O</span>
-        </button>
-
-        {/* Quick Save */}
-        <button
-          onClick={() => {
-            const serializer = window.__sceneSerializer
-            if (serializer) {
-              const workspaceName = useUIStore.getState().workspaceName || 'Untitled'
-              const sceneData = serializer.save(workspaceName)
-              const sessionId = window.__sessionID
-              const key = sessionId ? `lixsketch-autosave-${sessionId}` : 'lixsketch-autosave'
-              localStorage.setItem(key, JSON.stringify(sceneData))
-              useUIStore.getState().setSaveStatus('local')
-              triggerCloudSync()
-            }
-            closeMenu()
-          }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-check-circle text-sm" />
-            {t('menu.quickSave')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+S</span>
-        </button>
-
-        {/* Save & Share */}
-        <button
-          onClick={() => { toggleSaveModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-save text-sm" />
-            {t('menu.saveShare')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+Shift+S</span>
-        </button>
-
-        {/* Export Image */}
-        <button
-          onClick={() => { toggleExportImageModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-image text-sm" />
-            {t('menu.exportImage')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+Shift+E</span>
-        </button>
-
-        <hr className="border-border-light my-1" />
-
-        {/* Commands - highlighted */}
-        <button
-          onClick={() => { toggleCommandPalette(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-accent-blue bg-accent-blue/10 hover:bg-accent-blue/20 cursor-pointer"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-command text-sm" />
-            {t('menu.commands')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+/</span>
-        </button>
-
-        {/* Find Text */}
-        <button
-          onClick={() => { useUIStore.getState().toggleFindBar(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-search text-sm" />
-            {t('menu.findText')}
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+F</span>
-        </button>
-
-        {/* Canvas Properties */}
-        <button
-          onClick={() => { useUIStore.getState().toggleCanvasProperties(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-info-circle text-sm" />
-            {t('menu.canvasProperties')}
-          </span>
-        </button>
-
-        {/* Help */}
-        <button
-          onClick={() => { toggleHelpModal(); closeMenu() }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-help-circle text-sm" />
-            {t('menu.help')}
-          </span>
-        </button>
-
-        <hr className="border-border-light my-1" />
-
-        {/* Document layout */}
-        <div className="px-3 py-1.5">
-          <p className="text-text-dim text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <i className="bx bx-file-blank text-[11px]" />
-            Document
-          </p>
-          <div className="flex items-center gap-1 bg-surface/60 border border-border-light rounded-lg p-0.5">
-            {[
-              { key: 'canvas', icon: 'bx-pen', label: 'Canvas' },
-              { key: 'split', icon: 'bx-layout', label: 'Split' },
-              { key: 'docs', icon: 'bxs-notepad', label: 'Docs' },
-            ].map((m) => {
-              const active = layoutMode === m.key
-              return (
-                <button
-                  key={m.key}
-                  onClick={() => handleSetLayout(m.key)}
-                  title={m.label}
-                  className={`flex-1 flex items-center justify-center gap-1 h-6 rounded-md text-[10.5px] transition-all duration-150 ${
-                    active
-                      ? 'bg-accent-blue text-text-primary'
-                      : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
-                  }`}
-                >
-                  <i className={`bx ${m.icon} text-[11px]`} />
-                  {m.label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Sync doc now (Ctrl+S triggers both, but explicit action is useful from menu) */}
-        <button
-          onClick={() => {
-            triggerCloudSync()
-            triggerDocCloudSync()
-            closeMenu()
-          }}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-cloud-upload text-sm" />
-            Sync canvas + doc
-          </span>
-          <span className="text-text-dim text-xs">Ctrl+S</span>
+          <i className="bx bx-chevron-left text-sm text-text-dim" />
         </button>
 
         <hr className="border-border-light my-1" />
@@ -290,7 +288,7 @@ export default function AppMenu() {
         {prefsOpen && (
           <div className="ml-2 border-l border-border-light pl-1">
             {/* Language Switcher */}
-            <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] transition-all duration-200">
+            <div className="w-full flex items-center justify-between px-3 py-2 border-b border-border-light text-text-secondary text-[11px] transition-all duration-200">
               <span className="flex items-center gap-2">
                 {t('prefs.language')}
               </span>
@@ -310,6 +308,7 @@ export default function AppMenu() {
                 (item.id === 'toolLock' && toolLock) ||
                 (item.id === 'snapObjects' && snapToObjects) ||
                 (item.id === 'toggleGrid' && gridEnabled) ||
+                (item.id === 'toggleRulers' && rulersEnabled) ||
                 (item.id === 'zenMode' && zenMode) ||
                 (item.id === 'viewMode' && viewMode) ||
                 (item.toggle) // arrow binding, snap midpoints default on
@@ -318,15 +317,17 @@ export default function AppMenu() {
                 if (item.id === 'toolLock') toggleToolLock()
                 else if (item.id === 'snapObjects') toggleSnapToObjects()
                 else if (item.id === 'toggleGrid') toggleGrid()
+                else if (item.id === 'toggleRulers') toggleRulers()
                 else if (item.id === 'zenMode') { toggleZenMode(); closeMenu() }
                 else if (item.id === 'viewMode') { toggleViewMode(); closeMenu() }
+                else if (item.id === 'properties') { useUIStore.getState().toggleCanvasProperties(); closeMenu() }
               }
 
               return (
                 <button
                   key={item.id}
                   onClick={handleClick}
-                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+                  className="w-full flex items-center justify-between px-3 py-2 border-b border-border-light last:border-b-0 text-text-secondary text-[11px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
                 >
                   <span className="flex items-center gap-2">
                     {isActive && (
@@ -342,35 +343,6 @@ export default function AppMenu() {
             })}
           </div>
         )}
-
-        {/* Grid toggle */}
-        <button
-          onClick={toggleGrid}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-text-secondary text-[12.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-grid-alt text-sm" />
-            {t('menu.showGrid')}
-          </span>
-          <div className={`w-7 h-4 rounded-full transition-all duration-150 relative ${gridEnabled ? 'bg-accent-blue' : 'bg-white/10'}`}>
-            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-150 ${gridEnabled ? 'left-3.5' : 'left-0.5'}`} />
-          </div>
-        </button>
-
-        {/* Reset The Canvas */}
-        <button
-          onClick={() => {
-            const serializer = window.__sceneSerializer
-            if (serializer?.resetCanvas) serializer.resetCanvas()
-            clearShapes(); clearHistory(); closeMenu()
-          }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-red-400 text-xs hover:bg-red-500/10 cursor-pointer transition-all duration-200"
-        >
-          <span className="flex items-center gap-2">
-            <i className="bx bx-reset text-sm" />
-            {t('menu.resetCanvas')}
-          </span>
-        </button>
 
         <hr className="border-border-light my-1" />
 
@@ -390,6 +362,26 @@ export default function AppMenu() {
             </a>
           )
         })}
+
+        <hr className="border-border-light my-1" />
+
+        <div className="rounded-xl border border-red-500/25 bg-red-500/[0.04] p-1">
+          <p className="px-2 py-1 text-[10px] uppercase tracking-wider text-red-400/80">Danger zone</p>
+          <button
+            onClick={() => openDangerWarning('reset')}
+            className="w-full flex items-center gap-2 border-b border-red-500/20 px-2 py-2 text-left text-xs text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
+          >
+            <i className="bx bx-reset text-sm" />
+            {t('menu.resetCanvas')}
+          </button>
+          <button
+            onClick={() => openDangerWarning('delete')}
+            className="w-full flex items-center gap-2 px-2 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+          >
+            <i className="bx bx-trash text-sm" />
+            Delete workspace
+          </button>
+        </div>
 
         <hr className="border-border-light my-1" />
 
@@ -417,7 +409,7 @@ export default function AppMenu() {
         ) : (
           <button
             onClick={() => { login(); closeMenu() }}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-text-secondary hover:bg-surface-hover"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all duration-200 text-text-secondary hover:bg-surface-hover cursor-pointer"
           >
             <span className="flex items-center gap-2">
               <i className="bx bx-log-in text-sm" />
@@ -476,7 +468,37 @@ export default function AppMenu() {
             ))}
           </div>
         </div>
+
       </div>
+
+      {menuOpen && actionsOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed w-[230px] bg-surface-card border border-border-light rounded-2xl p-1.5 shadow-2xl shadow-black/40 z-[1001] font-[lixFont]"
+          style={actionsFlyoutPosition}
+        >
+          {actionItems.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => { setActionsOpen(false); item.onClick() }}
+              className="w-full flex items-center justify-between px-3 py-2 border-b border-border-light last:border-b-0 text-text-secondary text-[11.5px] hover:bg-surface-hover cursor-pointer transition-all duration-200"
+            >
+              <span className="flex items-center gap-2">
+                <i className={`bx ${item.icon} text-sm text-text-muted`} />
+                {item.label}
+              </span>
+              <span className="text-text-dim text-[10px]">{item.shortcut}</span>
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
+
+      <DangerWarningDialog
+        action={dangerAction}
+        workspaceName={useUIStore.getState().workspaceName}
+        onCancel={() => setDangerAction(null)}
+        onConfirm={handleDangerConfirm}
+      />
     </>
   )
 }

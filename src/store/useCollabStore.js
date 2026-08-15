@@ -5,6 +5,9 @@ import { create } from 'zustand'
 const useCollabStore = create((set, get) => ({
   // Connection state
   connected: false,
+  connecting: false,
+  error: null,
+  activeRoomId: null,
   roomId: null,
   myColor: null,
   users: [],       // [{ userId, displayName, avatar, color }]
@@ -14,7 +17,11 @@ const useCollabStore = create((set, get) => ({
   // WebSocket ref (not reactive, just stored)
   ws: null,
 
-  setConnected: (connected) => set({ connected }),
+  setConnected: (connected) => set({ connected, connecting: false }),
+  setConnecting: (connecting) => set({ connecting }),
+  setError: (error) => set({ error, connecting: false }),
+  startRoom: (roomId) => set({ activeRoomId: roomId, error: null }),
+  stopRoom: () => set({ activeRoomId: null, connected: false, connecting: false, ws: null }),
   setRoomInfo: (info) => set({
     roomId: info.roomId,
     myColor: info.yourColor,
@@ -41,6 +48,9 @@ const useCollabStore = create((set, get) => ({
 
   reset: () => set({
     connected: false,
+    connecting: false,
+    error: null,
+    activeRoomId: null,
     roomId: null,
     myColor: null,
     users: [],

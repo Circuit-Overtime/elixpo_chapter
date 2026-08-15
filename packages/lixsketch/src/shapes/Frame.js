@@ -474,7 +474,7 @@ move(dx, dy) {
     labelText.setAttribute("x", this.x + 5);
     labelText.setAttribute("y", this.y - 10);
     labelText.setAttribute("font-size", `${16 / currentZoom}px`);
-    labelText.setAttribute("fill", this.options.stroke);
+    labelText.setAttribute("fill", this.options.labelColor || this.options.stroke);
     labelText.setAttribute("font-family", "lixFont");
     labelText.textContent = this.frameName || "Frame";
     labelText.style.cursor = "pointer";

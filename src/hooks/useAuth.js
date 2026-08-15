@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from 'react'
-import useAuthStore from '@/store/useAuthStore'
+import useAuthStore, { consumeAuthReturnTo } from '@/store/useAuthStore'
 
 export default function useAuth() {
   const init = useAuthStore((s) => s.init)
@@ -29,10 +29,12 @@ export default function useAuth() {
     const authUser = url.searchParams.get('auth_user')
 
     if (authToken && authUser) {
+      let callbackHandled = false
       try {
         const user = JSON.parse(authUser)
         console.log('[Auth] SSO callback received:', { id: user.id, email: user.email, displayName: user.displayName })
         handleCallback(authToken, user)
+        callbackHandled = true
       } catch (e) {
         console.error('[Auth] Failed to parse callback params:', e)
       }
@@ -41,6 +43,14 @@ export default function useAuth() {
       url.searchParams.delete('auth_token')
       url.searchParams.delete('auth_user')
       window.history.replaceState(null, '', url.pathname + url.hash)
+
+      if (callbackHandled) {
+        const returnTo = consumeAuthReturnTo()
+        if (returnTo) {
+          window.__lixAuthRedirecting = true
+          window.location.replace(returnTo)
+        }
+      }
       return
     }
 

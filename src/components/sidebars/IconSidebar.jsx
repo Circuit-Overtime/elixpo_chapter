@@ -182,7 +182,7 @@ export default function IconSidebar() {
   // picker follows the canvas theme (light by default, dark on toggle).
   return (
     <div
-      className={`absolute top-[60px] right-2 bottom-[56px] w-[300px] bg-surface-card border border-border-light rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${
+      className={`absolute top-[60px] right-2 bottom-[112px] w-[300px] bg-surface-card border border-border-light rounded-2xl z-[999] font-[lixFont] flex flex-col transition-transform duration-200 ${
         visible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
@@ -192,7 +192,7 @@ export default function IconSidebar() {
           <h3 className="text-text-primary text-sm font-medium">Icons</h3>
           <button
             onClick={() => setActiveTool(TOOLS.SELECT)}
-            className="w-6 h-6 flex items-center justify-center rounded-md text-text-dim hover:text-text-primary hover:bg-surface-hover transition-colors duration-100"
+            className="w-6 h-6 flex items-center justify-center rounded-md text-text-dim hover:text-text-primary hover:bg-surface-hover transition-colors duration-100 cursor-pointer"
             title="Close (Esc)"
           >
             <i className="bx bx-x text-lg" />
@@ -212,7 +212,12 @@ export default function IconSidebar() {
             spellCheck={false}
           />
           {query && (
-            <button onClick={() => setQuery('')} className="text-text-dim hover:text-text-secondary">
+            <button
+              onClick={() => setQuery('')}
+              className="text-text-dim hover:text-text-secondary cursor-pointer"
+              title="Clear search"
+              aria-label="Clear icon search"
+            >
               <i className="bx bxs-x-circle text-sm" />
             </button>
           )}
@@ -220,19 +225,25 @@ export default function IconSidebar() {
       </div>
 
       {/* Categories */}
-      <div className="flex flex-wrap gap-1 px-3.5 pb-2.5 shrink-0">
+      <div
+        className="grid grid-cols-4 gap-1.5 px-3.5 pb-3 shrink-0"
+        role="group"
+        aria-label="Filter icons by category"
+      >
         {CATEGORIES.map((cat) => (
           <button
             key={cat.value || 'all'}
             onClick={() => setCategory(cat.value)}
-            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs whitespace-nowrap transition-colors duration-100 ${
+            aria-pressed={category === cat.value}
+            title={`Show ${cat.label.toLowerCase()} icons`}
+            className={`h-8 min-w-0 flex items-center justify-center gap-1 rounded-lg border px-1.5 text-[10.5px] whitespace-nowrap transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue/50 ${
               category === cat.value
-                ? 'bg-accent-blue/20 text-accent-blue-hover'
-                : 'text-text-muted hover:bg-surface-hover hover:text-text-primary'
+                ? 'border-accent-blue/50 bg-accent-blue/20 text-accent-blue shadow-sm'
+                : 'border-border-light bg-surface/40 text-text-muted hover:border-accent-blue/30 hover:bg-surface-hover hover:text-text-primary'
             }`}
           >
-            <i className={`bx ${cat.icon} text-xs`} />
-            {cat.label}
+            <i className={`bx ${cat.icon} shrink-0 text-xs`} />
+            <span className="min-w-0 truncate">{cat.label}</span>
           </button>
         ))}
       </div>

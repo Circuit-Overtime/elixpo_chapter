@@ -7,6 +7,29 @@ const STORAGE_KEY = 'lixsketch-auth'
 const COOKIE_NAME = 'lixsketch-session'
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 // 7 days
 const ELIXPO_AUTH_URL = 'https://accounts.elixpo.com'
+const AUTH_RETURN_TO_KEY = 'lixsketch-auth-return-to'
+
+function normalizeAuthReturnTo(value) {
+  if (typeof window === 'undefined' || !value) return null
+  try {
+    const target = new URL(value, window.location.origin)
+    if (target.origin !== window.location.origin) return null
+    return `${target.pathname}${target.search}${target.hash}`
+  } catch {
+    return null
+  }
+}
+
+export function consumeAuthReturnTo() {
+  if (typeof window === 'undefined') return null
+  try {
+    const returnTo = normalizeAuthReturnTo(sessionStorage.getItem(AUTH_RETURN_TO_KEY))
+    sessionStorage.removeItem(AUTH_RETURN_TO_KEY)
+    return returnTo
+  } catch {
+    return null
+  }
+}
 
 function loadAuth() {
   if (typeof window === 'undefined') return null
@@ -55,7 +78,7 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  login: () => {
+  login: (returnTo) => {
     const clientId = process.env.NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID
     if (!clientId) {
       console.error('[Auth] Missing NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID')
@@ -66,6 +89,17 @@ const useAuthStore = create((set, get) => ({
     const state = crypto.randomUUID()
 
     sessionStorage.setItem('lixsketch-oauth-state', state)
+
+    const authReturnTo = normalizeAuthReturnTo(
+      returnTo || `${window.location.pathname}${window.location.search}${window.location.hash}`,
+    )
+    try {
+      if (authReturnTo && authReturnTo !== '/') {
+        sessionStorage.setItem(AUTH_RETURN_TO_KEY, authReturnTo)
+      } else {
+        sessionStorage.removeItem(AUTH_RETURN_TO_KEY)
+      }
+    } catch {}
 
     const authUrl = `${ELIXPO_AUTH_URL}/oauth/authorize` +
       `?response_type=code` +

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import useUIStore from '@/store/useUIStore'
+import useUIStore, { MAX_WORKSPACE_NAME_LENGTH } from '@/store/useUIStore'
 import useCollabStore from '@/store/useCollabStore'
 import { getSessionID } from '@/hooks/useSessionID'
 import { generateKey, encrypt } from '@/utils/encryption'
@@ -64,6 +64,7 @@ export default function SaveModal() {
   const [startingCollab, setStartingCollab] = useState(false)
   const [collabError, setCollabError] = useState('')
   const collabConnected = useCollabStore((s) => s.connected)
+  const collabRuntimeError = useCollabStore((s) => s.error)
 
   // Issue #24 bug #9: one-time view-only share link. Creates a separate
   // read-only snapshot of the current scene that anyone with the link can
@@ -122,6 +123,7 @@ export default function SaveModal() {
       const origin = window.location.origin
       const link = `${origin}/room/${roomId}#key=${key}`
 
+      useCollabStore.getState().startRoom(roomId)
       setCollabLink(link)
       setCollabCopied(false)
     } catch (err) {
@@ -199,11 +201,8 @@ export default function SaveModal() {
   }
 
   const handleEndSession = () => {
-    const ws = useCollabStore.getState().ws
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.close()
-    }
-    useCollabStore.getState().reset()
+    window.__disconnectCollaboration?.()
+    useCollabStore.getState().stopRoom()
     setCollabLink('')
     setCollabCopied(false)
   }
@@ -298,10 +297,14 @@ export default function SaveModal() {
         <div className="px-6 pb-6 flex flex-col gap-4">
           {/* Workspace Name */}
           <div>
-            <label className="text-text-dim text-xs uppercase tracking-wider mb-1.5 block">Workspace Name</label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-text-dim text-xs uppercase tracking-wider">Workspace Name</label>
+              <span className="text-[10px] text-text-dim">{workspaceName.length}/{MAX_WORKSPACE_NAME_LENGTH}</span>
+            </div>
             <input
               type="text"
               value={workspaceName}
+              maxLength={MAX_WORKSPACE_NAME_LENGTH}
               onChange={(e) => setWorkspaceName(e.target.value)}
               placeholder="e.g. cosmic-penguin"
               className="w-full bg-surface text-text-primary text-sm border border-border-light rounded-lg px-3 py-2 outline-none focus:border-accent-blue transition-all duration-200"
@@ -471,8 +474,8 @@ export default function SaveModal() {
               </button>
             )}
 
-            {collabError && (
-              <p className="text-red-400 text-[10px] mt-2">{collabError}</p>
+            {(collabError || collabRuntimeError) && (
+              <p className="text-red-400 text-[10px] mt-2">{collabError || collabRuntimeError}</p>
             )}
           </div>
 

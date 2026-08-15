@@ -1,0 +1,52 @@
+# Implementation TODO
+
+- [x] Consolidate Canvas and Document shortcuts under `Ctrl + /`.
+- [x] Remove the standalone Help and Shortcuts modals.
+- [x] Replace the profile name with a save-status border on the avatar.
+- [x] Keep E2E, Test, and the existing profile dropdown in the compact profile pill.
+- [x] Add an edit affordance beside the workspace name.
+- [x] Route browser zoom shortcuts to canvas zoom.
+- [x] Consolidate file and search commands into an Actions flyout.
+- [x] Keep the command center trigger in the header and remove its menu duplicate.
+- [x] Remove the redundant Document layout control from the menu.
+- [x] Move Show Grid into Preferences and separate preference rows.
+- [x] Add horizontal separators between Actions flyout rows.
+- [x] Add a warned Danger Zone for canvas reset and workspace deletion.
+- [x] Show the pointer cursor on the Sign In button.
+- [x] Show the pointer cursor on the navbar account login controls.
+- [x] Show pointer cursors on all interactive navbar and header icons.
+- [x] Show pointer cursors on canvas footer controls and before workspace-name editing.
+- [x] Improve icon category filters and reduce the icon picker height.
+- [x] Show a success toast after a workspace-name edit is completed.
+- [x] Place the Danger Zone at the end of the menu after authentication.
+- [x] Persist and restore the Show Grid preference through localStorage.
+- [x] Apply the requested menu order and remove the standalone sync action.
+- [x] Show pointer cursors on every menu and menu-dialog button.
+- [x] Restore the last locally saved canvas from the landing route and add a New Canvas command.
+- [x] Return Start Drawing users to their canvas after sign-in.
+- [x] Limit workspace names to 20 characters across UI, state, and persistence.
+- [x] Add persistent top and left canvas rulers that track grid coordinates during pan and zoom, toggled with `Shift + R`.
+- [x] Focus a trailing document line when entering Docs and increase the default document font size.
+- [x] Keep the document add and drag controls side by side with reserved editor padding.
+- [x] Keep the document slash-command suggestion menu at a stable responsive width while filtering.
+- [x] Keep document text focused and position its formatting toolbar 4px below the selected line.
+- [x] Add a consistent left inset between document lines and their add/drag controls.
+- [x] Keep one document image embed control and position its URL field directly below the image placeholder.
+- [x] Validate remote document images before embedding and preserve the empty URL form on failure.
+- [x] Open a shared block context menu from both document side handles with Add and Delete actions.
+- [x] Make split-view divider resizing crop the canvas without changing its vector viewport.
+- [x] Apply the document line's 12px left inset to the add and move controls too.
+- [ ] Upstream reusable docs UX fixes to `@elixpo/lixeditor`, publish a release, then remove the matching Sketch overrides (GitHub write access required).
+- [x] Close the hamburger menu popup when the profile dropdown opens.
+- [x] Refine the profile dropdown hierarchy and remove its E2E documentation action.
+- [x] Keep profile workspace cards in sync with workspace-name edits.
+- [x] Add left-edge breathing room around the document add and move controls.
+- [x] Prevent the default and custom document side controls from overlapping.
+- [x] Suppress BlockNote's duplicate image embed panel below the document image placeholder.
+- [x] Open document block actions from right-click instead of left-clicking the side controls.
+- [x] Link canvas shapes and document blocks with persisted two-way navigation badges.
+- [x] Support many-to-many canvas/document connections with destination pickers and linked-item deletion warnings.
+- [x] Prevent the built-in BlockNote file panel from opening beneath the custom image placeholder.
+- [x] Position the text-tool editor at the clicked canvas point across pan, zoom, and split view.
+- [x] Place canvas rulers below the header and to the right of the left toolbar.
+- [x] Add live X/Y ruler guides and coordinate markers that follow the canvas pointer.

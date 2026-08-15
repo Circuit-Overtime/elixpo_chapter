@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import useUIStore from '@/store/useUIStore'
 import { generateWorkspaceName } from '@/utils/nameGenerator'
+import { createCanvasSessionId, rememberCanvasId } from '@/utils/canvasSession'
 
 /**
  * Manages session ID in the URL and auto-generates workspace names.
@@ -19,6 +20,7 @@ export default function useSessionID() {
     const segments = path.split('/').filter(Boolean)
     const searchParams = new URLSearchParams(window.location.search)
     const isExplicitNew = searchParams.get('new') === '1'
+    const preserveOtherLocalWorkspaces = searchParams.get('preserveLocal') === '1'
     const isPathNew = segments[0] === 'c' && segments[1] === 'new'
     const isNewWorkspace = isExplicitNew || isPathNew
 
@@ -33,10 +35,10 @@ export default function useSessionID() {
     if (isNewWorkspace || !sessionID) {
       if (!sessionID) {
         // /c/new or no session — generate a fresh ID
-        sessionID = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+        sessionID = createCanvasSessionId()
       }
 
-      if (isNewWorkspace) {
+      if (isNewWorkspace && !preserveOtherLocalWorkspaces) {
         // Clear ALL autosave data so the new workspace starts with a blank canvas
         localStorage.removeItem('lixsketch-autosave')
         localStorage.removeItem('lixsketch-autosave-meta')
@@ -67,6 +69,7 @@ export default function useSessionID() {
 
     // Store on window for the engine
     window.__sessionID = sessionID
+    rememberCanvasId(sessionID)
     // Flag so other hooks know this is a fresh workspace
     window.__isNewWorkspace = isNewWorkspace
 

@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
 import useSketchEngine from '@/hooks/useSketchEngine'
+import CanvasRulers from './CanvasRulers'
 
 const GRID_SIZE = 20
 
@@ -12,6 +13,9 @@ export default function SVGCanvas() {
   const svgRef = useRef(null)
   const canvasBackground = useSketchStore((s) => s.canvasBackground)
   const gridEnabled = useSketchStore((s) => s.gridEnabled)
+  const hydrateGrid = useSketchStore((s) => s.hydrateGrid)
+  const rulersEnabled = useSketchStore((s) => s.rulersEnabled)
+  const hydrateRulers = useSketchStore((s) => s.hydrateRulers)
   const resolvedTheme = useUIStore((s) => s.resolvedTheme)
   // Issue #38 follow-up: grid strokes were hardcoded to white-on-dark
   // (`rgba(255,255,255,0.06)`) — invisible on the new light canvas.
@@ -88,18 +92,33 @@ export default function SVGCanvas() {
   // Initialize the imperative sketch engine on this SVG element
   useSketchEngine(svgRef, svgReady)
 
+  // Restore the user's grid preference after client hydration.
+  useEffect(() => {
+    hydrateGrid()
+    hydrateRulers()
+  }, [hydrateGrid, hydrateRulers])
+
   // Expose grid state to engine
   useEffect(() => {
     window.__gridEnabled = gridEnabled
   }, [gridEnabled])
 
   return (
+    <>
     <svg
       id="freehand-canvas"
       ref={svgRef}
       className="absolute inset-0 w-full h-full"
       style={{
         background: canvasBackground,
+        // Split view is a viewport crop, not a canvas resize. Keep the SVG
+        // surface at the browser width and let SplitLayout's overflow-hidden
+        // pane reveal less of it. If the SVG follows the pane width, each
+        // divider movement rewrites the viewBox and changes screen-to-world
+        // mapping underneath existing shapes.
+        width: '100vw',
+        maxWidth: 'none',
+        right: 'auto',
         cursor,
         userSelect: 'none',
         WebkitUserSelect: 'none',
@@ -150,5 +169,7 @@ export default function SVGCanvas() {
         />
       )}
     </svg>
+    <CanvasRulers enabled={rulersEnabled} svgRef={svgRef} />
+    </>
   )
 }

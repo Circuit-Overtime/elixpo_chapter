@@ -44,6 +44,15 @@ let _localWriteTimer = null
 let _cloudDebounceTimer = null
 const _dbSaveTimestamps = []
 
+export function discardPendingDocChanges() {
+  if (_localWriteTimer) clearTimeout(_localWriteTimer)
+  if (_cloudDebounceTimer) clearTimeout(_cloudDebounceTimer)
+  _localWriteTimer = null
+  _cloudDebounceTimer = null
+  _pendingBlocks = null
+  _dirty = false
+}
+
 function isRateLimited() {
   const now = Date.now()
   while (_dbSaveTimestamps.length && now - _dbSaveTimestamps[0] > RATE_LIMIT_WINDOW) {

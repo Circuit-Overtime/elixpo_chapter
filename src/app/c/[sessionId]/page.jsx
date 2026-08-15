@@ -6,11 +6,9 @@ import useUIStore from '@/store/useUIStore'
 import Toolbar from '@/components/toolbar/Toolbar'
 import Footer from '@/components/footer/Footer'
 import AppMenu from '@/components/menu/AppMenu'
-import ShortcutsModal from '@/components/modals/ShortcutsModal'
 import SaveModal from '@/components/modals/SaveModal'
 import AIModal from '@/components/modals/AIModal'
 import CommandPalette from '@/components/modals/CommandPalette'
-import HelpModal from '@/components/modals/HelpModal'
 import ExportImageModal from '@/components/modals/ExportImageModal'
 import CanvasPropertiesModal from '@/components/modals/CanvasPropertiesModal'
 import RectangleSidebar from '@/components/sidebars/RectangleSidebar'
@@ -23,6 +21,7 @@ import FrameSidebar from '@/components/sidebars/FrameSidebar'
 import IconSidebar from '@/components/sidebars/IconSidebar'
 import ImageSidebar from '@/components/sidebars/ImageSidebar'
 import SVGCanvas from '@/components/canvas/SVGCanvas'
+import CanvasDocConnectors from '@/components/canvas/CanvasDocConnectors'
 import MultiSelectActions from '@/components/canvas/MultiSelectActions'
 import ImageSourcePicker from '@/components/canvas/ImageSourcePicker'
 import ImageGenerateModal from '@/components/modals/ImageGenerateModal'
@@ -37,6 +36,8 @@ import FindBar from '@/components/canvas/FindBar'
 import SplitLayout from '@/components/docs/SplitLayout'
 import dynamic from 'next/dynamic'
 import useSketchStore from '@/store/useSketchStore'
+import useCollabStore from '@/store/useCollabStore'
+import useCollaboration from '@/hooks/useCollaboration'
 
 // Lazy: only pulls BlockNote/Mantine/Mermaid into the bundle when the
 // docs panel is actually mounted (i.e. layoutMode is 'split' or 'docs').
@@ -70,6 +71,9 @@ export default function CanvasPage() {
   useGuestProfile()
   useAutoSave()
 
+  const activeRoomId = useCollabStore((s) => s.activeRoomId)
+  useCollaboration(activeRoomId)
+
   const layoutMode = useSketchStore((s) => s.layoutMode)
   const canvasVisible = layoutMode !== 'docs'
 
@@ -81,6 +85,7 @@ export default function CanvasPage() {
         canvas={
           <>
             <SVGCanvas />
+            <CanvasDocConnectors />
             {/* All canvas chrome lives inside the canvas wrapper so it
                 can't visually overflow into the docs panel during split. */}
             {canvasVisible && (
@@ -104,11 +109,9 @@ export default function CanvasPage() {
         docs={<DocsPanel />}
       />
       <AppMenu />
-      <ShortcutsModal />
       <SaveModal />
       <AIModal />
       <CommandPalette />
-      <HelpModal />
       <ExportImageModal />
       <CanvasPropertiesModal />
       <ImageSourcePicker />

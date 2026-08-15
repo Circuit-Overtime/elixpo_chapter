@@ -91,6 +91,13 @@ const _dbSaveTimestamps = []
 // explicitly requests a cloud save. This prevents an automatic 404 → POST
 // → workspace-limit loop for guest canvases restored from the browser.
 const _automaticCloudSyncBlocked = new Set()
+let _workspaceDeletionInProgress = false
+
+export function beginWorkspaceDeletion() {
+  _workspaceDeletionInProgress = true
+  const sessionId = getSessionID()
+  if (sessionId) _automaticCloudSyncBlocked.add(sessionId)
+}
 
 function isRateLimited() {
   const now = Date.now()
@@ -107,6 +114,7 @@ function recordDbSave() {
 
 // ── Save to localStorage (the buffer) ──
 function saveToLocalStorage() {
+  if (_workspaceDeletionInProgress) return false
   const serializer = window.__sceneSerializer
   const shapes = window.shapes
   if (!serializer || !Array.isArray(shapes)) return false
@@ -151,6 +159,7 @@ function showSaveToast() {
 
 // ── Save to DB (from localStorage buffer) ──
 async function saveToDb({ force = false } = {}) {
+  if (_workspaceDeletionInProgress) return false
   if (!WORKER_URL) return false
 
   const sessionId = getSessionID()
