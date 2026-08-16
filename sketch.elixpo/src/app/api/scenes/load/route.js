@@ -20,6 +20,7 @@ export async function GET(request) {
     const url = new URL(request.url)
     const token = url.searchParams.get('token')
     const sessionId = url.searchParams.get('sessionId')
+    const shouldTouch = url.searchParams.get('touch') !== '0'
 
     if (!token && !sessionId) {
       return NextResponse.json({ error: 'Missing token or sessionId' }, { status: 400 })
@@ -55,15 +56,18 @@ export async function GET(request) {
     }
 
     // Increment view count and update last accessed time
-    await DB.prepare(
-      `UPDATE scenes SET view_count = view_count + 1, last_accessed_at = datetime('now') WHERE session_id = ?`
-    ).bind(perm.session_id).run()
+    if (shouldTouch) {
+      await DB.prepare(
+        `UPDATE scenes SET view_count = view_count + 1, last_accessed_at = datetime('now') WHERE session_id = ?`
+      ).bind(perm.session_id).run()
+    }
 
     return NextResponse.json({
       encryptedData: perm.encrypted_data,
       permission: perm.permission,
       workspaceName: perm.workspace_name,
       updatedAt: perm.updated_at,
+      lastAccessedAt: shouldTouch ? new Date().toISOString() : undefined,
     })
   } catch (err) {
     console.error('[api/scenes/load] Error:', err)

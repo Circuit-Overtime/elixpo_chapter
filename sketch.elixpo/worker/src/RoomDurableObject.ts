@@ -22,6 +22,8 @@ interface RoomState {
   createdAt: string;
   expiresAt: string;
   status: string;
+  tier?: 'guest' | 'free' | 'pro';
+  maxUsers?: number;
 }
 
 interface AuthSession {
@@ -68,9 +70,35 @@ export class RoomDurableObject {
 
     // Extract user info from query params
     const authToken = url.searchParams.get('authToken');
-    const authSession = authToken
+    let authSession = authToken
       ? await this.env.KV.get(`session:${authToken}`, 'json') as AuthSession | null
       : null;
+    // The Next.js OAuth callback stores the Elixpo access token client-side,
+    // while the worker callback stores its own KV session. Accept either by
+    // validating unknown bearer tokens directly with Accounts.
+    if (authToken && !authSession) {
+      try {
+        const response = await fetch(`${this.env.ELIXPO_AUTH_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (response.ok) {
+          const profile = await response.json() as {
+            id?: string;
+            userId?: string;
+            displayName?: string;
+            avatar?: string | null;
+          };
+          const verifiedUserId = profile.id || profile.userId;
+          if (verifiedUserId) {
+            authSession = {
+              userId: verifiedUserId,
+              displayName: profile.displayName || 'User',
+              avatar: profile.avatar || null,
+            };
+          }
+        }
+      } catch {}
+    }
     if (authToken && !authSession) {
       return new Response('Invalid or expired session', { status: 401 });
     }
@@ -97,8 +125,9 @@ export class RoomDurableObject {
       });
     }
 
-    // Check max users
-    const maxUsers = parseInt(this.env.MAX_ROOM_USERS || '10');
+    // The room owner's plan controls total room occupancy (owner included).
+    // Never trust a client-provided tier.
+    const maxUsers = this.roomState!.maxUsers || 1;
     if (this.sessions.size >= maxUsers) {
       return new Response(JSON.stringify({ error: 'ROOM_FULL' }), {
         status: 429,
@@ -303,6 +332,12 @@ export class RoomDurableObject {
     const stored = await this.state.storage.get<RoomState>('roomState');
     if (stored) {
       this.roomState = stored;
+      if (!stored.maxUsers) {
+        const tier = await this.getOwnerTier(stored.ownerId);
+        stored.tier = tier;
+        stored.maxUsers = this.getCollaboratorLimit(tier);
+        await this.state.storage.put('roomState', stored);
+      }
       return;
     }
     await this.initRoom(roomId, ownerId, ownerIp, workspaceName);
@@ -313,21 +348,25 @@ export class RoomDurableObject {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + ttlHours * 3600 * 1000);
 
+    const tier = await this.getOwnerTier(ownerId);
+    const maxUsers = this.getCollaboratorLimit(tier);
     this.roomState = {
       ownerId,
       ownerIp,
       createdAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
       status: 'active',
+      tier,
+      maxUsers,
     };
     await this.state.storage.put('roomState', this.roomState);
 
     // Persist to D1
     try {
       await this.env.DB.prepare(
-        `INSERT OR IGNORE INTO rooms (id, owner_user_id, owner_ip, workspace_name, created_at, expires_at, status)
-         VALUES (?, ?, ?, ?, ?, ?, 'active')`
-      ).bind(roomId, ownerId, ownerIp, workspaceName, now.toISOString(), expiresAt.toISOString()).run();
+        `INSERT OR IGNORE INTO rooms (id, owner_user_id, owner_ip, workspace_name, created_at, expires_at, max_users, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'active')`
+      ).bind(roomId, ownerId, ownerIp, workspaceName, now.toISOString(), expiresAt.toISOString(), maxUsers).run();
     } catch {
       // Room may already exist from a previous session
     }
@@ -340,6 +379,23 @@ export class RoomDurableObject {
 
     // Set first alarm check
     this.state.storage.setAlarm(Date.now() + 5 * 60 * 1000);
+  }
+
+  private getCollaboratorLimit(tier: 'guest' | 'free' | 'pro'): number {
+    if (tier === 'pro') return 5;
+    if (tier === 'free') return 3;
+    return 1;
+  }
+
+  private async getOwnerTier(ownerId: string | null): Promise<'guest' | 'free' | 'pro'> {
+    if (!ownerId) return 'guest';
+    try {
+      const user = await this.env.DB.prepare(`SELECT tier FROM users WHERE id = ?`)
+        .bind(ownerId).first<{ tier: string }>();
+      return user?.tier === 'pro' || user?.tier === 'team' ? 'pro' : 'free';
+    } catch {
+      return 'free';
+    }
   }
 
   private handleDisconnect(ws: WebSocket): void {

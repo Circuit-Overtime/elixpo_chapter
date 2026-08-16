@@ -7,7 +7,7 @@ export default function TeamsPage() {
   return (
     <CanvasPageLayout
       title="Teams & Collaboration"
-      description="Share a link, draw together in real time. WebSocket rooms, live cursors, zero setup."
+      description="Start an encrypted room, share its link, and draw together with live cursors and synchronized updates."
       icon="bx bx-group"
       tags={['collaboration', 'teams', 'real-time']}
       breadcrumbs={[

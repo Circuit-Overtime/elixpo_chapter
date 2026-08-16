@@ -25,6 +25,15 @@ function reconcileActiveWorkspaceName(workspaces) {
   }
 }
 
+function parseDatabaseDate(value) {
+  if (!value) return null
+  const normalized = /(?:z|[+-]\d\d:\d\d)$/i.test(value)
+    ? value
+    : `${String(value).replace(' ', 'T')}Z`
+  const date = new Date(normalized)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 // ── Dot grid background ──────────────────────────────────────────────────────
 
 function DotGrid() {
@@ -131,11 +140,12 @@ function UsageBar({ used, limit, color = '#4A90D9', label, unit = '' }) {
 
 function WorkspaceCard({ workspace, index, onDelete }) {
   const sizeKB = ((workspace.size_bytes || 0) / 1024).toFixed(1)
-  const lastAccessed = workspace.last_accessed_at
-    ? new Date(workspace.last_accessed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const lastAccessedDate = parseDatabaseDate(workspace.last_accessed_at)
+  const lastAccessed = lastAccessedDate
+    ? lastAccessedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : 'Never'
   const created = workspace.created_at
-    ? new Date(workspace.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    ? parseDatabaseDate(workspace.created_at)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || '—'
     : '—'
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -329,7 +339,8 @@ export default function ProfilePage() {
 
   // Current room image usage (from window global, set by imageTool)
   const roomImageUsed = typeof window !== 'undefined' ? (window.__roomImageBytesUsed || 0) : 0
-  const roomImageLimitMB = 5
+  const workspaceLimit = quotaData?.workspaces?.limit || (isAuthenticated ? 2 : 1)
+  const roomImageLimitMB = Math.round((quotaData?.storage?.limitBytes || (isAuthenticated ? 5 : 2) * 1024 * 1024) / (1024 * 1024))
 
   return (
     <div className="relative min-h-screen bg-[#0a0a12] text-text-primary overflow-hidden">
@@ -374,7 +385,7 @@ export default function ProfilePage() {
                 <p className="text-text-dim text-xs truncate">{user.email}</p>
               )}
               {!isAuthenticated && (
-                <p className="text-text-dim text-xs">Sign in to unlock 3 workspaces and more AI requests</p>
+                <p className="text-text-dim text-xs">Sign in to unlock 2 workspaces, larger images, and live collaboration</p>
               )}
             </div>
             <div className="flex gap-2 shrink-0">
@@ -429,7 +440,7 @@ export default function ProfilePage() {
                   <UsageBar
                     label="Workspaces"
                     used={workspaces.length}
-                    limit={quotaData?.workspaces?.limit || (isAuthenticated ? 3 : 1)}
+                    limit={workspaceLimit}
                     color="#4A90D9"
                   />
 
@@ -465,10 +476,10 @@ export default function ProfilePage() {
                   <i className="bx bx-grid-alt text-[#4A90D9]" />
                   Workspaces
                   <span className="text-text-dim text-[10px] font-normal ml-1">
-                    {workspaces.length} / {isAuthenticated ? 3 : 1}
+                    {workspaces.length} / {workspaceLimit}
                   </span>
                 </h2>
-                {workspaces.length < (isAuthenticated ? 3 : 1) && (
+                {workspaces.length < workspaceLimit && (
                   <Link
                     href={`/c/${newSessionId}?new=1`}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-accent-blue border border-accent-blue/20 hover:bg-accent-blue/10 transition-all"
@@ -527,7 +538,7 @@ export default function ProfilePage() {
                       <div>
                         <span className="text-text-dim">Workspace limit</span>
                         <p className="text-text-secondary">
-                          {tier === 'team' ? 'Unlimited' : tier === 'pro' ? '3' : '3 (free)'}
+                          {workspaceLimit}
                         </p>
                       </div>
                       <div>
@@ -568,7 +579,7 @@ export default function ProfilePage() {
                         </li>
                         <li className="flex items-center gap-2">
                           <i className="bx bx-check text-green-400" />
-                          <span className="text-text-secondary">5 MB image limit per room</span>
+                          <span className="text-text-secondary">2 MB image limit per workspace</span>
                         </li>
                         <li className="flex items-center gap-2">
                           <i className="bx bx-x text-red-400" />

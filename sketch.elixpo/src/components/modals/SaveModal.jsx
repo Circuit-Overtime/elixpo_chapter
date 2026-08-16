@@ -6,6 +6,7 @@ import useCollabStore from '@/store/useCollabStore'
 import { getSessionID } from '@/hooks/useSessionID'
 import { generateKey, encrypt } from '@/utils/encryption'
 import { WORKER_URL } from '@/lib/env'
+import usePlanEntitlements from '@/hooks/usePlanEntitlements'
 import {
   canvasToLosslessPNG,
   createExportSVG,
@@ -17,6 +18,7 @@ import {
 // ── Component ────────────────────────────────────────────────
 
 export default function SaveModal() {
+  const { tier, limits } = usePlanEntitlements()
   const saveModalOpen = useUIStore((s) => s.saveModalOpen)
   const toggleSaveModal = useUIStore((s) => s.toggleSaveModal)
   const workspaceName = useUIStore((s) => s.workspaceName)
@@ -200,6 +202,15 @@ export default function SaveModal() {
   }
 
   const handleExportPDF = () => {
+    if (!limits.pdfExport) {
+      const toast = document.getElementById('save-toast')
+      if (toast) {
+        toast.innerHTML = '<i class="bx bxs-lock-alt text-[#b99be9] mr-1.5"></i>PDF export is available on Pro'
+        toast.classList.remove('hidden')
+        setTimeout(() => toast.classList.add('hidden'), 3500)
+      }
+      return
+    }
     const serializer = window.__sceneSerializer
     if (!serializer) return
     serializer.exportPDF()
@@ -339,10 +350,12 @@ export default function SaveModal() {
               </button>
               <button
                 onClick={handleExportPDF}
+                title={limits.pdfExport ? 'Export PDF' : 'PDF export is available on Pro'}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-surface hover:bg-surface-hover border border-border-light text-text-secondary text-xs cursor-pointer transition-all duration-200"
               >
                 <i className="bx bxs-file-pdf text-sm" />
                 PDF Document
+                {!limits.pdfExport && <span className="ml-auto rounded bg-accent-blue/15 px-1.5 py-0.5 text-[8px] uppercase text-accent-blue">Pro</span>}
               </button>
               <button
                 onClick={handleExportLixjson}
@@ -360,7 +373,7 @@ export default function SaveModal() {
               <i className="bx bx-group text-lg text-accent-blue" />
               <div className="flex-1">
                 <span className="text-text-primary text-sm font-medium">Live Collaborate</span>
-                <p className="text-text-dim text-[10px] leading-relaxed">Real-time E2E encrypted editing with up to 10 people</p>
+                <p className="text-text-dim text-[10px] leading-relaxed">Real-time E2E encrypted editing with up to {limits.collaborators} {limits.collaborators === 1 ? 'person' : 'people'} on {tier === 'guest' ? 'Guest' : tier[0].toUpperCase() + tier.slice(1)}</p>
               </div>
               <span className="flex items-center gap-1 text-[10px] text-green-400/80">
                 <i className="bx bxs-lock-alt text-xs" />

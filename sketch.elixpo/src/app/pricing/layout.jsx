@@ -1,7 +1,7 @@
 export const metadata = {
   title: 'Pricing in India | LixSketch',
   description:
-    'Compare LixSketch Free, Pro, and Team plans in Indian rupees. Start free with canvas, docs, encrypted sync, collaboration, and exports.',
+    'Compare LixSketch Guest, Free, and Pro plans in Indian rupees, including workspace, image, collaboration, and export limits.',
   keywords: [
     'LixSketch pricing',
     'online whiteboard pricing India',
@@ -9,7 +9,7 @@ export const metadata = {
     'collaborative canvas India',
   ],
   openGraph: {
-    title: 'LixSketch Pricing — Free, Pro, and Team',
+    title: 'LixSketch Pricing — Guest, Free, and Pro',
     description: 'Simple India-first pricing for visual thinking, from ₹0.',
     type: 'website',
     url: '/pricing',
@@ -17,7 +17,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LixSketch Pricing — Free, Pro, and Team',
+    title: 'LixSketch Pricing — Guest, Free, and Pro',
     description: 'Simple India-first pricing for visual thinking, from ₹0.',
     images: ['/og-image.png'],
   },

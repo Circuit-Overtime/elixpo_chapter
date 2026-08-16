@@ -480,6 +480,7 @@ move(dx, dy) {
     labelText.textContent = this.frameName || "Frame";
     labelText.style.cursor = "pointer";
     labelText.style.userSelect = "none";
+    labelText.style.pointerEvents = "all";
     
     if (this.rotation !== 0) {
         const centerX = this.x + this.width / 2;
@@ -487,6 +488,11 @@ move(dx, dy) {
         labelText.setAttribute("transform", `rotate(${this.rotation}, ${centerX}, ${centerY})`);
     }
     
+    // Do not let the first click select/redraw the frame: replacing the label
+    // between clicks prevents the browser from ever emitting `dblclick`.
+    labelText.addEventListener('pointerdown', (e) => e.stopPropagation());
+    labelText.addEventListener('click', (e) => e.stopPropagation());
+
     // Add double-click event for renaming
     labelText.addEventListener('dblclick', (e) => {
         e.stopPropagation();
@@ -498,6 +504,10 @@ move(dx, dy) {
 }
 
 startLabelEdit(labelElement) {
+    if (this._labelEditor) {
+        this._labelEditor.querySelector('input')?.focus();
+        return;
+    }
     // Create a foreignObject to hold an HTML input
     const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
     foreignObject.setAttribute("x", this.x + 5);
@@ -535,6 +545,7 @@ startLabelEdit(labelElement) {
     
     foreignObject.appendChild(input);
     this.group.appendChild(foreignObject);
+    this._labelEditor = foreignObject;
     
     // Hide the original label
     labelElement.style.display = "none";
@@ -545,7 +556,10 @@ startLabelEdit(labelElement) {
         input.select();
     }, 10);
     
+    let finished = false;
     const finishEdit = () => {
+        if (finished) return;
+        finished = true;
         const newName = input.value.trim() || "Frame";
         
         // Track name change in undo system if it actually changed
@@ -573,7 +587,8 @@ startLabelEdit(labelElement) {
         this.frameName = newName;
         
         // Remove the input
-        this.group.removeChild(foreignObject);
+        foreignObject.remove();
+        this._labelEditor = null;
         
         // Show and update the label
         labelElement.style.display = "block";
@@ -590,8 +605,10 @@ startLabelEdit(labelElement) {
             finishEdit();
         } else if (e.key === 'Escape') {
             e.preventDefault();
+            finished = true;
             // Cancel edit - restore original name
-            this.group.removeChild(foreignObject);
+            foreignObject.remove();
+            this._labelEditor = null;
             labelElement.style.display = "block";
         }
     });

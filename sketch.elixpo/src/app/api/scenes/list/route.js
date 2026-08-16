@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCloudflareBindings } from '@/lib/cloudflare'
+import { getPlanLimits, normalizePlanTier } from '@/lib/planLimits'
 
 export const runtime = 'edge'
 
@@ -27,8 +28,12 @@ export async function GET(request) {
        ORDER BY s.last_accessed_at DESC`
     ).bind(identifier, ownerType).all()
 
-    // Workspace limit: guests=1, free authenticated=3
-    const maxWorkspaces = userId ? 3 : 1
+    let tier = 'guest'
+    if (userId) {
+      const user = await DB.prepare(`SELECT tier FROM users WHERE id = ?`).bind(userId).first()
+      tier = normalizePlanTier(user?.tier, true)
+    }
+    const maxWorkspaces = getPlanLimits(tier).workspaces
 
     return NextResponse.json({
       workspaces: scenes.results || [],

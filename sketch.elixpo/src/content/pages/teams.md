@@ -1,10 +1,10 @@
 # Teams & Collaboration
 
-LixSketch is built for teams who think visually. Share a canvas link and everyone can draw together in real time — no accounts, no setup.
+LixSketch is built for teams who think visually. Start an encrypted live session, share its room link, and work together with live cursors and synchronized canvas updates.
 
 ## How Real-Time Collaboration Works
 
-When multiple people open the same canvas URL, they're connected through a **WebSocket room** powered by Cloudflare Durable Objects. Every action — drawing a shape, moving an element, typing text — is broadcast to all participants instantly.
+When participants open a live-session link, they're connected through a **WebSocket room** powered by Cloudflare Durable Objects. Every action — drawing a shape, moving an element, typing text — is encrypted in the browser and relayed to the other participants.
 
 ```lixscript
 // Collaboration Architecture
@@ -73,12 +73,18 @@ During a collaboration session, participants see:
 
 ## Starting a Team Session
 
-1. **Open a canvas** — visit any canvas URL or create a new one
-2. **Share the URL** — send the link to your teammates via Slack, email, or any messenger
-3. **Draw together** — everyone who opens the link joins the same room
-4. **See cursors** — each participant gets a colored cursor with their name
+1. **Open a canvas** — open an existing workspace or create a new one
+2. **Open Save & Export** — choose **Start Live Session**
+3. **Copy the room link** — send the generated encrypted link to your teammates
+4. **Draw together** — participants join the room and receive their own live cursor
 
-That's it. No sign-up flow, no workspace creation, no invite system. Just a URL.
+Room capacity follows the workspace owner's plan:
+
+- **Guest** — 1 participant
+- **Free** — up to 3 participants
+- **Pro** — up to 5 participants
+
+The owner can end the live session at any time.
 
 ## How Durable Objects Work
 
@@ -93,7 +99,7 @@ This architecture means:
 
 - **No conflicts** — a single authority manages all state transitions
 - **Low latency** — edge deployment puts the room close to participants
-- **No persistence overhead** — nothing is stored after the session ends
+- **Encrypted persistence** — saved workspace data remains encrypted outside the browser
 - **Automatic scaling** — each room is independent, so thousands can run in parallel
 
 ## Collaboration Best Practices
@@ -129,10 +135,10 @@ This architecture means:
 
 ## Sharing Permissions
 
-When you share a canvas:
+LixSketch provides two distinct sharing modes:
 
-- **Edit link** — recipients can view and modify the canvas
-- **View link** — recipients can see the canvas but not change it
+- **Live-session link** — participants can view and modify the canvas together within the room limit
+- **View-only link** — recipients can inspect a read-only encrypted snapshot
 
 Both share types use **E2E encryption**. The encryption key is in the URL fragment — our servers never see it.
 
@@ -150,12 +156,12 @@ rect owner at 180, 40 size 160x50 {
 
 rect edit at 80, 170 size 160x50 {
   stroke: $green
-  label: "Edit Access"
+  label: "Live Session"
 }
 
 rect view at 290, 170 size 160x50 {
   stroke: $red
-  label: "View Only"
+  label: "View Snapshot"
 }
 
 rect actions1 at 80, 290 size 160x50 {
@@ -170,12 +176,12 @@ rect actions2 at 290, 290 size 160x50 {
 
 arrow a1 from owner.bottom to edit.top {
   stroke: $gray
-  label: "Share /edit"
+  label: "Room link"
 }
 
 arrow a2 from owner.bottom to view.top {
   stroke: $gray
-  label: "Share /view"
+  label: "View link"
 }
 
 arrow a3 from edit.bottom to actions1.top {
@@ -186,26 +192,3 @@ arrow a4 from view.bottom to actions2.top {
   stroke: $gray
 }
 ```
-
-## What's Coming for Teams
-
-We're building dedicated team features:
-
-- **Team workspaces** — organize canvases by project or team
-- **Persistent rooms** — collaboration rooms that survive disconnects
-- **Role-based access** — owner, editor, viewer roles per workspace
-- **Team library** — shared components, templates, and icon sets
-- **Activity feed** — see who edited what canvas and when
-- **Comments** — leave threaded comments on specific elements
-- **Presence indicators** — see who's currently in a workspace
-
-## Self-Hosting for Teams
-
-LixSketch is open source. If your team needs full control over data:
-
-- **Fork the repo** and deploy to your own infrastructure
-- **Cloudflare Workers** handles the backend — deploy with `wrangler`
-- **No vendor lock-in** — standard WebSocket protocol, standard encryption
-- **Custom branding** — modify the UI to match your organization
-
-Check the GitHub repository for deployment instructions.

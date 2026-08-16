@@ -30,9 +30,11 @@ const minImageSize = 20;
 let draggedShapeInitialFrameImage = null;
 let hoveredFrameImage = null;
 
-// Per-room image size limit: 5MB total
-const ROOM_IMAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 if (!window.__roomImageBytesUsed) window.__roomImageBytesUsed = 0;
+
+function getRoomImageLimitBytes() {
+    return Number(window.__roomImageLimitBytes) || 2 * 1024 * 1024;
+}
 
 
 // Convert SVG element to our ImageShape class
@@ -69,6 +71,12 @@ async function uploadImageToCloudinary(imageShape) {
         const compressed = await compressImage(href);
         if (signal.aborted) return;
 
+        const roomLimit = getRoomImageLimitBytes();
+        const oldSize = imageShape.element.__fileSize || 0;
+        if ((window.__roomImageBytesUsed || 0) - oldSize + compressed.compressedSize > roomLimit) {
+            throw new Error(`Room image limit reached (${Math.round(roomLimit / (1024 * 1024))} MB)`);
+        }
+
         // Step 2: Get signed upload params
         const signRes = await fetch(`${workerUrl}/api/images/sign`, {
             method: 'POST',
@@ -76,10 +84,14 @@ async function uploadImageToCloudinary(imageShape) {
             body: JSON.stringify({
                 sessionId,
                 filename: `img_${Date.now()}`,
+                sizeBytes: compressed.compressedSize,
             }),
             signal,
         });
-        if (!signRes.ok) throw new Error('Failed to get upload signature');
+        if (!signRes.ok) {
+            const errorBody = await signRes.json().catch(() => ({}));
+            throw new Error(errorBody.message || 'Failed to get upload signature');
+        }
         const signData = await signRes.json();
         if (signal.aborted) return;
 
@@ -100,6 +112,17 @@ async function uploadImageToCloudinary(imageShape) {
         const uploadData = await uploadRes.json();
         if (signal.aborted) return;
 
+        await fetch(`${workerUrl}/api/images/complete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId,
+                publicId: uploadData.public_id || signData.publicId,
+                sizeBytes: uploadData.bytes || compressed.compressedSize,
+            }),
+            signal,
+        }).catch(() => {});
+
         // Step 4: Replace base64 with Cloudinary URL
         const cloudUrl = uploadData.secure_url || uploadData.url;
         imageShape.element.setAttribute('href', cloudUrl);
@@ -107,9 +130,9 @@ async function uploadImageToCloudinary(imageShape) {
         imageShape.element.setAttribute('data-cloudinary-id', uploadData.public_id);
 
         // Update file size tracking with actual compressed size
-        const oldSize = imageShape.element.__fileSize || 0;
         const newSize = uploadData.bytes || compressed.compressedSize;
         imageShape.element.__fileSize = newSize;
+        imageShape.element.setAttribute('data-file-size', String(newSize));
         window.__roomImageBytesUsed = Math.max(0, (window.__roomImageBytesUsed || 0) - oldSize + newSize);
 
         imageShape.uploadStatus = 'done';
@@ -209,19 +232,19 @@ const handleImageUpload = async (file) => {
         return;
     }
 
-    // Per-room 5MB total image limit
-    if (window.__roomImageBytesUsed + file.size > ROOM_IMAGE_LIMIT_BYTES) {
+    const roomImageLimitBytes = getRoomImageLimitBytes();
+    if (window.__roomImageBytesUsed + file.size > roomImageLimitBytes) {
         const usedMB = (window.__roomImageBytesUsed / (1024 * 1024)).toFixed(2);
         const fileMB = (file.size / (1024 * 1024)).toFixed(2);
-        alert(`Room image limit reached (5 MB). Used: ${usedMB} MB, this file: ${fileMB} MB. Delete some images to free space.`);
+        alert(`Room image limit reached (${Math.round(roomImageLimitBytes / (1024 * 1024))} MB). Used: ${usedMB} MB, this file: ${fileMB} MB. Delete some images to free space.`);
         isImageToolActive = false;
         return;
     }
 
-    const maxSize = 5 * 1024 * 1024; // 5MB per file (matches room limit)
+    const maxSize = roomImageLimitBytes;
     if (file.size > maxSize) {
         console.error('File size too large');
-        alert('Image file is too large. Please select an image smaller than 5 MB.');
+        alert(`Image file is too large. Please select an image smaller than ${Math.round(maxSize / (1024 * 1024))} MB.`);
         return;
     }
 
@@ -471,6 +494,7 @@ const handleMouseDownImage = async (e) => {
         // Track image size for room limit
         const placedFileSize = window.__pendingImageFileSize || 0;
         finalImage.__fileSize = placedFileSize;
+        finalImage.setAttribute('data-file-size', String(placedFileSize));
         window.__roomImageBytesUsed = (window.__roomImageBytesUsed || 0) + placedFileSize;
         window.__pendingImageFileSize = 0;
 

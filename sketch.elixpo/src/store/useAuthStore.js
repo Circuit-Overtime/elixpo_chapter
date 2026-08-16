@@ -122,6 +122,14 @@ const useAuthStore = create((set, get) => ({
     })
   },
 
+  updateUser: (patch) => {
+    const current = get().user
+    if (!current) return
+    const user = { ...current, ...patch }
+    set({ user })
+    saveAuth({ sessionToken: get().sessionToken, user })
+  },
+
   // Validate session by hitting Elixpo /api/auth/me with the access token
   fetchMe: async () => {
     const token = get().sessionToken
@@ -145,6 +153,7 @@ const useAuthStore = create((set, get) => ({
         displayName: profile.displayName,
         avatar: profile.avatar || null,
         isAdmin: profile.isAdmin || false,
+        tier: profile.tier || get().user?.tier || 'free',
       }
       set({ user, isAuthenticated: true })
       saveAuth({ sessionToken: token, user })

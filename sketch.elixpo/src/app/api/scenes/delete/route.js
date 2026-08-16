@@ -32,6 +32,7 @@ export async function DELETE(request) {
       // Delete permissions first, then the scene
       await DB.batch([
         DB.prepare(`DELETE FROM canvas_docs WHERE session_id = ?`).bind(perm.session_id),
+        DB.prepare(`DELETE FROM image_assets WHERE session_id = ?`).bind(perm.session_id),
         DB.prepare(`DELETE FROM scene_permissions WHERE scene_id = ?`).bind(perm.scene_id),
         DB.prepare(`DELETE FROM scenes WHERE id = ?`).bind(perm.scene_id),
       ])
@@ -56,6 +57,7 @@ export async function DELETE(request) {
       // Delete permissions first, then the scene
       await DB.batch([
         DB.prepare(`DELETE FROM canvas_docs WHERE session_id = ?`).bind(body.sessionId),
+        DB.prepare(`DELETE FROM image_assets WHERE session_id = ?`).bind(body.sessionId),
         DB.prepare(`DELETE FROM scene_permissions WHERE scene_id = ?`).bind(scene.id),
         DB.prepare(`DELETE FROM scenes WHERE id = ?`).bind(scene.id),
       ])

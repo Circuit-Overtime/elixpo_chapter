@@ -1,28 +1,26 @@
 export const runtime = 'edge'
 
 import { NextResponse } from 'next/server'
-import Fuse from 'fuse.js'
 
-let fuse = null
 let dataArray = null
 const svgCache = new Map()
 
 async function loadData(origin) {
-  if (dataArray && fuse) return
+  if (dataArray) return
 
   const res = await fetch(`${origin}/icons/info/icons.json`)
   if (!res.ok) return
 
   const metadata = await res.json()
-  dataArray = Object.keys(metadata).map((filename) => ({
-    filename,
-    ...metadata[filename],
-  }))
-
-  fuse = new Fuse(dataArray, {
-    includeScore: true,
-    threshold: 0.4,
-    keys: ['filename', 'keywords', 'description', 'category'],
+  dataArray = Object.keys(metadata).map((filename) => {
+    const item = metadata[filename]
+    const keywords = Array.isArray(item.keywords) ? item.keywords.join(' ') : (item.keywords || '')
+    return {
+      filename,
+      ...item,
+      normalizedCategory: String(item.category || '').toLowerCase(),
+      searchText: `${filename.replace(/[_-]/g, ' ')} ${keywords} ${item.description || ''} ${item.category || ''}`.toLowerCase(),
+    }
   })
 }
 
@@ -48,21 +46,18 @@ export async function GET(request) {
   await loadData(origin)
   if (!dataArray) return NextResponse.json({ results: [] })
 
-  let results
-
-  if (q) {
-    const fuseResults = fuse.search(q)
-    results = fuseResults.map((r) => r.item)
-    if (category) {
-      results = results.filter((item) => item.category === category)
-    }
-  } else if (category) {
-    results = dataArray.filter((item) => item.category === category)
-  } else {
-    results = dataArray.slice(0, 60)
+  // One bounded pass over the metadata. Avoid fuzzy indexes, result sorting,
+  // and multiple filter passes so every query is O(N) and can return as soon
+  // as the 60 visible results are found.
+  const terms = q ? q.split(/\s+/).filter(Boolean) : []
+  const results = []
+  for (const item of dataArray) {
+    if (category && item.normalizedCategory !== category) continue
+    if (terms.length && !terms.every((term) => item.searchText.includes(term))) continue
+    const { searchText, normalizedCategory, ...publicItem } = item
+    results.push(publicItem)
+    if (results.length === 60) break
   }
-
-  const sliced = results.slice(0, 60)
 
   // CORS — the icons API is intentionally public so any client (the
   // npm package, third-party embeds, etc.) can search and load icons
@@ -75,7 +70,7 @@ export async function GET(request) {
 
   if (inline) {
     const withSvg = await Promise.all(
-      sliced.map(async (item) => {
+      results.map(async (item) => {
         const svg = await fetchSvg(origin, item.filename)
         return { ...item, svg }
       })
@@ -85,7 +80,7 @@ export async function GET(request) {
     })
   }
 
-  return NextResponse.json({ results: sliced }, {
+  return NextResponse.json({ results }, {
     headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' },
   })
 }

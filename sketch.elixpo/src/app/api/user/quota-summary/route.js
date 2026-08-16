@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCloudflareBindings } from '@/lib/cloudflare'
+import { getPlanLimits, normalizePlanTier } from '@/lib/planLimits'
 
 export const runtime = 'edge'
 
@@ -51,12 +52,20 @@ export async function GET(request) {
        WHERE created_by = ? AND owner_type = ?`
     ).bind(identifier, ownerType).first()
     const workspaceCount = wsResult?.count || 0
-    const workspaceLimit = userId ? 3 : 1
+    const normalizedTier = normalizePlanTier(tier, Boolean(userId))
+    const limits = getPlanLimits(normalizedTier)
+    const workspaceLimit = limits.workspaces
 
-    // Image storage
+    // Image limits are per workspace, so expose the fullest workspace rather
+    // than summing unrelated rooms into one misleading total.
     const storageResult = await DB.prepare(
-      `SELECT COALESCE(SUM(size_bytes), 0) as total FROM scenes
-       WHERE created_by = ? AND owner_type = ?`
+      `SELECT COALESCE(MAX(workspace_bytes), 0) AS total FROM (
+         SELECT COALESCE(SUM(ia.size_bytes), 0) AS workspace_bytes
+         FROM scenes s
+         LEFT JOIN image_assets ia ON ia.session_id = s.session_id AND ia.status = 'complete'
+         WHERE s.created_by = ? AND s.owner_type = ?
+         GROUP BY s.session_id
+       )`
     ).bind(identifier, ownerType).first()
     const storageUsed = storageResult?.total || 0
 
@@ -76,8 +85,11 @@ export async function GET(request) {
       },
       storage: {
         usedBytes: storageUsed,
-        limitBytes: 5 * 1024 * 1024,
+        limitBytes: limits.imageBytesPerWorkspace,
+        perWorkspace: true,
       },
+      collaboration: { maxParticipants: limits.collaborators },
+      exports: { pdf: limits.pdfExport },
     })
   } catch (err) {
     console.error('[api/user/quota-summary] Error:', err)

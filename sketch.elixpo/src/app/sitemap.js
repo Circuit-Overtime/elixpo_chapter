@@ -8,7 +8,6 @@ export default async function sitemap() {
         "",
         "/docs",
         "/pricing",
-        "/roadmap",
         "/teams",
         "/resources/blog",
         "/resources/community",

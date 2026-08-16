@@ -29,9 +29,7 @@ function OpenCanvasButton({ className }) {
 const resourceLinks = [
   { href: '/resources/how-to-start', label: 'How to start', icon: 'bx bx-rocket' },
   { href: '/resources/community', label: 'Community', icon: 'bx bx-group' },
-  { href: '/resources/use-cases', label: 'Use Cases', icon: 'bx bx-bulb' },
   { href: '/resources/security', label: 'Security', icon: 'bx bx-shield' },
-  { href: '/docs', label: 'Docs', icon: 'bx bx-book-open' },
 ]
 
 // Compact star-count formatter: 999 → "999", 1200 → "1.2k", 12345 → "12.3k".
@@ -124,11 +122,8 @@ export default function LandingNav() {
           <Link href="/teams" className="hover:text-text-primary transition-colors">
             Teams
           </Link>
-          <Link href="/roadmap" className="hover:text-text-primary transition-colors">
-            Roadmap
-          </Link>
-          <Link href="/docs#blog" className="hover:text-text-primary transition-colors">
-            Blog
+          <Link href="/docs" className="hover:text-text-primary transition-colors">
+            Docs
           </Link>
 
           {/* Resources dropdown */}
@@ -215,8 +210,7 @@ export default function LandingNav() {
               {[
                 { href: '/pricing', label: 'Pricing' },
                 { href: '/teams', label: 'Teams' },
-                { href: '/roadmap', label: 'Roadmap' },
-                { href: '/docs#blog', label: 'Blog' },
+                { href: '/docs', label: 'Docs' },
               ].map((item) => (
                 <Link
                   key={item.href}

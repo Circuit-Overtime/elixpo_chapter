@@ -1,16 +1,16 @@
 export const metadata = {
   title: 'Teams & Collaboration',
   description:
-    'Real-time collaboration on LixSketch — WebSocket rooms, live cursors, Durable Objects, and zero-setup sharing.',
+    'Encrypted real-time collaboration on LixSketch with live cursors, synchronized canvas updates, and plan-based room capacity.',
   openGraph: {
     title: 'LixSketch Teams & Collaboration',
     description:
-      'Share a link, draw together in real time. WebSocket rooms, live cursors, zero setup.',
+      'Start an encrypted room, share its link, and draw together with live cursors and synchronized updates.',
     images: [{ url: '/og-image.png', width: 1280, height: 720, alt: 'LixSketch Collaboration' }],
   },
   twitter: {
     title: 'LixSketch Teams & Collaboration',
-    description: 'Real-time collaboration with live cursors and WebSocket rooms.',
+    description: 'Encrypted real-time collaboration with live cursors and synchronized canvas updates.',
     images: ['/og-image.png'],
   },
   alternates: { canonical: '/teams' },
