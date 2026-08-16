@@ -258,6 +258,18 @@ const handleMouseDownIcon = async (e) => {
         return;
     }
 
+// Helper to get inherited attribute from the SVG sub-tree
+function getInheritedAttr(element, attrName) {
+    let curr = element;
+    while (curr && curr.nodeType === 1) {
+        if (curr.getAttribute(attrName)) {
+            return curr.getAttribute(attrName);
+        }
+        curr = curr.parentElement;
+    }
+    return null;
+}
+
     if (!isDraggingIcon || !iconToPlace || !isIconToolActive) {
         return;
     }
@@ -322,29 +334,50 @@ const handleMouseDownIcon = async (e) => {
         backgroundRect.setAttribute('style', 'pointer-events: all; cursor: pointer;');
         finalIconGroup.appendChild(backgroundRect);
 
+        const isDark = document.body && document.body.classList.contains('theme-dark');
+        const targetDarkColor = '#1a1a2e';
+        const bgDarkColor = '#15111f';
+
+        const applyThemeStyle = (element) => {
+            if (element.nodeType === 1) {
+                const fill = getInheritedAttr(element, 'fill');
+                const stroke = getInheritedAttr(element, 'stroke');
+
+                const normFill = fill ? fill.toLowerCase().trim() : null;
+                const normStroke = stroke ? stroke.toLowerCase().trim() : null;
+
+                // Handle fill
+                if (normFill === 'none' || normFill === 'transparent') {
+                    element.setAttribute('fill', 'none');
+                } else if (!normFill || ['#000', '#000000', 'black', 'currentcolor', '#1a1a2e'].includes(normFill)) {
+                    element.setAttribute('fill', isDark ? '#ffffff' : targetDarkColor);
+                } else if (['#fff', '#ffffff', 'white', '#15111f'].includes(normFill)) {
+                    element.setAttribute('fill', isDark ? bgDarkColor : '#ffffff');
+                }
+
+                // Handle stroke
+                if (normStroke === 'none' || normStroke === 'transparent') {
+                    element.setAttribute('stroke', 'none');
+                } else if (normStroke && ['#000', '#000000', 'black', 'currentcolor', '#1a1a2e'].includes(normStroke)) {
+                    element.setAttribute('stroke', isDark ? '#ffffff' : targetDarkColor);
+                } else if (normStroke && ['#fff', '#ffffff', 'white', '#15111f'].includes(normStroke)) {
+                    element.setAttribute('stroke', isDark ? bgDarkColor : '#ffffff');
+                }
+
+                for (let j = 0; j < element.children.length; j++) {
+                    applyThemeStyle(element.children[j]);
+                }
+            }
+        };
+
+        // Apply theme styles to original elements while they are still in context
+        for (let i = 0; i < originalSvgElement.children.length; i++) {
+            applyThemeStyle(originalSvgElement.children[i]);
+        }
+
         const allChildren = originalSvgElement.children;
         for (let i = 0; i < allChildren.length; i++) {
             const clonedChild = allChildren[i].cloneNode(true);
-
-            // Apply white fill/stroke so icons are visible on dark canvas
-            const applyWhiteStyle = (element) => {
-                if (element.nodeType === 1) {
-                    const fill = element.getAttribute('fill');
-                    const stroke = element.getAttribute('stroke');
-                    // Replace black/dark fills with white; leave 'none'/'transparent' alone
-                    if (!fill || fill === '#000' || fill === '#000000' || fill === 'black' || fill === 'currentColor') {
-                        element.setAttribute('fill', '#ffffff');
-                    }
-                    if (stroke === '#000' || stroke === '#000000' || stroke === 'black' || stroke === 'currentColor') {
-                        element.setAttribute('stroke', '#ffffff');
-                    }
-                    for (let j = 0; j < element.children.length; j++) {
-                        applyWhiteStyle(element.children[j]);
-                    }
-                }
-            };
-            applyWhiteStyle(clonedChild);
-
             finalIconGroup.appendChild(clonedChild);
         }
 
@@ -1250,8 +1283,8 @@ function normalizeSVGSize(svgContent, fillColor = '#fff', strokeColor = null) {
                 
                 // Only apply to shape elements, not container elements like 'g'
                 if (['path', 'circle', 'rect', 'polygon', 'ellipse', 'polyline', 'line'].includes(tagName)) {
-                    const currentFill = element.getAttribute('fill');
-                    const currentStroke = element.getAttribute('stroke');
+                    const currentFill = getInheritedAttr(element, 'fill');
+                    const currentStroke = getInheritedAttr(element, 'stroke');
                     
                     // Check if parent <g> has explicit colors - if so, don't override
                     let parentG = element.parentElement;
@@ -1266,19 +1299,21 @@ function normalizeSVGSize(svgContent, fillColor = '#fff', strokeColor = null) {
                     }
                     
                     // Only apply white fill if:
-                    // 1. Element doesn't have explicit 'none' fill
+                    // 1. Element doesn't have explicit/inherited 'none'/'transparent' fill
                     // 2. Element doesn't already have a specific color (other than black/default)
                     // 3. Parent <g> doesn't have explicit colors
-                    if (!hasParentColor && currentFill !== 'none') {
+                    if (!hasParentColor && currentFill !== 'none' && currentFill !== 'transparent') {
                         // Only override if it's black, default, or unset
                         if (!currentFill || currentFill === '#000' || currentFill === '#000000' || currentFill === 'black' || currentFill === 'currentColor') {
                             element.setAttribute('fill', fillColor);
                         }
+                    } else if (currentFill === 'none' || currentFill === 'transparent') {
+                        element.setAttribute('fill', 'none');
                     }
                     
                     // Handle stroke similarly
                     if (strokeColor && !hasParentColor) {
-                        if (currentStroke && currentStroke !== 'none') {
+                        if (currentStroke && currentStroke !== 'none' && currentStroke !== 'transparent') {
                             if (!currentStroke || currentStroke === '#000' || currentStroke === '#000000' || currentStroke === 'black' || currentStroke === 'currentColor') {
                                 element.setAttribute('stroke', strokeColor);
                             }
