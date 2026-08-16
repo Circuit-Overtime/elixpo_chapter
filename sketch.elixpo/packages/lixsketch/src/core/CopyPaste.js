@@ -618,15 +618,24 @@ function handlePasteEvent(e) {
                 const rawDataUrl = ev.target.result;
                 const isSvg = (blob.type || '').toLowerCase() === 'image/svg+xml';
                 let placedDataUrl = rawDataUrl;
+                let placedSize = blob.size;
                 if (!isSvg) {
                     try {
                         const compressed = await compressImage(rawDataUrl);
-                        if (compressed?.dataUrl) placedDataUrl = compressed.dataUrl;
+                        if (compressed?.dataUrl) {
+                            placedDataUrl = compressed.dataUrl;
+                            placedSize = compressed.compressedSize || placedSize;
+                        }
                     } catch (err) {
                         console.warn('[CopyPaste] Pre-placement compression failed, using raw:', err);
                     }
                 }
-                placeImageFromDataUrl(placedDataUrl);
+                const limit = Number(window.__roomImageLimitBytes) || 2 * 1024 * 1024;
+                if ((window.__roomImageBytesUsed || 0) + placedSize > limit) {
+                    alert(`Workspace image limit reached (${Math.round(limit / (1024 * 1024))} MB).`);
+                    return;
+                }
+                placeImageFromDataUrl(placedDataUrl, placedSize);
             };
             reader.readAsDataURL(blob);
             return; // only handle first image
@@ -634,7 +643,7 @@ function handlePasteEvent(e) {
     }
 }
 
-function placeImageFromDataUrl(dataUrl) {
+function placeImageFromDataUrl(dataUrl, sizeBytes = 0) {
     const svgEl = getSVGElement();
     if (!svgEl || !window.ImageShape) return;
 
@@ -661,6 +670,9 @@ function placeImageFromDataUrl(dataUrl) {
         imgEl.setAttribute('data-shape-height', displayH);
         imgEl.setAttribute('type', 'image');
         imgEl.setAttribute('preserveAspectRatio', 'none');
+        imgEl.__fileSize = sizeBytes;
+        imgEl.setAttribute('data-file-size', String(sizeBytes));
+        window.__roomImageBytesUsed = (window.__roomImageBytesUsed || 0) + sizeBytes;
 
         svgEl.appendChild(imgEl);
         const imageShape = new ImageShape(imgEl);

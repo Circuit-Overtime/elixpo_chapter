@@ -8,27 +8,45 @@ import LandingFooter from '@/components/landing/LandingFooter'
 
 const plans = [
   {
-    name: 'Free',
-    eyebrow: 'For getting started',
-    description: 'A complete visual workspace for personal ideas, notes, and diagrams.',
+    name: 'Guest',
+    eyebrow: 'Try it instantly',
+    description: 'Open the canvas without an account and keep one lightweight workspace.',
     monthly: 0,
     annual: 0,
     annualTotal: 0,
-    cta: 'Start sketching',
+    cta: 'Draw as guest',
     href: '/',
     features: [
-      '3 encrypted cloud workspaces',
+      '1 encrypted workspace',
+      '2 MB of images per workspace',
       'Local-first canvas recovery',
       'Canvas, docs, and split view',
-      'Real-time collaboration',
-      'PNG, SVG, and PDF export',
-      'Community support',
+      'Solo live room · 1 person',
+      'PNG and SVG export',
+    ],
+  },
+  {
+    name: 'Free',
+    eyebrow: 'For personal projects',
+    description: 'Sign in for more project space and small-group collaboration at no cost.',
+    monthly: 0,
+    annual: 0,
+    annualTotal: 0,
+    cta: 'Sign in free',
+    href: '/',
+    features: [
+      '2 encrypted cloud workspaces',
+      '5 MB of images per workspace',
+      'Real-time collaboration · 3 people',
+      'Canvas, docs, and split view',
+      'PNG and SVG export',
+      'End-to-end encrypted sync',
     ],
   },
   {
     name: 'Pro',
-    eyebrow: 'For independent builders',
-    description: 'More room for active projects, media, and focused individual work.',
+    eyebrow: 'Best value for active work',
+    description: 'Turn LixSketch into a daily workspace with room for every active project.',
     monthly: 249,
     annual: 199,
     annualTotal: 2388,
@@ -37,30 +55,12 @@ const plans = [
     badge: 'Most popular',
     features: [
       'Everything in Free',
-      'More encrypted cloud workspaces',
-      'Higher media storage limits',
+      '10 workspaces · 5× more than Free',
+      '10 MB of images per workspace',
+      'Real-time collaboration · 5 people',
+      'High-resolution PDF export',
       'Personal usage dashboard',
-      'Early access to premium workflows',
       'Priority email support',
-    ],
-  },
-  {
-    name: 'Team',
-    eyebrow: 'For teams shipping together',
-    description: 'Shared workspaces, access controls, and one place to manage your team.',
-    monthly: 599,
-    annual: 479,
-    annualTotal: 5748,
-    unit: 'member',
-    cta: 'Talk to us',
-    href: 'mailto:ayushman@myceli.ai?subject=LixSketch%20Team%20plan',
-    features: [
-      'Everything in Pro',
-      'Shared team workspaces',
-      'Member roles and access controls',
-      'Centralised billing',
-      'Team usage overview',
-      'Priority onboarding support',
     ],
   },
 ]
@@ -68,16 +68,18 @@ const plans = [
 const comparison = [
   { feature: 'Canvas, docs, and split view', values: ['Included', 'Included', 'Included'] },
   { feature: 'End-to-end encrypted sync', values: ['Included', 'Included', 'Included'] },
-  { feature: 'Real-time collaboration', values: ['Included', 'Included', 'Included'] },
-  { feature: 'Cloud workspace capacity', values: ['3 workspaces', 'Expanded', 'Shared pool'] },
-  { feature: 'Team roles and controls', values: ['—', '—', 'Included'] },
+  { feature: 'Cloud workspaces', values: ['1', '2', '10'] },
+  { feature: 'Images per workspace', values: ['2 MB', '5 MB', '10 MB'] },
+  { feature: 'Live room participants', values: ['1', '3', '5'] },
+  { feature: 'PNG and SVG export', values: ['Included', 'Included', 'Included'] },
+  { feature: 'PDF export', values: ['—', '—', 'Included'] },
   { feature: 'AI connector', values: ['Coming soon', 'Coming soon', 'Coming soon'], comingSoon: true },
 ]
 
 const faqs = [
   {
-    question: 'Are Pro and Team available today?',
-    answer: 'Free is available now. Pro and Team are in early access while billing and plan entitlements are rolled out. Requesting access does not charge you or change your current plan.',
+    question: 'Is Pro available today?',
+    answer: 'Guest and Free are available now. Pro is in early access while billing is rolled out. Requesting access does not charge you or change your current plan.',
   },
   {
     question: 'Are taxes included?',
@@ -85,7 +87,7 @@ const faqs = [
   },
   {
     question: 'Can I use LixSketch without paying?',
-    answer: 'Yes. The Free plan includes the canvas, document editor, exports, real-time collaboration, and end-to-end encrypted sync for up to three cloud workspaces when signed in.',
+    answer: 'Yes. Free includes two encrypted cloud workspaces, canvas and docs, PNG and SVG export, and real-time collaboration for up to three people.',
   },
   {
     question: 'Is the AI connector included?',
@@ -146,7 +148,7 @@ export default function PricingPage() {
               Make space for every idea.
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-text-muted sm:text-base">
-              Start free with the full creative toolkit. Upgrade when you need more cloud capacity, project space, or controls for a growing team.
+              Try the full creative toolkit without an account. Sign in free for collaboration, then upgrade when active projects need more room.
             </p>
 
             <div className="mt-8 inline-flex rounded-xl border border-border-light bg-[#191222]/90 p-1" role="group" aria-label="Billing period">
@@ -218,7 +220,7 @@ export default function PricingPage() {
           </div>
 
           <p className="relative mx-auto mt-6 max-w-3xl text-center text-[11px] leading-5 text-text-dim">
-            Pro and Team are currently offered as early access. Displayed prices exclude applicable GST. Requesting access does not initiate a charge.
+            Pro is currently offered as early access. Displayed prices exclude applicable GST. Requesting access does not initiate a charge.
           </p>
         </section>
 

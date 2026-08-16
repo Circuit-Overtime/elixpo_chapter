@@ -76,35 +76,92 @@ function invertShapeColors(prevResolved, nextResolved) {
 
   for (const shape of shapes) {
     let changed = false
-    if (shape.options) {
-      if (fromColors.has(normalize(shape.options.stroke))) {
-        shape.options.stroke = to
-        changed = true
+    if (shape.shapeName === 'icon' || shape.type === 'icon') {
+      const isDark = nextResolved === 'dark'
+      const targetDarkColor = '#1a1a2e'
+      const bgDarkColor = '#15111f'
+
+      if (shape.group) {
+        shape.group.querySelectorAll('*').forEach((element) => {
+          if (element.nodeType === 1) {
+            const fill = element.getAttribute('fill')
+            const stroke = element.getAttribute('stroke')
+
+            if (fill && fill !== 'none' && fill !== 'transparent') {
+              const normFill = fill.toLowerCase().trim()
+              if (isDark) {
+                if (normFill === targetDarkColor || normFill === '#000000' || normFill === '#000') {
+                  element.setAttribute('fill', '#ffffff')
+                  changed = true
+                } else if (normFill === '#ffffff' || normFill === '#fff') {
+                  element.setAttribute('fill', bgDarkColor)
+                  changed = true
+                }
+              } else {
+                if (normFill === '#ffffff' || normFill === '#fff') {
+                  element.setAttribute('fill', targetDarkColor)
+                  changed = true
+                } else if (normFill === bgDarkColor) {
+                  element.setAttribute('fill', '#ffffff')
+                  changed = true
+                }
+              }
+            }
+
+            if (stroke && stroke !== 'none' && stroke !== 'transparent') {
+              const normStroke = stroke.toLowerCase().trim()
+              if (isDark) {
+                if (normStroke === targetDarkColor || normStroke === '#000000' || normStroke === '#000') {
+                  element.setAttribute('stroke', '#ffffff')
+                  changed = true
+                } else if (normStroke === '#ffffff' || normStroke === '#fff') {
+                  element.setAttribute('stroke', bgDarkColor)
+                  changed = true
+                }
+              } else {
+                if (normStroke === '#ffffff' || normStroke === '#fff') {
+                  element.setAttribute('stroke', targetDarkColor)
+                  changed = true
+                } else if (normStroke === bgDarkColor) {
+                  element.setAttribute('stroke', '#ffffff')
+                  changed = true
+                }
+              }
+            }
+          }
+        })
       }
-      if (fromColors.has(normalize(shape.options.fill))) {
-        shape.options.fill = to
-        changed = true
-      }
-    }
-    // Text shapes store color directly
-    if (shape.color !== undefined && fromColors.has(normalize(shape.color))) {
-      shape.color = to
-      changed = true
-    }
-    if (shape.strokeColor !== undefined && fromColors.has(normalize(shape.strokeColor))) {
-      shape.strokeColor = to
-      changed = true
-    }
-    // Text shapes keep their color in the restored SVG rather than on the
-    // shape object. Update only theme-default fills; explicit user colors
-    // remain untouched.
-    if (shape.group) {
-      shape.group.querySelectorAll('[fill]').forEach((element) => {
-        if (fromColors.has(normalize(element.getAttribute('fill')))) {
-          element.setAttribute('fill', to)
+    } else {
+      if (shape.options) {
+        if (fromColors.has(normalize(shape.options.stroke))) {
+          shape.options.stroke = to
           changed = true
         }
-      })
+        if (fromColors.has(normalize(shape.options.fill))) {
+          shape.options.fill = to
+          changed = true
+        }
+      }
+      // Text shapes store color directly
+      if (shape.color !== undefined && fromColors.has(normalize(shape.color))) {
+        shape.color = to
+        changed = true
+      }
+      if (shape.strokeColor !== undefined && fromColors.has(normalize(shape.strokeColor))) {
+        shape.strokeColor = to
+        changed = true
+      }
+      // Text shapes keep their color in the restored SVG rather than on the
+      // shape object. Update only theme-default fills; explicit user colors
+      // remain untouched.
+      if (shape.group) {
+        shape.group.querySelectorAll('[fill]').forEach((element) => {
+          if (fromColors.has(normalize(element.getAttribute('fill')))) {
+            element.setAttribute('fill', to)
+            changed = true
+          }
+        })
+      }
     }
     if (changed && typeof shape.draw === 'function') {
       shape.draw()

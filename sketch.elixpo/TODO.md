@@ -56,3 +56,17 @@
 - [x] Make placed graphs viewport-sized, selectable, movable, resizable, editable, and persistent.
 - [x] Let explicit logo clicks open the landing page without automatic canvas restoration.
 - [x] Make the E2E test verify the actual encrypted database save/load path and AES-GCM authentication.
+- [x] Focus icon search when the I shortcut opens the panel.
+- [x] Make icon search a single O(N) metadata pass with lower input latency.
+- [x] Make frame labels reliably editable by double-clicking their names.
+- [x] Keep framed SVG icons at a stable scale while their frame moves.
+- [x] Hide and guard Frame it when the selection contains a frame or framed object.
+- [x] Track frame creation and initial/fallback frame attachments in undo and redo.
+- [x] Limit image storage per workspace to 2 MB for Guest, 5 MB for Free, and 10 MB for Pro.
+- [x] Keep workspace access timestamps current on both cloud load and save.
+- [x] Gate PDF export behind Pro.
+- [x] Enforce 1 Guest, 2 Free, and 10 Pro workspaces.
+- [x] Enforce live-room occupancy of 1 Guest, 3 Free, and 5 Pro participants.
+- [x] Reframe pricing around explicit Guest, Free, and Pro value limits.
+- [x] Remove Roadmap from navigation and routing, promote Docs in the navbar, and trim Resources to onboarding, community, and security.
+- [x] Correct the Teams page around current encrypted live sessions and remove future-roadmap and self-hosting sections.

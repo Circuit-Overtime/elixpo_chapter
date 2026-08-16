@@ -29,24 +29,81 @@ function invertShapeColors(prevResolved, nextResolved) {
 
   for (const shape of shapes) {
     let changed = false
-    if (shape.options) {
-      if (normalize(shape.options.stroke) === from) {
-        shape.options.stroke = to
+    if (shape.shapeName === 'icon' || shape.type === 'icon') {
+      const isDark = nextResolved === 'dark'
+      const targetDarkColor = '#1a1a2e'
+      const bgDarkColor = '#15111f'
+
+      if (shape.group) {
+        shape.group.querySelectorAll('*').forEach((element) => {
+          if (element.nodeType === 1) {
+            const fill = element.getAttribute('fill')
+            const stroke = element.getAttribute('stroke')
+
+            if (fill && fill !== 'none' && fill !== 'transparent') {
+              const normFill = fill.toLowerCase().trim()
+              if (isDark) {
+                if (normFill === targetDarkColor || normFill === '#000000' || normFill === '#000') {
+                  element.setAttribute('fill', '#ffffff')
+                  changed = true
+                } else if (normFill === '#ffffff' || normFill === '#fff') {
+                  element.setAttribute('fill', bgDarkColor)
+                  changed = true
+                }
+              } else {
+                if (normFill === '#ffffff' || normFill === '#fff') {
+                  element.setAttribute('fill', targetDarkColor)
+                  changed = true
+                } else if (normFill === bgDarkColor) {
+                  element.setAttribute('fill', '#ffffff')
+                  changed = true
+                }
+              }
+            }
+
+            if (stroke && stroke !== 'none' && stroke !== 'transparent') {
+              const normStroke = stroke.toLowerCase().trim()
+              if (isDark) {
+                if (normStroke === targetDarkColor || normStroke === '#000000' || normStroke === '#000') {
+                  element.setAttribute('stroke', '#ffffff')
+                  changed = true
+                } else if (normStroke === '#ffffff' || normStroke === '#fff') {
+                  element.setAttribute('stroke', bgDarkColor)
+                  changed = true
+                }
+              } else {
+                if (normStroke === '#ffffff' || normStroke === '#fff') {
+                  element.setAttribute('stroke', targetDarkColor)
+                  changed = true
+                } else if (normStroke === bgDarkColor) {
+                  element.setAttribute('stroke', '#ffffff')
+                  changed = true
+                }
+              }
+            }
+          }
+        })
+      }
+    } else {
+      if (shape.options) {
+        if (normalize(shape.options.stroke) === from) {
+          shape.options.stroke = to
+          changed = true
+        }
+        if (normalize(shape.options.fill) === from) {
+          shape.options.fill = to
+          changed = true
+        }
+      }
+      // Text shapes store color directly
+      if (shape.color !== undefined && normalize(shape.color) === from) {
+        shape.color = to
         changed = true
       }
-      if (normalize(shape.options.fill) === from) {
-        shape.options.fill = to
+      if (shape.strokeColor !== undefined && normalize(shape.strokeColor) === from) {
+        shape.strokeColor = to
         changed = true
       }
-    }
-    // Text shapes store color directly
-    if (shape.color !== undefined && normalize(shape.color) === from) {
-      shape.color = to
-      changed = true
-    }
-    if (shape.strokeColor !== undefined && normalize(shape.strokeColor) === from) {
-      shape.strokeColor = to
-      changed = true
     }
     if (changed && typeof shape.draw === 'function') {
       shape.draw()

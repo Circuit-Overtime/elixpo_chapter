@@ -79,6 +79,25 @@ class IconShape {
         this.element.setAttribute('data-shape-height', value);
     }
 
+    _transformMetrics() {
+        const vbWidth = parseFloat(this.element.getAttribute('data-viewbox-width')) || 24;
+        const vbHeight = parseFloat(this.element.getAttribute('data-viewbox-height')) || 24;
+        const scale = Math.min(this.width / vbWidth, this.height / vbHeight);
+        return {
+            scale,
+            localCenterX: this.width / 2 / scale,
+            localCenterY: this.height / 2 / scale,
+        };
+    }
+
+    _applyTransform() {
+        const { scale, localCenterX, localCenterY } = this._transformMetrics();
+        this.element.setAttribute(
+            'transform',
+            `translate(${this.x}, ${this.y}) scale(${scale}) rotate(${this.rotation}, ${localCenterX}, ${localCenterY})`
+        );
+    }
+
     get rotation() {
         const dataRotation = this.element.getAttribute('data-shape-rotation');
         if (dataRotation) {
@@ -97,27 +116,14 @@ class IconShape {
 
     set rotation(value) {
         this.element.setAttribute('data-shape-rotation', value);
-
-        const vbWidth = parseFloat(this.element.getAttribute('data-viewbox-width')) || 24;
-        const vbHeight = parseFloat(this.element.getAttribute('data-viewbox-height')) || 24;
-        const scale = this.width / Math.max(vbWidth, vbHeight);
-        const localCenterX = this.width / 2 / scale;
-        const localCenterY = this.height / 2 / scale;
-
-        this.element.setAttribute('transform', `translate(${this.x}, ${this.y}) scale(${scale}) rotate(${value}, ${localCenterX}, ${localCenterY})`);
+        this._applyTransform();
     }
 
     move(dx, dy) {
         this.x += dx;
         this.y += dy;
 
-        const vbWidth = parseFloat(this.element.getAttribute('data-viewbox-width')) || 24;
-        const vbHeight = parseFloat(this.element.getAttribute('data-viewbox-height')) || 24;
-        const scale = this.width / Math.max(vbWidth, vbHeight);
-        const localCenterX = this.width / 2 / scale;
-        const localCenterY = this.height / 2 / scale;
-
-        this.element.setAttribute('transform', `translate(${this.x}, ${this.y}) scale(${scale}) rotate(${this.rotation}, ${localCenterX}, ${localCenterY})`);
+        this._applyTransform();
 
         this.element.setAttribute('x', this.x);
         this.element.setAttribute('y', this.y);
@@ -173,11 +179,7 @@ class IconShape {
     }
 
     draw() {
-        const scale = this.width / 24;
-        const localCenterX = this.width / 2 / scale;
-        const localCenterY = this.height / 2 / scale;
-
-        this.element.setAttribute('transform', `translate(${this.x}, ${this.y}) scale(${scale}) rotate(${this.rotation}, ${localCenterX}, ${localCenterY})`);
+        this._applyTransform();
 
         this.element.setAttribute('data-shape-x', this.x);
         this.element.setAttribute('data-shape-y', this.y);
@@ -246,11 +248,7 @@ class IconShape {
             pos.parentFrame.addShapeToFrame(this);
         }
 
-        const scale = pos.width / 24;
-        const localCenterX = pos.width / 2 / scale;
-        const localCenterY = pos.height / 2 / scale;
-
-        this.element.setAttribute('transform', `translate(${pos.x}, ${pos.y}) scale(${scale}) rotate(${pos.rotation}, ${localCenterX}, ${localCenterY})`);
+        this._applyTransform();
 
         this.element.setAttribute('data-shape-x', pos.x);
         this.element.setAttribute('data-shape-y', pos.y);

@@ -2,7 +2,7 @@
 // Multi-selection system - copied from selection.js
 
 import { cleanupAttachments } from '../tools/arrowTool.js';
-import { pushTransformAction, pushFrameAttachmentAction, pushDeleteAction } from './UndoRedo.js';
+import { pushCreateAction, pushTransformAction, pushFrameAttachmentAction, pushDeleteAction } from './UndoRedo.js';
 import { calculateSnap, clearSnapGuides } from './SnapGuides.js';
 import { registerRotationAnchor } from './ScreenSpaceControls.js';
 
@@ -1943,6 +1943,11 @@ function deleteSelectedShapes() {
 function frameSelectedShapes() {
     if (multiSelection.selectedShapes.size < 2) return;
 
+    const shapesToFrame = Array.from(multiSelection.selectedShapes);
+    // Frames cannot be nested through the Frame it action, and objects that
+    // already belong to a frame must first be detached explicitly.
+    if (shapesToFrame.some(shape => shape?.shapeName === 'frame' || shape?.parentFrame)) return;
+
     const bounds = multiSelection.getBounds();
     if (!bounds) return;
 
@@ -1962,17 +1967,7 @@ function frameSelectedShapes() {
     const frame = new FrameClass(fx, fy, fw, fh);
     shapes.push(frame);
 
-    // Push undo action for frame creation
-    if (window.historyStack) {
-        window.historyStack.push({
-            type: window.ACTION_CREATE || 'create',
-            shape: frame,
-            shapeName: 'frame'
-        });
-    }
-
     // Add each selected shape into the frame
-    const shapesToFrame = Array.from(multiSelection.selectedShapes);
     multiSelection.clearSelection();
 
     for (const shape of shapesToFrame) {
@@ -1995,6 +1990,12 @@ function frameSelectedShapes() {
             shapes.splice(earliest, 0, frame);
         }
     }
+
+    // Record after reordering so redo restores the same hit-test/layer index.
+    pushCreateAction(frame, {
+        frameCreation: true,
+        containedShapes: shapesToFrame
+    });
 
     // Select the new frame
     if (typeof frame.selectFrame === 'function') {

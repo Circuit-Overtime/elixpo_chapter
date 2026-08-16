@@ -180,6 +180,8 @@ function serializeShape(shape) {
                 width: shape.width, height: shape.height,
                 rotation: shape.rotation,
                 href: el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '',
+                sizeBytes: Number(el.__fileSize || el.getAttribute('data-file-size')) || 0,
+                cloudinaryId: el.getAttribute('data-cloudinary-id') || null,
                 frameType: shape._frameType || null,
                 graphData: shape._frameType === 'graph' && shape._graphData
                     ? cloneOptions(shape._graphData)
@@ -304,6 +306,12 @@ function deserializeShape(data) {
             imgEl.setAttribute('height', data.height);
             imgEl.setAttribute('href', data.href);
             imgEl.setAttribute('preserveAspectRatio', 'none');
+            if (data.sizeBytes) {
+                imgEl.__fileSize = Number(data.sizeBytes) || 0;
+                imgEl.setAttribute('data-file-size', String(imgEl.__fileSize));
+                window.__roomImageBytesUsed = (window.__roomImageBytesUsed || 0) + imgEl.__fileSize;
+            }
+            if (data.cloudinaryId) imgEl.setAttribute('data-cloudinary-id', data.cloudinaryId);
             svgEl.appendChild(imgEl);
             const shape = new ImageShape(imgEl);
             if (data.rotation) shape.rotation = data.rotation;
@@ -400,6 +408,7 @@ export function loadScene(sceneData) {
     // Clear current scene
     const svgEl = window.svg;
     if (!svgEl) return false;
+    window.__roomImageBytesUsed = 0;
 
     // Remove all existing shape DOM elements
     const existingShapes = window.shapes || [];

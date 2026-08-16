@@ -11,7 +11,6 @@ export default function LandingFooter() {
             <div className="flex flex-col gap-2.5">
               <Link href="/pricing" className="text-text-dim text-sm hover:text-text-primary transition-colors">Pricing</Link>
               <Link href="/teams" className="text-text-dim text-sm hover:text-text-primary transition-colors">Teams</Link>
-              <Link href="/roadmap" className="text-text-dim text-sm hover:text-text-primary transition-colors">Roadmap</Link>
               <a href="https://www.npmjs.com/package/@elixpo/lixsketch" target="_blank" rel="noopener noreferrer" className="text-text-dim text-sm hover:text-text-primary transition-colors flex items-center gap-1.5">
                 <i className="bx bxl-nodejs text-sm" />NPM Package
               </a>
@@ -37,7 +36,6 @@ export default function LandingFooter() {
             <h4 className="text-text-secondary text-xs uppercase tracking-wider mb-4">Resources</h4>
             <div className="flex flex-col gap-2.5">
               <Link href="/resources/how-to-start" className="text-text-dim text-sm hover:text-text-primary transition-colors">How to start</Link>
-              <Link href="/resources/use-cases" className="text-text-dim text-sm hover:text-text-primary transition-colors">Use Cases</Link>
               <Link href="/resources/community" className="text-text-dim text-sm hover:text-text-primary transition-colors">Community</Link>
               <Link href="/resources/security" className="text-text-dim text-sm hover:text-text-primary transition-colors">Security</Link>
             </div>
