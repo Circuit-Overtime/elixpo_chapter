@@ -6,6 +6,7 @@ import { showToast } from '../../utils/toast'
 export default function MultiSelectActions() {
   const [count, setCount] = useState(0)
   const [groupState, setGroupState] = useState('none') // 'none' | 'partial' | 'all'
+  const [frameEligible, setFrameEligible] = useState(false)
 
   useEffect(() => {
     // Poll multi-selection state. Cheap — Set size + a single
@@ -18,6 +19,7 @@ export default function MultiSelectActions() {
 
       if (n < 2) {
         setGroupState('none')
+        setFrameEligible(false)
         return
       }
       let withId = 0
@@ -28,6 +30,7 @@ export default function MultiSelectActions() {
           groupIds.add(s.groupId)
         }
       })
+      setFrameEligible(Array.from(sel).every((s) => s.shapeName !== 'frame' && !s.parentFrame))
       // "all" = every shape has a groupId AND they all share the same one
       if (withId === n && groupIds.size === 1) setGroupState('all')
       else if (withId > 0) setGroupState('partial')
@@ -82,7 +85,7 @@ export default function MultiSelectActions() {
 
         {/* Frame is only useful when shapes aren't already grouped — a
             grouped set is conceptually a "frameless frame" already. */}
-        {!grouped && (
+        {!grouped && frameEligible && (
           <button
             onClick={handleFrame}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-accent-blue hover:bg-accent-blue/10 transition-all duration-150"

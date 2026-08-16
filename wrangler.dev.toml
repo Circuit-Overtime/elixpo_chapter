@@ -24,7 +24,6 @@ id = "aa3a1466b15e443a8f0858c3b9a776c8"
 
 [vars]
 ENVIRONMENT = "development"
-MAX_ROOM_USERS = "10"
 ROOM_TTL_HOURS = "3"
 IDLE_TIMEOUT_MINS = "40"
 ELIXPO_AUTH_URL = "https://accounts.elixpo.com"

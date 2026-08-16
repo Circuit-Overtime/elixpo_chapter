@@ -90,6 +90,14 @@ export default function IconSidebar() {
   const [icons, setIcons] = useState([])
   const [loading, setLoading] = useState(false)
   const debounceRef = useRef(null)
+  const searchInputRef = useRef(null)
+  const requestSequenceRef = useRef(0)
+
+  useEffect(() => {
+    if (!visible) return
+    const frame = requestAnimationFrame(() => searchInputRef.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [visible])
 
   // Close on Escape
   useEffect(() => {
@@ -115,6 +123,7 @@ export default function IconSidebar() {
   }, [visible, setActiveTool])
 
   const fetchIcons = useCallback(async (searchQuery, cat) => {
+    const requestSequence = ++requestSequenceRef.current
     const params = new URLSearchParams()
     if (searchQuery) params.set('q', searchQuery)
     if (cat) params.set('category', cat)
@@ -124,6 +133,7 @@ export default function IconSidebar() {
     // Return cached results instantly if available
     if (iconResultCache.has(cacheKey)) {
       setIcons(iconResultCache.get(cacheKey))
+      setLoading(false)
       return
     }
 
@@ -134,12 +144,12 @@ export default function IconSidebar() {
         const data = await res.json()
         const results = data.results || []
         iconResultCache.set(cacheKey, results)
-        setIcons(results)
+        if (requestSequence === requestSequenceRef.current) setIcons(results)
       }
     } catch (err) {
       console.error('Icon fetch failed:', err)
     }
-    setLoading(false)
+    if (requestSequence === requestSequenceRef.current) setLoading(false)
   }, [])
 
   // Fetch icons when visibility, query, or category changes (debounced for query typing)
@@ -148,29 +158,9 @@ export default function IconSidebar() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       fetchIcons(query, category)
-    }, query ? 300 : 0)
+    }, query ? 80 : 0)
     return () => clearTimeout(debounceRef.current)
   }, [query, visible, category, fetchIcons])
-
-  // Preload all categories in background on first sidebar open
-  const hasPreloaded = useRef(false)
-  useEffect(() => {
-    if (!visible || hasPreloaded.current) return
-    hasPreloaded.current = true
-    // Fire-and-forget: preload each category so switching is instant
-    CATEGORIES.forEach((cat) => {
-      const params = new URLSearchParams()
-      if (cat.value) params.set('category', cat.value)
-      params.set('inline', '1')
-      const key = params.toString()
-      if (!iconResultCache.has(key)) {
-        fetch(`${getIconsBaseUrl()}/api/icons/search?${key}`)
-          .then((r) => r.ok ? r.json() : null)
-          .then((data) => { if (data?.results) iconResultCache.set(key, data.results) })
-          .catch(() => {})
-      }
-    })
-  }, [visible])
 
   const handleIconClick = useCallback((icon) => {
     if (typeof window === 'undefined') return
@@ -214,6 +204,7 @@ export default function IconSidebar() {
         <div className="flex items-center gap-2 bg-surface-hover border border-border-light rounded-lg px-2.5 py-2">
           <i className="bx bxs-search text-text-muted text-sm" />
           <input
+            ref={searchInputRef}
             id="iconSearchInput"
             type="text"
             value={query}

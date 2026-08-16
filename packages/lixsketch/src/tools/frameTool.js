@@ -143,9 +143,12 @@ const handleMouseDown = (e) => {
             currentFrame = null;
             currentShape = null;
         } else {
-            pushCreateAction(currentFrame);
             // Check for shapes that should be contained in the new frame
             currentFrame.updateContainedShapes(true); // Apply clipping immediately for new frames
+            pushCreateAction(currentFrame, {
+                frameCreation: true,
+                containedShapes: [...currentFrame.containedShapes]
+            });
 
             // Auto-select the new frame and switch to selection tool
             const placedFrame = currentFrame;
@@ -177,17 +180,24 @@ const handleMouseDown = (e) => {
         }
     }
 
-    // Only check frame containment for shapes that aren't already in frames
+    // Only check frame containment for shapes that aren't already in frames.
+    // Record this fallback attachment too; individual shape tools normally do
+    // it themselves, but restored/imported shapes can reach this path.
     if (!isDragging) {
         shapes.forEach(shape => {
             if (shape.shapeName !== 'frame' && !shape.parentFrame) {
-                shapes.forEach(frame => {
-                    if (frame.shapeName === 'frame') {
-                        if (frame.isShapeInFrame(shape)) {
-                            frame.addShapeToFrame(shape);
-                        }
+                let targetFrame = null;
+                for (let i = shapes.length - 1; i >= 0; i--) {
+                    const frame = shapes[i];
+                    if (frame.shapeName === 'frame' && frame.isShapeInFrame(shape)) {
+                        targetFrame = frame;
+                        break;
                     }
-                });
+                }
+                if (targetFrame) {
+                    targetFrame.addShapeToFrame(shape);
+                    pushFrameAttachmentAction(targetFrame, shape, 'attach', null);
+                }
             }
         });
     }

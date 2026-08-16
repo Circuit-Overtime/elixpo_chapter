@@ -42,7 +42,9 @@ import {
 } from '@/utils/docCanvasLinks'
 
 const DOC_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
-const DOC_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+function getDocumentImageLimitBytes() {
+  return Number(window.__roomImageLimitBytes) || 2 * 1024 * 1024
+}
 
 const DOC_FORMATTING_TOOLBAR_OPTIONS = {
   useFloatingOptions: {
@@ -300,14 +302,27 @@ function validateRemoteImage(url, timeoutMs = 8000) {
 }
 
 async function uploadDocumentImage(file) {
+  const roomLimit = getDocumentImageLimitBytes()
+  if (file.size > roomLimit) {
+    showToast(`Image exceeds the ${Math.round(roomLimit / (1024 * 1024))} MB workspace limit`, { tone: 'warn' })
+    throw new Error('Image exceeds workspace limit')
+  }
   const dataUrl = await readFileAsDataURL(file)
   const compressed = await compressImage(dataUrl)
+  const usedBytes = Number(window.__roomImageBytesUsed) || 0
+  if (usedBytes + compressed.compressedSize > roomLimit) {
+    showToast(`Workspace image limit reached (${Math.round(roomLimit / (1024 * 1024))} MB)`, { tone: 'warn' })
+    throw new Error('Workspace image limit reached')
+  }
   const sessionId = window.__sessionID
   const workerUrl = window.__WORKER_URL || WORKER_URL
 
   // Offline/local fallback: retain the compressed image without exposing the
   // package's default Embed URL card.
-  if (!workerUrl || !sessionId) return compressed.dataUrl
+  if (!workerUrl || !sessionId) {
+    window.__roomImageBytesUsed = usedBytes + compressed.compressedSize
+    return compressed.dataUrl
+  }
 
   const signResponse = await fetch(`${workerUrl}/api/images/sign`, {
     method: 'POST',
@@ -315,9 +330,13 @@ async function uploadDocumentImage(file) {
     body: JSON.stringify({
       sessionId,
       filename: `doc_${Date.now()}`,
+      sizeBytes: compressed.compressedSize,
     }),
   })
-  if (!signResponse.ok) throw new Error('Could not authorize document image upload')
+  if (!signResponse.ok) {
+    const body = await signResponse.json().catch(() => ({}))
+    throw new Error(body.message || 'Could not authorize document image upload')
+  }
   const signData = await signResponse.json()
 
   const formData = new FormData()
@@ -336,6 +355,16 @@ async function uploadDocumentImage(file) {
   const uploaded = await uploadResponse.json()
   const imageUrl = uploaded.secure_url || uploaded.url
   if (!imageUrl) throw new Error('Document image upload returned no URL')
+  await fetch(`${workerUrl}/api/images/complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId,
+      publicId: uploaded.public_id || signData.publicId,
+      sizeBytes: uploaded.bytes || compressed.compressedSize,
+    }),
+  }).catch(() => {})
+  window.__roomImageBytesUsed = usedBytes + (uploaded.bytes || compressed.compressedSize)
   return imageUrl
 }
 
@@ -559,7 +588,7 @@ export default function DocsPanel() {
               features={{ equations: true, mermaid: true, code: true }}
               uploadFile={uploadDocumentImage}
               acceptImageTypes={DOC_IMAGE_TYPES}
-              maxFileSizeBytes={DOC_IMAGE_MAX_BYTES}
+              maxFileSizeBytes={getDocumentImageLimitBytes()}
             >
               <FormattingToolbarController
                 formattingToolbar={DocumentFormattingToolbar}

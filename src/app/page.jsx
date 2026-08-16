@@ -400,7 +400,7 @@ export default function LandingPage() {
       // A cloud-saved canvas can outlive its local scene buffer. Resume it
       // only when this browser still has the E2E key required to decrypt it.
       try {
-        const response = await fetch(`/api/scenes/load?sessionId=${encodeURIComponent(rememberedCanvasId)}`, {
+        const response = await fetch(`/api/scenes/load?sessionId=${encodeURIComponent(rememberedCanvasId)}&touch=0`, {
           cache: 'no-store',
           signal: controller.signal,
         })
