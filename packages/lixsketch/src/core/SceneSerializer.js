@@ -184,6 +184,8 @@ function serializeShape(shape) {
                 cloudinaryId: el.getAttribute('data-cloudinary-id') || null,
                 storageProvider: el.getAttribute('data-storage-provider') || 'platform_cloudinary',
                 storageCloudName: el.getAttribute('data-storage-cloud-name') || null,
+                aiGenerated: el.getAttribute('data-ai-generated') === 'true',
+                aiModel: el.getAttribute('data-ai-model') || null,
                 frameType: shape._frameType || null,
                 graphData: shape._frameType === 'graph' && shape._graphData
                     ? cloneOptions(shape._graphData)
@@ -316,6 +318,8 @@ function deserializeShape(data) {
             if (data.cloudinaryId) imgEl.setAttribute('data-cloudinary-id', data.cloudinaryId);
             if (data.storageProvider) imgEl.setAttribute('data-storage-provider', data.storageProvider);
             if (data.storageCloudName) imgEl.setAttribute('data-storage-cloud-name', data.storageCloudName);
+            if (data.aiGenerated) imgEl.setAttribute('data-ai-generated', 'true');
+            if (data.aiModel) imgEl.setAttribute('data-ai-model', data.aiModel);
             svgEl.appendChild(imgEl);
             const shape = new ImageShape(imgEl);
             if (data.rotation) shape.rotation = data.rotation;

@@ -9,6 +9,7 @@ import { useProfileStore } from '@/hooks/useGuestProfile'
 import { WORKER_URL } from '@/lib/env'
 import { getRememberedCanvasId } from '@/utils/canvasSession'
 import CloudinaryIntegrationCard from '@/components/profile/CloudinaryIntegrationCard'
+import PollinationsIntegrationCard from '@/components/profile/PollinationsIntegrationCard'
 import PersonalDetailsCard from '@/components/profile/PersonalDetailsCard'
 import LandingNav from '@/components/landing/LandingNav'
 
@@ -639,12 +640,15 @@ export default function ProfilePage() {
             )}
 
             {activeTab === 'integrations' && isAuthenticated && (
-              <CloudinaryIntegrationCard
-                managedUsage={{
-                  usedBytes: managedStorageUsedBytes,
-                  limitBytes: managedStorageLimitBytes,
-                }}
-              />
+              <div className="space-y-4">
+                <CloudinaryIntegrationCard
+                  managedUsage={{
+                    usedBytes: managedStorageUsedBytes,
+                    limitBytes: managedStorageLimitBytes,
+                  }}
+                />
+                <PollinationsIntegrationCard />
+              </div>
             )}
 
             {/* Guest info card */}

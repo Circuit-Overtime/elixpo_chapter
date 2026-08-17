@@ -212,6 +212,7 @@ export default function CloudinaryIntegrationCard({ managedUsage }) {
             <p className="mt-1 max-w-xl text-xs leading-5 text-text-dim">
               Store new canvas and document images in your own Cloudinary product environment. Personal storage does not consume LixSketch’s per-workspace image allowance.
             </p>
+            <a href="/docs/connectors#cloudinary" className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-[#A99CF1] hover:text-white">Connector docs <i className="bx bx-right-arrow-alt" /></a>
           </div>
         </div>
       </div>

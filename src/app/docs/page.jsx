@@ -155,6 +155,13 @@ export default function DocsPage() {
             <NavItem href="#styling" label="Styling" icon="bx-palette" active={activeSection === 'styling'} />
 
             <p className="text-text-dim text-[10px] uppercase tracking-widest px-3 pt-5 pb-2">Integration</p>
+            <Link
+              href="/docs/connectors"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-all"
+            >
+              <i className="bx bx-plug text-base" />
+              Connectors
+            </Link>
             <NavItem href="#api" label="JavaScript API" icon="bx-code-alt" active={activeSection === 'api'} />
             <NavItem href="#llm" label="LLM Spec" icon="bx-bot" active={activeSection === 'llm'} />
 

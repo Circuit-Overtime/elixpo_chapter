@@ -95,3 +95,9 @@
 - [x] Increase typography across non-canvas routes while preserving the compact canvas workspace scale.
 - [x] Make the D1 migration runner read history correctly with Wrangler 4.87 command output.
 - [x] Configure the `/settings` compatibility redirect for the Cloudflare Edge runtime.
+- [x] Add a Pollinations BYOP image connector with encrypted PKCE authorization restricted to Flux and Klein.
+- [x] Show personal Pollen balance, recent image token usage, spend, expiry, and live Flux/Klein health in Integrations.
+- [x] Expose AI image generation as the workspace's only AI feature and require an enabled personal Pollinations connector for Flux or Klein.
+- [x] Include connector-backed AI image generation in the Free plan while billing and entitlements remain adjustable.
+- [x] Keep AI-generated images fully interoperable with regular images while preserving a top-left AI provenance badge through transforms, restore, and copy/paste.
+- [x] Replace the generic Pollinations BYOP reference with deployed-domain Cloudinary and Pollinations documentation under `/docs/connectors`.
