@@ -228,7 +228,7 @@ function HandlePageInner({ path, initialData = null }) {
   if (loading) {
     return (
       <AppShell>
-        <div className="max-w-3xl mx-auto px-6 py-10">
+        <div className="max-w-3xl mx-auto min-[1400px]:ml-[96px] px-6 py-10">
           <div className="h-44 rounded-xl bg-[var(--bg-elevated)] animate-pulse mb-16" />
           <div className="h-8 bg-[var(--bg-elevated)] animate-pulse rounded w-2/3 mb-4" />
           <div className="h-4 bg-[var(--bg-elevated)] animate-pulse rounded w-1/3 mb-6" />
@@ -276,7 +276,7 @@ function HandlePageInner({ path, initialData = null }) {
 
     return (
       <AppShell>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 w-full overflow-x-hidden">
+        <div className="max-w-3xl mx-auto min-[1400px]:ml-[96px] px-4 sm:px-6 py-8 w-full overflow-x-hidden">
           {canEdit && (
             <div className="flex items-center justify-end mb-4">
               <Link
