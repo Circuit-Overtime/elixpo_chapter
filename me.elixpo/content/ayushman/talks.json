@@ -3,6 +3,13 @@
   "description": "Selected highlights from talks, workshops, and community sessions on open source, DevOps, and building developer communities.",
   "sessions": [
     {
+      "title": "The Client Boundary - What 'use client' Really Does in Modern React.",
+      "venue": "Techno India University",
+      "date": "23rd August 2026",
+      "location": "Kolkata, India",
+      "status": "upcoming"
+    },
+    {
       "title": "Know Your Terminal: Zero to Hero on Bash Programming",
       "venue": "GDG on Campus, JIS University × GDG on Campus, UEM",
       "date": "23rd June 2026",
@@ -15,7 +22,8 @@
       "venue": "GitHub Open Source Friday",
       "date": "10th July 2026",
       "location": "Remote",
-      "status": "upcoming"
+      "status": "past",
+      "link" : "www.youtube.com/watch?v=apxwKja5JWE"
     },
     {
       "title": "Understanding Prompt Injection Attacks in LLMs (organized — first offline cross-collab)",
