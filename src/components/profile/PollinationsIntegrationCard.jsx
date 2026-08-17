@@ -121,11 +121,11 @@ export default function PollinationsIntegrationCard() {
         </div>
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-sm font-medium text-text-primary">Personal Pollinations image generation</h2>
+            <h2 className="text-sm font-medium text-text-primary">AI Image Generation Support ft. Pollinations AI</h2>
             {status && <span className={`rounded-full px-2 py-0.5 text-[9px] uppercase tracking-wider ${status.connected && !status.expired ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-text-dim'}`}>{status.expired ? 'Expired' : status.connected ? 'Connected' : 'Not connected'}</span>}
           </div>
           <p className="mt-1 max-w-xl text-xs leading-5 text-text-dim">
-            Bring your own Pollen for image generation. The issued key is limited to Flux and Klein, stored encrypted, and never exposed to the browser.
+            Connect your Pollinations account to generate AI images directly inside a LixSketch workspace with Flux or Klein. Requests use your personal Pollen balance, while the scoped key is encrypted and never exposed to the browser.
           </p>
           <a href="/docs/connectors#pollinations" className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-[#A99CF1] hover:text-white">Connector docs <i className="bx bx-right-arrow-alt" /></a>
         </div>

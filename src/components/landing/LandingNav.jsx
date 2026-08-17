@@ -26,6 +26,47 @@ function OpenCanvasButton({ className }) {
   )
 }
 
+function AccountPill() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const user = useAuthStore((s) => s.user)
+  const login = useAuthStore((s) => s.login)
+
+  if (!isAuthenticated) {
+    return (
+      <button
+        type="button"
+        onClick={() => login()}
+        title="Sign in to LixSketch"
+        className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-border-light bg-white/[0.025] px-3 text-sm text-text-muted transition-all hover:border-[#8b6de0]/60 hover:bg-[#8b6de0]/10 hover:text-white"
+      >
+        <i className="bx bx-log-in text-base" />
+        <span className="hidden sm:inline">Sign in</span>
+      </button>
+    )
+  }
+
+  const label = user?.displayName || user?.email || 'Profile'
+  return (
+    <Link
+      href="/profile"
+      title={`${label} · Open profile`}
+      className="inline-flex h-9 max-w-56 cursor-pointer items-center gap-2 rounded-lg border border-border-light bg-white/[0.025] px-1.5 pr-2.5 text-text-muted transition-all hover:border-[#8b6de0]/60 hover:bg-[#8b6de0]/10 hover:text-white"
+    >
+      {user?.avatar ? (
+        <img src={user.avatar} alt="" className="h-7 w-7 shrink-0 rounded-md object-cover" />
+      ) : (
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#8b6de0]/20 text-xs text-[#d9c7ff]">
+          {label.slice(0, 1).toUpperCase()}
+        </span>
+      )}
+      <span className="hidden min-w-0 xl:block">
+        <span className="block truncate text-[11px] leading-tight text-text-secondary">{label}</span>
+        {user?.email && user.email !== label && <span className="block truncate text-[9px] leading-tight text-text-dim">{user.email}</span>}
+      </span>
+    </Link>
+  )
+}
+
 const resourceLinks = [
   { href: '/resources/how-to-start', label: 'How to start', icon: 'bx bx-rocket' },
   { href: '/resources/community', label: 'Community', icon: 'bx bx-group' },
@@ -185,6 +226,7 @@ export default function LandingNav() {
           </a>
 
           <OpenCanvasButton className="px-4 py-2 cursor-pointer bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-accent-blue/20" />
+          <AccountPill />
 
           {/* Mobile hamburger */}
           <button
