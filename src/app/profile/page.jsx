@@ -437,7 +437,7 @@ export default function ProfilePage() {
       <DotGrid />
       <AmbientGlow />
 
-      <div className="relative z-10 max-w-3xl mx-auto px-6 pb-16 pt-28 sm:pt-32">
+      <div className="relative z-10 max-w-3xl mx-auto px-6 pb-16 pt-20 sm:pt-24">
         {/* Back link */}
         <motion.div
           ref={headerRef}
