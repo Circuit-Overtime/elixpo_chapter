@@ -105,3 +105,10 @@
 - [x] Replace the generic Pollinations BYOP reference with deployed-domain Cloudinary and Pollinations documentation under `/docs/connectors`.
 - [x] Clarify Pollinations AI image support and keep a sign-in/profile account slot beside the landing navbar canvas action.
 - [x] Remove duplicated landing navbar account and canvas controls after merging the profile menu and signed-out action.
+- [x] Add authenticated workspace publishing with a public title, description, tags, cover, and immutable public snapshot.
+- [x] Add a public template gallery and template detail pages with publisher attribution and usage counts.
+- [x] Let signed-in users fork templates with lineage or clone them independently using fresh session IDs and encryption keys.
+- [x] Count every fork and clone against Guest/Free/Pro workspace limits before creating the destination workspace.
+- [x] Include paired canvas documents in published templates without exposing editable workspace keys, tokens, or session IDs.
+- [x] Add publisher controls to update, unpublish, and inspect public workspace templates.
+- [x] Warn publishers about public content and handle unavailable or private media before publishing.
