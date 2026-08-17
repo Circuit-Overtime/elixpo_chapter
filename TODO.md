@@ -95,6 +95,7 @@
 - [x] Increase typography across non-canvas routes while preserving the compact canvas workspace scale.
 - [x] Make the D1 migration runner read history correctly with Wrangler 4.87 command output.
 - [x] Configure the `/settings` compatibility redirect for the Cloudflare Edge runtime.
+- [x] Show signed-in identity in the landing navbar with workspace, account, integration, usage, billing, team, and documentation actions.
 - [x] Reduce the top gap between the landing navbar and `/profile` content.
 - [x] Add a Pollinations BYOP image connector with encrypted PKCE authorization restricted to Flux and Klein.
 - [x] Show personal Pollen balance, recent image token usage, spend, expiry, and live Flux/Klein health in Integrations.
