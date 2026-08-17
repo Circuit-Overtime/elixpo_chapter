@@ -94,7 +94,40 @@ body {
   background: #120e1a;
   color: #fcf9ff;
   font-family: "lixFont", sans-serif;
-  font-size: 14px;
+  font-size: 16px;
+}
+
+/* lixFont has a compact x-height. Non-canvas routes use a slightly larger
+ * optical scale while the workspace keeps its dense control layout. */
+body:not(.canvas-mode) .text-\[6px\] {
+  font-size: 8px !important;
+}
+
+body:not(.canvas-mode) .text-\[8px\] {
+  font-size: 10px !important;
+}
+
+body:not(.canvas-mode) .text-\[9px\] {
+  font-size: 11px !important;
+}
+
+body:not(.canvas-mode) .text-\[10px\] {
+  font-size: 12px !important;
+}
+
+body:not(.canvas-mode) .text-\[11px\],
+body:not(.canvas-mode) .text-xs {
+  font-size: 13px !important;
+  line-height: 1.25rem !important;
+}
+
+body:not(.canvas-mode) .text-\[13px\] {
+  font-size: 14px !important;
+}
+
+body:not(.canvas-mode) .text-sm {
+  font-size: 15px !important;
+  line-height: 1.4rem !important;
 }
 
 body.canvas-mode {

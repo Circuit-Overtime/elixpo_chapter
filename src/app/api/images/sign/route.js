@@ -24,7 +24,8 @@ export async function POST(request) {
     const limitBytes = getPlanLimits(tier).imageBytesPerWorkspace
     const usage = await DB.prepare(
       `SELECT COALESCE(SUM(size_bytes), 0) AS total FROM image_assets
-       WHERE session_id = ? AND (status = 'complete' OR created_at >= datetime('now', '-1 hour'))`
+       WHERE session_id = ? AND storage_provider = 'platform_cloudinary'
+         AND (status = 'complete' OR created_at >= datetime('now', '-1 hour'))`
     ).bind(body.sessionId).first()
     if ((usage?.total || 0) + requestedBytes > limitBytes) {
       return NextResponse.json({
@@ -40,8 +41,8 @@ export async function POST(request) {
     const publicId = `${folder}/${body.filename || `img_${timestamp}`}`
 
     await DB.prepare(
-      `INSERT INTO image_assets (public_id, session_id, size_bytes, status)
-       VALUES (?, ?, ?, 'pending')
+      `INSERT INTO image_assets (public_id, session_id, size_bytes, status, storage_provider)
+       VALUES (?, ?, ?, 'pending', 'platform_cloudinary')
        ON CONFLICT(public_id) DO UPDATE SET size_bytes = excluded.size_bytes, updated_at = datetime('now')`
     ).bind(publicId, body.sessionId, requestedBytes).run()
 

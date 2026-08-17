@@ -303,19 +303,36 @@ function validateRemoteImage(url, timeoutMs = 8000) {
 
 async function uploadDocumentImage(file) {
   const roomLimit = getDocumentImageLimitBytes()
-  if (file.size > roomLimit) {
-    showToast(`Image exceeds the ${Math.round(roomLimit / (1024 * 1024))} MB workspace limit`, { tone: 'warn' })
+  const personalStorage = Boolean(window.__personalCloudinary?.connected && window.__personalCloudinary?.useForUploads)
+  const uploadLimit = personalStorage ? 20 * 1024 * 1024 : roomLimit
+  if (file.size > uploadLimit) {
+    showToast(`Image exceeds the ${Math.round(uploadLimit / (1024 * 1024))} MB upload limit`, { tone: 'warn' })
     throw new Error('Image exceeds workspace limit')
   }
   const dataUrl = await readFileAsDataURL(file)
   const compressed = await compressImage(dataUrl)
   const usedBytes = Number(window.__roomImageBytesUsed) || 0
-  if (usedBytes + compressed.compressedSize > roomLimit) {
+  if (!personalStorage && usedBytes + compressed.compressedSize > roomLimit) {
     showToast(`Workspace image limit reached (${Math.round(roomLimit / (1024 * 1024))} MB)`, { tone: 'warn' })
     throw new Error('Workspace image limit reached')
   }
   const sessionId = window.__sessionID
   const workerUrl = window.__WORKER_URL || WORKER_URL
+
+  if (personalStorage && sessionId) {
+    const personalForm = new FormData()
+    personalForm.append('file', compressed.blob, `doc_${Date.now()}`)
+    personalForm.append('sessionId', sessionId)
+    const personalResponse = await fetch('/api/images/personal-upload', {
+      method: 'POST',
+      body: personalForm,
+    })
+    const personalData = await personalResponse.json().catch(() => ({}))
+    if (!personalResponse.ok || !personalData.url) {
+      throw new Error(personalData.error || 'Personal Cloudinary upload failed')
+    }
+    return personalData.url
+  }
 
   // Offline/local fallback: retain the compressed image without exposing the
   // package's default Embed URL card.
@@ -588,7 +605,7 @@ export default function DocsPanel() {
               features={{ equations: true, mermaid: true, code: true }}
               uploadFile={uploadDocumentImage}
               acceptImageTypes={DOC_IMAGE_TYPES}
-              maxFileSizeBytes={getDocumentImageLimitBytes()}
+              maxFileSizeBytes={20 * 1024 * 1024}
             >
               <FormattingToolbarController
                 formattingToolbar={DocumentFormattingToolbar}
