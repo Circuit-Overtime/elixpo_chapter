@@ -2,220 +2,237 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "noonghunna/club-3090",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 28,
-    "pushed_at": "2026-08-16T06:38:53Z",
-    "reasons": [
-      "1965\u2605 python active",
-      "has open issues"
-    ],
-    "score": 52,
-    "stars": 1965,
-    "topics": [],
-    "url": "https://github.com/noonghunna/club-3090"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "text2future/flowix",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 25,
-    "pushed_at": "2026-08-16T06:39:13Z",
-    "reasons": [
-      "290\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 290,
-    "topics": [
-      "claude-code",
-      "codex-cli",
-      "dsh",
-      "dsh-plugin",
-      "hermes-agent",
-      "markdown-editor",
-      "memory-system",
-      "note-taking",
-      "open-code"
-    ],
-    "url": "https://github.com/text2future/flowix"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "bruc3van/awesome-dsh-plugin",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 4,
-    "pushed_at": "2026-08-16T06:37:10Z",
-    "reasons": [
-      "157\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 157,
-    "topics": [
-      "awesome-list",
-      "deepseek-harness",
-      "dsh",
-      "dsh-plugin",
-      "plugins"
-    ],
-    "url": "https://github.com/bruc3van/awesome-dsh-plugin"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "altstackHQ/altstack-data",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 8,
-    "pushed_at": "2026-08-16T06:34:00Z",
-    "reasons": [
-      "321\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 321,
-    "topics": [
-      "awesome",
-      "awesome-list",
-      "devops",
-      "docker",
-      "open-source",
-      "productivity",
-      "saas-alternatives",
-      "self-hosted"
-    ],
-    "url": "https://github.com/altstackHQ/altstack-data"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "Mafyuh/iac",
+    "full_name": "shadowmere-xyz/shadowmere",
     "has_contributing": false,
-    "language": "YAML",
-    "open_issues": 3,
-    "pushed_at": "2026-08-16T03:17:59Z",
+    "language": "Python",
+    "open_issues": 4,
+    "pushed_at": "2026-08-17T06:55:45Z",
     "reasons": [
-      "809\u2605 yaml active",
+      "169\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 809,
+    "stars": 169,
     "topics": [
-      "actions",
-      "ansible",
-      "devops",
-      "docker",
-      "docker-compose",
+      "django",
+      "hacktoberfest",
+      "shadowsocks",
+      "website"
+    ],
+    "url": "https://github.com/shadowmere-xyz/shadowmere"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "ccch1mneyyy/dsh-TUI",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 35,
+    "pushed_at": "2026-08-17T06:55:55Z",
+    "reasons": [
+      "1689\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 1689,
+    "topics": [
+      "claude-code",
+      "coding-agent",
+      "deepseek",
+      "deepseek-harness",
+      "dsh-plugin",
+      "ink",
+      "react",
+      "terminal",
+      "tui"
+    ],
+    "url": "https://github.com/ccch1mneyyy/dsh-TUI"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "uiv-lib/uiv",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 6,
+    "pushed_at": "2026-08-17T06:55:55Z",
+    "reasons": [
+      "938\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 938,
+    "topics": [
+      "bootstrap",
+      "ui",
+      "vue",
+      "vue3"
+    ],
+    "url": "https://github.com/uiv-lib/uiv"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "Event-Horizon-VL/blackhole-vl",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 31,
+    "pushed_at": "2026-08-17T06:54:16Z",
+    "reasons": [
+      "129\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 129,
+    "topics": [
+      "hyprland",
+      "linux",
+      "linux-packages",
+      "void-community-repo",
+      "void-linux",
+      "void-packages",
+      "xbps-src"
+    ],
+    "url": "https://github.com/Event-Horizon-VL/blackhole-vl"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "joryirving/home-ops",
+    "has_contributing": false,
+    "language": "YAML",
+    "open_issues": 5,
+    "pushed_at": "2026-08-17T06:24:19Z",
+    "reasons": [
+      "223\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 223,
+    "topics": [
+      "flux",
       "gitops",
-      "iac",
-      "k8s",
-      "k8s-at-home",
       "kubernetes",
       "kubesearch",
-      "nixos",
-      "opentofu",
-      "packer",
+      "renovate",
+      "self-hosted",
+      "talos",
       "terraform"
     ],
-    "url": "https://github.com/Mafyuh/iac"
+    "url": "https://github.com/joryirving/home-ops"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "elder-plinius/OBLITERATUS",
+    "full_name": "Screenly/Anthias",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 17,
-    "pushed_at": "2026-08-16T06:29:13Z",
+    "open_issues": 25,
+    "pushed_at": "2026-08-17T06:53:50Z",
     "reasons": [
-      "7447\u2605 python active",
+      "3646\u2605 python active",
+      "has open issues"
+    ],
+    "score": 53,
+    "stars": 3646,
+    "topics": [
+      "digital-signage",
+      "iot",
+      "python",
+      "raspberry-pi"
+    ],
+    "url": "https://github.com/Screenly/Anthias"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "open-multi-agent/open-multi-agent",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 10,
+    "pushed_at": "2026-08-17T06:42:32Z",
+    "reasons": [
+      "6781\u2605 typescript active",
       "has open issues"
     ],
     "score": 55,
-    "stars": 7447,
-    "topics": [],
-    "url": "https://github.com/elder-plinius/OBLITERATUS"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "open-cli-tools/concurrently",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 59,
-    "pushed_at": "2026-08-16T06:35:56Z",
-    "reasons": [
-      "7831\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 56,
-    "stars": 7831,
+    "stars": 6781,
     "topics": [
-      "cli",
-      "command-line",
-      "concurrently",
-      "parallel",
-      "process",
-      "spawn"
+      "agent-framework",
+      "agent-orchestration",
+      "agentic-ai",
+      "ai-agents",
+      "anthropic",
+      "claude",
+      "claude-code",
+      "crewai-alternative",
+      "deepseek",
+      "dynamic-workflows",
+      "gemini",
+      "langgraph-alternative",
+      "llm",
+      "local-llm",
+      "mcp",
+      "multi-agent",
+      "nodejs",
+      "ollama",
+      "openai",
+      "typescript"
     ],
-    "url": "https://github.com/open-cli-tools/concurrently"
+    "url": "https://github.com/open-multi-agent/open-multi-agent"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "SwiftOldDriver/iOS-Weekly",
+    "full_name": "pshenok/server-survival",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 7,
-    "pushed_at": "2026-08-16T04:55:32Z",
+    "open_issues": 17,
+    "pushed_at": "2026-08-17T06:55:53Z",
     "reasons": [
-      "4988\u2605 javascript active",
+      "6350\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 55,
+    "stars": 6350,
+    "topics": [
+      "aws",
+      "cloud",
+      "devops",
+      "education",
+      "game",
+      "javascript",
+      "learning",
+      "open-source",
+      "simulation",
+      "threejs",
+      "tower-defense"
+    ],
+    "url": "https://github.com/pshenok/server-survival"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "pgsty/pigsty",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 26,
+    "pushed_at": "2026-08-17T04:36:14Z",
+    "reasons": [
+      "5538\u2605 shell active",
       "has open issues"
     ],
     "score": 54,
-    "stars": 4988,
+    "stars": 5538,
     "topics": [
-      "ios",
-      "mobile",
-      "objective-c",
-      "rss",
-      "swift",
-      "weekly"
+      "graphics",
+      "infra",
+      "postgres",
+      "service",
+      "toolbox",
+      "yours"
     ],
-    "url": "https://github.com/SwiftOldDriver/iOS-Weekly"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "vdsm/virtual-dsm",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 3,
-    "pushed_at": "2026-08-16T05:27:07Z",
-    "reasons": [
-      "3967\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 38,
-    "stars": 3967,
-    "topics": [
-      "docker",
-      "docker-image",
-      "dsm",
-      "kvm",
-      "qemu",
-      "synology",
-      "synology-docker",
-      "synology-dsm",
-      "synology-nas"
-    ],
-    "url": "https://github.com/vdsm/virtual-dsm"
+    "url": "https://github.com/pgsty/pigsty"
   },
   {
     "archived": false,
@@ -246,182 +263,187 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "earthtojake/text-to-cad",
+    "full_name": "zubair-trabzada/geo-seo-claude",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 13,
-    "pushed_at": "2026-08-16T03:39:56Z",
+    "open_issues": 20,
+    "pushed_at": "2026-08-17T06:28:26Z",
     "reasons": [
-      "13475\u2605 python active",
-      "has open issues"
-    ],
-    "score": 59,
-    "stars": 13475,
-    "topics": [
-      "agents",
-      "ai-agents",
-      "cad",
-      "mechanical-engineering",
-      "robotics",
-      "step",
-      "stl",
-      "stp",
-      "text-to-cad"
-    ],
-    "url": "https://github.com/earthtojake/text-to-cad"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "miurla/morphic",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 54,
-    "pushed_at": "2026-08-16T06:26:44Z",
-    "reasons": [
-      "9044\u2605 typescript active",
+      "9370\u2605 python active",
       "has open issues"
     ],
     "score": 57,
-    "stars": 9044,
-    "topics": [
-      "generative-ai",
-      "generative-ui",
-      "nextjs",
-      "ollama",
-      "react",
-      "searxng",
-      "shadcn-ui",
-      "tailwindcss",
-      "tavily",
-      "typescript",
-      "upstash",
-      "vercel-ai-sdk"
-    ],
-    "url": "https://github.com/miurla/morphic"
+    "stars": 9370,
+    "topics": [],
+    "url": "https://github.com/zubair-trabzada/geo-seo-claude"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "horsicq/Detect-It-Easy",
+    "full_name": "rmyndharis/OpenWA",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 5,
+    "pushed_at": "2026-08-17T06:52:37Z",
+    "reasons": [
+      "12816\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 59,
+    "stars": 12816,
+    "topics": [
+      "api",
+      "bot",
+      "gateway",
+      "self-hosted",
+      "whatsapp",
+      "whatsapp-api",
+      "whatsapp-automation",
+      "whatsapp-bot",
+      "whatsapp-gateway",
+      "whatsapp-gateway-api",
+      "whatsapp-web",
+      "whatsapp-web-api"
+    ],
+    "url": "https://github.com/rmyndharis/OpenWA"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "marko-js/marko",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 33,
-    "pushed_at": "2026-08-16T05:46:36Z",
+    "open_issues": 28,
+    "pushed_at": "2026-08-17T03:23:00Z",
     "reasons": [
-      "11356\u2605 javascript active",
+      "14405\u2605 javascript active",
       "has open issues"
     ],
-    "score": 58,
-    "stars": 11356,
+    "score": 60,
+    "stars": 14405,
     "topics": [
-      "binary-analysis",
-      "debugger",
-      "detect",
-      "detector",
-      "disassembler",
-      "elf",
-      "entropy",
-      "hacktoberfest",
-      "hacktoberfest2023",
-      "mach-o",
-      "macho",
-      "malware-analysis",
-      "malware-research",
-      "packer",
-      "pentest",
-      "program-analysis",
-      "reverse-engineering",
-      "scanner",
-      "static-analysis",
-      "unpacker"
+      "client-side-rendering",
+      "dom",
+      "frontend",
+      "isomorphic",
+      "javascript",
+      "nodejs",
+      "server-side-rendering",
+      "ui-components",
+      "vdom"
     ],
-    "url": "https://github.com/horsicq/Detect-It-Easy"
+    "url": "https://github.com/marko-js/marko"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "juewuy/ShellCrash",
+    "full_name": "nelvko/clash-for-linux-install",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 37,
-    "pushed_at": "2026-08-15T18:10:21Z",
+    "open_issues": 21,
+    "pushed_at": "2026-08-16T10:46:16Z",
     "reasons": [
-      "13172\u2605 shell active",
+      "14461\u2605 shell active",
       "has open issues"
     ],
-    "score": 44,
-    "stars": 13172,
-    "topics": [],
-    "url": "https://github.com/juewuy/ShellCrash"
+    "score": 45,
+    "stars": 14461,
+    "topics": [
+      "clash",
+      "clash-meta",
+      "linux",
+      "mihomo",
+      "subconverter"
+    ],
+    "url": "https://github.com/nelvko/clash-for-linux-install"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "jvxiao/speed-github",
+    "full_name": "ahgraber/homelab-gitops-k3s",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 3,
-    "pushed_at": "2026-08-16T06:39:48Z",
+    "open_issues": 21,
+    "pushed_at": "2026-08-17T06:55:08Z",
     "reasons": [
-      "348\u2605 python active",
+      "121\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 348,
-    "topics": [],
-    "url": "https://github.com/jvxiao/speed-github"
+    "stars": 121,
+    "topics": [
+      "gitops",
+      "k3s",
+      "k8s-at-home",
+      "kubernetes",
+      "kubesearch",
+      "self-hosted"
+    ],
+    "url": "https://github.com/ahgraber/homelab-gitops-k3s"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "orbat-mapper/orbat-mapper",
+    "full_name": "lo1tuma/eslint-plugin-mocha",
     "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 43,
-    "pushed_at": "2026-08-16T06:39:12Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-17T06:55:40Z",
     "reasons": [
-      "129\u2605 typescript active",
+      "288\u2605 typescript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 129,
+    "stars": 288,
     "topics": [
-      "javascript",
-      "military",
-      "military-history",
-      "military-symbology",
-      "openlayers"
+      "eslint",
+      "eslint-plugin",
+      "eslintplugin",
+      "hacktoberfest",
+      "mocha"
     ],
-    "url": "https://github.com/orbat-mapper/orbat-mapper"
+    "url": "https://github.com/lo1tuma/eslint-plugin-mocha"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "smhg/gettext-parser",
+    "full_name": "microlinkhq/browserless",
     "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 11,
-    "pushed_at": "2026-08-16T06:37:10Z",
+    "open_issues": 6,
+    "pushed_at": "2026-08-17T06:54:26Z",
     "reasons": [
-      "169\u2605 javascript active",
+      "1830\u2605 javascript active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 169,
+    "score": 37,
+    "stars": 1830,
     "topics": [
-      "gettext"
+      "automation",
+      "browser",
+      "browserless",
+      "chrome",
+      "chromium",
+      "headless",
+      "html",
+      "javascript",
+      "nodejs",
+      "pdf",
+      "puppeteer",
+      "screenshot",
+      "text",
+      "web-scraping"
     ],
-    "url": "https://github.com/smhg/gettext-parser"
+    "url": "https://github.com/microlinkhq/browserless"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "mirceanton/home-ops",
+    "full_name": "fd00/yacp",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 9,
-    "pushed_at": "2026-08-16T06:24:12Z",
+    "open_issues": 7,
+    "pushed_at": "2026-08-17T06:53:02Z",
     "reasons": [
       "112\u2605 shell active",
       "has open issues"
@@ -429,60 +451,65 @@
     "score": 36,
     "stars": 112,
     "topics": [
-      "gitops",
-      "k8s-at-home"
+      "cygport",
+      "cygwin",
+      "packages",
+      "x86-64"
     ],
-    "url": "https://github.com/mirceanton/home-ops"
+    "url": "https://github.com/fd00/yacp"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "haraldkoch/kochhaus-home",
+    "full_name": "billimek/k8s-gitops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 8,
-    "pushed_at": "2026-08-16T00:09:09Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-17T00:55:20Z",
     "reasons": [
-      "178\u2605 yaml active",
+      "776\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 178,
+    "stars": 776,
     "topics": [
+      "flux",
       "gitops",
       "helm",
+      "k8s",
       "k8s-at-home",
-      "kubernetes",
-      "renovate"
+      "kubernetes"
     ],
-    "url": "https://github.com/haraldkoch/kochhaus-home"
+    "url": "https://github.com/billimek/k8s-gitops"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "huangruiteng/loopx",
-    "has_contributing": true,
+    "full_name": "walkinglabs/hands-on-modern-rl",
+    "has_contributing": false,
     "language": "Python",
-    "open_issues": 31,
-    "pushed_at": "2026-08-16T06:32:22Z",
+    "open_issues": 10,
+    "pushed_at": "2026-08-17T06:51:01Z",
     "reasons": [
-      "4787\u2605 python active",
+      "3978\u2605 python active",
       "has open issues"
     ],
-    "score": 54,
-    "stars": 4787,
+    "score": 38,
+    "stars": 3978,
     "topics": [
-      "agent-control-plane",
-      "agent-harness",
-      "agent-ops",
-      "ai-agents",
-      "codex",
-      "long-horizon",
-      "long-running-agents",
-      "loop-engineering",
-      "loopx",
-      "workflow-automation"
+      "agent",
+      "agentic",
+      "agentic-ai",
+      "agentic-rl",
+      "dpo",
+      "grpo",
+      "llm",
+      "llm-alignment",
+      "pytorch",
+      "reinforcemen",
+      "rlhf",
+      "tutorial"
     ],
-    "url": "https://github.com/huangruiteng/loopx"
+    "url": "https://github.com/walkinglabs/hands-on-modern-rl"
   }
 ]
