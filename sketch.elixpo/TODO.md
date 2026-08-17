@@ -70,3 +70,28 @@
 - [x] Reframe pricing around explicit Guest, Free, and Pro value limits.
 - [x] Remove Roadmap from navigation and routing, promote Docs in the navbar, and trim Resources to onboarding, community, and security.
 - [x] Correct the Teams page around current encrypted live sessions and remove future-roadmap and self-hosting sections.
+- [x] Add signed-in personal Cloudinary OAuth storage for canvas and document media, with encrypted refresh tokens and platform-quota bypass.
+- [x] Show remaining account-wide managed storage and connected Cloudinary storage in profiles.
+- [x] Hide AI request allowances from profiles until the Pollinations integration ships.
+- [x] Organize profiles into Personal, Workspaces, Integrations, Usage, and Billing tabs with URL-addressable navigation.
+- [x] Handle Cloudinary OAuth grants that omit the selected product environment by validating a user-supplied public cloud name.
+- [x] Add persisted personal profile details, biography, location, website, and custom links to the Personal tab.
+- [x] Enrich every profile tab with section context, summary metrics, entitlement details, and clearer status information.
+- [x] Keep the standard site navbar visible on the profile route.
+- [x] Let Cloudinary OAuth identify the selected product environment without asking users for a cloud name.
+- [x] Fix encoded server-session parsing for Cloudinary routes and show accurate disconnected integration status.
+- [x] Treat an absent or unavailable Cloudinary connection as a normal managed-storage state on profiles.
+- [x] Send signed-out Cloudinary connections through sign-in and return users to the Integrations tab.
+- [x] Keep client and Edge-route auth sessions synchronized so Cloudinary connect does not re-authenticate signed-in users.
+- [x] Resolve Cloudinary beta OAuth product-environment identifiers across nested, namespaced, and resource-URL response variants.
+- [x] Add value-free nested OAuth response diagnostics for Cloudinary beta claim changes.
+- [x] Match Blogs with a verified cloud-name fallback only when Cloudinary beta OAuth omits the product environment.
+- [x] Bind Cloudinary OAuth callbacks to the already-verified LixSketch user without repeating remote session verification.
+- [x] Prevent React click events from becoming post-login routes such as `/[object Object]`.
+- [x] Resolve Cloudinary product environments from OAuth resource audiences without asking users for a cloud name.
+- [x] Support Cloudinary credit-based usage responses and improve profile typography legibility.
+- [x] Show storage usage ranges and limits for LixSketch-managed and personal Cloudinary storage.
+- [x] Replace hover-based Cloudinary disconnect confirmation with a persistent cancelable alert dialog.
+- [x] Increase typography across non-canvas routes while preserving the compact canvas workspace scale.
+- [x] Make the D1 migration runner read history correctly with Wrangler 4.87 command output.
+- [x] Configure the `/settings` compatibility redirect for the Cloudflare Edge runtime.

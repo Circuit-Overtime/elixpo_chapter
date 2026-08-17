@@ -87,13 +87,14 @@ export async function GET(request) {
   const profile = await userRes.json()
   console.log('[auth/callback] Got profile:', { id: profile.id, email: profile.email, displayName: profile.displayName })
 
-  const userParam = encodeURIComponent(JSON.stringify({
+  const sessionUser = {
     id: profile.id || profile.userId,
     email: profile.email,
     displayName: profile.displayName,
     avatar: profile.avatar || null,
     isAdmin: profile.isAdmin || false,
-  }))
+  }
+  const userParam = encodeURIComponent(JSON.stringify(sessionUser))
 
   const sessionToken = tokens.access_token
 
@@ -105,6 +106,18 @@ export async function GET(request) {
   setTimeout(() => processedCodes.delete(code), 30000)
 
   const response = NextResponse.redirect(new URL(redirectPath, appOrigin))
+
+  // Establish the browser session for Edge routes immediately. The landing
+  // callback also mirrors this into localStorage for client-side restoration.
+  response.cookies.set('lixsketch-session', JSON.stringify({
+    sessionToken,
+    user: sessionUser,
+  }), {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60,
+  })
 
   if (tokens.refresh_token) {
     response.cookies.set('lixsketch-refresh-token', tokens.refresh_token, {

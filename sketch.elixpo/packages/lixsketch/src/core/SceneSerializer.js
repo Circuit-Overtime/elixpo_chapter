@@ -182,6 +182,8 @@ function serializeShape(shape) {
                 href: el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '',
                 sizeBytes: Number(el.__fileSize || el.getAttribute('data-file-size')) || 0,
                 cloudinaryId: el.getAttribute('data-cloudinary-id') || null,
+                storageProvider: el.getAttribute('data-storage-provider') || 'platform_cloudinary',
+                storageCloudName: el.getAttribute('data-storage-cloud-name') || null,
                 frameType: shape._frameType || null,
                 graphData: shape._frameType === 'graph' && shape._graphData
                     ? cloneOptions(shape._graphData)
@@ -312,6 +314,8 @@ function deserializeShape(data) {
                 window.__roomImageBytesUsed = (window.__roomImageBytesUsed || 0) + imgEl.__fileSize;
             }
             if (data.cloudinaryId) imgEl.setAttribute('data-cloudinary-id', data.cloudinaryId);
+            if (data.storageProvider) imgEl.setAttribute('data-storage-provider', data.storageProvider);
+            if (data.storageCloudName) imgEl.setAttribute('data-storage-cloud-name', data.storageCloudName);
             svgEl.appendChild(imgEl);
             const shape = new ImageShape(imgEl);
             if (data.rotation) shape.rotation = data.rotation;

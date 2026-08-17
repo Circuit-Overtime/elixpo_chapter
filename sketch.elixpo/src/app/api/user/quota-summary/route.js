@@ -56,18 +56,25 @@ export async function GET(request) {
     const limits = getPlanLimits(normalizedTier)
     const workspaceLimit = limits.workspaces
 
-    // Image limits are per workspace, so expose the fullest workspace rather
-    // than summing unrelated rooms into one misleading total.
+    // Keep the enforced per-workspace figure and also expose the account-wide
+    // total so profile storage can show the user's complete managed allowance.
     const storageResult = await DB.prepare(
-      `SELECT COALESCE(MAX(workspace_bytes), 0) AS total FROM (
+      `SELECT COALESCE(MAX(workspace_bytes), 0) AS fullest,
+              COALESCE(SUM(workspace_bytes), 0) AS total
+       FROM (
          SELECT COALESCE(SUM(ia.size_bytes), 0) AS workspace_bytes
-         FROM scenes s
-         LEFT JOIN image_assets ia ON ia.session_id = s.session_id AND ia.status = 'complete'
-         WHERE s.created_by = ? AND s.owner_type = ?
-         GROUP BY s.session_id
+         FROM (
+           SELECT DISTINCT session_id FROM scenes
+           WHERE created_by = ? AND owner_type = ?
+         ) owned
+         LEFT JOIN image_assets ia ON ia.session_id = owned.session_id
+           AND ia.status = 'complete' AND ia.storage_provider = 'platform_cloudinary'
+         GROUP BY owned.session_id
        )`
     ).bind(identifier, ownerType).first()
-    const storageUsed = storageResult?.total || 0
+    const storageUsed = Number(storageResult?.fullest || 0)
+    const accountStorageUsed = Number(storageResult?.total || 0)
+    const accountStorageLimit = limits.imageBytesPerWorkspace * workspaceLimit
 
     return NextResponse.json({
       tier,
@@ -87,6 +94,9 @@ export async function GET(request) {
         usedBytes: storageUsed,
         limitBytes: limits.imageBytesPerWorkspace,
         perWorkspace: true,
+        accountUsedBytes: accountStorageUsed,
+        accountLimitBytes: accountStorageLimit,
+        accountRemainingBytes: Math.max(0, accountStorageLimit - accountStorageUsed),
       },
       collaboration: { maxParticipants: limits.collaborators },
       exports: { pdf: limits.pdfExport },

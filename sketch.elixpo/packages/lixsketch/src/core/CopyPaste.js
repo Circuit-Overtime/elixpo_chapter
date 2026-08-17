@@ -148,6 +148,8 @@ function serializeShape(shape) {
                 height: shape.height,
                 rotation: shape.rotation,
                 href: el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '',
+                storageProvider: el.getAttribute('data-storage-provider') || null,
+                storageCloudName: el.getAttribute('data-storage-cloud-name') || null,
                 frameType: shape._frameType || null,
                 graphData: shape._frameType === 'graph' && shape._graphData
                     ? cloneOptions(shape._graphData)
@@ -387,6 +389,8 @@ function createShapeFromData(data, offsetX, offsetY) {
             imgEl.setAttribute('data-shape-height', data.height);
             imgEl.setAttribute('preserveAspectRatio', 'none');
             imgEl.setAttribute('style', 'cursor: pointer;');
+            if (data.storageProvider) imgEl.setAttribute('data-storage-provider', data.storageProvider);
+            if (data.storageCloudName) imgEl.setAttribute('data-storage-cloud-name', data.storageCloudName);
 
             // ImageShape constructor moves element into a group and appends to svg
             svgEl.appendChild(imgEl);
@@ -631,7 +635,8 @@ function handlePasteEvent(e) {
                     }
                 }
                 const limit = Number(window.__roomImageLimitBytes) || 2 * 1024 * 1024;
-                if ((window.__roomImageBytesUsed || 0) + placedSize > limit) {
+                const personalStorage = window.__personalCloudinary?.connected && window.__personalCloudinary?.useForUploads;
+                if (!personalStorage && (window.__roomImageBytesUsed || 0) + placedSize > limit) {
                     alert(`Workspace image limit reached (${Math.round(limit / (1024 * 1024))} MB).`);
                     return;
                 }

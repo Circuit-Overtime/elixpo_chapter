@@ -750,7 +750,8 @@ async function handleImageSign(request: Request, env: Env): Promise<Response> {
     const limitBytes = PLAN_LIMITS[tier].imageBytesPerWorkspace;
     const usage = await env.DB.prepare(
       `SELECT COALESCE(SUM(size_bytes), 0) AS total FROM image_assets
-       WHERE session_id = ? AND (status = 'complete' OR created_at >= datetime('now', '-1 hour'))`
+       WHERE session_id = ? AND storage_provider = 'platform_cloudinary'
+         AND (status = 'complete' OR created_at >= datetime('now', '-1 hour'))`
     ).bind(body.sessionId).first<{ total: number }>();
     if ((usage?.total || 0) + requestedBytes > limitBytes) {
       return json({
@@ -766,8 +767,8 @@ async function handleImageSign(request: Request, env: Env): Promise<Response> {
     const publicId = `${folder}/${body.filename || `img_${timestamp}`}`;
 
     await env.DB.prepare(
-      `INSERT INTO image_assets (public_id, session_id, size_bytes, status)
-       VALUES (?, ?, ?, 'pending')
+      `INSERT INTO image_assets (public_id, session_id, size_bytes, status, storage_provider)
+       VALUES (?, ?, ?, 'pending', 'platform_cloudinary')
        ON CONFLICT(public_id) DO UPDATE SET size_bytes = excluded.size_bytes, updated_at = datetime('now')`
     ).bind(publicId, body.sessionId, requestedBytes).run();
 
@@ -1028,18 +1029,25 @@ async function handleQuotaSummary(request: Request, env: Env): Promise<Response>
     const normalizedTier = normalizeTier(tier, Boolean(userId));
     const workspaceLimit = PLAN_LIMITS[normalizedTier].workspaces;
 
-    // Report the fullest workspace because image limits are per workspace,
-    // not a pooled account allowance.
+    // Keep the enforced per-workspace figure and also expose the account-wide
+    // total so profile storage can show the user's complete managed allowance.
     const storageResult = await env.DB.prepare(
-      `SELECT COALESCE(MAX(workspace_bytes), 0) AS total FROM (
+      `SELECT COALESCE(MAX(workspace_bytes), 0) AS fullest,
+              COALESCE(SUM(workspace_bytes), 0) AS total
+       FROM (
          SELECT COALESCE(SUM(ia.size_bytes), 0) AS workspace_bytes
-         FROM scenes s
-         LEFT JOIN image_assets ia ON ia.session_id = s.session_id AND ia.status = 'complete'
-         WHERE s.created_by = ? AND s.owner_type = ?
-         GROUP BY s.session_id
+         FROM (
+           SELECT DISTINCT session_id FROM scenes
+           WHERE created_by = ? AND owner_type = ?
+         ) owned
+         LEFT JOIN image_assets ia ON ia.session_id = owned.session_id
+           AND ia.status = 'complete' AND ia.storage_provider = 'platform_cloudinary'
+         GROUP BY owned.session_id
        )`
-    ).bind(identifier, ownerType).first<{ total: number }>();
-    const storageUsed = storageResult?.total || 0;
+    ).bind(identifier, ownerType).first<{ fullest: number; total: number }>();
+    const storageUsed = Number(storageResult?.fullest || 0);
+    const accountStorageUsed = Number(storageResult?.total || 0);
+    const accountStorageLimit = PLAN_LIMITS[normalizedTier].imageBytesPerWorkspace * workspaceLimit;
 
     return json({
       tier,
@@ -1059,6 +1067,9 @@ async function handleQuotaSummary(request: Request, env: Env): Promise<Response>
         usedBytes: storageUsed,
         limitBytes: PLAN_LIMITS[normalizedTier].imageBytesPerWorkspace,
         perWorkspace: true,
+        accountUsedBytes: accountStorageUsed,
+        accountLimitBytes: accountStorageLimit,
+        accountRemainingBytes: Math.max(0, accountStorageLimit - accountStorageUsed),
       },
       collaboration: {
         maxParticipants: PLAN_LIMITS[normalizedTier].collaborators,

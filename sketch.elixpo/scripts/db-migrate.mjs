@@ -50,6 +50,13 @@ async function execSQL(sql) {
   }
 }
 
+// Wrangler 4.87 no longer includes SELECT result rows when SQL is supplied
+// through --file. Use --command for reads so migration history and schema
+// probes receive their actual rows instead of only execution totals.
+function querySQL(sql) {
+  return run('npx', wranglerDatabaseArgs(`--command=${sql}`), { capture: true })
+}
+
 async function execFile(filePath) {
   await run('npx', wranglerDatabaseArgs(`--file=${filePath}`))
 }
@@ -61,14 +68,12 @@ await execSQL(`CREATE TABLE IF NOT EXISTS _migrations (
 );`)
 
 // 2. Read applied migrations.
-const appliedOut = await execSQL(`SELECT name FROM _migrations;`)
+const appliedOut = await querySQL(`SELECT name FROM _migrations;`)
 const applied = new Set()
-// wrangler prints results as JSON-ish text; pull out filename rows.
-const m = appliedOut.match(/"name"\s*:\s*"([^"]+)"/g) || []
-for (const line of m) {
-  const v = line.match(/"name"\s*:\s*"([^"]+)"/)
-  if (v) applied.add(v[1])
-}
+// Wrangler output varies between JSON and a Unicode table depending on its
+// version and terminal. Migration filenames are unique enough to parse from
+// either representation without depending on the surrounding renderer.
+for (const name of appliedOut.match(/\b\d{4}_[a-z0-9_.-]+\.sql\b/gi) || []) applied.add(name)
 
 // 3. List migration files.
 const files = (await readdir(MIGRATIONS_DIR))
@@ -82,8 +87,8 @@ const pending = files.filter((f) => !applied.has(f))
 // Abort with a clear message instead of attempting non-idempotent
 // ALTER TABLE statements.
 if (!INIT_MODE && applied.size === 0) {
-  const probe = await execSQL(`SELECT name FROM sqlite_master WHERE type='table' AND name='scenes';`)
-  if (/"name"\s*:\s*"scenes"/.test(probe)) {
+  const probe = await querySQL(`SELECT name FROM sqlite_master WHERE type='table' AND name='scenes';`)
+  if (/\bscenes\b/.test(probe)) {
     console.error('\n✗ Schema already exists but _migrations history is empty.')
     console.error('  This usually means migrations were applied manually before this tracker was added.')
     console.error('  Run `npm run db:migrate -- --init` ONCE to seed history with every migration')
