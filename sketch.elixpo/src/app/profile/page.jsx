@@ -244,6 +244,7 @@ function WorkspaceCard({ workspace, index, onDelete }) {
             <span className="rounded-full bg-green-500/10 px-2 py-1 text-green-400"><i className="bx bx-shield-quarter mr-1" />E2E encrypted</span>
             <span className="rounded-full bg-[#8B88E8]/10 px-2 py-1 text-[#A99CF1]"><i className="bx bx-link mr-1" />{accessLabel}</span>
             <span className="rounded-full bg-white/[0.04] px-2 py-1 text-text-dim">Scene {sizeKB} KB</span>
+            {workspace.template_mode === 'fork' && workspace.template_slug && <Link href={`/templates/${workspace.template_slug}`} className="rounded-full bg-accent-blue/10 px-2 py-1 text-accent-blue hover:bg-accent-blue/20"><i className="bx bx-git-repo-forked mr-1" />Forked from {workspace.template_title || 'template'}</Link>}
           </div>
 
           <div className="flex gap-2 mt-3">
@@ -314,6 +315,7 @@ export default function ProfilePage() {
 
   const [quotaData, setQuotaData] = useState(null)
   const [workspaces, setWorkspaces] = useState([])
+  const [publishedTemplates, setPublishedTemplates] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('personal')
 
@@ -359,9 +361,10 @@ export default function ProfilePage() {
           else { setLoading(false); return }
         }
 
-        const [quotaRes, wsRes] = await Promise.all([
+        const [quotaRes, wsRes, templatesRes] = await Promise.all([
           fetch(`${WORKER_URL}/api/user/quota-summary?${params}`),
           fetch(`${WORKER_URL}/api/scenes/list?${params}`),
+          isAuthenticated ? fetch('/api/templates?mine=1') : Promise.resolve(null),
         ])
 
         if (quotaRes.ok) {
@@ -371,6 +374,12 @@ export default function ProfilePage() {
         if (wsRes.ok) {
           const w = await wsRes.json()
           setWorkspaces(reconcileActiveWorkspaceName(w.workspaces))
+        }
+        if (templatesRes?.ok) {
+          const published = await templatesRes.json()
+          setPublishedTemplates(published.templates || [])
+        } else if (!isAuthenticated) {
+          setPublishedTemplates([])
         }
       } catch (err) {
         console.warn('[Profile] Failed to fetch data:', err)
@@ -626,6 +635,21 @@ export default function ProfilePage() {
                   ))}
                 </div>
               )}
+
+              {isAuthenticated && <div className="mt-8 border-t border-border-light pt-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium font-[lixFont] text-text-primary">Published templates</h3>
+                    <p className="mt-1 text-[10px] text-text-dim">Public snapshots others can fork or clone.</p>
+                  </div>
+                  <Link href="/templates" className="flex items-center gap-1 rounded-lg border border-accent-blue/20 px-3 py-1.5 text-xs text-accent-blue transition hover:bg-accent-blue/10"><i className="bx bx-world" />Browse</Link>
+                </div>
+                {publishedTemplates.length ? <div className="grid gap-3 sm:grid-cols-2">
+                  {publishedTemplates.map((template) => <Link key={template.id} href={`/templates/${template.slug}`} className="rounded-xl border border-border-light bg-surface-card p-4 transition hover:border-accent-blue/40">
+                    <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm text-text-primary">{template.title}</p><p className="mt-1 text-[10px] text-text-dim">{template.status === 'published' ? 'Public' : 'Unpublished'} · {template.forks} forks · {template.clones} clones</p></div><i className="bx bx-link-external text-accent-blue" /></div>
+                  </Link>)}
+                </div> : <div className="rounded-xl border border-dashed border-border-light p-5 text-center text-xs text-text-dim">Publish from a canvas using Save &amp; Export.</div>}
+              </div>}
             </motion.div>}
 
             {/* Account details for authenticated users */}

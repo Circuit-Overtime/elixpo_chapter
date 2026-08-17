@@ -7,6 +7,7 @@ import { getSessionID } from '@/hooks/useSessionID'
 import { generateKey, encrypt } from '@/utils/encryption'
 import { WORKER_URL } from '@/lib/env'
 import usePlanEntitlements from '@/hooks/usePlanEntitlements'
+import useAuthStore from '@/store/useAuthStore'
 import {
   canvasToLosslessPNG,
   createExportSVG,
@@ -14,6 +15,34 @@ import {
   getExportBackground,
   renderExportCanvas,
 } from '@/utils/canvasExport'
+
+async function validatePublicSceneMedia(sceneData) {
+  const sources = [...new Set((sceneData?.shapes || [])
+    .filter((shape) => shape?.type === 'image')
+    .map((shape) => String(shape.href || ''))
+    .filter(Boolean))]
+  const invalid = sources.filter((source) => source.startsWith('blob:') || (!source.startsWith('data:image/') && !/^https?:\/\//i.test(source)))
+  if (invalid.length) throw new Error('Replace local or unsupported images before publishing')
+  const remote = sources.filter((source) => /^https?:\/\//i.test(source))
+  const results = await Promise.all(remote.map((source) => new Promise((resolve) => {
+    const image = new Image()
+    const timer = setTimeout(() => { image.src = ''; resolve(false) }, 5000)
+    image.onload = () => { clearTimeout(timer); resolve(true) }
+    image.onerror = () => { clearTimeout(timer); resolve(false) }
+    image.src = source
+  })))
+  if (results.some((available) => !available)) {
+    throw new Error('One or more workspace images are private or unavailable. Make them public or remove them before publishing.')
+  }
+}
+
+async function validatePublicDocumentMedia(blocks) {
+  const sceneLike = {
+    shapes: (blocks || []).filter((block) => block?.type === 'image' && block?.props?.url)
+      .map((block) => ({ type: 'image', href: block.props.url })),
+  }
+  return validatePublicSceneMedia(sceneLike)
+}
 
 // ── Component ────────────────────────────────────────────────
 
@@ -24,6 +53,8 @@ export default function SaveModal() {
   const workspaceName = useUIStore((s) => s.workspaceName)
   const setWorkspaceName = useUIStore((s) => s.setWorkspaceName)
   const resolvedTheme = useUIStore((s) => s.resolvedTheme)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const login = useAuthStore((s) => s.login)
 
   // Live collab state
   const [collabLink, setCollabLink] = useState('')
@@ -40,6 +71,16 @@ export default function SaveModal() {
   const [shareCopied, setShareCopied] = useState(false)
   const [creatingShare, setCreatingShare] = useState(false)
   const [shareError, setShareError] = useState('')
+
+  // Public template publishing uses its own public snapshot key. It never
+  // reuses the key for the editable workspace.
+  const [publishTitle, setPublishTitle] = useState(workspaceName || '')
+  const [publishDescription, setPublishDescription] = useState('')
+  const [publishTags, setPublishTags] = useState('')
+  const [publishing, setPublishing] = useState(false)
+  const [publishError, setPublishError] = useState('')
+  const [publishedUrl, setPublishedUrl] = useState('')
+  const [publishedSlug, setPublishedSlug] = useState('')
 
   // Export state
   const [bgMode, setBgMode] = useState('dark')
@@ -59,11 +100,15 @@ export default function SaveModal() {
       if (!clone) return
       const canvas = await renderExportCanvas(clone, 1)
       if (cancelled || !canvas) return
-      setPreviewUrl(canvas.toDataURL('image/png'))
+      setPreviewUrl(canvas.toDataURL('image/webp', 0.78))
     }
     generate()
     return () => { cancelled = true }
   }, [saveModalOpen, bgMode, resolvedTheme])
+
+  useEffect(() => {
+    if (saveModalOpen && !publishTitle) setPublishTitle(workspaceName || '')
+  }, [saveModalOpen, publishTitle, workspaceName])
 
   if (!saveModalOpen) return null
 
@@ -155,6 +200,62 @@ export default function SaveModal() {
       setShareCopied(true)
       setTimeout(() => setShareCopied(false), 1800)
     }).catch(() => {})
+  }
+
+  const handlePublishTemplate = async (updateExisting = false) => {
+    if (!isAuthenticated) {
+      login(`${window.location.pathname}${window.location.search}`)
+      return
+    }
+    if (publishing) return
+    setPublishing(true)
+    setPublishError('')
+    try {
+      const serializer = window.__sceneSerializer
+      const sessionId = getSessionID()
+      if (!serializer || typeof serializer.save !== 'function' || !sessionId) {
+        throw new Error('The workspace is not ready to publish yet')
+      }
+      if (!publishTitle.trim()) throw new Error('Add a public template title')
+      const publicKey = await generateKey()
+      const sceneData = serializer.save(workspaceName || 'Untitled')
+      await validatePublicSceneMedia(sceneData)
+      const encryptedData = await encrypt(JSON.stringify(sceneData), publicKey)
+      let encryptedDocData = null
+      try {
+        const savedDoc = localStorage.getItem(`lixsketch-doc-autosave-${sessionId}`)
+        const blocks = savedDoc ? JSON.parse(savedDoc)?.blocks : null
+        if (Array.isArray(blocks) && blocks.length) {
+          await validatePublicDocumentMedia(blocks)
+          encryptedDocData = await encrypt(JSON.stringify(blocks), publicKey)
+        }
+      } catch {}
+      const coverDataUrl = previewUrl && new Blob([previewUrl]).size <= 200_000 ? previewUrl : null
+      const response = await fetch(updateExisting && publishedSlug ? `/api/templates/${encodeURIComponent(publishedSlug)}` : '/api/templates', {
+        method: updateExisting && publishedSlug ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceSessionId: sessionId,
+          title: publishTitle,
+          description: publishDescription,
+          tags: publishTags.split(','),
+          coverDataUrl,
+          encryptedData,
+          publicKey,
+          encryptedDocData,
+        }),
+      })
+      const body = await response.json()
+      if (!response.ok) throw new Error(body.error || 'Could not publish workspace')
+      if (body.url) {
+        setPublishedSlug(body.slug)
+        setPublishedUrl(`${window.location.origin}${body.url}`)
+      }
+    } catch (reason) {
+      setPublishError(reason.message || 'Could not publish workspace')
+    } finally {
+      setPublishing(false)
+    }
   }
 
   const handleCopyCollabLink = () => {
@@ -481,6 +582,41 @@ export default function SaveModal() {
             {shareError && (
               <p className="text-red-400 text-[10px] mt-2">{shareError}</p>
             )}
+          </div>
+
+          {/* ── Public workspace template ── */}
+          <div className="p-3.5 rounded-xl border border-accent-blue/25 bg-accent-blue/5">
+            <div className="mb-3 flex items-start gap-2">
+              <i className="bx bx-world text-lg text-accent-blue" />
+              <div className="flex-1">
+                <span className="text-text-primary text-sm font-medium">Publish as a template</span>
+                <p className="text-text-dim text-[10px] leading-relaxed">Create a public canvas and document snapshot others can fork or clone.</p>
+              </div>
+              <a href="/templates" target="_blank" rel="noreferrer" className="text-[10px] text-accent-blue hover:underline">Browse</a>
+            </div>
+            {publishedUrl ? (
+              <div>
+                <div className="flex gap-2">
+                  <input readOnly value={publishedUrl} onClick={(event) => event.target.select()} className="min-w-0 flex-1 rounded-lg border border-border-light bg-surface px-2.5 py-2 text-xs text-text-secondary outline-none" />
+                  <button onClick={() => navigator.clipboard.writeText(publishedUrl)} className="cursor-pointer rounded-lg bg-accent-blue px-3 text-xs text-white hover:bg-accent-blue-hover">Copy</button>
+                </div>
+                <a href={publishedUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[10px] text-accent-blue hover:underline">Open published template <i className="bx bx-link-external" /></a>
+                <button onClick={() => handlePublishTemplate(true)} disabled={publishing} className="mt-2 ml-4 cursor-pointer text-[10px] text-text-dim hover:text-accent-blue disabled:opacity-50"><i className="bx bx-refresh mr-1" />{publishing ? 'Updating…' : 'Update public snapshot'}</button>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <input value={publishTitle} maxLength={72} onChange={(event) => setPublishTitle(event.target.value)} placeholder="Public title" className="w-full rounded-lg border border-border-light bg-surface px-3 py-2 text-xs text-text-primary outline-none focus:border-accent-blue" />
+                <textarea value={publishDescription} maxLength={600} onChange={(event) => setPublishDescription(event.target.value)} placeholder="What can people build with this workspace?" rows={3} className="w-full resize-none rounded-lg border border-border-light bg-surface px-3 py-2 text-xs leading-5 text-text-primary outline-none focus:border-accent-blue" />
+                <input value={publishTags} onChange={(event) => setPublishTags(event.target.value)} placeholder="Tags, separated by commas (up to 6)" className="w-full rounded-lg border border-border-light bg-surface px-3 py-2 text-xs text-text-primary outline-none focus:border-accent-blue" />
+                <div className="rounded-lg border border-yellow-400/20 bg-yellow-400/5 p-2.5 text-[10px] leading-4 text-yellow-200/80">
+                  <i className="bx bx-info-circle mr-1" />Everything in this snapshot becomes public. Private or access-controlled media may not work for other users.
+                </div>
+                <button onClick={() => handlePublishTemplate(false)} disabled={publishing} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-accent-blue py-2.5 text-sm text-white hover:bg-accent-blue-hover disabled:opacity-50">
+                  <i className="bx bx-upload" />{!isAuthenticated ? 'Sign in to publish' : publishing ? 'Publishing…' : 'Publish workspace'}
+                </button>
+              </div>
+            )}
+            {publishError && <p className="mt-2 text-[10px] text-red-400">{publishError}</p>}
           </div>
         </div>
       </div>

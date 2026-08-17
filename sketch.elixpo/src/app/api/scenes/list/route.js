@@ -21,9 +21,13 @@ export async function GET(request) {
     const scenes = await DB.prepare(
       `SELECT s.id, s.session_id, s.workspace_name, s.created_at, s.updated_at,
               s.last_accessed_at, s.size_bytes, s.view_count,
-              sp.token
+              sp.token, wi.mode AS template_mode,
+              CASE WHEN wi.mode = 'fork' AND wt.status = 'published' THEN wt.slug ELSE NULL END AS template_slug,
+              CASE WHEN wi.mode = 'fork' THEN wt.title ELSE NULL END AS template_title
        FROM scenes s
        LEFT JOIN scene_permissions sp ON sp.scene_id = s.id
+       LEFT JOIN workspace_template_instances wi ON wi.scene_id = s.id
+       LEFT JOIN workspace_templates wt ON wt.id = wi.template_id
        WHERE s.created_by = ? AND s.owner_type = ?
        ORDER BY s.last_accessed_at DESC`
     ).bind(identifier, ownerType).all()

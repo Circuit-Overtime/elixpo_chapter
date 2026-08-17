@@ -309,6 +309,9 @@ export default function LandingNav() {
           <Link href="/teams" className="hover:text-text-primary transition-colors">
             Teams
           </Link>
+          <Link href="/templates" className="hover:text-text-primary transition-colors">
+            Templates
+          </Link>
           <Link href="/docs" className="hover:text-text-primary transition-colors">
             Docs
           </Link>
@@ -407,6 +410,7 @@ export default function LandingNav() {
               {[
                 { href: '/pricing', label: 'Pricing' },
                 { href: '/teams', label: 'Teams' },
+                { href: '/templates', label: 'Templates' },
                 { href: '/docs', label: 'Docs' },
               ].map((item) => (
                 <Link
