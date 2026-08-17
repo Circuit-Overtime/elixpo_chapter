@@ -95,12 +95,11 @@ export default function ImageSourcePicker() {
       style={{ left: posX, top: posY }}
     >
       <div className="bg-surface-card border border-border-light rounded-xl p-1.5 shadow-2xl shadow-black/40 flex flex-col gap-1 min-w-[200px]">
-        {/* Issue #24 bug #6: AI image generation gated as coming-soon. */}
         <button
           type="button"
-          disabled
-          title="AI image generation is coming back soon"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-dim opacity-60 cursor-not-allowed group"
+          onClick={handleGenerateAI}
+          title="Generate an image with your Pollinations account"
+          className="flex cursor-pointer items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all group"
         >
           <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-blue/60">
@@ -109,12 +108,10 @@ export default function ImageSourcePicker() {
             </svg>
           </div>
           <div className="flex-1 text-left">
-            <div className="text-sm font-medium flex items-center gap-1.5">
-              Generate with AI
-              <span className="text-[8px] uppercase tracking-wider px-1 py-px rounded bg-yellow-500/15 text-yellow-300/90 border border-yellow-500/25 leading-none">Soon</span>
-            </div>
-            <div className="text-[10px] text-text-dim">Reopens when the assistant is back online</div>
+            <div className="text-sm font-medium">Generate with AI</div>
+            <div className="text-[10px] text-text-dim">Flux or Klein · personal Pollen</div>
           </div>
+          <kbd className="text-[10px] text-text-dim bg-surface-dark px-1.5 py-0.5 rounded">G</kbd>
         </button>
 
         <div className="h-px bg-white/[0.06] mx-2" />

@@ -26,6 +26,189 @@ function OpenCanvasButton({ className }) {
   )
 }
 
+function SignInButton() {
+  const login = useAuthStore((state) => state.login)
+  return (
+    <button
+      type="button"
+      onClick={() => login()}
+      title="Sign in to LixSketch"
+      className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-border-light bg-white/[0.025] px-3 text-sm text-text-muted transition-all hover:border-[#8b6de0]/60 hover:bg-[#8b6de0]/10 hover:text-white"
+    >
+      <i className="bx bx-log-in text-base" />
+      <span className="hidden sm:inline">Sign in</span>
+    </button>
+  )
+}
+
+const accountSections = [
+  {
+    label: 'Workspace',
+    items: [
+      { href: '/profile?tab=workspaces', label: 'My workspaces', detail: 'Open and manage canvases', icon: 'bx-grid-alt' },
+      { action: 'new-canvas', label: 'Create canvas', detail: 'Start a new workspace', icon: 'bx-plus-circle' },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
+      { href: '/profile?tab=personal', label: 'Personal details', detail: 'Identity and public profile', icon: 'bx-user' },
+      { href: '/profile?tab=integrations', label: 'Integrations', detail: 'Cloudinary and Pollinations', icon: 'bx-plug' },
+      { href: '/profile?tab=usage', label: 'Usage & limits', detail: 'Storage and collaboration', icon: 'bx-bar-chart-alt-2' },
+      { href: '/profile?tab=billing', label: 'Billing & plan', detail: 'Plan and entitlements', icon: 'bx-credit-card' },
+    ],
+  },
+  {
+    label: 'Professional',
+    items: [
+      { href: '/teams', label: 'Teams', detail: 'Collaboration for groups', icon: 'bx-group' },
+      { href: '/docs', label: 'Documentation', detail: 'Guides and platform reference', icon: 'bx-book-open' },
+    ],
+  },
+]
+
+function AccountMenu({ onOpenChange }) {
+  const router = useRouter()
+  const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  const setMenuOpen = (next) => {
+    setOpen(next)
+    onOpenChange?.(next)
+  }
+
+  useEffect(() => {
+    if (!open) return undefined
+    const close = (event) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+        return
+      }
+      if (event.type === 'mousedown' && ref.current && !ref.current.contains(event.target)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', close)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', close)
+    }
+  }, [open])
+
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Account'
+  const initials = displayName.slice(0, 2).toUpperCase()
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setMenuOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-controls="landing-account-menu"
+        title={`${displayName} · ${user?.email || 'signed in'}`}
+        className={`flex cursor-pointer items-center gap-2 rounded-xl border px-1.5 py-1 text-left transition-all duration-200 ${open ? 'border-[#9E91EE]/55 bg-[#8B88E8]/15' : 'border-border-light bg-surface-card/60 hover:border-[#9E91EE]/35 hover:bg-surface-hover'}`}
+      >
+        {user?.avatar ? (
+          <img src={user.avatar} alt="" referrerPolicy="no-referrer" className="h-9 w-9 shrink-0 rounded-lg border border-white/10 object-cover" />
+        ) : (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#9E91EE]/25 bg-[#8B88E8]/15 text-xs text-[#C4B8F8]">{initials}</span>
+        )}
+        <span className="hidden min-w-0 max-w-[168px] lg:block">
+          <span className="block truncate text-xs font-medium text-text-primary">{displayName}</span>
+          <span className="mt-0.5 block truncate text-[10px] text-text-dim">{user?.email || 'Signed in'}</span>
+        </span>
+        <i className={`bx bx-chevron-down hidden text-sm text-text-dim transition-transform lg:block ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            id="landing-account-menu"
+            role="menu"
+            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-full mt-2 max-h-[calc(100vh-76px)] w-[calc(100vw-24px)] max-w-[310px] overflow-y-auto rounded-2xl border border-[#8B88E8]/25 bg-[#171120]/98 p-2 shadow-2xl shadow-black/50 backdrop-blur-xl"
+          >
+            <div className="flex items-center gap-3 px-2 py-2.5">
+              {user?.avatar ? (
+                <img src={user.avatar} alt="" referrerPolicy="no-referrer" className="h-11 w-11 rounded-xl border border-white/10 object-cover" />
+              ) : (
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#9E91EE]/25 bg-[#8B88E8]/15 text-sm text-[#C4B8F8]">{initials}</span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-text-primary">{displayName}</p>
+                <p className="mt-0.5 truncate text-[10px] text-text-dim">{user?.email}</p>
+                <span className="mt-1.5 inline-flex rounded-full border border-[#8B88E8]/20 bg-[#8B88E8]/10 px-2 py-0.5 text-[9px] uppercase tracking-wider text-[#B9ACF5]">{user?.tier || 'Free'} plan</span>
+              </div>
+            </div>
+
+            {accountSections.map((section) => (
+              <div key={section.label} className="border-t border-white/[0.07] py-1.5 first-of-type:mt-1">
+                <p className="px-2 py-1 text-[9px] uppercase tracking-[0.16em] text-text-dim">{section.label}</p>
+                {section.items.map((item) => {
+                  const content = (
+                    <>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-[#A99CF1]">
+                        <i className={`bx ${item.icon} text-base`} />
+                      </span>
+                      <span className="min-w-0 text-left">
+                        <span className="block text-xs">{item.label}</span>
+                        <span className="mt-0.5 block text-[9px] text-text-dim">{item.detail}</span>
+                      </span>
+                      <i className="bx bx-chevron-right ml-auto text-sm text-text-dim" />
+                    </>
+                  )
+                  const className = 'flex w-full cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-text-secondary transition-colors hover:bg-[#8B88E8]/10 hover:text-text-primary'
+                  if (item.action === 'new-canvas') {
+                    return (
+                      <button
+                        key={item.action}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          const id = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+                          setMenuOpen(false)
+                          router.push(`/c/${id}?new=1&preserveLocal=1`)
+                        }}
+                        className={className}
+                      >
+                        {content}
+                      </button>
+                    )
+                  }
+                  return (
+                    <Link key={item.href} href={item.href} role="menuitem" onClick={() => setMenuOpen(false)} className={className}>
+                      {content}
+                    </Link>
+                  )
+                })}
+              </div>
+            ))}
+
+            <div className="border-t border-white/[0.07] pt-1.5">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => { logout(); setMenuOpen(false) }}
+                className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-xs text-red-400/85 transition-colors hover:bg-red-500/10 hover:text-red-300"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/[0.07]"><i className="bx bx-log-out text-base" /></span>
+                Sign out
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 const resourceLinks = [
   { href: '/resources/how-to-start', label: 'How to start', icon: 'bx bx-rocket' },
   { href: '/resources/community', label: 'Community', icon: 'bx bx-group' },
@@ -87,8 +270,12 @@ export default function LandingNav() {
   const [resourcesOpen, setResourcesOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const initAuth = useAuthStore((state) => state.init)
   const stars = useGitHubStars(GH_REPO)
   const starsLabel = formatStars(stars)
+
+  useEffect(() => { initAuth() }, [initAuth])
 
   useEffect(() => {
     function handleClick(e) {
@@ -185,6 +372,16 @@ export default function LandingNav() {
           </a>
 
           <OpenCanvasButton className="px-4 py-2 cursor-pointer bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-accent-blue/20" />
+          {isAuthenticated ? (
+            <AccountMenu onOpenChange={(open) => {
+              if (open) {
+                setResourcesOpen(false)
+                setMobileOpen(false)
+              }
+            }} />
+          ) : (
+            <SignInButton />
+          )}
 
           {/* Mobile hamburger */}
           <button

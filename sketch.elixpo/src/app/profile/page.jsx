@@ -9,6 +9,7 @@ import { useProfileStore } from '@/hooks/useGuestProfile'
 import { WORKER_URL } from '@/lib/env'
 import { getRememberedCanvasId } from '@/utils/canvasSession'
 import CloudinaryIntegrationCard from '@/components/profile/CloudinaryIntegrationCard'
+import PollinationsIntegrationCard from '@/components/profile/PollinationsIntegrationCard'
 import PersonalDetailsCard from '@/components/profile/PersonalDetailsCard'
 import LandingNav from '@/components/landing/LandingNav'
 
@@ -436,7 +437,7 @@ export default function ProfilePage() {
       <DotGrid />
       <AmbientGlow />
 
-      <div className="relative z-10 max-w-3xl mx-auto px-6 pb-16 pt-28 sm:pt-32">
+      <div className="relative z-10 max-w-3xl mx-auto px-6 pb-16 pt-20 sm:pt-24">
         {/* Back link */}
         <motion.div
           ref={headerRef}
@@ -639,12 +640,15 @@ export default function ProfilePage() {
             )}
 
             {activeTab === 'integrations' && isAuthenticated && (
-              <CloudinaryIntegrationCard
-                managedUsage={{
-                  usedBytes: managedStorageUsedBytes,
-                  limitBytes: managedStorageLimitBytes,
-                }}
-              />
+              <div className="space-y-4">
+                <CloudinaryIntegrationCard
+                  managedUsage={{
+                    usedBytes: managedStorageUsedBytes,
+                    limitBytes: managedStorageLimitBytes,
+                  }}
+                />
+                <PollinationsIntegrationCard />
+              </div>
             )}
 
             {/* Guest info card */}
