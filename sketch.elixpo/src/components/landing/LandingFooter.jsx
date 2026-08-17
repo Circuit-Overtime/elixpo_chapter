@@ -25,6 +25,7 @@ export default function LandingFooter() {
             <h4 className="text-text-secondary text-xs uppercase tracking-wider mb-4">Docs</h4>
             <div className="flex flex-col gap-2.5">
               <Link href="/docs" className="text-text-dim text-sm hover:text-text-primary transition-colors">LixScript Docs</Link>
+              <Link href="/docs/connectors" className="text-text-dim text-sm hover:text-text-primary transition-colors">Connector Docs</Link>
               <Link href="/docs#blog" className="text-text-dim text-sm hover:text-text-primary transition-colors">Blog</Link>
               <Link href="/docs/blog/e2e-encryption" className="text-text-dim text-sm hover:text-text-primary transition-colors">E2E Encryption</Link>
               <Link href="/docs/blog/lixscript-dsl" className="text-text-dim text-sm hover:text-text-primary transition-colors">LixScript DSL</Link>

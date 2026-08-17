@@ -306,7 +306,7 @@ export default function AIModal() {
 
   // Fetch AI quota on modal open
   useEffect(() => {
-    if (!aiModalOpen) return
+    if (!aiModalOpen || AI_DISABLED) return
     const authState = useAuthStore.getState()
     const params = new URLSearchParams()
     if (authState.isAuthenticated && authState.user?.id) {
@@ -1545,7 +1545,7 @@ export default function AIModal() {
                 </div>
 
                 {/* AI Edit controls — only for AI-generated diagrams, not raw mermaid */}
-                {!previewDiagram?._mermaidSrc && (
+                {!AI_DISABLED && !previewDiagram?._mermaidSrc && (
                   <>
                     <div className="mb-4 shrink-0">
                       <p className="text-text-muted text-xs uppercase tracking-wider mb-2">Suggest Edits</p>

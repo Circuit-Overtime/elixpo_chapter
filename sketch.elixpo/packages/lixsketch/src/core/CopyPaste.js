@@ -150,6 +150,8 @@ function serializeShape(shape) {
                 href: el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '',
                 storageProvider: el.getAttribute('data-storage-provider') || null,
                 storageCloudName: el.getAttribute('data-storage-cloud-name') || null,
+                aiGenerated: el.getAttribute('data-ai-generated') === 'true',
+                aiModel: el.getAttribute('data-ai-model') || null,
                 frameType: shape._frameType || null,
                 graphData: shape._frameType === 'graph' && shape._graphData
                     ? cloneOptions(shape._graphData)
@@ -391,6 +393,8 @@ function createShapeFromData(data, offsetX, offsetY) {
             imgEl.setAttribute('style', 'cursor: pointer;');
             if (data.storageProvider) imgEl.setAttribute('data-storage-provider', data.storageProvider);
             if (data.storageCloudName) imgEl.setAttribute('data-storage-cloud-name', data.storageCloudName);
+            if (data.aiGenerated) imgEl.setAttribute('data-ai-generated', 'true');
+            if (data.aiModel) imgEl.setAttribute('data-ai-model', data.aiModel);
 
             // ImageShape constructor moves element into a group and appends to svg
             svgEl.appendChild(imgEl);

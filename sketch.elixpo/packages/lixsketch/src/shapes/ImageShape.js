@@ -11,7 +11,10 @@ class ImageShape {
     constructor(element) {
         this.element = element;
         this.shapeName = 'image';
+        this.type = 'image';
         this.shapeID = element.shapeID || `image-${String(Date.now()).slice(0, 8)}-${Math.floor(Math.random() * 10000)}`;
+        this.isAIGenerated = element.getAttribute('data-ai-generated') === 'true';
+        this.aiModel = element.getAttribute('data-ai-model') || null;
 
         // Frame attachment properties
         this.parentFrame = null;
@@ -34,7 +37,62 @@ class ImageShape {
             this.element.parentNode.removeChild(this.element);
         }
         this.group.appendChild(this.element);
+        this._aiBadge = null;
+        this._aiBadgeObserver = null;
+        if (this.isAIGenerated) this.showAIBadge();
         svg.appendChild(this.group);
+    }
+
+    showAIBadge() {
+        if (this._aiBadge) return;
+        const ns = 'http://www.w3.org/2000/svg';
+        const badge = document.createElementNS(ns, 'g');
+        badge.setAttribute('class', 'ai-image-badge');
+        badge.setAttribute('aria-label', 'AI generated image');
+        badge.style.pointerEvents = 'none';
+
+        const background = document.createElementNS(ns, 'rect');
+        background.setAttribute('width', '32');
+        background.setAttribute('height', '18');
+        background.setAttribute('rx', '6');
+        background.setAttribute('fill', '#7c5ce0');
+        background.setAttribute('stroke', 'rgba(255,255,255,0.72)');
+        background.setAttribute('stroke-width', '1');
+        badge.appendChild(background);
+
+        const label = document.createElementNS(ns, 'text');
+        label.textContent = '✦ AI';
+        label.setAttribute('x', '16');
+        label.setAttribute('y', '12.5');
+        label.setAttribute('fill', '#ffffff');
+        label.setAttribute('font-family', 'system-ui, sans-serif');
+        label.setAttribute('font-size', '9');
+        label.setAttribute('font-weight', '700');
+        label.setAttribute('text-anchor', 'middle');
+        badge.appendChild(label);
+
+        this.group.appendChild(badge);
+        this._aiBadge = badge;
+        this.updateAIBadgePosition();
+
+        if (typeof MutationObserver !== 'undefined') {
+            this._aiBadgeObserver = new MutationObserver(() => this.updateAIBadgePosition());
+            this._aiBadgeObserver.observe(this.element, {
+                attributes: true,
+                attributeFilter: ['x', 'y', 'width', 'height', 'transform'],
+            });
+        }
+    }
+
+    updateAIBadgePosition() {
+        if (!this._aiBadge) return;
+        const x = Number.isFinite(this.x) ? this.x + 6 : 6;
+        const y = Number.isFinite(this.y) ? this.y + 6 : 6;
+        this._aiBadge.setAttribute('transform', `translate(${x}, ${y})`);
+        const imageTransform = this.element.getAttribute('transform');
+        if (imageTransform) {
+            this._aiBadge.setAttribute('transform', `${imageTransform} translate(${x}, ${y})`);
+        }
     }
 
     showUploadIndicator() {
@@ -249,8 +307,21 @@ class ImageShape {
 
     // Add draw method for consistency with other shapes
     draw() {
-        // Images don't need redrawing like other shapes, but we need this method for consistency
-        // Update any visual state if needed
+        this.updateAIBadgePosition();
+    }
+
+    remove() {
+        if (this.group?.parentNode) this.group.parentNode.removeChild(this.group);
+        if (typeof shapes !== 'undefined' && Array.isArray(shapes)) {
+            const index = shapes.indexOf(this);
+            if (index !== -1) shapes.splice(index, 1);
+        }
+    }
+
+    restore() {
+        if (svg && this.group && !this.group.parentNode) svg.appendChild(this.group);
+        if (typeof shapes !== 'undefined' && Array.isArray(shapes) && !shapes.includes(this)) shapes.push(this);
+        this.updateAIBadgePosition();
     }
 
     // Add methods for frame compatibility
