@@ -104,3 +104,4 @@
 - [x] Keep AI-generated images fully interoperable with regular images while preserving a top-left AI provenance badge through transforms, restore, and copy/paste.
 - [x] Replace the generic Pollinations BYOP reference with deployed-domain Cloudinary and Pollinations documentation under `/docs/connectors`.
 - [x] Clarify Pollinations AI image support and keep a sign-in/profile account slot beside the landing navbar canvas action.
+- [x] Remove duplicated landing navbar account and canvas controls after merging the profile menu and signed-out action.

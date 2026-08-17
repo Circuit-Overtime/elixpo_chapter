@@ -26,6 +26,21 @@ function OpenCanvasButton({ className }) {
   )
 }
 
+function SignInButton() {
+  const login = useAuthStore((state) => state.login)
+  return (
+    <button
+      type="button"
+      onClick={() => login()}
+      title="Sign in to LixSketch"
+      className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-border-light bg-white/[0.025] px-3 text-sm text-text-muted transition-all hover:border-[#8b6de0]/60 hover:bg-[#8b6de0]/10 hover:text-white"
+    >
+      <i className="bx bx-log-in text-base" />
+      <span className="hidden sm:inline">Sign in</span>
+    </button>
+  )
+}
+
 const accountSections = [
   {
     label: 'Workspace',
@@ -356,6 +371,7 @@ export default function LandingNav() {
             <span className="hidden lg:inline">GitHub</span>
           </a>
 
+          <OpenCanvasButton className="px-4 py-2 cursor-pointer bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-accent-blue/20" />
           {isAuthenticated ? (
             <AccountMenu onOpenChange={(open) => {
               if (open) {
@@ -364,10 +380,8 @@ export default function LandingNav() {
               }
             }} />
           ) : (
-            <OpenCanvasButton className="px-4 py-2 cursor-pointer bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-accent-blue/20" />
+            <SignInButton />
           )}
-          <OpenCanvasButton className="px-4 py-2 cursor-pointer bg-accent-blue hover:bg-accent-blue-hover text-white text-sm rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-accent-blue/20" />
-          <AccountPill />
 
           {/* Mobile hamburger */}
           <button
