@@ -4,10 +4,17 @@
   "home": "https://blogs.elixpo.com",
   "posts": [
     {
+      "title": "A Tricolor Across LixBlogs",
+      "date": "2025-11-02",
+      "excerpt": "Adapting the Indian Tricolor across a thematic representation on our blogging platform",
+      "url": "https://blogs.elixpo.com/elixpohere/a-little-tricolour-across-lixblogs",
+      "tags": ["Thematic", "Independence"]
+    },
+    {
       "title": "Running a 290-Person Hacktoberfest Meetup",
       "date": "2025-11-02",
       "excerpt": "The logistics, the sponsors, and the contributor-first format behind Kolkata's biggest Hacktoberfest - and what we'd do differently next time.",
-      "url": "https://blogs.elixpo.com/REPLACE-hacktoberfest",
+      "url": "https://blogs.elixpo.com/elixpohere/organizing-kolkatas-biggest-hacktoberfest-meetup",
       "tags": ["Community", "Events"]
     },
     {
@@ -21,16 +28,8 @@
       "title": "Building a Campus Developer Community From Zero",
       "date": "2026-03-10",
       "excerpt": "Two years of running GDG on Campus at JIS University - how we went from empty rooms to a recurring contributor pipeline.",
-      "url": "https://blogs.elixpo.com/REPLACE-campus-community",
+      "url": "https://blogs.elixpo.com/elixpohere/dscjisu26-report",
       "tags": ["Community", "Leadership"]
-    },
-    {
-      "title": "Building a Contributor Pipeline That Actually Retains People",
-      "date": "2026-04-18",
-      "excerpt": "What I learned wiring up payouts, triage bots, and app-submission workflows at Pollinations.ai - and why most onboarding funnels leak.",
-      "url": "https://REPLACE.substack.com/p/contributor-pipeline",
-      "source": "Substack",
-      "tags": ["Open Source", "Maintainership"]
     }
   ]
 }
