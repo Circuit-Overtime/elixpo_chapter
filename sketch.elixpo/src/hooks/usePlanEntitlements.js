@@ -46,5 +46,21 @@ export default function usePlanEntitlements() {
     return () => { cancelled = true }
   }, [isAuthenticated, profile?.id, user?.id, user?.tier])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    if (!isAuthenticated || !user?.id) {
+      window.__personalCloudinary = { connected: false, useForUploads: false }
+      return undefined
+    }
+    let cancelled = false
+    fetch('/api/integrations/cloudinary', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!cancelled && data) window.__personalCloudinary = data
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [isAuthenticated, user?.id])
+
   return plan
 }

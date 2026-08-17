@@ -36,6 +36,10 @@ function getRoomImageLimitBytes() {
     return Number(window.__roomImageLimitBytes) || 2 * 1024 * 1024;
 }
 
+function usesPersonalCloudinary() {
+    return Boolean(window.__personalCloudinary?.connected && window.__personalCloudinary?.useForUploads);
+}
+
 
 // Convert SVG element to our ImageShape class
 function wrapImageElement(element) {
@@ -73,8 +77,33 @@ async function uploadImageToCloudinary(imageShape) {
 
         const roomLimit = getRoomImageLimitBytes();
         const oldSize = imageShape.element.__fileSize || 0;
-        if ((window.__roomImageBytesUsed || 0) - oldSize + compressed.compressedSize > roomLimit) {
+        if (!usesPersonalCloudinary() && (window.__roomImageBytesUsed || 0) - oldSize + compressed.compressedSize > roomLimit) {
             throw new Error(`Room image limit reached (${Math.round(roomLimit / (1024 * 1024))} MB)`);
+        }
+
+        if (usesPersonalCloudinary()) {
+            const personalForm = new FormData();
+            personalForm.append('file', compressed.blob, `image_${Date.now()}`);
+            personalForm.append('sessionId', sessionId);
+            const personalResponse = await fetch('/api/images/personal-upload', {
+                method: 'POST',
+                body: personalForm,
+                signal,
+            });
+            const personalData = await personalResponse.json().catch(() => ({}));
+            if (!personalResponse.ok || !personalData.url) {
+                throw new Error(personalData.error || 'Personal Cloudinary upload failed');
+            }
+            imageShape.element.setAttribute('href', personalData.url);
+            imageShape.element.setAttribute('data-href', personalData.url);
+            imageShape.element.setAttribute('data-cloudinary-id', personalData.publicId);
+            imageShape.element.setAttribute('data-storage-provider', 'user_cloudinary');
+            imageShape.element.setAttribute('data-storage-cloud-name', personalData.cloudName || '');
+            imageShape.element.__fileSize = 0;
+            imageShape.element.setAttribute('data-file-size', '0');
+            window.__roomImageBytesUsed = Math.max(0, (window.__roomImageBytesUsed || 0) - oldSize);
+            imageShape.uploadStatus = 'done';
+            return;
         }
 
         // Step 2: Get signed upload params
@@ -233,7 +262,8 @@ const handleImageUpload = async (file) => {
     }
 
     const roomImageLimitBytes = getRoomImageLimitBytes();
-    if (window.__roomImageBytesUsed + file.size > roomImageLimitBytes) {
+    const personalStorage = usesPersonalCloudinary();
+    if (!personalStorage && window.__roomImageBytesUsed + file.size > roomImageLimitBytes) {
         const usedMB = (window.__roomImageBytesUsed / (1024 * 1024)).toFixed(2);
         const fileMB = (file.size / (1024 * 1024)).toFixed(2);
         alert(`Room image limit reached (${Math.round(roomImageLimitBytes / (1024 * 1024))} MB). Used: ${usedMB} MB, this file: ${fileMB} MB. Delete some images to free space.`);
@@ -241,7 +271,7 @@ const handleImageUpload = async (file) => {
         return;
     }
 
-    const maxSize = roomImageLimitBytes;
+    const maxSize = personalStorage ? 20 * 1024 * 1024 : roomImageLimitBytes;
     if (file.size > maxSize) {
         console.error('File size too large');
         alert(`Image file is too large. Please select an image smaller than ${Math.round(maxSize / (1024 * 1024))} MB.`);
@@ -1294,9 +1324,11 @@ function deleteCurrentImage() {
             const match = imgHref.match(/\/upload\/(?:v\d+\/)?(lixsketch\/.+?)(?:\.\w+)?$/);
             if (match) {
                 const publicId = match[1];
+                const isPersonal = selectedImage.getAttribute('data-storage-provider') === 'user_cloudinary';
                 const workerUrl = window.__WORKER_URL;
-                if (workerUrl) {
-                    fetch(`${workerUrl}/api/images/delete`, {
+                const deleteUrl = isPersonal ? '/api/images/personal-delete' : (workerUrl ? `${workerUrl}/api/images/delete` : null);
+                if (deleteUrl) {
+                    fetch(deleteUrl, {
                         method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ publicId }),
