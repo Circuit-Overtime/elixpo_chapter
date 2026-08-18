@@ -339,7 +339,7 @@ export default async function HomePage({ params }) {
                       </span>
                       <ion-icon
                         name="arrow-forward-outline"
-                        class="shrink-0 text-[#1B1B19] group-hover:text-[#E2D9C8] text-3xl sm:text-5xl transition-all duration-300 group-hover:translate-x-2"
+                        className="shrink-0 text-[#1B1B19] group-hover:text-[#E2D9C8] text-3xl sm:text-5xl transition-all duration-300 group-hover:translate-x-2"
                       />
                     </div>
                   </a>

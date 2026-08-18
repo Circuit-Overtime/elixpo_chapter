@@ -49,7 +49,7 @@ export default async function PersonLayout({ children, params }) {
         </a>
         <ion-icon
           name="list"
-          class="cursor-pointer text-lg sm:text-xl md:text-2xl z-10"
+          className="cursor-pointer text-lg sm:text-xl md:text-2xl z-10"
           id="scrollInMenu"
           style={{ cursor: "pointer" }}
         />
