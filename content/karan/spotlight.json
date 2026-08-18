@@ -9,7 +9,7 @@
     "title": "Founder of Kareixo",
     "date": "2025-01-01",
     "description": "Launched Kareixo, a free AI code reviewer for every pull request. Install the GitHub App once and get instant, intelligent code reviews powered by a resilient multi-model router.",
-    "image": "/assets/karan/spotlight/kareixo-hero.png",
+    "image": "/assets/karan/spotlight/kareixo-logo.jpg",
     "url": "https://kareixo.vercel.app/"
   },
   {
@@ -29,12 +29,12 @@
     "title": "Core Contributor at Elixpo",
     "date": "2025-02-01",
     "description": "Contributing to multiple Elixpo products including chat.elixpo, sketch.elixpo, opensource.elixpo, and blogs.elixpo alongside the core team led by Ayushman.",
-    "image": "/assets/common/spotlight/elixpo-art.webp"
+    "image": "/assets/karan/spotlight/elixpo-home.png"
   },
   {
     "title": "Open Source Contributor - Pollinations AI",
     "date": "2025-04-01",
     "description": "Enhanced openai.yml schemas for Scalet API integration and fixed CI/CD and backend stability issues for S3-compatible media API at Pollinations.",
-    "image": "/assets/common/spotlight/elixpo-hackathon.webp"
+    "image": "/assets/karan/spotlight/pollinations-logo.png"
   }
 ]
