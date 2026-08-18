@@ -1,0 +1,12 @@
+{
+  "name": "Karan Ray",
+  "siteName": "Karan",
+  "siteDescription": "Second-year B.Tech CSE student & Frontend AI Engineering Intern",
+  "location": "West Bengal, India",
+  "email": "2006karanray@gmail.com",
+  "socials": [
+    { "platform": "GitHub", "url": "https://github.com/karanray06", "icon": "logo-github", "hoverColor": "#333" },
+    { "platform": "LinkedIn", "url": "https://linkedin.com/in/karan-ray-370150351", "icon": "logo-linkedin", "hoverColor": "#0077b5" }
+  ],
+  "menuItems": ["Home", "About", "Projects", "Publications"]
+}

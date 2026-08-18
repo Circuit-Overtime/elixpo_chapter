@@ -1,0 +1,27 @@
+{
+  "intro": {
+    "heading": "KARAN",
+    "subheading": "ABOUT!",
+    "description": "I am a 2nd-year B.Tech CSE student (MAKAUT-affiliated, West Bengal) with a strong focus on frontend development and AI integration. I enjoy building real deployed projects, multi-model architectures, and SaaS products.",
+    "portraitImage": "/assets/karan/about/ptr-11.webp"
+  },
+  "fancySection": {
+    "banner": "PROFILE",
+    "subtitle": "Experience & Interests",
+    "content": "I am currently a Frontend AI Engineering Intern at FlyRank AI and an active open-source contributor to Elixpo and Pollinations. I actively build projects focusing on AI integrations and modern SaaS architectures.",
+    "highlights": [
+      "Frontend Developer (React / Next.js)",
+      "AI Integrator (OpenAI, Groq)",
+      "Open Source Contributor"
+    ],
+    "contactNote": "Interested in collaboration, internships, or freelance work? Feel free to reach out.",
+    "shoutouts": ["FlyRank AI", "Elixpo", "Google Gemini Student Ambassador"],
+    "shoutoutText": "for shaping my technical journey and growth."
+  },
+  "images": {
+    "gallery": [
+      "/assets/karan/about/sq-11.webp",
+      "/assets/karan/about/sq-22.webp"
+    ]
+  }
+}

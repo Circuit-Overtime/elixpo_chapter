@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Frontend AI Developer Intern at FlyRank AI",
+    "date": "2026-01-01",
+    "description": "Started building frontend interfaces for AI-driven product features integrated with LLM-powered workflows.",
+    "image": "/assets/common/spotlight/elixpo-hackathon.webp"
+  },
+  {
+    "title": "Founder of Kareixo",
+    "date": "2025-01-01",
+    "description": "Launched Kareixo, an AI coding IDE built on a transparent, inspectable-AI philosophy.",
+    "image": "/assets/common/spotlight/elixpo-art.webp"
+  },
+  {
+    "title": "Built Nirmaan MUN Platform",
+    "date": "2025-05-01",
+    "description": "Developed the Indraja Foundation's MUN conference platform from architecture to deployment.",
+    "image": "/assets/common/spotlight/elixpoSearchPicture.webp"
+  },
+  {
+    "title": "Google Gemini Student Ambassador",
+    "date": "2025-03-01",
+    "description": "Selected as a Google Gemini Student Ambassador for campus-level AI advocacy.",
+    "image": "/assets/common/spotlight/asciiArt.webp"
+  }
+]

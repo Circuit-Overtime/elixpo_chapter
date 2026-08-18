@@ -1,0 +1,70 @@
+{
+  "hero": {
+    "focusTags": ["Frontend", "AI Integration", "SaaS Design"],
+    "name": "KARAN",
+    "headline": "Frontend AI Engineering Intern",
+    "subhead": "Frontend AI Engineering Intern @ FlyRank AI · 2nd-year B.Tech CSE Student",
+    "intro": "Building real deployed projects since first year. Focused on AI integrations, multi-model architectures, and SaaS product design.",
+    "credentials": [
+      { "label": "Frontend AI Intern", "org": "FlyRank AI" },
+      { "label": "Contributor", "org": "Elixpo" }
+    ],
+    "ctas": [
+      { "label": "View Work", "href": "projects" },
+      { "label": "Connect", "href": "connect" }
+    ],
+    "portrait": "/assets/karan/punchlineSection/vr-pic1.webp"
+  },
+  "intro": {
+    "heroName": "KARAN",
+    "tagline": "AI",
+    "taglineSuffix": "ENGINEER",
+    "description": "I build modern, scalable, and AI-powered web applications with a focus on performance, usability, and clean design.",
+    "highlights": [
+      "React & Next.js",
+      "AI + LLM Integration",
+      "SaaS Product Design",
+      "Multi-model architectures"
+    ],
+    "images": {
+      "portrait": "/assets/karan/punchlineSection/vr-pic1.webp",
+      "landscape": "/assets/karan/punchlineSection/hz-pic1.webp"
+    }
+  },
+  "websiteSection": {
+    "designedBy": "This portfolio showcases my projects, technical skills, and experience in frontend development and AI integration.",
+    "futurePlans": "I aim to deepen my expertise in system design, scalable architectures, and AI-powered applications.",
+    "codeStory": "My journey in tech started with curiosity about how things work. Over time, it evolved into building real-world applications, contributing to communities, and exploring cutting-edge AI technologies.",
+    "images": {
+      "owl": "/assets/karan/websiteSection/hz-owl1.webp",
+      "humanThink": "/assets/karan/websiteSection/human-think1.webp",
+      "seal": "/assets/karan/websiteSection/sq-seal1.webp"
+    }
+  },
+  "techSection": {
+    "heading": "TECH STACK",
+    "subheading": "DEV-S",
+    "description": "Technologies and tools I use to build efficient and scalable applications.",
+    "skills": [
+      { "type": "text", "label": "React" },
+      { "type": "text", "label": "Next.js" },
+      { "type": "text", "label": "Node.js" },
+      { "type": "text", "label": "PostgreSQL" },
+      { "type": "text", "label": "Python" },
+      { "type": "text", "label": "TypeScript" },
+      { "type": "text", "label": "Docker" },
+      { "type": "text", "label": "Git" },
+      { "type": "text", "label": "OpenAI API" }
+    ],
+    "explore": [
+      { "label": "Talks", "caption": "Speaking & sessions", "href": "talks" },
+      { "label": "Writing", "caption": "Notes & blog posts", "href": "blogs" },
+      { "label": "Papers", "caption": "Research & publications", "href": "publications" }
+    ],
+    "images": {
+      "wand": "/assets/karan/techTracks/wand-1.webp",
+      "landscape": "/assets/karan/techTracks/hz-image1.webp",
+      "banner": "/assets/karan/hrz-image1.webp"
+    }
+  }
+}
