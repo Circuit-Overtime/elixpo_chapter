@@ -4,6 +4,19 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext(null);
 
+// Theme colours matched to globals.css tokens and the Safari tint source.
+const THEME_COLORS = { dark: '#131922', light: '#ffffff' };
+
+function ensureThemeColorMeta() {
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    document.head.appendChild(meta);
+  }
+  return meta;
+}
+
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('light');
   const [mounted, setMounted] = useState(false);
@@ -17,11 +30,39 @@ export function ThemeProvider({ children }) {
     setMounted(true);
   }, []);
 
-  // Apply theme to <html> element
+  // Apply theme and update all status-bar colour hooks.
   useEffect(() => {
     if (!mounted) return;
+
+    const color = THEME_COLORS[theme];
+
+    // Keep explicit background colors on the elements Safari observes on iOS 26+.
     document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.backgroundColor = color;
+    document.body.style.backgroundColor = color;
     localStorage.setItem('lixblogs_theme', theme);
+
+    // Safari 26 samples this fixed element for the top browser chrome.
+    const shim = document.getElementById('ios-status-bar-shim');
+    if (shim) shim.style.backgroundColor = color;
+
+    // Older iOS uses the meta tag. On iOS 26, changing it is also the most
+    // reliable way to make Safari re-sample the live body/fixed-element color.
+    const meta = ensureThemeColorMeta();
+    meta.setAttribute('content', color);
+    let nudgeFrame;
+    let restoreFrame;
+    nudgeFrame = requestAnimationFrame(() => {
+      meta.setAttribute('content', `${color}fe`);
+      restoreFrame = requestAnimationFrame(() => {
+        meta.setAttribute('content', color);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(nudgeFrame);
+      if (restoreFrame) cancelAnimationFrame(restoreFrame);
+    };
   }, [theme, mounted]);
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');

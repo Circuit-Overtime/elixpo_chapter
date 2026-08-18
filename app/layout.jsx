@@ -86,12 +86,11 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#131922' },
-  ],
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
+  // Required for iOS 26+ to sample the safe-area / status-bar region
+  viewportFit: 'cover',
 };
 
 // Site-wide structured data. `WebSite` + `SearchAction` is what makes Google offer a
@@ -140,12 +139,16 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSONLD) }}
         />
-        {/* Prevent flash of wrong theme */}
+        {/* Prevent a flash of the wrong theme before React mounts. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             try {
               var t = localStorage.getItem('lixblogs_theme');
-              if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+              var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+              if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.documentElement.style.backgroundColor = '#131922';
+              }
             } catch(e) {}
           })();
         `}} />
@@ -185,6 +188,8 @@ export default function RootLayout({ children }) {
         `}} />
       </head>
       <body className="antialiased" style={{ fontFamily: "'Source Serif 4', 'Georgia', serif" }}>
+        {/* Safari 26+ samples this fixed tint source for the top browser chrome. */}
+        <div id="ios-status-bar-shim" aria-hidden="true" />
         <SeasonalThemeProvider>
           <ThemeProvider>
             <AuthProvider>
