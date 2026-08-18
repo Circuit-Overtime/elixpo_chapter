@@ -4,7 +4,7 @@
   "projects": [
     {
       "name": "Kareixo",
-      "description": "GlassBox AI Coding IDE. Founder and lead developer of an AI coding IDE built on a transparent, inspectable-AI philosophy. Architecting pivot to a GitHub-native AI agent.",
+      "description": "Free AI code reviewer for every pull request. Install the GitHub App once and get instant, intelligent code reviews powered by a resilient multi-model router.",
       "stars": null,
       "url": "https://kareixo.vercel.app",
       "owner": "karanray06",
