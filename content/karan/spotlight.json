@@ -9,13 +9,15 @@
     "title": "Founder of Kareixo",
     "date": "2025-01-01",
     "description": "Launched Kareixo, an AI coding IDE built on a transparent, inspectable-AI philosophy.",
-    "image": "/assets/common/spotlight/elixpo-art.webp"
+    "image": "/assets/karan/spotlight/kareixo.png",
+    "url": "https://kareixo.vercel.app/"
   },
   {
     "title": "Built Nirmaan MUN Platform",
     "date": "2025-05-01",
     "description": "Developed the Indraja Foundation's MUN conference platform from architecture to deployment.",
-    "image": "/assets/common/spotlight/elixpoSearchPicture.webp"
+    "image": "/assets/karan/spotlight/nirmaan.png",
+    "url": "https://nirmaan-jade.vercel.app/"
   },
   {
     "title": "Google Gemini Student Ambassador",

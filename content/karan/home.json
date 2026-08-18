@@ -1,10 +1,10 @@
 {
   "hero": {
-    "focusTags": ["Frontend", "AI Integration", "SaaS Design"],
+    "focusTags": ["Full-Stack", "AI/MLOps", "Open Source"],
     "name": "KARAN",
-    "headline": "Frontend AI Engineering Intern",
-    "subhead": "Frontend AI Engineering Intern @ FlyRank AI · 2nd-year B.Tech CSE Student",
-    "intro": "Building real deployed projects since first year. Focused on AI integrations, multi-model architectures, and SaaS product design.",
+    "headline": "Contributor @ Elixpo",
+    "subhead": "Contributor @ Elixpo · 2nd-year B.Tech CSE Student",
+    "intro": "Building and deploying software from first year, focused on full-stack development, AI-powered products, automation, and scalable system design. I turn ideas into practical products while continuously exploring modern developer tooling.",
     "credentials": [
       { "label": "Frontend AI Intern", "org": "FlyRank AI" },
       { "label": "Contributor", "org": "Elixpo" }
@@ -21,10 +21,10 @@
     "taglineSuffix": "ENGINEER",
     "description": "I build modern, scalable, and AI-powered web applications with a focus on performance, usability, and clean design.",
     "highlights": [
-      "React & Next.js",
-      "AI + LLM Integration",
-      "SaaS Product Design",
-      "Multi-model architectures"
+      "Full-Stack Development",
+      "AI & MLOps",
+      "Open Source Contributor",
+      "Scalable System Design"
     ],
     "images": {
       "portrait": "/assets/karan/karan-avatar.jpg",

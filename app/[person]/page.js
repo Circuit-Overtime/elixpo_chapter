@@ -45,18 +45,33 @@ export default async function HomePage({ params }) {
                   <p className="featuredTileSpecialDesc text-sm sm:text-[1.8em] font-thin relative text-center">These are the  latest catches in my career</p>
                 </div>
               )}
-              <div className="featuredTile relative h-[280px] sm:h-[350px] w-[250px] sm:w-[400px] flex-shrink-0 flex flex-col mt-[10px] px-[10px] sm:px-[20px] overflow-hidden">
-                <div
-                  className="featuredImage hoverScale h-[120px] sm:h-[150px] w-full bg-cover bg-center rounded-[12px]"
-                  style={{ backgroundImage: `url(${news.image})` }}
-                />
-                <p className="featureName font-[Canopee,serif] text-base sm:text-[1.6em] tracking-wide mt-2 sm:mt-3 leading-tight truncate">
-                  {news.title}
-                </p>
-                <p className="featuredDescription text-xs sm:text-[1.1em] text-[#555] mt-1 leading-snug line-clamp-3 overflow-hidden">
-                  {news.description.slice(0, 120)}...
-                </p>
-              </div>
+              {news.url ? (
+                <a href={news.url} target="_blank" rel="noopener noreferrer" className="featuredTile relative h-[280px] sm:h-[350px] w-[250px] sm:w-[400px] flex-shrink-0 flex flex-col mt-[10px] px-[10px] sm:px-[20px] overflow-hidden group">
+                  <div
+                    className="featuredImage hoverScale group-hover:scale-[1.03] h-[120px] sm:h-[150px] w-full bg-cover bg-center rounded-[12px] transition-transform duration-300"
+                    style={{ backgroundImage: `url(${news.image})` }}
+                  />
+                  <p className="featureName font-[Canopee,serif] text-base sm:text-[1.6em] tracking-wide mt-2 sm:mt-3 leading-tight truncate group-hover:text-[#B63B12] transition-colors">
+                    {news.title}
+                  </p>
+                  <p className="featuredDescription text-xs sm:text-[1.1em] text-[#555] mt-1 leading-snug line-clamp-3 overflow-hidden">
+                    {news.description.slice(0, 120)}...
+                  </p>
+                </a>
+              ) : (
+                <div className="featuredTile relative h-[280px] sm:h-[350px] w-[250px] sm:w-[400px] flex-shrink-0 flex flex-col mt-[10px] px-[10px] sm:px-[20px] overflow-hidden">
+                  <div
+                    className="featuredImage hoverScale h-[120px] sm:h-[150px] w-full bg-cover bg-center rounded-[12px]"
+                    style={{ backgroundImage: `url(${news.image})` }}
+                  />
+                  <p className="featureName font-[Canopee,serif] text-base sm:text-[1.6em] tracking-wide mt-2 sm:mt-3 leading-tight truncate">
+                    {news.title}
+                  </p>
+                  <p className="featuredDescription text-xs sm:text-[1.1em] text-[#555] mt-1 leading-snug line-clamp-3 overflow-hidden">
+                    {news.description.slice(0, 120)}...
+                  </p>
+                </div>
+              )}
             </span>
           );
         })}
