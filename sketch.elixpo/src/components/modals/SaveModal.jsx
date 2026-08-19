@@ -8,6 +8,7 @@ import { generateKey, encrypt } from '@/utils/encryption'
 import { WORKER_URL } from '@/lib/env'
 import usePlanEntitlements from '@/hooks/usePlanEntitlements'
 import useAuthStore from '@/store/useAuthStore'
+import { triggerCloudSync } from '@/hooks/useAutoSave'
 import {
   canvasToLosslessPNG,
   createExportSVG,
@@ -44,6 +45,13 @@ async function validatePublicDocumentMedia(blocks) {
   return validatePublicSceneMedia(sceneLike)
 }
 
+const MODAL_TABS = [
+  { id: 'save', label: 'Save', icon: 'bx-cloud-upload', description: 'Rename and securely sync the current workspace.' },
+  { id: 'export', label: 'Export', icon: 'bx-export', description: 'Download a lossless image, vector, PDF, or scene file.' },
+  { id: 'share', label: 'Share', icon: 'bx-share-alt', description: 'Collaborate live or create an encrypted view-only link.' },
+  { id: 'publish', label: 'Publish', icon: 'bx-world', description: 'Publish a public template that others can fork or clone.' },
+]
+
 // ── Component ────────────────────────────────────────────────
 
 export default function SaveModal() {
@@ -55,6 +63,10 @@ export default function SaveModal() {
   const resolvedTheme = useUIStore((s) => s.resolvedTheme)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const login = useAuthStore((s) => s.login)
+  const saveStatus = useUIStore((s) => s.saveStatus)
+  const [activeTab, setActiveTab] = useState('save')
+  const [savingNow, setSavingNow] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
 
   // Live collab state
   const [collabLink, setCollabLink] = useState('')
@@ -273,6 +285,20 @@ export default function SaveModal() {
     setCollabCopied(false)
   }
 
+  const handleSaveNow = async () => {
+    if (savingNow) return
+    setSavingNow(true)
+    setSaveMessage('')
+    try {
+      const saved = await triggerCloudSync()
+      setSaveMessage(saved ? 'Workspace saved locally and synced to the cloud.' : 'Workspace saved locally. Cloud sync is unavailable or waiting for a workspace slot.')
+    } catch {
+      setSaveMessage('Workspace saved locally, but cloud sync could not complete.')
+    } finally {
+      setSavingNow(false)
+    }
+  }
+
   // ── Export handlers ──
 
   const fileName = (workspaceName || 'lixsketch-export').replace(/[^a-zA-Z0-9_-]/g, '_')
@@ -335,7 +361,7 @@ export default function SaveModal() {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <h2 className="text-text-primary text-base font-medium">Save & Export</h2>
+          <h2 className="text-text-primary text-base font-medium">Workspace actions</h2>
           <button
             onClick={toggleSaveModal}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover cursor-pointer transition-all duration-200"
@@ -344,8 +370,27 @@ export default function SaveModal() {
           </button>
         </div>
 
+        <div className="mx-6 mb-4 grid grid-cols-4 gap-1 rounded-xl border border-border-light bg-surface/70 p-1">
+          {MODAL_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs transition ${activeTab === tab.id ? 'bg-accent-blue/20 text-accent-blue shadow-sm' : 'text-text-muted hover:bg-surface-hover hover:text-text-primary'}`}
+            >
+              <i className={`bx ${tab.icon} text-sm`} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="px-6 pb-6 flex flex-col gap-4">
+          <div className="rounded-xl border border-border-light bg-surface/35 px-4 py-3">
+            <p className="text-sm text-text-primary">{MODAL_TABS.find((tab) => tab.id === activeTab)?.label}</p>
+            <p className="mt-1 text-[11px] leading-5 text-text-dim">{MODAL_TABS.find((tab) => tab.id === activeTab)?.description}</p>
+          </div>
           {/* Workspace Name */}
+          {activeTab === 'save' && <div className="space-y-4">
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <label className="text-text-dim text-xs uppercase tracking-wider">Workspace Name</label>
@@ -361,9 +406,18 @@ export default function SaveModal() {
               spellCheck={false}
             />
           </div>
+          <div className="rounded-xl border border-border-light bg-surface/50 p-4">
+            <div className="flex items-start gap-3">
+              <span className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${saveStatus === 'cloud' ? 'bg-green-400' : saveStatus === 'failed' ? 'bg-red-400' : 'bg-yellow-400'}`} />
+              <div className="flex-1"><p className="text-sm text-text-primary">Encrypted workspace save</p><p className="mt-1 text-[10px] leading-5 text-text-dim">Save the canvas and paired document locally, then sync the encrypted payload when cloud storage is available.</p></div>
+            </div>
+            <button onClick={handleSaveNow} disabled={savingNow} className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent-blue py-2.5 text-sm text-white hover:bg-accent-blue-hover disabled:opacity-50"><i className={`bx ${savingNow ? 'bx-loader-alt animate-spin' : 'bx-save'}`} />{savingNow ? 'Saving…' : 'Save workspace now'}</button>
+            {saveMessage && <p className="mt-2 text-[10px] leading-4 text-text-muted">{saveMessage}</p>}
+          </div>
+          </div>}
 
           {/* ── Export As ── */}
-          <div className="p-3.5 rounded-xl border border-border-light bg-surface/50">
+          {activeTab === 'export' && <div className="p-3.5 rounded-xl border border-border-light bg-surface/50">
             <div className="flex items-center gap-2 mb-3">
               <i className="bx bx-export text-lg text-accent-blue" />
               <span className="text-text-primary text-sm font-medium">Export As</span>
@@ -466,10 +520,10 @@ export default function SaveModal() {
                 .lixjson Scene
               </button>
             </div>
-          </div>
+          </div>}
 
           {/* ── Live Collaborate ── */}
-          <div className="p-3.5 rounded-xl border border-border-light bg-surface/50">
+          {activeTab === 'share' && <div className="p-3.5 rounded-xl border border-border-light bg-surface/50">
             <div className="flex items-center gap-2 mb-2.5">
               <i className="bx bx-group text-lg text-accent-blue" />
               <div className="flex-1">
@@ -532,10 +586,10 @@ export default function SaveModal() {
             {(collabError || collabRuntimeError) && (
               <p className="text-red-400 text-[10px] mt-2">{collabError || collabRuntimeError}</p>
             )}
-          </div>
+          </div>}
 
           {/* ── One-time view-only share (issue #24 bug #9) ── */}
-          <div className="p-3.5 rounded-xl border border-border-light bg-surface/50">
+          {activeTab === 'share' && <div className="p-3.5 rounded-xl border border-border-light bg-surface/50">
             <div className="flex items-center gap-2 mb-2.5">
               <i className="bx bx-link-alt text-lg text-accent-blue" />
               <div className="flex-1">
@@ -582,10 +636,10 @@ export default function SaveModal() {
             {shareError && (
               <p className="text-red-400 text-[10px] mt-2">{shareError}</p>
             )}
-          </div>
+          </div>}
 
           {/* ── Public workspace template ── */}
-          <div className="p-3.5 rounded-xl border border-accent-blue/25 bg-accent-blue/5">
+          {activeTab === 'publish' && <div className="p-3.5 rounded-xl border border-accent-blue/25 bg-accent-blue/5">
             <div className="mb-3 flex items-start gap-2">
               <i className="bx bx-world text-lg text-accent-blue" />
               <div className="flex-1">
@@ -617,7 +671,7 @@ export default function SaveModal() {
               </div>
             )}
             {publishError && <p className="mt-2 text-[10px] text-red-400">{publishError}</p>}
-          </div>
+          </div>}
         </div>
       </div>
     </div>
