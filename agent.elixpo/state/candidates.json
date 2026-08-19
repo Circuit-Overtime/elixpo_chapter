@@ -2,224 +2,230 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "oceanbase/powercontext",
-    "has_contributing": true,
+    "full_name": "nix-community/NUR",
+    "has_contributing": false,
     "language": "Python",
-    "open_issues": 21,
-    "pushed_at": "2026-08-18T06:41:58Z",
+    "open_issues": 35,
+    "pushed_at": "2026-08-19T06:40:50Z",
     "reasons": [
-      "872\u2605 python active",
+      "1924\u2605 python active",
       "has open issues"
     ],
-    "score": 51,
-    "stars": 872,
+    "score": 37,
+    "stars": 1924,
     "topics": [
-      "agentic",
-      "ai-agents",
-      "context-engineering",
-      "databases",
-      "handoff",
-      "long-term-memory",
-      "memory",
-      "multi-agent"
+      "nix-packages",
+      "nixpkgs",
+      "nur",
+      "overlays"
     ],
-    "url": "https://github.com/oceanbase/powercontext"
+    "url": "https://github.com/nix-community/NUR"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "MetaMask/eth-phishing-detect",
+    "full_name": "callstackincubator/rozenite",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 18,
-    "pushed_at": "2026-08-18T06:41:11Z",
+    "open_issues": 9,
+    "pushed_at": "2026-08-19T06:42:37Z",
     "reasons": [
-      "1316\u2605 typescript active",
+      "647\u2605 typescript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 1316,
-    "topics": [],
-    "url": "https://github.com/MetaMask/eth-phishing-detect"
+    "stars": 647,
+    "topics": [
+      "devtools",
+      "react-native"
+    ],
+    "url": "https://github.com/callstackincubator/rozenite"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "Dest1ny-Sec/DesJsFinder",
-    "has_contributing": false,
+    "full_name": "FaserF/hassio-addons",
+    "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 3,
-    "pushed_at": "2026-08-18T06:38:28Z",
+    "open_issues": 7,
+    "pushed_at": "2026-08-19T06:42:29Z",
     "reasons": [
-      "122\u2605 javascript active",
+      "124\u2605 javascript active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 122,
-    "topics": [],
-    "url": "https://github.com/Dest1ny-Sec/DesJsFinder"
+    "score": 51,
+    "stars": 124,
+    "topics": [
+      "apache2",
+      "docker",
+      "hassio",
+      "hassio-addons",
+      "home-assistant",
+      "home-automation",
+      "homeassistant-addons",
+      "homeassistant-app",
+      "self-hosted",
+      "whatsapp",
+      "wordpress"
+    ],
+    "url": "https://github.com/FaserF/hassio-addons"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "hdl/containers",
+    "full_name": "kdeldycke/dotfiles",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 33,
-    "pushed_at": "2026-08-18T06:41:21Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-19T06:41:11Z",
     "reasons": [
-      "123\u2605 shell active",
+      "170\u2605 shell active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 123,
-    "topics": [],
-    "url": "https://github.com/hdl/containers"
+    "stars": 170,
+    "topics": [
+      "apple-silicon",
+      "dotfile",
+      "dotfiles",
+      "macos",
+      "macos-configuration",
+      "meta-package-manager",
+      "monokai",
+      "neovim",
+      "nerd-fonts",
+      "python",
+      "shell",
+      "sonoma",
+      "source-code-pro",
+      "starship",
+      "terminal",
+      "visual-studio-code",
+      "zsh"
+    ],
+    "url": "https://github.com/kdeldycke/dotfiles"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "billimek/k8s-gitops",
+    "full_name": "chr1sd/home-ops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 3,
-    "pushed_at": "2026-08-18T05:34:06Z",
+    "open_issues": 12,
+    "pushed_at": "2026-08-19T06:30:07Z",
     "reasons": [
-      "776\u2605 yaml active",
+      "177\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 776,
+    "stars": 177,
     "topics": [
       "flux",
       "gitops",
-      "helm",
-      "k8s",
-      "k8s-at-home",
-      "kubernetes"
+      "home-lab",
+      "kubernetes",
+      "kubesearch",
+      "renovate",
+      "self-hosted"
     ],
-    "url": "https://github.com/billimek/k8s-gitops"
+    "url": "https://github.com/chr1sd/home-ops"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "raullenchai/Rapid-MLX",
+    "full_name": "modelscope/evalscope",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 33,
-    "pushed_at": "2026-08-18T06:37:08Z",
+    "open_issues": 37,
+    "pushed_at": "2026-08-19T06:38:25Z",
     "reasons": [
-      "3499\u2605 python active",
+      "3269\u2605 python active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 3499,
+    "stars": 3269,
     "topics": [
-      "apple-silicon",
-      "claude-code",
-      "cursor",
-      "deepseek",
-      "fastapi",
-      "hacktoberfest",
-      "inference",
+      "evaluation",
       "llm",
-      "local-llm",
-      "m1",
-      "m2",
-      "m3",
-      "macos",
-      "mlx",
-      "ollama-alternative",
-      "openai-api",
-      "python",
-      "qwen",
-      "tool-calling"
+      "performance",
+      "rag",
+      "vlm"
     ],
-    "url": "https://github.com/raullenchai/Rapid-MLX"
+    "url": "https://github.com/modelscope/evalscope"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "DavidHDev/canvas-ui",
-    "has_contributing": true,
+    "full_name": "software-mansion/react-native-gesture-handler",
+    "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 5,
-    "pushed_at": "2026-08-18T06:37:08Z",
+    "open_issues": 28,
+    "pushed_at": "2026-08-19T06:32:53Z",
     "reasons": [
-      "4061\u2605 typescript active",
+      "6776\u2605 typescript active",
       "has open issues"
     ],
-    "score": 53,
-    "stars": 4061,
+    "score": 40,
+    "stars": 6776,
     "topics": [
-      "animation",
-      "canvas",
-      "component-library",
-      "components",
-      "creative-coding",
-      "design-engineering",
-      "frontend",
-      "glsl",
-      "nextjs",
-      "react",
-      "shadcn",
-      "shaders",
-      "svelte",
-      "threejs",
-      "typescript",
-      "ui",
-      "ui-library",
-      "vue",
-      "weggl"
+      "gesture",
+      "javascript",
+      "react-native"
     ],
-    "url": "https://github.com/DavidHDev/canvas-ui"
+    "url": "https://github.com/software-mansion/react-native-gesture-handler"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "IsmaelMartinez/teams-for-linux",
+    "full_name": "worldwonderer/oh-story-claudecode",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 37,
-    "pushed_at": "2026-08-18T06:38:49Z",
+    "open_issues": 8,
+    "pushed_at": "2026-08-19T05:29:25Z",
     "reasons": [
-      "4939\u2605 javascript active",
+      "5771\u2605 javascript active",
       "has open issues"
     ],
     "score": 54,
-    "stars": 4939,
+    "stars": 5771,
     "topics": [
-      "electron",
-      "linux",
-      "microsoft",
-      "teams"
+      "ai-agent",
+      "ai-writing",
+      "chinese-novel",
+      "claude-code",
+      "claude-skills",
+      "creative-writing",
+      "novel-writing",
+      "openclaw",
+      "skill",
+      "web-novel",
+      "writing-assistant"
     ],
-    "url": "https://github.com/IsmaelMartinez/teams-for-linux"
+    "url": "https://github.com/worldwonderer/oh-story-claudecode"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "linuxserver/docker-webtop",
+    "full_name": "bitnami/containers",
     "has_contributing": true,
     "language": "Shell",
-    "open_issues": 5,
-    "pushed_at": "2026-08-18T04:28:43Z",
+    "open_issues": 14,
+    "pushed_at": "2026-08-19T03:52:21Z",
     "reasons": [
-      "4337\u2605 shell active",
+      "4451\u2605 shell active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 4337,
+    "stars": 4451,
     "topics": [
-      "alpine",
-      "arch",
+      "bitnami",
+      "containers",
       "docker",
-      "fedora",
-      "rdp",
-      "ubuntu",
-      "webtop"
+      "docker-image",
+      "non-root",
+      "vmware"
     ],
-    "url": "https://github.com/linuxserver/docker-webtop"
+    "url": "https://github.com/bitnami/containers"
   },
   {
     "archived": false,
@@ -227,14 +233,14 @@
     "full_name": "usnistgov/macos_security",
     "has_contributing": true,
     "language": "YAML",
-    "open_issues": 21,
-    "pushed_at": "2026-08-14T19:43:19Z",
+    "open_issues": 20,
+    "pushed_at": "2026-08-18T18:07:10Z",
     "reasons": [
-      "2446\u2605 yaml active",
+      "2447\u2605 yaml active",
       "has open issues"
     ],
-    "score": 48,
-    "stars": 2446,
+    "score": 52,
+    "stars": 2447,
     "topics": [
       "apple",
       "bash",
@@ -250,40 +256,26 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "fivetran/great_expectations",
+    "full_name": "healthchecks/healthchecks",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 40,
-    "pushed_at": "2026-08-18T05:49:08Z",
+    "open_issues": 53,
+    "pushed_at": "2026-08-19T06:32:11Z",
     "reasons": [
-      "11715\u2605 python active",
+      "10259\u2605 python active",
       "has open issues"
     ],
-    "score": 58,
-    "stars": 11715,
+    "score": 57,
+    "stars": 10259,
     "topics": [
-      "cleandata",
-      "data-engineering",
-      "data-profilers",
-      "data-profiling",
-      "data-quality",
-      "data-science",
-      "data-unit-tests",
-      "datacleaner",
-      "datacleaning",
-      "dataquality",
-      "dataunittest",
-      "eda",
-      "exploratory-analysis",
-      "exploratory-data-analysis",
-      "exploratorydataanalysis",
-      "mlops",
-      "pipeline",
-      "pipeline-debt",
-      "pipeline-testing",
-      "pipeline-tests"
+      "cron",
+      "cron-jobs",
+      "devops",
+      "django",
+      "monitoring",
+      "ops"
     ],
-    "url": "https://github.com/fivetran/great_expectations"
+    "url": "https://github.com/healthchecks/healthchecks"
   },
   {
     "archived": false,
@@ -291,14 +283,14 @@
     "full_name": "assistant-ui/assistant-ui",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 60,
-    "pushed_at": "2026-08-18T06:37:37Z",
+    "open_issues": 52,
+    "pushed_at": "2026-08-19T06:24:06Z",
     "reasons": [
-      "11705\u2605 typescript active",
+      "11722\u2605 typescript active",
       "has open issues"
     ],
     "score": 58,
-    "stars": 11705,
+    "stars": 11722,
     "topics": [
       "ai-chatbot",
       "chatbot",
@@ -318,8 +310,8 @@
     "full_name": "marko-js/marko",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 28,
-    "pushed_at": "2026-08-18T04:31:20Z",
+    "open_issues": 27,
+    "pushed_at": "2026-08-19T04:46:31Z",
     "reasons": [
       "14406\u2605 javascript active",
       "has open issues"
@@ -342,182 +334,179 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "DaoCloud/public-image-mirror",
+    "full_name": "nelvko/clash-for-linux-install",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 7,
-    "pushed_at": "2026-08-18T05:02:20Z",
+    "open_issues": 22,
+    "pushed_at": "2026-08-19T03:09:42Z",
     "reasons": [
-      "14874\u2605 shell active",
+      "14492\u2605 shell active",
       "has open issues"
     ],
     "score": 45,
-    "stars": 14874,
+    "stars": 14492,
     "topics": [
-      "mirror",
-      "speedup"
+      "clash",
+      "clash-meta",
+      "linux",
+      "mihomo",
+      "subconverter"
     ],
-    "url": "https://github.com/DaoCloud/public-image-mirror"
+    "url": "https://github.com/nelvko/clash-for-linux-install"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "jvxiao/speed-github",
+    "full_name": "stabldev/torrra",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 3,
-    "pushed_at": "2026-08-18T06:42:34Z",
+    "open_issues": 12,
+    "pushed_at": "2026-08-19T06:43:15Z",
     "reasons": [
-      "348\u2605 python active",
+      "1220\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 348,
-    "topics": [],
-    "url": "https://github.com/jvxiao/speed-github"
+    "stars": 1220,
+    "topics": [
+      "libtorrent-python",
+      "python-cli",
+      "torrent",
+      "torrent-downloader"
+    ],
+    "url": "https://github.com/stabldev/torrra"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "dcouple/Pane",
+    "full_name": "Signet-AI/signetai",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 51,
-    "pushed_at": "2026-08-18T06:39:52Z",
+    "open_issues": 22,
+    "pushed_at": "2026-08-19T06:42:01Z",
     "reasons": [
-      "389\u2605 typescript active",
+      "251\u2605 typescript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 389,
+    "stars": 251,
     "topics": [
-      "agent-manager",
-      "agentic-ai",
-      "agents",
-      "ai",
-      "aider",
+      "agent-memory",
+      "ai-memory",
       "claude-code",
-      "cli",
       "codex",
-      "coding-agents",
-      "cursor-ai",
-      "desktop",
-      "developer",
-      "electron",
-      "git",
+      "hermes-agent",
+      "hermes-agent-plugin",
+      "hermes-plugin",
+      "oh-my-pi",
+      "openclaw",
       "opencode",
-      "orchestration",
-      "parallel-agents",
-      "terminal",
-      "windows",
-      "worktree-manager"
+      "opencode-plugin",
+      "pi-coding-agent",
+      "pi-extension",
+      "self-hosted"
     ],
-    "url": "https://github.com/dcouple/Pane"
+    "url": "https://github.com/Signet-AI/signetai"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "usabilityhub/rails-erb-loader",
+    "full_name": "codsen/codsen",
     "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 18,
-    "pushed_at": "2026-08-18T06:37:58Z",
+    "open_issues": 14,
+    "pushed_at": "2026-08-19T06:41:09Z",
     "reasons": [
-      "105\u2605 javascript active",
+      "213\u2605 javascript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 105,
-    "topics": [
-      "erb",
-      "javascript",
-      "loader",
-      "nodejs",
-      "rails",
-      "rails-erb-loader",
-      "ruby",
-      "webpack",
-      "webpack-loader"
-    ],
-    "url": "https://github.com/usabilityhub/rails-erb-loader"
+    "stars": 213,
+    "topics": [],
+    "url": "https://github.com/codsen/codsen"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "ArmanTheParman/Parmanode",
+    "full_name": "math-ai-org/mathcode",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 3,
-    "pushed_at": "2026-08-18T06:37:13Z",
+    "open_issues": 4,
+    "pushed_at": "2026-08-19T06:37:35Z",
     "reasons": [
-      "114\u2605 shell active",
+      "702\u2605 shell active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 114,
-    "topics": [],
-    "url": "https://github.com/ArmanTheParman/Parmanode"
+    "stars": 702,
+    "topics": [
+      "agent",
+      "ai",
+      "coding",
+      "foundation-models",
+      "llm",
+      "reasoning"
+    ],
+    "url": "https://github.com/math-ai-org/mathcode"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "joryirving/home-ops",
+    "full_name": "haraldkoch/kochhaus-home",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 7,
-    "pushed_at": "2026-08-18T06:22:20Z",
+    "open_issues": 5,
+    "pushed_at": "2026-08-19T04:10:25Z",
     "reasons": [
-      "223\u2605 yaml active",
+      "178\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 223,
+    "stars": 178,
     "topics": [
-      "flux",
       "gitops",
+      "helm",
+      "k8s-at-home",
       "kubernetes",
-      "kubesearch",
-      "renovate",
-      "self-hosted",
-      "talos",
-      "terraform"
+      "renovate"
     ],
-    "url": "https://github.com/joryirving/home-ops"
+    "url": "https://github.com/haraldkoch/kochhaus-home"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "Epodonios/v2ray-configs",
-    "has_contributing": false,
+    "full_name": "raullenchai/Rapid-MLX",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 30,
-    "pushed_at": "2026-08-18T06:38:29Z",
+    "open_issues": 58,
+    "pushed_at": "2026-08-19T06:38:00Z",
     "reasons": [
-      "3194\u2605 python active",
+      "3509\u2605 python active",
       "has open issues"
     ],
-    "score": 38,
-    "stars": 3194,
+    "score": 53,
+    "stars": 3509,
     "topics": [
-      "bulk-connection",
-      "bulk-operation",
-      "gfw",
-      "gfw-china",
-      "reality",
-      "shadowsocks",
-      "trojan-gfw",
-      "v2ray",
-      "v2ray-ws-tls",
-      "v2rayng",
-      "vless",
-      "vless-grpc",
-      "vless-ws-tls",
-      "vmess",
-      "vmess-over-tls",
-      "vpn",
-      "vpn-server",
-      "vpnservice"
+      "apple-silicon",
+      "claude-code",
+      "cursor",
+      "deepseek",
+      "fastapi",
+      "hacktoberfest",
+      "inference",
+      "llm",
+      "local-llm",
+      "m1",
+      "m2",
+      "m3",
+      "macos",
+      "mlx",
+      "ollama-alternative",
+      "openai-api",
+      "python",
+      "qwen",
+      "tool-calling"
     ],
-    "url": "https://github.com/Epodonios/v2ray-configs"
+    "url": "https://github.com/raullenchai/Rapid-MLX"
   }
 ]
