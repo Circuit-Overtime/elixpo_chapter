@@ -112,3 +112,4 @@
 - [x] Include paired canvas documents in published templates without exposing editable workspace keys, tokens, or session IDs.
 - [x] Add publisher controls to update, unpublish, and inspect public workspace templates.
 - [x] Warn publishers about public content and handle unavailable or private media before publishing.
+- [x] Organize workspace actions into Save, Export, Share, and Publish tabs with concise guidance for each workflow.
