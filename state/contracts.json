@@ -25,14 +25,14 @@
       "status": ""
     },
     "daily_summary.json": {
-      "expires_at": "2026-08-27T01:53:23.778880+00:00",
+      "expires_at": "2026-08-28T01:51:44.094282+00:00",
       "key": "",
-      "payload_sha256": "983ce73625226972e7da04491a180c8ad787774ae14c04ac0ddf56ce216bcd92",
-      "produced_at": "2026-08-19T01:53:23.778880+00:00",
+      "payload_sha256": "557de64994852e69f84fd682b37a925f46905d80e43d72777326ef3e73dee081",
+      "produced_at": "2026-08-20T01:51:44.094282+00:00",
       "producer": "daily-summary",
       "run_id": "",
       "schema_version": 1,
-      "sequence": 10,
+      "sequence": 11,
       "state_file": "daily_summary.json",
       "status": "degraded"
     },
@@ -170,5 +170,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": "2026-08-19T06:43:22.550050+00:00"
+  "updated_at": "2026-08-20T01:51:44.094282+00:00"
 }
