@@ -2,108 +2,99 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "nix-community/NUR",
-    "has_contributing": false,
+    "full_name": "oemof/tespy",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 35,
-    "pushed_at": "2026-08-19T06:40:50Z",
+    "open_issues": 51,
+    "pushed_at": "2026-08-20T06:45:37Z",
     "reasons": [
-      "1924\u2605 python active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1924,
-    "topics": [
-      "nix-packages",
-      "nixpkgs",
-      "nur",
-      "overlays"
-    ],
-    "url": "https://github.com/nix-community/NUR"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "callstackincubator/rozenite",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 9,
-    "pushed_at": "2026-08-19T06:42:37Z",
-    "reasons": [
-      "647\u2605 typescript active",
+      "410\u2605 python active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 647,
+    "stars": 410,
     "topics": [
-      "devtools",
-      "react-native"
+      "cooling",
+      "energy-system",
+      "exergy",
+      "heating",
+      "powerplant",
+      "process-engineering",
+      "python",
+      "refrigeration",
+      "simulation",
+      "thermodynamic-cycles",
+      "thermodynamics"
     ],
-    "url": "https://github.com/callstackincubator/rozenite"
+    "url": "https://github.com/oemof/tespy"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "FaserF/hassio-addons",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 7,
-    "pushed_at": "2026-08-19T06:42:29Z",
-    "reasons": [
-      "124\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 124,
-    "topics": [
-      "apache2",
-      "docker",
-      "hassio",
-      "hassio-addons",
-      "home-assistant",
-      "home-automation",
-      "homeassistant-addons",
-      "homeassistant-app",
-      "self-hosted",
-      "whatsapp",
-      "wordpress"
-    ],
-    "url": "https://github.com/FaserF/hassio-addons"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "kdeldycke/dotfiles",
+    "full_name": "Soul-Brews-Studio/arra-oracle-skills-cli",
     "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 3,
-    "pushed_at": "2026-08-19T06:41:11Z",
+    "language": "TypeScript",
+    "open_issues": 22,
+    "pushed_at": "2026-08-20T06:46:07Z",
     "reasons": [
-      "170\u2605 shell active",
+      "118\u2605 typescript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 170,
-    "topics": [
-      "apple-silicon",
-      "dotfile",
-      "dotfiles",
-      "macos",
-      "macos-configuration",
-      "meta-package-manager",
-      "monokai",
-      "neovim",
-      "nerd-fonts",
-      "python",
-      "shell",
-      "sonoma",
-      "source-code-pro",
-      "starship",
-      "terminal",
-      "visual-studio-code",
-      "zsh"
+    "stars": 118,
+    "topics": [],
+    "url": "https://github.com/Soul-Brews-Studio/arra-oracle-skills-cli"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "stylelint-stylistic/stylelint-stylistic",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 15,
+    "pushed_at": "2026-08-20T06:43:20Z",
+    "reasons": [
+      "107\u2605 javascript active",
+      "has open issues"
     ],
-    "url": "https://github.com/kdeldycke/dotfiles"
+    "score": 51,
+    "stars": 107,
+    "topics": [
+      "codeguide",
+      "css",
+      "csslint",
+      "lint",
+      "linter",
+      "stylelint",
+      "stylelint-plugin"
+    ],
+    "url": "https://github.com/stylelint-stylistic/stylelint-stylistic"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "altstackHQ/altstack-data",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 10,
+    "pushed_at": "2026-08-20T06:40:20Z",
+    "reasons": [
+      "321\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 321,
+    "topics": [
+      "awesome",
+      "awesome-list",
+      "devops",
+      "docker",
+      "open-source",
+      "productivity",
+      "saas-alternatives",
+      "self-hosted"
+    ],
+    "url": "https://github.com/altstackHQ/altstack-data"
   },
   {
     "archived": false,
@@ -111,8 +102,8 @@
     "full_name": "chr1sd/home-ops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 12,
-    "pushed_at": "2026-08-19T06:30:07Z",
+    "open_issues": 14,
+    "pushed_at": "2026-08-20T06:30:15Z",
     "reasons": [
       "177\u2605 yaml active",
       "has open issues"
@@ -133,99 +124,113 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "modelscope/evalscope",
+    "full_name": "shy3130/tickflow-stock-panel",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 37,
-    "pushed_at": "2026-08-19T06:38:25Z",
+    "open_issues": 26,
+    "pushed_at": "2026-08-20T06:36:07Z",
     "reasons": [
-      "3269\u2605 python active",
+      "3217\u2605 python active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 3269,
+    "stars": 3217,
     "topics": [
-      "evaluation",
+      "a-stock",
+      "ai-agent",
+      "aigc",
+      "backtesting",
+      "daily",
+      "duckdb",
+      "fastapi",
       "llm",
-      "performance",
-      "rag",
-      "vlm"
+      "polars",
+      "quant",
+      "quantitative-finance",
+      "quantitative-trading",
+      "react",
+      "screener",
+      "self-hosted",
+      "stock",
+      "stock-analysis",
+      "tdx",
+      "tickflow",
+      "tsp"
     ],
-    "url": "https://github.com/modelscope/evalscope"
+    "url": "https://github.com/shy3130/tickflow-stock-panel"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "software-mansion/react-native-gesture-handler",
-    "has_contributing": false,
+    "full_name": "open-pencil/open-pencil",
+    "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 28,
-    "pushed_at": "2026-08-19T06:32:53Z",
+    "open_issues": 33,
+    "pushed_at": "2026-08-20T06:45:53Z",
     "reasons": [
-      "6776\u2605 typescript active",
+      "7886\u2605 typescript active",
       "has open issues"
     ],
-    "score": 40,
-    "stars": 6776,
+    "score": 56,
+    "stars": 7886,
     "topics": [
-      "gesture",
-      "javascript",
-      "react-native"
+      "ai",
+      "collaboration",
+      "design-editor",
+      "figma-alternative",
+      "open-source",
+      "skia",
+      "tauri",
+      "vue",
+      "webgpu"
     ],
-    "url": "https://github.com/software-mansion/react-native-gesture-handler"
+    "url": "https://github.com/open-pencil/open-pencil"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "worldwonderer/oh-story-claudecode",
+    "full_name": "pshenok/server-survival",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 8,
-    "pushed_at": "2026-08-19T05:29:25Z",
+    "open_issues": 20,
+    "pushed_at": "2026-08-20T06:18:17Z",
     "reasons": [
-      "5771\u2605 javascript active",
+      "6359\u2605 javascript active",
       "has open issues"
     ],
-    "score": 54,
-    "stars": 5771,
+    "score": 55,
+    "stars": 6359,
     "topics": [
-      "ai-agent",
-      "ai-writing",
-      "chinese-novel",
-      "claude-code",
-      "claude-skills",
-      "creative-writing",
-      "novel-writing",
-      "openclaw",
-      "skill",
-      "web-novel",
-      "writing-assistant"
+      "aws",
+      "cloud",
+      "devops",
+      "education",
+      "game",
+      "javascript",
+      "learning",
+      "open-source",
+      "simulation",
+      "threejs",
+      "tower-defense"
     ],
-    "url": "https://github.com/worldwonderer/oh-story-claudecode"
+    "url": "https://github.com/pshenok/server-survival"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "bitnami/containers",
+    "full_name": "expo/skills",
     "has_contributing": true,
     "language": "Shell",
-    "open_issues": 14,
-    "pushed_at": "2026-08-19T03:52:21Z",
+    "open_issues": 56,
+    "pushed_at": "2026-08-20T04:32:08Z",
     "reasons": [
-      "4451\u2605 shell active",
+      "2438\u2605 shell active",
       "has open issues"
     ],
-    "score": 53,
-    "stars": 4451,
-    "topics": [
-      "bitnami",
-      "containers",
-      "docker",
-      "docker-image",
-      "non-root",
-      "vmware"
-    ],
-    "url": "https://github.com/bitnami/containers"
+    "score": 52,
+    "stars": 2438,
+    "topics": [],
+    "url": "https://github.com/expo/skills"
   },
   {
     "archived": false,
@@ -233,14 +238,14 @@
     "full_name": "usnistgov/macos_security",
     "has_contributing": true,
     "language": "YAML",
-    "open_issues": 20,
-    "pushed_at": "2026-08-18T18:07:10Z",
+    "open_issues": 23,
+    "pushed_at": "2026-08-20T01:43:21Z",
     "reasons": [
-      "2447\u2605 yaml active",
+      "2448\u2605 yaml active",
       "has open issues"
     ],
     "score": 52,
-    "stars": 2447,
+    "stars": 2448,
     "topics": [
       "apple",
       "bash",
@@ -256,53 +261,70 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "healthchecks/healthchecks",
+    "full_name": "MervinPraison/PraisonAI",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 53,
-    "pushed_at": "2026-08-19T06:32:11Z",
+    "open_issues": 50,
+    "pushed_at": "2026-08-20T06:46:15Z",
     "reasons": [
-      "10259\u2605 python active",
+      "8927\u2605 python active",
       "has open issues"
     ],
-    "score": 57,
-    "stars": 10259,
+    "score": 56,
+    "stars": 8927,
     "topics": [
-      "cron",
-      "cron-jobs",
-      "devops",
-      "django",
-      "monitoring",
-      "ops"
+      "agents",
+      "ai",
+      "ai-agent-framework",
+      "ai-agent-sdk",
+      "ai-agents",
+      "ai-agents-framework",
+      "ai-agents-sdk",
+      "ai-framwork",
+      "aiagent",
+      "aiagentframework",
+      "aiagents",
+      "aiagentsframework",
+      "framework",
+      "hermes",
+      "hermes-agent",
+      "multi-agent",
+      "multi-agent-system",
+      "multi-agents",
+      "multi-ai-agents",
+      "openclaw"
     ],
-    "url": "https://github.com/healthchecks/healthchecks"
+    "url": "https://github.com/MervinPraison/PraisonAI"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "assistant-ui/assistant-ui",
+    "full_name": "rmyndharis/OpenWA",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 52,
-    "pushed_at": "2026-08-19T06:24:06Z",
+    "open_issues": 6,
+    "pushed_at": "2026-08-20T06:42:28Z",
     "reasons": [
-      "11722\u2605 typescript active",
+      "12983\u2605 typescript active",
       "has open issues"
     ],
-    "score": 58,
-    "stars": 11722,
+    "score": 59,
+    "stars": 12983,
     "topics": [
-      "ai-chatbot",
-      "chatbot",
-      "conversational-ai",
-      "copilot",
-      "radix-ui",
-      "react-chatbot",
-      "shadcn",
-      "ui-components",
-      "vercel-ai-sdk"
+      "api",
+      "bot",
+      "gateway",
+      "self-hosted",
+      "whatsapp",
+      "whatsapp-api",
+      "whatsapp-automation",
+      "whatsapp-bot",
+      "whatsapp-gateway",
+      "whatsapp-gateway-api",
+      "whatsapp-web",
+      "whatsapp-web-api"
     ],
-    "url": "https://github.com/assistant-ui/assistant-ui"
+    "url": "https://github.com/rmyndharis/OpenWA"
   },
   {
     "archived": false,
@@ -311,7 +333,7 @@
     "has_contributing": true,
     "language": "JavaScript",
     "open_issues": 27,
-    "pushed_at": "2026-08-19T04:46:31Z",
+    "pushed_at": "2026-08-20T05:00:46Z",
     "reasons": [
       "14406\u2605 javascript active",
       "has open issues"
@@ -337,14 +359,14 @@
     "full_name": "nelvko/clash-for-linux-install",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 22,
-    "pushed_at": "2026-08-19T03:09:42Z",
+    "open_issues": 23,
+    "pushed_at": "2026-08-19T16:27:32Z",
     "reasons": [
-      "14492\u2605 shell active",
+      "14503\u2605 shell active",
       "has open issues"
     ],
     "score": 45,
-    "stars": 14492,
+    "stars": 14503,
     "topics": [
       "clash",
       "clash-meta",
@@ -357,156 +379,140 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "stabldev/torrra",
+    "full_name": "SnailDev/douyin-hot-hub",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 12,
-    "pushed_at": "2026-08-19T06:43:15Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-20T06:46:14Z",
     "reasons": [
-      "1220\u2605 python active",
+      "113\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 1220,
-    "topics": [
-      "libtorrent-python",
-      "python-cli",
-      "torrent",
-      "torrent-downloader"
-    ],
-    "url": "https://github.com/stabldev/torrra"
+    "stars": 113,
+    "topics": [],
+    "url": "https://github.com/SnailDev/douyin-hot-hub"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "Signet-AI/signetai",
-    "has_contributing": true,
+    "full_name": "mundane799699/bilibili-history-wxt",
+    "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 22,
-    "pushed_at": "2026-08-19T06:42:01Z",
+    "open_issues": 11,
+    "pushed_at": "2026-08-20T06:44:47Z",
     "reasons": [
-      "251\u2605 typescript active",
+      "129\u2605 typescript active",
       "has open issues"
     ],
-    "score": 51,
-    "stars": 251,
-    "topics": [
-      "agent-memory",
-      "ai-memory",
-      "claude-code",
-      "codex",
-      "hermes-agent",
-      "hermes-agent-plugin",
-      "hermes-plugin",
-      "oh-my-pi",
-      "openclaw",
-      "opencode",
-      "opencode-plugin",
-      "pi-coding-agent",
-      "pi-extension",
-      "self-hosted"
-    ],
-    "url": "https://github.com/Signet-AI/signetai"
+    "score": 36,
+    "stars": 129,
+    "topics": [],
+    "url": "https://github.com/mundane799699/bilibili-history-wxt"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "codsen/codsen",
+    "full_name": "xiaoyuanda666-ship-it/BaiLongma",
     "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 14,
-    "pushed_at": "2026-08-19T06:41:09Z",
+    "open_issues": 28,
+    "pushed_at": "2026-08-20T06:43:28Z",
     "reasons": [
-      "213\u2605 javascript active",
+      "664\u2605 javascript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 213,
+    "stars": 664,
     "topics": [],
-    "url": "https://github.com/codsen/codsen"
+    "url": "https://github.com/xiaoyuanda666-ship-it/BaiLongma"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "math-ai-org/mathcode",
+    "full_name": "rrr333nnn333/BRENE",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 4,
-    "pushed_at": "2026-08-19T06:37:35Z",
+    "open_issues": 10,
+    "pushed_at": "2026-08-20T06:35:48Z",
     "reasons": [
-      "702\u2605 shell active",
+      "324\u2605 shell active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 702,
+    "stars": 324,
     "topics": [
-      "agent",
-      "ai",
-      "coding",
-      "foundation-models",
-      "llm",
-      "reasoning"
+      "android",
+      "hiding",
+      "kernelsu",
+      "ksu",
+      "root",
+      "susfs"
     ],
-    "url": "https://github.com/math-ai-org/mathcode"
+    "url": "https://github.com/rrr333nnn333/BRENE"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "haraldkoch/kochhaus-home",
+    "full_name": "ishioni/homelab-ops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 5,
-    "pushed_at": "2026-08-19T04:10:25Z",
+    "open_issues": 4,
+    "pushed_at": "2026-08-20T06:04:36Z",
     "reasons": [
-      "178\u2605 yaml active",
+      "168\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 178,
+    "stars": 168,
     "topics": [
-      "gitops",
+      "authentik",
+      "cert-manager",
+      "external-dns",
+      "flux",
       "helm",
       "k8s-at-home",
       "kubernetes",
-      "renovate"
+      "renovate",
+      "sops",
+      "talos"
     ],
-    "url": "https://github.com/haraldkoch/kochhaus-home"
+    "url": "https://github.com/ishioni/homelab-ops"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "raullenchai/Rapid-MLX",
-    "has_contributing": true,
+    "full_name": "Epodonios/v2ray-configs",
+    "has_contributing": false,
     "language": "Python",
-    "open_issues": 58,
-    "pushed_at": "2026-08-19T06:38:00Z",
+    "open_issues": 30,
+    "pushed_at": "2026-08-20T06:34:12Z",
     "reasons": [
-      "3509\u2605 python active",
+      "3198\u2605 python active",
       "has open issues"
     ],
-    "score": 53,
-    "stars": 3509,
+    "score": 38,
+    "stars": 3198,
     "topics": [
-      "apple-silicon",
-      "claude-code",
-      "cursor",
-      "deepseek",
-      "fastapi",
-      "hacktoberfest",
-      "inference",
-      "llm",
-      "local-llm",
-      "m1",
-      "m2",
-      "m3",
-      "macos",
-      "mlx",
-      "ollama-alternative",
-      "openai-api",
-      "python",
-      "qwen",
-      "tool-calling"
+      "bulk-connection",
+      "bulk-operation",
+      "gfw",
+      "gfw-china",
+      "reality",
+      "shadowsocks",
+      "trojan-gfw",
+      "v2ray",
+      "v2ray-ws-tls",
+      "v2rayng",
+      "vless",
+      "vless-grpc",
+      "vless-ws-tls",
+      "vmess",
+      "vmess-over-tls",
+      "vpn",
+      "vpn-server",
+      "vpnservice"
     ],
-    "url": "https://github.com/raullenchai/Rapid-MLX"
+    "url": "https://github.com/Epodonios/v2ray-configs"
   }
 ]
