@@ -2,73 +2,62 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "oemof/tespy",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 51,
-    "pushed_at": "2026-08-20T06:45:37Z",
-    "reasons": [
-      "410\u2605 python active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 410,
-    "topics": [
-      "cooling",
-      "energy-system",
-      "exergy",
-      "heating",
-      "powerplant",
-      "process-engineering",
-      "python",
-      "refrigeration",
-      "simulation",
-      "thermodynamic-cycles",
-      "thermodynamics"
-    ],
-    "url": "https://github.com/oemof/tespy"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "Soul-Brews-Studio/arra-oracle-skills-cli",
+    "full_name": "jvxiao/speed-github",
     "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 22,
-    "pushed_at": "2026-08-20T06:46:07Z",
+    "language": "Python",
+    "open_issues": 3,
+    "pushed_at": "2026-08-21T06:47:52Z",
     "reasons": [
-      "118\u2605 typescript active",
+      "348\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 118,
+    "stars": 348,
     "topics": [],
-    "url": "https://github.com/Soul-Brews-Studio/arra-oracle-skills-cli"
+    "url": "https://github.com/jvxiao/speed-github"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "stylelint-stylistic/stylelint-stylistic",
+    "full_name": "dahlia/logtape",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 13,
+    "pushed_at": "2026-08-21T06:47:10Z",
+    "reasons": [
+      "1969\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 1969,
+    "topics": [
+      "bun",
+      "deno",
+      "javascript",
+      "log",
+      "logging",
+      "nodejs",
+      "structured-logging",
+      "typescript"
+    ],
+    "url": "https://github.com/dahlia/logtape"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "kunchenguid/autopreso",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 15,
-    "pushed_at": "2026-08-20T06:43:20Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-21T06:45:38Z",
     "reasons": [
-      "107\u2605 javascript active",
+      "426\u2605 javascript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 107,
-    "topics": [
-      "codeguide",
-      "css",
-      "csslint",
-      "lint",
-      "linter",
-      "stylelint",
-      "stylelint-plugin"
-    ],
-    "url": "https://github.com/stylelint-stylistic/stylelint-stylistic"
+    "stars": 426,
+    "topics": [],
+    "url": "https://github.com/kunchenguid/autopreso"
   },
   {
     "archived": false,
@@ -77,7 +66,7 @@
     "has_contributing": true,
     "language": "Shell",
     "open_issues": 10,
-    "pushed_at": "2026-08-20T06:40:20Z",
+    "pushed_at": "2026-08-21T06:45:38Z",
     "reasons": [
       "321\u2605 shell active",
       "has open issues"
@@ -99,92 +88,69 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "chr1sd/home-ops",
+    "full_name": "Mafyuh/iac",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 14,
-    "pushed_at": "2026-08-20T06:30:15Z",
+    "open_issues": 16,
+    "pushed_at": "2026-08-21T05:40:23Z",
     "reasons": [
-      "177\u2605 yaml active",
+      "926\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 177,
+    "stars": 926,
     "topics": [
-      "flux",
+      "actions",
+      "ansible",
+      "devops",
+      "docker",
+      "docker-compose",
       "gitops",
-      "home-lab",
+      "iac",
+      "k8s",
+      "k8s-at-home",
       "kubernetes",
       "kubesearch",
-      "renovate",
-      "self-hosted"
+      "nixos",
+      "opentofu",
+      "packer",
+      "terraform"
     ],
-    "url": "https://github.com/chr1sd/home-ops"
+    "url": "https://github.com/Mafyuh/iac"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "shy3130/tickflow-stock-panel",
-    "has_contributing": true,
+    "full_name": "NEKOparapa/AiNiee",
+    "has_contributing": false,
     "language": "Python",
-    "open_issues": 26,
-    "pushed_at": "2026-08-20T06:36:07Z",
+    "open_issues": 24,
+    "pushed_at": "2026-08-21T06:38:55Z",
     "reasons": [
-      "3217\u2605 python active",
+      "6158\u2605 python active",
+      "has open issues"
+    ],
+    "score": 40,
+    "stars": 6158,
+    "topics": [],
+    "url": "https://github.com/NEKOparapa/AiNiee"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "kunchenguid/gnhf",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 21,
+    "pushed_at": "2026-08-21T06:45:52Z",
+    "reasons": [
+      "3742\u2605 typescript active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 3217,
-    "topics": [
-      "a-stock",
-      "ai-agent",
-      "aigc",
-      "backtesting",
-      "daily",
-      "duckdb",
-      "fastapi",
-      "llm",
-      "polars",
-      "quant",
-      "quantitative-finance",
-      "quantitative-trading",
-      "react",
-      "screener",
-      "self-hosted",
-      "stock",
-      "stock-analysis",
-      "tdx",
-      "tickflow",
-      "tsp"
-    ],
-    "url": "https://github.com/shy3130/tickflow-stock-panel"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "open-pencil/open-pencil",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 33,
-    "pushed_at": "2026-08-20T06:45:53Z",
-    "reasons": [
-      "7886\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 56,
-    "stars": 7886,
-    "topics": [
-      "ai",
-      "collaboration",
-      "design-editor",
-      "figma-alternative",
-      "open-source",
-      "skia",
-      "tauri",
-      "vue",
-      "webgpu"
-    ],
-    "url": "https://github.com/open-pencil/open-pencil"
+    "stars": 3742,
+    "topics": [],
+    "url": "https://github.com/kunchenguid/gnhf"
   },
   {
     "archived": false,
@@ -192,14 +158,14 @@
     "full_name": "pshenok/server-survival",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 20,
-    "pushed_at": "2026-08-20T06:18:17Z",
+    "open_issues": 21,
+    "pushed_at": "2026-08-21T05:51:28Z",
     "reasons": [
-      "6359\u2605 javascript active",
+      "6363\u2605 javascript active",
       "has open issues"
     ],
     "score": 55,
-    "stars": 6359,
+    "stars": 6363,
     "topics": [
       "aws",
       "cloud",
@@ -218,19 +184,26 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "expo/skills",
+    "full_name": "bitnami/containers",
     "has_contributing": true,
     "language": "Shell",
-    "open_issues": 56,
-    "pushed_at": "2026-08-20T04:32:08Z",
+    "open_issues": 14,
+    "pushed_at": "2026-08-21T02:08:41Z",
     "reasons": [
-      "2438\u2605 shell active",
+      "4451\u2605 shell active",
       "has open issues"
     ],
-    "score": 52,
-    "stars": 2438,
-    "topics": [],
-    "url": "https://github.com/expo/skills"
+    "score": 53,
+    "stars": 4451,
+    "topics": [
+      "bitnami",
+      "containers",
+      "docker",
+      "docker-image",
+      "non-root",
+      "vmware"
+    ],
+    "url": "https://github.com/bitnami/containers"
   },
   {
     "archived": false,
@@ -239,7 +212,7 @@
     "has_contributing": true,
     "language": "YAML",
     "open_issues": 23,
-    "pushed_at": "2026-08-20T01:43:21Z",
+    "pushed_at": "2026-08-20T18:24:35Z",
     "reasons": [
       "2448\u2605 yaml active",
       "has open issues"
@@ -261,70 +234,45 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "MervinPraison/PraisonAI",
+    "full_name": "open-jarvis/OpenJarvis",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 50,
-    "pushed_at": "2026-08-20T06:46:15Z",
+    "open_issues": 47,
+    "pushed_at": "2026-08-21T06:40:13Z",
     "reasons": [
-      "8927\u2605 python active",
+      "8844\u2605 python active",
       "has open issues"
     ],
     "score": 56,
-    "stars": 8927,
-    "topics": [
-      "agents",
-      "ai",
-      "ai-agent-framework",
-      "ai-agent-sdk",
-      "ai-agents",
-      "ai-agents-framework",
-      "ai-agents-sdk",
-      "ai-framwork",
-      "aiagent",
-      "aiagentframework",
-      "aiagents",
-      "aiagentsframework",
-      "framework",
-      "hermes",
-      "hermes-agent",
-      "multi-agent",
-      "multi-agent-system",
-      "multi-agents",
-      "multi-ai-agents",
-      "openclaw"
-    ],
-    "url": "https://github.com/MervinPraison/PraisonAI"
+    "stars": 8844,
+    "topics": [],
+    "url": "https://github.com/open-jarvis/OpenJarvis"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "rmyndharis/OpenWA",
+    "full_name": "web-infra-dev/midscene",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 6,
-    "pushed_at": "2026-08-20T06:42:28Z",
+    "open_issues": 96,
+    "pushed_at": "2026-08-21T06:45:57Z",
     "reasons": [
-      "12983\u2605 typescript active",
+      "14638\u2605 typescript active",
       "has open issues"
     ],
-    "score": 59,
-    "stars": 12983,
+    "score": 52,
+    "stars": 14638,
     "topics": [
-      "api",
-      "bot",
-      "gateway",
-      "self-hosted",
-      "whatsapp",
-      "whatsapp-api",
-      "whatsapp-automation",
-      "whatsapp-bot",
-      "whatsapp-gateway",
-      "whatsapp-gateway-api",
-      "whatsapp-web",
-      "whatsapp-web-api"
+      "browser-use",
+      "computer-use",
+      "e2e-testing",
+      "gpt-operator",
+      "gui-agent",
+      "javascript",
+      "phone-use",
+      "testing"
     ],
-    "url": "https://github.com/rmyndharis/OpenWA"
+    "url": "https://github.com/web-infra-dev/midscene"
   },
   {
     "archived": false,
@@ -333,7 +281,7 @@
     "has_contributing": true,
     "language": "JavaScript",
     "open_issues": 27,
-    "pushed_at": "2026-08-20T05:00:46Z",
+    "pushed_at": "2026-08-21T06:22:25Z",
     "reasons": [
       "14406\u2605 javascript active",
       "has open issues"
@@ -356,25 +304,22 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "nelvko/clash-for-linux-install",
+    "full_name": "DaoCloud/public-image-mirror",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 23,
-    "pushed_at": "2026-08-19T16:27:32Z",
+    "open_issues": 7,
+    "pushed_at": "2026-08-21T06:01:05Z",
     "reasons": [
-      "14503\u2605 shell active",
+      "14905\u2605 shell active",
       "has open issues"
     ],
     "score": 45,
-    "stars": 14503,
+    "stars": 14905,
     "topics": [
-      "clash",
-      "clash-meta",
-      "linux",
-      "mihomo",
-      "subconverter"
+      "mirror",
+      "speedup"
     ],
-    "url": "https://github.com/nelvko/clash-for-linux-install"
+    "url": "https://github.com/DaoCloud/public-image-mirror"
   },
   {
     "archived": false,
@@ -383,7 +328,7 @@
     "has_contributing": false,
     "language": "Python",
     "open_issues": 3,
-    "pushed_at": "2026-08-20T06:46:14Z",
+    "pushed_at": "2026-08-21T06:47:25Z",
     "reasons": [
       "113\u2605 python active",
       "has open issues"
@@ -396,123 +341,124 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "mundane799699/bilibili-history-wxt",
+    "full_name": "cortexkit/magic-context",
     "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 11,
-    "pushed_at": "2026-08-20T06:44:47Z",
+    "open_issues": 26,
+    "pushed_at": "2026-08-21T06:46:26Z",
     "reasons": [
-      "129\u2605 typescript active",
+      "1811\u2605 typescript active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 129,
-    "topics": [],
-    "url": "https://github.com/mundane799699/bilibili-history-wxt"
+    "score": 37,
+    "stars": 1811,
+    "topics": [
+      "agent-framework",
+      "agent-memory",
+      "ai",
+      "ai-agents",
+      "ai-context",
+      "ai-memory",
+      "cache-aware",
+      "context-engineering",
+      "context-management",
+      "langchain",
+      "memory",
+      "opencode",
+      "pi-coding-agent"
+    ],
+    "url": "https://github.com/cortexkit/magic-context"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "xiaoyuanda666-ship-it/BaiLongma",
+    "full_name": "rtfeldman/node-test-runner",
     "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 28,
-    "pushed_at": "2026-08-20T06:43:28Z",
+    "open_issues": 34,
+    "pushed_at": "2026-08-21T06:45:06Z",
     "reasons": [
-      "664\u2605 javascript active",
+      "140\u2605 javascript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 664,
+    "stars": 140,
     "topics": [],
-    "url": "https://github.com/xiaoyuanda666-ship-it/BaiLongma"
+    "url": "https://github.com/rtfeldman/node-test-runner"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "rrr333nnn333/BRENE",
+    "full_name": "felixonmars/archriscv-packages",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 10,
-    "pushed_at": "2026-08-20T06:35:48Z",
+    "open_issues": 55,
+    "pushed_at": "2026-08-21T06:47:13Z",
     "reasons": [
-      "324\u2605 shell active",
+      "271\u2605 shell active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 324,
+    "stars": 271,
     "topics": [
-      "android",
-      "hiding",
-      "kernelsu",
-      "ksu",
-      "root",
-      "susfs"
+      "hacktoberfest",
+      "linux"
     ],
-    "url": "https://github.com/rrr333nnn333/BRENE"
+    "url": "https://github.com/felixonmars/archriscv-packages"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "ishioni/homelab-ops",
+    "full_name": "billimek/k8s-gitops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 4,
-    "pushed_at": "2026-08-20T06:04:36Z",
+    "open_issues": 7,
+    "pushed_at": "2026-08-21T05:27:30Z",
     "reasons": [
-      "168\u2605 yaml active",
+      "776\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 168,
+    "stars": 776,
     "topics": [
-      "authentik",
-      "cert-manager",
-      "external-dns",
       "flux",
+      "gitops",
       "helm",
+      "k8s",
       "k8s-at-home",
-      "kubernetes",
-      "renovate",
-      "sops",
-      "talos"
+      "kubernetes"
     ],
-    "url": "https://github.com/ishioni/homelab-ops"
+    "url": "https://github.com/billimek/k8s-gitops"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "Epodonios/v2ray-configs",
+    "full_name": "ciromattia/kcc",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 30,
-    "pushed_at": "2026-08-20T06:34:12Z",
+    "open_issues": 55,
+    "pushed_at": "2026-08-21T06:45:43Z",
     "reasons": [
-      "3198\u2605 python active",
+      "5543\u2605 python active",
       "has open issues"
     ],
-    "score": 38,
-    "stars": 3198,
+    "score": 39,
+    "stars": 5543,
     "topics": [
-      "bulk-connection",
-      "bulk-operation",
-      "gfw",
-      "gfw-china",
-      "reality",
-      "shadowsocks",
-      "trojan-gfw",
-      "v2ray",
-      "v2ray-ws-tls",
-      "v2rayng",
-      "vless",
-      "vless-grpc",
-      "vless-ws-tls",
-      "vmess",
-      "vmess-over-tls",
-      "vpn",
-      "vpn-server",
-      "vpnservice"
+      "azw3",
+      "cbz",
+      "comics",
+      "eink",
+      "epub",
+      "kindle",
+      "kobo",
+      "koreader",
+      "manga",
+      "pdf",
+      "remarkable-tablet",
+      "webtoon",
+      "webtoons"
     ],
-    "url": "https://github.com/Epodonios/v2ray-configs"
+    "url": "https://github.com/ciromattia/kcc"
   }
 ]
