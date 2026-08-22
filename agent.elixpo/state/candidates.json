@@ -2,62 +2,88 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "jvxiao/speed-github",
-    "has_contributing": false,
+    "full_name": "yutto-dev/yutto",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 3,
-    "pushed_at": "2026-08-21T06:47:52Z",
+    "open_issues": 13,
+    "pushed_at": "2026-08-22T06:39:26Z",
     "reasons": [
-      "348\u2605 python active",
+      "1994\u2605 python active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 1994,
+    "topics": [
+      "asyncio",
+      "bangumi",
+      "bilibili",
+      "coroutines",
+      "cross-platform",
+      "danmaku",
+      "downloader",
+      "video"
+    ],
+    "url": "https://github.com/yutto-dev/yutto"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "sonofmagic/weapp-tailwindcss",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 16,
+    "pushed_at": "2026-08-22T06:38:58Z",
+    "reasons": [
+      "1848\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 1848,
+    "topics": [
+      "mini",
+      "mp",
+      "mpx",
+      "postcss",
+      "rax",
+      "tailwind",
+      "tailwindcss",
+      "tarojs",
+      "uni-app",
+      "vite",
+      "weapp",
+      "webpack"
+    ],
+    "url": "https://github.com/sonofmagic/weapp-tailwindcss"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "bradeGithub/DSH-Plugins-Marketplace",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 16,
+    "pushed_at": "2026-08-22T06:39:34Z",
+    "reasons": [
+      "134\u2605 javascript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 348,
-    "topics": [],
-    "url": "https://github.com/jvxiao/speed-github"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "dahlia/logtape",
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 13,
-    "pushed_at": "2026-08-21T06:47:10Z",
-    "reasons": [
-      "1969\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1969,
+    "stars": 134,
     "topics": [
-      "bun",
-      "deno",
+      "agent",
+      "ai-agents",
+      "cordis",
+      "deepseek-harness",
+      "dsh",
+      "dsh-plugin",
       "javascript",
-      "log",
-      "logging",
+      "llm",
+      "marketplace",
       "nodejs",
-      "structured-logging",
-      "typescript"
+      "plugin",
+      "plugin-marketplace"
     ],
-    "url": "https://github.com/dahlia/logtape"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "kunchenguid/autopreso",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 3,
-    "pushed_at": "2026-08-21T06:45:38Z",
-    "reasons": [
-      "426\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 426,
-    "topics": [],
-    "url": "https://github.com/kunchenguid/autopreso"
+    "url": "https://github.com/bradeGithub/DSH-Plugins-Marketplace"
   },
   {
     "archived": false,
@@ -66,7 +92,7 @@
     "has_contributing": true,
     "language": "Shell",
     "open_issues": 10,
-    "pushed_at": "2026-08-21T06:45:38Z",
+    "pushed_at": "2026-08-22T06:34:17Z",
     "reasons": [
       "321\u2605 shell active",
       "has open issues"
@@ -91,14 +117,14 @@
     "full_name": "Mafyuh/iac",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 16,
-    "pushed_at": "2026-08-21T05:40:23Z",
+    "open_issues": 18,
+    "pushed_at": "2026-08-22T05:41:11Z",
     "reasons": [
-      "926\u2605 yaml active",
+      "944\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 926,
+    "stars": 944,
     "topics": [
       "actions",
       "ansible",
@@ -121,65 +147,77 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "NEKOparapa/AiNiee",
-    "has_contributing": false,
+    "full_name": "huangruiteng/loopx",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 24,
-    "pushed_at": "2026-08-21T06:38:55Z",
+    "open_issues": 36,
+    "pushed_at": "2026-08-22T06:32:40Z",
     "reasons": [
-      "6158\u2605 python active",
+      "5009\u2605 python active",
       "has open issues"
     ],
-    "score": 40,
-    "stars": 6158,
-    "topics": [],
-    "url": "https://github.com/NEKOparapa/AiNiee"
+    "score": 54,
+    "stars": 5009,
+    "topics": [
+      "agent-control-plane",
+      "agent-harness",
+      "agent-ops",
+      "ai-agents",
+      "codex",
+      "long-horizon",
+      "long-running-agents",
+      "loop-engineering",
+      "loopx",
+      "workflow-automation"
+    ],
+    "url": "https://github.com/huangruiteng/loopx"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "kunchenguid/gnhf",
+    "full_name": "zhu1090093659/dsh-web-ui",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 21,
-    "pushed_at": "2026-08-21T06:45:52Z",
+    "open_issues": 24,
+    "pushed_at": "2026-08-22T06:39:51Z",
     "reasons": [
-      "3742\u2605 typescript active",
+      "5472\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 54,
+    "stars": 5472,
+    "topics": [
+      "deepseek-harness",
+      "dsh",
+      "dsh-plugin",
+      "web-ui"
+    ],
+    "url": "https://github.com/zhu1090093659/dsh-web-ui"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "getgauge/taiko",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 50,
+    "pushed_at": "2026-08-22T05:27:02Z",
+    "reasons": [
+      "3673\u2605 javascript active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 3742,
-    "topics": [],
-    "url": "https://github.com/kunchenguid/gnhf"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "pshenok/server-survival",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 21,
-    "pushed_at": "2026-08-21T05:51:28Z",
-    "reasons": [
-      "6363\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 55,
-    "stars": 6363,
+    "stars": 3673,
     "topics": [
-      "aws",
-      "cloud",
-      "devops",
-      "education",
-      "game",
-      "javascript",
-      "learning",
-      "open-source",
-      "simulation",
-      "threejs",
-      "tower-defense"
+      "automation",
+      "headless",
+      "headless-browsers",
+      "headless-chrome",
+      "headless-chromium",
+      "headless-testing",
+      "testing-tools"
     ],
-    "url": "https://github.com/pshenok/server-survival"
+    "url": "https://github.com/getgauge/taiko"
   },
   {
     "archived": false,
@@ -188,7 +226,7 @@
     "has_contributing": true,
     "language": "Shell",
     "open_issues": 14,
-    "pushed_at": "2026-08-21T02:08:41Z",
+    "pushed_at": "2026-08-22T03:30:35Z",
     "reasons": [
       "4451\u2605 shell active",
       "has open issues"
@@ -211,7 +249,7 @@
     "full_name": "usnistgov/macos_security",
     "has_contributing": true,
     "language": "YAML",
-    "open_issues": 23,
+    "open_issues": 24,
     "pushed_at": "2026-08-20T18:24:35Z",
     "reasons": [
       "2448\u2605 yaml active",
@@ -234,45 +272,49 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "open-jarvis/OpenJarvis",
+    "full_name": "zubair-trabzada/geo-seo-claude",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 47,
-    "pushed_at": "2026-08-21T06:40:13Z",
+    "open_issues": 22,
+    "pushed_at": "2026-08-22T06:27:32Z",
     "reasons": [
-      "8844\u2605 python active",
+      "9422\u2605 python active",
       "has open issues"
     ],
-    "score": 56,
-    "stars": 8844,
+    "score": 57,
+    "stars": 9422,
     "topics": [],
-    "url": "https://github.com/open-jarvis/OpenJarvis"
+    "url": "https://github.com/zubair-trabzada/geo-seo-claude"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "web-infra-dev/midscene",
+    "full_name": "rmyndharis/OpenWA",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 96,
-    "pushed_at": "2026-08-21T06:45:57Z",
+    "open_issues": 5,
+    "pushed_at": "2026-08-22T05:57:44Z",
     "reasons": [
-      "14638\u2605 typescript active",
+      "13056\u2605 typescript active",
       "has open issues"
     ],
-    "score": 52,
-    "stars": 14638,
+    "score": 59,
+    "stars": 13056,
     "topics": [
-      "browser-use",
-      "computer-use",
-      "e2e-testing",
-      "gpt-operator",
-      "gui-agent",
-      "javascript",
-      "phone-use",
-      "testing"
+      "api",
+      "bot",
+      "gateway",
+      "self-hosted",
+      "whatsapp",
+      "whatsapp-api",
+      "whatsapp-automation",
+      "whatsapp-bot",
+      "whatsapp-gateway",
+      "whatsapp-gateway-api",
+      "whatsapp-web",
+      "whatsapp-web-api"
     ],
-    "url": "https://github.com/web-infra-dev/midscene"
+    "url": "https://github.com/rmyndharis/OpenWA"
   },
   {
     "archived": false,
@@ -280,14 +322,14 @@
     "full_name": "marko-js/marko",
     "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 27,
-    "pushed_at": "2026-08-21T06:22:25Z",
+    "open_issues": 28,
+    "pushed_at": "2026-08-22T04:45:03Z",
     "reasons": [
-      "14406\u2605 javascript active",
+      "14407\u2605 javascript active",
       "has open issues"
     ],
     "score": 60,
-    "stars": 14406,
+    "stars": 14407,
     "topics": [
       "client-side-rendering",
       "dom",
@@ -307,14 +349,14 @@
     "full_name": "DaoCloud/public-image-mirror",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 7,
+    "open_issues": 8,
     "pushed_at": "2026-08-21T06:01:05Z",
     "reasons": [
-      "14905\u2605 shell active",
+      "14912\u2605 shell active",
       "has open issues"
     ],
     "score": 45,
-    "stars": 14905,
+    "stars": 14912,
     "topics": [
       "mirror",
       "speedup"
@@ -324,141 +366,149 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "SnailDev/douyin-hot-hub",
+    "full_name": "jvxiao/speed-github",
     "has_contributing": false,
     "language": "Python",
     "open_issues": 3,
-    "pushed_at": "2026-08-21T06:47:25Z",
+    "pushed_at": "2026-08-22T06:40:05Z",
     "reasons": [
-      "113\u2605 python active",
+      "348\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 113,
+    "stars": 348,
     "topics": [],
-    "url": "https://github.com/SnailDev/douyin-hot-hub"
+    "url": "https://github.com/jvxiao/speed-github"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "cortexkit/magic-context",
-    "has_contributing": false,
+    "full_name": "supabase/evals",
+    "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 26,
-    "pushed_at": "2026-08-21T06:46:26Z",
+    "open_issues": 28,
+    "pushed_at": "2026-08-22T06:40:24Z",
     "reasons": [
-      "1811\u2605 typescript active",
+      "132\u2605 typescript active",
       "has open issues"
     ],
-    "score": 37,
-    "stars": 1811,
-    "topics": [
-      "agent-framework",
-      "agent-memory",
-      "ai",
-      "ai-agents",
-      "ai-context",
-      "ai-memory",
-      "cache-aware",
-      "context-engineering",
-      "context-management",
-      "langchain",
-      "memory",
-      "opencode",
-      "pi-coding-agent"
-    ],
-    "url": "https://github.com/cortexkit/magic-context"
+    "score": 51,
+    "stars": 132,
+    "topics": [],
+    "url": "https://github.com/supabase/evals"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "rtfeldman/node-test-runner",
+    "full_name": "1661169091kiwi/Knote",
     "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 34,
-    "pushed_at": "2026-08-21T06:45:06Z",
+    "open_issues": 6,
+    "pushed_at": "2026-08-22T06:37:02Z",
     "reasons": [
-      "140\u2605 javascript active",
+      "132\u2605 javascript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 140,
-    "topics": [],
-    "url": "https://github.com/rtfeldman/node-test-runner"
+    "stars": 132,
+    "topics": [
+      "agent",
+      "ai-agent",
+      "ai-assistant",
+      "electron",
+      "knowledge-base",
+      "local-first",
+      "markdown",
+      "markdown-editor",
+      "note-taking",
+      "notes-app",
+      "notion-like",
+      "pdf",
+      "tiptap",
+      "vue3",
+      "wysiwyg"
+    ],
+    "url": "https://github.com/1661169091kiwi/Knote"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "felixonmars/archriscv-packages",
+    "full_name": "toolboxmd/karpathy-wiki",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 55,
-    "pushed_at": "2026-08-21T06:47:13Z",
+    "open_issues": 3,
+    "pushed_at": "2026-08-22T06:37:50Z",
     "reasons": [
-      "271\u2605 shell active",
+      "101\u2605 shell active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 271,
-    "topics": [
-      "hacktoberfest",
-      "linux"
-    ],
-    "url": "https://github.com/felixonmars/archriscv-packages"
+    "stars": 101,
+    "topics": [],
+    "url": "https://github.com/toolboxmd/karpathy-wiki"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "billimek/k8s-gitops",
+    "full_name": "waifulabs/infrastructure",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 7,
-    "pushed_at": "2026-08-21T05:27:30Z",
+    "open_issues": 4,
+    "pushed_at": "2026-08-22T02:43:49Z",
     "reasons": [
-      "776\u2605 yaml active",
+      "224\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 776,
+    "stars": 224,
     "topics": [
-      "flux",
-      "gitops",
-      "helm",
-      "k8s",
+      "ansible",
+      "home-assistant",
+      "home-automation",
+      "k3s",
       "k8s-at-home",
-      "kubernetes"
+      "kubernetes",
+      "node-red",
+      "renovate"
     ],
-    "url": "https://github.com/billimek/k8s-gitops"
+    "url": "https://github.com/waifulabs/infrastructure"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "ciromattia/kcc",
-    "has_contributing": false,
+    "full_name": "vitali87/code-graph-rag",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 55,
-    "pushed_at": "2026-08-21T06:45:43Z",
+    "open_issues": 53,
+    "pushed_at": "2026-08-22T06:30:47Z",
     "reasons": [
-      "5543\u2605 python active",
+      "4776\u2605 python active",
       "has open issues"
     ],
-    "score": 39,
-    "stars": 5543,
+    "score": 54,
+    "stars": 4776,
     "topics": [
-      "azw3",
-      "cbz",
-      "comics",
-      "eink",
-      "epub",
-      "kindle",
-      "kobo",
-      "koreader",
-      "manga",
-      "pdf",
-      "remarkable-tablet",
-      "webtoon",
-      "webtoons"
+      "ai",
+      "ast",
+      "claude-code",
+      "code-analysis",
+      "code-understanding",
+      "codebase-search",
+      "developer-tools",
+      "graph-database",
+      "knowledge-graph",
+      "llm",
+      "mcp",
+      "mcp-server",
+      "memgraph",
+      "monorepo",
+      "multi-language",
+      "python",
+      "rag",
+      "retrieval-augmented-generation",
+      "semantic-search",
+      "tree-sitter"
     ],
-    "url": "https://github.com/ciromattia/kcc"
+    "url": "https://github.com/vitali87/code-graph-rag"
   }
 ]
