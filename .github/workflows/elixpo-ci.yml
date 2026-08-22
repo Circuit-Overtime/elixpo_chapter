@@ -16,7 +16,7 @@ name: Elixpo CI
 on:
   push:
     branches: [main]
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, closed]
     branches: [main]
   issues:
