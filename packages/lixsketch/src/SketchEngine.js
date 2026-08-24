@@ -98,6 +98,10 @@ class SketchEngine {
         window.isFrameToolActive = false;
         window.isIconToolActive = false;
         window.isCodeToolActive = false;
+        window.isShapeRecognitionToolActive = false;
+        window.isPaintBucketToolActive = false;
+        window.isLassoToolActive = false;
+        window.isWebEmbedToolActive = false;
         window.isTextInCodeMode = false;
 
         // Pan state
@@ -400,6 +404,10 @@ class SketchEngine {
         if (typeof window.__cleanupIconTool === 'function') {
             window.__cleanupIconTool();
         }
+        if (typeof window.__cancelShapeRecognition === 'function') {
+            window.__cancelShapeRecognition();
+        }
+        if (typeof window.__cancelLasso === 'function') window.__cancelLasso();
 
         window.isPaintToolActive = false;
         window.isSquareToolActive = false;
@@ -415,6 +423,10 @@ class SketchEngine {
         window.isFrameToolActive = false;
         window.isIconToolActive = false;
         window.isCodeToolActive = false;
+        window.isShapeRecognitionToolActive = false;
+        window.isPaintBucketToolActive = false;
+        window.isLassoToolActive = false;
+        window.isWebEmbedToolActive = false;
 
         const flagMap = {
             select: 'isSelectionToolActive',
@@ -431,6 +443,10 @@ class SketchEngine {
             image: 'isImageToolActive',
             frame: 'isFrameToolActive',
             icon: 'isIconToolActive',
+            'draw-shape': 'isShapeRecognitionToolActive',
+            'paint-bucket': 'isPaintBucketToolActive',
+            lasso: 'isLassoToolActive',
+            'web-embed': 'isWebEmbedToolActive',
         };
 
         const flag = flagMap[toolName];
@@ -443,6 +459,10 @@ class SketchEngine {
         // Show image source picker when image tool is activated
         if (toolName === 'image' && window.__showImageSourcePicker) {
             window.__showImageSourcePicker();
+        }
+        if (toolName === 'web-embed') {
+            window.__showWebEmbedModal?.();
+            window.dispatchEvent(new CustomEvent('lixsketch:open-web-embed'));
         }
 
         // Set appropriate cursor for the active tool
@@ -461,6 +481,10 @@ class SketchEngine {
             image: 'crosshair',
             frame: 'crosshair',
             icon: 'crosshair',
+            'draw-shape': 'crosshair',
+            'paint-bucket': 'cell',
+            lasso: 'crosshair',
+            'web-embed': 'crosshair',
         };
         if (this.svg) {
             this.svg.style.cursor = cursorMap[toolName] || 'default';
@@ -468,6 +492,9 @@ class SketchEngine {
     }
 
     cleanup() {
+        if (typeof window.__cancelShapeRecognition === 'function') {
+            window.__cancelShapeRecognition();
+        }
         // Remove event listeners from the SVG element
         if (this._modules.core?.eventDispatcher?.cleanupEventDispatcher) {
             this._modules.core.eventDispatcher.cleanupEventDispatcher();

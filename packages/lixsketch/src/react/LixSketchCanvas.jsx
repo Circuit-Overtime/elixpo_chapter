@@ -19,6 +19,7 @@ import Footer from './components/Footer.jsx';
 import AppMenu from './components/AppMenu.jsx';
 import RectangleSidebar from './components/sidebars/RectangleSidebar.jsx';
 import CircleSidebar from './components/sidebars/CircleSidebar.jsx';
+import PaintBucketSidebar from './components/sidebars/PaintBucketSidebar.jsx';
 import LineSidebar from './components/sidebars/LineSidebar.jsx';
 import ArrowSidebar from './components/sidebars/ArrowSidebar.jsx';
 import PaintbrushSidebar from './components/sidebars/PaintbrushSidebar.jsx';
@@ -35,6 +36,7 @@ import CommandPalette from './components/modals/CommandPalette.jsx';
 import ExportImageModal from './components/modals/ExportImageModal.jsx';
 import LixScriptModal from './components/modals/LixScriptModal.jsx';
 import GraphModal from './components/modals/GraphModal.jsx';
+import WebEmbedModal from './components/modals/WebEmbedModal.jsx';
 
 const SAVE_DEBOUNCE_MS = 1500;
 
@@ -221,6 +223,7 @@ export default function LixSketchCanvas({
       <AppMenu />
       <RectangleSidebar />
       <CircleSidebar />
+      <PaintBucketSidebar />
       <LineSidebar />
       <ArrowSidebar />
       <PaintbrushSidebar />
@@ -233,6 +236,7 @@ export default function LixSketchCanvas({
       <ExportImageModal />
       <LixScriptModal />
       <GraphModal />
+      <WebEmbedModal />
       <ContextMenu />
       <FindBar />
       <ImageSourcePicker />

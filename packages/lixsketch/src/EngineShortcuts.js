@@ -47,6 +47,10 @@ export const SHORTCUT_MAP = {
     i: 'icon',
     f: 'frame',
     k: 'laser',
+    d: 'draw-shape',
+    b: 'paint-bucket',
+    s: 'lasso',
+    w: 'web-embed',
 };
 
 // Mirror of TOOLS used inside this module's function bodies. Local copy
@@ -67,6 +71,10 @@ const TOOLS = {
     IMAGE: 'image',
     FRAME: 'frame',
     ICON: 'icon',
+    DRAW_SHAPE: 'draw-shape',
+    PAINT_BUCKET: 'paint-bucket',
+    LASSO: 'lasso',
+    WEB_EMBED: 'web-embed',
 };
 
 function isTypingTarget(target) {

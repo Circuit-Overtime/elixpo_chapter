@@ -12,6 +12,7 @@ import { Line } from '../shapes/Line.js';
 import { Arrow } from '../shapes/Arrow.js';
 import { FreehandStroke } from '../shapes/FreehandStroke.js';
 import { Frame } from '../shapes/Frame.js';
+import { normalizeWebEmbedUrl } from './WebEmbedPolicy.js';
 import { TextShape } from '../shapes/TextShape.js';
 import { CodeShape } from '../shapes/CodeShape.js';
 import { ImageShape } from '../shapes/ImageShape.js';
@@ -137,6 +138,8 @@ function serializeShape(shape) {
                 fillColor: shape.fillColor || '#1e1e28',
                 gridSize: shape.gridSize || 20,
                 gridColor: shape.gridColor || 'rgba(255,255,255,0.06)',
+                frameType: shape._frameType || null,
+                webEmbedURL: shape._frameType === 'web-embed' ? shape._webEmbedURL : null,
                 options: cloneOptions(shape.options),
                 // Issue #24 bug #10: filter out null / undefined / shapeID-less
                 // children. A stale reference would serialize as `null` and the
@@ -269,6 +272,8 @@ function deserializeShape(data) {
             if (data.fillColor) frameOpts.fillColor = data.fillColor;
             if (data.gridSize) frameOpts.gridSize = data.gridSize;
             if (data.gridColor) frameOpts.gridColor = data.gridColor;
+            const embedURL = data.frameType === 'web-embed' ? normalizeWebEmbedUrl(data.webEmbedURL) : null;
+            if (embedURL) { frameOpts.frameType = 'web-embed'; frameOpts.webEmbedURL = embedURL; }
             const shape = new Frame(data.x, data.y, data.width, data.height, frameOpts);
             if (data.rotation) shape.rotation = data.rotation;
             if (data.shapeID) shape.shapeID = data.shapeID;

@@ -20,11 +20,13 @@ import TextSidebar from '@/components/sidebars/TextSidebar'
 import FrameSidebar from '@/components/sidebars/FrameSidebar'
 import IconSidebar from '@/components/sidebars/IconSidebar'
 import ImageSidebar from '@/components/sidebars/ImageSidebar'
+import PaintBucketSidebar from '@/components/sidebars/PaintBucketSidebar'
 import SVGCanvas from '@/components/canvas/SVGCanvas'
 import CanvasDocConnectors from '@/components/canvas/CanvasDocConnectors'
 import MultiSelectActions from '@/components/canvas/MultiSelectActions'
 import ImageSourcePicker from '@/components/canvas/ImageSourcePicker'
 import ImageGenerateModal from '@/components/modals/ImageGenerateModal'
+import WebEmbedModal from '@/components/modals/WebEmbedModal'
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
 import useSessionID from '@/hooks/useSessionID'
 import useGuestProfile from '@/hooks/useGuestProfile'
@@ -100,6 +102,7 @@ export default function CanvasPage() {
                 <FrameSidebar />
                 <IconSidebar />
                 <ImageSidebar />
+                <PaintBucketSidebar />
                 <MultiSelectActions />
                 <Footer />
               </>
@@ -116,6 +119,7 @@ export default function CanvasPage() {
       <CanvasPropertiesModal />
       <ImageSourcePicker />
       <ImageGenerateModal />
+      <WebEmbedModal />
       <ContextMenu />
       <FindBar />
       <CanvasLoadingOverlay />

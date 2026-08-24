@@ -25,6 +25,10 @@ class Frame {
         this.height = height;
         this.rotation = options.rotation || 0;
         this.frameName = options.frameName || "Frame";
+        this._frameType = options.frameType || null;
+        this._webEmbedURL = options.webEmbedURL || null;
+        this._webEmbedForeignObject = null;
+        this._webEmbedElement = null;
         this.fillStyle = options.fillStyle || "transparent"; // 'transparent' | 'solid' | 'grid'
         this.fillColor = options.fillColor || "#1e1e28";
         this.gridSize = options.gridSize || 20;
@@ -81,9 +85,9 @@ class Frame {
 
     draw() {
         // Clear previous elements
-        while (this.group.firstChild) {
-            this.group.removeChild(this.group.firstChild);
-        }
+        Array.from(this.group.children).forEach((child) => {
+            if (child !== this._webEmbedForeignObject) this.group.removeChild(child);
+        });
         this.anchors = [];
 
         // Ensure defs exists for grid pattern
@@ -153,6 +157,12 @@ class Frame {
         this.element = frameRect;
         this.group.appendChild(this.element);
 
+        if (this._frameType === 'web-embed' && this._webEmbedURL) {
+            this._updateWebEmbed();
+            // Keep the frame outline above the embedded document so it remains selectable.
+            this.group.appendChild(this.element);
+        }
+
         // Add label
         this.addFrameLabel();
 
@@ -208,7 +218,39 @@ class Frame {
         }
     }
 
+    setWebEmbedURL(url) {
+        this._webEmbedURL = url;
+        this._frameType = 'web-embed';
+        this._updateWebEmbed();
+    }
+
+    _updateWebEmbed() {
+        if (!this._webEmbedURL) return;
+        if (!this._webEmbedForeignObject) {
+            const foreign = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+            const host = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+            const embed = document.createElementNS('http://www.w3.org/1999/xhtml', 'embed');
+            host.style.cssText = 'width:100%;height:100%;overflow:hidden;background:#fff;border-radius:4px';
+            embed.setAttribute('type', 'text/html'); embed.setAttribute('width', '100%'); embed.setAttribute('height', '100%');
+            embed.setAttribute('src', this._webEmbedURL); embed.setAttribute('title', this.frameName || 'Web embed');
+            host.appendChild(embed); foreign.appendChild(host);
+            this._webEmbedForeignObject = foreign; this._webEmbedElement = embed;
+            this.group.insertBefore(foreign, this.element || null);
+        } else if (this._webEmbedElement?.getAttribute('src') !== this._webEmbedURL) {
+            this._webEmbedElement.setAttribute('src', this._webEmbedURL);
+        }
+        const inset = 2;
+        this._webEmbedForeignObject.setAttribute('x', this.x + inset);
+        this._webEmbedForeignObject.setAttribute('y', this.y + inset);
+        this._webEmbedForeignObject.setAttribute('width', Math.max(0, this.width - inset * 2));
+        this._webEmbedForeignObject.setAttribute('height', Math.max(0, this.height - inset * 2));
+        if (this.rotation) {
+            this._webEmbedForeignObject.setAttribute('transform', `rotate(${this.rotation}, ${this.x + this.width / 2}, ${this.y + this.height / 2})`);
+        } else this._webEmbedForeignObject.removeAttribute('transform');
+    }
+
     addShapeToFrame(shape) {
+    if (this._frameType === 'web-embed') return;
     if (shape && !this.containedShapes.includes(shape)) {
         const oldFrame = shape.parentFrame;
 
@@ -275,7 +317,7 @@ class Frame {
 
     // Check if a shape overlaps with this frame
     isShapeInFrame(shape) {
-    if (!shape || shape === this) return false;
+    if (this._frameType === 'web-embed' || !shape || shape === this) return false;
     
     const shapeX = shape.x || 0;
     const shapeY = shape.y || 0;
@@ -291,6 +333,7 @@ class Frame {
 }
 
 updateContainedShapes(applyClipping = true) {
+    if (this._frameType === 'web-embed') return;
     // Check all shapes to see if they should be in this frame
     if (typeof shapes === 'undefined' || !Array.isArray(shapes)) return;
     shapes.forEach(shape => {
