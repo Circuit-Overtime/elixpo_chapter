@@ -342,6 +342,7 @@ export default function useKeyboardShortcuts() {
     function handleKeyUp(e) {
       if (e.code === 'Space' && spaceHeld) {
         spaceHeld = false
+        window.__spacePanActive = false
         if (toolBeforeSpace) {
           useSketchStore.getState().setActiveTool(toolBeforeSpace)
           toolBeforeSpace = null
@@ -355,6 +356,7 @@ export default function useKeyboardShortcuts() {
         if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return
         e.preventDefault()
         spaceHeld = true
+        window.__spacePanActive = true
         const store = useSketchStore.getState()
         if (store.activeTool !== TOOLS.PAN) {
           toolBeforeSpace = store.activeTool
@@ -363,15 +365,27 @@ export default function useKeyboardShortcuts() {
       }
     }
 
+    function handleWindowBlur() {
+      spaceHeld = false
+      window.__spacePanActive = false
+      if (toolBeforeSpace) {
+        useSketchStore.getState().setActiveTool(toolBeforeSpace)
+        toolBeforeSpace = null
+      }
+    }
+
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('keydown', handleSpaceDown)
     document.addEventListener('keyup', handleKeyUp)
     document.addEventListener('wheel', handleWheel, { passive: false })
+    window.addEventListener('blur', handleWindowBlur)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('keydown', handleSpaceDown)
       document.removeEventListener('keyup', handleKeyUp)
       document.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('blur', handleWindowBlur)
+      window.__spacePanActive = false
     }
   }, [])
 }

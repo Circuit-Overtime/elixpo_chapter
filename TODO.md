@@ -115,3 +115,5 @@
 - [x] Organize workspace actions into Save, Export, Share, and Publish tabs with concise guidance for each workflow.
 - [x] Keep the grabbed text resize handle locked to the pointer across canvas zoom, pan, and rotation.
 - [x] Port the Blogs production CI deployment flow for the collaboration Worker and Cloudflare Pages.
+- [x] Cancel an active marquee before Ctrl/Cmd+A selects every canvas shape.
+- [x] Prioritize Space + primary-button dragging as temporary canvas panning.

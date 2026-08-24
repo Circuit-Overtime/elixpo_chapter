@@ -58,6 +58,21 @@ function removeMultiSelectionRect() {
     clearDragSelectHighlights();
 }
 
+function cancelActiveMultiSelectionDrag() {
+    if (!isMultiSelecting) return false;
+
+    removeMultiSelectionRect();
+    isMultiSelecting = false;
+    isDraggingMultiSelection = false;
+    document.body.style.userSelect = '';
+    document.body.style.webkitUserSelect = '';
+    if (typeof svg !== 'undefined') {
+        svg.style.userSelect = '';
+        svg.style.webkitUserSelect = '';
+    }
+    return true;
+}
+
 // Track elements highlighted during drag-select
 let dragSelectHighlights = [];
 
@@ -1826,6 +1841,15 @@ window.addEventListener('pointerup', () => {
     }
 });
 
+// Select-all owns the selection state. Cancel an in-progress marquee during
+// capture so the app or embedded-engine shortcut can safely select every
+// shape without a later pointer-up restoring the partial drag selection.
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key || '').toLowerCase() === 'a') {
+        cancelActiveMultiSelectionDrag();
+    }
+}, true);
+
 // Delete key support for multi-selection
 document.addEventListener('keydown', (e) => {
     if ((e.key === 'Delete' || e.key === 'Backspace') && multiSelection.selectedShapes.size > 0) {
@@ -2007,6 +2031,7 @@ function frameSelectedShapes() {
 // Expose for plain scripts (sketchGeneric.js is not a module)
 window.clearAllSelections = clearAllSelections;
 window.multiSelection = multiSelection;
+window.cancelActiveMultiSelectionDrag = cancelActiveMultiSelectionDrag;
 window.deleteSelectedShapes = deleteSelectedShapes;
 window.frameSelectedShapes = frameSelectedShapes;
 
@@ -2019,6 +2044,7 @@ export {
     createMultiSelectionControls,
     removeMultiSelectionControls,
     removeMultiSelectionRect,
+    cancelActiveMultiSelectionDrag,
     isPointInMultiSelection,
     moveSelectedShapes,
     multiSelection,
