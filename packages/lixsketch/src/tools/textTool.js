@@ -52,6 +52,10 @@ let isRotating = false;
 let rotationStartAngle = 0;
 let rotationStartTransform = null;
 let initialHandlePosRelGroup = null;
+let initialFixedHandlePosRelGroup = null;
+let resizePointerOffsetScreen = null;
+let resizePadding = 0;
+let initialGroupMatrix = null;
 let initialGroupTx = 0;
 let initialGroupTy = 0;
 let initialInverseScreenCTM = null;
@@ -499,6 +503,7 @@ function createSelectionFeedback(groupElement) {
         handleRect.addEventListener('pointerdown', (e) => {
             if (window.isSelectionToolActive) {
                 e.stopPropagation();
+                handleRect.setPointerCapture?.(e.pointerId);
                 startResize(e, handle.name);
             }
         });
@@ -783,20 +788,42 @@ function startResize(event, anchor) {
   initialInverseScreenCTM = groupScreenCTM ? groupScreenCTM.inverse() : null;
 
   const currentTransform = selectedElement.transform.baseVal.consolidate();
-  initialGroupTx = currentTransform ? currentTransform.matrix.e : 0;
-  initialGroupTy = currentTransform ? currentTransform.matrix.f : 0;
+  const matrix = currentTransform?.matrix;
+  initialGroupMatrix = matrix ? {
+    a: matrix.a, b: matrix.b, c: matrix.c,
+    d: matrix.d, e: matrix.e, f: matrix.f,
+  } : { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+  initialGroupTx = initialGroupMatrix.e;
+  initialGroupTy = initialGroupMatrix.f;
 
-  const padding = 3;
-  const startX = startBBox.x - padding;
-  const startY = startBBox.y - padding;
-  const startWidth = startBBox.width + 2 * padding;
-  const startHeight = startBBox.height + 2 * padding;
+  resizePadding = 8 / (window.currentZoom || 1);
+  const startX = startBBox.x - resizePadding;
+  const startY = startBBox.y - resizePadding;
+  const startWidth = startBBox.width + 2 * resizePadding;
+  const startHeight = startBBox.height + 2 * resizePadding;
 
   let hx = startX;
   let hy = startY;
   if (anchor.includes('e')) { hx = startX + startWidth; }
   if (anchor.includes('s')) { hy = startY + startHeight; }
   initialHandlePosRelGroup = { x: hx, y: hy };
+
+  let fx = startX + startWidth;
+  let fy = startY + startHeight;
+  if (anchor.includes('e')) { fx = startX; }
+  if (anchor.includes('s')) { fy = startY; }
+  initialFixedHandlePosRelGroup = { x: fx, y: fy };
+
+  const handlePoint = svg.createSVGPoint();
+  handlePoint.x = hx;
+  handlePoint.y = hy;
+  const handleScreen = groupScreenCTM
+    ? handlePoint.matrixTransform(groupScreenCTM)
+    : { x: event.clientX, y: event.clientY };
+  resizePointerOffsetScreen = {
+    x: event.clientX - handleScreen.x,
+    y: event.clientY - handleScreen.y,
+  };
 
   svg.style.cursor = resizeHandles[anchor]?.style.cursor || 'default';
 
@@ -855,47 +882,33 @@ const handleMouseMove = (event) => {
 
     } else if (isResizing) {
         const textElement = selectedElement.querySelector('text');
-        if (!textElement || !startBBox || startFontSize === null || !startPoint || !initialHandlePosRelGroup) return;
+        if (!textElement || !startBBox || startFontSize === null || !startPoint ||
+            !initialHandlePosRelGroup || !initialFixedHandlePosRelGroup || !initialGroupMatrix) return;
 
         // Use the frozen initial CTM so the mapping doesn't shift as we change the group transform
         let currentPoint;
         if (initialInverseScreenCTM) {
             const pt = svg.createSVGPoint();
-            pt.x = event.clientX;
-            pt.y = event.clientY;
+            pt.x = event.clientX - (resizePointerOffsetScreen?.x || 0);
+            pt.y = event.clientY - (resizePointerOffsetScreen?.y || 0);
             currentPoint = pt.matrixTransform(initialInverseScreenCTM);
         } else {
-            currentPoint = getSVGCoordinates(event, selectedElement);
+            currentPoint = getSVGCoordinates({
+                clientX: event.clientX - (resizePointerOffsetScreen?.x || 0),
+                clientY: event.clientY - (resizePointerOffsetScreen?.y || 0),
+            }, selectedElement);
         }
 
-        const startX = startBBox.x;
-        const startY = startBBox.y;
         const startWidth = startBBox.width;
         const startHeight = startBBox.height;
-
-        let anchorX, anchorY;
-
-        switch (currentResizeHandle) {
-            case 'nw':
-                anchorX = startX + startWidth;
-                anchorY = startY + startHeight;
-                break;
-            case 'ne':
-                anchorX = startX;
-                anchorY = startY + startHeight;
-                break;
-            case 'sw':
-                anchorX = startX + startWidth;
-                anchorY = startY;
-                break;
-            case 'se':
-                anchorX = startX;
-                anchorY = startY;
-                break;
-        }
-
-        const newHeight = Math.abs(currentPoint.y - anchorY);
-        const chosenScale = newHeight / startHeight;
+        const directionX = currentResizeHandle.includes('e') ? 1 : -1;
+        const directionY = currentResizeHandle.includes('s') ? 1 : -1;
+        const desiredWidth = directionX * (currentPoint.x - initialFixedHandlePosRelGroup.x) - 2 * resizePadding;
+        const desiredHeight = directionY * (currentPoint.y - initialFixedHandlePosRelGroup.y) - 2 * resizePadding;
+        const denominator = startWidth * startWidth + startHeight * startHeight;
+        const chosenScale = denominator > 0
+            ? (startWidth * desiredWidth + startHeight * desiredHeight) / denominator
+            : 1;
 
         const minScale = 0.1;
         const maxScale = 10.0;
@@ -913,44 +926,55 @@ const handleMouseMove = (event) => {
 
         switch (currentResizeHandle) {
             case 'nw':
-                newAnchorX = currentBBox.x + currentBBox.width;
-                newAnchorY = currentBBox.y + currentBBox.height;
+                newAnchorX = currentBBox.x + currentBBox.width + resizePadding;
+                newAnchorY = currentBBox.y + currentBBox.height + resizePadding;
                 break;
             case 'ne':
-                newAnchorX = currentBBox.x;
-                newAnchorY = currentBBox.y + currentBBox.height;
+                newAnchorX = currentBBox.x - resizePadding;
+                newAnchorY = currentBBox.y + currentBBox.height + resizePadding;
                 break;
             case 'sw':
-                newAnchorX = currentBBox.x + currentBBox.width;
-                newAnchorY = currentBBox.y;
+                newAnchorX = currentBBox.x + currentBBox.width + resizePadding;
+                newAnchorY = currentBBox.y - resizePadding;
                 break;
             case 'se':
-                newAnchorX = currentBBox.x;
-                newAnchorY = currentBBox.y;
+                newAnchorX = currentBBox.x - resizePadding;
+                newAnchorY = currentBBox.y - resizePadding;
                 break;
         }
 
-        const deltaX = anchorX - newAnchorX;
-        const deltaY = anchorY - newAnchorY;
+        const deltaX = initialFixedHandlePosRelGroup.x - newAnchorX;
+        const deltaY = initialFixedHandlePosRelGroup.y - newAnchorY;
+        let newGroupTx = initialGroupMatrix.e + initialGroupMatrix.a * deltaX + initialGroupMatrix.c * deltaY;
+        let newGroupTy = initialGroupMatrix.f + initialGroupMatrix.b * deltaX + initialGroupMatrix.d * deltaY;
+        const matrixTransform = () => `matrix(${initialGroupMatrix.a} ${initialGroupMatrix.b} ${initialGroupMatrix.c} ${initialGroupMatrix.d} ${newGroupTx} ${newGroupTy})`;
+        selectedElement.setAttribute('transform', matrixTransform());
 
-        const currentTransform = selectedElement.transform.baseVal.consolidate();
-        if (currentTransform) {
-            const matrix = currentTransform.matrix;
-            const angle = Math.atan2(matrix.b, matrix.a) * 180 / Math.PI;
-
-            const newGroupTx = initialGroupTx + deltaX;
-            const newGroupTy = initialGroupTy + deltaY;
-
-            const centerX = currentBBox.x + currentBBox.width / 2;
-            const centerY = currentBBox.y + currentBBox.height / 2;
-
-            selectedElement.setAttribute('transform',
-                `translate(${newGroupTx}, ${newGroupTy}) rotate(${angle}, ${centerX}, ${centerY})`
-            );
-        } else {
-            const newGroupTx = initialGroupTx + deltaX;
-            const newGroupTy = initialGroupTy + deltaY;
-            selectedElement.setAttribute('transform', `translate(${newGroupTx}, ${newGroupTy})`);
+        // Uniform font scaling cannot satisfy arbitrary x/y pointer movement
+        // while also keeping the opposite corner perfectly fixed. Prefer the
+        // user's dragged corner: correct the residual in parent coordinates so
+        // the handle stays under the exact grab point at every zoom/rotation.
+        const draggedX = currentBBox.x + (currentResizeHandle.includes('e') ? currentBBox.width + resizePadding : -resizePadding);
+        const draggedY = currentBBox.y + (currentResizeHandle.includes('s') ? currentBBox.height + resizePadding : -resizePadding);
+        const draggedPoint = svg.createSVGPoint();
+        draggedPoint.x = draggedX;
+        draggedPoint.y = draggedY;
+        const resizedScreenCTM = selectedElement.getScreenCTM();
+        const parentScreenCTM = selectedElement.parentNode?.getScreenCTM?.();
+        if (resizedScreenCTM && parentScreenCTM) {
+            const actualScreen = draggedPoint.matrixTransform(resizedScreenCTM);
+            const parentInverse = parentScreenCTM.inverse();
+            const targetScreenPoint = svg.createSVGPoint();
+            targetScreenPoint.x = event.clientX - (resizePointerOffsetScreen?.x || 0);
+            targetScreenPoint.y = event.clientY - (resizePointerOffsetScreen?.y || 0);
+            const actualScreenPoint = svg.createSVGPoint();
+            actualScreenPoint.x = actualScreen.x;
+            actualScreenPoint.y = actualScreen.y;
+            const targetParent = targetScreenPoint.matrixTransform(parentInverse);
+            const actualParent = actualScreenPoint.matrixTransform(parentInverse);
+            newGroupTx += targetParent.x - actualParent.x;
+            newGroupTy += targetParent.y - actualParent.y;
+            selectedElement.setAttribute('transform', matrixTransform());
         }
 
         // Update attached arrows during resizing
@@ -1164,6 +1188,10 @@ const handleMouseUp = (event) => {
     dragOffsetX = undefined;
     dragOffsetY = undefined;
     initialHandlePosRelGroup = null;
+    initialFixedHandlePosRelGroup = null;
+    resizePointerOffsetScreen = null;
+    resizePadding = 0;
+    initialGroupMatrix = null;
     initialGroupTx = 0;
     initialGroupTy = 0;
     rotationStartAngle = 0;
