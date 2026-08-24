@@ -12,7 +12,7 @@ function OpenCanvasButton({ className }) {
 
   const handleClick = () => {
     if (isAuthenticated) {
-      router.push('/profile')
+      router.push('/profile?tab=workspaces')
     } else {
       const id = `lx-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
       router.push(`/c/${id}?new=1`)

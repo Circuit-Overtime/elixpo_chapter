@@ -5,8 +5,8 @@ import useAuthStore from '@/store/useAuthStore'
 import useUIStore from '@/store/useUIStore'
 
 const MODELS = [
-  { id: 'flux', label: 'Flux', desc: 'Detailed and artistic' },
-  { id: 'klein', label: 'Klein', desc: 'Clean and precise' },
+  { id: 'flux', label: 'Flux', desc: 'Detailed and artistic', cost: '0.002 Pollen / image' },
+  { id: 'klein', label: 'Klein', desc: 'Clean and precise', cost: '0.005 Pollen / image' },
 ]
 
 const SIZES = [
@@ -76,9 +76,6 @@ function ConnectorGate({ status, loading, isAuthenticated, onSignIn, onEnable, e
               {expired ? 'Reconnect Pollinations' : 'Connect Pollinations'}
             </a>
           )}
-          {isAuthenticated && (
-            <a href="/profile?tab=integrations" className="cursor-pointer rounded-xl border border-border-light px-4 py-2.5 text-sm text-text-muted transition hover:bg-surface-hover hover:text-text-primary">Integrations</a>
-          )}
         </div>
       </div>
     </div>
@@ -128,11 +125,11 @@ export default function ImageGenerateModal() {
     if (isOpen) loadConnector()
   }, [isOpen, loadConnector])
 
-  const handleClose = useCallback(() => {
+  useEffect(() => () => {
     abortRef.current?.abort()
-    abortRef.current = null
-    setIsGenerating(false)
-    setError('')
+  }, [])
+
+  const handleClose = useCallback(() => {
     closeModal()
   }, [closeModal])
 
@@ -171,6 +168,7 @@ export default function ImageGenerateModal() {
         throw new Error(data.error || 'Image generation failed.')
       }
       setGeneratedImage({ imageUrl: data.imageUrl, width: data.width, height: data.height, model: data.model })
+      setPrompt('')
       loadConnector()
     } catch (generationError) {
       if (generationError.name !== 'AbortError') setError(generationError.message || 'Connection failed. Please try again.')
@@ -258,7 +256,8 @@ export default function ImageGenerateModal() {
                 <div className="flex gap-2">
                   {MODELS.map((item) => (
                     <button key={item.id} onClick={() => setModel(item.id)} className={`flex-1 cursor-pointer rounded-xl border px-3 py-2 text-sm transition ${model === item.id ? 'border-accent/50 bg-accent/10 text-accent' : 'border-border bg-surface-dark text-text-muted hover:border-border-light'}`}>
-                      <span className="block text-xs font-medium">{item.label}</span><span className="mt-0.5 block text-[10px] opacity-60">{item.desc}</span>
+                      <span className="flex items-center justify-between gap-2 text-xs font-medium"><span>{item.label}</span><span className="text-[9px] font-normal opacity-70">{item.cost}</span></span>
+                      <span className="mt-0.5 block text-left text-[10px] opacity-60">{item.desc}</span>
                     </button>
                   ))}
                 </div>
