@@ -392,6 +392,9 @@ export default function useAutoSave() {
       if (cloud.metadata.workspaceName) {
         useUIStore.getState().setWorkspaceName(cloud.metadata.workspaceName)
       }
+      if (cloud.metadata.templateSlug) {
+        useUIStore.getState().setTemplateInfo(cloud.metadata.templateSlug, cloud.metadata.templateStatus)
+      }
       useUIStore.getState().setSaveStatus('cloud')
       finishRestore('cloud', cloud.sceneData.shapes.length)
       return true
@@ -500,10 +503,23 @@ export default function useAutoSave() {
   useEffect(() => {
     if (isInRoom) return
 
+    let hasWarnedAboutEditingPublished = false
     let debounceTimer = null
     const debouncedSave = () => {
       clearTimeout(debounceTimer)
       debounceTimer = setTimeout(() => {
+        const ui = useUIStore.getState()
+        if (ui.templateSlug && !hasWarnedAboutEditingPublished) {
+          hasWarnedAboutEditingPublished = true
+          const proceed = window.confirm(
+            "This workspace is published as a public template. Any edits you make will update the source template, but existing forks and clones of this template will not receive these updates. Do you want to proceed?"
+          )
+          if (!proceed) {
+            window.location.reload()
+            return
+          }
+        }
+
         saveToLocalStorage()
         // Mark dirty relative to cloud
         const status = useUIStore.getState().saveStatus

@@ -64,6 +64,7 @@ export default function SaveModal() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const login = useAuthStore((s) => s.login)
   const saveStatus = useUIStore((s) => s.saveStatus)
+  const templateSlug = useUIStore((s) => s.templateSlug)
   const [activeTab, setActiveTab] = useState('save')
   const [savingNow, setSavingNow] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
@@ -93,6 +94,13 @@ export default function SaveModal() {
   const [publishError, setPublishError] = useState('')
   const [publishedUrl, setPublishedUrl] = useState('')
   const [publishedSlug, setPublishedSlug] = useState('')
+
+  useEffect(() => {
+    if (templateSlug) {
+      setPublishedSlug(templateSlug)
+      setPublishedUrl(`${window.location.origin}/templates/${templateSlug}`)
+    }
+  }, [templateSlug])
 
   // Export state
   const [bgMode, setBgMode] = useState('dark')
