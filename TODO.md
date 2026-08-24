@@ -124,3 +124,4 @@
 - [x] Explain AI-generated canvas media when users hover its provenance badge.
 - [x] Scale AI provenance badges with images and collapse them to hoverable dots at small sizes.
 - [x] Clear successful AI image prompts and show live Flux and Klein costs in their model buttons.
+- [x] Clarify that Pollinations AI image generation has no extra LixSketch charge on the Free plan.
