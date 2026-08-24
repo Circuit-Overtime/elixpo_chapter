@@ -55,7 +55,7 @@ function AvatarImg({ src, name, size = 32 }) {
     );
 }
 
-function BufferedSlugInput({ value, disabled, onCommit }) {
+function BufferedSlugInput({ value, disabled, onCommit, onDraftChange }) {
     const [draft, setDraft] = useState(value || "");
     const timerRef = useRef(null);
 
@@ -81,6 +81,7 @@ function BufferedSlugInput({ value, disabled, onCommit }) {
             onChange={(event) => {
                 const next = normalize(event.target.value);
                 setDraft(next);
+                onDraftChange?.(next);
                 clearTimeout(timerRef.current);
                 timerRef.current = setTimeout(() => onCommit(next), 250);
             }}
@@ -867,12 +868,14 @@ export default function WritePage({ slugid }) {
     const [showColorPanel, setShowColorPanel] = useState(false);
     const [pageColor, setPageColor] = useState(null);
     const [slug, setSlug] = useState("");
+    const pendingSlugRef = useRef("");
     const [slugManual, setSlugManual] = useState(false); // user typed a custom slug → stop auto-deriving from title
     const [slugAvail, setSlugAvail] = useState({ state: "idle" }); // idle | checking | available | taken
     const [isOwner, setIsOwner] = useState(true); // owner (author / org admin) — only owners may change a slug
     const [slugLockHint, setSlugLockHint] = useState(null);
     const [ownerInfo, setOwnerInfo] = useState(null); // real author {username, display_name, avatar_url} — shown to collaborators
     const [publishing, setPublishing] = useState(false);
+    const [publishError, setPublishError] = useState("");
     const [savingDraft, setSavingDraft] = useState(false);
     const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
     const [inviteUsername, setInviteUsername] = useState("");
@@ -893,6 +896,10 @@ export default function WritePage({ slugid }) {
     const mdUploadRef = useRef(null);
 
     const username = user?.username || "you";
+
+    useEffect(() => {
+        pendingSlugRef.current = slug;
+    }, [slug]);
 
     // The URL param (`slugid`) is the human slug or a new-blog id — client-facing.
     // `blogId` is the canonical DB id used for every read/write; it's resolved from
@@ -1659,14 +1666,27 @@ export default function WritePage({ slugid }) {
             const trimmed = rawTag.trim().toLowerCase();
             if (!trimmed || tags.includes(trimmed) || tags.length >= 5)
                 return false;
-            setTags([...tags, trimmed]);
+            const nextTags = [...tags, trimmed];
+            draftDataRef.current = {
+                ...draftDataRef.current,
+                tags: nextTags,
+            };
+            setTags(nextTags);
             return true;
         },
         [tags],
     );
 
     const removeTag = useCallback(
-        (tag) => setTags((current) => current.filter((item) => item !== tag)),
+        (tag) =>
+            setTags((current) => {
+                const nextTags = current.filter((item) => item !== tag);
+                draftDataRef.current = {
+                    ...draftDataRef.current,
+                    tags: nextTags,
+                };
+                return nextTags;
+            }),
         [],
     );
 
@@ -2269,6 +2289,7 @@ export default function WritePage({ slugid }) {
     const doPublish = async (targetStatus) => {
         if (!title.trim() || publishing) return;
         setPublishing(true);
+        setPublishError("");
         setShowPublishMenu(false);
         try {
             await coverUploadRef.current;
@@ -2286,6 +2307,13 @@ export default function WritePage({ slugid }) {
         const persistedCover = persistableCover(
             draftDataRef.current.coverPreview,
         );
+        // Buffered metadata inputs intentionally avoid re-rendering the large editor
+        // on every keypress. Read their live values here so clicking Update during
+        // the debounce window cannot publish the previous slug or tag set.
+        const publishSlug = pendingSlugRef.current || slug;
+        const publishTags = Array.isArray(draftDataRef.current.tags)
+            ? draftDataRef.current.tags
+            : tags;
         try {
             const res = await fetch("/api/blogs/publish", {
                 method: "POST",
@@ -2294,7 +2322,7 @@ export default function WritePage({ slugid }) {
                     slugid: blogId,
                     title,
                     subtitle,
-                    tags,
+                    tags: publishTags,
                     publishAs,
                     collectionId,
                     editorContent: draftDataRef.current.editorContent,
@@ -2302,7 +2330,7 @@ export default function WritePage({ slugid }) {
                     coverUrl: persistedCover,
                     coverPos,
                     coverZoom,
-                    slug,
+                    slug: publishSlug,
                     status: targetStatus,
                     lastKnownUpdatedAt: syncedUpdatedAt || lastKnownUpdatedAt,
                     secret,
@@ -2381,8 +2409,17 @@ export default function WritePage({ slugid }) {
                 window.location.replace(destination);
                 return;
             }
-        } catch {
-            /* silent */
+
+            const data = await res.json().catch(() => ({}));
+            setPublishError(
+                data.error ||
+                    `The blog could not be ${isPublished ? "updated" : "published"}. Please try again.`,
+            );
+        } catch (error) {
+            console.error("Publish request failed:", error);
+            setPublishError(
+                `The blog could not be ${isPublished ? "updated" : "published"}. Check your connection and try again.`,
+            );
         }
         setPublishing(false);
     };
@@ -4826,6 +4863,10 @@ export default function WritePage({ slugid }) {
                                     <BufferedSlugInput
                                         value={slug}
                                         disabled={slugLocked}
+                                        onDraftChange={(nextSlug) => {
+                                            pendingSlugRef.current = nextSlug;
+                                            setHasUnsavedEdits(true);
+                                        }}
                                         onCommit={(nextSlug) => {
                                             setSlugManual(true);
                                             setSlug(nextSlug);
@@ -5225,6 +5266,15 @@ export default function WritePage({ slugid }) {
                               ? "Update now"
                               : "Publish now"}
                     </button>
+                    {publishError && (
+                        <p
+                            role="alert"
+                            className="text-center text-[11px] leading-4"
+                            style={{ color: "#f87171" }}
+                        >
+                            {publishError}
+                        </p>
+                    )}
                     <button
                         onClick={handleSaveDraft}
                         disabled={publishing || savingDraft || hasNoChanges()}

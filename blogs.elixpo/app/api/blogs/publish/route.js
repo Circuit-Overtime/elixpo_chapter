@@ -61,6 +61,7 @@ export async function POST(request) {
     const compressedContent = editorContent ? compressBlogContent(editorContent) : '';
     const { excerptFromBlocks } = await import('../../../../lib/excerpt');
     const excerpt = editorContent ? excerptFromBlocks(editorContent) : '';
+    const normalizedTags = Array.isArray(tags) ? normalizeTags(tags) : null;
 
     const existing = await db.prepare('SELECT id, author_id, status, published_as, slug, secret, member_only FROM blogs WHERE id = ?').bind(slugid).first();
 
@@ -174,10 +175,21 @@ export async function POST(request) {
       query += ' WHERE id = ?';
       params.push(slugid);
 
-      await db.prepare(query).bind(...params).run();
+      const statements = [db.prepare(query).bind(...params)];
+      if (normalizedTags) {
+        statements.push(db.prepare('DELETE FROM blog_tags WHERE blog_id = ?').bind(slugid));
+        for (const tag of normalizedTags) {
+          statements.push(
+            db.prepare('INSERT OR IGNORE INTO blog_tags (blog_id, tag) VALUES (?, ?)').bind(slugid, tag)
+          );
+        }
+      }
+      // The public URL and its discovery metadata are one update. D1 batch keeps
+      // the blog row and tags atomic, avoiding a live post with only half the change.
+      await db.batch(statements);
     } else {
       // Create and publish in one step
-      await db.prepare(`
+      const statements = [db.prepare(`
         INSERT INTO blogs (id, slug, title, subtitle, content, excerpt, author_id, published_as, collection_id, status,
           page_emoji, cover_image_r2_key, cover_pos_x, cover_pos_y, cover_zoom, read_time_minutes, secret, member_only, created_at, updated_at, published_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -186,7 +198,16 @@ export async function POST(request) {
         session.userId, publishAs || 'personal', finalCollectionId, targetStatus,
         pageEmoji || '', storedCover, posX, posY, zoom, readTime, finalSecret, finalMemberOnly, now, now,
         (targetStatus === 'published' || targetStatus === 'unlisted') ? now : null
-      ).run();
+      )];
+      if (normalizedTags) {
+        statements.push(db.prepare('DELETE FROM blog_tags WHERE blog_id = ?').bind(slugid));
+        for (const tag of normalizedTags) {
+          statements.push(
+            db.prepare('INSERT OR IGNORE INTO blog_tags (blog_id, tag) VALUES (?, ?)').bind(slugid, tag)
+          );
+        }
+      }
+      await db.batch(statements);
     }
 
     // A user may upload media before the first draft/publish request creates
@@ -199,16 +220,6 @@ export async function POST(request) {
     // Record a version snapshot for every publish/update (#11 E).
     if (compressedContent && targetStatus !== 'draft') {
       try { const { snapshotVersion } = await import('../../../../lib/blogVersions'); await snapshotVersion(db, slugid, compressedContent, { label: 'published', userId: session.userId }); } catch {}
-    }
-
-    // Sync tags
-    if (Array.isArray(tags)) {
-      const normalizedTags = normalizeTags(tags);
-      await db.prepare('DELETE FROM blog_tags WHERE blog_id = ?').bind(slugid).run();
-      for (const tag of normalizedTags) {
-        await db.prepare('INSERT OR IGNORE INTO blog_tags (blog_id, tag) VALUES (?, ?)')
-          .bind(slugid, tag).run();
-      }
     }
 
     // Invalidate caches
