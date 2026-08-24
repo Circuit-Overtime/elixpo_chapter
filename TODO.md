@@ -118,3 +118,9 @@
 - [x] Cancel an active marquee before Ctrl/Cmd+A selects every canvas shape.
 - [x] Prioritize Space + primary-button dragging as temporary canvas panning.
 - [x] Inject the repository auth client ID secret into Actions Pages builds.
+- [x] Remove the redundant Integrations action from the Pollinations image-generation gate.
+- [x] Route the signed-in My Canvases navbar action directly to the profile Workspaces tab.
+- [x] Keep AI image generation running and preserve modal state while the generator is closed.
+- [x] Explain AI-generated canvas media when users hover its provenance badge.
+- [x] Scale AI provenance badges with images and collapse them to hoverable dots at small sizes.
+- [x] Clear successful AI image prompts and show live Flux and Klein costs in their model buttons.
