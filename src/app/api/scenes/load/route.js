@@ -30,7 +30,9 @@ export async function GET(request) {
     
     if (token) {
       perm = await DB.prepare(
-        `SELECT sp.permission, s.encrypted_data, s.workspace_name, s.session_id, s.updated_at
+        `SELECT sp.permission, s.encrypted_data, s.workspace_name, s.session_id, s.updated_at,
+                (SELECT slug FROM workspace_templates WHERE source_session_id = s.session_id LIMIT 1) AS template_slug,
+                (SELECT status FROM workspace_templates WHERE source_session_id = s.session_id LIMIT 1) AS template_status
          FROM scene_permissions sp
          JOIN scenes s ON sp.scene_id = s.id
          WHERE sp.token = ?`
@@ -39,7 +41,9 @@ export async function GET(request) {
       // Intentional bypass: querying by sessionId directly allows owners/initial creators
       // to load the scene from their local storage or URL without needing a share token.
       perm = await DB.prepare(
-        `SELECT permission, encrypted_data, workspace_name, session_id, updated_at
+        `SELECT permission, encrypted_data, workspace_name, session_id, updated_at,
+                (SELECT slug FROM workspace_templates WHERE source_session_id = session_id LIMIT 1) AS template_slug,
+                (SELECT status FROM workspace_templates WHERE source_session_id = session_id LIMIT 1) AS template_status
          FROM scenes
          WHERE session_id = ?`
       ).bind(sessionId).first()
@@ -68,6 +72,8 @@ export async function GET(request) {
       workspaceName: perm.workspace_name,
       updatedAt: perm.updated_at,
       lastAccessedAt: shouldTouch ? new Date().toISOString() : undefined,
+      templateSlug: perm.template_slug || null,
+      templateStatus: perm.template_status || null,
     })
   } catch (err) {
     console.error('[api/scenes/load] Error:', err)

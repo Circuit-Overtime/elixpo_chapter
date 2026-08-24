@@ -891,7 +891,81 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      <FeaturedTemplates />
+
       <LandingFooter />
     </div>
+  )
+}
+
+function FeaturedTemplates() {
+  const [templates, setTemplates] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/templates?limit=3')
+      .then((res) => res.json())
+      .then((data) => {
+        setTemplates(data.templates || [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  if (loading || !templates.length) return null
+
+  return (
+    <section className="py-24 border-t border-border-light bg-[#171324]/30 font-[lixFont]">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-light leading-tight tracking-tight text-white">
+              Recommended <span className="text-accent-blue">Templates</span>
+            </h2>
+            <p className="text-text-muted mt-2 text-sm leading-relaxed max-w-md">
+              Start with one of these public workspaces published by the LixSketch community.
+            </p>
+          </div>
+          <Link
+            href="/templates"
+            className="inline-flex items-center gap-1 text-sm text-accent-blue hover:underline"
+          >
+            Browse all templates <i className="bx bx-right-arrow-alt" />
+          </Link>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+          {templates.map((template) => (
+            <Link
+              key={template.id}
+              href={`/templates/${template.slug}`}
+              className="group rounded-2xl border border-border-light bg-surface-card/30 p-5 transition-all duration-300 hover:border-accent-blue/40 hover:bg-surface-card/60 flex flex-col h-full"
+            >
+              <div className="overflow-hidden rounded-xl border border-border-light bg-gradient-to-br from-[#2c2142]/40 to-[#111019] aspect-[16/9] mb-4 flex items-center justify-center relative">
+                {template.coverDataUrl ? (
+                  <img
+                    src={template.coverDataUrl}
+                    alt=""
+                    className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
+                  />
+                ) : (
+                  <i className="bx bx-palette text-5xl text-accent-blue/30" />
+                )}
+              </div>
+              <h3 className="text-base font-medium text-text-primary group-hover:text-accent-blue transition duration-200 truncate">
+                {template.title}
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-text-muted line-clamp-2 flex-grow">
+                {template.description || 'A public LixSketch workspace template.'}
+              </p>
+              <div className="mt-4 pt-4 border-t border-border-light/40 flex items-center justify-between text-[10px] text-text-dim">
+                <span>By {template.publisher?.name || 'Community'}</span>
+                <span>{template.forks || 0} forks</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
