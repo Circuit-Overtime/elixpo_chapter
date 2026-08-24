@@ -3,7 +3,6 @@ all_icons/
 .vercel
 .next/
 out/
-wrangler.toml
 plans/
 .wrangler
 dist/
