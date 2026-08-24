@@ -2,234 +2,258 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "meyer-nils/torch-fem",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 6,
-    "pushed_at": "2026-08-23T06:40:37Z",
-    "reasons": [
-      "121\u2605 python active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 121,
-    "topics": [
-      "adjoint",
-      "differentiable-programming",
-      "fem",
-      "python",
-      "scientific-computing",
-      "sensitivity-analysis",
-      "shape-optimization",
-      "solid-mechanics-codes",
-      "structural-optimization",
-      "topology-optimization"
-    ],
-    "url": "https://github.com/meyer-nils/torch-fem"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "datadrivenconstruction/OpenConstructionERP",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 15,
-    "pushed_at": "2026-08-23T06:39:47Z",
-    "reasons": [
-      "703\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 703,
-    "topics": [
-      "4d",
-      "5d",
-      "ai",
-      "autocad",
-      "bill-of-quantities",
-      "bim",
-      "boq",
-      "cad",
-      "calculation",
-      "construction",
-      "cost-estimation",
-      "erp",
-      "fastapi",
-      "ifc",
-      "masterformat",
-      "open-source",
-      "pdf",
-      "qto",
-      "revit",
-      "takeoff"
-    ],
-    "url": "https://github.com/datadrivenconstruction/OpenConstructionERP"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "vaibhavarora14/job-application-agent",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 3,
-    "pushed_at": "2026-08-23T06:39:11Z",
-    "reasons": [
-      "135\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 135,
-    "topics": [
-      "ai-agent",
-      "automation",
-      "careers",
-      "codex",
-      "job-search"
-    ],
-    "url": "https://github.com/vaibhavarora14/job-application-agent"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "altstackHQ/altstack-data",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 10,
-    "pushed_at": "2026-08-23T06:34:29Z",
-    "reasons": [
-      "321\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 321,
-    "topics": [
-      "awesome",
-      "awesome-list",
-      "devops",
-      "docker",
-      "open-source",
-      "productivity",
-      "saas-alternatives",
-      "self-hosted"
-    ],
-    "url": "https://github.com/altstackHQ/altstack-data"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "billimek/k8s-gitops",
+    "full_name": "jd-opensource/JoyAI-Video-Edit",
     "has_contributing": false,
-    "language": "YAML",
-    "open_issues": 10,
-    "pushed_at": "2026-08-23T06:36:34Z",
-    "reasons": [
-      "776\u2605 yaml active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 776,
-    "topics": [
-      "flux",
-      "gitops",
-      "helm",
-      "k8s",
-      "k8s-at-home",
-      "kubernetes"
-    ],
-    "url": "https://github.com/billimek/k8s-gitops"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "huangruiteng/loopx",
-    "has_contributing": true,
     "language": "Python",
-    "open_issues": 39,
-    "pushed_at": "2026-08-23T06:37:11Z",
-    "reasons": [
-      "5026\u2605 python active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 5026,
-    "topics": [
-      "agent-control-plane",
-      "agent-harness",
-      "agent-ops",
-      "ai-agents",
-      "codex",
-      "long-horizon",
-      "long-running-agents",
-      "loop-engineering",
-      "loopx",
-      "workflow-automation"
-    ],
-    "url": "https://github.com/huangruiteng/loopx"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "zhu1090093659/dsh-web-ui",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 15,
-    "pushed_at": "2026-08-23T06:26:08Z",
-    "reasons": [
-      "5628\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 5628,
-    "topics": [
-      "cordis",
-      "deepseek-harness",
-      "dsh",
-      "dsh-plugin",
-      "dsh-web",
-      "dsh-web-ui"
-    ],
-    "url": "https://github.com/zhu1090093659/dsh-web-ui"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "chaitanyagiri/munder-difflin",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 55,
-    "pushed_at": "2026-08-23T06:16:33Z",
-    "reasons": [
-      "3719\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 53,
-    "stars": 3719,
-    "topics": [
-      "agents",
-      "claude-code",
-      "free",
-      "harness",
-      "harness-engineering",
-      "memory"
-    ],
-    "url": "https://github.com/chaitanyagiri/munder-difflin"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "FiorenMas/Revanced-And-Revanced-Extended-Non-Root",
-    "has_contributing": false,
-    "language": "Shell",
     "open_issues": 10,
-    "pushed_at": "2026-08-23T03:34:26Z",
+    "pushed_at": "2026-08-24T06:58:35Z",
     "reasons": [
-      "2655\u2605 shell active",
+      "1642\u2605 python active",
       "has open issues"
     ],
     "score": 37,
-    "stars": 2655,
+    "stars": 1642,
     "topics": [],
-    "url": "https://github.com/FiorenMas/Revanced-And-Revanced-Extended-Non-Root"
+    "url": "https://github.com/jd-opensource/JoyAI-Video-Edit"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "yamlresume/yamlresume",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 28,
+    "pushed_at": "2026-08-24T06:56:58Z",
+    "reasons": [
+      "1503\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 1503,
+    "topics": [
+      "curriculum-vitae",
+      "curriculum-vitae-template",
+      "cv-builder",
+      "cv-template",
+      "json-resume",
+      "jsonresume",
+      "latex",
+      "markdown",
+      "resume",
+      "resume-builder",
+      "resume-template",
+      "typescript",
+      "typesetting",
+      "typography",
+      "yaml",
+      "yaml-resume",
+      "yamlresume"
+    ],
+    "url": "https://github.com/yamlresume/yamlresume"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "randomBrainstormer/MMM-GoogleCalendar",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 16,
+    "pushed_at": "2026-08-24T06:58:04Z",
+    "reasons": [
+      "102\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 102,
+    "topics": [],
+    "url": "https://github.com/randomBrainstormer/MMM-GoogleCalendar"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "yuting0624/antigravity-for-claude-code",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 5,
+    "pushed_at": "2026-08-24T06:54:18Z",
+    "reasons": [
+      "273\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 273,
+    "topics": [
+      "agy-cli",
+      "antigravity-cli",
+      "claude-code",
+      "claude-code-plugin",
+      "delegate",
+      "gemini",
+      "gemini-cli",
+      "orchestration",
+      "subagent-delegation"
+    ],
+    "url": "https://github.com/yuting0624/antigravity-for-claude-code"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "Mafyuh/iac",
+    "has_contributing": false,
+    "language": "YAML",
+    "open_issues": 20,
+    "pushed_at": "2026-08-24T06:02:12Z",
+    "reasons": [
+      "951\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 951,
+    "topics": [
+      "actions",
+      "ansible",
+      "devops",
+      "docker",
+      "docker-compose",
+      "gitops",
+      "iac",
+      "k8s",
+      "k8s-at-home",
+      "kubernetes",
+      "kubesearch",
+      "nixos",
+      "opentofu",
+      "packer",
+      "terraform"
+    ],
+    "url": "https://github.com/Mafyuh/iac"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "Q00/ouroboros",
+    "has_contributing": true,
+    "language": "Python",
+    "open_issues": 58,
+    "pushed_at": "2026-08-24T06:55:14Z",
+    "reasons": [
+      "5638\u2605 python active",
+      "has open issues"
+    ],
+    "score": 54,
+    "stars": 5638,
+    "topics": [
+      "agent-os",
+      "agentic-ai",
+      "ai-agent",
+      "ai-coding-agent",
+      "claude-code",
+      "cli",
+      "codex",
+      "coding-agent",
+      "deepseek",
+      "deepseek-harness",
+      "developer-tools",
+      "dsh",
+      "dsh-plugin",
+      "github-copilot",
+      "llm-evaluation",
+      "llm-orchestration",
+      "loop-engineering",
+      "mcp",
+      "opencode"
+    ],
+    "url": "https://github.com/Q00/ouroboros"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "chakra-ui/ark",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 7,
+    "pushed_at": "2026-08-24T06:53:28Z",
+    "reasons": [
+      "5351\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 54,
+    "stars": 5351,
+    "topics": [
+      "components",
+      "design-system",
+      "headless",
+      "primitives",
+      "react",
+      "solid",
+      "svelte",
+      "ui",
+      "unstyled",
+      "vue"
+    ],
+    "url": "https://github.com/chakra-ui/ark"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "ilysenko/codex-desktop-linux",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 13,
+    "pushed_at": "2026-08-24T06:43:17Z",
+    "reasons": [
+      "3702\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 53,
+    "stars": 3702,
+    "topics": [
+      "ai-coding",
+      "appimage",
+      "archlinux",
+      "chatgpt",
+      "chatgpt-desktop",
+      "codex",
+      "codex-desktop",
+      "debian",
+      "desktop-app",
+      "electron",
+      "fedora",
+      "linux",
+      "nix",
+      "nixos",
+      "openai",
+      "opensuse",
+      "rpm",
+      "ubuntu",
+      "wayland",
+      "x11"
+    ],
+    "url": "https://github.com/ilysenko/codex-desktop-linux"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "pgsty/pigsty",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 26,
+    "pushed_at": "2026-08-24T06:23:03Z",
+    "reasons": [
+      "5565\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 54,
+    "stars": 5565,
+    "topics": [
+      "graphics",
+      "infra",
+      "postgres",
+      "service",
+      "toolbox",
+      "yours"
+    ],
+    "url": "https://github.com/pgsty/pigsty"
   },
   {
     "archived": false,
@@ -243,7 +267,7 @@
       "2448\u2605 yaml active",
       "has open issues"
     ],
-    "score": 52,
+    "score": 48,
     "stars": 2448,
     "topics": [
       "apple",
@@ -264,13 +288,13 @@
     "has_contributing": true,
     "language": "Python",
     "open_issues": 11,
-    "pushed_at": "2026-08-23T06:16:31Z",
+    "pushed_at": "2026-08-24T06:47:22Z",
     "reasons": [
-      "11290\u2605 python active",
+      "11457\u2605 python active",
       "has open issues"
     ],
     "score": 58,
-    "stars": 11290,
+    "stars": 11457,
     "topics": [
       "ai",
       "audiobook",
@@ -298,212 +322,252 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "HBAI-Ltd/Toonflow-app",
-    "has_contributing": false,
-    "language": "TypeScript",
-    "open_issues": 3,
-    "pushed_at": "2026-08-23T06:40:01Z",
-    "reasons": [
-      "14364\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 45,
-    "stars": 14364,
-    "topics": [
-      "ai",
-      "ai-content-creation",
-      "ai-tool",
-      "ai-video-generation",
-      "automation",
-      "content-generation",
-      "desktop-app",
-      "electron",
-      "generative-ai",
-      "image-generation",
-      "llm",
-      "nodejs",
-      "shorts",
-      "text-to-video",
-      "typescript",
-      "video-generation",
-      "vite",
-      "vue3"
-    ],
-    "url": "https://github.com/HBAI-Ltd/Toonflow-app"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "Piebald-AI/claude-code-system-prompts",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 8,
-    "pushed_at": "2026-08-23T01:50:53Z",
-    "reasons": [
-      "12430\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 44,
-    "stars": 12430,
-    "topics": [
-      "claude-code",
-      "claude-code-system-prompts",
-      "system-prompts"
-    ],
-    "url": "https://github.com/Piebald-AI/claude-code-system-prompts"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "DaoCloud/public-image-mirror",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 11,
-    "pushed_at": "2026-08-21T06:01:05Z",
-    "reasons": [
-      "14914\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 45,
-    "stars": 14914,
-    "topics": [
-      "mirror",
-      "speedup"
-    ],
-    "url": "https://github.com/DaoCloud/public-image-mirror"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "jvxiao/speed-github",
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 3,
-    "pushed_at": "2026-08-23T06:40:57Z",
-    "reasons": [
-      "348\u2605 python active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 348,
-    "topics": [],
-    "url": "https://github.com/jvxiao/speed-github"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "RoloBits/nestjs-doctor",
+    "full_name": "mikro-orm/mikro-orm",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 12,
-    "pushed_at": "2026-08-23T06:40:35Z",
+    "open_issues": 19,
+    "pushed_at": "2026-08-24T06:43:55Z",
     "reasons": [
-      "153\u2605 typescript active",
+      "9182\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 57,
+    "stars": 9182,
+    "topics": [
+      "database",
+      "datamapper",
+      "entities",
+      "entity",
+      "identity-map",
+      "javascript",
+      "libsql",
+      "mongodb",
+      "mysql",
+      "nodejs",
+      "orm",
+      "postgre",
+      "postgresql",
+      "sql",
+      "sql-server",
+      "sqlite",
+      "sqlite3",
+      "typescript",
+      "typescript-orm",
+      "unit-of-work"
+    ],
+    "url": "https://github.com/mikro-orm/mikro-orm"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "projectdiscovery/nuclei-templates",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 121,
+    "pushed_at": "2026-08-24T06:31:06Z",
+    "reasons": [
+      "12829\u2605 javascript active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 153,
+    "stars": 12829,
     "topics": [
-      "agents",
-      "code-review",
-      "doctor",
-      "nestjs",
-      "nodejs",
-      "skill"
+      "bugbounty",
+      "exploit-development",
+      "exploits",
+      "fingerprint",
+      "hacktoberfest",
+      "nuclei",
+      "nuclei-checks",
+      "nuclei-templates",
+      "security",
+      "vulnerability-detection"
     ],
-    "url": "https://github.com/RoloBits/nestjs-doctor"
+    "url": "https://github.com/projectdiscovery/nuclei-templates"
   },
   {
     "archived": false,
-    "band": "small",
-    "full_name": "ra2web/ra2web.github.io",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 7,
-    "pushed_at": "2026-08-23T06:38:07Z",
-    "reasons": [
-      "512\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 512,
-    "topics": [
-      "openra",
-      "ra",
-      "ra2",
-      "ra2web",
-      "webra2"
-    ],
-    "url": "https://github.com/ra2web/ra2web.github.io"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "coreos/fedora-coreos-config",
+    "band": "large",
+    "full_name": "juewuy/ShellCrash",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 49,
-    "pushed_at": "2026-08-23T06:40:02Z",
+    "open_issues": 41,
+    "pushed_at": "2026-08-23T18:09:36Z",
     "reasons": [
-      "200\u2605 shell active",
+      "13205\u2605 shell active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 200,
+    "score": 44,
+    "stars": 13205,
     "topics": [],
-    "url": "https://github.com/coreos/fedora-coreos-config"
+    "url": "https://github.com/juewuy/ShellCrash"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "joryirving/home-ops",
+    "full_name": "indmdev/Free-Telegram-Store-Bot",
     "has_contributing": false,
-    "language": "YAML",
-    "open_issues": 3,
-    "pushed_at": "2026-08-23T06:24:07Z",
+    "language": "Python",
+    "open_issues": 13,
+    "pushed_at": "2026-08-24T06:58:24Z",
     "reasons": [
-      "223\u2605 yaml active",
+      "155\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 223,
+    "stars": 155,
     "topics": [
-      "flux",
-      "gitops",
-      "kubernetes",
-      "kubesearch",
-      "renovate",
-      "self-hosted",
-      "talos",
-      "terraform"
+      "autobot",
+      "cryptobot",
+      "digital-products",
+      "e-commerce",
+      "e-commerce-bot",
+      "free",
+      "free-bot-for-crypto-trading",
+      "free-script",
+      "free-shop-bot",
+      "free-telegram-bot",
+      "shop-bot",
+      "shopping-bot",
+      "store-bot",
+      "telegram-bot",
+      "telegram-bots",
+      "telegram-shop",
+      "telegram-shopping-bot",
+      "telegram-store",
+      "telegram-store-bot"
     ],
-    "url": "https://github.com/joryirving/home-ops"
+    "url": "https://github.com/indmdev/Free-Telegram-Store-Bot"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "MrCreativ3001/moonlight-web-stream",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 24,
+    "pushed_at": "2026-08-24T06:58:42Z",
+    "reasons": [
+      "646\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 646,
+    "topics": [
+      "game-streaming",
+      "moonlight",
+      "remote-desktop",
+      "rust",
+      "sunshine",
+      "typescript",
+      "web",
+      "webrtc"
+    ],
+    "url": "https://github.com/MrCreativ3001/moonlight-web-stream"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "Moyf/moys-asr-workflow",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 9,
+    "pushed_at": "2026-08-24T06:57:30Z",
+    "reasons": [
+      "217\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 217,
+    "topics": [],
+    "url": "https://github.com/Moyf/moys-asr-workflow"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "openclaw/goplaces",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 2,
+    "pushed_at": "2026-08-24T06:58:26Z",
+    "reasons": [
+      "251\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 28,
+    "stars": 251,
+    "topics": [
+      "cli",
+      "go",
+      "google",
+      "locations",
+      "places",
+      "reviews"
+    ],
+    "url": "https://github.com/openclaw/goplaces"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "waifulabs/infrastructure",
+    "has_contributing": false,
+    "language": "YAML",
+    "open_issues": 7,
+    "pushed_at": "2026-08-24T04:56:36Z",
+    "reasons": [
+      "225\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 225,
+    "topics": [
+      "ansible",
+      "home-assistant",
+      "home-automation",
+      "k3s",
+      "k8s-at-home",
+      "kubernetes",
+      "node-red",
+      "renovate"
+    ],
+    "url": "https://github.com/waifulabs/infrastructure"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "kevoreilly/CAPEv2",
-    "has_contributing": false,
+    "full_name": "vitali87/code-graph-rag",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 55,
-    "pushed_at": "2026-08-23T06:38:27Z",
+    "open_issues": 51,
+    "pushed_at": "2026-08-24T06:54:12Z",
     "reasons": [
-      "3440\u2605 python active",
+      "4799\u2605 python active",
       "has open issues"
     ],
-    "score": 38,
-    "stars": 3440,
+    "score": 54,
+    "stars": 4799,
     "topics": [
-      "cape",
-      "configs",
-      "debugging-tools",
-      "malware",
-      "malware-analysis",
-      "malware-research",
-      "reverse-engineering",
-      "sandbox",
-      "unpacking"
+      "ai",
+      "ast",
+      "claude-code",
+      "code-analysis",
+      "code-understanding",
+      "codebase-search",
+      "developer-tools",
+      "graph-database",
+      "knowledge-graph",
+      "llm",
+      "mcp",
+      "mcp-server",
+      "memgraph",
+      "monorepo",
+      "multi-language",
+      "python",
+      "rag",
+      "retrieval-augmented-generation",
+      "semantic-search",
+      "tree-sitter"
     ],
-    "url": "https://github.com/kevoreilly/CAPEv2"
+    "url": "https://github.com/vitali87/code-graph-rag"
   }
 ]
