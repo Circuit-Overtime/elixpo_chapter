@@ -19,6 +19,10 @@ export const TOOLS = {
   IMAGE: 'image',
   FRAME: 'frame',
   ICON: 'icon',
+  DRAW_SHAPE: 'draw-shape',
+  PAINT_BUCKET: 'paint-bucket',
+  LASSO: 'lasso',
+  WEB_EMBED: 'web-embed',
 }
 
 // Action types for undo/redo
@@ -44,6 +48,10 @@ const TOOL_CURSORS = {
   [TOOLS.IMAGE]: 'crosshair',
   [TOOLS.FRAME]: 'crosshair',
   [TOOLS.ICON]: 'crosshair',
+  [TOOLS.DRAW_SHAPE]: 'crosshair',
+  [TOOLS.PAINT_BUCKET]: 'cell',
+  [TOOLS.LASSO]: 'crosshair',
+  [TOOLS.WEB_EMBED]: 'crosshair',
 }
 
 // Tool -> sidebar mapping
@@ -56,6 +64,7 @@ const TOOL_SIDEBARS = {
   [TOOLS.TEXT]: 'text',
   [TOOLS.CODE]: 'text',
   [TOOLS.FRAME]: 'frame',
+  [TOOLS.DRAW_SHAPE]: 'paintbrush',
 }
 
 // Keyboard shortcut -> tool mapping
@@ -81,6 +90,10 @@ export const SHORTCUT_MAP = {
   i: TOOLS.ICON,
   f: TOOLS.FRAME,
   k: TOOLS.LASER,
+  d: TOOLS.DRAW_SHAPE,
+  b: TOOLS.PAINT_BUCKET,
+  s: TOOLS.LASSO,
+  w: TOOLS.WEB_EMBED,
 }
 
 const useSketchStore = create((set, get) => ({
