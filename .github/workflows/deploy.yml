@@ -3,7 +3,6 @@
 # Required repository secrets:
 #   CLOUDFLARE_API_TOKEN  — Workers Scripts: Edit and Cloudflare Pages: Edit
 #   CLOUDFLARE_ACCOUNT_ID — Cloudflare account identifier
-# Required repository variable:
 #   NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID — public Elixpo OAuth client identifier
 #
 # Runtime secrets remain configured on the Worker and Pages project. This
@@ -56,10 +55,10 @@ jobs:
 
       - name: Validate public build configuration
         env:
-          NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID: ${{ vars.NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID }}
+          NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID }}
         run: |
           if [ -z "$NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID" ]; then
-            echo "::error::NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID repository variable is required"
+            echo "::error::NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID repository secret is required"
             exit 1
           fi
 
@@ -67,7 +66,7 @@ jobs:
         run: npx --no-install @cloudflare/next-on-pages
         env:
           NEXT_TELEMETRY_DISABLED: "1"
-          NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID: ${{ vars.NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID }}
+          NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_ELIXPO_AUTH_CLIENT_ID }}
           NEXT_PUBLIC_WORKER_URL: ${{ vars.NEXT_PUBLIC_WORKER_URL || 'https://sketch.elixpo.com' }}
           NEXT_PUBLIC_ROOM_WS_URL: ${{ vars.NEXT_PUBLIC_ROOM_WS_URL || 'wss://sketch.elixpo.com' }}
           NEXT_PUBLIC_LIXSKETCH_EMBED_ORIGINS: ${{ vars.NEXT_PUBLIC_LIXSKETCH_EMBED_ORIGINS || 'https://sketch.elixpo.com' }}

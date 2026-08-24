@@ -117,3 +117,4 @@
 - [x] Port the Blogs production CI deployment flow for the collaboration Worker and Cloudflare Pages.
 - [x] Cancel an active marquee before Ctrl/Cmd+A selects every canvas shape.
 - [x] Prioritize Space + primary-button dragging as temporary canvas panning.
+- [x] Inject the repository auth client ID secret into Actions Pages builds.
