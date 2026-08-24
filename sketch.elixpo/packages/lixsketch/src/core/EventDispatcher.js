@@ -109,7 +109,7 @@ const handleMainMouseDown = (e) => {
     // multi-selection rectangle. Without this guard, middle-click-drag
     // simultaneously pans (handled in ZoomPan) and starts a selection
     // marquee.
-    if (e.button === 1 || e.button === 2) return;
+    if (e.button === 1 || e.button === 2 || window.__spacePanActive) return;
     // Safety: remove any stray selection rectangle from a previous interrupted drag
     removeMultiSelectionRect();
 
@@ -251,6 +251,7 @@ const handleMainMouseDown = (e) => {
 };
 
 const handleMainMouseMove = (e) => {
+    if (window.__spacePanPointerActive) return;
     // Auto-scroll when dragging near/past viewport edges (checked first so early returns don't skip it)
     if (e.buttons & 1) {
         _lastDragEvent = e;
@@ -342,6 +343,7 @@ const handleMainMouseMove = (e) => {
 };
 
 const handleMainMouseUp = (e) => {
+    if (window.__spacePanPointerActive) return;
     _stopAutoScroll();
     if (isSquareToolActive) {
         handleMouseUpRect(e);
@@ -422,6 +424,7 @@ const handleMainMouseUp = (e) => {
 };
 
 const handleMainMouseLeave = (e) => {
+    if (window.__spacePanPointerActive) return;
     // If the user is still holding the primary button (dragging outside the canvas),
     // keep auto-scrolling and don't finalize the operation yet.
     if (e.buttons & 1) {

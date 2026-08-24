@@ -251,6 +251,9 @@ const useUIStore = create((set, get) => ({
     }
     set({ workspaceName })
   },
+  templateSlug: null,
+  templateStatus: null,
+  setTemplateInfo: (slug, status) => set({ templateSlug: slug, templateStatus: status }),
 
   // --- Save Status ---
   // 'idle' | 'local' | 'cloud' | 'failed'

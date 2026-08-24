@@ -309,6 +309,7 @@ export function installEngineShortcuts(engine, options = {}) {
         if (skipWhen && skipWhen(e)) return;
         e.preventDefault();
         spaceHeld = true;
+        window.__spacePanActive = true;
         const active = getActiveTool();
         if (active && active !== TOOLS.PAN) {
             toolBeforeSpace = active;
@@ -319,10 +320,20 @@ export function installEngineShortcuts(engine, options = {}) {
     function handleKeyUp(e) {
         if (e.code === 'Space' && spaceHeld) {
             spaceHeld = false;
+            window.__spacePanActive = false;
             if (toolBeforeSpace) {
                 setTool(toolBeforeSpace);
                 toolBeforeSpace = null;
             }
+        }
+    }
+
+    function handleWindowBlur() {
+        spaceHeld = false;
+        window.__spacePanActive = false;
+        if (toolBeforeSpace) {
+            setTool(toolBeforeSpace);
+            toolBeforeSpace = null;
         }
     }
 
@@ -335,11 +346,14 @@ export function installEngineShortcuts(engine, options = {}) {
     document.addEventListener('keydown', handleSpaceDown);
     document.addEventListener('keyup', handleKeyUp);
     document.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('blur', handleWindowBlur);
 
     return function uninstall() {
         document.removeEventListener('keydown', handleKeyDown);
         document.removeEventListener('keydown', handleSpaceDown);
         document.removeEventListener('keyup', handleKeyUp);
         document.removeEventListener('wheel', handleWheel);
+        window.removeEventListener('blur', handleWindowBlur);
+        window.__spacePanActive = false;
     };
 }

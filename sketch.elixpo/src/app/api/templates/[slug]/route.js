@@ -76,3 +76,21 @@ export async function PATCH(request, context) {
     return NextResponse.json({ error: 'Could not update template' }, { status: 500 })
   }
 }
+
+export async function DELETE(request, context) {
+  try {
+    const user = await getAuthenticatedUser(request)
+    if (!user) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    const { slug } = await context.params
+    const { DB } = getCloudflareBindings()
+    const existing = await DB.prepare('SELECT * FROM workspace_templates WHERE slug = ?').bind(slug).first()
+    if (!existing) return NextResponse.json({ error: 'Template not found' }, { status: 404 })
+    if (existing.publisher_user_id !== user.id) return NextResponse.json({ error: 'Only the publisher can delete this template' }, { status: 403 })
+    
+    await DB.prepare('DELETE FROM workspace_templates WHERE id = ?').bind(existing.id).run()
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('[api/templates/slug] delete failed:', error)
+    return NextResponse.json({ error: 'Could not delete template' }, { status: 500 })
+  }
+}
