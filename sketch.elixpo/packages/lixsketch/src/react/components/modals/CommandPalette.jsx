@@ -41,11 +41,15 @@ const CANVAS_COMMANDS = [
   { label: 'Arrow', icon: 'bx-right-arrow-alt', section: 'Tools', shortcut: 'A / 5', action: 'tool:arrow' },
   { label: 'Line', icon: 'bx-minus', section: 'Tools', shortcut: 'L / 6', action: 'tool:line' },
   { label: 'Freehand', icon: 'bx-pencil', section: 'Tools', shortcut: 'P / 7', action: 'tool:freehand' },
+  { label: 'Draw to shape', icon: 'bx-vector', section: 'Tools', shortcut: 'D', action: 'tool:drawShape' },
+  { label: 'Paint bucket', icon: 'bxs-color-fill', section: 'Tools', shortcut: 'B', action: 'tool:paintBucket' },
   { label: 'Text', icon: 'bx-text', section: 'Tools', shortcut: 'T / 8', action: 'tool:text' },
   { label: 'Insert image', icon: 'bx-image-add', section: 'Tools', shortcut: '9', action: 'tool:image' },
   { label: 'Eraser', icon: 'bx-eraser', section: 'Tools', shortcut: 'E / 0', action: 'tool:eraser' },
   { label: 'Laser pointer', icon: 'bxs-magic-wand', section: 'Tools', shortcut: 'K', action: 'tool:laser' },
   { label: 'Frame tool', icon: 'bx-border-all', section: 'Tools', shortcut: 'F', action: 'tool:frame' },
+  { label: 'Lasso selection', icon: 'bx-shape-polygon', section: 'Tools', shortcut: 'S', action: 'tool:lasso' },
+  { label: 'Web embed', icon: 'bx-globe', section: 'Tools', shortcut: 'W', action: 'tool:webEmbed' },
   // AI entries removed — feature is hidden behind a coming-soon screen.
   // Restore "Text to diagram..." / "Mermaid to diagram..." here when the
   // assistant ships.
@@ -103,6 +107,10 @@ const TOOL_ACTION_MAP = {
   'tool:arrow': TOOLS.ARROW,
   'tool:line': TOOLS.LINE,
   'tool:freehand': TOOLS.FREEHAND,
+  'tool:drawShape': TOOLS.DRAW_SHAPE,
+  'tool:paintBucket': TOOLS.PAINT_BUCKET,
+  'tool:lasso': TOOLS.LASSO,
+  'tool:webEmbed': TOOLS.WEB_EMBED,
   'tool:text': TOOLS.TEXT,
   'tool:image': TOOLS.IMAGE,
   'tool:eraser': TOOLS.ERASER,

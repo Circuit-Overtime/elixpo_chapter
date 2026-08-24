@@ -1,10 +1,20 @@
 "use client"
 
+import { useEffect, useRef, useState } from 'react'
 import useSketchStore, { TOOLS } from '@/store/useSketchStore'
 import useUIStore from '@/store/useUIStore'
 
 const VIEW_MODE_ITEMS = [
   { tool: TOOLS.PAN, icon: 'bxs-hand', title: 'Pan (H)', key: 'H' },
+]
+
+const MORE_TOOL_ITEMS = [
+  { tool: TOOLS.DRAW_SHAPE, icon: 'draw-shape', title: 'Draw to shape', key: 'D' },
+  { tool: TOOLS.PAINT_BUCKET, icon: 'bxs-color-fill', title: 'Paint bucket', key: 'B' },
+  { tool: TOOLS.FRAME, icon: 'bx-crop', title: 'Frame', key: 'F' },
+  { tool: TOOLS.LASER, icon: 'bxs-magic-wand', title: 'Laser', key: 'K' },
+  { tool: TOOLS.LASSO, icon: 'bx-shape-polygon', title: 'Lasso selection', key: 'S' },
+  { tool: TOOLS.WEB_EMBED, icon: 'bx-globe', title: 'Web embed', key: 'W' },
 ]
 
 const TOOL_ITEMS = [
@@ -20,14 +30,26 @@ const TOOL_ITEMS = [
   { tool: TOOLS.IMAGE, icon: 'bx-image-alt', title: 'Image (9)', key: '9' },
   { tool: TOOLS.ICON, icon: 'bx-wink-smile', title: 'Icon (I)', key: 'I' },
   'spacer',
-  { tool: TOOLS.FRAME, icon: 'bx-crop', title: 'Frame (F)', key: 'F' },
-  { tool: TOOLS.LASER, icon: 'bxs-magic-wand', title: 'Laser (K)', key: 'K' },
   { tool: TOOLS.ERASER, icon: 'bxs-eraser', title: 'Eraser (E)', key: 'E' },
+  'more',
   'spacer',
   // Violet star → opens the DSL Studio modal (LixScript / Mermaid / Graph).
   // No AI inference; each tab dispatches to the engine's direct parser.
   { tool: 'dsl', icon: null, title: 'DSL Studio (LixScript / Mermaid / Graph)', isAI: true },
 ]
+
+function ToolIcon({ item, className = 'h-5 w-5' }) {
+  if (item.icon === 'draw-shape') {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M2.5 16.5c2.2-5.8 4.5 3.5 7-2.5 1.1-2.7 2.2-3.8 3.4-3.9" />
+        <path d="M15 4.5h6v6h-6z" />
+        <path d="m12.5 8 2.5-.5" />
+      </svg>
+    )
+  }
+  return <i className={`bx ${item.icon} text-xl`} />
+}
 
 export default function Toolbar() {
   const activeTool = useSketchStore((s) => s.activeTool)
@@ -36,12 +58,37 @@ export default function Toolbar() {
   const toolLock = useSketchStore((s) => s.toolLock)
   const toggleToolLock = useSketchStore((s) => s.toggleToolLock)
   const toggleAIModal = useUIStore((s) => s.toggleAIModal)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [lastMoreItem, setLastMoreItem] = useState(null)
+  const moreRef = useRef(null)
 
   const items = viewMode ? VIEW_MODE_ITEMS : TOOL_ITEMS
+  const activeMoreItem = MORE_TOOL_ITEMS.find((item) => item.tool === activeTool)
+  const moreActive = Boolean(activeMoreItem)
+  const shownMoreItem = activeMoreItem || lastMoreItem
+
+  useEffect(() => {
+    if (!moreOpen) return undefined
+    const close = (event) => {
+      if (event.key === 'Escape' || (event.type === 'pointerdown' && !moreRef.current?.contains(event.target))) {
+        setMoreOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', close)
+    return () => {
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', close)
+    }
+  }, [moreOpen])
+
+  useEffect(() => {
+    setMoreOpen(false)
+  }, [activeTool, viewMode])
 
   return (
     <>
-    <div data-canvas-toolbar className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-[46px] rounded-xl bg-surface border border-border-light shadow-sm z-[1000] flex flex-col items-center py-1.5 gap-0.5 font-[lixFont] max-h-[calc(100vh-120px)] overflow-y-auto no-scrollbar`}>
+    <div data-canvas-toolbar className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-[46px] rounded-xl bg-surface border border-border-light shadow-sm z-[1000] flex flex-col items-center py-1.5 gap-0.5 font-[lixFont] max-h-[calc(100vh-120px)] overflow-visible`}>
       {/* Tool lock button at the top */}
       {!viewMode && (
         <>
@@ -68,6 +115,45 @@ export default function Toolbar() {
               key={`spacer-${idx}`}
               className="w-6 h-px bg-border-light my-0.5"
             />
+          )
+        }
+
+        if (item === 'more') {
+          return (
+            <div key="more" ref={moreRef} className="relative">
+              <button
+                type="button"
+                title={shownMoreItem ? `${shownMoreItem.title} — More tools` : 'More tools'}
+                aria-label="More tools"
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((open) => !open)}
+                className={`relative flex h-[31px] w-[33px] cursor-pointer items-center justify-center rounded-lg transition-all duration-200 ${moreOpen || moreActive ? 'bg-accent/20 text-accent' : 'text-text-muted hover:bg-surface-hover hover:text-text-primary'}`}
+              >
+                {shownMoreItem ? <ToolIcon item={shownMoreItem} className="h-[18px] w-[18px]" /> : <i className="bx bx-dots-horizontal-rounded text-xl" />}
+              </button>
+
+              {moreOpen && (
+                <div className="absolute left-[calc(100%+10px)] top-1/2 z-[1100] w-[190px] -translate-y-1/2 rounded-xl border border-border-light bg-surface-card/95 p-1.5 shadow-xl shadow-black/25 backdrop-blur-lg">
+                  <p className="px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-text-dim">More tools</p>
+                  {MORE_TOOL_ITEMS.map((moreItem) => {
+                    const selected = activeTool === moreItem.tool
+                    return (
+                      <button
+                        key={moreItem.tool}
+                        type="button"
+                        title={`${moreItem.title} (${moreItem.key})`}
+                        onClick={() => { setLastMoreItem(moreItem); setActiveTool(moreItem.tool); setMoreOpen(false) }}
+                        className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-left text-xs transition ${selected ? 'bg-accent/20 text-accent' : 'text-text-muted hover:bg-surface-hover hover:text-text-primary'}`}
+                      >
+                        <span className="flex h-5 w-5 items-center justify-center"><ToolIcon item={moreItem} className="h-[18px] w-[18px]" /></span>
+                        <span className="flex-1">{moreItem.title}</span>
+                        <span className="text-[10px] text-text-dim">{moreItem.key}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           )
         }
 
@@ -109,10 +195,7 @@ export default function Toolbar() {
                 : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
             }`}
           >
-            <i
-              className={`bx ${item.icon} text-xl`}
-              style={item.rotate ? { transform: 'rotate(-45deg)' } : undefined}
-            />
+            <span style={item.rotate ? { transform: 'rotate(-45deg)' } : undefined}><ToolIcon item={item} /></span>
             {item.key && (
               <span className={`absolute bottom-0.5 right-[-1px] text-[10px] leading-none ${isActive ? 'opacity-60' : 'opacity-35'}`}>
                 {item.key}

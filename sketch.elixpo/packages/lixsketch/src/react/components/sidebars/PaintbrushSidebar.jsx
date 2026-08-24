@@ -41,7 +41,7 @@ export default function PaintbrushSidebar() {
   const updateOpacity = useCallback((v) => { setOpacity(v); if (window.updateSelectedFreehandStyle) window.updateSelectedFreehandStyle({ opacity: v }) }, [])
 
   return (
-    <ShapeSidebar visible={activeTool === TOOLS.FREEHAND || selectedShapeSidebar === 'paintbrush'}>
+    <ShapeSidebar visible={activeTool === TOOLS.FREEHAND || activeTool === TOOLS.DRAW_SHAPE || selectedShapeSidebar === 'paintbrush'}>
       <ToolbarButton tooltip={t('sidebar.strokeColor')}
         preview={<span className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: strokeColor }} />}
       >

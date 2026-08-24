@@ -99,4 +99,8 @@ export const TOOLS = {
     IMAGE: 'image',
     FRAME: 'frame',
     ICON: 'icon',
+    DRAW_SHAPE: 'draw-shape',
+    PAINT_BUCKET: 'paint-bucket',
+    LASSO: 'lasso',
+    WEB_EMBED: 'web-embed',
 };

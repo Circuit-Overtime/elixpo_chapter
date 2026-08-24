@@ -26,6 +26,7 @@ import SVGCanvas from '@/components/canvas/SVGCanvas'
 import MultiSelectActions from '@/components/canvas/MultiSelectActions'
 import ImageSourcePicker from '@/components/canvas/ImageSourcePicker'
 import ImageGenerateModal from '@/components/modals/ImageGenerateModal'
+import WebEmbedModal from '@/components/modals/WebEmbedModal'
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts'
 import useGuestProfile from '@/hooks/useGuestProfile'
 import useAuth from '@/hooks/useAuth'
@@ -84,6 +85,7 @@ export default function RoomPage() {
       <CanvasPropertiesModal />
       <ImageSourcePicker />
       <ImageGenerateModal />
+      <WebEmbedModal />
       <ContextMenu />
       <FindBar />
       <CanvasLoadingOverlay />
