@@ -94,6 +94,27 @@ export default function TemplateDetailPage() {
     setAction('')
   }
 
+  const deleteTemplate = async () => {
+    if (!template?.isOwner || action) return
+    if (!window.confirm("Are you sure you want to delete this template? Existing forks and clones will keep working, but this public template will be permanently removed from LixSketch.")) return
+    setAction('delete')
+    setError('')
+    try {
+      const response = await fetch(`/api/templates/${encodeURIComponent(slug)}`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        window.location.assign('/profile')
+      } else {
+        const body = await response.json().catch(() => ({}))
+        throw new Error(body.error || 'Could not delete template')
+      }
+    } catch (reason) {
+      setError(reason.message)
+      setAction('')
+    }
+  }
+
   const saveMetadata = async () => {
     if (!template?.isOwner || action) return
     setAction('save')
@@ -143,7 +164,16 @@ export default function TemplateDetailPage() {
             <button onClick={() => createCopy('fork')} disabled={Boolean(action) || template.status !== 'published'} className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent-blue px-4 py-3 text-sm text-white hover:bg-accent-blue-hover disabled:cursor-not-allowed disabled:opacity-50"><i className="bx bx-git-repo-forked" />{action === 'fork' ? 'Creating fork…' : 'Fork with attribution'}</button>
             <button onClick={() => createCopy('clone')} disabled={Boolean(action) || template.status !== 'published'} className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-light px-4 py-3 text-sm text-text-secondary hover:border-accent-blue/50 hover:text-accent-blue disabled:cursor-not-allowed disabled:opacity-50"><i className="bx bx-copy" />{action === 'clone' ? 'Creating clone…' : 'Clone independently'}</button>
             <p className="mt-4 text-[11px] leading-5 text-text-dim">Both options create a new encrypted workspace and use one workspace slot. Forks keep public attribution; clones do not.</p>
-            {template.isOwner && <button onClick={togglePublished} disabled={Boolean(action)} className={`mt-5 w-full cursor-pointer border-t border-border-light pt-4 text-xs ${template.status === 'published' ? 'text-red-400 hover:text-red-300' : 'text-accent-blue hover:text-accent-blue-hover'}`}>{action ? 'Updating…' : template.status === 'published' ? 'Unpublish template' : 'Publish template again'}</button>}
+            {template.isOwner && (
+              <div className="mt-5 border-t border-border-light pt-4 flex flex-col gap-2.5">
+                <button onClick={togglePublished} disabled={Boolean(action)} className={`w-full cursor-pointer text-left text-xs ${template.status === 'published' ? 'text-red-400 hover:text-red-300' : 'text-accent-blue hover:text-accent-blue-hover'}`}>
+                  {action ? 'Updating…' : template.status === 'published' ? 'Unpublish template' : 'Publish template again'}
+                </button>
+                <button onClick={deleteTemplate} disabled={Boolean(action)} className="w-full cursor-pointer text-left text-xs text-red-400/80 hover:text-red-300">
+                  {action === 'delete' ? 'Deleting…' : 'Delete template permanently'}
+                </button>
+              </div>
+            )}
             {error && <p className="mt-4 rounded-lg bg-red-400/10 p-3 text-xs leading-5 text-red-300">{error}</p>}
           </aside>
         </div>}

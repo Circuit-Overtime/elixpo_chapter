@@ -285,8 +285,22 @@ function resizeCanvas() {
 
 
 let isMiddleMousePanning = false;
+let isSpaceMousePanning = false;
 
 freehandCanvas.addEventListener("mousedown", function (e) {
+  // Space + primary button temporarily owns the pointer, regardless of the
+  // active drawing tool. EventDispatcher yields while this flag is active.
+  if (e.button === 0 && window.__spacePanActive) {
+      e.preventDefault();
+      isSpaceMousePanning = true;
+      window.__spacePanPointerActive = true;
+      isPanning = true;
+      startCanvasX = e.clientX;
+      startCanvasY = e.clientY;
+      panStart = { x: e.clientX, y: e.clientY };
+      freehandCanvas.style.cursor = 'grabbing';
+      return;
+  }
   // Middle mouse button panning
   if (e.button === 1) {
       e.preventDefault();
@@ -327,6 +341,13 @@ freehandCanvas.addEventListener("mousemove", (e) => {
 });
 
 freehandCanvas.addEventListener("mouseup", (e) => {
+  if (isSpaceMousePanning) {
+      isSpaceMousePanning = false;
+      window.__spacePanPointerActive = false;
+      isPanning = false;
+      freehandCanvas.style.cursor = window.__spacePanActive ? 'grab' : '';
+      return;
+  }
   if (isMiddleMousePanning) {
       isMiddleMousePanning = false;
       isPanning = false;
@@ -341,6 +362,13 @@ freehandCanvas.addEventListener("mouseup", (e) => {
 });
 
 freehandCanvas.addEventListener("mouseleave", () => {
+  if (isSpaceMousePanning) {
+      isSpaceMousePanning = false;
+      window.__spacePanPointerActive = false;
+      isPanning = false;
+      freehandCanvas.style.cursor = window.__spacePanActive ? 'grab' : '';
+      return;
+  }
   if (isMiddleMousePanning) {
       isMiddleMousePanning = false;
       isPanning = false;
@@ -352,6 +380,14 @@ freehandCanvas.addEventListener("mouseleave", () => {
       isPanning = false;
       freehandCanvas.style.cursor = 'grab';
   }
+});
+
+window.addEventListener("blur", () => {
+  if (!isSpaceMousePanning) return;
+  isSpaceMousePanning = false;
+  window.__spacePanPointerActive = false;
+  isPanning = false;
+  freehandCanvas.style.cursor = '';
 });
 
 // Prevent default middle-click auto-scroll behavior

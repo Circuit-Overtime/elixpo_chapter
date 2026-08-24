@@ -7,7 +7,7 @@ project:
 ci:
   lint_cmd: ""
   test_cmd: ""
-  build_cmd: "npm run build"
+  build_cmd: "npx --no-install @cloudflare/next-on-pages"
 
 maintainers:
   - github: Circuit-Overtime

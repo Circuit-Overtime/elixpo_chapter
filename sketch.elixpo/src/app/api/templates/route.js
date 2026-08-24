@@ -78,6 +78,12 @@ export async function POST(request) {
     if (cover && new Blob([cover]).size > TEMPLATE_COVER_MAX_BYTES) {
       return NextResponse.json({ error: 'Template cover must be smaller than 200 KB' }, { status: 413 })
     }
+    if (body.sourceSessionId) {
+      const existing = await DB.prepare("SELECT slug FROM workspace_templates WHERE source_session_id = ? AND status = 'published'").bind(body.sourceSessionId).first()
+      if (existing) {
+        return NextResponse.json({ error: 'This workspace is already published. Use PATCH to update it.' }, { status: 409 })
+      }
+    }
     const id = crypto.randomUUID()
     let slug = templateSlug(title)
     const collision = await DB.prepare('SELECT id FROM workspace_templates WHERE slug = ?').bind(slug).first()
