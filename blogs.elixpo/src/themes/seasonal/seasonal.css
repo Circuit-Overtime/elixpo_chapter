@@ -1,6 +1,4 @@
 /* Theme styles stay scoped to their data-seasonal-theme value. */
-@import './india-independence-day.css';
-
 html[data-seasonal-theme] {
   --accent: var(--seasonal-primary);
   --accent-hover: var(--seasonal-primary-hover);

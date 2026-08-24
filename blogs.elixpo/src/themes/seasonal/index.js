@@ -31,10 +31,6 @@ export function getActiveSeasonalTheme(date = new Date()) {
     .find((theme) => isSeasonalThemeActive(theme, date)) || null;
 }
 
-export function isIndianIndependenceDay(date = new Date()) {
-  return getActiveSeasonalTheme(date)?.id === 'india-independence-day';
-}
-
 export function seasonalThemeBootstrapScript() {
   const themes = JSON.stringify(registry.themes).replaceAll('<', '\\u003c');
   return `(function(){try{var themes=${themes};var now=new Date();var root=document.documentElement;var active=themes.sort(function(a,b){return (b.priority||0)-(a.priority||0)}).find(function(theme){var s=theme.schedule;if(!s||s.type!=='annual')return false;var p=new Intl.DateTimeFormat('en-US',{timeZone:s.timeZone||'UTC',month:'2-digit',day:'2-digit'}).formatToParts(now);var m=p.find(function(x){return x.type==='month'}).value;var d=p.find(function(x){return x.type==='day'}).value;var key=m+'-'+d;var end=s.end||s.start;return s.start<=end?(key>=s.start&&key<=end):(key>=s.start||key<=end)});if(active){root.setAttribute('data-seasonal-theme',active.id);var p=active.palette||{};root.style.setProperty('--seasonal-primary',p.primary||'');root.style.setProperty('--seasonal-primary-hover',p.primaryHover||p.primary||'');root.style.setProperty('--seasonal-secondary',p.secondary||'');root.style.setProperty('--seasonal-focus',p.focus||p.primary||'')}else root.removeAttribute('data-seasonal-theme')}catch(e){}})();`;

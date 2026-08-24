@@ -1,25 +1,4 @@
 {
   "version": 1,
-  "themes": [
-    {
-      "id": "india-independence-day",
-      "name": "India Independence Day",
-      "shortLabel": "15 August",
-      "description": "India Independence Day theme",
-      "icon": "/icon_independence.png",
-      "priority": 100,
-      "schedule": {
-        "type": "annual",
-        "start": "08-15",
-        "end": "08-15",
-        "timeZone": "Asia/Kolkata"
-      },
-      "palette": {
-        "primary": "#138808",
-        "primaryHover": "#0f7007",
-        "secondary": "#ff9933",
-        "focus": "#1a4b8c"
-      }
-    }
-  ]
+  "themes": []
 }
