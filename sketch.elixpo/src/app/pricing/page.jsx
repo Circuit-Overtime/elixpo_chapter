@@ -41,7 +41,7 @@ const plans = [
       'Canvas, docs, and split view',
       'PNG and SVG export',
       'End-to-end encrypted sync',
-      'AI image generation · connect Pollinations',
+      'AI image generation · free with Pollinations',
     ],
   },
   {
@@ -74,7 +74,7 @@ const comparison = [
   { feature: 'Live room participants', values: ['1', '3', '5'] },
   { feature: 'PNG and SVG export', values: ['Included', 'Included', 'Included'] },
   { feature: 'PDF export', values: ['—', '—', 'Included'] },
-  { feature: 'AI image generation', values: ['—', 'Included', 'Included'] },
+  { feature: 'AI image generation', values: ['—', 'Free with Pollinations', 'Free with Pollinations'] },
 ]
 
 const faqs = [
@@ -92,7 +92,7 @@ const faqs = [
   },
   {
     question: 'Is the AI connector included?',
-    answer: 'Yes. Free and Pro include AI image generation with Flux and Klein after you connect your Pollinations account. Generation uses your personal Pollen balance; LixSketch does not provide or resell Pollen credits.',
+    answer: 'Yes. Free and Pro include AI image generation with Flux and Klein at no extra LixSketch charge after you connect Pollinations. Each generation uses your personal Pollen balance; LixSketch does not provide or resell Pollen credits.',
   },
 ]
 
@@ -234,7 +234,7 @@ export default function PricingPage() {
               </div>
               <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#9b7be5]/30 bg-[#8b6de0]/10 px-3 py-1.5 text-xs text-[#d9c7ff]">
                 <i className="bx bx-sparkles" aria-hidden="true" />
-                AI image generation · Included in Free
+                AI image generation · Free with Pollinations
               </div>
             </div>
 
