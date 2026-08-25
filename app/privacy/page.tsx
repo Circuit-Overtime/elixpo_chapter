@@ -135,11 +135,13 @@ export default function PrivacyPage() {
 
           <Section title="Retention">
             <p>
-              Click events are retained for the window matching your tier
-              (3 days on Free, up to 365 on Enterprise). Older events are
-              deleted in regular cleanup passes. You can delete a short link
-              at any time, which removes both the link and all its click
-              history immediately.
+              Guest links expire after 24 hours. Expired guest links and
+              completed guest quota records are removed during subsequent
+              guest creation cleanup. Analytics query access is limited by
+              plan; the service may retain raw click events beyond that query
+              window until the analytics cleanup process removes them. You can
+              delete a short link at any time, which removes both the link and
+              its click history immediately.
             </p>
           </Section>
 
