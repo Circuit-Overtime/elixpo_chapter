@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveUser, auditLog } from '@/lib/auth';
 import { requireSameOrigin } from '@/lib/csrf';
-import { getDB, getKV } from '@/lib/db';
+import { getDB, getEnv, getKV } from '@/lib/db';
 import { validateUrl, validateLength, validateFutureDate, badRequest } from '@/lib/validate';
-import type { UrlRecord } from '@/lib/types';
+import { TIER_LIMITS, type UrlRecord } from '@/lib/types';
+import { checkSafeBrowsing, threatMessage } from '@/lib/safebrowsing';
+import { putRedirectCache } from '@/lib/redirect-cache';
 
 export const runtime = 'edge';
 
@@ -28,7 +30,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { code } = await params;
-  const body: any = await request.json();
+  const body: any = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object') return badRequest('Request body must be valid JSON');
   const db = getDB();
   const kv = getKV();
 
@@ -43,6 +46,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (typeof body.url !== 'string') return badRequest('url must be a string');
     const urlErr = validateUrl(body.url);
     if (urlErr) return badRequest(urlErr);
+    const threat = await checkSafeBrowsing(body.url, getEnv().SAFE_BROWSING_API_KEY);
+    if (threat) {
+      return NextResponse.json({ error: threatMessage(threat) }, { status: 422 });
+    }
     updates.push('original_url = ?'); bindParams.push(body.url);
   }
   if (body.title !== undefined) {
@@ -54,10 +61,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     updates.push('title = ?'); bindParams.push(body.title);
   }
   if (body.is_active !== undefined) {
+    if (typeof body.is_active !== 'boolean') return badRequest('is_active must be a boolean');
     updates.push('is_active = ?'); bindParams.push(body.is_active ? 1 : 0);
   }
   if (body.expires_at !== undefined) {
+    if (body.expires_at !== null && !TIER_LIMITS[user.tier].expiringLinks) {
+      return NextResponse.json({ error: 'Expiring links require Pro tier or above' }, { status: 403 });
+    }
     if (body.expires_at !== null) {
+      if (typeof body.expires_at !== 'string') return badRequest('expires_at must be a string or null');
       const dateErr = validateFutureDate(body.expires_at);
       if (dateErr) return badRequest(dateErr);
     }
@@ -75,8 +87,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   // Sync KV cache
   const newUrl = body.url || url.original_url;
   const isActive = body.is_active !== undefined ? body.is_active : !!url.is_active;
+  const newExpiry = body.expires_at !== undefined ? body.expires_at : url.expires_at;
   if (isActive) {
-    kv.put(`url:${code}`, JSON.stringify({ url: newUrl, id: url.id })).catch(() => {});
+    putRedirectCache(kv, code, {
+      url: newUrl,
+      id: url.id,
+      expires_at: newExpiry,
+    }).catch(() => {});
   } else {
     kv.delete(`url:${code}`).catch(() => {});
   }

@@ -4,6 +4,7 @@ import { getDB, getEnv, getKV } from '@/lib/db';
 import { deriveGuestRiskIdentity } from '@/lib/guest-risk';
 import { rateLimit } from '@/lib/ratelimit';
 import { checkSafeBrowsing, threatMessage } from '@/lib/safebrowsing';
+import { putRedirectCache } from '@/lib/redirect-cache';
 import { generateShortCode } from '@/lib/utils';
 import { badRequest, validateSlug, validateUrl } from '@/lib/validate';
 
@@ -154,13 +155,11 @@ export async function POST(request: NextRequest) {
     )
     .run();
 
-  getKV()
-    .put(
-      `url:${shortCode}`,
-      JSON.stringify({ url, guest: true }),
-      { expirationTtl: GUEST_TTL_SECONDS },
-    )
-    .catch(() => {});
+  putRedirectCache(getKV(), shortCode, {
+    url,
+    guest: true,
+    expires_at: expiresAt.toISOString(),
+  }).catch(() => {});
 
   const baseUrl = env.BASE_URL || new URL(request.url).origin;
   return NextResponse.json(

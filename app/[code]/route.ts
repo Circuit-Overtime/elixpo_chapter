@@ -2,6 +2,11 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB, getKV } from '@/lib/db';
 import { parseUserAgent, hashIp } from '@/lib/utils';
+import {
+  type CachedRedirect,
+  isCachedRedirectExpired,
+  putRedirectCache,
+} from '@/lib/redirect-cache';
 
 export const runtime = 'edge';
 
@@ -33,12 +38,16 @@ export async function GET(
       return notFoundPage(request);
     }
     try {
-      const { url, id, guest } = JSON.parse(cached);
-      if (!guest && typeof id === 'number') {
-        const db = getDB();
-        scheduleTracking(db, id, request);
+      const entry = JSON.parse(cached) as CachedRedirect;
+      if (!entry.url || isCachedRedirectExpired(entry)) {
+        kv.delete(`url:${code}`).catch(() => {});
+        return notFoundPage(request);
       }
-      return redirect(url);
+      if (!entry.guest && typeof entry.id === 'number') {
+        const db = getDB();
+        scheduleTracking(db, entry.id, request);
+      }
+      return redirect(entry.url);
     } catch {
       // Corrupted cache entry — fall through to D1 lookup and re-cache.
       kv.delete(`url:${code}`).catch(() => {});
@@ -63,16 +72,11 @@ export async function GET(
       .first<{ original_url: string; expires_at: string }>();
 
     if (guestRecord) {
-      const ttl = Math.floor(
-        (new Date(guestRecord.expires_at).getTime() - Date.now()) / 1000,
-      );
-      if (ttl >= 60) {
-        kv.put(
-          `url:${code}`,
-          JSON.stringify({ url: guestRecord.original_url, guest: true }),
-          { expirationTtl: ttl },
-        ).catch(() => {});
-      }
+      putRedirectCache(kv, code, {
+        url: guestRecord.original_url,
+        guest: true,
+        expires_at: guestRecord.expires_at,
+      }).catch(() => {});
       return redirect(guestRecord.original_url);
     }
 
@@ -90,16 +94,11 @@ export async function GET(
     return notFoundPage(request);
   }
 
-  // Re-populate KV cache with appropriate TTL
-  const ttl = urlRecord.expires_at
-    ? Math.max(Math.floor((new Date(urlRecord.expires_at).getTime() - Date.now()) / 1000), 60)
-    : 86400; // 24h default
-
-  kv.put(
-    `url:${code}`,
-    JSON.stringify({ url: urlRecord.original_url, id: urlRecord.id }),
-    { expirationTtl: ttl },
-  ).catch(() => {});
+  putRedirectCache(kv, code, {
+    url: urlRecord.original_url,
+    id: urlRecord.id,
+    expires_at: urlRecord.expires_at,
+  }).catch(() => {});
 
   scheduleTracking(db, urlRecord.id, request);
   return redirect(urlRecord.original_url);

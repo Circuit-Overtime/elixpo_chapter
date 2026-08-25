@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auditLog } from '@/lib/auth';
 import { getDB, getEnv, getKV } from '@/lib/db';
 import { checkSafeBrowsing, threatMessage } from '@/lib/safebrowsing';
+import { putRedirectCache } from '@/lib/redirect-cache';
 import { TIER_LIMITS, type UrlRecord, type User } from '@/lib/types';
 import { generateShortCode } from '@/lib/utils';
 import {
@@ -103,8 +104,11 @@ export async function createUrlForUser(user: User, input: CreateUrlInput) {
     'INSERT INTO urls (user_id, short_code, original_url, title, expires_at) VALUES (?, ?, ?, ?, ?) RETURNING *',
   ).bind(user.id, shortCode, url, typeof title === 'string' ? title : null, expiry).first<UrlRecord>();
 
-  const ttl = expiry ? Math.max(Math.floor((new Date(expiry).getTime() - Date.now()) / 1000), 60) : undefined;
-  kv.put(`url:${shortCode}`, JSON.stringify({ url, id: result!.id }), { expirationTtl: ttl }).catch(() => {});
+  putRedirectCache(kv, shortCode, {
+    url,
+    id: result!.id,
+    expires_at: expiry,
+  }).catch(() => {});
   auditLog(user.id, 'url.create', 'url', shortCode, url).catch(() => {});
 
   return NextResponse.json({
