@@ -1,7 +1,9 @@
 # Lixrl Product Audit
 
 **Audit date:** 25 August 2026  
-**Repository revision:** `9a02e83`  
+**Original audit revision:** `9a02e83`  
+**Implementation revision reviewed:** `859ba19` on `feat/product-audit-remediation`  
+**Tracking:** [Issue #22](https://github.com/elixpo/lixrl.com/issues/22) · [Draft PR #23](https://github.com/elixpo/lixrl.com/pull/23)  
 **Competitive frame:** Bitly (direct competitor) and Pastebin (adjacent competitor)  
 **Scope:** Product positioning, acquisition, landing experience, dashboard, plans, API, documentation, privacy, security, abuse prevention, reliability, and operational readiness.
 
@@ -9,9 +11,33 @@
 
 Lixrl has the foundation of a compelling developer-focused URL shortener: an unusually low-friction guest flow, Cloudflare-native redirects, persistent account links, analytics, QR generation, API access, and an interface that is substantially less crowded than mature competitors. The best strategic opening is not to reproduce every Bitly feature. It is to become the simpler, privacy-conscious, developer-first choice with fast onboarding and honest, understandable limits.
 
-The product is currently best classified as a promising public beta. The core loop works, but paid-plan messaging is ahead of implementation, some public documentation does not match runtime behaviour, and several authentication, API authorization, expiry, and abuse-control gaps should be resolved before increasing acquisition or actively selling Business plans.
+The original revision was best classified as a promising public beta. PR #23
+materially changes that assessment: the critical authentication,
+authorization, destination-update, and expiry findings are remediated; the
+free daily allowance is enforced; and pricing no longer advertises unshipped
+domains, seats, or webhooks. Keep the product in public beta until the PR
+receives a real Next.js/Cloudflare Pages build, migrations are applied through
+the deployment workflow, and the remaining operational controls below are
+verified in production.
 
 Bitly is the direct commercial benchmark. It competes with branded domains, UTM campaigns, redirects, integrations, dynamic QR codes, routing, and detailed analytics. Pastebin is not a direct URL-shortening competitor; it competes for the same desire to share something instantly without setup. Its relevant lessons are explicit expiry, clear visibility controls, anonymous creation, and mature abuse handling. Lixrl should learn from that workflow without adding paste hosting and its much larger moderation burden.
+
+**Remediation status after PR #23**
+
+| Audit area | Status | What remains |
+|---|---|---|
+| 2.1 Authentication and authorization | Remediated | Rotate the production OAuth client secret and verify log removal |
+| 2.2 Redirect expiry | Remediated | Production cache/expiry integration test |
+| 2.3 Paid-plan truthfulness | Remediated | Do not restore domains, seats, webhooks, or rate claims before enforcement |
+| 2.4 Free daily allowance | Remediated | Observe false positives and quota conversion after launch |
+| 2.5 Documentation contracts | Mostly remediated | OpenAPI source of truth and contract tests |
+| 2.6 Privacy and lifecycle | Partially remediated | Scheduled cleanup independent of dashboard activity |
+| 2.7 Abuse operations | Foundation shipped | Notifications, review SLA, appeals, and reputation signals |
+| 2.8 Guest failure handling | Remediated | Monitor cleanup cost and failed-claim recovery |
+| 2.9 Onboarding | Partially remediated | Claim a guest link into the newly created account |
+| 2.10 Analytics quality | Partially remediated | Validate bot accuracy and expose definitions in the dashboard |
+| 2.11 Reliability evidence | Partially remediated | Repair CI, run Pages build, add integration tests, publish SLOs |
+| 2.12 Competitive workflows | Partially remediated | Custom domains are the next major paid capability |
 
 ---
 
@@ -80,7 +106,17 @@ The direction is stronger than the current wording and implementation details; c
 
 ## 2. Gaps, risks, and competitive weaknesses
 
-### 2.1 Critical security and authorization gaps
+This section preserves the original finding and evidence so reviewers can
+audit the remediation. The status callout under each heading is the current
+state on PR #23; prose after the callout describes the condition found at
+revision `9a02e83` unless explicitly stated otherwise.
+
+### 2.1 Authentication and authorization — remediated
+
+**PR #23 outcome:** OAuth payload logging and unused provider-token storage
+were removed, D1 is authoritative for sessions, and API-key write scopes are
+enforced on mutation routes. The production OAuth client secret still needs to
+be rotated if the old exchange path ever ran there.
 
 | Gap | Evidence | Product impact | Severity |
 |---|---|---|---|
@@ -94,7 +130,11 @@ The OAuth logging must be treated as an incident-prevention task, not ordinary c
 
 API scopes currently create a dangerous false sense of security. Until enforcement ships, the UI and documentation should state that every key has full access. The best end state is an authenticated principal containing the user, key ID, and granted scopes, with a common authorization helper applied to every endpoint.
 
-### 2.2 Redirect expiry is not authoritative
+### 2.2 Redirect expiry — remediated
+
+**PR #23 outcome:** cached redirects now carry expiry, reject expired cache
+hits, avoid KV caching inside its 60-second minimum TTL, and are invalidated or
+rewritten when the destination, activation state, or expiry changes.
 
 The cached redirect record contains the destination and database ID, but not its expiry. The fast path redirects without consulting D1. When an existing link is updated, the cache is rewritten without a matching expiration TTL. The slow-path calculation also enforces a minimum 60-second TTL, allowing a link close to expiry to remain cached beyond its intended lifetime.
 
@@ -108,7 +148,12 @@ This breaks a central product contract. A customer using an expiring link for a 
 - Destination, activation, and expiry changes invalidate or atomically replace cached state.
 - Automated tests cover create, update, deactivate, expire, and reactivate sequences.
 
-### 2.3 Paid-plan promises exceed the shipped product
+### 2.3 Paid-plan promises — remediated in purchase surfaces
+
+**PR #23 outcome:** branded domains, webhook delivery, team seats, and
+unenforced per-minute rates were removed from pricing and subscription
+benefits. Reserved entitlement fields remain in code but are explicitly barred
+from marketing until their product paths exist.
 
 The plan model and pricing UI advertise branded domains, webhook delivery, team seats, and tier-specific API request rates. Branded-domain routing and team management do not exist, outbound product webhooks are explicitly documented as coming soon, and most API routes use fixed limits rather than the advertised tier limits.
 
@@ -125,7 +170,12 @@ This is the largest commercial trust gap. A buyer can pay for a plan based on a 
 
 The short-term correction is to label unshipped capabilities clearly or remove them from checkout. The long-term correction is an entitlement registry used consistently by pricing, UI, API enforcement, and documentation.
 
-### 2.4 The requested free-user allowance is only a placeholder
+### 2.4 Free-user daily allowance — remediated
+
+**PR #23 outcome:** signed-in Free accounts receive two creations per UTC day
+through an atomic D1 ledger. The dashboard shows live usage and reset time;
+risk metadata is keyed and pseudonymous, and failed link inserts release the
+claimed slot.
 
 The guest rule—one link per rolling 24 hours—is implemented. The signed-in free allowance—two links per day with a risk-aware IP and metadata mechanism—is not. The dashboard displays it as a planned allowance, while the server applies a 25-link lifetime total.
 
@@ -139,7 +189,12 @@ The quota model should distinguish:
 - Analytics window: how far back detailed data can be queried.
 - Storage retention: when underlying click records are actually deleted.
 
-### 2.5 Documentation is detailed but not yet dependable
+### 2.5 Documentation contracts — mostly remediated
+
+**PR #23 outcome:** key format/hash/scopes, error bodies, analytics defaults,
+query windows, storage shape, plan values, campaign metadata, and bulk-create
+behaviour now describe the implementation. The next step is generating and
+testing these contracts from an OpenAPI specification.
 
 The documentation surface is visually substantial, but several statements do not match runtime responses:
 
@@ -151,7 +206,12 @@ The documentation surface is visually substantial, but several statements do not
 
 Developer trust depends more on examples matching production than on documentation volume. Contract tests should generate or validate examples from the same schemas used by the API.
 
-### 2.6 Privacy language and data lifecycle are inconsistent
+### 2.6 Privacy and data lifecycle — partially remediated
+
+**PR #23 outcome:** guest, quota, network, and daily visitor identifiers now
+use Web Crypto HMACs. The policy describes individual events, daily visitor
+rotation, guest cleanup, and the current analytics deletion trigger. The
+remaining gap is scheduled deletion for accounts that never reopen analytics.
 
 The privacy page says IP information is “hashed, masked.” `hashIp` masks IPv4 addresses to a `/16`-style value and IPv6 to a coarse prefix, but does not cryptographically hash the result. The click table stores individual events; plan retention limits restrict query windows but do not prune old records.
 
@@ -163,7 +223,12 @@ These differences create avoidable policy risk:
 - Add scheduled deletion or aggregation if the public policy promises deletion.
 - Publish what country, referrer, browser, device, and network data is stored and for how long.
 
-### 2.7 Abuse response is incomplete
+### 2.7 Abuse response — operational foundation shipped
+
+**PR #23 outcome:** visitors can submit rate-limited reports, reports enter an
+indexed D1 queue, administrators can review them, and quarantine immediately
+disables D1 redirects and clears KV. Notifications, appeals, reputation
+signals, and a documented response SLA remain.
 
 Public shorteners attract phishing, malware, spam, automated scanning, and brand impersonation. Google Safe Browsing is useful but currently fails open when it is unavailable and does not cover destination edits. No public report-abuse entry point or moderation console is present.
 
@@ -179,13 +244,21 @@ Risk scoring should support abuse decisions, not silently become identity. A com
 
 Pastebin's mature product visibly includes reporting and abuse-related restrictions. Lixrl does not need Pastebin's content system, but it does need comparable operational readiness for links.
 
-### 2.8 Guest quota failure handling and cleanup need work
+### 2.8 Guest failure handling and cleanup — remediated
+
+**PR #23 outcome:** a failed guest-link write releases only its exact quota
+claim. Successful guest creation schedules removal of expired guest links and
+completed quota records outside the response path.
 
 The guest quota is claimed before the guest-link insert and the two writes are not one D1 transaction or batch. If link creation fails after the claim, the visitor may lose the allowance without receiving a link. Expired guest links and old quota records also have no scheduled cleanup path.
 
 The guest workflow should be idempotent for retryable failures, and cleanup should prevent unbounded storage growth.
 
-### 2.9 Onboarding and conversion leaks
+### 2.9 Onboarding and conversion — partially remediated
+
+**PR #23 outcome:** safe same-origin return paths survive OAuth, pricing intent
+returns to pricing, and stale cookies no longer create a login loop. Guest-link
+claiming after account creation remains the most important conversion gap.
 
 The pricing page sends a `return_to=/pricing` parameter to login, but the login route does not retain it and the callback always sends users to `/dashboard`. This interrupts checkout intent. A stale session cookie can also create a redirect loop: middleware sees the cookie and leaves login, while server-side validation rejects the underlying session.
 
@@ -196,13 +269,24 @@ Other conversion gaps:
 - Pricing should show concrete units—per day, per month, active links—not ambiguous totals.
 - Upgrade prompts should identify the exact unlocked task, such as “Connect your domain,” rather than only “Upgrade to Pro.”
 
-### 2.10 Analytics lack the trust signals expected in this market
+### 2.10 Analytics trust signals — partially remediated
+
+**PR #23 outcome:** common bots and preview agents are filtered from customer
+metrics; the API exposes human clicks, filtered bots, and approximate unique
+visitor-days; dashboards and CSV exports apply the same filter; raw events are
+pruned to plan windows when analytics are accessed.
 
 Lixrl records useful country, browser, device, referrer, and timeline dimensions. It does not yet visibly distinguish total from unique clicks, filter bots, disclose unknown-location behaviour, or show measurement confidence. Bitly markets real-time unified analytics, UTM support, and device/location dimensions; these are established expectations in paid link management.
 
 Adding more charts before improving measurement quality would be the wrong order. First define what a click means, exclude known scanners, identify unique visits using a privacy-conscious method, and document update latency.
 
-### 2.11 Reliability claims are not supported by product evidence
+### 2.11 Reliability evidence — partially remediated
+
+**PR #23 outcome:** unmeasured sub-50ms and real-time claims were removed,
+health responses now report D1/KV/total probe latency, and a repository check
+guards edge runtimes, Node imports, credential logs, and migration ordering.
+The current CI workflow fails before starting a job, so a real Pages build and
+runtime integration tests are still release blockers.
 
 “Under 50ms worldwide” is precise enough to be testable, but the product does not expose a latency dashboard, regional percentiles, redirect success rate, or status history. There is also no automated test runner in the repository, and the redirect/cache/auth/billing paths rely on manual verification.
 
@@ -213,22 +297,27 @@ Before using the latency claim as a headline:
 - Track redirect success, D1 fallback rate, KV hit rate, analytics write failure, and safety-check health.
 - Add alerting for elevated redirect errors and billing-webhook failures.
 
-### 2.12 Competitive feature gaps
+### 2.12 Competitive workflows — partially remediated
+
+**PR #23 outcome:** link creation now supports campaign labels, searchable
+tags, UTM composition, 25-item bulk creation with row outcomes, CSV metadata,
+and SVG/PNG QR export. Custom domains remain the clearest missing paid feature;
+teams and advanced routing should follow only after domain routing is stable.
 
 Lixrl should not copy Bitly indiscriminately, but several missing capabilities directly affect paid conversion:
 
 | Capability | Bitly expectation | Lixrl status | Strategic value |
 |---|---|---|---|
-| Custom domains | Core paid capability | Advertised, not implemented | Very high |
-| UTM builder and campaigns | Available in paid workflows | Missing | High |
-| Link redirects/editing | Mature workflow | Destination editing exists, but safety gap | High |
-| Bulk creation/import | Available on higher plans | Bulk delete only | Medium-high |
-| Tags/folders | Organization at scale | Missing | Medium |
-| Dynamic QR formats | PNG/JPEG/SVG and customization | Styled SVG only | Medium |
+| Custom domains | Core paid capability | Not shipped; removed from paid claims | Very high |
+| UTM builder and campaigns | Available in paid workflows | UTM composition and campaign labels shipped in PR #23 | High |
+| Link redirects/editing | Mature workflow | Editing and update-time safety checks shipped | High |
+| Bulk creation/import | Available on higher plans | 25-item API shipped; CSV import remains | Medium-high |
+| Tags/folders | Organization at scale | Searchable tags shipped; folders remain | Medium |
+| Dynamic QR formats | PNG/JPEG/SVG and customization | Styled SVG and PNG shipped; JPEG remains | Medium |
 | Integrations | Broad ecosystem | Elixpo Blogs only | Medium |
 | Device/location routing | Higher-plan capability | Missing | Later |
 | Landing/link-in-bio pages | Included by Bitly | Missing | Later |
-| Team roles | Business expectation | Advertised seats, no management | High for Business |
+| Team roles | Business expectation | Not shipped; seat claims removed | High for Business |
 
 Paste hosting, syntax highlighting, and raw text endpoints are intentionally excluded from this table. Those are Pastebin's category, not necessary gaps in a URL shortener.
 
@@ -255,7 +344,9 @@ Avoid claiming absolute superiority or a global latency number until measurement
 
 ### 3.2 P0: secure and make promises truthful
 
-**Target window:** before the next paid acquisition campaign.
+**Status:** implemented in PR #23 except production secret rotation, migration
+deployment, and build/runtime verification. Those three checks remain release
+gates before the next paid acquisition campaign.
 
 1. Remove the OAuth payload log and rotate `ELIXPO_CLIENT_SECRET` if production logs may contain it.
 2. Run destination safety checks on both create and update.
@@ -290,7 +381,9 @@ Avoid claiming absolute superiority or a global latency number until measurement
 
 ### 3.3 P1: complete the free-to-paid product loop
 
-**Target window:** next 2–6 weeks after P0.
+**Status:** the two-per-day allowance, live dashboard counter, searchable
+campaign metadata, UTM composition, and bulk-create API are implemented. Guest
+link claiming and custom domains remain the highest-value product work.
 
 #### Quotas and packaging
 
@@ -332,6 +425,11 @@ Minimum complete workflow:
 
 ### 3.4 P1: improve analytics quality before breadth
 
+**Status:** bot filtering, approximate unique visitor-days, consistent filtered
+queries/exports, and access-triggered retention pruning are implemented. The
+remaining work is validation, scheduled cleanup, dashboard definitions, and
+production measurement.
+
 Define and display:
 
 - Total redirect attempts.
@@ -352,6 +450,11 @@ Use documented bot heuristics and privacy-preserving uniqueness rather than pres
 - Every chart reconciles with the downloadable data for the same filters.
 
 ### 3.5 P1: establish reliability and test coverage
+
+**Status:** this is now the immediate release blocker. PR #23 adds static edge
+auditing and measurable health probes, but the repository CI workflow currently
+fails before creating a quality job and the branch has not received a real
+Next.js or Cloudflare Pages build.
 
 Create an automated test layer around the behaviours most likely to damage trust:
 
@@ -449,16 +552,29 @@ Track the roadmap through product outcomes rather than shipped screens:
 
 ### 3.11 Recommended execution order
 
-1. Security, authorization, expiry, session validity, and secret rotation.
-2. Truthful pricing, documentation, privacy language, and abuse reporting.
-3. Signed-in two-per-day allowance and guest-to-account claiming.
-4. Custom domains.
-5. UTM presets, tags/folders, and bulk creation.
-6. Analytics quality, retention cleanup, and public reliability metrics.
-7. Webhooks and stronger API tooling.
-8. Teams, advanced routing, and broader integrations.
+The immediate focus should be **release confidence, then custom domains**. Do
+not add another large surface until the remediation branch is proven on the
+actual edge runtime.
 
-This sequence protects existing users first, makes the current product contract honest, and then builds the paid capabilities most likely to differentiate Lixrl without turning it into a smaller copy of Bitly.
+| Order | Focus | Definition of done |
+|---|---|---|
+| 1 | Repair CI and validate PR #23 | Quality workflow creates jobs; TypeScript, test, Next build, and `pages:build` pass |
+| 2 | Deploy safely | Migrations 0005–0009 apply through the merged deployment; OAuth secret rotated; redirect/auth/quota/abuse smoke tests pass |
+| 3 | Production observability | Redirect success, p50/p95/p99, KV hit rate, D1 fallback, analytics failures, and abuse queue age are visible with alerts |
+| 4 | Custom domains | Ownership verification, DNS guidance, certificates, routing, collision isolation, removal, and downgrade safety work end to end |
+| 5 | Guest-to-account claiming | A guest can sign in and retain the exact link securely; conversion and failure rates are measured |
+| 6 | Scheduled lifecycle jobs | Click, guest, quota, session, and abuse data are pruned independently of dashboard traffic |
+| 7 | API contract maturity | OpenAPI 3.1, contract tests, idempotent creates, generated examples, and stable machine-readable errors ship together |
+| 8 | Abuse operations | Reviewer notifications, response SLA, appeals, reputation signals, and repeat-actor controls are operational |
+| 9 | Analytics validation | Bot false positives, unique-count semantics, freshness, timezone, and export reconciliation are measured and documented |
+| 10 | Teams and routing | Roles, invitations, ownership transfer, audit history, then geo/device routing—only after custom domains are stable |
+
+**Recommended next sprint:** complete items 1–3 only. They turn a large security
+and product patch into a safe release and create the evidence needed to decide
+whether custom domains or conversion work produces the better commercial
+return. After release confidence, custom domains should be the next feature:
+they are visible to every paid customer's audience, create a clear upgrade
+reason, and close the most important direct gap with Bitly.
 
 ### Competitive references
 
