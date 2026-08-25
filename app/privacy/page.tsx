@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/privacy' },
 };
 
-const LAST_UPDATED = 'June 2026';
+const LAST_UPDATED = '25 August 2026';
 const SUPPORT_EMAIL = 'hello@elixpo.com';
 
 export default function PrivacyPage() {
@@ -75,11 +75,11 @@ export default function PrivacyPage() {
                 and paths.
               </li>
               <li>
-                <strong>A hashed, masked IP</strong>. We never store the raw
-                IP. IPv4 is masked to /16 (e.g.{' '}
-                <code>203.0.x.x</code>); IPv6 is masked to /64. This is
-                sufficient for coarse geographic aggregation and abuse
-                detection, and not sufficient to re-identify a visitor.
+                <strong>A keyed hash of a coarse network prefix</strong>. We
+                truncate IPv4 to /16 and IPv6 to /64 in memory, HMAC that
+                prefix with a server secret, and store only the resulting
+                pseudonymous value. The raw address and readable prefix are
+                discarded.
               </li>
             </ul>
             <p>
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
               abuse-prevention identity from the request IP and coarse browser,
               device, operating-system, and language categories. The raw values
               are processed in memory and discarded; we store only a
-              secret-peppered hash, a risk score, and the time the allowance
+              keyed HMAC, a risk score, and the time the allowance
               becomes available again. Guest links and quota records are not
               used for click analytics or advertising.
             </p>
@@ -127,8 +127,8 @@ export default function PrivacyPage() {
                 other purpose.
               </li>
               <li>
-                We do not retain raw IP addresses, ever — only the masked
-                hash.
+                We do not retain raw IP addresses or readable network
+                prefixes—only keyed pseudonymous hashes.
               </li>
             </ul>
           </Section>

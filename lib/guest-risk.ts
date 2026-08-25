@@ -1,14 +1,8 @@
-import { parseUserAgent } from './utils';
+import { hmacSha256Hex, parseUserAgent } from './utils';
 
 export interface GuestRiskIdentity {
   fingerprintHash: string;
   score: number;
-}
-
-function toHex(bytes: ArrayBuffer): string {
-  return Array.from(new Uint8Array(bytes), (byte) =>
-    byte.toString(16).padStart(2, '0'),
-  ).join('');
 }
 
 /**
@@ -46,17 +40,15 @@ export async function deriveGuestRiskIdentity(
 
   const material = [
     'guest-v1',
-    secret,
     ip,
     agent.device,
     agent.browser,
     agent.os,
     language,
   ].join('|');
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(material),
-  );
 
-  return { fingerprintHash: toHex(digest), score: Math.min(score, 100) };
+  return {
+    fingerprintHash: await hmacSha256Hex(material, secret),
+    score: Math.min(score, 100),
+  };
 }

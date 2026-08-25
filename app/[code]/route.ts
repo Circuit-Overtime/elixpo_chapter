@@ -1,6 +1,6 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB, getKV } from '@/lib/db';
+import { getDB, getEnv, getKV } from '@/lib/db';
 import { parseUserAgent, hashIp } from '@/lib/utils';
 import {
   type CachedRedirect,
@@ -201,6 +201,7 @@ async function trackClick(
     }
   }
 
+  const networkHash = await hashIp(rawIp, getEnv().GUEST_FINGERPRINT_SECRET);
   await db.batch([
     db.prepare('UPDATE urls SET clicks = clicks + 1 WHERE id = ?').bind(urlId),
     db
@@ -217,7 +218,7 @@ async function trackClick(
         ua.browser,
         ua.os,
         refererOrigin,
-        hashIp(rawIp),
+        networkHash,
       ),
   ]);
 }
