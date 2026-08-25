@@ -21,10 +21,10 @@ export interface TierLimits {
   qrLogo: boolean;
 }
 
-// -1 = unlimited. NOTE on enforcement: maxUrls, maxApiKeys, maxClicksRetention,
-// customCodes, analytics, expiringLinks are enforced in the API today. seats,
-// brandedDomains, webhooks, rateLimitPerMin define the plan and drive the
-// pricing UI; their feature enforcement lands with those features.
+// -1 = unlimited. Only enforced capabilities may be shown by pricing and
+// subscription UIs. seats, brandedDomains, webhooks, and rateLimitPerMin are
+// reserved entitlement values for planned features and must not be marketed
+// until their corresponding product paths enforce them.
 export const TIER_LIMITS: Record<Tier, TierLimits> = {
   free:       { maxUrls: 25,    maxApiKeys: 1,   maxClicksRetention: 7,   customCodes: false, analytics: false, expiringLinks: false, seats: 1,  brandedDomains: 0,  webhooks: false, rateLimitPerMin: 60,   qrPresets: 3,  qrLogo: false },
   pro:        { maxUrls: 1000,  maxApiKeys: 5,   maxClicksRetention: 30,  customCodes: true,  analytics: true,  expiringLinks: true,  seats: 1,  brandedDomains: 1,  webhooks: true,  rateLimitPerMin: 600,  qrPresets: -1, qrLogo: true },
@@ -63,7 +63,7 @@ export const TIER_PRICING: Record<SellableTier, TierPricing> = {
   },
   business: {
     name: 'Business',
-    tagline: 'For teams that need seats, domains, and a year of history.',
+    tagline: 'For high-volume link management and a year of history.',
     price: { INR: { monthly: 1499, annual: 14990 }, USD: { monthly: 19, annual: 190 } },
   },
 };
@@ -104,6 +104,8 @@ export interface UrlRecord {
   created_at: string;
   updated_at: string;
   expires_at: string | null;
+  campaign?: string | null;
+  tags?: string | null;
 }
 
 export interface ClickRecord {

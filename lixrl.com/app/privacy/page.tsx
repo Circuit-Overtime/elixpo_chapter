@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/privacy' },
 };
 
-const LAST_UPDATED = 'June 2026';
+const LAST_UPDATED = '25 August 2026';
 const SUPPORT_EMAIL = 'hello@elixpo.com';
 
 export default function PrivacyPage() {
@@ -75,11 +75,11 @@ export default function PrivacyPage() {
                 and paths.
               </li>
               <li>
-                <strong>A hashed, masked IP</strong>. We never store the raw
-                IP. IPv4 is masked to /16 (e.g.{' '}
-                <code>203.0.x.x</code>); IPv6 is masked to /64. This is
-                sufficient for coarse geographic aggregation and abuse
-                detection, and not sufficient to re-identify a visitor.
+                <strong>A keyed hash of a coarse network prefix</strong>. We
+                truncate IPv4 to /16 and IPv6 to /64 in memory, HMAC that
+                prefix with a server secret, and store only the resulting
+                pseudonymous value. The raw address and readable prefix are
+                discarded.
               </li>
             </ul>
             <p>
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
               abuse-prevention identity from the request IP and coarse browser,
               device, operating-system, and language categories. The raw values
               are processed in memory and discarded; we store only a
-              secret-peppered hash, a risk score, and the time the allowance
+              keyed HMAC, a risk score, and the time the allowance
               becomes available again. Guest links and quota records are not
               used for click analytics or advertising.
             </p>
@@ -120,25 +120,31 @@ export default function PrivacyPage() {
           <Section title="What we never do">
             <ul>
               <li>We do not sell or share your data with advertisers.</li>
-              <li>We do not track visitors across sites or build profiles.</li>
+              <li>
+                We do not track visitors across sites or build lasting
+                profiles. The identifier used for approximate unique counts
+                rotates every UTC day.
+              </li>
               <li>
                 We do not log the destination URLs you create except to
                 store them for redirection — they are not used for any
                 other purpose.
               </li>
               <li>
-                We do not retain raw IP addresses, ever — only the masked
-                hash.
+                We do not retain raw IP addresses or readable network
+                prefixes—only keyed pseudonymous hashes.
               </li>
             </ul>
           </Section>
 
           <Section title="Retention">
             <p>
-              Click events are retained for the window matching your tier
-              (3 days on Free, up to 365 on Enterprise). Older events are
-              deleted in regular cleanup passes. You can delete a short link
-              at any time, which removes both the link and all its click
+              Guest links expire after 24 hours. Expired guest links and
+              completed guest quota records are removed during subsequent
+              guest creation cleanup. Analytics query access is limited by
+              plan. Raw click events beyond that window are deleted when the
+              account next loads analytics or its dashboard. You can delete a
+              short link at any time, which removes both the link and its click
               history immediately.
             </p>
           </Section>

@@ -53,17 +53,42 @@ export function parseUserAgent(ua: string | null): { device: string; browser: st
   return { device, browser, os };
 }
 
-export function hashIp(ip: string | null): string | null {
-  if (!ip) return null;
-  // IPv4: mask to /16
+export function isLikelyBot(userAgent: string | null): boolean {
+  if (!userAgent) return true;
+  return /bot|crawler|spider|slurp|preview|headless|curl|wget|python|httpclient|facebookexternalhit|discordbot|slackbot|telegrambot|whatsapp/i.test(userAgent);
+}
+
+export async function hmacSha256Hex(
+  value: string,
+  secret: string,
+): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(value));
+  return Array.from(new Uint8Array(signature), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('');
+}
+
+export async function hashIp(
+  ip: string | null,
+  secret: string,
+): Promise<string | null> {
+  if (!ip || !secret) return null;
+  let prefix: string | null = null;
   const v4Parts = ip.split('.');
-  if (v4Parts.length === 4) return `${v4Parts[0]}.${v4Parts[1]}.x.x`;
-  // IPv6: keep first 4 segments (mask to /64)
-  if (ip.includes(':')) {
+  if (v4Parts.length === 4) prefix = `${v4Parts[0]}.${v4Parts[1]}.x.x`;
+  else if (ip.includes(':')) {
     const segments = ip.split(':').slice(0, 4);
-    return `${segments.join(':')}::`;
+    prefix = `${segments.join(':')}::`;
   }
-  return null;
+  return prefix ? hmacSha256Hex(`click-network-v1|${prefix}`, secret) : null;
 }
 
 export function cn(...classes: (string | undefined | null | false)[]): string {
