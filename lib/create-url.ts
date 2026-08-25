@@ -3,6 +3,11 @@ import { auditLog } from '@/lib/auth';
 import { getDB, getEnv, getKV } from '@/lib/db';
 import { checkSafeBrowsing, threatMessage } from '@/lib/safebrowsing';
 import { putRedirectCache } from '@/lib/redirect-cache';
+import {
+  claimFreeCreation,
+  releaseFreeCreation,
+} from '@/lib/account-quota';
+import type { GuestRiskIdentity } from '@/lib/guest-risk';
 import { TIER_LIMITS, type UrlRecord, type User } from '@/lib/types';
 import { generateShortCode } from '@/lib/utils';
 import {
@@ -21,7 +26,11 @@ export interface CreateUrlInput {
 }
 
 /** Shared URL creation path for the LixRL UI/API and trusted integrations. */
-export async function createUrlForUser(user: User, input: CreateUrlInput) {
+export async function createUrlForUser(
+  user: User,
+  input: CreateUrlInput,
+  creationRisk?: GuestRiskIdentity,
+) {
   const { url, custom_code, title, expires_at } = input;
   const limits = TIER_LIMITS[user.tier];
   const db = getDB();
@@ -99,10 +108,36 @@ export async function createUrlForUser(user: User, input: CreateUrlInput) {
     }
   }
 
+  const quotaClaim = user.tier === 'free'
+    ? await claimFreeCreation(user.id, creationRisk)
+    : null;
+  if (quotaClaim && !quotaClaim.allowed) {
+    const retryAfter = Math.max(
+      60,
+      Math.ceil((Date.parse(quotaClaim.resetAt) - Date.now()) / 1000),
+    );
+    return NextResponse.json(
+      {
+        error: 'Free accounts can create 2 links per UTC day',
+        available_at: quotaClaim.resetAt,
+      },
+      { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+    );
+  }
+
   const expiry = typeof expires_at === 'string' ? new Date(expires_at).toISOString() : null;
-  const result = await db.prepare(
-    'INSERT INTO urls (user_id, short_code, original_url, title, expires_at) VALUES (?, ?, ?, ?, ?) RETURNING *',
-  ).bind(user.id, shortCode, url, typeof title === 'string' ? title : null, expiry).first<UrlRecord>();
+  let result: UrlRecord | null = null;
+  try {
+    result = await db.prepare(
+      'INSERT INTO urls (user_id, short_code, original_url, title, expires_at) VALUES (?, ?, ?, ?, ?) RETURNING *',
+    ).bind(user.id, shortCode, url, typeof title === 'string' ? title : null, expiry).first<UrlRecord>();
+  } catch (error) {
+    if (quotaClaim) {
+      await releaseFreeCreation(user.id, quotaClaim.windowStart).catch(() => {});
+    }
+    console.error('[url-create] insert failed', error);
+    return NextResponse.json({ error: 'Could not create the short link' }, { status: 500 });
+  }
 
   putRedirectCache(kv, shortCode, {
     url,
