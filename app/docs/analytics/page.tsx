@@ -16,8 +16,8 @@ export default function AnalyticsPage() {
     <article>
       <h1 className={H1}>Click Analytics</h1>
       <p className={LEDE}>
-        Every redirect is tracked on Cloudflare&apos;s edge in real time.
-        Pull breakdowns over any window with one endpoint.
+        Redirect events are recorded asynchronously from Cloudflare&apos;s edge.
+        Paid plans can query daily breakdowns within their plan window.
       </p>
 
       <h2 id="endpoint" className={H2}>Endpoint</h2>
@@ -34,6 +34,7 @@ export default function AnalyticsPage() {
       <h2 id="response" className={H2}>Response</h2>
       <pre className={PRE} style={PRE_STYLE}>
         <code>{`{
+  "summary": {"clicks": 42, "unique_visitor_days": 31, "filtered_bots": 6},
   "timeline":  [{"date": "2026-03-19", "count": 42}],
   "countries": [{"country": "US",       "count": 30}],
   "browsers":  [{"browser": "Chrome",   "count": 25}],
@@ -41,14 +42,20 @@ export default function AnalyticsPage() {
   "referers":  [{"referer": "twitter.com", "count": 12}]
 }`}</code>
       </pre>
+      <p className={P}>
+        Clicks and breakdowns exclude recognized crawlers and link-preview
+        agents. <code className="font-mono text-white">unique_visitor_days</code>{' '}
+        is an approximation based on a keyed identifier that rotates daily;
+        it is not a cross-day visitor profile.
+      </p>
 
       <h2 id="windows" className={H2}>Time windows</h2>
       <ul className="space-y-2 list-none p-0 mb-6">
         {[
-          ['days=1', 'Last 24h, bucketed by hour'],
+          ['days=1', 'Last 24h, grouped by UTC date'],
           ['days=7', 'Last 7d, bucketed by day'],
-          ['days=30', 'Last 30d, bucketed by day (default)'],
-          ['days=90', 'Last 90d, bucketed by day'],
+          ['days=30', 'Last 30d, bucketed by day'],
+          ['default', '7 days when the days parameter is omitted'],
         ].map(([k, v]) => (
           <li key={k} className="text-white/70 text-[0.96rem] flex gap-2.5">
             <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#e53935]" />
@@ -59,15 +66,18 @@ export default function AnalyticsPage() {
 
       <h2 id="retention" className={H2}>Retention</h2>
       <p className={P}>
-        Free tier keeps the last 30 days of per-click events. Core and
-        Growth tiers extend retention — see Pricing once those tiers ship.
+        Detailed analytics queries are available on Pro and higher plans.
+        Pro can query 30 days, Business 365 days, and Enterprise 730 days.
+        The limit is an access window; raw-event cleanup is described in the
+        Privacy Policy.
       </p>
 
       <h2 id="privacy" className={H2}>Privacy</h2>
       <p className={P}>
         We do not record visitor IPs in cleartext, fingerprint visitors, or
         sell click data. Country / device / browser are inferred from the
-        request headers at redirect time and stored aggregated.
+        request headers at redirect time. Individual redirect events are
+        stored so the API can aggregate them for the requested window.
       </p>
     </article>
   );

@@ -56,8 +56,8 @@ export default async function UrlsPage({
     const escaped = search.replace(/[%_]/g, '\\$&');
     const like = `%${escaped}%`;
     where +=
-      " AND (short_code LIKE ? ESCAPE '\\' OR original_url LIKE ? ESCAPE '\\' OR title LIKE ? ESCAPE '\\')";
-    params.push(like, like, like);
+      " AND (short_code LIKE ? ESCAPE '\\' OR original_url LIKE ? ESCAPE '\\' OR title LIKE ? ESCAPE '\\' OR campaign LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\')";
+    params.push(like, like, like, like, like);
   }
 
   if (status === 'active') {

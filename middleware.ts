@@ -12,11 +12,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/api/auth/login', request.url));
   }
 
-  // If logged in and visiting /login, redirect to dashboard
-  if (pathname === '/login' && sessionCookie) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
   return NextResponse.next();
 }
 

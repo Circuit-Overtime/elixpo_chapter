@@ -11,14 +11,15 @@ const PRE_STYLE = {
   color: '#e8e8ed',
 };
 
-const ERRORS: Array<[string, number, string]> = [
-  ['unauthorized', 401, 'Missing or invalid API key.'],
-  ['forbidden', 403, 'Key exists but doesn\'t own this resource.'],
-  ['not_found', 404, 'No short link with that code.'],
-  ['slug_taken', 409, 'The custom_code you asked for is already in use.'],
-  ['invalid_url', 422, 'The destination URL did not parse.'],
-  ['rate_limited', 429, 'You hit your tier\'s quota — back off and retry.'],
-  ['server_error', 500, 'Something broke on our side. Retry with exponential backoff.'],
+const ERRORS: Array<[number, string, string]> = [
+  [400, 'Invalid URL', 'Request JSON or a field is invalid.'],
+  [401, 'Unauthorized', 'The API key is missing, invalid, expired, or lacks the required scope.'],
+  [403, 'Expiring links require Pro tier or above', 'The account plan does not include the requested capability.'],
+  [404, 'Not found', 'The resource does not exist for this account.'],
+  [409, 'Short code already taken', 'Choose another custom code.'],
+  [422, 'That URL is flagged as phishing by Google Safe Browsing', 'The destination failed a safety check.'],
+  [429, 'Too many requests', 'Wait for Retry-After or the returned available_at time.'],
+  [500, 'Could not create the short link', 'Retry with exponential backoff.'],
 ];
 
 export default function ErrorsPage() {
@@ -26,15 +27,15 @@ export default function ErrorsPage() {
     <article>
       <h1 className={H1}>Error Reference</h1>
       <p className={LEDE}>
-        Every error response is JSON with a stable error code and a
-        human-readable message. The HTTP status mirrors the category.
+        Error responses contain a human-readable <code>error</code> string.
+        Use the HTTP status for program flow; error text may become more
+        specific as validation improves.
       </p>
 
       <h2 id="format" className={H2}>Format</h2>
       <pre className={PRE} style={PRE_STYLE}>
         <code>{`{
-  "error":   "slug_taken",
-  "message": "The slug 'launch' is already in use"
+  "error": "Short code already taken"
 }`}</code>
       </pre>
 
@@ -46,20 +47,20 @@ export default function ErrorsPage() {
         <table className="w-full text-sm">
           <thead style={{ background: 'rgba(0,0,0,0.05)' }}>
             <tr className="text-white/70">
-              <th className="text-left px-4 py-2 font-semibold">code</th>
               <th className="text-left px-4 py-2 font-semibold">HTTP</th>
+              <th className="text-left px-4 py-2 font-semibold">example error</th>
               <th className="text-left px-4 py-2 font-semibold">meaning</th>
             </tr>
           </thead>
           <tbody>
-            {ERRORS.map(([code, status, msg]) => (
+            {ERRORS.map(([status, example, msg]) => (
               <tr
-                key={code}
+                key={status}
                 className="text-white/80"
                 style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}
               >
-                <td className="px-4 py-2 font-mono text-white">{code}</td>
                 <td className="px-4 py-2 font-mono">{status}</td>
+                <td className="px-4 py-2 font-mono text-white">{example}</td>
                 <td className="px-4 py-2 text-white/70">{msg}</td>
               </tr>
             ))}
@@ -70,8 +71,7 @@ export default function ErrorsPage() {
       <h2 id="retrying" className={H2}>Retrying</h2>
       <p className={P}>
         4xx errors are deterministic — fix the request and retry. For
-        <code className="font-mono text-white"> rate_limited</code> the
-        response includes a <code className="font-mono text-white">Retry-After</code>{' '}
+        HTTP 429 responses include a <code className="font-mono text-white">Retry-After</code>{' '}
         header in seconds. For 5xx, retry with exponential backoff
         (250ms · 500ms · 1s · 2s · 4s, max 5 tries).
       </p>

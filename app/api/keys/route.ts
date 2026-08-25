@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   const limited = await rateLimit(request, 'key:create', 10, 60);
   if (limited) return limited;
 
-  const user = await resolveUser(request);
+  const user = await resolveUser(request, 'write');
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { name, scopes, expires_at }: any = await request.json();

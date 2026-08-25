@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { resolveUser } from '@/lib/auth';
 import { getDB } from '@/lib/db';
 import { TIER_LIMITS } from '@/lib/types';
+import { pruneUserClicks } from '@/lib/analytics-retention';
 
 export const runtime = 'edge';
 
@@ -29,6 +30,7 @@ export async function GET(
 
   const { code } = await params;
   const db = getDB();
+  await pruneUserClicks(user.id, limits.maxClicksRetention);
 
   const url = await db
     .prepare('SELECT id FROM urls WHERE short_code = ? AND user_id = ?')
@@ -46,7 +48,7 @@ export async function GET(
     .prepare(
       `SELECT clicked_at, country, city, region, device, browser, os, referer, ip_hash
        FROM clicks
-       WHERE url_id = ? AND clicked_at >= ?
+       WHERE url_id = ? AND clicked_at >= ? AND is_bot = 0
        ORDER BY clicked_at DESC`,
     )
     .bind(url.id, since)

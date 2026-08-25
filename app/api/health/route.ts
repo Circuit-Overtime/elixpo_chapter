@@ -18,18 +18,20 @@ export const runtime = 'edge';
  * every 30-60s and would fail on either of those.
  */
 export async function GET() {
+  const startedAt = performance.now();
   const [db, kv] = await Promise.all([
     pingDB(),
     pingKV(),
   ]);
 
-  const status: 'ok' | 'degraded' = db === 'ok' && kv === 'ok' ? 'ok' : 'degraded';
+  const status: 'ok' | 'degraded' = db.status === 'ok' && kv.status === 'ok' ? 'ok' : 'degraded';
   const httpStatus = status === 'ok' ? 200 : 503;
 
   return NextResponse.json(
     {
       status,
       timestamp: new Date().toISOString(),
+      latency_ms: Math.round(performance.now() - startedAt),
       checks: { db, kv },
     },
     {
@@ -44,7 +46,13 @@ export async function GET() {
   );
 }
 
-async function pingDB(): Promise<'ok' | 'fail'> {
+interface HealthCheck {
+  status: 'ok' | 'fail';
+  latency_ms: number;
+}
+
+async function pingDB(): Promise<HealthCheck> {
+  const startedAt = performance.now();
   try {
     const db = getDB();
     // Single-row SELECT 1 with a 2s ceiling — anything slower is "degraded"
@@ -53,22 +61,31 @@ async function pingDB(): Promise<'ok' | 'fail'> {
       db.prepare('SELECT 1 as ok').first<{ ok: number }>(),
       timeoutFail<'fail'>(2000, 'fail'),
     ]);
-    if (result === 'fail') return 'fail';
-    return result?.ok === 1 ? 'ok' : 'fail';
+    return {
+      status: result !== 'fail' && result?.ok === 1 ? 'ok' : 'fail',
+      latency_ms: Math.round(performance.now() - startedAt),
+    };
   } catch {
-    return 'fail';
+    return { status: 'fail', latency_ms: Math.round(performance.now() - startedAt) };
   }
 }
 
-async function pingKV(): Promise<'ok' | 'fail'> {
+async function pingKV(): Promise<HealthCheck> {
+  const startedAt = performance.now();
   try {
     const kv = getKV();
     // KV.get on a missing key is the cheapest call. We don't care about the
     // value — only that the binding responds.
-    await Promise.race([kv.get('__health__'), timeoutFail<'fail'>(2000, 'fail')]);
-    return 'ok';
+    const result = await Promise.race([
+      kv.get('__health__'),
+      timeoutFail<'fail'>(2000, 'fail'),
+    ]);
+    return {
+      status: result === 'fail' ? 'fail' : 'ok',
+      latency_ms: Math.round(performance.now() - startedAt),
+    };
   } catch {
-    return 'fail';
+    return { status: 'fail', latency_ms: Math.round(performance.now() - startedAt) };
   }
 }
 

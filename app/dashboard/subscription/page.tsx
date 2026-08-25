@@ -290,15 +290,11 @@ function planFeatures(tier: SellableTier): string[] {
   const out = [
     `${l.maxUrls.toLocaleString()} short links`,
     `${fmtRetention(l.maxClicksRetention)} click analytics`,
-    `${l.maxApiKeys} API key${l.maxApiKeys === 1 ? '' : 's'} · ${l.rateLimitPerMin.toLocaleString()}/min`,
+    `${l.maxApiKeys} API key${l.maxApiKeys === 1 ? '' : 's'}`,
   ];
   if (l.customCodes) out.push('Custom slugs');
   if (l.analytics) out.push('Geo / device analytics + CSV export');
   if (l.expiringLinks) out.push('Expiring links');
-  if (l.brandedDomains > 0) {
-    out.push(`${l.brandedDomains} branded domain${l.brandedDomains === 1 ? '' : 's'}`);
-  }
-  if (l.webhooks) out.push('Webhook delivery');
-  if (l.seats > 1) out.push(`${l.seats} team seats`);
+  if (l.qrLogo) out.push('Custom QR logos and styles');
   return out;
 }

@@ -5,6 +5,11 @@ import ClicksChart, {
 import { getCurrentUser } from '@/lib/auth';
 import { getDB } from '@/lib/db';
 import { TIER_LIMITS, type UrlRecord } from '@/lib/types';
+import {
+  currentUtcQuotaWindow,
+  FREE_DAILY_CREATION_LIMIT,
+} from '@/lib/account-quota';
+import { pruneUserClicks } from '@/lib/analytics-retention';
 
 /** Fill missing days with zero so the chart has continuous bars. */
 function buildTimeline(
@@ -76,8 +81,10 @@ export default async function DashboardPage({
   const daysRaw = Number.parseInt(daysParam || '7');
   const days = [7, 30, 90].includes(daysRaw) ? daysRaw : 7;
   const since = new Date(Date.now() - days * 86400000).toISOString();
+  await pruneUserClicks(user.id, limits.maxClicksRetention);
 
-  const [urlCount, totalClicks, recentClicks, timeline, topUrls, recentUrls] =
+  const quotaWindow = currentUtcQuotaWindow();
+  const [urlCount, totalClicks, recentClicks, timeline, topUrls, recentUrls, dailyQuota] =
     await Promise.all([
       db
         .prepare('SELECT COUNT(*) as count FROM urls WHERE user_id = ?')
@@ -85,19 +92,19 @@ export default async function DashboardPage({
         .first<{ count: number }>(),
       db
         .prepare(
-          'SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ?',
+          'SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.is_bot = 0',
         )
         .bind(user.id)
         .first<{ count: number }>(),
       db
         .prepare(
-          'SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.clicked_at >= ?',
+          'SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.clicked_at >= ? AND c.is_bot = 0',
         )
         .bind(user.id, since)
         .first<{ count: number }>(),
       db
         .prepare(
-          'SELECT DATE(c.clicked_at) as date, COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.clicked_at >= ? GROUP BY DATE(c.clicked_at) ORDER BY date',
+          'SELECT DATE(c.clicked_at) as date, COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.clicked_at >= ? AND c.is_bot = 0 GROUP BY DATE(c.clicked_at) ORDER BY date',
         )
         .bind(user.id, since)
         .all<{ date: string; count: number }>(),
@@ -113,6 +120,12 @@ export default async function DashboardPage({
         )
         .bind(user.id)
         .all<UrlRecord>(),
+      db
+        .prepare(
+          'SELECT created_count FROM user_creation_quotas WHERE user_id = ? AND window_start = ?',
+        )
+        .bind(user.id, quotaWindow.start)
+        .first<{ created_count: number }>(),
     ]);
 
   const chartData = buildTimeline(timeline.results || [], days);
@@ -125,6 +138,10 @@ export default async function DashboardPage({
   const isOverCap = !isUnlimited && used > limits.maxUrls;
   const showUpgradeNudge =
     user.tier === 'free' && !isUnlimited && (usagePct >= 80 || isOverCap);
+  const freeDailyUsed = Math.min(
+    dailyQuota?.created_count ?? 0,
+    FREE_DAILY_CREATION_LIMIT,
+  );
 
   return (
     <div className="w-full max-w-6xl mx-auto py-2 px-2">
@@ -174,15 +191,12 @@ export default async function DashboardPage({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-white">
-                Free daily links: 2 per day
-              </span>
-              <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#c62828] bg-white/80">
-                Coming soon
+                Free daily links: {freeDailyUsed}/{FREE_DAILY_CREATION_LIMIT} used
               </span>
             </div>
             <p className="text-xs text-white/55 mt-1">
-              Planned allowance with privacy-conscious network and request-risk
-              checks. Your current account quota is unchanged.
+              Resets at 00:00 UTC. Privacy-conscious request-risk signals help
+              protect the shared free allowance.
             </p>
           </div>
           <Link
