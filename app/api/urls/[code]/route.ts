@@ -70,7 +70,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
   if (body.tags !== undefined) {
     if (!Array.isArray(body.tags) || body.tags.length > 10) return badRequest('tags must be an array of up to 10 strings');
-    const tags = Array.from(new Set(body.tags.map((tag: unknown) => typeof tag === 'string' ? tag.trim().toLowerCase() : ''))).filter(Boolean);
+    const normalizedTags = (body.tags as unknown[]).map((tag) =>
+      typeof tag === 'string' ? tag.trim().toLowerCase() : ''
+    );
+    const tags = Array.from(new Set(normalizedTags)).filter((tag) => tag.length > 0);
     if (tags.some((tag) => tag.length > 24)) return badRequest('each tag must be 24 characters or fewer');
     updates.push('tags = ?'); bindParams.push(tags.length ? JSON.stringify(tags) : null);
   }
