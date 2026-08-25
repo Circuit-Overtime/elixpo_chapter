@@ -305,7 +305,7 @@ export default function LandingPage() {
             {guestError && (
               <p className="text-[12px] text-red-600" role="alert">
                 {guestError}{' '}
-                <Link href="/api/auth/login" className="font-semibold underline">
+                <Link href="/api/auth/login?return_to=/dashboard" className="font-semibold underline">
                   Create an account
                 </Link>
               </p>
@@ -337,7 +337,7 @@ export default function LandingPage() {
                 </div>
                 <p className="mt-1 text-[#555]">
                   Expires in 24 hours.{' '}
-                  <Link href="/api/auth/login" className="font-semibold underline">
+                  <Link href="/api/auth/login?return_to=/dashboard" className="font-semibold underline">
                     Create an account
                   </Link>{' '}
                   to keep links and manage them.
@@ -352,7 +352,7 @@ export default function LandingPage() {
                 </p>
                 <div className="flex items-center gap-4 shrink-0">
                   <Link
-                    href="/api/auth/login"
+                    href="/api/auth/login?return_to=/dashboard"
                     className="font-semibold no-underline"
                     style={{ color: ACCENT }}
                   >
@@ -607,7 +607,7 @@ export default function LandingPage() {
               Sign in with your Elixpo account, shorten a URL, and grab an API
               key — free tier, no credit card.
             </p>
-            <Link href="/api/auth/login" className="btn-accent">
+            <Link href="/api/auth/login?return_to=/dashboard" className="btn-accent">
               Sign in with Elixpo
               <ArrowIcon />
             </Link>
