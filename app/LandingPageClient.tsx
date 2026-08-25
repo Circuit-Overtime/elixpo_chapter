@@ -436,7 +436,7 @@ export default function LandingPage() {
               Everything a link should do
             </h2>
             <p className="text-[#555] leading-relaxed max-w-[360px] text-[0.95rem]">
-              Redirects, analytics, branding, and an API behind one dashboard —
+              Redirects, analytics, styled QR codes, and an API behind one dashboard —
               so you ship the link and skip the plumbing.
             </p>
           </div>
@@ -583,7 +583,7 @@ export default function LandingPage() {
               Pricing that scales with you
             </h2>
             <p className="text-[0.9rem] text-[#555]">
-              Start free, upgrade when you need branded domains and higher limits.
+              Start free, upgrade when you need custom slugs, deeper analytics, and higher limits.
             </p>
           </div>
           <Link href="/pricing" className="btn-accent shrink-0">
