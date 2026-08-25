@@ -35,14 +35,12 @@ jobs:
       - name: Audit edge routes
         run: npm test
 
-      - name: Build Cloudflare Pages output
-        run: npm run pages:build
+      - name: Verify deployment credentials
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
 
-      - name: Apply D1 migrations
-        run: npx wrangler d1 migrations apply elixpourl --remote
-
-      - name: Deploy Cloudflare Pages production
-        run: >-
-          npx wrangler pages deploy .vercel/output/static
-          --project-name=elixpourl
-          --branch=main
+      # Keep CI and manual releases on the same implementation. Build before
+      # migration so a compile failure can never leave production half-released.
+      - name: Build, migrate D1, and deploy Pages
+        run: ./deploy.sh build migrate deploy
