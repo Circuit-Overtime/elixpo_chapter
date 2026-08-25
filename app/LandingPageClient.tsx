@@ -102,7 +102,6 @@ const REGIONS = [
   'South America',
   'Africa',
   'Middle East',
-  '< 50ms',
 ];
 
 const STEPS: { n: string; icon: ReactNode; title: string; body: string }[] = [
@@ -122,7 +121,7 @@ const STEPS: { n: string; icon: ReactNode; title: string; body: string }[] = [
     n: '03',
     icon: <TrackIcon />,
     title: 'Track',
-    body: 'Watch clicks, countries, and referrers in real time — or call the API and pipe them anywhere.',
+    body: 'Watch clicks, countries, and referrers from the dashboard — or call the API and pipe them anywhere.',
   },
 ];
 
@@ -130,12 +129,12 @@ const FEATURES: { icon: ReactNode; title: string; body: string }[] = [
   {
     icon: <BoltIcon />,
     title: 'Edge-native redirects',
-    body: "Links resolve on Cloudflare's edge in under 50ms worldwide. No cold starts, no proxy hops between the click and the destination.",
+    body: "Links resolve through Cloudflare's global edge, close to the visitor and without an application proxy hop.",
   },
   {
     icon: <ChartIcon />,
     title: 'Click analytics',
-    body: 'Real-time counts with country, referrer, and device breakdowns. No third-party script — the data lives on your account.',
+    body: 'Bot-filtered counts with country, referrer, and device breakdowns. No third-party tracking script is required.',
   },
   {
     icon: <SlugIcon />,
@@ -149,8 +148,8 @@ const FEATURES: { icon: ReactNode; title: string; body: string }[] = [
   },
   {
     icon: <DomainIcon />,
-    title: 'Branded domains',
-    body: 'Point your own domain at ElixpoURL on Pro and Business so every short link carries your name, not ours.',
+    title: 'Safety screening',
+    body: 'Destinations are validated and checked against known phishing and malware signals when links are created or changed.',
   },
   {
     icon: <ApiIcon />,
@@ -164,8 +163,8 @@ const USE_CASES = [
   'Social bios',
   'QR codes for print',
   'API integrations',
-  'Team link management',
-  'Branded short domains',
+  'Expiring event links',
+  'Developer tooling',
 ];
 
 /* ── Page ───────────────────────────────────────────────────────────────── */
@@ -243,7 +242,7 @@ export default function LandingPage() {
               No plumbing.
             </h1>
             <p className="text-[1.05rem] leading-relaxed text-[#555] max-w-[480px] mx-auto lg:mx-0 mb-9">
-              Paste a URL, get a link that resolves in under 50ms worldwide —
+              Paste a URL, get a link that resolves through Cloudflare&apos;s global edge —
               with click analytics, custom slugs, and a REST API, all from one
               dashboard.
             </p>

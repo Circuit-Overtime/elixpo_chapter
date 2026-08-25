@@ -22,6 +22,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "test": "npm run audit:edge",
+    "audit:edge": "node scripts/check-edge-routes.mjs",
     "pages:build": "npx @cloudflare/next-on-pages",
     "pages:deploy": "npx @cloudflare/next-on-pages && npx wrangler pages deploy .vercel/output/static",
     "db:migrate": "npx wrangler d1 migrations apply elixpourl",

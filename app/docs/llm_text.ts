@@ -1,6 +1,6 @@
 export const LLM_TEXT = `# ElixpoURL — Documentation
 
-ElixpoURL is an open URL shortener built on Cloudflare's edge. Short links, real-time click analytics, and a developer-first REST API — for any app you ship, Elixpo or not.
+ElixpoURL is an open URL shortener built on Cloudflare's edge. Short links, click analytics, and a developer-first REST API — for any app you ship, Elixpo or not.
 
 Base URL: https://lixrl.com
 
@@ -232,7 +232,7 @@ curl -X DELETE https://lixrl.com/api/urls/launch \\
 
 # Click Analytics
 
-Every redirect is tracked on Cloudflare's edge in real time. Pull breakdowns over any window with one endpoint.
+Redirect events are recorded asynchronously from Cloudflare's edge. Pull daily breakdowns within your plan window with one endpoint.
 
 ## Endpoint — GET /api/urls/{code}/analytics?days=30
 cURL example:

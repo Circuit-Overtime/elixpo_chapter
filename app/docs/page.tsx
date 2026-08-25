@@ -18,7 +18,7 @@ export default function OverviewPage() {
       <h1 className={H1}>Overview</h1>
       <p className={LEDE}>
         ElixpoURL is an open URL shortener built on Cloudflare&apos;s edge.
-        Short links, real-time click analytics, and a developer-first REST
+        Short links, click analytics, and a developer-first REST
         API — for any app you ship, Elixpo or not.
       </p>
 
