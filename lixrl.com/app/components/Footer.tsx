@@ -25,6 +25,7 @@ const PRODUCT_LINKS: FooterLink[] = [
 ];
 
 const RESOURCE_LINKS: FooterLink[] = [
+  { label: 'Report abuse', href: '/report' },
   { label: 'Source on GitHub', href: REPO_URL, external: true },
   { label: 'Accounts SSO', href: 'https://accounts.elixpo.com', external: true },
   { label: 'Elixpo ecosystem', href: ECOSYSTEM_URL, external: true },

@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   const [urlCount, keyCount, totalClicks, sessionCount] = await Promise.all([
     db.prepare('SELECT COUNT(*) as count FROM urls WHERE user_id = ?').bind(user.id).first<{ count: number }>(),
     db.prepare('SELECT COUNT(*) as count FROM api_keys WHERE user_id = ? AND is_active = 1').bind(user.id).first<{ count: number }>(),
-    db.prepare('SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ?')
+    db.prepare('SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.is_bot = 0')
       .bind(user.id).first<{ count: number }>(),
     db.prepare('SELECT COUNT(*) as count FROM sessions WHERE user_id = ? AND expires_at > datetime("now")')
       .bind(user.id).first<{ count: number }>(),

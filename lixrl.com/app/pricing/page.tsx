@@ -8,7 +8,6 @@ import {
   type BillingCurrency,
   type BillingInterval,
   CURRENCY_SYMBOL,
-  EXTRA_SEAT_PRICE,
   type SellableTier,
   SELLABLE_TIER_ORDER,
   TIER_LIMITS,
@@ -28,18 +27,12 @@ function featuresFor(tier: SellableTier): string[] {
   const out = [
     `${l.maxUrls.toLocaleString()} short links`,
     retentionLabel(l.maxClicksRetention),
-    `${l.maxApiKeys} API key${l.maxApiKeys === 1 ? '' : 's'} · ${l.rateLimitPerMin.toLocaleString()}/min`,
+    `${l.maxApiKeys} API key${l.maxApiKeys === 1 ? '' : 's'}`,
   ];
   out.push(l.customCodes ? 'Custom slugs' : 'Auto-generated slugs');
   out.push(l.analytics ? 'Geo / device analytics + CSV' : 'Click totals');
   if (l.expiringLinks) out.push('Expiring links');
-  if (l.brandedDomains > 0) {
-    out.push(`${l.brandedDomains} branded domain${l.brandedDomains === 1 ? '' : 's'}`);
-  }
-  if (l.webhooks) out.push('Webhook delivery');
-  if (l.seats > 1) {
-    out.push(`${l.seats} team seats · +${CURRENCY_SYMBOL.INR}${EXTRA_SEAT_PRICE.INR}/extra seat`);
-  }
+  if (l.qrLogo) out.push('Custom QR logos and styles');
   return out;
 }
 
@@ -139,8 +132,8 @@ export default function PricingPage() {
             Simple pricing that <span style={{ color: ACCENT }}>scales with you.</span>
           </h1>
           <p className="text-base md:text-[1.1rem] text-white/65 max-w-[620px] leading-relaxed">
-            Start free, no credit card. Scale to custom slugs, branded domains,
-            team seats, and a full year of analytics when you&apos;re ready.
+            Start free, no credit card. Scale to custom slugs, richer analytics,
+            more API keys, and expiring links when you&apos;re ready.
           </p>
 
           {/* Toggles: currency + billing interval */}
@@ -327,11 +320,11 @@ export default function PricingPage() {
               {/* Short perks */}
               <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
                 {[
-                  'Unlimited links & domains',
-                  'SSO / SAML + SCIM',
-                  'Dedicated support & SLA',
-                  'Audit logs & invoicing',
-                  'Custom seats & limits',
+                  'Custom link limits',
+                  'Up to 2 years of analytics',
+                  'Up to 100 API keys',
+                  'Custom billing review',
+                  'Priority onboarding',
                 ].map((perk) => (
                   <span key={perk} className="inline-flex items-center gap-1.5 text-[0.82rem] text-white/75">
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ACCENT }} />

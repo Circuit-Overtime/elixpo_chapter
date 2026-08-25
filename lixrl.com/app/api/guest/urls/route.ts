@@ -1,9 +1,11 @@
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSameOrigin } from '@/lib/csrf';
 import { getDB, getEnv, getKV } from '@/lib/db';
 import { deriveGuestRiskIdentity } from '@/lib/guest-risk';
 import { rateLimit } from '@/lib/ratelimit';
 import { checkSafeBrowsing, threatMessage } from '@/lib/safebrowsing';
+import { putRedirectCache } from '@/lib/redirect-cache';
 import { generateShortCode } from '@/lib/utils';
 import { badRequest, validateSlug, validateUrl } from '@/lib/validate';
 
@@ -139,28 +141,48 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await db
-    .prepare(
-      `INSERT INTO guest_links
-         (short_code, original_url, fingerprint_hash, risk_score, expires_at)
-       VALUES (?, ?, ?, ?, ?)`,
-    )
-    .bind(
-      shortCode,
-      url,
-      identity.fingerprintHash,
-      identity.score,
-      expiresAt.toISOString(),
-    )
-    .run();
+  try {
+    await db
+      .prepare(
+        `INSERT INTO guest_links
+           (short_code, original_url, fingerprint_hash, risk_score, expires_at)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        shortCode,
+        url,
+        identity.fingerprintHash,
+        identity.score,
+        expiresAt.toISOString(),
+      )
+      .run();
+  } catch (error) {
+    // The quota claim and link insert cannot share a D1 transaction through
+    // separate prepared calls. Release only the exact claim made above so a
+    // failed insert never consumes the visitor's 24-hour allowance.
+    await db.prepare(
+      `UPDATE guest_quotas SET available_at = ?, updated_at = datetime('now')
+       WHERE fingerprint_hash = ? AND available_at = ?`,
+    ).bind(now.toISOString(), identity.fingerprintHash, expiresAt.toISOString()).run().catch(() => {});
+    console.error('[guest-url] link insert failed', error);
+    return NextResponse.json({ error: 'Could not create the guest link' }, { status: 500 });
+  }
 
-  getKV()
-    .put(
-      `url:${shortCode}`,
-      JSON.stringify({ url, guest: true }),
-      { expirationTtl: GUEST_TTL_SECONDS },
-    )
-    .catch(() => {});
+  putRedirectCache(getKV(), shortCode, {
+    url,
+    guest: true,
+    expires_at: expiresAt.toISOString(),
+  }).catch(() => {});
+
+  const cleanup = db.batch([
+    db.prepare('DELETE FROM guest_links WHERE expires_at <= ?').bind(now.toISOString()),
+    db.prepare('DELETE FROM guest_quotas WHERE available_at <= ?').bind(now.toISOString()),
+  ]).then(() => undefined).catch(() => {});
+  try {
+    getRequestContext().ctx.waitUntil(cleanup);
+  } catch {
+    // Local Next development does not always expose an execution context.
+  }
 
   const baseUrl = env.BASE_URL || new URL(request.url).origin;
   return NextResponse.json(
