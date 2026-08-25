@@ -25,10 +25,10 @@ export default function OverviewPage() {
       <h2 id="what-you-get" className={H2}>What you get</h2>
       <ul className="space-y-2 list-none p-0 mb-6">
         {[
-          'Edge-native redirects — every short link resolves on Cloudflare\'s edge, sub-50ms anywhere.',
+          'Edge-native redirects — short links resolve through Cloudflare\'s global network.',
           'Click analytics — counts, geo, referrers, devices, browsers; no third-party script.',
           'REST API + API keys with scoped permissions.',
-          'Custom slugs, bulk operations, soft-delete, and TTLs.',
+          'Custom slugs, bulk deletion, activation controls, and link expiry.',
           'Sign in via Elixpo Accounts SSO — no separate password.',
         ].map((line) => (
           <li key={line} className="text-white/70 text-[0.96rem] flex gap-2.5">
@@ -117,7 +117,7 @@ export default function OverviewPage() {
         </li>
         <li className="text-white/70 text-[0.96rem] flex gap-2.5">
           <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#e53935]" />
-          Errors follow the format <code className="font-mono text-white">{'{ "error": "code", "message": "..." }'}</code> — see <Link href="/docs/errors" className="underline decoration-white/30 hover:text-white">Error Reference</Link>.
+          Errors follow the format <code className="font-mono text-white">{'{ "error": "Human-readable message" }'}</code> — use the HTTP status for program flow and see <Link href="/docs/errors" className="underline decoration-white/30 hover:text-white">Error Reference</Link>.
         </li>
       </ul>
     </article>

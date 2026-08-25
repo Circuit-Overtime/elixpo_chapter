@@ -8,7 +8,7 @@ Base URL: https://lixrl.com
 
 # Overview
 
-ElixpoURL redirects every short link on Cloudflare's edge in under 50ms globally, collects click analytics, and supports custom slugs, bulk operations, soft-delete, and TTLs.
+ElixpoURL redirects short links through Cloudflare's global network, collects click analytics, and supports custom slugs, bulk deletion, activation controls, and TTLs.
 
 Users sign in via Elixpo Accounts SSO (no separate password). For machine-to-machine access, mint an API key and send it in the Authorization header.
 
@@ -23,7 +23,7 @@ Users sign in via Elixpo Accounts SSO (no separate password). For machine-to-mac
 # Quickstart (end to end)
 
 1. **Sign in**: Go to \`/api/auth/login\` to sign in through Elixpo Accounts SSO.
-2. **Mint API Key**: Go to **Profile → API Keys**, click **Create key**, and copy the printed key (\`elu_...\`). It is Argon2id hashed on save and won't be shown again.
+2. **Mint API Key**: Go to **Profile → API Keys**, click **Create key**, and copy the printed key (\`elu_...\`). It is SHA-256 hashed on save and won't be shown again.
 3. **Shorten URL**: Send a POST request to \`/api/urls\`:
    \`\`\`bash
    curl -X POST https://lixrl.com/api/urls \\
@@ -55,7 +55,7 @@ Endpoints require a scoped API key in the standard Bearer header:
 \`\`\`http
 Authorization: Bearer elu_YOUR_API_KEY
 \`\`\`
-Keys are 32-byte secrets, base32-encoded, prefixed with \`elu_\`. They must only be sent via the \`Authorization\` header.
+Keys contain 32 cryptographically random alphanumeric characters prefixed with \`elu_\`. They must only be sent via the \`Authorization\` header.
 
 ## Guest Shortening
 The guest endpoint does not accept an API key. It is protected by same-origin browser check, risk scoring, and a 24-hour D1 quota.
@@ -260,7 +260,7 @@ Query parameter \`days\` can be set to:
 - \`days=90\` — Last 90d, bucketed by day
 
 ## Retention & Privacy
-- **Retention**: Free tier retains the last 30 days of per-click events. Core and Growth tiers extend this window.
+- **Analytics access windows**: Pro can query 30 days, Business 365 days, and Enterprise 730 days. Free accounts see click totals and a limited dashboard preview.
 - **Privacy**: Visitor IPs are never recorded in cleartext. No fingerprinting is performed, and click data is not sold. Country, device, and browser metrics are derived in-memory at redirect time and stored in aggregate.
 
 ---
@@ -272,7 +272,7 @@ Get HTTP callbacks when links are created, updated, or clicked. Webhooks are com
 
 # Error Reference
 
-Every error response is JSON with a stable error code and a human-readable message. The HTTP status mirrors the category.
+Every error response is JSON with a human-readable \`error\` string. Use the HTTP status for program flow.
 
 ## Format
 \`\`\`json

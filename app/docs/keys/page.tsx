@@ -39,14 +39,14 @@ export default function KeysPage() {
 
       <h2 id="format" className={H2}>Format</h2>
       <p className={P}>
-        Keys are 32-byte secrets, base32-encoded, with the prefix{' '}
+        Keys contain 32 cryptographically random alphanumeric characters with the prefix{' '}
         <code className="font-mono text-white">elu_</code>:
       </p>
       <pre className={PRE} style={PRE_STYLE}>
         <code>elu_a1b2c3d4e5f67890abcdef1234567890</code>
       </pre>
       <p className={P}>
-        We hash keys on the server (Argon2id) and only the prefix is kept in
+        We hash keys on the server with SHA-256 and only the prefix is kept in
         the clear. <strong>We can&apos;t recover a lost key</strong> — if
         you lose it, revoke it and mint a new one.
       </p>
@@ -77,9 +77,11 @@ export default function KeysPage() {
 
       <h2 id="scopes" className={H2}>Scopes</h2>
       <p className={P}>
-        Scopes ship with the next release. For now every key has full
-        read/write access to your own short links. Don&apos;t share keys
-        across users or repositories.
+        Choose <code className="font-mono text-white">read</code> for list,
+        detail, analytics, and export requests. Choose{' '}
+        <code className="font-mono text-white">read,write</code> when an
+        integration must also create, update, disable, or delete links.
+        A read-only key is rejected from mutation endpoints.
       </p>
 
       <h2 id="limits" className={H2}>Limits</h2>
