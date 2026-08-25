@@ -217,6 +217,9 @@ export default function ApiPage() {
         ['title', 'string', 'No', 'Human-readable label between 1 and 255 characters.'],
         ['custom_code', 'string', 'No', 'Pro or higher. A unique 3–32 character slug containing letters, digits, hyphens, or underscores.'],
         ['expires_at', 'ISO 8601', 'No', 'Pro or higher. A future timestamp; null/omitted links do not expire.'],
+        ['campaign', 'string', 'No', 'A campaign label between 1 and 64 characters.'],
+        ['tags', 'string[]', 'No', 'Up to 10 normalized tags, each no longer than 24 characters.'],
+        ['utm', 'object', 'No', 'Optional source, medium, campaign, term, and content values appended as UTM parameters.'],
       ]} />
       <CodeBlock label="cURL">{`curl -X POST https://lixrl.com/api/urls \\
   -H "Authorization: Bearer elu_YOUR_KEY" \\
@@ -240,6 +243,21 @@ export default function ApiPage() {
         <code className={INLINE_CODE}>409</code>; unavailable tier features and
         exhausted account quotas return <code className={INLINE_CODE}>403</code>.
       </p>
+
+      <h2 id="bulk-create" className={H2}>Bulk create account links</h2>
+      <Endpoint method="POST" path="/api/urls/bulk-create" />
+      <p className={P}>
+        Submit up to 25 ordinary create-link payloads. Each item is validated,
+        safety checked, quota checked, and returned with its own HTTP-style
+        status. A fully successful batch returns 201; a partial batch returns
+        207 so callers can retry only failed rows.
+      </p>
+      <CodeBlock label="Request">{`{
+  "links": [
+    {"url":"https://example.com/a","campaign":"launch","tags":["email"]},
+    {"url":"https://example.com/b","utm":{"source":"newsletter","medium":"email"}}
+  ]
+}`}</CodeBlock>
 
       <h2 id="list-your-links" className={H2}>List account links</h2>
       <Endpoint method="GET" path="/api/urls" />

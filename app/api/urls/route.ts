@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
     // Escape LIKE wildcards in user input
     const escaped = search.replace(/[%_]/g, '\\$&');
     const like = `%${escaped}%`;
-    query += " AND (short_code LIKE ? ESCAPE '\\' OR original_url LIKE ? ESCAPE '\\' OR title LIKE ? ESCAPE '\\')";
-    params.push(like, like, like);
+    query += " AND (short_code LIKE ? ESCAPE '\\' OR original_url LIKE ? ESCAPE '\\' OR title LIKE ? ESCAPE '\\' OR campaign LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\')";
+    params.push(like, like, like, like, like);
   }
 
   query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';

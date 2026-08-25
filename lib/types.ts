@@ -104,6 +104,8 @@ export interface UrlRecord {
   created_at: string;
   updated_at: string;
   expires_at: string | null;
+  campaign?: string | null;
+  tags?: string | null;
 }
 
 export interface ClickRecord {

@@ -60,6 +60,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     updates.push('title = ?'); bindParams.push(body.title);
   }
+  if (body.campaign !== undefined) {
+    if (body.campaign !== null && typeof body.campaign !== 'string') return badRequest('campaign must be a string or null');
+    if (body.campaign) {
+      const campaignError = validateLength(body.campaign.trim(), 'Campaign', 1, 64);
+      if (campaignError) return badRequest(campaignError);
+    }
+    updates.push('campaign = ?'); bindParams.push(body.campaign?.trim() || null);
+  }
+  if (body.tags !== undefined) {
+    if (!Array.isArray(body.tags) || body.tags.length > 10) return badRequest('tags must be an array of up to 10 strings');
+    const tags = Array.from(new Set(body.tags.map((tag: unknown) => typeof tag === 'string' ? tag.trim().toLowerCase() : ''))).filter(Boolean);
+    if (tags.some((tag) => tag.length > 24)) return badRequest('each tag must be 24 characters or fewer');
+    updates.push('tags = ?'); bindParams.push(tags.length ? JSON.stringify(tags) : null);
+  }
   if (body.is_active !== undefined) {
     if (typeof body.is_active !== 'boolean') return badRequest('is_active must be a boolean');
     updates.push('is_active = ?'); bindParams.push(body.is_active ? 1 : 0);

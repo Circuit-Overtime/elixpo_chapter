@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   const db = getDB();
   const { results } = await db
     .prepare(
-      'SELECT short_code, original_url, title, clicks, is_active, expires_at, created_at, updated_at FROM urls WHERE user_id = ? ORDER BY created_at DESC',
+      'SELECT short_code, original_url, title, campaign, tags, clicks, is_active, expires_at, created_at, updated_at FROM urls WHERE user_id = ? ORDER BY created_at DESC',
     )
     .bind(user.id)
     .all<UrlRecord>();
@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
     'short_code',
     'original_url',
     'title',
+    'campaign',
+    'tags',
     'clicks',
     'is_active',
     'expires_at',
@@ -43,6 +45,8 @@ export async function GET(request: NextRequest) {
     u.short_code,
     u.original_url,
     u.title || '',
+    u.campaign || '',
+    u.tags || '',
     String(u.clicks ?? 0),
     String(u.is_active ?? 0),
     u.expires_at || '',

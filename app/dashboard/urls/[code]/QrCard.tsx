@@ -105,7 +105,7 @@ export default function QrCard({ shortUrl, presetLimit, allowLogo }: Props) {
         <div className="flex flex-col gap-2 w-full">
           <button
             type="button"
-            onClick={() => qrRef.current?.download()}
+            onClick={() => qrRef.current?.download('svg')}
             className="inline-flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all cursor-pointer border-none"
             style={{
               background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
@@ -118,6 +118,15 @@ export default function QrCard({ shortUrl, presetLimit, allowLogo }: Props) {
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             Download SVG
+          </button>
+
+          <button
+            type="button"
+            onClick={() => qrRef.current?.download('png')}
+            className="inline-flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer"
+            style={{ background: '#fff', color: '#c62828', border: '1px solid rgba(229,57,53,0.35)' }}
+          >
+            Download PNG
           </button>
 
           <button

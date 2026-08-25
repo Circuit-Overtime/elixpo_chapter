@@ -112,6 +112,9 @@ Creates a permanent link owned by your account. Free accounts are capped at 25 l
 | \`title\` | string | No | Human-readable label (1–255 characters). |
 | \`custom_code\` | string | No | Pro+. Unique 3–32 character slug (alphanumeric, hyphens, underscores). |
 | \`expires_at\` | ISO 8601 | No | Pro+. Future timestamp. If omitted, link does not expire. |
+| \`campaign\` | string | No | Campaign label, maximum 64 characters. |
+| \`tags\` | string[] | No | Up to 10 normalized tags, maximum 24 characters each. |
+| \`utm\` | object | No | Optional source, medium, campaign, term, and content values. |
 
 ### Request Example
 \`\`\`bash
