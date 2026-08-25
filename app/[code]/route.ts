@@ -1,7 +1,7 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB, getEnv, getKV } from '@/lib/db';
-import { parseUserAgent, hashIp } from '@/lib/utils';
+import { parseUserAgent, hashIp, hmacSha256Hex, isLikelyBot } from '@/lib/utils';
 import {
   type CachedRedirect,
   isCachedRedirectExpired,
@@ -141,7 +141,9 @@ async function trackClick(
   urlId: number,
   request: NextRequest,
 ): Promise<void> {
-  const ua = parseUserAgent(request.headers.get('user-agent'));
+  const userAgent = request.headers.get('user-agent');
+  const ua = parseUserAgent(userAgent);
+  const isBot = isLikelyBot(userAgent);
 
   // CF properties come through three different shapes depending on
   // runtime + framework version. Try each in order:
@@ -201,13 +203,22 @@ async function trackClick(
     }
   }
 
-  const networkHash = await hashIp(rawIp, getEnv().GUEST_FINGERPRINT_SECRET);
+  const privacySecret = getEnv().GUEST_FINGERPRINT_SECRET;
+  const networkHash = await hashIp(rawIp, privacySecret);
+  const visitorDay = new Date().toISOString().slice(0, 10);
+  const visitorHash = rawIp && privacySecret
+    ? await hmacSha256Hex(
+        `visitor-day-v1|${visitorDay}|${rawIp}|${userAgent || ''}`,
+        privacySecret,
+      )
+    : null;
   await db.batch([
-    db.prepare('UPDATE urls SET clicks = clicks + 1 WHERE id = ?').bind(urlId),
+    db.prepare('UPDATE urls SET clicks = clicks + ? WHERE id = ?').bind(isBot ? 0 : 1, urlId),
     db
       .prepare(
-        `INSERT INTO clicks (url_id, country, city, region, device, browser, os, referer, ip_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO clicks
+          (url_id, country, city, region, device, browser, os, referer, ip_hash, visitor_hash, is_bot)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         urlId,
@@ -219,6 +230,8 @@ async function trackClick(
         ua.os,
         refererOrigin,
         networkHash,
+        visitorHash,
+        isBot ? 1 : 0,
       ),
   ]);
 }

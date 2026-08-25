@@ -8,6 +8,7 @@ import ClicksChart, {
 import CopyButton from './CopyButton';
 import DeleteButton from './DeleteButton';
 import QrCard from './QrCard';
+import { pruneUserClicks } from '@/lib/analytics-retention';
 
 export const runtime = 'edge';
 
@@ -67,6 +68,7 @@ export default async function UrlDetailPage({
   const tierMax = Math.min(limits.maxClicksRetention, ABS_MAX_DAYS);
   const days = Math.max(1, Math.min(requested, tierMax));
   const since = new Date(Date.now() - days * 86400000).toISOString();
+  await pruneUserClicks(user.id, limits.maxClicksRetention);
 
   const url = await db
     .prepare('SELECT * FROM urls WHERE short_code = ? AND user_id = ?')
@@ -88,7 +90,7 @@ export default async function UrlDetailPage({
       .prepare(
         `SELECT DATE(clicked_at) as date, COUNT(*) as count
          FROM clicks
-         WHERE url_id = ? AND clicked_at >= ?
+         WHERE url_id = ? AND clicked_at >= ? AND is_bot = 0
          GROUP BY DATE(clicked_at)
          ORDER BY date`,
       )
@@ -96,7 +98,7 @@ export default async function UrlDetailPage({
       .all<{ date: string; count: number }>(),
     db
       .prepare(
-        'SELECT COUNT(*) as rows, MAX(clicked_at) as latest FROM clicks WHERE url_id = ? AND clicked_at >= ?',
+        'SELECT COUNT(*) as rows, MAX(clicked_at) as latest FROM clicks WHERE url_id = ? AND clicked_at >= ? AND is_bot = 0',
       )
       .bind(url.id, since)
       .first<{ rows: number; latest: string | null }>(),
@@ -112,19 +114,19 @@ export default async function UrlDetailPage({
     const [countries, browsers, devices] = await Promise.all([
       db
         .prepare(
-          'SELECT country, COUNT(*) as count FROM clicks WHERE url_id = ? AND clicked_at >= ? GROUP BY country ORDER BY count DESC LIMIT 10',
+          'SELECT country, COUNT(*) as count FROM clicks WHERE url_id = ? AND clicked_at >= ? AND is_bot = 0 GROUP BY country ORDER BY count DESC LIMIT 10',
         )
         .bind(url.id, since)
         .all<{ country: string; count: number }>(),
       db
         .prepare(
-          'SELECT browser, COUNT(*) as count FROM clicks WHERE url_id = ? AND clicked_at >= ? GROUP BY browser ORDER BY count DESC',
+          'SELECT browser, COUNT(*) as count FROM clicks WHERE url_id = ? AND clicked_at >= ? AND is_bot = 0 GROUP BY browser ORDER BY count DESC',
         )
         .bind(url.id, since)
         .all<{ browser: string; count: number }>(),
       db
         .prepare(
-          'SELECT device, COUNT(*) as count FROM clicks WHERE url_id = ? AND clicked_at >= ? GROUP BY device ORDER BY count DESC',
+          'SELECT device, COUNT(*) as count FROM clicks WHERE url_id = ? AND clicked_at >= ? AND is_bot = 0 GROUP BY device ORDER BY count DESC',
         )
         .bind(url.id, since)
         .all<{ device: string; count: number }>(),

@@ -120,7 +120,11 @@ export default function PrivacyPage() {
           <Section title="What we never do">
             <ul>
               <li>We do not sell or share your data with advertisers.</li>
-              <li>We do not track visitors across sites or build profiles.</li>
+              <li>
+                We do not track visitors across sites or build lasting
+                profiles. The identifier used for approximate unique counts
+                rotates every UTC day.
+              </li>
               <li>
                 We do not log the destination URLs you create except to
                 store them for redirection — they are not used for any
@@ -138,10 +142,10 @@ export default function PrivacyPage() {
               Guest links expire after 24 hours. Expired guest links and
               completed guest quota records are removed during subsequent
               guest creation cleanup. Analytics query access is limited by
-              plan; the service may retain raw click events beyond that query
-              window until the analytics cleanup process removes them. You can
-              delete a short link at any time, which removes both the link and
-              its click history immediately.
+              plan. Raw click events beyond that window are deleted when the
+              account next loads analytics or its dashboard. You can delete a
+              short link at any time, which removes both the link and its click
+              history immediately.
             </p>
           </Section>
 

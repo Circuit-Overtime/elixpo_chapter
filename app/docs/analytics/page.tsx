@@ -34,6 +34,7 @@ export default function AnalyticsPage() {
       <h2 id="response" className={H2}>Response</h2>
       <pre className={PRE} style={PRE_STYLE}>
         <code>{`{
+  "summary": {"clicks": 42, "unique_visitor_days": 31, "filtered_bots": 6},
   "timeline":  [{"date": "2026-03-19", "count": 42}],
   "countries": [{"country": "US",       "count": 30}],
   "browsers":  [{"browser": "Chrome",   "count": 25}],
@@ -41,6 +42,12 @@ export default function AnalyticsPage() {
   "referers":  [{"referer": "twitter.com", "count": 12}]
 }`}</code>
       </pre>
+      <p className={P}>
+        Clicks and breakdowns exclude recognized crawlers and link-preview
+        agents. <code className="font-mono text-white">unique_visitor_days</code>{' '}
+        is an approximation based on a keyed identifier that rotates daily;
+        it is not a cross-day visitor profile.
+      </p>
 
       <h2 id="windows" className={H2}>Time windows</h2>
       <ul className="space-y-2 list-none p-0 mb-6">

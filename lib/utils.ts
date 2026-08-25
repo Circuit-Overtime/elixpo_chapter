@@ -53,6 +53,11 @@ export function parseUserAgent(ua: string | null): { device: string; browser: st
   return { device, browser, os };
 }
 
+export function isLikelyBot(userAgent: string | null): boolean {
+  if (!userAgent) return true;
+  return /bot|crawler|spider|slurp|preview|headless|curl|wget|python|httpclient|facebookexternalhit|discordbot|slackbot|telegrambot|whatsapp/i.test(userAgent);
+}
+
 export async function hmacSha256Hex(
   value: string,
   secret: string,

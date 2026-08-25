@@ -9,6 +9,7 @@ import {
   currentUtcQuotaWindow,
   FREE_DAILY_CREATION_LIMIT,
 } from '@/lib/account-quota';
+import { pruneUserClicks } from '@/lib/analytics-retention';
 
 /** Fill missing days with zero so the chart has continuous bars. */
 function buildTimeline(
@@ -80,6 +81,7 @@ export default async function DashboardPage({
   const daysRaw = Number.parseInt(daysParam || '7');
   const days = [7, 30, 90].includes(daysRaw) ? daysRaw : 7;
   const since = new Date(Date.now() - days * 86400000).toISOString();
+  await pruneUserClicks(user.id, limits.maxClicksRetention);
 
   const quotaWindow = currentUtcQuotaWindow();
   const [urlCount, totalClicks, recentClicks, timeline, topUrls, recentUrls, dailyQuota] =
@@ -90,19 +92,19 @@ export default async function DashboardPage({
         .first<{ count: number }>(),
       db
         .prepare(
-          'SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ?',
+          'SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.is_bot = 0',
         )
         .bind(user.id)
         .first<{ count: number }>(),
       db
         .prepare(
-          'SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.clicked_at >= ?',
+          'SELECT COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.clicked_at >= ? AND c.is_bot = 0',
         )
         .bind(user.id, since)
         .first<{ count: number }>(),
       db
         .prepare(
-          'SELECT DATE(c.clicked_at) as date, COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.clicked_at >= ? GROUP BY DATE(c.clicked_at) ORDER BY date',
+          'SELECT DATE(c.clicked_at) as date, COUNT(*) as count FROM clicks c JOIN urls u ON c.url_id = u.id WHERE u.user_id = ? AND c.clicked_at >= ? AND c.is_bot = 0 GROUP BY DATE(c.clicked_at) ORDER BY date',
         )
         .bind(user.id, since)
         .all<{ date: string; count: number }>(),
