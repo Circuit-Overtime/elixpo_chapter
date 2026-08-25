@@ -24,7 +24,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const csrfErr = requireSameOrigin(request);
   if (csrfErr) return csrfErr;
 
-  const user = await resolveUser(request);
+  const user = await resolveUser(request, 'write');
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { code } = await params;
@@ -89,7 +89,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const csrfErr = requireSameOrigin(request);
   if (csrfErr) return csrfErr;
 
-  const user = await resolveUser(request);
+  const user = await resolveUser(request, 'write');
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { code } = await params;

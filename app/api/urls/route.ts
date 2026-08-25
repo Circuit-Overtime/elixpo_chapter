@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   const limited = await rateLimit(request, 'url:create', 30, 60);
   if (limited) return limited;
 
-  const user = await resolveUser(request);
+  const user = await resolveUser(request, 'write');
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json() as import('@/lib/create-url').CreateUrlInput;

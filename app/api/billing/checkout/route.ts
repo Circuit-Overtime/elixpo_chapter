@@ -25,7 +25,7 @@ const INTERVALS: BillingInterval[] = ['monthly', 'annual'];
  * Returns: 200 { url } · 400 bad input · 401 unauth · 502 Pay error · 503 unconfigured
  */
 export async function POST(request: NextRequest) {
-  const user = await resolveUser(request);
+  const user = await resolveUser(request, 'write');
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const env = getEnv();

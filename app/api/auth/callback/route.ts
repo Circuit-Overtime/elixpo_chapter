@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCode, fetchUserInfo, upsertUser, createSession, auditLog } from '@/lib/auth';
-import { getDB, getKV, getEnv } from '@/lib/db';
+import { getKV, getEnv } from '@/lib/db';
 
 export const runtime = 'edge';
 
@@ -31,18 +31,6 @@ export async function GET(request: NextRequest) {
     const tokens = await exchangeCode(code, request.url);
     const userInfo = await fetchUserInfo(tokens.access_token);
     const user = await upsertUser(userInfo);
-
-    // Store refresh token
-    const db = getDB();
-    await db
-      .prepare(
-        `INSERT INTO oauth_tokens (user_id, access_token, refresh_token, expires_at)
-         VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET
-         access_token = excluded.access_token, refresh_token = excluded.refresh_token,
-         expires_at = excluded.expires_at, created_at = datetime('now')`
-      )
-      .bind(user.id, tokens.access_token, tokens.refresh_token, new Date(Date.now() + tokens.expires_in * 1000).toISOString())
-      .run();
 
     await createSession(user.id);
     await auditLog(user.id, 'user.login', 'user', String(user.id));
