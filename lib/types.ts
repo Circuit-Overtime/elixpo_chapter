@@ -22,9 +22,8 @@ export interface TierLimits {
 }
 
 // -1 = unlimited. Only enforced capabilities may be shown by pricing and
-// subscription UIs. seats, brandedDomains, webhooks, and rateLimitPerMin are
-// reserved entitlement values for planned features and must not be marketed
-// until their corresponding product paths enforce them.
+// subscription UIs. seats, webhooks, and rateLimitPerMin remain reserved
+// entitlement values until their corresponding product paths enforce them.
 export const TIER_LIMITS: Record<Tier, TierLimits> = {
   free:       { maxUrls: 25,    maxApiKeys: 1,   maxClicksRetention: 7,   customCodes: false, analytics: false, expiringLinks: false, seats: 1,  brandedDomains: 0,  webhooks: false, rateLimitPerMin: 60,   qrPresets: 3,  qrLogo: false },
   pro:        { maxUrls: 1000,  maxApiKeys: 5,   maxClicksRetention: 30,  customCodes: true,  analytics: true,  expiringLinks: true,  seats: 1,  brandedDomains: 1,  webhooks: true,  rateLimitPerMin: 600,  qrPresets: -1, qrLogo: true },
@@ -106,6 +105,40 @@ export interface UrlRecord {
   expires_at: string | null;
   campaign?: string | null;
   tags?: string | null;
+}
+
+export type SubdomainStatus =
+  | 'pending'
+  | 'verified'
+  | 'active'
+  | 'failed'
+  | 'suspended'
+  | 'removed';
+
+export interface SubdomainRecord {
+  id: number;
+  user_id: number;
+  label: string;
+  hostname: string;
+  status: SubdomainStatus;
+  verification_token: string;
+  verification_expires_at: string;
+  verified_at: string | null;
+  activated_at: string | null;
+  removed_at: string | null;
+  last_error: string | null;
+  is_default: number;
+  revision: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubdomainLinkRecord {
+  id: number;
+  subdomain_id: number;
+  url_id: number;
+  short_code: string;
+  created_at: string;
 }
 
 export interface ClickRecord {
