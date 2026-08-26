@@ -24,6 +24,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${BASE_URL}/about`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
       url: `${BASE_URL}/docs`,
       lastModified: now,
       changeFrequency: 'weekly',
@@ -48,6 +54,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'api',
     'keys',
     'analytics',
+    'subdomains',
     'webhooks',
     'errors',
     'self-hosting',
