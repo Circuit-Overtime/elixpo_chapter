@@ -48,3 +48,12 @@ convert app/icon.png -background none -define icon:auto-resize=64,48,32,16 app/f
 2. Add a row to the catalogue above.
 3. Reference the `output` path wherever you need it (e.g. a `spotlight.json` `image` field).
 4. Run `npm run gen:asset <name>`.
+
+## Portfolio portrait standard
+
+Landing-page portraits use the repository-wide **Vignette Bloom Archive** treatment defined in
+[`content/portfolio-theme.json`](./content/portfolio-theme.json). Keep source portraits at
+`public/assets/<slug>/about/ptr-11.webp` with a centered head-and-shoulders crop, at least
+768×768 pixels. The landing renderer applies the square crop, mosaic cells, rust-and-paper
+palette, vignette, and twelve-second wave loop consistently at runtime. Do not bake a separate
+filter into individual member portraits.
