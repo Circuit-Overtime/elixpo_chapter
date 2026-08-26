@@ -124,13 +124,14 @@ export default function LandingClient({ profiles }) {
           {profiles.map((profile, index) => (
             <motion.div
               key={profile.slug}
+              className="aspect-square"
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 1.2 + index * 0.15, ease: "easeOut" }}
             >
               <Link
                 href={`/${profile.slug}`}
-                className="group relative flex flex-col h-full border-2 border-[#444] rounded-[18px] bg-[#E2D9C8] p-4 sm:p-5 transition-all duration-500 hover:border-[#B63B12] hover:-translate-y-1"
+                className="group relative flex h-full flex-col overflow-hidden border-2 border-[#444] rounded-[18px] bg-[#E2D9C8] p-4 sm:p-5 transition-all duration-500 hover:border-[#B63B12] hover:-translate-y-1"
               >
                 {/* Paper grain on card */}
                 <div className="absolute inset-0 rounded-[18px] opacity-25 bg-[url(/assets/ayushman/paperTexture.webp)] bg-repeat bg-cover pointer-events-none mix-blend-multiply" />
@@ -145,7 +146,7 @@ export default function LandingClient({ profiles }) {
 
                 {/* Portrait */}
                 <div
-                  className="relative w-full aspect-[4/5] rounded-[12px] bg-cover bg-center border-2 border-[#222] sepia-[40%] saturate-[160%] group-hover:sepia-0 group-hover:saturate-100 transition-all duration-500"
+                  className="relative w-full flex-1 min-h-0 rounded-[12px] bg-cover bg-center border-2 border-[#222] sepia-[40%] saturate-[160%] group-hover:sepia-0 group-hover:saturate-100 transition-all duration-500"
                   style={{ backgroundImage: `url(/assets/${profile.slug}/about/ptr-11.webp)` }}
                 />
 
