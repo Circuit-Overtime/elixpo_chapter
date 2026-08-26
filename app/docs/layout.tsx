@@ -16,6 +16,7 @@ const DOCS_NAV = [
   { label: 'Shortening API', href: '/docs/api' },
   { label: 'API Keys', href: '/docs/keys' },
   { label: 'Click Analytics', href: '/docs/analytics' },
+  { label: 'Branded Subdomains', href: '/docs/subdomains' },
   { label: 'Webhooks', href: '/docs/webhooks' },
   { label: 'Error Reference', href: '/docs/errors' },
   { label: 'Self-Hosting', href: '/docs/self-hosting' },

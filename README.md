@@ -60,12 +60,12 @@ in milliseconds no matter where your audience is.
 
 | | Free | Pro | Business | Enterprise |
 |---|---|---|---|---|
-| **Short URLs** | 25 | 500 | 5,000 | Unlimited |
+| **Short URLs** | 25 | 1,000 | 10,000 | Unlimited |
 | **API keys** | 1 | 5 | 20 | 100 |
-| **Analytics retention** | 7 days | 30 days | 90 days | 365 days |
+| **Analytics query window** | 7 days | 30 days | 365 days | 730 days |
 | **Custom codes** | — | Yes | Yes | Yes |
 | **Expiring links** | — | Yes | Yes | Yes |
-| **Price** | Free forever | $9/mo | $29/mo | Custom |
+| **Price** | Free forever | $5/mo | $19/mo | Custom |
 
 ### Get started
 

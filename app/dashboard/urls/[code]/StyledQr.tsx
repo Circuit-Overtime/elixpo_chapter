@@ -10,8 +10,7 @@ import type { CSSProperties } from 'react';
 import type { Options } from 'qr-code-styling';
 
 export interface StyledQrHandle {
-  /** QR is always exported as SVG (vector). */
-  download: () => Promise<void>;
+  download: (extension?: 'svg' | 'png') => Promise<void>;
 }
 
 interface Props {
@@ -72,12 +71,12 @@ const StyledQr = forwardRef<StyledQrHandle, Props>(function StyledQr(
   useImperativeHandle(
     ref,
     () => ({
-      download: async () => {
+      download: async (extension = 'svg') => {
         if (!qrRef.current) return;
         try {
-          await Promise.resolve(qrRef.current.download({ name: filename, extension: 'svg' }));
+          await Promise.resolve(qrRef.current.download({ name: filename, extension }));
         } catch {
-          onError?.('SVG export failed — check the logo image URL is reachable.');
+          onError?.(`${extension.toUpperCase()} export failed — check the logo image URL is reachable.`);
         }
       },
     }),

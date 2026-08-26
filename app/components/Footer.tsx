@@ -25,6 +25,7 @@ const PRODUCT_LINKS: FooterLink[] = [
 ];
 
 const RESOURCE_LINKS: FooterLink[] = [
+  { label: 'Report abuse', href: '/report' },
   { label: 'Source on GitHub', href: REPO_URL, external: true },
   { label: 'Accounts SSO', href: 'https://accounts.elixpo.com', external: true },
   { label: 'Elixpo ecosystem', href: ECOSYSTEM_URL, external: true },
@@ -33,8 +34,8 @@ const RESOURCE_LINKS: FooterLink[] = [
 
 const LEGAL_LINKS: FooterLink[] = [
   { label: 'License', href: LICENSE_URL, external: true },
-  { label: 'Privacy', href: `${ECOSYSTEM_URL}/privacy`, external: true },
-  { label: 'Terms', href: `${ECOSYSTEM_URL}/terms`, external: true },
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Terms', href: '/terms' },
   { label: 'Trademark notice', href: `${REPO_URL}/blob/main/LICENSES/exceptions/Oreo-trademarks`, external: true },
 ];
 

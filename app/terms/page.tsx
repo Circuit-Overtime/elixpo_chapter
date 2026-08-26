@@ -1,221 +1,101 @@
 import type { Metadata } from 'next';
-import Footer from '../components/Footer';
-import Navbar from '../components/Navbar';
+import { LegalNote, LegalPage, LegalSection } from '../components/LegalPage';
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
-  description:
-    'The terms that govern your use of ElixpoURL — the open URL shortener built on Cloudflare\'s edge.',
+  description: 'The rules for using LixRL links, accounts, API access, and paid plans.',
   alternates: { canonical: '/terms' },
 };
 
-const LAST_UPDATED = 'June 2026';
-const SUPPORT_EMAIL = 'hello@elixpo.com';
-const REPO_URL = 'https://github.com/elixpo/elixpourl';
+const UPDATED = '25 August 2026';
+const EMAIL = 'hello@elixpo.com';
+const REPOSITORY = 'https://github.com/elixpo/elixpourl';
+
+const navigation = [
+  { id: 'using-lixrl', label: 'Using LixRL' },
+  { id: 'accounts-and-security', label: 'Accounts & security' },
+  { id: 'links-and-content', label: 'Links & content' },
+  { id: 'plans-and-billing', label: 'Plans & billing' },
+  { id: 'service-operation', label: 'Service operation' },
+  { id: 'liability', label: 'Liability' },
+  { id: 'changes-and-contact', label: 'Changes & contact' },
+];
 
 export default function TermsPage() {
   return (
-    <div className="theme-light min-h-screen flex flex-col text-[#111] bg-white">
+    <LegalPage
+      eyebrow={`Terms · updated ${UPDATED}`}
+      title="Fair rules for short links."
+      intro="These terms explain what you can expect from LixRL and what we expect from everyone who creates, manages, or visits a short link."
+      summaries={[
+        { title: 'You control your links', detail: 'You keep ownership of your destinations and metadata and can delete links you own.' },
+        { title: 'Abuse is not permitted', detail: 'Phishing, malware, scams, illegal content, and attempts to bypass safeguards can be removed.' },
+        { title: 'Plans match enforced limits', detail: 'Guest, Free, Pro, and Business allowances are described on the pricing page and enforced by the service.' },
+      ]}
+      navigation={navigation}
+    >
+      <LegalSection id="using-lixrl" title="1. Using LixRL">
+        <p>
+          By using LixRL, including guest shortening, redirects, the dashboard, or the API, you agree to these Terms. If you use LixRL for an organization, you confirm that you can accept these Terms for that organization.
+        </p>
+        <p>You must be legally able to enter this agreement. Do not use the service if applicable law prohibits you from doing so.</p>
+        <LegalNote>
+          Guest use creates one short link that expires after 24 hours. Persistent links require an account. Signed-in Free accounts can create up to two links per UTC day, subject to their total plan limit.
+        </LegalNote>
+      </LegalSection>
 
-      <div className="relative z-10">
-        <Navbar />
-      </div>
+      <LegalSection id="accounts-and-security" title="2. Accounts, API keys, and security">
+        <p>
+          Sign-in is provided through Elixpo Accounts. You are responsible for activity under your account and API keys, keeping credentials private, and promptly revoking keys you no longer trust.
+        </p>
+        <p>
+          Do not share access in a way that exceeds your plan or attempt to bypass quotas, authorization checks, rate limits, or account restrictions. Tell us at <a href={`mailto:${EMAIL}`}>{EMAIL}</a> if you believe an account or key has been compromised.
+        </p>
+      </LegalSection>
 
-      <main className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-16">
-        <header className="mb-10">
-          <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#c62828] mb-2">
-            Last updated · {LAST_UPDATED}
-          </div>
-          <h1
-            className="text-[2.2rem] md:text-[3rem] font-extrabold leading-[1.08] tracking-tight"
-            style={{
-              background: 'linear-gradient(180deg, #111111 0%, #555555 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Terms of Service
-          </h1>
-          <p className="text-white/65 mt-3 text-base md:text-[1.05rem] leading-relaxed">
-            The terms that govern your use of ElixpoURL.
-          </p>
-        </header>
+      <LegalSection id="links-and-content" title="3. Your links and acceptable use">
+        <p>
+          You retain ownership of destination URLs, titles, campaign labels, tags, and eligible subdomain labels you submit. You give us the limited permission needed to store that information, resolve the short link, provide analytics, and operate the service.
+        </p>
+        <p>You must not use LixRL to:</p>
+        <ul>
+          <li>Distribute malware, phishing, credential theft, scams, spam, or deceptive impersonation.</li>
+          <li>Link to child sexual abuse material or content that is unlawful where the service operates.</li>
+          <li>Harass people, infringe rights, or conceal a destination to cause harm.</li>
+          <li>Probe internal networks, scrape or overload endpoints, automate abusive traffic, or evade safeguards.</li>
+        </ul>
+        <p>
+          Destinations may be checked with Google Safe Browsing. We may reject, disable, quarantine, or delete links and suspend accounts when reasonably necessary to address abuse, legal requests, security risk, or service integrity. Reports can be submitted through <a href="/report">Report abuse</a>.
+        </p>
+      </LegalSection>
 
-        <article className="space-y-7 text-white/75 leading-relaxed">
-          <Section title="1. Acceptance">
-            <p>
-              By accessing or using ElixpoURL (the &ldquo;Service&rdquo;) —
-              including the dashboard, the public redirect path, and the
-              API — you agree to these Terms. If you do not agree, please
-              do not use the Service.
-            </p>
-          </Section>
+      <LegalSection id="plans-and-billing" title="4. Plans, quotas, and billing">
+        <p>Current prices and enforced feature limits appear on the <a href="/pricing">Pricing page</a>. Limits can include stored links, daily creation, analytics retention, API keys, branded lixrl.com subdomains, custom slugs, expiring links, and QR options.</p>
+        <ul>
+          <li>Paid subscriptions renew for the selected monthly or annual period until cancelled.</li>
+          <li>Cancellation stops the next renewal; access continues through the paid period unless otherwise stated at checkout.</li>
+          <li>Taxes, supported payment methods, final charges, and any refund terms are shown during checkout.</li>
+          <li>A failed or reversed payment may pause paid features or return the account to available Free limits.</li>
+        </ul>
+        <p>We may change plans or prices prospectively. Material changes affecting an active subscription will be communicated before they take effect where practical.</p>
+      </LegalSection>
 
-          <Section title="2. Open source &amp; licensing">
-            <p>
-              ElixpoURL is open source. Source code is provided under the{' '}
-              <strong>MIT License (with Oreo-trademark exception)</strong>{' '}
-              and visual assets under <strong>CC-BY-4.0</strong>, as set out
-              in our{' '}
-              <a
-                href={`${REPO_URL}/blob/main/LICENSE`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
-              >
-                LICENSE
-              </a>
-              . The Oreo mascot, the chest E-badge, and the
-              &ldquo;Elixpo&rdquo; and &ldquo;ElixpoURL&rdquo; names and
-              brand palette are reserved and not granted for use outside
-              Elixpo-aligned projects.
-            </p>
-          </Section>
+      <LegalSection id="service-operation" title="5. Availability, changes, and termination">
+        <p>You can stop using LixRL or request account deletion at any time. We may limit or terminate access for violations, security threats, non-payment, legal obligations, or material risk to the service or its users.</p>
+        <p>We may modify or discontinue features. We aim to communicate material changes, but we do not promise uninterrupted availability, permanent storage, or that every destination will remain reachable.</p>
+        <p>The source code is available under the licenses and trademark exceptions in the repository <a href={`${REPOSITORY}/blob/main/LICENSE`}>license</a>. Those licenses do not grant rights to reserved Elixpo names, mascots, or brand assets.</p>
+      </LegalSection>
 
-          <Section title="3. Acceptable use">
-            <p>
-              You agree not to use ElixpoURL to shorten URLs that:
-            </p>
-            <ul>
-              <li>
-                Distribute malware, phishing payloads, or any content
-                flagged by Google Safe Browsing.
-              </li>
-              <li>
-                Host or link to content depicting child sexual abuse, or
-                that violates applicable law in your jurisdiction or ours.
-              </li>
-              <li>
-                Redirect to scam, spam, fraud, or impersonation pages.
-              </li>
-              <li>
-                Disrupt the Service through abuse — including but not
-                limited to scraping the redirect endpoint, attempting to
-                bypass rate limits, or pointing short links at internal
-                networks.
-              </li>
-            </ul>
-            <p>
-              We may remove links, suspend accounts, and rate-limit
-              traffic to keep the Service safe and available for everyone.
-              Safe Browsing checks run on every link creation; flagged URLs
-              are rejected at create time.
-            </p>
-          </Section>
+      <LegalSection id="liability" title="6. Disclaimers and liability">
+        <p>LixRL is provided “as is” and “as available,” without warranties of merchantability, fitness for a particular purpose, non-infringement, uptime, or data durability, to the extent permitted by law.</p>
+        <p>To the fullest extent permitted by law, Elixpo, its maintainers, and contributors will not be liable for indirect, incidental, special, consequential, or punitive damages, lost profits, lost data, or losses caused by destinations operated by third parties.</p>
+        <p>Nothing in these Terms excludes rights or liability that applicable law does not allow us to exclude.</p>
+      </LegalSection>
 
-          <Section title="4. Account &amp; sign-in">
-            <p>
-              ElixpoURL uses Elixpo Accounts (single sign-on) for
-              authentication. The terms of your Elixpo Account apply
-              alongside these. You are responsible for keeping your account
-              credentials secure and for any activity performed through
-              your account or API keys.
-            </p>
-          </Section>
-
-          <Section title="5. Your content">
-            <p>
-              You retain ownership of the destination URLs you shorten and
-              any title or metadata you attach. By using the Service you
-              grant us a limited license to store, redirect to, and serve
-              your short links for the purpose of operating the Service.
-            </p>
-            <p>
-              You are responsible for ensuring you have the right to link
-              to whatever destination you choose, and for how that link is
-              shared.
-            </p>
-          </Section>
-
-          <Section title="6. Tiers &amp; limits">
-            <p>
-              Free and paid tiers carry different per-account quotas —
-              monthly link limits, retention windows, analytics depth, and
-              feature access. Current tier definitions are described on
-              the <a
-                href="/pricing"
-                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
-              >
-                Pricing page
-              </a>{' '}
-              and enforced server-side. Quotas may change with notice.
-            </p>
-          </Section>
-
-          <Section title="7. No warranty">
-            <p>
-              The Service is provided <strong>&ldquo;as is&rdquo;</strong>,
-              without warranties of any kind. As a community-run,
-              open-source project we do not guarantee uptime, durability,
-              or fitness for any particular purpose. See our{' '}
-              <a
-                href="/api/health"
-                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
-              >
-                health endpoint
-              </a>{' '}
-              for current operational status.
-            </p>
-          </Section>
-
-          <Section title="8. Limitation of liability">
-            <p>
-              To the fullest extent permitted by law, the ElixpoURL
-              maintainers and contributors are not liable for any
-              indirect, incidental, or consequential damages arising from
-              your use of the Service.
-            </p>
-          </Section>
-
-          <Section title="9. Termination">
-            <p>
-              You may delete your account and all associated links at any
-              time. We may suspend or terminate accounts that violate
-              these Terms, with notice where practical.
-            </p>
-          </Section>
-
-          <Section title="10. Changes">
-            <p>
-              We may update these Terms over time. Material changes will be
-              reflected by the &ldquo;last updated&rdquo; date above.
-              Continued use after changes constitutes acceptance.
-            </p>
-          </Section>
-
-          <Section title="11. Contact">
-            <p>
-              Questions about these Terms? Email{' '}
-              <a
-                href={`mailto:${SUPPORT_EMAIL}`}
-                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
-              >
-                {SUPPORT_EMAIL}
-              </a>
-              .
-            </p>
-          </Section>
-        </article>
-      </main>
-
-      <div className="relative z-10">
-        <Footer />
-      </div>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  return (
-    <section>
-      <h2
-        id={id}
-        className="text-[1.35rem] font-bold text-white tracking-tight mb-3 scroll-mt-20"
-      >
-        {title}
-      </h2>
-      <div className="space-y-3">{children}</div>
-    </section>
+      <LegalSection id="changes-and-contact" title="7. Changes and contact">
+        <p>We may update these Terms as LixRL changes. The date at the top identifies the current version. Material changes will be announced through an appropriate product or repository channel; continued use after the effective date means you accept the revised Terms.</p>
+        <p>Questions about these Terms can be sent to <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>
+      </LegalSection>
+    </LegalPage>
   );
 }

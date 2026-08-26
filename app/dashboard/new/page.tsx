@@ -15,6 +15,11 @@ export default function ShortenPage() {
   const [url, setUrl] = useState('');
   const [customCode, setCustomCode] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [campaign, setCampaign] = useState('');
+  const [tags, setTags] = useState('');
+  const [utmSource, setUtmSource] = useState('');
+  const [utmMedium, setUtmMedium] = useState('');
+  const [utmCampaign, setUtmCampaign] = useState('');
   const [result, setResult] = useState<{ short_url: string } | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -77,6 +82,11 @@ export default function ShortenPage() {
     const body: Record<string, unknown> = { url };
     if (isPro && customCode) body.custom_code = customCode;
     if (isPro && expiresAt) body.expires_at = new Date(expiresAt).toISOString();
+    if (campaign.trim()) body.campaign = campaign.trim();
+    if (tags.trim()) body.tags = tags.split(',').map((tag) => tag.trim()).filter(Boolean);
+    if (utmSource || utmMedium || utmCampaign) {
+      body.utm = { source: utmSource, medium: utmMedium, campaign: utmCampaign };
+    }
 
     try {
       const res = await fetch('/api/urls', {
@@ -90,6 +100,11 @@ export default function ShortenPage() {
         setUrl('');
         setCustomCode('');
         setExpiresAt('');
+        setCampaign('');
+        setTags('');
+        setUtmSource('');
+        setUtmMedium('');
+        setUtmCampaign('');
         setSlugStatus({ state: 'idle' });
       } else {
         setError(data.error || 'Something went wrong');
@@ -169,6 +184,17 @@ export default function ShortenPage() {
               }
             />
           </div>
+
+          <details className="mb-4 rounded-lg border border-black/10 p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-[#333]">Campaign and UTM options</summary>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <CampaignField label="Campaign label" value={campaign} onChange={setCampaign} placeholder="Q3 launch" />
+              <CampaignField label="Tags (comma-separated)" value={tags} onChange={setTags} placeholder="social, launch" />
+              <CampaignField label="UTM source" value={utmSource} onChange={setUtmSource} placeholder="newsletter" />
+              <CampaignField label="UTM medium" value={utmMedium} onChange={setUtmMedium} placeholder="email" />
+              <CampaignField label="UTM campaign" value={utmCampaign} onChange={setUtmCampaign} placeholder="q3-launch" />
+            </div>
+          </details>
 
           {/* Slug + live availability — Pro only */}
           {isPro && (
@@ -394,5 +420,14 @@ export default function ShortenPage() {
         </div>
       </Modal>
     </>
+  );
+}
+
+function CampaignField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder: string }) {
+  return (
+    <label className="block text-[0.7rem] text-[#555] uppercase tracking-wider font-medium">
+      {label}
+      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-1.5 w-full rounded-lg border border-[#d8d8d8] px-3 py-2 text-sm normal-case tracking-normal text-[#111] outline-none" />
+    </label>
   );
 }

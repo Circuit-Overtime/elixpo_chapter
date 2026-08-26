@@ -44,20 +44,10 @@ export async function getCurrentUser(): Promise<User | null> {
   const sessionId = cookieStore.get('session')?.value;
   if (!sessionId) return null;
 
-  const kv = getKV();
   const db = getDB();
-
-  // KV cache first
-  const cachedUserId = await kv.get(`session:${sessionId}`);
-  if (cachedUserId) {
-    const user = await db
-      .prepare('SELECT * FROM users WHERE id = ? AND is_active = 1')
-      .bind(parseInt(cachedUserId))
-      .first<User>();
-    if (user) return applyDevTierOverride(normalizeEntitlement(user));
-  }
-
-  // D1 fallback
+  // Sessions are security state, so D1 is authoritative on every request.
+  // KV's eventual consistency made revoked or expired sessions usable until
+  // a cached entry disappeared.
   const user = await db
     .prepare(
       `SELECT u.* FROM sessions s JOIN users u ON s.user_id = u.id
@@ -68,14 +58,17 @@ export async function getCurrentUser(): Promise<User | null> {
 
   if (!user) return null;
 
-  // Re-cache
-  await kv.put(`session:${sessionId}`, String(user.id), { expirationTtl: SESSION_DURATION });
   return applyDevTierOverride(normalizeEntitlement(user));
 }
 
 // ─── Get user from API key (for API routes) ─────────────────
 
-export async function getUserFromApiKey(authHeader: string): Promise<User | null> {
+interface ApiKeyPrincipal {
+  user: User;
+  scopes: string;
+}
+
+async function getApiKeyPrincipal(authHeader: string): Promise<ApiKeyPrincipal | null> {
   if (!authHeader.startsWith('Bearer elu_')) return null;
 
   const key = authHeader.slice(7);
@@ -99,8 +92,9 @@ export async function getUserFromApiKey(authHeader: string): Promise<User | null
     .run()
     .catch(() => {});
 
-  return applyDevTierOverride(
-    normalizeEntitlement({
+  return {
+    scopes: row.ak_scopes,
+    user: applyDevTierOverride(normalizeEntitlement({
       id: row.id,
       elixpo_id: row.elixpo_id,
       email: row.email,
@@ -114,16 +108,27 @@ export async function getUserFromApiKey(authHeader: string): Promise<User | null
       tier_expires_at: row.tier_expires_at ?? null,
       pay_subscription_id: row.pay_subscription_id ?? null,
       billing_status: row.billing_status ?? 'none',
-    }),
-  );
+    })),
+  };
+}
+
+export async function getUserFromApiKey(authHeader: string): Promise<User | null> {
+  return (await getApiKeyPrincipal(authHeader))?.user ?? null;
 }
 
 // ─── Resolve user from session or API key ───────────────────
 
-export async function resolveUser(request: Request): Promise<User | null> {
+export async function resolveUser(
+  request: Request,
+  requiredScope: 'read' | 'write' = 'read',
+): Promise<User | null> {
   const authHeader = request.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer elu_')) {
-    return getUserFromApiKey(authHeader);
+    const principal = await getApiKeyPrincipal(authHeader);
+    if (!principal) return null;
+    const granted = new Set(principal.scopes.split(',').map((scope) => scope.trim()));
+    if (!granted.has(requiredScope)) return null;
+    return principal.user;
   }
   return getCurrentUser();
 }
@@ -134,14 +139,11 @@ export async function createSession(userId: number): Promise<string> {
   const sessionId = generateSessionId();
   const expiresAt = new Date(Date.now() + SESSION_DURATION * 1000).toISOString();
   const db = getDB();
-  const kv = getKV();
 
   await db
     .prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)')
     .bind(sessionId, userId, expiresAt)
     .run();
-
-  await kv.put(`session:${sessionId}`, String(userId), { expirationTtl: SESSION_DURATION });
 
   const cookieStore = await cookies();
   cookieStore.set('session', sessionId, {
@@ -193,8 +195,6 @@ export async function exchangeCode(code: string, requestUrl: string): Promise<OA
     client_secret: env.ELIXPO_CLIENT_SECRET,
     redirect_uri: redirectUri,
   };
-  console.log('[exchangeCode] payload:', JSON.stringify(payload));
-  console.log('[exchangeCode] url:', `${ELIXPO_ACCOUNTS_BASE}/api/auth/token`);
   const res = await fetch(`${ELIXPO_ACCOUNTS_BASE}/api/auth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

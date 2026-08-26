@@ -1,232 +1,97 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import Footer from '../components/Footer';
-import Navbar from '../components/Navbar';
+import { LegalNote, LegalPage, LegalSection } from '../components/LegalPage';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description:
-    'How ElixpoURL handles your data — what we collect, what we do not, and how clicks are tracked privately on the edge.',
+  description: 'A plain-language explanation of what LixRL collects, why, and how long it is kept.',
   alternates: { canonical: '/privacy' },
 };
 
-const LAST_UPDATED = 'June 2026';
-const SUPPORT_EMAIL = 'hello@elixpo.com';
+const UPDATED = '25 August 2026';
+const EMAIL = 'hello@elixpo.com';
+
+const navigation = [
+  { id: 'data-at-a-glance', label: 'Data at a glance' },
+  { id: 'link-visitors', label: 'Link visitors' },
+  { id: 'guest-shortening', label: 'Guest shortening' },
+  { id: 'accounts', label: 'Accounts' },
+  { id: 'use-and-sharing', label: 'Use & sharing' },
+  { id: 'retention-and-security', label: 'Retention & security' },
+  { id: 'your-choices', label: 'Your choices' },
+  { id: 'changes-and-contact', label: 'Changes & contact' },
+];
 
 export default function PrivacyPage() {
   return (
-    <div className="theme-light min-h-screen flex flex-col text-[#111] bg-white">
+    <LegalPage
+      eyebrow={`Privacy · updated ${UPDATED}`}
+      title="Useful analytics, less personal data."
+      intro="This policy explains the information LixRL processes for redirects, account features, analytics, abuse prevention, and billing—without ad tracking or visitor cookies."
+      summaries={[
+        { title: 'No ad profiles', detail: 'We do not sell personal data, run behavioural advertising, or track visitors across unrelated links.' },
+        { title: 'Raw IPs are not stored', detail: 'Coarse network data is transformed in memory into keyed, pseudonymous signals.' },
+        { title: 'You can delete or export', detail: 'Link owners can export links, delete links and click history, revoke API keys, or request account deletion.' },
+      ]}
+      navigation={navigation}
+    >
+      <LegalSection id="data-at-a-glance" title="1. Data at a glance">
+        <p>LixRL processes only the data needed to create and resolve short links, authenticate accounts, show link analytics, prevent abuse, and operate paid subscriptions. We do not place tracking cookies on people who open a short link.</p>
+        <LegalNote>A short-link destination belongs to the link owner, not LixRL. Visiting it may expose you to the destination site’s separate privacy practices.</LegalNote>
+      </LegalSection>
 
-      <div className="relative z-10">
-        <Navbar />
-      </div>
+      <LegalSection id="link-visitors" title="2. When someone opens a short link">
+        <p>For each redirect, we may record:</p>
+        <ul>
+          <li>The time of the click and the short link that was opened.</li>
+          <li>Country, region, and city supplied by Cloudflare edge metadata—not GPS or precise location.</li>
+          <li>Device category, browser, and operating system inferred from the User-Agent header.</li>
+          <li>The referring site’s origin, with its path and query string removed.</li>
+          <li>A bot classification used to keep automated traffic out of human analytics.</li>
+          <li>A keyed daily hash of a coarse IPv4 /16 or IPv6 /64 prefix for approximate unique counts.</li>
+        </ul>
+        <p>The readable IP address and network prefix are not written to LixRL’s database. The daily visitor signal rotates and is not designed to identify a person across days or unrelated links.</p>
+      </LegalSection>
 
-      <main className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-16">
-        <header className="mb-10">
-          <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#c62828] mb-2">
-            Last updated · {LAST_UPDATED}
-          </div>
-          <h1
-            className="text-[2.2rem] md:text-[3rem] font-extrabold leading-[1.08] tracking-tight"
-            style={{
-              background: 'linear-gradient(180deg, #111111 0%, #555555 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Privacy Policy
-          </h1>
-          <p className="text-white/65 mt-3 text-base md:text-[1.05rem] leading-relaxed">
-            Privacy-first by design. Here&apos;s exactly what we do — and
-            don&apos;t — collect when you use ElixpoURL.
-          </p>
-        </header>
+      <LegalSection id="guest-shortening" title="3. Guest shortening and risk controls">
+        <p>Guest users can create one link with 24-hour validity. To enforce that allowance and detect obvious automation, we process the request IP together with coarse browser, device, operating-system, and language categories. We store a keyed HMAC, a risk score, and quota timing—not the raw inputs.</p>
+        <p>Signed-in Free accounts have a separate daily creation allowance. Pseudonymous request metadata may be used to enforce it and investigate attempts to evade limits.</p>
+      </LegalSection>
 
-        <article className="prose-purple space-y-7 text-white/75 leading-relaxed">
-          <Section title="Our approach">
-            <p>
-              ElixpoURL is an open URL shortener that runs on Cloudflare&apos;s
-              edge. We collect the bare minimum needed to make short links
-              work, give you click analytics, and keep the service safe for
-              everyone — nothing more.
-            </p>
-          </Section>
+      <LegalSection id="accounts" title="4. Accounts, links, and billing">
+        <p>Elixpo Accounts provides authentication. We receive and store an opaque Elixpo account ID, email address, display name, avatar URL when available, account role, tier, and session records. We do not receive or store your password.</p>
+        <p>We store the destinations, short codes, titles, campaign labels, tags, expiry settings, branded subdomain claims and mappings, and active state you choose. API keys are stored as hashes; the full key is shown only when created. For paid plans, we retain subscription identifiers and billing status needed to apply entitlements. Payment details are handled by the checkout provider and are not stored in LixRL’s database.</p>
+      </LegalSection>
 
-          <Section title="What we collect when someone clicks your link">
-            <p>
-              When a visitor follows a short link, we record a single click
-              event with the following fields:
-            </p>
-            <ul>
-              <li>
-                <strong>Timestamp</strong> of the click.
-              </li>
-              <li>
-                <strong>Country, city, region</strong> from Cloudflare&apos;s
-                edge geolocation — never a precise location.
-              </li>
-              <li>
-                <strong>Device, browser, OS</strong> inferred from the
-                User-Agent header.
-              </li>
-              <li>
-                <strong>Referrer origin</strong> (e.g.{' '}
-                <code>https://twitter.com</code>) — we strip query strings
-                and paths.
-              </li>
-              <li>
-                <strong>A hashed, masked IP</strong>. We never store the raw
-                IP. IPv4 is masked to /16 (e.g.{' '}
-                <code>203.0.x.x</code>); IPv6 is masked to /64. This is
-                sufficient for coarse geographic aggregation and abuse
-                detection, and not sufficient to re-identify a visitor.
-              </li>
-            </ul>
-            <p>
-              We do <strong>not</strong> set tracking cookies on visitors who
-              follow a short link, fingerprint browsers, or correlate clicks
-              across different links you don&apos;t own.
-            </p>
-          </Section>
+      <LegalSection id="use-and-sharing" title="5. How data is used and shared">
+        <p>We use data to provide redirects and dashboards, calculate analytics, enforce plan limits, secure accounts, respond to abuse, troubleshoot failures, and meet legal obligations.</p>
+        <p>Service providers process limited data on our behalf:</p>
+        <ul>
+          <li><strong>Cloudflare Pages, D1, and KV</strong> host the application, database, cache, and edge request metadata.</li>
+          <li><strong>Google Safe Browsing</strong> receives destination URLs submitted for reputation checks.</li>
+          <li><strong>Elixpo Accounts</strong> authenticates users, and <strong>Elixpo Pay</strong> handles hosted checkout and subscription events.</li>
+        </ul>
+        <p>We do not sell personal data or share it for behavioural advertising. We may disclose information when legally required, to investigate abuse or security incidents, or during an organizational transaction subject to appropriate protections.</p>
+      </LegalSection>
 
-          <Section title="What we collect when you create a guest link">
-            <p>
-              To enforce the one-link guest allowance, we derive a temporary
-              abuse-prevention identity from the request IP and coarse browser,
-              device, operating-system, and language categories. The raw values
-              are processed in memory and discarded; we store only a
-              secret-peppered hash, a risk score, and the time the allowance
-              becomes available again. Guest links and quota records are not
-              used for click analytics or advertising.
-            </p>
-          </Section>
+      <LegalSection id="retention-and-security" title="6. Retention and security">
+        <ul>
+          <li>Guest links expire after 24 hours and are removed by scheduled or activity-triggered cleanup.</li>
+          <li>Click-event access and retention follow the account plan: 7 days on Free, 30 days on Pro, and 365 days on Business.</li>
+          <li>Deleting a link removes its associated click history. Account data is retained while the account is active and as needed for security, disputes, or legal compliance.</li>
+          <li>Abuse reports and audit records are retained as needed to investigate incidents and protect the service.</li>
+        </ul>
+        <p>We use access controls, scoped API keys, keyed hashing, encrypted transport, secret management, and provider security controls. No internet service can guarantee absolute security; report suspected issues to <a href={`mailto:${EMAIL}?subject=LixRL%20security%20report`}>{EMAIL}</a>.</p>
+      </LegalSection>
 
-          <Section title="What we collect when you sign in">
-            <p>
-              ElixpoURL uses{' '}
-              <a
-                href="https://accounts.elixpo.com"
-                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
-              >
-                Elixpo Accounts
-              </a>{' '}
-              for sign-in. The OAuth round-trip gives us your email and
-              display name; we store these plus an
-              opaque <code>elixpo_id</code> linking your ElixpoURL account
-              to your Elixpo Account. We do not store passwords.
-            </p>
-          </Section>
+      <LegalSection id="your-choices" title="7. Your choices and rights">
+        <p>From LixRL you can export links as CSV, delete individual links and their analytics, revoke API keys, and cancel paid renewal. You can request access, correction, or deletion of account data by emailing <a href={`mailto:${EMAIL}`}>{EMAIL}</a>. We may need to verify the request and may retain limited records where law or security requires it.</p>
+        <p>Depending on where you live, local law may provide additional rights such as objection, restriction, portability, or a complaint to a data-protection authority.</p>
+      </LegalSection>
 
-          <Section title="What we never do">
-            <ul>
-              <li>We do not sell or share your data with advertisers.</li>
-              <li>We do not track visitors across sites or build profiles.</li>
-              <li>
-                We do not log the destination URLs you create except to
-                store them for redirection — they are not used for any
-                other purpose.
-              </li>
-              <li>
-                We do not retain raw IP addresses, ever — only the masked
-                hash.
-              </li>
-            </ul>
-          </Section>
-
-          <Section title="Retention">
-            <p>
-              Click events are retained for the window matching your tier
-              (3 days on Free, up to 365 on Enterprise). Older events are
-              deleted in regular cleanup passes. You can delete a short link
-              at any time, which removes both the link and all its click
-              history immediately.
-            </p>
-          </Section>
-
-          <Section title="Third-party services">
-            <p>
-              ElixpoURL runs entirely on{' '}
-              <strong>Cloudflare Pages</strong>, <strong>D1</strong>, and{' '}
-              <strong>KV</strong>. Cloudflare acts as the edge network and
-              database provider; their{' '}
-              <a
-                href="https://www.cloudflare.com/privacypolicy/"
-                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
-              >
-                privacy policy
-              </a>{' '}
-              applies to data processed in their infrastructure. We use{' '}
-              <strong>Google Safe Browsing</strong> to check destination
-              URLs against known phishing and malware lists at create time;
-              the URL is sent to their API for that check and not retained
-              by Google for any other use.
-            </p>
-          </Section>
-
-          <Section title="Your rights">
-            <p>
-              You can export every short link you own as CSV from your
-              dashboard, request deletion of your entire account by
-              emailing{' '}
-              <a
-                href={`mailto:${SUPPORT_EMAIL}`}
-                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
-              >
-                {SUPPORT_EMAIL}
-              </a>
-              , or revoke any API key from{' '}
-              <Link
-                href="/profile/keys"
-                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
-              >
-                Profile → API Keys
-              </Link>{' '}
-              at any time.
-            </p>
-          </Section>
-
-          <Section title="Changes">
-            <p>
-              We may update this policy as the service evolves; the
-              &ldquo;last updated&rdquo; date above always reflects the
-              current version. Material changes will be announced via the
-              changelog and our GitHub Discussions.
-            </p>
-          </Section>
-
-          <Section title="Contact">
-            <p>
-              Privacy questions? Email{' '}
-              <a
-                href={`mailto:${SUPPORT_EMAIL}`}
-                className="text-[#c62828] underline decoration-white/30 hover:decoration-white/70"
-              >
-                {SUPPORT_EMAIL}
-              </a>
-              .
-            </p>
-          </Section>
-        </article>
-      </main>
-
-      <div className="relative z-10">
-        <Footer />
-      </div>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  return (
-    <section>
-      <h2
-        id={id}
-        className="text-[1.35rem] font-bold text-white tracking-tight mb-3 scroll-mt-20"
-      >
-        {title}
-      </h2>
-      <div className="space-y-3">{children}</div>
-    </section>
+      <LegalSection id="changes-and-contact" title="8. Changes and contact">
+        <p>We may update this policy as the product or its providers change. The current revision date appears at the top, and material changes will be announced through an appropriate product or repository channel.</p>
+        <p>Privacy questions and requests can be sent to <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>
+      </LegalSection>
+    </LegalPage>
   );
 }
