@@ -235,6 +235,22 @@ async function applyEntitlement(data: EntitlementData): Promise<void> {
     )
     .bind(tier, status, expiresAt, subId, data.uid)
     .run();
+
+  // D1 remains authoritative for branded routing. A lapse suspends every
+  // claimed hostname immediately; a later renewal leaves reactivation as an
+  // explicit owner action so a stale claim can never silently come back.
+  if (!granting) {
+    await db
+      .prepare(
+        `UPDATE subdomains
+         SET status = 'suspended', is_default = 0, revision = revision + 1,
+             last_error = 'Paid plan inactive', updated_at = datetime('now')
+         WHERE user_id = (SELECT id FROM users WHERE elixpo_id = ?)
+           AND status IN ('pending', 'verified', 'active', 'failed')`,
+      )
+      .bind(data.uid)
+      .run();
+  }
 }
 
 function billingStatusFor(s?: string, failed?: boolean): BillingStatus {

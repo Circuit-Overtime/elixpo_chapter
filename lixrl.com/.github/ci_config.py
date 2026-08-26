@@ -1,5 +1,5 @@
 """
-Elixpo CI Configuration — accounts.elixpo
+Elixpo CI Configuration — agent.elixpo
 Single source of truth for all CI workflows and scripts.
 """
 
@@ -20,9 +20,9 @@ LLM_MAX_TOKENS_SEARCH = 2500
 LLM_MODEL = LLM_MODEL_CHAT
 
 # ── Repository ──────────────────────────────────────
-REPO = "elixpo/lixrl.com"
-PROJECT_NAME = "lixrl.com"
-PROJECT_DESCRIPTION = "Elixpo URL shortener"
+REPO = "elixpo/agent.elixpo"
+PROJECT_NAME = "agent.elixpo"
+PROJECT_DESCRIPTION = "Elixpo agent orchestration hub"
 
 # ── GitHub Projects V2 ──────────────────────────────
 # Shared org-wide projects (linked to all elixpo repos).

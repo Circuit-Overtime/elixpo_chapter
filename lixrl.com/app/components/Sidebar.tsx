@@ -27,6 +27,12 @@ const Icons = {
       <path d="M11.5 8.5a4 4 0 00-5.5 0L3.5 11a4 4 0 005.5 5.5l1.5-1.5" />
     </svg>
   ),
+  domain: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="M2.5 10h15M10 2.5c2 2.1 3 4.6 3 7.5s-1 5.4-3 7.5M10 2.5C8 4.6 7 7.1 7 10s1 5.4 3 7.5" />
+    </svg>
+  ),
   plus: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-[18px] h-[18px]">
       <circle cx="10" cy="10" r="7.5" />
@@ -103,6 +109,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Icons.dashboard },
   { href: '/dashboard/urls', label: 'My URLs', icon: Icons.link },
   { href: '/dashboard/new', label: 'Shorten URL', icon: Icons.plus },
+  { href: '/dashboard/domains', label: 'Subdomains', icon: Icons.domain },
 ];
 
 const accountItems = [

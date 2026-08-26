@@ -6,6 +6,7 @@ import { validateUrl, validateLength, validateFutureDate, badRequest } from '@/l
 import { TIER_LIMITS, type UrlRecord } from '@/lib/types';
 import { checkSafeBrowsing, threatMessage } from '@/lib/safebrowsing';
 import { putRedirectCache } from '@/lib/redirect-cache';
+import { bumpSubdomainRevisionsForUrl } from '@/lib/subdomain-control';
 
 export const runtime = 'edge';
 
@@ -100,6 +101,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   await db.prepare(`UPDATE urls SET ${updates.join(', ')} WHERE short_code = ? AND user_id = ?`)
     .bind(...bindParams).run();
+  await bumpSubdomainRevisionsForUrl(db, url.id);
 
   // Sync KV cache
   const newUrl = body.url || url.original_url;
@@ -131,9 +133,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const kv = getKV();
 
   const url = await db.prepare('SELECT id FROM urls WHERE short_code = ? AND user_id = ?')
-    .bind(code, user.id).first();
+    .bind(code, user.id).first<{ id: number }>();
   if (!url) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+  await bumpSubdomainRevisionsForUrl(db, url.id);
   await db.prepare('DELETE FROM urls WHERE short_code = ? AND user_id = ?').bind(code, user.id).run();
   kv.delete(`url:${code}`).catch(() => {});
   auditLog(user.id, 'url.delete', 'url', code).catch(() => {});
