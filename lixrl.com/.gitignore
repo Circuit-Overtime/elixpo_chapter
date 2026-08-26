@@ -3,7 +3,6 @@ dist/
 .DS_Store
 *.pem
 .env*.local
-wrangler.toml
 .dev.vars
 *.tsbuildinfo
 .vscode
