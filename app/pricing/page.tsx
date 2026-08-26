@@ -27,6 +27,7 @@ const COMPARISON_ROWS: { label: string; values: Record<SellableTier, string> }[]
   { label: 'New-link allowance', values: { free: '2 per UTC day', pro: 'Up to plan limit', business: 'Up to plan limit' } },
   { label: 'Analytics', values: { free: 'Click totals · 7 days', pro: 'Geo, device & CSV · 30 days', business: 'Geo, device & CSV · 1 year' } },
   { label: 'Custom slugs', values: { free: '—', pro: 'Included', business: 'Included' } },
+  { label: 'Branded lixrl.com subdomains', values: { free: '—', pro: '1', business: '3' } },
   { label: 'API keys', values: { free: '1', pro: '5', business: '20' } },
   { label: 'Expiring links', values: { free: '—', pro: 'Included', business: 'Included' } },
   { label: 'QR customization', values: { free: '3 presets', pro: 'All presets + logo', business: 'All presets + logo' } },
@@ -48,6 +49,7 @@ function featuresFor(tier: SellableTier): string[] {
   out.push(l.customCodes ? 'Custom slugs' : 'Auto-generated slugs');
   out.push(l.analytics ? 'Geo / device analytics + CSV' : 'Click totals');
   if (l.expiringLinks) out.push('Expiring links');
+  if (l.brandedDomains > 0) out.push(`${l.brandedDomains} branded lixrl.com subdomain${l.brandedDomains === 1 ? '' : 's'}`);
   if (l.qrLogo) out.push('Custom QR logos and styles');
   return out;
 }
@@ -431,8 +433,8 @@ export default function PricingPage() {
             <Faq question="How does annual billing work?">
               Annual prices cover 12 months and cost about the same as 10 monthly payments. The exact annual total and monthly equivalent are shown above before checkout.
             </Faq>
-            <Faq question="Are custom domains included?">
-              Not yet. Custom-domain and subdomain routing are intentionally excluded until domain verification, TLS, tenant routing, and takeover protection are complete.
+            <Faq question="Are branded subdomains included?">
+              Yes. Pro includes one and Business includes three single-level addresses such as your-brand.lixrl.com. External domains are not included yet.
             </Faq>
             <Faq question="Can I cancel a paid plan?">
               You can stop renewal at any time. Paid access continues through the current billing period unless the checkout terms state otherwise.
