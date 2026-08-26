@@ -36,7 +36,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "deploy": "next build && npx wrangler pages deploy out",
+    "deploy": "./deploy.sh build deploy",
+    "optimize:media": "node scripts/optimize-deploy-media.mjs out",
     "gen:asset": "node scripts/generate-asset.mjs",
     "gen:members": "node scripts/generate-asset.mjs members"
   },
