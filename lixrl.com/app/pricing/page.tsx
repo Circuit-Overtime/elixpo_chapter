@@ -13,7 +13,7 @@ import {
   TIER_PRICING,
 } from '@/lib/types';
 
-const ACCENT = '#9b7bf7';
+const ACCENT = '#e53935';
 
 const PLAN_GUIDANCE: Record<SellableTier, string> = {
   free: 'For personal links and trying Lixrl.',
@@ -175,7 +175,7 @@ export default function PricingPage() {
               />
               <span
                 className="text-[0.7rem] font-bold px-2 py-1 rounded-full whitespace-nowrap"
-                style={{ background: 'rgba(155,123,247,0.12)', color: '#6f52d9', border: '1px solid rgba(155,123,247,0.28)' }}
+                style={{ background: 'var(--accent-dim)', color: 'var(--accent-deep)', border: '1px solid var(--accent-border)' }}
               >
                 2 months free
               </span>
@@ -193,7 +193,7 @@ export default function PricingPage() {
         )}
 
         {/* One offer panel keeps prices and actions comparable without scrolling. */}
-        <section className="mt-6 grid grid-cols-1 overflow-hidden rounded-[22px] border border-[#ded8f2] bg-white shadow-[0_20px_60px_rgba(74,52,130,0.10)] md:grid-cols-3">
+        <section className="mt-6 grid grid-cols-1 overflow-hidden rounded-[22px] border border-[#e3e3e3] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.08)] md:grid-cols-3">
           {SELLABLE_TIER_ORDER.map((tier) => {
             const p = TIER_PRICING[tier];
             const amount = p.price[currency][interval];
@@ -202,13 +202,13 @@ export default function PricingPage() {
             return (
               <div
                 key={tier}
-                className="relative flex flex-col border-t border-[#ece8f7] p-5 first:border-t-0 md:min-h-[430px] md:border-l md:border-t-0 md:first:border-l-0 lg:p-6"
+                className="relative flex flex-col border-t border-[#ececec] p-5 first:border-t-0 md:min-h-[430px] md:border-l md:border-t-0 md:first:border-l-0 lg:p-6"
                 style={{
                   // Current plan is greyed/dimmed — it's not an upgrade target.
                   background: isCurrent
                     ? 'linear-gradient(135deg, rgba(0,0,0,0.04) 0%, rgba(250,250,250,0.9) 100%)'
                     : isPopular
-                      ? 'linear-gradient(145deg, rgba(155,123,247,0.16) 0%, rgba(124,92,255,0.04) 100%)'
+                      ? 'linear-gradient(145deg, rgba(229,57,53,0.13) 0%, rgba(198,40,40,0.03) 100%)'
                       : 'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(250,250,250,0.92) 100%)',
                   backdropFilter: 'blur(20px)',
                   opacity: isCurrent ? 0.6 : 1,
@@ -224,7 +224,7 @@ export default function PricingPage() {
                 ) : isPopular ? (
                   <span
                     className="absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
-                    style={{ background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)' }}
                   >
                     Most popular
                   </span>
@@ -287,7 +287,7 @@ export default function PricingPage() {
 
         <section className="mt-14" aria-labelledby="compare-plans">
           <div className="max-w-2xl">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#7052d6]">Plan details</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#c62828]">Plan details</p>
             <h2 id="compare-plans" className="mt-2 text-2xl font-extrabold tracking-tight text-[#111] md:text-3xl">
               Compare every limit
             </h2>
@@ -321,7 +321,7 @@ export default function PricingPage() {
 
         <section className="mx-auto mt-16 max-w-3xl" aria-labelledby="pricing-faq">
           <div className="text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#7052d6]">Before you choose</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#c62828]">Before you choose</p>
             <h2 id="pricing-faq" className="mt-2 text-2xl font-extrabold tracking-tight text-[#111] md:text-3xl">Pricing questions, answered</h2>
           </div>
           <div className="mt-7 divide-y divide-[#e8e8e8] rounded-2xl border border-[#e5e5e5] px-5 md:px-7">
@@ -389,7 +389,7 @@ function Toggle({
           className="px-3.5 py-1.5 rounded-[9px] text-[0.82rem] font-semibold transition-all cursor-pointer border-none"
           style={
             value === o.value
-              ? { background: 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)', color: '#fff' }
+              ? { background: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)', color: '#fff' }
               : { background: 'transparent', color: 'rgba(0,0,0,0.6)' }
           }
         >
@@ -458,9 +458,9 @@ function CtaButton({
         background: isCurrentPlanCta
           ? 'rgba(0,0,0,0.06)'
           : filled
-            ? 'linear-gradient(135deg, #9b7bf7 0%, #7c5cff 100%)'
+            ? 'linear-gradient(135deg, #e53935 0%, #c62828 100%)'
             : 'transparent',
-        boxShadow: filled && !disabled ? '0 6px 18px rgba(124,92,255,0.28)' : 'none',
+        boxShadow: filled && !disabled ? '0 6px 18px rgba(229,57,53,0.24)' : 'none',
         border: isCurrentPlanCta
           ? '1px solid rgba(0,0,0,0.1)'
           : filled

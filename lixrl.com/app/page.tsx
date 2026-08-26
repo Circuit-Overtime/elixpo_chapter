@@ -1,8 +1,16 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import LandingPageClient from './LandingPageClient';
 
 export const runtime = 'edge';
+
+export const metadata: Metadata = {
+  title: { absolute: 'Lixrl — Short Links, Branded Subdomains & Link Analytics' },
+  description:
+    'Create a short link in one click, keep persistent links with a free account, and add analytics, custom names, or branded subdomains when you need them.',
+  alternates: { canonical: '/' },
+};
 
 /**
  * Landing-page entry point.
