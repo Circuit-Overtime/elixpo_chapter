@@ -59,7 +59,7 @@ export default function PrivacyPage() {
 
       <LegalSection id="accounts" title="4. Accounts, links, and billing">
         <p>Elixpo Accounts provides authentication. We receive and store an opaque Elixpo account ID, email address, display name, avatar URL when available, account role, tier, and session records. We do not receive or store your password.</p>
-        <p>We store the destinations, short codes, titles, campaign labels, tags, expiry settings, and active state you choose. API keys are stored as hashes; the full key is shown only when created. For paid plans, we retain subscription identifiers and billing status needed to apply entitlements. Payment details are handled by the checkout provider and are not stored in LixRL’s database.</p>
+        <p>We store the destinations, short codes, titles, campaign labels, tags, expiry settings, branded subdomain claims and mappings, and active state you choose. API keys are stored as hashes; the full key is shown only when created. For paid plans, we retain subscription identifiers and billing status needed to apply entitlements. Payment details are handled by the checkout provider and are not stored in LixRL’s database.</p>
       </LegalSection>
 
       <LegalSection id="use-and-sharing" title="5. How data is used and shared">
