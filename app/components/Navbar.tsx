@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const REPO_URL = 'https://github.com/elixpo/elixpourl';
-const ACCENT = '#9b7bf7';
+const ACCENT = '#e53935';
 
 const Icons = {
   about: (
@@ -105,7 +105,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg no-underline transition-colors"
               style={{
                 color: isActive(l.href) ? '#111' : '#555',
-                background: isActive(l.href) ? 'rgba(155,123,247,0.10)' : 'transparent',
+                background: isActive(l.href) ? 'var(--accent-dim)' : 'transparent',
               }}
             >
               <span style={{ color: isActive(l.href) ? ACCENT : 'currentColor' }}>{l.icon}</span>
@@ -135,7 +135,7 @@ export default function Navbar() {
             href={isLoggedIn ? '/dashboard' : '/api/auth/login'}
             className="hidden sm:inline-flex items-center gap-2 px-[18px] py-2 rounded-full font-semibold text-sm text-white no-underline transition-colors"
             style={{ background: ACCENT }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#7c5cff')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#c62828')}
             onMouseLeave={(e) => (e.currentTarget.style.background = ACCENT)}
           >
             {isLoggedIn ? 'Dashboard' : 'Sign in'}
@@ -168,7 +168,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-3 px-3 py-2.5 rounded-lg no-underline text-sm transition-colors"
               style={{
                 color: isActive(l.href) ? '#111' : '#333',
-                background: isActive(l.href) ? 'rgba(155,123,247,0.10)' : 'transparent',
+                background: isActive(l.href) ? 'var(--accent-dim)' : 'transparent',
               }}
             >
               <span style={{ color: isActive(l.href) ? ACCENT : '#888' }}>{l.icon}</span>

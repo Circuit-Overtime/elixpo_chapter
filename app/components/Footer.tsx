@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
-const ACCENT = '#9b7bf7';
+const ACCENT = '#e53935';
 const EMAIL = 'hello@elixpo.com';
 const REPO_URL = 'https://github.com/elixpo/elixpourl';
 const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`;
@@ -162,8 +162,8 @@ export default function Footer() {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = '#fff';
-                e.currentTarget.style.borderColor = 'rgba(155,123,247,0.5)';
-                e.currentTarget.style.background = 'rgba(155,123,247,0.10)';
+                e.currentTarget.style.borderColor = 'rgba(229,57,53,0.5)';
+                e.currentTarget.style.background = 'rgba(229,57,53,0.08)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = 'rgba(255,255,255,0.85)';
@@ -232,8 +232,8 @@ export default function Footer() {
               className="w-8 h-8 inline-flex items-center justify-center rounded-[8px] text-white/70 hover:text-white transition-all no-underline"
               style={{ border: '1px solid rgba(255,255,255,0.12)' }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(155,123,247,0.45)';
-                e.currentTarget.style.background = 'rgba(155,123,247,0.10)';
+                e.currentTarget.style.borderColor = 'rgba(229,57,53,0.45)';
+                e.currentTarget.style.background = 'rgba(229,57,53,0.08)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
