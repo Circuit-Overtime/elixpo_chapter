@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 
 const siteUrl = 'https://lixrl.com';
 const title =
-  "ElixpoURL — Fast, Secure URL Shortener with Analytics";
+  'Lixrl — Short Links, Branded Subdomains & Link Analytics';
 const description =
-  "ElixpoURL is a fast, secure, and developer-first URL shortener powered by Cloudflare's global edge network. Create branded short links, track detailed analytics, manage redirects, and integrate seamlessly with modern applications through a reliable API.";
+  'Create fast short links, understand every click, use memorable link names, and give paid links a branded lixrl.com subdomain.';
 
 // Google Search Console — "HTML tag" verification method. Set
 // NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION (the `content` value Google gives you)
@@ -29,41 +29,28 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: title,
-    template: '%s | ElixpoURL',
+    template: '%s | Lixrl',
   },
   description,
-  applicationName: 'ElixpoURL',
-  alternates: {
-    canonical: '/',
-  },
+  applicationName: 'Lixrl',
+  manifest: '/manifest.webmanifest',
   keywords: [
     'url shortener',
     'link shortener',
     'short links',
-    'elixpo',
-    'elixpourl',
-    'edge network',
-    'edge computing',
-    'cloudflare',
-    'cloudflare workers',
-    'cloudflare d1',
-    'short url api',
-    'developer tools',
-    'developer api',
-    'open source',
     'custom links',
     'branded links',
+    'branded subdomains',
     'url analytics',
     'link analytics',
     'link management',
-    'fast redirects',
     'qr codes',
   ],
   
   authors: [{ name: 'Elixpo', url: 'https://elixpo.com' }],
   creator: 'Elixpo',
   publisher: 'Elixpo',
-  category: 'developer tools',
+  category: 'business',
   ...(googleSiteVerification
     ? { verification: { google: googleSiteVerification } }
     : {}),
@@ -82,15 +69,15 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: siteUrl,
-    siteName: 'ElixpoURL',
+    siteName: 'Lixrl',
     title,
-    description: "Create, manage, and analyze short links with ElixpoURL—a fast, secure, and developer-first URL shortener powered by Cloudflare's global edge network.",
+    description,
     images: [
       {
         url: '/og-image.png',
         width: 1822,
         height: 825,
-        alt: "ElixpoURL — Fast and secure URL shortener",
+        alt: 'Lixrl short links and analytics',
         type: 'image/png',
       },
     ],
@@ -98,7 +85,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title,
-    description: "Build faster with ElixpoURL. Shorten links, monitor analytics, manage redirects, and integrate a reliable URL shortening API powered by Cloudflare's edge.",
+    description,
     images: ['/og-image.png'],
     creator: '@elixpo',
     site: '@elixpo',
@@ -107,6 +94,11 @@ export const metadata: Metadata = {
     email: false,
     address: false,
     telephone: false,
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Lixrl',
+    statusBarStyle: 'default',
   },
   // Icons declared explicitly so they're emitted as <link> tags pointing
   // at static files in public/. Putting these files under app/ (the
@@ -130,13 +122,56 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': `${siteUrl}/#website`,
+        name: 'Lixrl',
+        url: siteUrl,
+        description,
+      },
+      {
+        '@type': 'WebApplication',
+        '@id': `${siteUrl}/#application`,
+        name: 'Lixrl',
+        url: siteUrl,
+        description,
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Any',
+        browserRequirements: 'Requires a modern web browser',
+        featureList: [
+          'Short links',
+          'Click analytics',
+          'Custom link names',
+          'QR codes',
+          'Expiring links',
+          'Branded lixrl.com subdomains',
+        ],
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+          description: 'Free account plan',
+        },
+      },
+    ],
+  };
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} overflow-x-hidden`}
       suppressHydrationWarning
     >
-      <body className="antialiased overflow-x-hidden font-sans">{children}</body>
+      <body className="antialiased overflow-x-hidden font-sans">
+        {children}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      </body>
     </html>
   );
 }

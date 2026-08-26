@@ -8,6 +8,12 @@ const REPO_URL = 'https://github.com/elixpo/elixpourl';
 const ACCENT = '#e53935';
 
 const Icons = {
+  about: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-[16px] h-[16px]">
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="M10 9v5M10 6.25h.01" />
+    </svg>
+  ),
   pricing: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-[16px] h-[16px]">
       <path d="M3 7.5L9 2.5a2 2 0 012.6 0l5.4 4.5a2 2 0 01.7 1.5V16a2 2 0 01-2 2H4a2 2 0 01-2-2V9a2 2 0 011-1.5z" />
@@ -46,6 +52,7 @@ const Icons = {
 };
 
 const NAV = [
+  { href: '/about', label: 'About', icon: Icons.about },
   { href: '/pricing', label: 'Pricing', icon: Icons.pricing },
   { href: '/docs', label: 'Docs', icon: Icons.docs },
 ];
@@ -98,7 +105,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg no-underline transition-colors"
               style={{
                 color: isActive(l.href) ? '#111' : '#555',
-                background: isActive(l.href) ? 'rgba(229,57,53,0.08)' : 'transparent',
+                background: isActive(l.href) ? 'var(--accent-dim)' : 'transparent',
               }}
             >
               <span style={{ color: isActive(l.href) ? ACCENT : 'currentColor' }}>{l.icon}</span>
@@ -161,7 +168,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-3 px-3 py-2.5 rounded-lg no-underline text-sm transition-colors"
               style={{
                 color: isActive(l.href) ? '#111' : '#333',
-                background: isActive(l.href) ? 'rgba(229,57,53,0.08)' : 'transparent',
+                background: isActive(l.href) ? 'var(--accent-dim)' : 'transparent',
               }}
             >
               <span style={{ color: isActive(l.href) ? ACCENT : '#888' }}>{l.icon}</span>
