@@ -15,7 +15,7 @@ API at runtime (needs a token, adds latency).
    npm run gen:asset maintainer-advisory   # one
    npm run gen:asset all                   # every prompt in prompts/
    ```
-   (Equivalent to `node --env-file=.env.local scripts/generate-asset.mjs <name>`.)
+   (Equivalent to `node scripts/generate-asset.mjs <name>`; the script loads `.env.local` automatically.)
 
 Each prompt file (`prompts/<name>.md`) declares its own `output` path, `width`, `height`,
 `model`, and `quality` in frontmatter, followed by the prompt text.
@@ -54,6 +54,16 @@ convert app/icon.png -background none -define icon:auto-resize=64,48,32,16 app/f
 Landing-page portraits use the repository-wide **Vignette Bloom Archive** treatment defined in
 [`content/portfolio-theme.json`](./content/portfolio-theme.json). Keep source portraits at
 `public/assets/<slug>/about/ptr-11.webp` with a centered head-and-shoulders crop, at least
-768×768 pixels. The landing renderer applies the square crop, mosaic cells, rust-and-paper
-palette, vignette, and twelve-second wave loop consistently at runtime. Do not bake a separate
-filter into individual member portraits.
+768×768 pixels.
+
+Final themed card covers are generated externally through Pollinations using the `gptimage`
+model and saved as `public/assets/<slug>/about/card-cover.webp`. Keep the original portrait;
+do not overwrite `ptr-11.webp`. The landing page prefers `card-cover.webp` and falls back to the
+runtime Canvas treatment of `ptr-11.webp` until a generated cover is available. Encode every
+cover as a compressed 768×768 WebP using Sharp quality 72 and effort 6; do not commit the raw
+PNG or JPEG returned by the image model.
+
+All member covers share [`prompts/member-card-cover.md`](./prompts/member-card-cover.md). Generate
+the complete ordered member set with `npm run gen:members`; the script reads that single prompt,
+uses each member's `ptr-11.webp` as the edit input, and writes the corresponding compressed
+`card-cover.webp`.

@@ -19,6 +19,18 @@
     "paper": "#E2D9C8",
     "accent": "#B63B12"
   },
+  "generation": {
+    "provider": "Pollinations",
+    "model": "gptimage",
+    "outputPath": "/assets/{slug}/about/card-cover.webp",
+    "width": 768,
+    "height": 768,
+    "format": "webp",
+    "compression": {
+      "quality": 72,
+      "effort": 6
+    }
+  },
   "sourceStandard": {
     "minimumSize": "768x768",
     "crop": "centered head-and-shoulders",
