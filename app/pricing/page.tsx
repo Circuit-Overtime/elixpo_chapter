@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import {
@@ -15,6 +15,22 @@ import {
 } from '@/lib/types';
 
 const ACCENT = '#e53935';
+
+const PLAN_GUIDANCE: Record<SellableTier, string> = {
+  free: 'Learn the workflow and keep a small personal link set.',
+  pro: 'Publish regularly with branded slugs and useful analytics.',
+  business: 'Run higher-volume campaigns with a full year of history.',
+};
+
+const COMPARISON_ROWS: { label: string; values: Record<SellableTier, string> }[] = [
+  { label: 'Stored short links', values: { free: '25', pro: '1,000', business: '10,000' } },
+  { label: 'New-link allowance', values: { free: '2 per UTC day', pro: 'Up to plan limit', business: 'Up to plan limit' } },
+  { label: 'Analytics', values: { free: 'Click totals · 7 days', pro: 'Geo, device & CSV · 30 days', business: 'Geo, device & CSV · 1 year' } },
+  { label: 'Custom slugs', values: { free: '—', pro: 'Included', business: 'Included' } },
+  { label: 'API keys', values: { free: '1', pro: '5', business: '20' } },
+  { label: 'Expiring links', values: { free: '—', pro: 'Included', business: 'Included' } },
+  { label: 'QR customization', values: { free: '3 presets', pro: 'All presets + logo', business: 'All presets + logo' } },
+];
 
 // Per-tier feature bullets, derived from the single source of truth so the
 // marketing copy can never drift from what the API actually enforces.
@@ -120,7 +136,10 @@ export default function PricingPage() {
       </div>
 
       <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-4 md:px-6 pt-10 md:pt-16 pb-16">
-        <section className="text-center max-w-[720px] mx-auto flex flex-col items-center gap-5">
+        <section className="text-center max-w-[780px] mx-auto flex flex-col items-center gap-5">
+          <span className="rounded-full border border-[#f0c8c6] bg-[#fff6f5] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#c62828]">
+            Clear limits · no hidden feature promises
+          </span>
           <h1
             className="text-[2.2rem] md:text-[3.2rem] font-extrabold leading-[1.08] tracking-tight"
             style={{
@@ -129,12 +148,25 @@ export default function PricingPage() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            Simple pricing that <span style={{ color: ACCENT }}>scales with you.</span>
+            Pick the right plan <span style={{ color: ACCENT }}>at a glance.</span>
           </h1>
-          <p className="text-base md:text-[1.1rem] text-white/65 max-w-[620px] leading-relaxed">
-            Start free, no credit card. Scale to custom slugs, richer analytics,
-            more API keys, and expiring links when you&apos;re ready.
+          <p className="text-base md:text-[1.1rem] text-[#555] max-w-[650px] leading-relaxed">
+            Free is enough to try the full workflow. Choose Pro for regular publishing,
+            or Business when volume and a year of analytics matter.
           </p>
+
+          <div className="grid w-full grid-cols-1 gap-2 text-left sm:grid-cols-3">
+            {[
+              ['Guest', '1 link · expires in 24 hours'],
+              ['Free account', '2 new links/day · 25 stored'],
+              ['Every paid plan', 'Cancel renewal anytime'],
+            ].map(([label, detail]) => (
+              <div key={label} className="rounded-xl border border-[#e8e8e8] bg-[#fafafa] px-4 py-3">
+                <div className="text-xs font-bold text-[#111]">{label}</div>
+                <div className="mt-1 text-xs text-[#666]">{detail}</div>
+              </div>
+            ))}
+          </div>
 
           {/* Toggles: currency + billing interval */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
@@ -166,7 +198,7 @@ export default function PricingPage() {
 
           {/* Trust strip — lowers purchase anxiety */}
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.78rem] text-white/55 pt-1">
-            {['No card on Free', 'Cancel anytime', 'Secure UPI / card autopay'].map((t) => (
+            {['No card on Free', 'Hosted checkout', 'Edge redirects on every plan'].map((t) => (
               <span key={t} className="inline-flex items-center gap-1.5">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12" />
@@ -229,22 +261,23 @@ export default function PricingPage() {
                   </span>
                 ) : null}
 
-                <h3 className="text-[1.15rem] font-bold text-white">{p.name}</h3>
-                <p className="text-[0.85rem] text-white/55 mt-1 mb-4 min-h-[2.4em]">{p.tagline}</p>
+                <h3 className="text-[1.15rem] font-bold text-[#111]">{p.name}</h3>
+                <p className="text-[0.85rem] text-[#666] mt-1 min-h-[2.4em]">{p.tagline}</p>
+                <p className="mb-4 mt-2 min-h-[3em] text-[0.78rem] leading-5 text-[#777]">{PLAN_GUIDANCE[tier]}</p>
 
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-[2.1rem] font-extrabold text-white">
+                  <span className="text-[2.1rem] font-extrabold text-[#111]">
                     {CURRENCY_SYMBOL[currency]}
                     {amount.toLocaleString()}
                   </span>
                   {amount > 0 && (
-                    <span className="text-sm text-white/50">
+                    <span className="text-sm text-[#777]">
                       /{interval === 'monthly' ? 'mo' : 'yr'}
                     </span>
                   )}
                 </div>
                 <div className="text-[0.72rem] mb-5 h-4 flex items-center gap-2">
-                  <span className="text-white/40">
+                  <span className="text-[#777]">
                     {amount > 0 && interval === 'annual'
                       ? `${CURRENCY_SYMBOL[currency]}${Math.round(amount / 12).toLocaleString()}/mo, billed yearly`
                       : amount > 0
@@ -272,7 +305,7 @@ export default function PricingPage() {
 
                 <ul className="space-y-2 list-none p-0 mt-6">
                   {featuresFor(tier).map((f) => (
-                    <li key={f} className="text-[0.85rem] text-white/75 flex items-start gap-2">
+                    <li key={f} className="text-[0.85rem] text-[#555] flex items-start gap-2">
                       <span className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full" style={{ background: ACCENT }} />
                       {f}
                     </li>
@@ -283,12 +316,45 @@ export default function PricingPage() {
           })}
         </section>
 
+        <section className="mt-16" aria-labelledby="compare-plans">
+          <div className="max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#c62828]">Exact plan limits</p>
+            <h2 id="compare-plans" className="mt-2 text-2xl font-extrabold tracking-tight text-[#111] md:text-3xl">
+              Compare what changes when you upgrade
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-[#666]">
+              Every item below is available in the product today and enforced by the API.
+            </p>
+          </div>
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-[#e5e5e5]">
+            <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+              <thead className="bg-[#fafafa]">
+                <tr>
+                  <th className="px-5 py-4 font-semibold text-[#777]">Feature</th>
+                  {SELLABLE_TIER_ORDER.map((tier) => (
+                    <th key={tier} className="px-5 py-4 text-base font-bold text-[#111]">{TIER_PRICING[tier].name}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_ROWS.map((row) => (
+                  <tr key={row.label} className="border-t border-[#ececec]">
+                    <th className="px-5 py-4 font-semibold text-[#333]">{row.label}</th>
+                    {SELLABLE_TIER_ORDER.map((tier) => (
+                      <td key={tier} className="px-5 py-4 text-[#666]">{row.values[tier]}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {/* Enterprise — non-priced 16:9 card to balance the layout */}
-        <section className="mt-10">
+        <section className="mt-16">
           <div
-            className="relative mx-auto w-full max-w-3xl rounded-[22px] overflow-hidden flex items-center justify-center text-center px-6 py-8"
+            className="relative mx-auto flex min-h-[320px] w-full max-w-3xl items-center justify-center overflow-hidden rounded-[22px] px-6 py-10 text-center"
             style={{
-              aspectRatio: '16 / 9',
               background:
                 'radial-gradient(120% 120% at 50% 0%, rgba(229,57,53,0.18) 0%, rgba(95,182,255,0.06) 40%, rgba(0,0,0,0.03) 100%)',
               border: '1px solid rgba(229,57,53,0.28)',
@@ -349,6 +415,30 @@ export default function PricingPage() {
             </div>
           </div>
         </section>
+
+        <section className="mx-auto mt-16 max-w-3xl" aria-labelledby="pricing-faq">
+          <div className="text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#c62828]">Before you choose</p>
+            <h2 id="pricing-faq" className="mt-2 text-2xl font-extrabold tracking-tight text-[#111] md:text-3xl">Pricing questions, answered</h2>
+          </div>
+          <div className="mt-7 divide-y divide-[#e8e8e8] rounded-2xl border border-[#e5e5e5] px-5 md:px-7">
+            <Faq question="Can I shorten a link without an account?">
+              Yes. A guest can create one short link, valid for 24 hours. Create a Free account for persistent links and dashboard access.
+            </Faq>
+            <Faq question="What happens when I reach a limit?">
+              Existing links continue to resolve. New creation or plan-gated actions are blocked until the daily allowance resets, capacity is freed, or the plan is upgraded.
+            </Faq>
+            <Faq question="How does annual billing work?">
+              Annual prices cover 12 months and cost about the same as 10 monthly payments. The exact annual total and monthly equivalent are shown above before checkout.
+            </Faq>
+            <Faq question="Are custom domains included?">
+              Not yet. Custom-domain and subdomain routing are intentionally excluded until domain verification, TLS, tenant routing, and takeover protection are complete.
+            </Faq>
+            <Faq question="Can I cancel a paid plan?">
+              You can stop renewal at any time. Paid access continues through the current billing period unless the checkout terms state otherwise.
+            </Faq>
+          </div>
+        </section>
       </main>
 
       <div className="relative z-10">
@@ -359,6 +449,20 @@ export default function PricingPage() {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────
+
+function Faq({ question, children }: { question: string; children: ReactNode }) {
+  return (
+    <details className="group py-5">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-[#111]">
+        {question}
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#ddd] text-lg font-normal text-[#777] transition-transform group-open:rotate-45">
+          +
+        </span>
+      </summary>
+      <p className="max-w-2xl pr-10 pt-3 text-sm leading-6 text-[#666]">{children}</p>
+    </details>
+  );
+}
 
 function Toggle({
   options,
@@ -455,10 +559,10 @@ function CtaButton({
             : 'transparent',
         boxShadow: filled && !disabled ? '0 6px 18px rgba(229,57,53,0.32)' : 'none',
         border: isCurrentPlanCta
-          ? '1px solid rgba(255,255,255,0.1)'
+          ? '1px solid rgba(0,0,0,0.1)'
           : filled
             ? 'none'
-            : '1px solid rgba(255,255,255,0.16)',
+            : '1px solid rgba(0,0,0,0.16)',
       }}
     >
       {thisSubmitting && (
@@ -503,21 +607,21 @@ function EmailChip() {
       onClick={handleCopyEmail}
       className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-sm transition-all"
       style={{
-        border: '1px solid rgba(255, 255, 255, 0.15)',
-        background: 'transparent',
-        color: 'rgba(255, 255, 255, 0.85)',
+        border: '1px solid rgba(0, 0, 0, 0.14)',
+        background: '#fff',
+        color: '#555',
         fontFamily: 'var(--font-geist-mono), monospace',
         cursor: 'pointer',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.color = '#fff';
+        e.currentTarget.style.color = '#111';
         e.currentTarget.style.borderColor = 'rgba(229, 57, 53, 0.5)';
         e.currentTarget.style.background = 'rgba(229, 57, 53, 0.08)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.85)';
-        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.color = '#555';
+        e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.14)';
+        e.currentTarget.style.background = '#fff';
       }}
       title={copied ? 'Copied!' : 'Click to copy'}
     >

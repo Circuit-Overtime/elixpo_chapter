@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="elixpourl"
 OUTDIR=".vercel/output/static"
+WRANGLER_CONFIG="$SCRIPT_DIR/wrangler.toml"
 
 # CF Pages treats `main` as Production. Without --branch, wrangler tags the
 # deploy as Preview for whatever git branch you're on — which never updates
@@ -61,6 +62,11 @@ check_deps() {
       exit 1
     fi
   done
+
+  if [ ! -f "$WRANGLER_CONFIG" ]; then
+    err "Wrangler config not found: $WRANGLER_CONFIG"
+    exit 1
+  fi
 }
 
 # Wrangler automatically reads .env, but this repository stores that file in
@@ -134,6 +140,7 @@ do_deploy() {
   fi
   load_cloudflare_auth
   npx wrangler pages deploy "$OUTDIR" \
+    --config="$WRANGLER_CONFIG" \
     --project-name="$PROJECT" \
     --branch="$BRANCH"
   log "Deploy complete"
@@ -142,7 +149,9 @@ do_deploy() {
 do_migrate() {
   log "Running D1 migrations (remote) for ${BOLD}$PROJECT${RESET}..."
   load_cloudflare_auth
-  npx wrangler d1 migrations apply "$PROJECT" --remote
+  npx wrangler d1 migrations apply "$PROJECT" \
+    --config="$WRANGLER_CONFIG" \
+    --remote
   log "Migrations applied"
 }
 
@@ -217,6 +226,7 @@ do_secrets() {
         ;;
     esac
     printf '%s' "${vars[$k]}" | npx wrangler pages secret put "$k" \
+      --config="$WRANGLER_CONFIG" \
       --project-name="$PROJECT" >/dev/null
     dim "set $k"
     count=$((count + 1))
