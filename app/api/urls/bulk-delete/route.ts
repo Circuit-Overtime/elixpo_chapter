@@ -59,6 +59,19 @@ export async function POST(request: NextRequest) {
   // Single DELETE with IN(...) on owner — D1 prepares parameter binding
   // up to a reasonable limit; MAX_BULK keeps us well clear.
   const placeholders = unique.map(() => '?').join(',');
+  await db
+    .prepare(
+      `UPDATE subdomains
+       SET revision = revision + 1, updated_at = datetime('now')
+       WHERE id IN (
+         SELECT DISTINCT dl.subdomain_id
+         FROM subdomain_links dl
+         JOIN urls u ON u.id = dl.url_id
+         WHERE u.user_id = ? AND u.short_code IN (${placeholders})
+       )`,
+    )
+    .bind(user.id, ...unique)
+    .run();
   const result = await db
     .prepare(
       `DELETE FROM urls WHERE user_id = ? AND short_code IN (${placeholders})`,
