@@ -33,3 +33,6 @@ jobs:
 
       - name: Build Cloudflare Pages output
         run: npm run pages:build
+
+      - name: Build wildcard subdomain Worker
+        run: npx wrangler deploy --config wrangler.subdomains.toml --dry-run
