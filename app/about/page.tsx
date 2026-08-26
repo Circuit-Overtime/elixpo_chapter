@@ -82,7 +82,7 @@ export default function AboutPage() {
           </div>
           <div className="lg:pb-1">
             <p className="text-base leading-7 text-[#5f5f66] md:text-lg">
-              Lixrl helps people turn unwieldy addresses into short, useful links—and then understand how those links perform.
+              Lixrl is a URL shortener that turns unwieldy addresses into useful links—and then helps people understand how those links perform.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/" className="rounded-full bg-gradient-to-r from-[#9b7bf7] to-[#7c5cff] px-5 py-2.5 text-sm font-semibold text-white no-underline shadow-[0_8px_24px_rgba(124,92,255,0.24)]">
