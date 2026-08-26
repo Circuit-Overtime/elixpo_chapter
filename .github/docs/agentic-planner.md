@@ -18,7 +18,9 @@ repository that installs the agent workflows:
 | --- | --- | --- |
 | `ELIXPO_POLLINATIONS_API_KEY` | Every model request: agent, triage, PR metadata, and changelog summaries | Pollinations text API; this is the only model credential |
 | `ELIXPOO_GITHUB_AGENTIC_TOKEN` | Repository reads/writes, issue and PR metadata, branches, failed-run retries, repository variables, and Project V2 fields | See the token profiles below |
-| `ELIXPOO_GIST_AGENTIC_TOKEN` | Shared reusable `merge-gist.yml` workflow in `agent.elixpo` | Gist read/write |
+| `ELIXPOO_GITHUB_NOTIFICATIONS_TOKEN` | Optional discovery of mentions outside repositories with installed webhooks | Classic PAT with `notifications`; fine-grained PATs are unsupported by this endpoint |
+| `AGENT_GITHUB_SOLVER_TOKEN` | Solve/Submit fork creation, fork branch pushes, and pull-request creation | Classic PAT from the fork owner with `public_repo` for public targets |
+| `ELIXPOO_GIST_AGENTIC_TOKEN` | Merge changelog and Steward follow-up memory | Gist read/write |
 
 `GITHUB_TOKEN` is created automatically for each workflow run. It is not an
 organization secret and must not be copied into organization settings.
@@ -33,6 +35,9 @@ whose workflows use them.
 
 Recommended `ELIXPOO_GITHUB_AGENTIC_TOKEN` fine-grained PAT:
 
+- Token owner: the human `elixpoo` account. State-writing workflows use this
+  credential for pushes so GitHub records `elixpoo`, not `github-actions[bot]`,
+  as the authenticated pusher.
 - Resource owner: `elixpo`; repository access: every repository using the agent.
 - Repository permissions: Actions read/write, Contents read/write, Issues
   read/write, Pull requests read/write, Variables read/write, Workflows
@@ -43,8 +48,32 @@ Add `read:org` only if the organization restricts project access in a
 way that requires membership lookup. This is broader than the fine-grained
 profile.
 
-`ELIXPOO_GIST_AGENTIC_TOKEN` needs only classic PAT scope `gist`. It does not need `repo`,
-`workflow`, or organization administration scopes.
+The commit identity is `elixpoo <elixpoo@gmail.com>`. Keep that email verified
+on the `elixpoo` GitHub account or replace it everywhere with the account's
+GitHub-provided private noreply address; an unverified email will not link the
+commit to the profile.
+
+`ELIXPOO_GIST_AGENTIC_TOKEN` needs either the fine-grained Gists user permission
+set to read/write or the classic PAT scope `gist`. It does not need `repo`,
+`workflow`, or organization administration scopes. An optional
+`ELIXPOO_GITHUB_NOTIFICATIONS_TOKEN` must be a classic PAT with the
+`notifications` scope; GitHub rejects fine-grained tokens for that endpoint.
+
+Set the organization variable `ELIXPOO_FOLLOWUP_GIST_ID` to one private Gist
+owned by `elixpoo`. Steward stores `elixpoo-followups.json` beside any other
+Gist files; it never overwrites the merge changelog. Optionally set
+`ELIXPO_FOLLOWUP_TTL_DAYS` from 60 through 360 (default 360). Set
+`ELIXPO_GITHUB_CONTROL_REPO` to the
+`owner/repository` containing the squad workflows when Steward runs anywhere
+other than that control repository; Actions otherwise uses `GITHUB_REPOSITORY`.
+`ELIXPO_AGENT_MAX_TURNS` is retired: the repository responder no longer runs a
+coding tool loop.
+
+`AGENT_GITHUB_SOLVER_TOKEN` is deliberately separate from the general
+agentic token. Mint it from the account that owns the forks. Use classic scope
+`public_repo` for public targets; add private-repository access only if private
+targets are explicitly enabled. Solve and Submit never fall back to another
+GitHub credential.
 
 `ELIXPO_POLLINATIONS_API_KEY` is not a GitHub token and receives no
 GitHub permissions. Give it only Pollinations text-generation access.
@@ -55,14 +84,16 @@ workflow is rolled out everywhere.
 
 ### Portable repository baseline
 
-For another Elixpo repository, copy the agent workflows, supporting scripts,
-`ci_config.py`, and this document. Then customize only the repository identity,
-description, core paths, maintainers, and project mappings in `ci_config.py`.
+For another Elixpo repository, use the canonical bundle in
+`config/org_standard.yaml`. `python -m agents.standard_sync` reports drift;
+`--apply` opens one reviewable update PR per repository. Do not manually copy
+individual workflow files because that recreates version drift.
 
 Required organization secrets:
 
 - `ELIXPO_POLLINATIONS_API_KEY`
 - `ELIXPOO_GITHUB_AGENTIC_TOKEN`
+- `AGENT_GITHUB_SOLVER_TOKEN`
 - `ELIXPOO_GIST_AGENTIC_TOKEN`
 
 No `GH_SECRET` is required. GitHub supplies `GITHUB_TOKEN` automatically, while
@@ -93,16 +124,35 @@ These are not part of the organization agent bundle:
 
 | Route | Model | Use |
 | --- | --- | --- |
-| default | `deepseek` | repository changes, review, and scoped tool use |
-| background | `nova-fast` | inexpensive metadata and supporting work |
-| think | `deepseek` | complex reasoning or review only |
+| repository_agent | `nova-fast` | bounded issue replies, PR review, and OreoFlow routing |
+| code | `qwen-coder` | Solve and Steward Fix coding only |
 | webSearch | `perplexity-fast` | time-sensitive external lookup only |
 
 Token ceilings are centralized in `.github/ci_config.py`. The prompt directs the agent to read the prepared context once, use targeted repository reads, and avoid search unless local context is insufficient. RTK compresses supported shell output before it reaches the model.
 
-PR context is bounded to metadata, diff statistics, and changed-file names. The agent requests per-file diffs only when needed; the workflow never injects the full patch. Agent execution is capped at 32 turns and 12 minutes, with prompt-level budgets of 12 tool calls for questions/reviews and 30 for implementation.
+The repository responder receives bounded issue context or at most 12,000
+characters of PR diff. It makes one `repository_agent` call and one safety call,
+with a 16,000-token soft budget and 20,000-token ceiling. It has no file, shell,
+branch, or metadata tools. Implementation requests enter OreoFlow Vet; Solve is
+the only CCR coding harness and remains supervised by Doctor and Janitor.
 
-The setup script also maps the harness's Sonnet, Opus, and Haiku aliases to these configured free models. This prevents the upstream API from receiving an unavailable Anthropic model name after CCR has selected a Pollinations provider.
+Steward polls the elixpoo account's participating mention notifications every
+ten minutes. This catches public issue and PR mentions outside repositories that
+host the portable workflow. A new thread receives a Gist intake record and a
+safety-gated response; repository-changing work still enters the normal
+grounded repository workflow. A structured Steward decision dispatches only an
+explicit issue implementation request. The serialized intake workflow checks
+the blocklist, daily cap, active repository work, and Pick/Vet slot, then sends
+the issue through Vet before Solve can fork or edit anything. Submitted PRs are
+registered from the Solve and Submit state receipts, then removed from active
+memory immediately on merge or close, or on TTL expiry. A bounded completion
+tracker retains the outcome.
+
+GitHub Discussion mentions are handled both by direct `discussion` and
+`discussion_comment` events and by the existing ten-minute target-repository
+poll, which covers webhook gaps and nested replies.
+
+CCR configuration applies only to the bounded Solve coding harness.
 
 ## Scope and safety
 
