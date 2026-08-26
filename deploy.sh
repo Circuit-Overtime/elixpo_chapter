@@ -145,10 +145,15 @@ do_deploy() {
     dim "Preview deploy — production URL stays on whatever's deployed to main."
   fi
   load_cloudflare_auth
-  npx wrangler pages deploy "$OUTDIR" \
-    --config="$WRANGLER_CONFIG" \
-    --project-name="$PROJECT" \
-    --branch="$BRANCH"
+  # Pages only accepts the default wrangler.toml path. Run from the project
+  # root so Wrangler discovers that config implicitly; an explicit --config
+  # fails even when it resolves to this same file.
+  (
+    cd "$SCRIPT_DIR"
+    npx wrangler pages deploy "$OUTDIR" \
+      --project-name="$PROJECT" \
+      --branch="$BRANCH"
+  )
   if [ "$BRANCH" = "main" ]; then
     log "Deploying the ${BOLD}*.lixrl.com${RESET} redirect Worker..."
     npx wrangler deploy --config="$SUBDOMAIN_WRANGLER_CONFIG"
