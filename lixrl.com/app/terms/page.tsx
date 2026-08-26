@@ -55,7 +55,7 @@ export default function TermsPage() {
 
       <LegalSection id="links-and-content" title="3. Your links and acceptable use">
         <p>
-          You retain ownership of destination URLs, titles, campaign labels, and tags you submit. You give us the limited permission needed to store that information, resolve the short link, provide analytics, and operate the service.
+          You retain ownership of destination URLs, titles, campaign labels, tags, and eligible subdomain labels you submit. You give us the limited permission needed to store that information, resolve the short link, provide analytics, and operate the service.
         </p>
         <p>You must not use LixRL to:</p>
         <ul>
@@ -70,7 +70,7 @@ export default function TermsPage() {
       </LegalSection>
 
       <LegalSection id="plans-and-billing" title="4. Plans, quotas, and billing">
-        <p>Current prices and enforced feature limits appear on the <a href="/pricing">Pricing page</a>. Limits can include stored links, daily creation, analytics retention, API keys, custom slugs, expiring links, and QR options.</p>
+        <p>Current prices and enforced feature limits appear on the <a href="/pricing">Pricing page</a>. Limits can include stored links, daily creation, analytics retention, API keys, branded lixrl.com subdomains, custom slugs, expiring links, and QR options.</p>
         <ul>
           <li>Paid subscriptions renew for the selected monthly or annual period until cancelled.</li>
           <li>Cancellation stops the next renewal; access continues through the paid period unless otherwise stated at checkout.</li>

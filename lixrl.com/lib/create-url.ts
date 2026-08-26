@@ -3,6 +3,7 @@ import { auditLog } from '@/lib/auth';
 import { getDB, getEnv, getKV } from '@/lib/db';
 import { checkSafeBrowsing, threatMessage } from '@/lib/safebrowsing';
 import { putRedirectCache } from '@/lib/redirect-cache';
+import { bumpSubdomainRevision } from '@/lib/subdomain-control';
 import {
   claimFreeCreation,
   releaseFreeCreation,
@@ -188,10 +189,29 @@ export async function createUrlForUser(
     id: result!.id,
     expires_at: expiry,
   }).catch(() => {});
+  const defaultSubdomain = await db
+    .prepare("SELECT id, hostname FROM subdomains WHERE user_id = ? AND is_default = 1 AND status = 'active' LIMIT 1")
+    .bind(user.id)
+    .first<{ id: number; hostname: string }>();
+  let brandedUrl: string | null = null;
+  if (defaultSubdomain) {
+    try {
+      await db
+        .prepare('INSERT INTO subdomain_links (subdomain_id, url_id, short_code) VALUES (?, ?, ?)')
+        .bind(defaultSubdomain.id, result!.id, shortCode)
+        .run();
+      await bumpSubdomainRevision(db, defaultSubdomain.id);
+      brandedUrl = `https://${defaultSubdomain.hostname}/${shortCode}`;
+    } catch {
+      // A manually assigned branded code may already occupy this path. The
+      // canonical lixrl.com URL is still valid, so creation must not fail.
+    }
+  }
   auditLog(user.id, 'url.create', 'url', shortCode, destinationUrl).catch(() => {});
 
   return NextResponse.json({
     short_url: `${env.BASE_URL}/${shortCode}`,
+    branded_url: brandedUrl,
     short_code: shortCode,
     original_url: destinationUrl,
     campaign: result?.campaign,

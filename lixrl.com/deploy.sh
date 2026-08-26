@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="elixpourl"
 OUTDIR=".vercel/output/static"
 WRANGLER_CONFIG="$SCRIPT_DIR/wrangler.toml"
+SUBDOMAIN_WRANGLER_CONFIG="$SCRIPT_DIR/wrangler.subdomains.toml"
 
 # CF Pages treats `main` as Production. Without --branch, wrangler tags the
 # deploy as Preview for whatever git branch you're on — which never updates
@@ -23,6 +24,7 @@ usage() {
   echo "Commands (can be chained):"
   echo "  build     Build the Next.js app with @cloudflare/next-on-pages"
   echo "  deploy    Deploy to Cloudflare Pages (builds first if needed)"
+  echo "            Production also deploys the *.lixrl.com redirect Worker"
   echo "  all       Build and deploy in one step"
   echo "  migrate   Run D1 database migrations (remote)"
   echo "  secrets   Decrypt .env (sops) and upload all secrets to Pages prod"
@@ -65,6 +67,10 @@ check_deps() {
 
   if [ ! -f "$WRANGLER_CONFIG" ]; then
     err "Wrangler config not found: $WRANGLER_CONFIG"
+    exit 1
+  fi
+  if [ ! -f "$SUBDOMAIN_WRANGLER_CONFIG" ]; then
+    err "Subdomain Wrangler config not found: $SUBDOMAIN_WRANGLER_CONFIG"
     exit 1
   fi
 }
@@ -139,10 +145,21 @@ do_deploy() {
     dim "Preview deploy — production URL stays on whatever's deployed to main."
   fi
   load_cloudflare_auth
-  npx wrangler pages deploy "$OUTDIR" \
-    --config="$WRANGLER_CONFIG" \
-    --project-name="$PROJECT" \
-    --branch="$BRANCH"
+  # Pages only accepts the default wrangler.toml path. Run from the project
+  # root so Wrangler discovers that config implicitly; an explicit --config
+  # fails even when it resolves to this same file.
+  (
+    cd "$SCRIPT_DIR"
+    npx wrangler pages deploy "$OUTDIR" \
+      --project-name="$PROJECT" \
+      --branch="$BRANCH"
+  )
+  if [ "$BRANCH" = "main" ]; then
+    log "Deploying the ${BOLD}*.lixrl.com${RESET} redirect Worker..."
+    npx wrangler deploy --config="$SUBDOMAIN_WRANGLER_CONFIG"
+  else
+    dim "Skipping wildcard subdomain Worker for preview branch."
+  fi
   log "Deploy complete"
 }
 
@@ -231,6 +248,11 @@ do_secrets() {
     dim "set $k"
     count=$((count + 1))
   done
+  if [ -n "${vars[GUEST_FINGERPRINT_SECRET]:-}" ]; then
+    printf '%s' "${vars[GUEST_FINGERPRINT_SECRET]}" | npx wrangler secret put \
+      GUEST_FINGERPRINT_SECRET --config="$SUBDOMAIN_WRANGLER_CONFIG" >/dev/null
+    dim "set GUEST_FINGERPRINT_SECRET on lixrl-subdomain-router"
+  fi
   log "Uploaded $count secrets"
   dim "Secrets apply to the next deploy — run: ./deploy.sh deploy"
 }
