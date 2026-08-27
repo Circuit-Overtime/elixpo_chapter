@@ -43,7 +43,7 @@ types/                       - Shared TS types
 scripts/                     - One-off maintenance scripts
 ```
 
-External consumers of the OAuth API: see `docs/OAUTH_INTEGRATION.md`.
+External consumers of the OAuth API: see `docs/README.md`.
 
 ## Hard Constraints (edge runtime)
 

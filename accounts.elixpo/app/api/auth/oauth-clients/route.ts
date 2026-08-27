@@ -362,7 +362,10 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Return public client info (no secret!)
+        const brandingVerified = (client as any).is_branding_verified === 1;
+
+        // Custom branding is public only after domain verification. This
+        // keeps every consumer safe even if it forgets to check the flag.
         return NextResponse.json({
             client_id: clientId,
             name: (client as any).name,
@@ -373,6 +376,28 @@ export async function GET(request: NextRequest) {
             created_at: (client as any).created_at,
             is_active: (client as any).is_active,
             client_type: (client as any).client_type || "confidential",
+            logo_url: brandingVerified
+                ? (client as any).logo_url || null
+                : null,
+            branding_display_name: brandingVerified
+                ? (client as any).branding_display_name || null
+                : null,
+            branding_primary_color: brandingVerified
+                ? (client as any).branding_primary_color || null
+                : null,
+            branding_accent_color: brandingVerified
+                ? (client as any).branding_accent_color || null
+                : null,
+            privacy_policy_url: brandingVerified
+                ? (client as any).privacy_policy_url || null
+                : null,
+            terms_of_service_url: brandingVerified
+                ? (client as any).terms_of_service_url || null
+                : null,
+            is_branding_verified: brandingVerified,
+            branding_verified_domain: brandingVerified
+                ? (client as any).branding_verified_domain || null
+                : null,
         });
     } catch (error) {
         console.error("[OAuth Client] Get error:", error);

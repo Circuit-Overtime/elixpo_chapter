@@ -19,7 +19,7 @@ const PRODUCT = {
     name: "Accounts",
     accent: "#ff7759",
     description:
-        "Open OAuth 2.0 single sign-on for the modern web. Add “Sign in with Elixpo” to any app — Elixpo or your own — in two steps, on one edge-hosted account.",
+        "Complete sign-in, sign-out, single sign-on, and user management for your product. Choose the providers and branding; we run the identity infrastructure behind them.",
     repo: "elixpo/accounts.elixpo",
     email: "hello@elixpo.com",
 };
@@ -41,6 +41,7 @@ const COLUMNS: {
         links: [
             { label: "Documentation", href: "/docs" },
             { label: "Quickstart", href: "/docs/quickstart" },
+            { label: "Developer SDK", href: "/docs/lixaccounts" },
             { label: "OAuth 2.0", href: "/docs/oauth" },
             { label: "Webhooks", href: "/docs/webhooks" },
             { label: "Pricing", href: "/pricing" },

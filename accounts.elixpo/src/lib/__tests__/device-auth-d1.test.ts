@@ -30,7 +30,15 @@ async function setupDatabase() {
             is_active INTEGER NOT NULL DEFAULT 1,
             scopes TEXT NOT NULL,
             name TEXT NOT NULL,
-            audience TEXT
+            audience TEXT,
+            logo_url TEXT,
+            branding_display_name TEXT,
+            branding_primary_color TEXT,
+            branding_accent_color TEXT,
+            privacy_policy_url TEXT,
+            terms_of_service_url TEXT,
+            is_branding_verified INTEGER DEFAULT 0,
+            branding_verified_domain TEXT
         )`),
         env.DB.prepare(`CREATE TABLE IF NOT EXISTS device_authorizations (
             id TEXT PRIMARY KEY,

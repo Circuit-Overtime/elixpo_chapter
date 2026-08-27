@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Chip, Typography } from "@mui/material";
+import Link from "next/link";
 import CodeBlock from "../../components/code-block";
 
 const NODE_JS_EXAMPLE = `// 1. Generate authorization URL
@@ -173,6 +174,23 @@ export default function QuickstartPage() {
                 }}
             >
                 Node.js Integration Code
+            </Typography>
+            <Typography
+                sx={{
+                    color: "var(--fg-muted)",
+                    mb: 2,
+                    lineHeight: 1.6,
+                }}
+            >
+                The example below uses the protocol directly. For typed PKCE,
+                callback, token, and JWKS helpers, follow the{" "}
+                <Link
+                    href="/docs/lixaccounts"
+                    style={{ color: "#ff7759", fontWeight: 700 }}
+                >
+                    Developer SDK guide
+                </Link>
+                .
             </Typography>
             <Typography
                 sx={{

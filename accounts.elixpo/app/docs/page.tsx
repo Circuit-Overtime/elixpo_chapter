@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
+import Link from "next/link";
 
 export default function OverviewPage() {
     return (
@@ -78,6 +79,40 @@ export default function OverviewPage() {
                     register OAuth applications, subscribe to Webhooks, and
                     generate API Keys.
                 </li>
+            </Box>
+
+            <Box
+                sx={{
+                    border: "1px solid rgba(255, 119, 89, 0.28)",
+                    bgcolor: "rgba(255, 119, 89, 0.06)",
+                    borderRadius: 3,
+                    p: { xs: 2.5, sm: 3 },
+                    mb: 4,
+                }}
+            >
+                <Typography
+                    variant="h2"
+                    sx={{
+                        fontSize: "1.25rem",
+                        fontWeight: 700,
+                        color: "var(--fg)",
+                        mt: "0 !important",
+                        mb: 1,
+                    }}
+                >
+                    Prefer a typed integration?
+                </Typography>
+                <Typography sx={{ color: "var(--fg-muted)", mb: 2 }}>
+                    The <code>@elixpo/accounts</code> package handles discovery,
+                    PKCE, authorization callbacks, token rotation, revocation,
+                    and token verification.
+                </Typography>
+                <Link
+                    href="/docs/lixaccounts"
+                    style={{ color: "#ff7759", fontWeight: 700 }}
+                >
+                    Open the Developer SDK guide →
+                </Link>
             </Box>
 
             <Typography

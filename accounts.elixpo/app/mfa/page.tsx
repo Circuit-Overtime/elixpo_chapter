@@ -18,6 +18,10 @@ import { startAuthentication } from "@simplewebauthn/browser";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useCooldown } from "@/lib/hooks/useCooldown";
+import {
+    useVerifiedBranding,
+    VerifiedBrandBanner,
+} from "../components/verified-brand-banner";
 
 const EMAIL_OTP_RESEND_COOLDOWN_S = 60;
 
@@ -52,6 +56,7 @@ const methodMeta: Record<
 function ChallengeInner() {
     const params = useSearchParams();
     const mfaToken = params.get("token");
+    const branding = useVerifiedBranding(params.get("next"));
 
     const [methods, setMethods] = useState<Method[]>([]);
     const [selected, setSelected] = useState<Method | null>(null);
@@ -260,6 +265,7 @@ function ChallengeInner() {
                     backdropFilter: "blur(20px)",
                 }}
             >
+                <VerifiedBrandBanner branding={branding} />
                 <Box sx={{ textAlign: "center", mb: 3 }}>
                     <SecurityIcon
                         sx={{ color: "#ff7759", fontSize: 36, mb: 1 }}

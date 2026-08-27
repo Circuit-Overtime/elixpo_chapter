@@ -3,7 +3,7 @@
  *
  * All outbound mail from accounts.elixpo goes through mails.elixpo.com via
  * HMAC-signed POST to a per-template webhook endpoint. The signature
- * contract is documented in refer/mails.md:
+ * contract is documented in docs/README.md:
  *
  *   X-Elixpo-Signature: t=<unix_seconds>,v1=<hex HMAC-SHA256>
  *   HMAC key   = product shared secret (MAILS_SHARED_SECRET)
