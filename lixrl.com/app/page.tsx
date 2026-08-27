@@ -6,9 +6,9 @@ import LandingPageClient from './LandingPageClient';
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
-  title: { absolute: 'Lixrl — Short Links, Branded Subdomains & Link Analytics' },
+  title: { absolute: 'Lixrl — URL Shortener & Quick QR Code Generator' },
   description:
-    'Create a short link in one click, keep persistent links with a free account, and add analytics, custom names, or branded subdomains when you need them.',
+    'Shorten a URL in one click, generate a QR code for any link, and unlock branded links, custom QR styles, and analytics when you need them.',
   alternates: { canonical: '/' },
 };
 
@@ -17,14 +17,23 @@ export const metadata: Metadata = {
  *
  * Server-side auth check before rendering the marketing surface — signed-in
  * users are sent straight to `/dashboard` so they don't have to click
- * through the hero. Anonymous visitors get the full landing page.
+ * through the hero. `?noredirect=1` is the explicit escape hatch used by
+ * authenticated navigation when someone chooses to explore the homepage.
  *
  * `getCurrentUser()` is cheap (KV session lookup → D1 fallback) and runs
  * at the edge, so the redirect adds no perceptible latency.
  */
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ noredirect?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const noRedirect = Array.isArray(params.noredirect)
+    ? params.noredirect.includes('1')
+    : params.noredirect === '1';
   const user = await getCurrentUser();
-  if (user) {
+  if (user && !noRedirect) {
     redirect('/dashboard');
   }
   return <LandingPageClient />;

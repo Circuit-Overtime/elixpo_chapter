@@ -1,7 +1,7 @@
 {
   "name": "elixpourl",
   "version": "3.1.4",
-  "description": "Fast URL shortener built on Cloudflare's edge network — lightning-fast redirects, powerful analytics, and a developer-first API for the Elixpo ecosystem.",
+  "description": "URL shortener and quick QR code generator with branded links, custom QR styles, and click or scan analytics.",
   "author": "Elixpo <hello@elixpo.com> (https://elixpo.com)",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://lixrl.com",
@@ -11,6 +11,9 @@
   },
   "keywords": [
     "url-shortener",
+    "qr-code-generator",
+    "url-to-qr-code",
+    "tracked-qr-code",
     "cloudflare-pages",
     "next.js",
     "edge",

@@ -9,6 +9,7 @@ const REPO_URL = 'https://github.com/elixpo/elixpourl';
 const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`;
 const STATUS_URL = 'https://status.elixpo.com';
 const ECOSYSTEM_URL = 'https://elixpo.com';
+const ABUSE_REPORT_URL = 'https://github.com/elixpo/lixrl.com/issues/new?template=abuse-report.yml';
 
 interface FooterLink {
   label: string;
@@ -19,6 +20,7 @@ interface FooterLink {
 const PRODUCT_LINKS: FooterLink[] = [
   { label: 'Sign in with Elixpo', href: '/api/auth/login' },
   { label: 'About', href: '/about' },
+  { label: 'QR Generator', href: '/generate' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Docs', href: '/docs' },
   { label: 'Dashboard', href: '/dashboard' },
@@ -26,7 +28,7 @@ const PRODUCT_LINKS: FooterLink[] = [
 ];
 
 const RESOURCE_LINKS: FooterLink[] = [
-  { label: 'Report abuse', href: '/report' },
+  { label: 'Report abuse', href: ABUSE_REPORT_URL, external: true },
   { label: 'Source on GitHub', href: REPO_URL, external: true },
   { label: 'Accounts SSO', href: 'https://accounts.elixpo.com', external: true },
   { label: 'Elixpo ecosystem', href: ECOSYSTEM_URL, external: true },
@@ -48,7 +50,7 @@ interface FooterColumnProps {
 function FooterColumn({ title, links }: FooterColumnProps) {
   return (
     <div>
-      <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-white/40 mb-3">
+      <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[#888888]">
         {title}
       </div>
       <ul className="space-y-2 list-none p-0">
@@ -59,14 +61,14 @@ function FooterColumn({ title, links }: FooterColumnProps) {
                 href={l.href}
                 target={l.href.startsWith('mailto:') ? undefined : '_blank'}
                 rel={l.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
-                className="text-sm text-white/70 hover:text-white no-underline transition-colors"
+                className="text-sm text-[#a3a3a3] hover:text-[#ffffff] no-underline transition-colors"
               >
                 {l.label}
               </a>
             ) : (
               <Link
                 href={l.href}
-                className="text-sm text-white/70 hover:text-white no-underline transition-colors"
+                className="text-sm text-[#a3a3a3] hover:text-[#ffffff] no-underline transition-colors"
               >
                 {l.label}
               </Link>
@@ -119,12 +121,12 @@ export default function Footer() {
               className="text-[11px] font-bold tracking-[0.12em] uppercase mb-2.5"
               style={{ color: ACCENT }}
             >
-              AI moves fast
+              We protect privacy
             </p>
-            <h4 className="text-[1.15rem] font-bold text-white leading-snug mb-4">
-              Stay updated on modern
+            <h4 className="mb-4 text-[1.15rem] font-bold leading-snug text-[#ffffff]">
+              Short links and QR codes,
               <br />
-              URL infrastructure.
+              built to be shared.
             </h4>
 
             <div className="flex items-center gap-2 mb-3">
@@ -146,7 +148,7 @@ export default function Footer() {
                 COMING SOON
               </span>
             </div>
-            <p className="text-xs text-white/35 mb-5">
+            <p className="mb-5 text-xs text-[#888888]">
               Product updates and changelog — subscriptions open soon.
             </p>
 
@@ -154,7 +156,7 @@ export default function Footer() {
             <button
               type="button"
               onClick={handleCopyEmail}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[10px] text-sm text-white/85 transition-all"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[10px] text-sm text-[#d8d8d8] transition-all"
               style={{
                 border: '1px solid rgba(255,255,255,0.15)',
                 background: 'transparent',
@@ -196,17 +198,17 @@ export default function Footer() {
         </div>
 
         {/* Bottom strip */}
-        <div className="py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-[12px] text-white/35">
+        <div className="flex flex-col gap-2 py-5 text-[12px] text-[#888888] md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center gap-x-3 gap-y-1">
             <span>© {new Date().getFullYear()} Elixpo · Edge-native URL shortener</span>
-            <span className="hidden sm:inline text-white/20">·</span>
+            <span className="hidden text-[#555555] sm:inline">·</span>
             <span>
               Code{' '}
               <a
                 href={LICENSE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline decoration-white/20 hover:text-white hover:decoration-white/60 transition-colors"
+                className="underline decoration-[#555555] transition-colors hover:text-[#ffffff] hover:decoration-[#aaaaaa]"
               >
                 MIT
               </a>
@@ -215,7 +217,7 @@ export default function Footer() {
                 href={LICENSE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline decoration-white/20 hover:text-white hover:decoration-white/60 transition-colors"
+                className="underline decoration-[#555555] transition-colors hover:text-[#ffffff] hover:decoration-[#aaaaaa]"
               >
                 CC-BY-4.0
               </a>
@@ -229,7 +231,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View on GitHub"
-              className="w-8 h-8 inline-flex items-center justify-center rounded-[8px] text-white/70 hover:text-white transition-all no-underline"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-[#a3a3a3] no-underline transition-all hover:text-[#ffffff]"
               style={{ border: '1px solid rgba(255,255,255,0.12)' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'rgba(229,57,53,0.45)';

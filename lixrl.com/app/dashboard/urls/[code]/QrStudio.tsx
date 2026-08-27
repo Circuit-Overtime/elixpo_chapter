@@ -7,7 +7,7 @@ import {
   getPreset,
   QR_PRESETS,
 } from '@/lib/qr/presets';
-import StyledQr, { type StyledQrHandle } from './StyledQr';
+import StyledQr, { type StyledQrHandle } from '@/app/components/qr/StyledQr';
 
 interface Props {
   shortUrl: string;

@@ -8,6 +8,14 @@ const REPO_URL = 'https://github.com/elixpo/elixpourl';
 const ACCENT = '#e53935';
 
 const Icons = {
+  qr: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-[16px] h-[16px]">
+      <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="1" />
+      <rect x="12" y="2.5" width="5.5" height="5.5" rx="1" />
+      <rect x="2.5" y="12" width="5.5" height="5.5" rx="1" />
+      <path d="M12 12h2v2h3.5M12 17.5v-2h2" />
+    </svg>
+  ),
   about: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-[16px] h-[16px]">
       <circle cx="10" cy="10" r="7.5" />
@@ -53,6 +61,7 @@ const Icons = {
 
 const NAV = [
   { href: '/about', label: 'About', icon: Icons.about },
+  { href: '/generate', label: 'QR Generator', icon: Icons.qr },
   { href: '/pricing', label: 'Pricing', icon: Icons.pricing },
   { href: '/docs', label: 'Docs', icon: Icons.docs },
 ];
@@ -81,7 +90,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6 h-[60px] flex items-center gap-3">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 no-underline text-[#111] shrink-0">
+        <Link href="/?noredirect=1" className="flex items-center gap-2.5 no-underline text-[#111] shrink-0">
           <img src="/base_logo.png" alt="ElixpoURL" width={30} height={30} className="rounded-lg" />
           <span className="font-bold text-[1.05rem] tracking-tight text-[#111]">
             Elixpo<span style={{ color: ACCENT }}>URL</span>
