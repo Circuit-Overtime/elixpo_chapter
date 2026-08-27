@@ -19,7 +19,7 @@ interface FooterLink {
 const PRODUCT_LINKS: FooterLink[] = [
   { label: 'Sign in with Elixpo', href: '/api/auth/login' },
   { label: 'About', href: '/about' },
-  { label: 'QR Generator', href: '/qr-code-generator' },
+  { label: 'QR Generator', href: '/generate' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Docs', href: '/docs' },
   { label: 'Dashboard', href: '/dashboard' },

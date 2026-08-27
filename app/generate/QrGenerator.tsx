@@ -295,7 +295,7 @@ export default function QrGenerator() {
               </label>
             ) : (
               <Link
-                href={account.loggedIn ? '/pricing' : '/api/auth/login?return_to=%2Fqr-code-generator'}
+                href={account.loggedIn ? '/pricing' : '/api/auth/login?return_to=%2Fgenerate'}
                 className="mt-3 inline-flex text-xs font-semibold text-[#c62828] no-underline"
               >
                 {account.loggedIn ? 'Upgrade for scan analytics →' : 'Sign in to view options →'}

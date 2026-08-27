@@ -21,10 +21,10 @@ export const metadata: Metadata = {
     'tracked QR code',
     'QR code scan analytics',
   ],
-  alternates: { canonical: '/qr-code-generator' },
+  alternates: { canonical: '/generate' },
   openGraph: {
     type: 'website',
-    url: '/qr-code-generator',
+    url: '/generate',
     title: `${pageTitle} | Lixrl`,
     description: pageDescription,
     images: [
@@ -74,7 +74,7 @@ export default function QrCodeGeneratorPage() {
       {
         '@type': 'WebApplication',
         name: 'Lixrl Quick QR Code Generator',
-        url: 'https://lixrl.com/qr-code-generator',
+        url: 'https://lixrl.com/generate',
         description: pageDescription,
         applicationCategory: 'UtilitiesApplication',
         operatingSystem: 'Any',
@@ -108,7 +108,7 @@ export default function QrCodeGeneratorPage() {
             '@type': 'ListItem',
             position: 2,
             name: 'QR Code Generator',
-            item: 'https://lixrl.com/qr-code-generator',
+            item: 'https://lixrl.com/generate',
           },
         ],
       },

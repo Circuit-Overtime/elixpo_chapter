@@ -61,7 +61,7 @@ const Icons = {
 
 const NAV = [
   { href: '/about', label: 'About', icon: Icons.about },
-  { href: '/qr-code-generator', label: 'QR Generator', icon: Icons.qr },
+  { href: '/generate', label: 'QR Generator', icon: Icons.qr },
   { href: '/pricing', label: 'Pricing', icon: Icons.pricing },
   { href: '/docs', label: 'Docs', icon: Icons.docs },
 ];
