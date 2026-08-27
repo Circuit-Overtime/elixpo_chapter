@@ -101,7 +101,7 @@ jobs:
           else
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
-          if npm view "lixaccounts@$VERSION" version >/dev/null 2>&1; then
+          if npm view "@elixpo/accounts@$VERSION" version >/dev/null 2>&1; then
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
@@ -129,5 +129,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- packages/accounts/package.json
-          git commit -m "chore: prepare lixaccounts v${NEXT_VERSION} [skip release]"
+          git commit -m "chore: prepare @elixpo/accounts v${NEXT_VERSION} [skip release]"
           git push origin HEAD:main

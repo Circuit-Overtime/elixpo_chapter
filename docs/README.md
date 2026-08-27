@@ -25,7 +25,7 @@ Refresh tokens rotate on every successful refresh. Store the replacement
 atomically, reject state/nonce mismatches, and verify access and ID tokens using
 the published JWKS.
 
-## `lixaccounts`
+## `@elixpo/accounts`
 
 The runtime-neutral core provides discovery, PKCE, callback parsing, token
 lifecycle operations, JWKS verification, and sanitized typed errors.
@@ -34,7 +34,7 @@ lifecycle operations, JWKS verification, and sanitized typed errors.
 import {
   createAccountsClient,
   parseAuthorizationCallback,
-} from "lixaccounts";
+} from "@elixpo/accounts";
 
 const accounts = createAccountsClient({
   issuer: "https://accounts.elixpo.com",
@@ -61,8 +61,8 @@ consent, and account selection.
 Planned framework adapters will build on the core package and are not exported
 by the current stable release:
 
-- `lixaccounts/next`: route handlers, encrypted cookie sessions, guards
-- `lixaccounts/react`: provider and account-aware hooks
+- `@elixpo/accounts/next`: route handlers, encrypted cookie sessions, guards
+- `@elixpo/accounts/react`: provider and account-aware hooks
 
 The metadata field `elixpo_contract_version` tracks protocol compatibility.
 Prereleases publish under npm tag `beta`; stable versions publish under `latest`.
@@ -116,7 +116,7 @@ credentials. Canonical service documentation remains on each service's hosted
 
 On pull requests it runs Biome, tests, the SDK build, and package inspection. A
 successful `main` run then applies D1 migrations, deploys Cloudflare Pages
-project `elixpo-accounts`, and publishes the declared `lixaccounts` version if
+project `elixpo-accounts`, and publishes the declared `@elixpo/accounts` version if
 it is new. After publication, the workflow commits the next patch version
 directly to `main`. The site deploy completes before npm publication.
 
@@ -126,7 +126,7 @@ Required GitHub secrets:
 | --- | --- |
 | `CLOUDFLARE_API_TOKEN` | D1 migration and Pages deployment |
 | `CLOUDFLARE_ACCOUNT_ID` | Wrangler authentication |
-| `NPM_TOKEN` | Publish `lixaccounts` |
+| `NPM_TOKEN` | Publish `@elixpo/accounts` |
 
 Protect the `production` and `npm` environments. Runtime application secrets
 remain in Cloudflare Pages and are never compiled into the browser bundle.

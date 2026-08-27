@@ -636,7 +636,7 @@ export default function OAuthAppSettingsPage() {
                             "&:hover": { textDecoration: "underline" },
                         }}
                     >
-                        Use this Client ID with the lixaccounts SDK →
+                        Use this Client ID with the Developer SDK →
                     </Typography>
                 </Box>
 

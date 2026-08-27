@@ -1,6 +1,6 @@
 # Elixpo Accounts
 
-Elixpo Accounts is the OAuth 2.0 and OpenID Connect identity provider for Elixpo and third-party applications. It runs on Cloudflare Pages and exposes an edge-safe TypeScript SDK as `lixaccounts`.
+Elixpo Accounts is the OAuth 2.0 and OpenID Connect identity provider for Elixpo and third-party applications. It runs on Cloudflare Pages and exposes an edge-safe TypeScript SDK as `@elixpo/accounts`.
 
 ## Canonical documentation
 

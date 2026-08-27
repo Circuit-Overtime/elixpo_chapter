@@ -80,7 +80,7 @@ export default function OAuthPage() {
                     href="/docs/lixaccounts"
                     style={{ color: "#ff7759", fontWeight: 700 }}
                 >
-                    lixaccounts SDK
+                    @elixpo/accounts SDK
                 </Link>{" "}
                 for PKCE and token verification helpers.
             </Typography>

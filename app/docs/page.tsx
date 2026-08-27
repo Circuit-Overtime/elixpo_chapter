@@ -103,7 +103,7 @@ export default function OverviewPage() {
                     Prefer a typed integration?
                 </Typography>
                 <Typography sx={{ color: "var(--fg-muted)", mb: 2 }}>
-                    The <code>lixaccounts</code> package handles discovery,
+                    The <code>@elixpo/accounts</code> package handles discovery,
                     PKCE, authorization callbacks, token rotation, revocation,
                     and token verification.
                 </Typography>
@@ -111,7 +111,7 @@ export default function OverviewPage() {
                     href="/docs/lixaccounts"
                     style={{ color: "#ff7759", fontWeight: 700 }}
                 >
-                    Open the lixaccounts SDK guide →
+                    Open the Developer SDK guide →
                 </Link>
             </Box>
 

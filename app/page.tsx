@@ -30,7 +30,7 @@ const MARKETING_LINKS = [
     { label: "Home", href: "/" },
     { label: "Pricing", href: "/pricing" },
     { label: "Docs", href: "/docs" },
-    { label: "SDK", href: "/docs/lixaccounts" },
+    { label: "Developer SDK", href: "/docs/lixaccounts" },
     { label: "About", href: "/about" },
 ];
 
@@ -40,34 +40,34 @@ const APP_LINKS = [
     { label: "Services", href: "/dashboard/services" },
     { label: "Webhooks", href: "/dashboard/webhooks" },
     { label: "Docs", href: "/docs" },
-    { label: "SDK", href: "/docs/lixaccounts" },
+    { label: "Developer SDK", href: "/docs/lixaccounts" },
     { label: "Pricing", href: "/pricing" },
     { label: "Profile", href: "/dashboard/profile" },
 ];
 
 const FEATURES = [
     {
-        icon: Zap,
-        title: "Sign in once",
-        body: "Use your Elixpo account on any Elixpo site without making a new login — no separate passwords, no juggling logins.",
+        icon: Fingerprint,
+        title: "Five providers, one account",
+        body: "Offer email and password, Google, GitHub, Microsoft, and Discord from one sign-in screen. Users can also choose a passkey when they want passwordless access.",
         soon: false,
     },
     {
-        icon: Fingerprint,
-        title: "Choose how to sign in",
-        body: "WebAuthn passkeys, email + password, Google, or GitHub — pick whichever sign-in method you prefer.",
+        icon: Zap,
+        title: "The whole sign-in lifecycle",
+        body: "Sign-in, sign-out, account switching, consent, session refresh, and revocation work together instead of becoming separate features your team must maintain.",
         soon: false,
     },
     {
         icon: Network,
-        title: "Manage profile in one place",
-        body: "Update your display name, picture, and bio from your developer portal. Every connected Elixpo product stays in sync.",
+        title: "User management is included",
+        body: "Give users one place for profiles, security methods, active sessions, devices, connected apps, notification choices, and account deletion.",
         soon: false,
     },
     {
         icon: Lock,
-        title: "Delete account properly",
-        body: "One click removes your account from every Elixpo product — ensuring no orphaned developer data is left behind.",
+        title: "Your brand, standard OAuth",
+        body: "Show your app name, logo, and domain during the hosted handoff. Underneath, standard OAuth and OpenID Connect keep the integration portable and inspectable.",
         soon: false,
     },
 ];
@@ -220,24 +220,25 @@ export default function LandingPage() {
                 {/* Hero Content Area — fully centered */}
                 <main className="w-full max-w-[1280px] mx-auto px-5 sm:px-8 flex-1 flex flex-col justify-center py-12">
                     <div className="max-w-[720px] mx-auto flex flex-col items-center text-center">
+                        <span className="gsap-hero-animate mb-5 inline-flex items-center rounded-full border border-[#ff7759]/25 bg-[#ff7759]/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#d9573b]">
+                            Complete authentication for your product
+                        </span>
                         {/* Heading */}
                         <h1 className="font-heading text-[clamp(1.9rem,6vw,3.4rem)] leading-[1.05] tracking-[-0.01em] text-[var(--fg)] mb-6 font-bold gsap-hero-animate">
-                            <Zap className="inline-block w-6 h-6 sm:w-8 sm:h-8 text-[var(--fg)] align-middle relative -top-[2px] mr-2" />
-                            Single sign-on,
+                            5 Providers.
                             <LockKeyhole className="inline-block w-6 h-6 sm:w-8 sm:h-8 text-[var(--fg)] align-middle relative -top-[2px] mx-2" />
-                            in two steps
+                            Single Sign-On.
                             <Fingerprint className="inline-block w-6 h-6 sm:w-8 sm:h-8 text-[var(--fg)] align-middle relative -top-[2px] ml-2" />
+                            Two Steps.
                         </h1>
 
                         {/* Subtext */}
                         <p className="font-body text-[clamp(0.95rem,2.5vw,1.15rem)] leading-[1.65] text-[var(--fg)] opacity-80 mb-9 max-w-[600px] mx-auto gsap-hero-animate">
-                            Open OAuth 2.0 single sign-on —{" "}
-                            <strong className="font-semibold opacity-100">
-                                not just for Elixpo
-                            </strong>
-                            . Add “Sign in with Elixpo” to any app, yours or
-                            ours, in two steps: register your app, then drop in
-                            the button. One account, signed in everywhere.
+                            Add sign-in, sign-out, account switching, secure
+                            sessions, and complete user management to your app.
+                            Choose your providers and branding, register the
+                            app, follow the docs, and ship—without building an
+                            authentication platform first.
                         </p>
 
                         {/* CTAs — Dashboard + Docs */}
@@ -251,13 +252,13 @@ export default function LandingPage() {
                                 transition={{ duration: 0.2 }}
                             >
                                 <Link
-                                    href={authed ? "/dashboard" : "/login"}
+                                    href={authed ? "/dashboard" : "/register"}
                                     className="bg-[#ff7759] text-white rounded-full py-[15px] px-7 font-body font-semibold text-[clamp(0.9rem,2vw,1rem)] shadow-[0_6px_24px_rgba(255,119,89,0.32)] flex items-center gap-2.5 group"
                                 >
                                     <span>
                                         {authed
-                                            ? "Go to Dashboard"
-                                            : "Dashboard"}
+                                            ? "Open your projects"
+                                            : "Start building"}
                                     </span>
                                     <ArrowRightCircle className="w-5 h-5 text-white transition-transform group-hover:translate-x-1" />
                                 </Link>
@@ -271,7 +272,20 @@ export default function LandingPage() {
                                     href="/docs"
                                     className="bg-[var(--surface)]/85 backdrop-blur-sm text-[var(--fg)] rounded-full py-[15px] px-7 font-body font-semibold text-[clamp(0.9rem,2vw,1rem)] border border-[var(--border)] flex items-center gap-2.5"
                                 >
-                                    Docs
+                                    Read the docs
+                                </Link>
+                            </motion.div>
+                            <motion.div
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.96 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <Link
+                                    href="/docs/lixaccounts"
+                                    className="text-[var(--fg)] rounded-full py-[15px] px-5 font-body font-semibold text-[clamp(0.9rem,2vw,1rem)] flex items-center gap-2 opacity-80 hover:opacity-100"
+                                >
+                                    Developer SDK
+                                    <ArrowRightCircle className="w-4 h-4" />
                                 </Link>
                             </motion.div>
                         </div>
@@ -285,11 +299,11 @@ export default function LandingPage() {
                     className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 opacity-60 text-xs font-semibold tracking-widest text-[var(--fg)] cursor-pointer animate-bounce select-none border-0 bg-transparent p-0"
                     onClick={() =>
                         document
-                            .getElementById("features")
+                            .getElementById("how-it-works")
                             ?.scrollIntoView({ behavior: "smooth" })
                     }
                 >
-                    <span>FEATURES</span>
+                    <span>SEE HOW IT WORKS</span>
                     <svg
                         className="w-4 h-4"
                         fill="none"
@@ -308,20 +322,22 @@ export default function LandingPage() {
             </section>
 
             {/* TWO STEPS SECTION */}
-            <section className="bg-[var(--bg)] text-[var(--fg)] py-24 relative z-10">
+            <section
+                id="how-it-works"
+                className="bg-[var(--bg)] text-[var(--fg)] py-24 relative z-10"
+            >
                 <div className="max-w-[1280px] mx-auto px-5 sm:px-8">
                     <div className="text-center max-w-[720px] mx-auto mb-16">
                         <span className="inline-block text-[11px] font-bold uppercase tracking-[0.18em] text-[#ff7759] mb-4">
                             Get started
                         </span>
                         <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-                            Add Sign in with Elixpo in two steps
+                            From a new project to working sign-in in two steps
                         </h2>
                         <p className="text-base sm:text-lg opacity-80 leading-relaxed font-body">
-                            Use standard OAuth directly or start faster with our
-                            typed SDK. Create your account, register your app,
-                            and you&apos;re issuing logins — for Elixpo apps or
-                            your own.
+                            We host the difficult identity screens and security
+                            flows. You choose how your app should look, connect
+                            one callback, and keep building your product.
                         </p>
                     </div>
 
@@ -337,26 +353,30 @@ export default function LandingPage() {
                                 </div>
                             </div>
                             <h3 className="font-heading text-xl font-bold mb-2">
-                                Create your account
+                                Set up your auth project
                             </h3>
                             <p className="text-[var(--fg-muted)] leading-relaxed text-sm sm:text-base font-body mb-6">
-                                Register a free Elixpo account — or sign in if
-                                you already have one. One identity that works
-                                everywhere.
+                                Create a project, choose the sign-in providers,
+                                add your callback URLs, and set the app name,
+                                logo, and domain users will recognize.
                             </p>
                             <div className="mt-auto flex flex-wrap items-center gap-3">
                                 <Link
                                     href="/register"
                                     className="inline-flex items-center gap-2 bg-[#ff7759] text-white px-5 py-2.5 rounded-full font-body font-semibold text-sm transition-all hover:brightness-110 active:scale-[0.98]"
                                 >
-                                    Create account
+                                    Create a project
                                     <ArrowRightCircle className="w-4 h-4" />
                                 </Link>
                                 <Link
-                                    href="/login"
+                                    href={
+                                        authed
+                                            ? "/dashboard/oauth-apps"
+                                            : "/login"
+                                    }
                                     className="inline-flex items-center text-sm font-semibold text-[var(--fg)] opacity-80 hover:opacity-100 transition-opacity"
                                 >
-                                    Sign in
+                                    Open dashboard
                                 </Link>
                             </div>
                         </div>
@@ -372,26 +392,26 @@ export default function LandingPage() {
                                 </div>
                             </div>
                             <h3 className="font-heading text-xl font-bold mb-2">
-                                Register your app
+                                Connect your application
                             </h3>
                             <p className="text-[var(--fg-muted)] leading-relaxed text-sm sm:text-base font-body mb-6">
-                                Add your app in the dashboard to get OAuth
-                                client credentials, then drop in the “Sign in
-                                with Elixpo” button. That&apos;s it.
+                                Install the Developer SDK or use standard OAuth.
+                                Add sign-in and sign-out, then let the hosted
+                                account screens handle the rest.
                             </p>
                             <div className="mt-auto flex flex-wrap items-center gap-3">
                                 <Link
-                                    href="/dashboard/oauth-apps"
+                                    href="/docs/quickstart"
                                     className="inline-flex items-center gap-2 bg-[#ff7759] text-white px-5 py-2.5 rounded-full font-body font-semibold text-sm transition-all hover:brightness-110 active:scale-[0.98]"
                                 >
-                                    Register an app
+                                    Read the quickstart
                                     <ArrowRightCircle className="w-4 h-4" />
                                 </Link>
                                 <Link
-                                    href="/docs/quickstart"
+                                    href="/docs/lixaccounts"
                                     className="inline-flex items-center text-sm font-semibold text-[var(--fg)] opacity-80 hover:opacity-100 transition-opacity"
                                 >
-                                    Read the quickstart
+                                    Explore the SDK
                                 </Link>
                             </div>
                         </div>
@@ -405,27 +425,32 @@ export default function LandingPage() {
                     <div>
                         <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#ff7759] mb-4">
                             <PackageOpen className="w-4 h-4" />
-                            Official TypeScript SDK
+                            Developer SDK
                         </span>
                         <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mb-5">
-                            Ship OAuth with lixaccounts
+                            One package for the security-sensitive parts
                         </h2>
                         <p className="text-base sm:text-lg text-[var(--fg-muted)] leading-relaxed font-body mb-7">
-                            Discovery, S256 PKCE, callback validation, token
-                            rotation, revocation, and JWKS verification in one
-                            edge-safe package. It works anywhere Web Crypto and
-                            fetch are available.
+                            <code className="font-mono text-[0.9em]">
+                                @elixpo/accounts
+                            </code>{" "}
+                            creates login links, protects callbacks, refreshes
+                            access, and verifies user identity. That means less
+                            auth code to write, review, and keep patched. It
+                            runs in Node.js and edge runtimes, and it stays
+                            compatible with standard OAuth if you ever want to
+                            integrate without the package.
                         </p>
                         <div className="flex flex-wrap gap-3">
                             <Link
                                 href="/docs/lixaccounts"
                                 className="inline-flex items-center gap-2 bg-[#ff7759] text-white px-6 py-3 rounded-full font-body font-semibold text-sm transition-all hover:brightness-110 active:scale-[0.98]"
                             >
-                                Read the SDK guide
+                                Developer SDK
                                 <ArrowRightCircle className="w-4 h-4" />
                             </Link>
                             <a
-                                href="https://www.npmjs.com/package/lixaccounts"
+                                href="https://www.npmjs.com/package/@elixpo/accounts"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 border border-[var(--border)] bg-[var(--bg)] px-6 py-3 rounded-full font-body font-semibold text-sm transition-all hover:border-[#ff7759]/50 active:scale-[0.98]"
@@ -445,12 +470,12 @@ export default function LandingPage() {
                         <pre className="p-5 sm:p-6 overflow-x-auto font-mono text-sm leading-7">
                             <code>
                                 <span className="text-[#ff9a82]">$</span> npm
-                                install lixaccounts{"\n\n"}
+                                install @elixpo/accounts{"\n\n"}
                                 <span className="text-white/55">import</span>{" "}
                                 {"{ createAccountsClient }"}{" "}
                                 <span className="text-white/55">from</span>{" "}
                                 <span className="text-[#ff9a82]">
-                                    &quot;lixaccounts&quot;
+                                    &quot;@elixpo/accounts&quot;
                                 </span>
                             </code>
                         </pre>
@@ -470,11 +495,12 @@ export default function LandingPage() {
                 <div className="max-w-[1280px] mx-auto px-5 sm:px-8">
                     <div className="text-center max-w-[700px] mx-auto mb-20">
                         <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-                            What can you do with Elixpo Accounts?
+                            Everything your product needs after “Sign in”
                         </h2>
                         <p className="text-base sm:text-lg opacity-80 leading-relaxed font-body">
-                            Our open OAuth 2.0 gateway coordinates identity,
-                            billing, and webhooks on the edge.
+                            Authentication is more than a login form. Keep the
+                            user, session, security, and app lifecycle together
+                            from day one.
                         </p>
                     </div>
 
@@ -515,12 +541,12 @@ export default function LandingPage() {
             <section className="bg-[var(--bg)] text-[var(--fg)] py-24 border-t border-[var(--border)] relative z-10">
                 <div className="max-w-[800px] mx-auto px-5 text-center">
                     <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-4 tracking-tight">
-                        Ready when you are.
+                        Stop maintaining auth. Start shipping your product.
                     </h2>
                     <p className="text-base opacity-80 mb-8 max-w-[560px] mx-auto font-body leading-relaxed">
-                        Create an account in seconds or sign in if you already
-                        have one. The same identity works across Elixpo and any
-                        app integrating our SSO.
+                        Create your auth project, choose the providers and brand
+                        your users should see, then follow the quickstart. We
+                        handle the account system behind it.
                     </p>
                     <motion.div
                         whileHover={{ scale: 1.04, filter: "brightness(1.1)" }}
@@ -529,10 +555,16 @@ export default function LandingPage() {
                         className="inline-block"
                     >
                         <Link
-                            href="/login"
+                            href={
+                                authed ? "/dashboard/oauth-apps" : "/register"
+                            }
                             className="inline-flex items-center gap-3 bg-[#ff7759] text-white px-8 py-4 rounded-full font-body font-semibold transition-all shadow-[0_4px_24px_rgba(255, 119, 89,0.28)]"
                         >
-                            <span>Continue to sign in</span>
+                            <span>
+                                {authed
+                                    ? "Open your projects"
+                                    : "Start building"}
+                            </span>
                             <ArrowRightCircle className="w-5 h-5 text-white" />
                         </Link>
                     </motion.div>
@@ -651,7 +683,7 @@ export default function LandingPage() {
                                             }
                                             className="w-full bg-[#ff7759] text-white py-3 rounded-full font-semibold text-center hover:brightness-110 active:scale-[0.98] transition-all shadow-md"
                                         >
-                                            Start For Free
+                                            Create a project
                                         </Link>
                                         <Link
                                             href="/login"

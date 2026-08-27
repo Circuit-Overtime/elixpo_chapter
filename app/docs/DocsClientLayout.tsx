@@ -16,10 +16,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-const DOCS_NAV = [
+const PRODUCT_DOCS_NAV = [
     { label: "Overview", href: "/docs" },
     { label: "Quickstart", href: "/docs/quickstart" },
-    { label: "lixaccounts SDK", href: "/docs/lixaccounts" },
     { label: "OAuth Flow", href: "/docs/oauth" },
     { label: "Users API", href: "/docs/users-api" },
     { label: "Webhooks", href: "/docs/webhooks" },
@@ -27,6 +26,12 @@ const DOCS_NAV = [
     { label: "Error Reference", href: "/docs/errors" },
     { label: "Self-Hosting", href: "/docs/self-hosting" },
 ];
+
+const DEVELOPER_SDK_NAV = [
+    { label: "@elixpo/accounts", href: "/docs/lixaccounts" },
+];
+
+const DOCS_NAV = [...PRODUCT_DOCS_NAV, ...DEVELOPER_SDK_NAV];
 
 interface HeadingItem {
     id: string;
@@ -160,7 +165,7 @@ export default function DocsClientLayout({
             "",
             "Elixpo Accounts is an OAuth 2.0 and OpenID Connect identity provider running on Cloudflare's edge.",
             "Treat this page and the discovery endpoints as authoritative. Use authorization code flow with S256 PKCE, state, and nonce. Keep secrets and tokens server-side.",
-            "SDK: lixaccounts. Discovery: /.well-known/oauth-authorization-server and /.well-known/openid-configuration.",
+            "Developer SDK: @elixpo/accounts. Discovery: /.well-known/oauth-authorization-server and /.well-known/openid-configuration.",
             "",
             "---",
             "",
@@ -209,7 +214,10 @@ export default function DocsClientLayout({
             ? DOCS_NAV[currentPageIndex + 1]
             : null;
 
-    const filteredNav = DOCS_NAV.filter((item) =>
+    const filteredProductNav = PRODUCT_DOCS_NAV.filter((item) =>
+        item.label.toLowerCase().includes(search.toLowerCase()),
+    );
+    const filteredSdkNav = DEVELOPER_SDK_NAV.filter((item) =>
         item.label.toLowerCase().includes(search.toLowerCase()),
     );
 
@@ -281,7 +289,7 @@ export default function DocsClientLayout({
 
             {/* List */}
             <nav className="flex-1 flex flex-col gap-1 overflow-y-auto">
-                {filteredNav.map((item) => {
+                {filteredProductNav.map((item) => {
                     const active = pathname === item.href;
                     return (
                         <Link
@@ -298,11 +306,36 @@ export default function DocsClientLayout({
                         </Link>
                     );
                 })}
-                {filteredNav.length === 0 && (
-                    <p className="text-[var(--fg-faint)] text-xs text-center py-4">
-                        No results found
-                    </p>
+                {(search.length === 0 || filteredSdkNav.length > 0) && (
+                    <div className="mt-5 border-t border-[var(--border)] pt-5">
+                        <span className="mb-2 block px-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--fg-faint)]">
+                            Developer SDK
+                        </span>
+                        {filteredSdkNav.map((item) => {
+                            const active = pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className={`flex items-center px-4 py-2 rounded-xl text-sm font-semibold tracking-wide transition-all ${
+                                        active
+                                            ? "bg-[#ff7759]/10 text-[#ff7759]"
+                                            : "text-[var(--fg-muted)] hover:bg-[var(--overlay)] hover:text-[var(--fg)]"
+                                    }`}
+                                >
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
+                    </div>
                 )}
+                {filteredProductNav.length === 0 &&
+                    filteredSdkNav.length === 0 && (
+                        <p className="text-[var(--fg-faint)] text-xs text-center py-4">
+                            No results found
+                        </p>
+                    )}
             </nav>
         </div>
     );

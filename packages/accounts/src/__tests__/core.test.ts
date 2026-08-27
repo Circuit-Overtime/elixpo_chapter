@@ -45,7 +45,7 @@ const configuration: AccountsConfiguration = {
     audience: "app.example.com",
 };
 
-describe("lixaccounts core", () => {
+describe("@elixpo/accounts core", () => {
     it("implements the RFC 7636 S256 vector", async () => {
         expect(
             await deriveCodeChallenge(

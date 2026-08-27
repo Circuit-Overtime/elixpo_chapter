@@ -188,7 +188,7 @@ export default function QuickstartPage() {
                     href="/docs/lixaccounts"
                     style={{ color: "#ff7759", fontWeight: 700 }}
                 >
-                    lixaccounts SDK guide
+                    Developer SDK guide
                 </Link>
                 .
             </Typography>

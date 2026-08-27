@@ -1,4 +1,4 @@
-# `lixaccounts`
+# `@elixpo/accounts`
 
 Edge-safe OAuth 2.0 and OpenID Connect primitives for Elixpo Accounts.
 
@@ -10,13 +10,13 @@ Next.js and React adapters are tracked separately and are not exported yet.
 ## Install
 
 ```bash
-npm install lixaccounts
+npm install @elixpo/accounts
 ```
 
 ## Start authorization
 
 ```ts
-import { createAccountsClient } from "lixaccounts";
+import { createAccountsClient } from "@elixpo/accounts";
 
 const accounts = createAccountsClient({
     issuer: "https://accounts.elixpo.com",
@@ -32,7 +32,7 @@ const { url, transaction } = await accounts.createAuthorizationRequest();
 ## Complete authorization
 
 ```ts
-import { parseAuthorizationCallback } from "lixaccounts";
+import { parseAuthorizationCallback } from "@elixpo/accounts";
 
 const { code } = parseAuthorizationCallback(
     request.url,

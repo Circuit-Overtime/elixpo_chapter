@@ -4,12 +4,12 @@ import { Box, Chip, Typography } from "@mui/material";
 import Link from "next/link";
 import CodeBlock from "../../components/code-block";
 
-const INSTALL = `npm install lixaccounts`;
+const INSTALL = `npm install @elixpo/accounts`;
 
 const CONFIGURE = `import {
   createAccountsClient,
   parseAuthorizationCallback,
-} from "lixaccounts";
+} from "@elixpo/accounts";
 
 const accounts = createAccountsClient({
   issuer: "https://accounts.elixpo.com",
@@ -70,12 +70,12 @@ export default function LixaccountsDocsPage() {
                         mb: "0 !important",
                     }}
                 >
-                    lixaccounts SDK
+                    @elixpo/accounts
                 </Typography>
                 <Chip
-                    label="npm · stable"
+                    label="Developer SDK"
                     component="a"
-                    href="https://www.npmjs.com/package/lixaccounts"
+                    href="https://www.npmjs.com/package/@elixpo/accounts"
                     target="_blank"
                     rel="noopener noreferrer"
                     clickable

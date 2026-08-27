@@ -1,5 +1,5 @@
 {
-  "name": "lixaccounts",
+  "name": "@elixpo/accounts",
   "version": "1.0.1",
   "description": "Standards-first OAuth and OpenID Connect SDK for Elixpo Accounts",
   "type": "module",
@@ -9,7 +9,7 @@
     "url": "git+https://github.com/elixpo/accounts.elixpo.git",
     "directory": "packages/accounts"
   },
-  "homepage": "https://accounts.elixpo.com/docs",
+  "homepage": "https://accounts.elixpo.com/docs/lixaccounts",
   "bugs": "https://github.com/elixpo/accounts.elixpo/issues",
   "sideEffects": false,
   "files": [
