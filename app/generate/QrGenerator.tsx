@@ -179,10 +179,10 @@ export default function QrGenerator() {
   };
 
   return (
-    <div className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-stretch">
+    <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-stretch">
       <form
         onSubmit={generate}
-        className="rounded-3xl border border-[#e3e3e3] bg-white p-4 shadow-[0_16px_45px_rgba(0,0,0,0.06)] md:p-5"
+        className="flex flex-col justify-center rounded-3xl border border-[#e3e3e3] bg-white p-5 shadow-[0_16px_45px_rgba(0,0,0,0.06)] md:p-8"
       >
         <label htmlFor="qr-destination" className="text-sm font-bold text-[#222]">
           Link to turn into a QR code
@@ -207,7 +207,7 @@ export default function QrGenerator() {
           </button>
         </div>
 
-        <div className="mt-5">
+        <div className="mt-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-sm font-bold text-[#222]">Choose a style</h2>
             {!paid && (
@@ -216,7 +216,7 @@ export default function QrGenerator() {
               </Link>
             )}
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2.5">
             {QR_PRESETS.map((preset, index) => {
               const locked = account.presetLimit !== -1 && index >= account.presetLimit;
               const selected = preset.id === presetId;
@@ -234,7 +234,7 @@ export default function QrGenerator() {
                     setError('');
                     setPresetId(preset.id);
                   }}
-                  className="group inline-flex h-10 items-center gap-2 rounded-full border px-3 text-left text-xs font-bold transition-all"
+                  className="group inline-flex h-11 items-center gap-2 rounded-full border px-3.5 text-left text-xs font-bold transition-all"
                   style={{
                     borderColor: selected ? '#e53935' : '#e1e1e1',
                     background: selected ? '#fff6f5' : '#ffffff',
@@ -258,8 +258,8 @@ export default function QrGenerator() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          <div className="rounded-2xl border border-[#e5e5e5] bg-[#fcfcfc] p-3">
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-[#e5e5e5] bg-[#fcfcfc] p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="text-sm font-bold text-[#222]">Center logo</div>
               {!account.allowLogo && <span className="rounded-full bg-[#f5f5f5] px-2 py-1 text-[10px] font-bold text-[#777]">PRO</span>}
@@ -279,7 +279,7 @@ export default function QrGenerator() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-[#e5e5e5] bg-[#fcfcfc] p-3">
+          <div className="rounded-2xl border border-[#e5e5e5] bg-[#fcfcfc] p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="text-sm font-bold text-[#222]">Scan analytics</div>
               {!paid && <span className="rounded-full bg-[#f5f5f5] px-2 py-1 text-[10px] font-bold text-[#777]">PAID</span>}
@@ -306,13 +306,13 @@ export default function QrGenerator() {
         </div>
 
         {error && (
-          <div className="mt-5 rounded-xl border border-[#efb8b5] bg-[#fff6f5] px-4 py-3 text-sm text-[#a82420]" role="alert">
+          <div className="mt-6 rounded-xl border border-[#efb8b5] bg-[#fff6f5] px-4 py-3 text-sm text-[#a82420]" role="alert">
             {error}
           </div>
         )}
       </form>
 
-      <aside className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-5 text-center lg:min-h-0">
+      <aside className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-center lg:min-h-0">
         {qrData ? (
           <>
             <div className="rounded-2xl bg-white p-3 shadow-[0_12px_35px_rgba(0,0,0,0.10)]">

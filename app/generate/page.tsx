@@ -132,7 +132,7 @@ export default function QrCodeGeneratorPage() {
           className="mx-auto flex min-h-[calc(100svh-72px)] w-full max-w-7xl flex-col px-4 pb-10 pt-6 md:px-6 md:pt-8"
           aria-labelledby="qr-generator-heading"
         >
-          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 id="qr-generator-heading" className="text-3xl font-extrabold tracking-[-0.035em] sm:text-4xl">
                 Create a QR code
