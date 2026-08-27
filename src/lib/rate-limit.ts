@@ -229,4 +229,12 @@ export function createDeviceLookupRateLimiter(): DatabaseRateLimiter {
     });
 }
 
+export function createBrandingVerificationRateLimiter(): DatabaseRateLimiter {
+    return new DatabaseRateLimiter({
+        windowMs: 60 * 1000,
+        maxRequests: 5,
+        blockDurationMs: 10 * 60 * 1000,
+    });
+}
+
 export { DatabaseRateLimiter };

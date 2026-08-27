@@ -38,6 +38,36 @@ interface LookupResult {
     client_name?: string;
     scopes?: string[];
     expires_at?: string;
+    logo_url?: string | null;
+    branding_display_name?: string | null;
+    branding_primary_color?: string | null;
+    branding_accent_color?: string | null;
+    privacy_policy_url?: string | null;
+    terms_of_service_url?: string | null;
+    is_branding_verified?: boolean;
+    branding_verified_domain?: string | null;
+}
+
+function getContrastColorLocal(hex: string): string {
+    if (!hex?.startsWith("#")) return "#FFFFFF";
+    let cleanHex = hex.slice(1);
+    if (cleanHex.length === 3 || cleanHex.length === 4) {
+        cleanHex = cleanHex
+            .split("")
+            .map((c) => c + c)
+            .join("");
+    }
+    const r = parseInt(cleanHex.slice(0, 2), 16);
+    const g = parseInt(cleanHex.slice(2, 4), 16);
+    const b = parseInt(cleanHex.slice(4, 6), 16);
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return "#FFFFFF";
+
+    const [rs, gs, bs] = [r, g, b].map((c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    });
+    const luminance = 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+    return luminance > 0.179 ? "#000000" : "#FFFFFF";
 }
 
 type ViewState =
@@ -216,13 +246,41 @@ function DeviceVerificationContent() {
                         <p className="text-xs font-mono uppercase tracking-wide text-[var(--fg-faint)] mb-2">
                             Confirm access
                         </p>
+                        {view.details.is_branding_verified &&
+                        view.details.logo_url ? (
+                            <div className="flex items-center gap-3 mb-4">
+                                <img
+                                    src={view.details.logo_url}
+                                    alt="App logo"
+                                    className="w-10 h-10 rounded-lg object-cover border border-[var(--border)]"
+                                />
+                                <span className="text-lg text-[var(--fg-faint)]">
+                                    ↔
+                                </span>
+                                <div className="w-8 h-8 rounded-full bg-[var(--field-bg)] border border-[var(--border)] flex items-center justify-center">
+                                    <span className="text-[var(--fg)] font-bold text-sm">
+                                        E
+                                    </span>
+                                </div>
+                            </div>
+                        ) : null}
                         <p className="text-sm text-[var(--fg)] mb-1">
                             <strong>
-                                {view.details.client_name ||
-                                    view.details.client_id}
+                                {view.details.is_branding_verified &&
+                                view.details.branding_display_name
+                                    ? view.details.branding_display_name
+                                    : view.details.client_name ||
+                                      view.details.client_id}
                             </strong>{" "}
                             wants to access your account.
                         </p>
+                        {view.details.is_branding_verified &&
+                        view.details.branding_verified_domain ? (
+                            <p className="mb-3 font-mono text-xs text-[var(--fg-faint)]">
+                                Verified for{" "}
+                                {view.details.branding_verified_domain}
+                            </p>
+                        ) : null}
                         {view.details.expires_at ? (
                             <p className="text-xs font-mono text-[var(--fg-faint)] mb-5">
                                 Expires{" "}
@@ -281,6 +339,20 @@ function DeviceVerificationContent() {
                             <button
                                 onClick={() => resolve("approve")}
                                 className="w-full rounded-lg bg-[var(--accent)] py-3 font-semibold text-[var(--accent-contrast)]"
+                                style={
+                                    view.details.is_branding_verified &&
+                                    view.details.branding_primary_color
+                                        ? {
+                                              backgroundColor:
+                                                  view.details
+                                                      .branding_primary_color,
+                                              color: getContrastColorLocal(
+                                                  view.details
+                                                      .branding_primary_color,
+                                              ),
+                                          }
+                                        : undefined
+                                }
                             >
                                 Approve
                             </button>
@@ -331,6 +403,40 @@ function DeviceVerificationContent() {
                         </button>
                     </>
                 ) : null}
+                {/* Trust Marker Footer */}
+                <div className="mt-8 pt-4 border-t border-[var(--border)] flex flex-col items-center gap-2">
+                    <p className="text-[10px] text-[var(--fg-faint)] font-medium">
+                        🛡️ Secured by Elixpo Accounts
+                    </p>
+                    {view.phase === "ready" &&
+                        view.details &&
+                        view.details.is_branding_verified &&
+                        (view.details.privacy_policy_url ||
+                            view.details.terms_of_service_url) && (
+                            <div className="flex gap-3 text-[10px] text-neutral-500">
+                                {view.details.privacy_policy_url && (
+                                    <a
+                                        href={view.details.privacy_policy_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="underline hover:text-neutral-300"
+                                    >
+                                        Privacy Policy
+                                    </a>
+                                )}
+                                {view.details.terms_of_service_url && (
+                                    <a
+                                        href={view.details.terms_of_service_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="underline hover:text-neutral-300"
+                                    >
+                                        Terms of Service
+                                    </a>
+                                )}
+                            </div>
+                        )}
+                </div>
             </div>
         </main>
     );

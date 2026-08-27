@@ -17,5 +17,6 @@ export default defineConfig({
             "src/**/__tests__/**/*.test.ts",
             "packages/accounts/src/**/__tests__/**/*.test.ts",
         ],
+        setupFiles: ["src/lib/__tests__/setup.ts"],
     },
 });

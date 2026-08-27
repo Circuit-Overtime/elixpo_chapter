@@ -14,6 +14,7 @@
 
 import type { D1Database } from "@cloudflare/workers-types";
 import {
+    createBrandingVerificationRateLimiter,
     createDeviceIssuanceRateLimiter,
     createDeviceLookupRateLimiter,
     createLoginRateLimiter,
@@ -28,6 +29,14 @@ export async function checkLoginRateLimit(
 ): Promise<RateLimitResult> {
     const limiter = createLoginRateLimiter();
     return limiter.check(db, ipAddress, "login");
+}
+
+export async function checkBrandingVerificationRateLimit(
+    db: D1Database,
+    ownerKey: string,
+): Promise<RateLimitResult> {
+    const limiter = createBrandingVerificationRateLimiter();
+    return limiter.check(db, ownerKey, "branding_verify");
 }
 
 export async function checkRegisterRateLimit(

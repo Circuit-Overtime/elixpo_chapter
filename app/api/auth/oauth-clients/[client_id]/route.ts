@@ -1,11 +1,20 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
+import {
+    hasSufficientContrast,
+    isOpaqueHexColor,
+    isValidUrl,
+    sanitizeString,
+    validateBrandAssetUrl,
+    validateLogoUrl,
+} from "@/lib/branding-validation";
 import { getDatabase } from "@/lib/d1-client";
 import {
     getOAuthClientById,
     getOAuthClientByIdWithSecret,
     getUserById,
+    logAuditEvent,
     updateOAuthClient,
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
@@ -15,7 +24,11 @@ import {
     SUPPORTED_OAUTH_SCOPES,
     unsupportedOAuthScopes,
 } from "@/lib/oauth-scopes";
-import { generateRandomString, hashString } from "@/lib/webcrypto";
+import {
+    generateRandomString,
+    generateUUID,
+    hashString,
+} from "@/lib/webcrypto";
 
 /**
  * PUT /api/auth/oauth-clients/[client_id]
@@ -51,6 +64,11 @@ export async function PUT(
             description,
             homepage_url,
             logo_url,
+            branding_display_name,
+            branding_primary_color,
+            branding_accent_color,
+            privacy_policy_url,
+            terms_of_service_url,
         } = body;
 
         if (!client_id) {
@@ -134,6 +152,139 @@ export async function PUT(
             );
         }
 
+        // Custom branding validations
+        for (const [label, value] of [
+            ["Homepage", homepage_url],
+            ["Logo", logo_url],
+            ["Privacy Policy", privacy_policy_url],
+            ["Terms of Service", terms_of_service_url],
+        ] as const) {
+            if (
+                value !== undefined &&
+                value !== null &&
+                typeof value !== "string"
+            ) {
+                return NextResponse.json(
+                    { error: `${label} URL must be a string` },
+                    { status: 400 },
+                );
+            }
+            if (typeof value === "string" && value.length > 2048) {
+                return NextResponse.json(
+                    { error: `${label} URL is too long` },
+                    { status: 400 },
+                );
+            }
+        }
+        if (homepage_url !== undefined) {
+            if (homepage_url && !isValidUrl(homepage_url)) {
+                return NextResponse.json(
+                    { error: "Invalid homepage URL" },
+                    { status: 400 },
+                );
+            }
+        }
+        if (privacy_policy_url !== undefined) {
+            if (privacy_policy_url && !isValidUrl(privacy_policy_url)) {
+                return NextResponse.json(
+                    { error: "Invalid Privacy Policy URL" },
+                    { status: 400 },
+                );
+            }
+        }
+        if (terms_of_service_url !== undefined) {
+            if (terms_of_service_url && !isValidUrl(terms_of_service_url)) {
+                return NextResponse.json(
+                    { error: "Invalid Terms of Service URL" },
+                    { status: 400 },
+                );
+            }
+        }
+        const effectiveHomepage =
+            homepage_url !== undefined ? homepage_url : app.homepage_url;
+        if (logo_url) {
+            const logoCheck = validateLogoUrl(logo_url, effectiveHomepage);
+            if (!logoCheck.valid) {
+                return NextResponse.json(
+                    { error: logoCheck.error },
+                    { status: 400 },
+                );
+            }
+        }
+        for (const [label, value] of [
+            ["Privacy Policy", privacy_policy_url],
+            ["Terms of Service", terms_of_service_url],
+        ] as const) {
+            if (!value) continue;
+            const result = validateBrandAssetUrl(value, effectiveHomepage);
+            if (!result.valid) {
+                return NextResponse.json(
+                    { error: `${label} URL: ${result.error}` },
+                    { status: 400 },
+                );
+            }
+        }
+        if (
+            branding_display_name !== undefined &&
+            branding_display_name !== null &&
+            typeof branding_display_name !== "string"
+        ) {
+            return NextResponse.json(
+                { error: "Branding display name must be a string" },
+                { status: 400 },
+            );
+        }
+        if (branding_primary_color !== undefined) {
+            if (branding_primary_color) {
+                if (
+                    typeof branding_primary_color !== "string" ||
+                    !hasSufficientContrast(branding_primary_color)
+                ) {
+                    return NextResponse.json(
+                        {
+                            error: "Primary color has insufficient contrast against both black and white.",
+                        },
+                        { status: 400 },
+                    );
+                }
+            }
+        }
+        if (
+            branding_accent_color &&
+            (typeof branding_accent_color !== "string" ||
+                !isOpaqueHexColor(branding_accent_color))
+        ) {
+            return NextResponse.json(
+                {
+                    error: "Accent color must be an opaque 3- or 6-digit hex color",
+                },
+                { status: 400 },
+            );
+        }
+
+        const trustBearingBrandingChanged =
+            (homepage_url !== undefined &&
+                (homepage_url || null) !== (app.homepage_url || null)) ||
+            (redirect_uris !== undefined &&
+                JSON.stringify(redirect_uris) !== app.redirect_uris) ||
+            (logo_url !== undefined &&
+                (logo_url || null) !== (app.logo_url || null)) ||
+            (branding_display_name !== undefined &&
+                (branding_display_name || null) !==
+                    (app.branding_display_name || null)) ||
+            (branding_primary_color !== undefined &&
+                (branding_primary_color || null) !==
+                    (app.branding_primary_color || null)) ||
+            (branding_accent_color !== undefined &&
+                (branding_accent_color || null) !==
+                    (app.branding_accent_color || null)) ||
+            (privacy_policy_url !== undefined &&
+                (privacy_policy_url || null) !==
+                    (app.privacy_policy_url || null)) ||
+            (terms_of_service_url !== undefined &&
+                (terms_of_service_url || null) !==
+                    (app.terms_of_service_url || null));
+
         try {
             await updateOAuthClient(db, client_id, {
                 ...(name !== undefined && { name }),
@@ -143,10 +294,50 @@ export async function PUT(
                 ...(scopes !== undefined && { scopes: JSON.stringify(scopes) }),
                 ...(description !== undefined && { description }),
                 ...(homepage_url !== undefined && {
-                    homepageUrl: homepage_url,
+                    homepageUrl: homepage_url || null,
                 }),
-                ...(logo_url !== undefined && { logoUrl: logo_url }),
+                ...(logo_url !== undefined && { logoUrl: logo_url || null }),
+                ...(branding_display_name !== undefined && {
+                    brandingDisplayName: branding_display_name
+                        ? sanitizeString(branding_display_name).slice(0, 50)
+                        : null,
+                }),
+                ...(branding_primary_color !== undefined && {
+                    brandingPrimaryColor: branding_primary_color || null,
+                }),
+                ...(branding_accent_color !== undefined && {
+                    brandingAccentColor: branding_accent_color || null,
+                }),
+                ...(privacy_policy_url !== undefined && {
+                    privacyPolicyUrl: privacy_policy_url || null,
+                }),
+                ...(terms_of_service_url !== undefined && {
+                    termsOfServiceUrl: terms_of_service_url || null,
+                }),
+                ...(trustBearingBrandingChanged && {
+                    isBrandingVerified: false,
+                    brandingVerifiedDomain: null,
+                    brandingVerifiedAt: null,
+                }),
             });
+
+            // Log audit event for branding modifications
+            if (
+                branding_display_name !== undefined ||
+                branding_primary_color !== undefined ||
+                branding_accent_color !== undefined ||
+                logo_url !== undefined ||
+                privacy_policy_url !== undefined ||
+                terms_of_service_url !== undefined
+            ) {
+                await logAuditEvent(db, {
+                    id: generateUUID(),
+                    userId: payload.sub,
+                    eventType: "client.branding_updated",
+                    provider: client_id,
+                    status: "success",
+                }).catch(() => {});
+            }
         } catch (error) {
             console.error("[OAuth Client] Database update error:", error);
             return NextResponse.json(
@@ -167,6 +358,15 @@ export async function PUT(
             client_type: updated?.client_type || "confidential",
             request_count: updated?.request_count ?? 0,
             last_used: updated?.last_used,
+            logo_url: updated?.logo_url || null,
+            branding_display_name: updated?.branding_display_name || null,
+            branding_primary_color: updated?.branding_primary_color || null,
+            branding_accent_color: updated?.branding_accent_color || null,
+            privacy_policy_url: updated?.privacy_policy_url || null,
+            terms_of_service_url: updated?.terms_of_service_url || null,
+            is_branding_verified: updated?.is_branding_verified === 1,
+            branding_verified_domain: updated?.branding_verified_domain || null,
+            branding_verified_at: updated?.branding_verified_at || null,
         });
     } catch (error) {
         console.error("[OAuth Client] Update error:", error);
@@ -450,6 +650,18 @@ export async function GET(
                 logo_url: (app as any).logo_url,
                 request_count: (app as any).request_count ?? 0,
                 last_used: (app as any).last_used,
+                branding_display_name:
+                    (app as any).branding_display_name || null,
+                branding_primary_color:
+                    (app as any).branding_primary_color || null,
+                branding_accent_color:
+                    (app as any).branding_accent_color || null,
+                privacy_policy_url: (app as any).privacy_policy_url || null,
+                terms_of_service_url: (app as any).terms_of_service_url || null,
+                is_branding_verified: (app as any).is_branding_verified === 1,
+                branding_verified_domain:
+                    (app as any).branding_verified_domain || null,
+                branding_verified_at: (app as any).branding_verified_at || null,
             }),
         });
     } catch (error) {

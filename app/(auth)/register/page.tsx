@@ -13,6 +13,11 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { getContrastColor } from "@/lib/branding-validation";
+import {
+    useVerifiedBranding,
+    VerifiedBrandBanner,
+} from "../../components/verified-brand-banner";
 
 const textFieldSx = {
     "& .MuiOutlinedInput-root": {
@@ -43,6 +48,7 @@ const textFieldSx = {
 const RegisterContent = () => {
     const searchParams = useSearchParams();
     const next = searchParams.get("next");
+    const branding = useVerifiedBranding(next);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -140,6 +146,7 @@ const RegisterContent = () => {
                         justifyContent: "center",
                     }}
                 >
+                    <VerifiedBrandBanner branding={branding} />
                     <Box sx={{ mb: 2, textAlign: "center" }}>
                         <Typography
                             variant="h4"
@@ -149,7 +156,9 @@ const RegisterContent = () => {
                                 mb: 0.5,
                             }}
                         >
-                            Create Account
+                            {branding
+                                ? `Create an account for ${branding.displayName}`
+                                : "Create Account"}
                         </Typography>
                         <Typography
                             sx={{
@@ -157,7 +166,9 @@ const RegisterContent = () => {
                                 fontSize: "0.95rem",
                             }}
                         >
-                            Register for your SSO account
+                            {branding
+                                ? `You will return to ${branding.domain} after setup`
+                                : "Register for your SSO account"}
                         </Typography>
                     </Box>
 
@@ -266,16 +277,17 @@ const RegisterContent = () => {
                             disabled={loading}
                             sx={{
                                 my: 2,
-                                background: "#ff7759",
-                                color: "#fff",
-                                border: "1px solid #ff7759",
+                                background: branding?.primaryColor || "#ff7759",
+                                color: branding
+                                    ? getContrastColor(branding.primaryColor)
+                                    : "#fff",
+                                border: `1px solid ${branding?.primaryColor || "#ff7759"}`,
                                 fontWeight: 600,
                                 py: 1.5,
                                 textTransform: "none",
                                 fontSize: "1rem",
                                 "&:hover": {
-                                    background: "rgba(255, 119, 89, 0.9)",
-                                    borderColor: "rgba(255, 119, 89, 0.9)",
+                                    filter: "brightness(1.05)",
                                 },
                                 "&:disabled": {
                                     color: "var(--fg-faint)",
