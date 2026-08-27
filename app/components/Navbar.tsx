@@ -8,6 +8,14 @@ const REPO_URL = 'https://github.com/elixpo/elixpourl';
 const ACCENT = '#e53935';
 
 const Icons = {
+  qr: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-[16px] h-[16px]">
+      <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="1" />
+      <rect x="12" y="2.5" width="5.5" height="5.5" rx="1" />
+      <rect x="2.5" y="12" width="5.5" height="5.5" rx="1" />
+      <path d="M12 12h2v2h3.5M12 17.5v-2h2" />
+    </svg>
+  ),
   about: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-[16px] h-[16px]">
       <circle cx="10" cy="10" r="7.5" />
@@ -53,6 +61,7 @@ const Icons = {
 
 const NAV = [
   { href: '/about', label: 'About', icon: Icons.about },
+  { href: '/generate', label: 'QR Generator', icon: Icons.qr },
   { href: '/pricing', label: 'Pricing', icon: Icons.pricing },
   { href: '/docs', label: 'Docs', icon: Icons.docs },
 ];

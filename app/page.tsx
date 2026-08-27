@@ -6,9 +6,9 @@ import LandingPageClient from './LandingPageClient';
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
-  title: { absolute: 'Lixrl — Short Links, Branded Subdomains & Link Analytics' },
+  title: { absolute: 'Lixrl — URL Shortener & Quick QR Code Generator' },
   description:
-    'Create a short link in one click, keep persistent links with a free account, and add analytics, custom names, or branded subdomains when you need them.',
+    'Shorten a URL in one click, generate a QR code for any link, and unlock branded links, custom QR styles, and analytics when you need them.',
   alternates: { canonical: '/' },
 };
 
