@@ -41,6 +41,7 @@ const COLUMNS: {
         links: [
             { label: "Documentation", href: "/docs" },
             { label: "Quickstart", href: "/docs/quickstart" },
+            { label: "lixaccounts SDK", href: "/docs/lixaccounts" },
             { label: "OAuth 2.0", href: "/docs/oauth" },
             { label: "Webhooks", href: "/docs/webhooks" },
             { label: "Pricing", href: "/pricing" },

@@ -10,6 +10,7 @@ import {
     TableRow,
     Typography,
 } from "@mui/material";
+import Link from "next/link";
 import CodeBlock from "../../components/code-block";
 
 const AUTH_URL_EXAMPLE = `GET https://accounts.elixpo.com/oauth/authorize
@@ -73,7 +74,15 @@ export default function OAuthPage() {
                 Elixpo Accounts implements the standard OAuth 2.0 Authorization
                 Code Flow. This flow is recommended for web and mobile
                 applications that communicate with a backend server where
-                secrets can be safely stored.
+                secrets can be safely stored. You can implement the protocol
+                directly or use the{" "}
+                <Link
+                    href="/docs/lixaccounts"
+                    style={{ color: "#ff7759", fontWeight: 700 }}
+                >
+                    lixaccounts SDK
+                </Link>{" "}
+                for PKCE and token verification helpers.
             </Typography>
 
             <Typography

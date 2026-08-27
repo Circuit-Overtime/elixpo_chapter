@@ -621,6 +621,23 @@ export default function OAuthAppSettingsPage() {
                             </IconButton>
                         </Tooltip>
                     </Box>
+                    <Typography
+                        component="a"
+                        href="/docs/lixaccounts"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                            display: "inline-block",
+                            color: "#ff7759",
+                            fontSize: "0.8rem",
+                            fontWeight: 600,
+                            mt: 1.25,
+                            textDecoration: "none",
+                            "&:hover": { textDecoration: "underline" },
+                        }}
+                    >
+                        Use this Client ID with the lixaccounts SDK →
+                    </Typography>
                 </Box>
 
                 {/* Client Secret */}

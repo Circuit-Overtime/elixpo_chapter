@@ -9,6 +9,7 @@ const MARKETING_LINKS = [
     { label: "Home", href: "/" },
     { label: "Pricing", href: "/pricing" },
     { label: "Docs", href: "/docs" },
+    { label: "SDK", href: "/docs/lixaccounts" },
     { label: "About", href: "/about" },
 ];
 
@@ -17,6 +18,7 @@ const APP_LINKS = [
     { label: "OAuth Apps", href: "/dashboard/oauth-apps" },
     { label: "Services", href: "/dashboard/services" },
     { label: "Webhooks", href: "/dashboard/webhooks" },
+    { label: "SDK", href: "/docs/lixaccounts" },
     { label: "Pricing", href: "/pricing" },
     { label: "Profile", href: "/dashboard/profile" },
 ];

@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 const DOCS_NAV = [
     { label: "Overview", href: "/docs" },
     { label: "Quickstart", href: "/docs/quickstart" },
+    { label: "lixaccounts SDK", href: "/docs/lixaccounts" },
     { label: "OAuth Flow", href: "/docs/oauth" },
     { label: "Users API", href: "/docs/users-api" },
     { label: "Webhooks", href: "/docs/webhooks" },
@@ -374,6 +375,16 @@ export default function DocsClientLayout({
                     padding: 0;
                     border-radius: 0;
                     font-size: 0.88em;
+                }
+                #docs-content a {
+                    color: #ff7759;
+                    font-weight: 650;
+                    text-decoration: underline;
+                    text-decoration-color: rgba(255, 119, 89, 0.35);
+                    text-underline-offset: 3px;
+                }
+                #docs-content a:hover {
+                    text-decoration-color: #ff7759;
                 }
             `}</style>
 

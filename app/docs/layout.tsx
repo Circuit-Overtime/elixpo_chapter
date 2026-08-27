@@ -9,11 +9,11 @@ export const metadata: Metadata = {
         template: "%s | Elixpo Docs",
     },
     description:
-        "Developer documentation for Elixpo Accounts. Read our guides, learn how to integrate OAuth 2.0 with PKCE, implement webhooks, and manage API keys.",
+        "Developer documentation for Elixpo Accounts and the lixaccounts SDK. Integrate OAuth 2.0 with PKCE, token verification, webhooks, and API keys.",
     openGraph: {
         title: "Documentation — Elixpo Accounts",
         description:
-            "Developer documentation for Elixpo Accounts. Read our guides, learn how to integrate OAuth 2.0 with PKCE, implement webhooks, and manage API keys.",
+            "Developer documentation for Elixpo Accounts and the lixaccounts SDK. Integrate OAuth 2.0 with PKCE, token verification, webhooks, and API keys.",
         images: [
             {
                 url: "/og-docs.png",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
         card: "summary_large_image",
         title: "Documentation — Elixpo Accounts",
         description:
-            "Developer documentation for Elixpo Accounts. Read our guides, learn how to integrate OAuth 2.0 with PKCE, implement webhooks, and manage API keys.",
+            "Developer documentation for Elixpo Accounts and the lixaccounts SDK. Integrate OAuth 2.0 with PKCE, token verification, webhooks, and API keys.",
         images: ["/og-docs.png"],
     },
 };

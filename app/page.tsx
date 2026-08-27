@@ -9,6 +9,9 @@ import {
     LockKeyhole,
     Menu,
     Network,
+    PackageOpen,
+    ShieldCheck,
+    Terminal,
     X,
     Zap,
 } from "lucide-react";
@@ -27,6 +30,7 @@ const MARKETING_LINKS = [
     { label: "Home", href: "/" },
     { label: "Pricing", href: "/pricing" },
     { label: "Docs", href: "/docs" },
+    { label: "SDK", href: "/docs/lixaccounts" },
     { label: "About", href: "/about" },
 ];
 
@@ -36,6 +40,7 @@ const APP_LINKS = [
     { label: "Services", href: "/dashboard/services" },
     { label: "Webhooks", href: "/dashboard/webhooks" },
     { label: "Docs", href: "/docs" },
+    { label: "SDK", href: "/docs/lixaccounts" },
     { label: "Pricing", href: "/pricing" },
     { label: "Profile", href: "/dashboard/profile" },
 ];
@@ -313,9 +318,10 @@ export default function LandingPage() {
                             Add Sign in with Elixpo in two steps
                         </h2>
                         <p className="text-base sm:text-lg opacity-80 leading-relaxed font-body">
-                            No SDK to wrestle with. Create your account,
-                            register your app, and you&apos;re issuing logins —
-                            for Elixpo apps or your own.
+                            Use standard OAuth directly or start faster with our
+                            typed SDK. Create your account, register your app,
+                            and you&apos;re issuing logins — for Elixpo apps or
+                            your own.
                         </p>
                     </div>
 
@@ -388,6 +394,69 @@ export default function LandingPage() {
                                     Read the quickstart
                                 </Link>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* SDK SECTION */}
+            <section className="bg-[var(--surface)] text-[var(--fg)] py-24 border-y border-[var(--border)] relative z-10">
+                <div className="max-w-[1120px] mx-auto px-5 sm:px-8 grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-center">
+                    <div>
+                        <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#ff7759] mb-4">
+                            <PackageOpen className="w-4 h-4" />
+                            Official TypeScript SDK
+                        </span>
+                        <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mb-5">
+                            Ship OAuth with lixaccounts
+                        </h2>
+                        <p className="text-base sm:text-lg text-[var(--fg-muted)] leading-relaxed font-body mb-7">
+                            Discovery, S256 PKCE, callback validation, token
+                            rotation, revocation, and JWKS verification in one
+                            edge-safe package. It works anywhere Web Crypto and
+                            fetch are available.
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                            <Link
+                                href="/docs/lixaccounts"
+                                className="inline-flex items-center gap-2 bg-[#ff7759] text-white px-6 py-3 rounded-full font-body font-semibold text-sm transition-all hover:brightness-110 active:scale-[0.98]"
+                            >
+                                Read the SDK guide
+                                <ArrowRightCircle className="w-4 h-4" />
+                            </Link>
+                            <a
+                                href="https://www.npmjs.com/package/lixaccounts"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 border border-[var(--border)] bg-[var(--bg)] px-6 py-3 rounded-full font-body font-semibold text-sm transition-all hover:border-[#ff7759]/50 active:scale-[0.98]"
+                            >
+                                View on npm
+                            </a>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[var(--border)] bg-[#192837] text-white shadow-[0_18px_60px_rgba(25,40,55,0.16)] overflow-hidden">
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 text-xs text-white/65">
+                            <span className="inline-flex items-center gap-2">
+                                <Terminal className="w-4 h-4" /> install
+                            </span>
+                            <span>v1.0.1</span>
+                        </div>
+                        <pre className="p-5 sm:p-6 overflow-x-auto font-mono text-sm leading-7">
+                            <code>
+                                <span className="text-[#ff9a82]">$</span> npm
+                                install lixaccounts{"\n\n"}
+                                <span className="text-white/55">import</span>{" "}
+                                {"{ createAccountsClient }"}{" "}
+                                <span className="text-white/55">from</span>{" "}
+                                <span className="text-[#ff9a82]">
+                                    &quot;lixaccounts&quot;
+                                </span>
+                            </code>
+                        </pre>
+                        <div className="flex items-center gap-2 px-5 py-3 border-t border-white/10 text-xs text-white/70">
+                            <ShieldCheck className="w-4 h-4 text-[#ff9a82]" />
+                            PKCE and token verification built in
                         </div>
                     </div>
                 </div>
