@@ -1,0 +1,346 @@
+'use client';
+
+import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import StyledQr, { type StyledQrHandle } from '@/app/components/qr/StyledQr';
+import {
+  buildQrOptions,
+  DEFAULT_PRESET_ID,
+  getPreset,
+  QR_PRESETS,
+} from '@/lib/qr/presets';
+
+interface AccountState {
+  loaded: boolean;
+  loggedIn: boolean;
+  tier: string;
+  presetLimit: number;
+  allowLogo: boolean;
+}
+
+interface TrackedResult {
+  short_url: string;
+  short_code: string;
+}
+
+const BASIC_PRESET_LIMIT = 3;
+const QR_SIZE = 1024;
+
+function normalizeWebUrl(value: string): string | null {
+  try {
+    const parsed = new URL(value.trim());
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+export default function QrGenerator() {
+  const [destination, setDestination] = useState('');
+  const [qrData, setQrData] = useState<string | null>(null);
+  const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID);
+  const [logoUrl, setLogoUrl] = useState('');
+  const [trackScans, setTrackScans] = useState(false);
+  const [trackedResult, setTrackedResult] = useState<TrackedResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [account, setAccount] = useState<AccountState>({
+    loaded: false,
+    loggedIn: false,
+    tier: 'free',
+    presetLimit: BASIC_PRESET_LIMIT,
+    allowLogo: false,
+  });
+  const qrRef = useRef<StyledQrHandle>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/auth/me')
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{
+          tier?: string;
+          limits?: { qrPresets?: number; qrLogo?: boolean };
+        }>;
+      })
+      .then((data) => {
+        if (!alive) return;
+        setAccount({
+          loaded: true,
+          loggedIn: !!data,
+          tier: data?.tier || 'free',
+          presetLimit: data?.limits?.qrPresets ?? BASIC_PRESET_LIMIT,
+          allowLogo: data?.limits?.qrLogo ?? false,
+        });
+      })
+      .catch(() => {
+        if (alive) {
+          setAccount({
+            loaded: true,
+            loggedIn: false,
+            tier: 'free',
+            presetLimit: BASIC_PRESET_LIMIT,
+            allowLogo: false,
+          });
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const paid = account.loggedIn && account.tier !== 'free';
+  const options = useMemo(
+    () =>
+      buildQrOptions(getPreset(presetId), {
+        data: qrData || 'https://lixrl.com',
+        image: paid ? logoUrl : '',
+        size: QR_SIZE,
+      }),
+    [logoUrl, paid, presetId, qrData],
+  );
+
+  const generate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
+    setCopied(false);
+    setTrackedResult(null);
+
+    const normalized = normalizeWebUrl(destination);
+    if (!normalized) {
+      setError('Enter a complete link beginning with http:// or https://.');
+      return;
+    }
+    if (logoUrl && !normalizeWebUrl(logoUrl)) {
+      setError('The logo must be a public http(s) image URL.');
+      return;
+    }
+
+    if (!trackScans) {
+      setQrData(normalized);
+      return;
+    }
+    if (!paid) {
+      setError('Tracked QR codes require Pro or Business.');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const response = await fetch('/api/qr/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: normalized, title: 'QR code destination' }),
+      });
+      const data = (await response.json().catch(() => null)) as
+        | (TrackedResult & { error?: string })
+        | { error?: string }
+        | null;
+      if (!response.ok || !data || !('short_url' in data)) {
+        setError(data?.error || 'Could not create the tracked QR code.');
+        return;
+      }
+      const result = data as TrackedResult;
+      setTrackedResult(result);
+      setQrData(result.short_url);
+    } catch {
+      setError('Network error while creating the tracked QR code.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyQrLink = async () => {
+    if (!qrData) return;
+    try {
+      await navigator.clipboard.writeText(qrData);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setError('Could not copy the QR destination.');
+    }
+  };
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+      <form
+        onSubmit={generate}
+        className="rounded-3xl border border-[#e5e5e5] bg-white p-5 shadow-[0_18px_55px_rgba(0,0,0,0.07)] md:p-7"
+      >
+        <label htmlFor="qr-destination" className="text-sm font-bold text-[#222]">
+          Link to turn into a QR code
+        </label>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+          <input
+            id="qr-destination"
+            type="url"
+            inputMode="url"
+            required
+            value={destination}
+            onChange={(event) => setDestination(event.target.value)}
+            placeholder="https://example.com/page"
+            className="min-w-0 flex-1 rounded-xl border border-[#d8d8d8] bg-white px-4 py-3 text-sm text-[#111] outline-none transition-colors placeholder:text-[#999] focus:border-[#e53935]"
+          />
+          <button
+            type="submit"
+            disabled={busy}
+            className="rounded-xl bg-gradient-to-r from-[#e53935] to-[#c62828] px-5 py-3 text-sm font-bold text-white shadow-[0_8px_22px_rgba(229,57,53,0.22)] disabled:cursor-wait disabled:opacity-60"
+          >
+            {busy ? 'Creating…' : 'Generate QR code'}
+          </button>
+        </div>
+
+        <fieldset className="mt-7">
+          <div className="flex items-end justify-between gap-4">
+            <legend className="text-sm font-bold text-[#222]">Choose a style</legend>
+            {!paid && (
+              <Link href="/pricing" className="text-xs font-semibold text-[#c62828] no-underline">
+                Unlock every style →
+              </Link>
+            )}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {QR_PRESETS.map((preset, index) => {
+              const locked = account.presetLimit !== -1 && index >= account.presetLimit;
+              const selected = preset.id === presetId;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  aria-pressed={selected}
+                  aria-disabled={locked}
+                  onClick={() => {
+                    if (locked) {
+                      setError('Upgrade to Pro to unlock every QR style.');
+                      return;
+                    }
+                    setError('');
+                    setPresetId(preset.id);
+                  }}
+                  className="relative flex min-h-16 items-end overflow-hidden rounded-xl border p-3 text-left transition-all"
+                  style={{
+                    borderColor: selected ? '#e53935' : '#e1e1e1',
+                    background: preset.swatch,
+                    opacity: locked ? 0.45 : 1,
+                    boxShadow: selected ? '0 0 0 2px rgba(229,57,53,0.14)' : 'none',
+                  }}
+                >
+                  <span className="rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-[#222] shadow-sm">
+                    {preset.name}{locked ? ' · Pro' : ''}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <div className="mt-7 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-[#e5e5e5] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-bold text-[#222]">Add a logo</div>
+                <p className="mt-1 text-xs leading-5 text-[#777]">Place a public image in the center.</p>
+              </div>
+              {!account.allowLogo && <span className="rounded-full bg-[#f5f5f5] px-2 py-1 text-[10px] font-bold text-[#777]">PRO</span>}
+            </div>
+            {account.allowLogo ? (
+              <input
+                type="url"
+                value={logoUrl}
+                onChange={(event) => setLogoUrl(event.target.value)}
+                placeholder="https://site.com/logo.png"
+                className="mt-3 w-full rounded-lg border border-[#dddddd] px-3 py-2 text-xs outline-none focus:border-[#e53935]"
+              />
+            ) : (
+              <Link href="/pricing" className="mt-3 inline-flex text-xs font-semibold text-[#c62828] no-underline">
+                Upgrade to add a logo →
+              </Link>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-[#e5e5e5] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-bold text-[#222]">Track QR scans</div>
+                <p className="mt-1 text-xs leading-5 text-[#777]">Use a short link with dashboard analytics.</p>
+              </div>
+              {!paid && <span className="rounded-full bg-[#f5f5f5] px-2 py-1 text-[10px] font-bold text-[#777]">PAID</span>}
+            </div>
+            {paid ? (
+              <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs font-semibold text-[#444]">
+                <input
+                  type="checkbox"
+                  checked={trackScans}
+                  onChange={(event) => setTrackScans(event.target.checked)}
+                  className="h-4 w-4 accent-[#e53935]"
+                />
+                Create a tracked Lixrl link
+              </label>
+            ) : (
+              <Link
+                href={account.loggedIn ? '/pricing' : '/api/auth/login?return_to=%2Fqr-code-generator'}
+                className="mt-3 inline-flex text-xs font-semibold text-[#c62828] no-underline"
+              >
+                {account.loggedIn ? 'Upgrade for scan analytics →' : 'Sign in to view options →'}
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-5 rounded-xl border border-[#efb8b5] bg-[#fff6f5] px-4 py-3 text-sm text-[#a82420]" role="alert">
+            {error}
+          </div>
+        )}
+      </form>
+
+      <aside className="flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-center">
+        {qrData ? (
+          <>
+            <div className="rounded-2xl bg-white p-3 shadow-[0_12px_35px_rgba(0,0,0,0.10)]">
+              <StyledQr
+                ref={qrRef}
+                options={options}
+                display={260}
+                filename="lixrl-qr-code"
+                onError={setError}
+              />
+            </div>
+            <p className="mt-5 max-w-sm break-all font-mono text-xs leading-5 text-[#777]">{qrData}</p>
+            {trackedResult && (
+              <Link
+                href={`/dashboard/urls/${encodeURIComponent(trackedResult.short_code)}`}
+                className="mt-2 text-xs font-semibold text-[#c62828] no-underline"
+              >
+                Open scan analytics →
+              </Link>
+            )}
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <button type="button" onClick={() => qrRef.current?.download('svg')} className="rounded-lg bg-[#111] px-4 py-2 text-xs font-bold text-white">
+                Download SVG
+              </button>
+              <button type="button" onClick={() => qrRef.current?.download('png')} className="rounded-lg border border-[#d8d8d8] bg-white px-4 py-2 text-xs font-bold text-[#333]">
+                Download PNG
+              </button>
+              <button type="button" onClick={copyQrLink} className="rounded-lg border border-[#d8d8d8] bg-white px-4 py-2 text-xs font-bold text-[#333]">
+                {copied ? 'Copied' : 'Copy link'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="max-w-xs">
+            <div className="mx-auto grid h-20 w-20 grid-cols-3 gap-1 rounded-xl bg-white p-3 shadow-sm" aria-hidden="true">
+              {Array.from({ length: 9 }, (_, index) => (
+                <span key={index} className="rounded-sm bg-[#222]" style={{ opacity: index === 4 ? 0.15 : 1 }} />
+              ))}
+            </div>
+            <h2 className="mt-5 text-lg font-bold">Your QR code appears here</h2>
+            <p className="mt-2 text-sm leading-6 text-[#777]">Enter a link, choose a style, and generate a print-ready QR code.</p>
+          </div>
+        )}
+      </aside>
+    </div>
+  );
+}

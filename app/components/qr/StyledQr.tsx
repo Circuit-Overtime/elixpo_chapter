@@ -30,7 +30,7 @@ interface Props {
  * options.width for crisp downloads while CSS scales it to `display`.
  */
 const StyledQr = forwardRef<StyledQrHandle, Props>(function StyledQr(
-  { options, display, filename = 'elixpourl-qr', className, style, onError },
+  { options, display, filename = 'lixrl-qr', className, style, onError },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
