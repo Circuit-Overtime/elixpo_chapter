@@ -26,6 +26,8 @@ export function ThemeProvider({ children }) {
     const saved = localStorage.getItem('lixblogs_theme');
     if (saved === 'dark' || saved === 'light') {
       setTheme(saved);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark');
     }
     setMounted(true);
   }, []);
