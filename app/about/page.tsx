@@ -4,13 +4,15 @@ import AboutClient from "./AboutClient";
 export const runtime = "edge";
 
 export const metadata: Metadata = {
-    title: "About",
+    title: "About Our Authentication Platform",
     description:
-        "Learn about Elixpo Accounts, the central OAuth 2.0 Identity Provider and Single Sign-On (SSO) gateway for the Elixpo ecosystem. Discover our secure, edge-first architecture built on Cloudflare Workers and D1.",
+        "Learn how Elixpo Accounts provides edge-hosted authentication, OAuth 2.0, OpenID Connect, passkeys, SSO, and user management for any application.",
+    alternates: { canonical: "/about" },
     openGraph: {
-        title: "About Elixpo Accounts",
+        url: "/about",
+        title: "About the Elixpo Accounts Authentication Platform",
         description:
-            "Learn about Elixpo Accounts, the central OAuth 2.0 Identity Provider and Single Sign-On (SSO) gateway for the Elixpo ecosystem.",
+            "Edge-hosted authentication, OAuth/OIDC, passkeys, SSO, and user management for any application.",
         images: [
             {
                 url: "/og-image.png",
@@ -22,9 +24,9 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "About Elixpo Accounts",
+        title: "About the Elixpo Accounts Authentication Platform",
         description:
-            "Learn about Elixpo Accounts, the central OAuth 2.0 Identity Provider and Single Sign-On (SSO) gateway for the Elixpo ecosystem.",
+            "Edge-hosted authentication, OAuth/OIDC, passkeys, SSO, and user management for any application.",
         images: ["/og-image.png"],
     },
 };

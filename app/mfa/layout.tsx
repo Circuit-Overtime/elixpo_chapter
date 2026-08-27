@@ -1,5 +1,10 @@
 import { Box } from "@mui/material";
+import type { Metadata } from "next";
 import BackgroundAurora from "../components/background-aurora";
+
+export const metadata: Metadata = {
+    robots: { index: false, follow: false },
+};
 
 /**
  * Shared chrome for the 2FA challenge surface — /mfa and

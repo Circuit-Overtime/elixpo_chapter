@@ -10,7 +10,9 @@ export const metadata: Metadata = {
     },
     description:
         "Developer documentation for Elixpo Accounts and the @elixpo/accounts SDK. Integrate OAuth 2.0 with PKCE, token verification, webhooks, and API keys.",
+    alternates: { canonical: "/docs" },
     openGraph: {
+        url: "/docs",
         title: "Documentation — Elixpo Accounts",
         description:
             "Developer documentation for Elixpo Accounts and the @elixpo/accounts SDK. Integrate OAuth 2.0 with PKCE, token verification, webhooks, and API keys.",

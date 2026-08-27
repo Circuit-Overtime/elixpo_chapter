@@ -4,13 +4,15 @@ import PricingClient from "./PricingClient";
 export const runtime = "edge";
 
 export const metadata: Metadata = {
-    title: "Pricing",
+    title: "Authentication & User Management Pricing",
     description:
-        "Transparent, developer-first pricing for Elixpo Accounts. Start for free on our Hobby plan and scale seamlessly as your application's user base grows.",
+        "Start authentication and user management free for up to 1,000 monthly active users per app. Compare Hobby, Indie, and Studio plans for growing products.",
+    alternates: { canonical: "/pricing" },
     openGraph: {
-        title: "Pricing Plans — Elixpo Accounts",
+        url: "/pricing",
+        title: "Authentication & User Management Pricing",
         description:
-            "Transparent, developer-first pricing for Elixpo Accounts. Scale seamlessly as your application's user base grows.",
+            "Start free, then scale SSO, OAuth apps, webhooks, and user management as your product grows.",
         images: [
             {
                 url: "/og-image.png",
@@ -22,9 +24,9 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "Pricing Plans — Elixpo Accounts",
+        title: "Authentication & User Management Pricing",
         description:
-            "Transparent, developer-first pricing for Elixpo Accounts. Scale seamlessly as your application's user base grows.",
+            "Start free, then scale SSO, OAuth apps, webhooks, and user management as your product grows.",
         images: ["/og-image.png"],
     },
 };

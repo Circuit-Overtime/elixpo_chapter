@@ -15,53 +15,51 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: {
-        default: "Elixpo Accounts — Secure Single Sign-On & OAuth Provider",
+        default: "Authentication & User Management | Elixpo Accounts",
         template: "%s | Elixpo Accounts",
     },
     description:
-        "Access the developer portal and authenticate securely across all Elixpo services. Built with edge-native runtime, Web Crypto API, and passwordless authentication.",
+        "Add branded sign-in, sign-out, SSO, passkeys, social login, sessions, and user management to any app with hosted OAuth/OIDC and a TypeScript SDK.",
+    applicationName: "Elixpo Accounts",
+    category: "Authentication and identity management",
     keywords: [
-        "Elixpo",
-        "Elixpo Accounts",
-        "OAuth 2.0 Provider",
-        "Single Sign-On",
-        "SSO",
-        "Passkeys",
-        "WebAuthn",
-        "Edge authentication",
-        "Identity Provider",
-        "Developer dashboard",
-        "Secure login",
+        "authentication platform",
+        "user management",
+        "single sign-on",
+        "OAuth 2.0 provider",
+        "OpenID Connect",
+        "social login",
+        "passkey authentication",
+        "hosted authentication",
+        "TypeScript authentication SDK",
+        "edge authentication",
     ],
     authors: [{ name: "Elixpo", url: "https://elixpo.com" }],
     creator: "Elixpo",
     publisher: "Elixpo",
     metadataBase: new URL("https://accounts.elixpo.com"),
-    alternates: {
-        canonical: "/",
-    },
     openGraph: {
         type: "website",
         locale: "en_US",
         url: "https://accounts.elixpo.com",
         siteName: "Elixpo Accounts",
-        title: "Elixpo Accounts — Secure Single Sign-On & OAuth Provider",
+        title: "Authentication, SSO & User Management for Any App",
         description:
-            "Access the developer portal and authenticate securely across all Elixpo services. Built with edge-native runtime, Web Crypto API, and passwordless authentication.",
+            "Five sign-in providers, passkeys, account switching, secure sessions, branded hosted screens, and a standards-based TypeScript SDK.",
         images: [
             {
                 url: "/og-image.png",
                 width: 1280,
                 height: 720,
-                alt: "Elixpo Accounts — Secure Single Sign-On & OAuth Provider",
+                alt: "Elixpo Accounts authentication and user management platform",
             },
         ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Elixpo Accounts — Secure Single Sign-On & OAuth Provider",
+        title: "Authentication, SSO & User Management for Any App",
         description:
-            "Access the developer portal and authenticate securely across all Elixpo services. Built with edge-native runtime, Web Crypto API, and passwordless authentication.",
+            "Five sign-in providers, passkeys, account switching, secure sessions, branded hosted screens, and a standards-based TypeScript SDK.",
         images: ["/og-image.png"],
     },
     icons: {
@@ -85,8 +83,35 @@ export const metadata: Metadata = {
         googleBot: {
             index: true,
             follow: true,
+            "max-video-preview": -1,
+            "max-image-preview": "large",
+            "max-snippet": -1,
         },
     },
+};
+
+const websiteStructuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "Organization",
+            "@id": "https://elixpo.com/#organization",
+            name: "Elixpo",
+            url: "https://elixpo.com",
+            logo: "https://accounts.elixpo.com/icon1.png",
+            sameAs: ["https://github.com/elixpo"],
+        },
+        {
+            "@type": "WebSite",
+            "@id": "https://accounts.elixpo.com/#website",
+            url: "https://accounts.elixpo.com",
+            name: "Elixpo Accounts",
+            description:
+                "Authentication, single sign-on, and user management for web and edge applications.",
+            publisher: { "@id": "https://elixpo.com/#organization" },
+            inLanguage: "en",
+        },
+    ],
 };
 
 export default function RootLayout({
@@ -111,6 +136,15 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify(websiteStructuredData).replace(
+                            /</g,
+                            "\\u003c",
+                        ),
+                    }}
+                />
                 <ThemeProvider>{children}</ThemeProvider>
             </body>
         </html>

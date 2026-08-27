@@ -72,6 +72,41 @@ const FEATURES = [
     },
 ];
 
+const softwareApplicationStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "@id": "https://accounts.elixpo.com/#software",
+    name: "Elixpo Accounts",
+    alternateName: "Elixpo Authentication and User Management",
+    url: "https://accounts.elixpo.com",
+    applicationCategory: "SecurityApplication",
+    applicationSubCategory: "Authentication and identity management",
+    operatingSystem: "Web, Node.js, Cloudflare Workers",
+    description:
+        "Hosted authentication and user management with five sign-in providers, passkeys, single sign-on, account switching, sessions, webhooks, and OAuth/OIDC APIs.",
+    offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "INR",
+        description:
+            "Free Hobby plan for up to 1,000 monthly active users per app",
+    },
+    featureList: [
+        "Email, Google, GitHub, Microsoft, and Discord sign-in",
+        "WebAuthn passkeys and multi-factor authentication",
+        "Single sign-on and multiple account switching",
+        "Hosted sign-in, consent, and account management",
+        "Session, device, profile, and connected-app management",
+        "OAuth 2.0 and OpenID Connect discovery",
+        "S256 PKCE, token rotation, revocation, and JWKS verification",
+        "Signed webhooks and developer API keys",
+        "Edge-safe TypeScript SDK",
+    ],
+    softwareHelp: "https://accounts.elixpo.com/docs",
+    downloadUrl: "https://www.npmjs.com/package/@elixpo/accounts",
+    provider: { "@id": "https://elixpo.com/#organization" },
+};
+
 export default function LandingPage() {
     const [authed, setAuthed] = useState<boolean | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -121,6 +156,14 @@ export default function LandingPage() {
 
     return (
         <div className="relative w-full min-h-screen font-body text-[var(--fg)] bg-[var(--bg)] selection:bg-[#ff7759] selection:text-white overflow-x-hidden">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(
+                        softwareApplicationStructuredData,
+                    ).replace(/</g, "\\u003c"),
+                }}
+            />
             <style>{`
                 .font-heading { font-family: var(--font-heading), sans-serif; }
                 .font-body { font-family: var(--font-body), sans-serif; }

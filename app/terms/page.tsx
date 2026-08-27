@@ -7,7 +7,9 @@ export const metadata: Metadata = {
     title: "Terms of Service",
     description:
         "The terms and legal agreements governing your use of Elixpo Accounts, the developer portal, webhook dispatch services, and OAuth integrations.",
+    alternates: { canonical: "/terms" },
     openGraph: {
+        url: "/terms",
         title: "Terms of Service — Elixpo Accounts",
         description:
             "The terms and legal agreements governing your use of Elixpo Accounts.",
