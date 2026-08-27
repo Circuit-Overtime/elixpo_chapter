@@ -142,17 +142,17 @@ export default function RootLayout({ children }) {
         {/* Prevent a flash of the wrong theme before React mounts. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-              try {
-                var t = localStorage.getItem('lixblogs_theme');
-                var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                var color = isDark ? '#131922' : '#ffffff';
-                if (isDark) {
-                  document.documentElement.setAttribute('data-theme', 'dark');
-                }
-                document.documentElement.style.backgroundColor = color;
-                var meta = document.querySelector('meta[name="theme-color"]');
-                if (meta) meta.setAttribute('content', color);
-              } catch(e) {}
+            try {
+              var t = localStorage.getItem('lixblogs_theme');
+              var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+              var color = isDark ? '#131922' : '#ffffff';
+              if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+              }
+              document.documentElement.style.backgroundColor = color;
+              var meta = document.querySelector('meta[name="theme-color"]');
+              if (meta) meta.setAttribute('content', color);
+            } catch(e) {}
           })();
         `}} />
         {/* Recover once when cached HTML references a chunk from an older deploy. */}
