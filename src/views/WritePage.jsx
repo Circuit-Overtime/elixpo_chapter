@@ -886,6 +886,12 @@ export default function WritePage({ slugid }) {
     const [collabLock, setCollabLock] = useState(null);
     const [collabLockDismissed, setCollabLockDismissed] = useState(false);
     const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+
+    const titleWords = (title || "").trim().split(/\s+/).filter(Boolean).length;
+    const titleValid = titleWords >= 2;
+    const bodyValid = wordCount >= 20;
+    const canPublishNow = titleValid && bodyValid;
+
     const [conflict, setConflict] = useState(null); // { message, currentVersion, status }
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [isSavingLeave, setIsSavingLeave] = useState(false);
@@ -2287,7 +2293,7 @@ export default function WritePage({ slugid }) {
     }, [secret, draftLoading, blogId]);
 
     const doPublish = async (targetStatus) => {
-        if (!title.trim() || publishing) return;
+        if (!canPublishNow || publishing) return;
         setPublishing(true);
         setPublishError("");
         setShowPublishMenu(false);
@@ -5250,22 +5256,41 @@ export default function WritePage({ slugid }) {
                     className="p-5 space-y-2"
                     style={{ borderTop: "1px solid var(--border-default)" }}
                 >
-                    <button
-                        onClick={() => {
-                            if (isPublished) setShowPublishConfirm(true);
-                            else handlePublish();
-                        }}
-                        disabled={!title.trim() || publishing || hasNoChanges()}
-                        className="w-full py-2.5 bg-[#9b7bf7] text-white font-bold rounded-xl text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        {publishing
-                            ? isPublished
-                                ? "Updating..."
-                                : "Publishing..."
-                            : isPublished
-                              ? "Update now"
-                              : "Publish now"}
-                    </button>
+                    <div className="relative group/panelpublish">
+                        <button
+                            onClick={() => {
+                                if (isPublished) setShowPublishConfirm(true);
+                                else handlePublish();
+                            }}
+                            disabled={!canPublishNow || publishing || (isPublished && hasNoChanges())}
+                            className="w-full py-2.5 bg-[#9b7bf7] text-white font-bold rounded-xl text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            {publishing
+                                ? isPublished
+                                    ? "Updating..."
+                                    : "Publishing..."
+                                : isPublished
+                                  ? "Update now"
+                                  : "Publish now"}
+                        </button>
+                        {!canPublishNow && !publishing && !(isPublished && hasNoChanges()) && (
+                            <div
+                                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap px-3 py-1.5 rounded-lg text-[11px] font-medium z-50 opacity-0 group-hover/panelpublish:opacity-100 transition-opacity pointer-events-none"
+                                style={{
+                                    backgroundColor: "var(--bg-elevated)",
+                                    color: "var(--text-muted)",
+                                    border: "1px solid var(--border-default)",
+                                    boxShadow: "var(--shadow-sm)",
+                                }}
+                            >
+                                {!titleValid && !bodyValid
+                                    ? "Title needs at least 2 words and body at least 20 words"
+                                    : !titleValid
+                                      ? "Title must have at least 2 words to publish"
+                                      : "Body must have at least 20 words to publish"}
+                            </div>
+                        )}
+                    </div>
                     {publishError && (
                         <p
                             role="alert"
