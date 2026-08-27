@@ -129,3 +129,9 @@ Required GitHub secrets:
 
 Protect the `production` and `npm` environments. Runtime application secrets
 remain in Cloudflare Pages and are never compiled into the browser bundle.
+
+`CLOUDFLARE_API_TOKEN` must be a plaintext Cloudflare API token scoped to the
+configured account with **D1 Edit** and **Cloudflare Pages Edit** permissions.
+Do not use a Global API Key, SOPS ciphertext, surrounding quotes, or the npm
+token. If the same secret exists at repository and environment scope, the
+environment value takes precedence.

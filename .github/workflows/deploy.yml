@@ -34,6 +34,9 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,12 +45,20 @@ jobs:
           cache: npm
       - run: npm ci
 
+      - name: Validate Cloudflare credentials
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required"
+            exit 1
+          fi
+          if [[ "$CLOUDFLARE_API_TOKEN" == ENC\[* ]]; then
+            echo "::error::CLOUDFLARE_API_TOKEN contains SOPS ciphertext; store the plaintext API token"
+            exit 1
+          fi
+          npx --no-install wrangler whoami
+
       - name: Apply D1 migrations
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: d1 migrations apply elixpo_auth --remote
+        run: npx --no-install wrangler d1 migrations apply elixpo_auth --remote
 
       - name: Build Accounts for Cloudflare Pages
         run: npm run pages:build
@@ -56,11 +67,7 @@ jobs:
           NEXT_PUBLIC_APP_URL: https://accounts.elixpo.com
 
       - name: Deploy Accounts to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy .vercel/output/static --project-name elixpo-accounts --branch main
+        run: npx --no-install wrangler pages deploy .vercel/output/static --project-name elixpo-accounts --branch main
 
   publish-sdk:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
