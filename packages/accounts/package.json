@@ -1,6 +1,6 @@
 {
   "name": "@elixpo/accounts",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Standards-first OAuth and OpenID Connect SDK for Elixpo Accounts",
   "type": "module",
   "license": "MIT",
