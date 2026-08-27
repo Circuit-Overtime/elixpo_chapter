@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const UPDATED = '25 August 2026';
 const EMAIL = 'hello@elixpo.com';
 const REPOSITORY = 'https://github.com/elixpo/elixpourl';
-const ABUSE_REPORT_URL = `https://github.com/elixpo/lixrl.com/issues/new?title=${encodeURIComponent('[Abuse report] ')}&body=${encodeURIComponent('Short link:\n\nReason (phishing, malware, spam, impersonation, or other):\n\nDetails:\n\nPlease do not include personal or sensitive information.')}`;
+const ABUSE_REPORT_URL = 'https://github.com/elixpo/lixrl.com/issues/new?template=abuse-report.yml';
 
 const navigation = [
   { id: 'using-lixrl', label: 'Using LixRL' },

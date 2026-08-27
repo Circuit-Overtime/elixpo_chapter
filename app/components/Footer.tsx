@@ -9,7 +9,7 @@ const REPO_URL = 'https://github.com/elixpo/elixpourl';
 const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`;
 const STATUS_URL = 'https://status.elixpo.com';
 const ECOSYSTEM_URL = 'https://elixpo.com';
-const ABUSE_REPORT_URL = `https://github.com/elixpo/lixrl.com/issues/new?title=${encodeURIComponent('[Abuse report] ')}&body=${encodeURIComponent('Short link:\n\nReason (phishing, malware, spam, impersonation, or other):\n\nDetails:\n\nPlease do not include personal or sensitive information.')}`;
+const ABUSE_REPORT_URL = 'https://github.com/elixpo/lixrl.com/issues/new?template=abuse-report.yml';
 
 interface FooterLink {
   label: string;
