@@ -2,10 +2,10 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'ElixpoURL',
-    short_name: 'ElixpoURL',
+    name: 'Lixrl URL Shortener & QR Generator',
+    short_name: 'Lixrl',
     description:
-      'Fast URL shortener built on Cloudflare\'s edge — lightning-fast redirects, click analytics, and a developer-first API.',
+      'Shorten URLs, generate QR codes, create branded links, and track link or QR scan activity.',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

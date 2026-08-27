@@ -34,7 +34,7 @@ hours. A free account gives you persistent links and a dashboard.
 - **Choose your link name** — Paid plans can use names such as
   `lixrl.com/product-launch`.
 - **Set an expiry date** — End access automatically after an event or campaign.
-- **Create QR codes** — Share the same destination in print or in person.
+- **Create QR codes** — Use the [quick QR code generator](https://lixrl.com/qr-code-generator) to share any destination in print or in person.
 - **Use a branded subdomain** — Paid plans can claim addresses such as
   `yourbrand.lixrl.com`.
 

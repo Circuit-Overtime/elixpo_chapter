@@ -30,6 +30,7 @@ const COMPARISON_ROWS: { label: string; values: Record<SellableTier, string> }[]
   { label: 'API keys', values: { free: '1', pro: '5', business: '20' } },
   { label: 'Expiring links', values: { free: '—', pro: 'Included', business: 'Included' } },
   { label: 'Quick QR generation', values: { free: 'Unlimited', pro: 'Unlimited', business: 'Unlimited' } },
+  { label: 'QR export formats', values: { free: 'SVG, PNG & JPG', pro: 'SVG, PNG & JPG', business: 'SVG, PNG & JPG' } },
   { label: 'QR styles', values: { free: '3 styles', pro: 'All styles', business: 'All styles' } },
   { label: 'Custom QR logo', values: { free: '—', pro: 'Included', business: 'Included' } },
   { label: 'Tracked QR workflow', values: { free: '—', pro: '30-day scan history', business: '1-year scan history' } },
@@ -341,7 +342,7 @@ export default function PricingPage() {
               Yes. Pro includes one and Business includes three single-level addresses such as your-brand.lixrl.com. External domains are not included yet.
             </Faq>
             <Faq question="Can I generate QR codes for free?">
-              Yes. Basic QR generation is unlimited and includes three styles with SVG and PNG downloads. Pro and Business unlock every style, custom center logos, and tracked QR codes with dashboard analytics.
+              Yes. Basic QR generation is unlimited and includes three styles, SVG, PNG, and JPG downloads, plus compressed JPG clipboard copy in supported browsers. Pro and Business unlock every style, custom center logos, and tracked QR codes with dashboard analytics.
             </Faq>
             <Faq question="Can I cancel a paid plan?">
               You can stop renewal at any time. Paid access continues through the current billing period unless the checkout terms state otherwise.

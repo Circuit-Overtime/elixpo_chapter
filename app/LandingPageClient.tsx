@@ -144,7 +144,7 @@ const FEATURES: { icon: ReactNode; title: string; body: string; href?: string }[
   {
     icon: <QrIcon />,
     title: 'Quick QR code generator',
-    body: 'Turn any URL into a QR code, export SVG or PNG, and unlock custom styles, logos, and scan tracking when needed.',
+    body: 'Turn any URL into a QR code, export SVG, PNG, or JPG, and unlock custom styles, logos, and scan tracking when needed.',
     href: '/qr-code-generator',
   },
   {

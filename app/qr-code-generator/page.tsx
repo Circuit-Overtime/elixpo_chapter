@@ -48,7 +48,7 @@ const faqs = [
   {
     question: 'Can I create a QR code for free?',
     answer:
-      'Yes. Paste a complete web address, choose one of the three basic styles, and download the QR code as SVG or PNG. Basic generation does not require an account.',
+      'Yes. Paste a complete web address, choose one of the three basic styles, and export the QR code as SVG, PNG, or JPEG. Basic generation does not require an account.',
   },
   {
     question: 'What is a tracked QR code?',
@@ -63,7 +63,7 @@ const faqs = [
   {
     question: 'Which download format should I use?',
     answer:
-      'SVG is best for print because it stays sharp at any size. PNG is convenient for presentations, documents, messages, and social posts.',
+      'SVG is best for print because it stays sharp at any size. PNG preserves crisp detail for digital use. JPEG produces a smaller shareable image and can be copied directly in supported browsers.',
   },
 ];
 
@@ -88,7 +88,8 @@ export default function QrCodeGeneratorPage() {
         },
         featureList: [
           'Generate a QR code from a URL',
-          'Download QR codes as SVG or PNG',
+          'Download QR codes as SVG, PNG, or JPEG',
+          'Copy a compressed JPEG QR code to the clipboard',
           'Choose QR code styles',
           'Add a custom logo on paid plans',
           'Track QR code scans on paid plans',
@@ -158,7 +159,7 @@ export default function QrCodeGeneratorPage() {
               {[
                 ['1', 'Paste your link', 'Use a complete destination beginning with http:// or https://.'],
                 ['2', 'Choose the look', 'Start with a free style, or use a paid plan for every style and a center logo.'],
-                ['3', 'Download and share', 'Export SVG for print or PNG for everyday digital use.'],
+                ['3', 'Download and share', 'Export SVG for print, PNG for crisp digital use, or a compact JPEG for quick sharing.'],
               ].map(([number, heading, body]) => (
                 <li key={number} className="list-none rounded-2xl border border-[#e5e5e5] bg-white p-6">
                   <span className="font-mono text-xs font-bold text-[#c62828]">{number.padStart(2, '0')}</span>
@@ -189,7 +190,8 @@ export default function QrCodeGeneratorPage() {
               <ul className="mt-4 space-y-3 text-sm leading-6 text-[#666]">
                 <li>Directly opens the destination URL</li>
                 <li>Three included visual styles</li>
-                <li>SVG and PNG downloads</li>
+                <li>SVG, PNG, and JPEG exports</li>
+                <li>Compressed JPEG clipboard copy</li>
                 <li>No account required</li>
               </ul>
             </article>

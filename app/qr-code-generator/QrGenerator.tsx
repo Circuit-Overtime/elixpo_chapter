@@ -23,6 +23,8 @@ interface TrackedResult {
   short_code: string;
 }
 
+type ExportFormat = 'svg' | 'png' | 'jpeg';
+
 const BASIC_PRESET_LIMIT = 3;
 const QR_SIZE = 1024;
 
@@ -46,6 +48,8 @@ export default function QrGenerator() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [imageCopied, setImageCopied] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('svg');
   const [account, setAccount] = useState<AccountState>({
     loaded: false,
     loggedIn: false,
@@ -106,6 +110,7 @@ export default function QrGenerator() {
     event.preventDefault();
     setError('');
     setCopied(false);
+    setImageCopied(false);
     setTrackedResult(null);
 
     const normalized = normalizeWebUrl(destination);
@@ -163,6 +168,16 @@ export default function QrGenerator() {
     }
   };
 
+  const copyCompressedJpeg = async () => {
+    setError('');
+    setImageCopied(false);
+    const success = await qrRef.current?.copyJpeg(0.82);
+    if (success) {
+      setImageCopied(true);
+      window.setTimeout(() => setImageCopied(false), 1800);
+    }
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
       <form
@@ -192,9 +207,9 @@ export default function QrGenerator() {
           </button>
         </div>
 
-        <fieldset className="mt-7">
+        <div className="mt-7">
           <div className="flex items-end justify-between gap-4">
-            <legend className="text-sm font-bold text-[#222]">Choose a style</legend>
+            <h2 className="text-sm font-bold text-[#222]">Choose a style</h2>
             {!paid && (
               <Link href="/pricing" className="text-xs font-semibold text-[#c62828] no-underline">
                 Unlock every style →
@@ -234,7 +249,7 @@ export default function QrGenerator() {
               );
             })}
           </div>
-        </fieldset>
+        </div>
 
         <div className="mt-7 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-[#e5e5e5] p-4">
@@ -317,13 +332,42 @@ export default function QrGenerator() {
                 Open scan analytics →
               </Link>
             )}
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              <button type="button" onClick={() => qrRef.current?.download('svg')} className="rounded-lg bg-[#111] px-4 py-2 text-xs font-bold text-white">
-                Download SVG
-              </button>
-              <button type="button" onClick={() => qrRef.current?.download('png')} className="rounded-lg border border-[#d8d8d8] bg-white px-4 py-2 text-xs font-bold text-[#333]">
-                Download PNG
-              </button>
+            <div className="mt-5 flex flex-col items-center gap-3">
+              <div className="inline-flex rounded-xl border border-[#d8d8d8] bg-white p-1" aria-label="QR download format">
+                {(['svg', 'png', 'jpeg'] as ExportFormat[]).map((format) => (
+                  <button
+                    key={format}
+                    type="button"
+                    aria-pressed={exportFormat === format}
+                    onClick={() => setExportFormat(format)}
+                    className="rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase transition-colors"
+                    style={{
+                      background: exportFormat === format ? '#111' : 'transparent',
+                      color: exportFormat === format ? '#fff' : '#666',
+                    }}
+                  >
+                    {format === 'jpeg' ? 'JPG' : format}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => qrRef.current?.download(exportFormat)}
+                  className="rounded-lg bg-[#111] px-4 py-2 text-xs font-bold text-white"
+                >
+                  Download {exportFormat === 'jpeg' ? 'JPG' : exportFormat.toUpperCase()}
+                </button>
+                <button
+                  type="button"
+                  onClick={copyCompressedJpeg}
+                  className="rounded-lg border border-[#d8d8d8] bg-white px-4 py-2 text-xs font-bold text-[#333]"
+                >
+                  {imageCopied ? 'JPG copied' : 'Copy compressed JPG'}
+                </button>
+              </div>
+            </div>
+            <div className="mt-2 flex flex-wrap justify-center gap-2">
               <button type="button" onClick={copyQrLink} className="rounded-lg border border-[#d8d8d8] bg-white px-4 py-2 text-xs font-bold text-[#333]">
                 {copied ? 'Copied' : 'Copy link'}
               </button>
