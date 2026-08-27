@@ -128,50 +128,23 @@ export default function QrCodeGeneratorPage() {
       <Navbar />
 
       <main>
-        <section className="mx-auto w-full max-w-6xl px-4 pb-12 pt-12 text-center md:px-6 md:pb-14 md:pt-16">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c62828]">
-            Free URL to QR code tool
-          </p>
-          <h1 className="mx-auto mt-4 max-w-4xl text-[2.55rem] font-extrabold leading-[1.03] tracking-[-0.045em] sm:text-6xl">
-            Quick QR code generator for any link
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#666] md:text-lg">
-            Paste a URL, choose a style, and download a sharp QR code. Upgrade when you need custom branding or scan analytics.
-          </p>
-        </section>
-
-        <section className="mx-auto w-full max-w-6xl px-4 pb-20 md:px-6" aria-label="QR code generator">
-          <QrGenerator />
-          <p className="mt-4 text-center text-xs leading-5 text-[#777]">
-            Basic QR codes are created in your browser. A destination is sent to Lixrl only when a paid member chooses scan tracking.
-          </p>
-        </section>
-
-        <section className="border-y border-[#e8e8e8] bg-[#fafafa]" aria-labelledby="how-qr-works">
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 md:py-20">
-            <div className="max-w-2xl">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c62828]">How it works</p>
-              <h2 id="how-qr-works" className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">
-                From link to QR code in three steps
-              </h2>
+        <section
+          className="mx-auto flex min-h-[calc(100svh-72px)] w-full max-w-7xl flex-col px-4 pb-10 pt-6 md:px-6 md:pt-8"
+          aria-labelledby="qr-generator-heading"
+        >
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 id="qr-generator-heading" className="text-3xl font-extrabold tracking-[-0.035em] sm:text-4xl">
+                Create a QR code
+              </h1>
+              <p className="mt-1 text-sm text-[#777]">Paste a link. Pick a style. Download instantly.</p>
             </div>
-            <ol className="mt-10 grid gap-4 md:grid-cols-3">
-              {[
-                ['1', 'Paste your link', 'Use a complete destination beginning with http:// or https://.'],
-                ['2', 'Choose the look', 'Start with a free style, or use a paid plan for every style and a center logo.'],
-                ['3', 'Download and share', 'Export SVG for print, PNG for crisp digital use, or a compact JPEG for quick sharing.'],
-              ].map(([number, heading, body]) => (
-                <li key={number} className="list-none rounded-2xl border border-[#e5e5e5] bg-white p-6">
-                  <span className="font-mono text-xs font-bold text-[#c62828]">{number.padStart(2, '0')}</span>
-                  <h3 className="mt-5 text-lg font-bold">{heading}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#6b6b6b]">{body}</p>
-                </li>
-              ))}
-            </ol>
+            <p className="text-xs font-semibold text-[#777]">Free · No account required</p>
           </div>
+          <QrGenerator />
         </section>
 
-        <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 md:px-6 md:py-24 lg:grid-cols-[0.8fr_1.2fr]" aria-labelledby="tracked-qr-codes">
+        <section className="border-t border-[#e8e8e8] mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 md:px-6 md:py-24 lg:grid-cols-[0.8fr_1.2fr]" aria-labelledby="tracked-qr-codes">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c62828]">Optional scan tracking</p>
             <h2 id="tracked-qr-codes" className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">
