@@ -2,8 +2,9 @@
 
 import { env } from "cloudflare:test";
 import type { D1Database } from "@cloudflare/workers-types";
+import { exportPKCS8, exportSPKI, generateKeyPair } from "jose";
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET as getDiscovery } from "../../../app/.well-known/oauth-authorization-server/route";
 import { POST as approveDevice } from "../../../app/api/auth/device/approve/route";
 import { POST as issueDevice } from "../../../app/api/auth/device/authorize/route";
@@ -11,6 +12,7 @@ import { POST as denyDevice } from "../../../app/api/auth/device/deny/route";
 import { POST as revokeToken } from "../../../app/api/auth/revoke/route";
 import { POST as exchangeToken } from "../../../app/api/auth/token/route";
 import { createAccessToken, verifyJWT } from "../jwt";
+import { deriveS256CodeChallenge } from "../pkce";
 
 vi.mock("@/lib/d1-client", async () => {
     const { env: testEnv } = await import("cloudflare:test");
@@ -32,6 +34,7 @@ const AUDIENCE = "blogs.elixpo.com";
 const OLD_AUDIENCE = "api.lixblogs.com";
 const SCOPES = "openid profile email lixblogs:blog:read";
 const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
+const REDIRECT_URI = "https://cli.example.com/callback";
 
 type DeviceResponse = {
     device_code: string;
@@ -113,10 +116,33 @@ async function setupDatabase() {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(ip_address, endpoint)
         )`),
+        env.DB.prepare(`CREATE TABLE IF NOT EXISTS auth_requests (
+            id TEXT PRIMARY KEY, state TEXT UNIQUE NOT NULL, nonce TEXT NOT NULL,
+            pkce_verifier TEXT NOT NULL, provider TEXT NOT NULL,
+            client_id TEXT NOT NULL, redirect_uri TEXT NOT NULL, scopes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL, code TEXT, user_id TEXT,
+            used INTEGER DEFAULT 0, code_challenge TEXT,
+            code_challenge_method TEXT
+        )`),
+        env.DB.prepare(`CREATE TABLE IF NOT EXISTS app_usage_seen (
+            client_id TEXT NOT NULL, user_id TEXT NOT NULL,
+            year_month TEXT NOT NULL,
+            PRIMARY KEY (client_id, user_id, year_month)
+        )`),
+        env.DB.prepare(`CREATE TABLE IF NOT EXISTS app_usage_monthly (
+            client_id TEXT NOT NULL, year_month TEXT NOT NULL,
+            mau_count INTEGER NOT NULL DEFAULT 0,
+            last_updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (client_id, year_month)
+        )`),
         env.DB.prepare("DELETE FROM audit_logs"),
         env.DB.prepare("DELETE FROM refresh_tokens"),
         env.DB.prepare("DELETE FROM device_authorizations"),
         env.DB.prepare("DELETE FROM rate_limits"),
+        env.DB.prepare("DELETE FROM auth_requests"),
+        env.DB.prepare("DELETE FROM app_usage_seen"),
+        env.DB.prepare("DELETE FROM app_usage_monthly"),
         env.DB.prepare("DELETE FROM identities"),
         env.DB.prepare("DELETE FROM oauth_clients"),
         env.DB.prepare("DELETE FROM users"),
@@ -133,11 +159,12 @@ async function setupDatabase() {
             `INSERT INTO oauth_clients
              (client_id, client_secret_hash, name, redirect_uris, scopes,
               is_active, owner_id, client_type, audience)
-             VALUES (?, ?, ?, '[]', ?, 1, ?, 'public', ?)`,
+             VALUES (?, ?, ?, ?, ?, 1, ?, 'public', ?)`,
         ).bind(
             CLIENT_ID,
             "unused-public-client-secret",
             "LixBlogs CLI (Prod)",
+            JSON.stringify([REDIRECT_URI]),
             JSON.stringify(SCOPES.split(" ")),
             USER_ID,
             AUDIENCE,
@@ -183,6 +210,17 @@ async function approve(userCode: string) {
 }
 
 describe("LixBlogs CLI device-flow contract", () => {
+    beforeAll(async () => {
+        const { privateKey, publicKey } = await generateKeyPair("EdDSA", {
+            extractable: true,
+        });
+        process.env.JWT_PRIVATE_KEY = await exportPKCS8(privateKey);
+        process.env.JWT_PUBLIC_KEY = await exportSPKI(publicKey);
+        process.env.NEXT_PUBLIC_APP_URL = "https://accounts.test";
+        process.env.JWT_EXPIRATION_MINUTES = "15";
+        process.env.REFRESH_TOKEN_EXPIRATION_DAYS = "30";
+    });
+
     beforeEach(setupDatabase);
 
     it("covers pending, slow-down, browser approval, refresh rotation, and replay revocation", async () => {
@@ -252,6 +290,59 @@ describe("LixBlogs CLI device-flow contract", () => {
         expect(await response.json()).toMatchObject({
             error: "invalid_request",
         });
+    });
+
+    it("binds a public authorization code to S256 PKCE and issues an ID token", async () => {
+        const verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
+        await env.DB.prepare(
+            `INSERT INTO auth_requests
+             (id, state, nonce, pkce_verifier, provider, client_id,
+              redirect_uri, scopes, expires_at, code, user_id, used,
+              code_challenge, code_challenge_method)
+             VALUES (?, ?, ?, ?, 'sso', ?, ?, ?, datetime('now', '+10 minutes'),
+                     ?, ?, 0, ?, 'S256')`,
+        )
+            .bind(
+                "pkce-request",
+                "pkce-state",
+                "pkce-nonce",
+                "legacy-unused-verifier",
+                CLIENT_ID,
+                REDIRECT_URI,
+                SCOPES,
+                "code_pkce",
+                USER_ID,
+                await deriveS256CodeChallenge(verifier),
+            )
+            .run();
+
+        const rejected = await exchangeToken(
+            formRequest("https://accounts.test/api/auth/token", {
+                grant_type: "authorization_code",
+                code: "code_pkce",
+                code_verifier: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                client_id: CLIENT_ID,
+                redirect_uri: REDIRECT_URI,
+            }),
+        );
+        expect(rejected.status).toBe(400);
+        expect(await rejected.json()).toMatchObject({ error: "invalid_grant" });
+
+        const accepted = await exchangeToken(
+            formRequest("https://accounts.test/api/auth/token", {
+                grant_type: "authorization_code",
+                code: "code_pkce",
+                code_verifier: verifier,
+                client_id: CLIENT_ID,
+                redirect_uri: REDIRECT_URI,
+            }),
+        );
+        expect(accepted.status).toBe(200);
+        const tokens = (await accepted.json()) as TokenResponse & {
+            id_token: string;
+        };
+        expect((await verifyJWT(tokens.id_token))?.type).toBe("id");
+        expect((await verifyJWT(tokens.id_token))?.aud).toBe(CLIENT_ID);
     });
 
     it("covers denial and expiry responses", async () => {
@@ -329,7 +420,7 @@ describe("LixBlogs CLI device-flow contract", () => {
             grant_types_supported: string[];
         };
         expect(metadata).toMatchObject({
-            elixpo_contract_version: "1.0.0",
+            elixpo_contract_version: "1.1.0",
             elixpo_min_compatible_cli_version: "0.1.0",
             elixpo_refresh_token_rotation: {
                 policy: "rotate_always",
@@ -340,5 +431,11 @@ describe("LixBlogs CLI device-flow contract", () => {
         expect(metadata.device_authorization_endpoint).toContain(
             "/api/auth/device/authorize",
         );
+        expect(metadata).toMatchObject({
+            jwks_uri: "https://accounts.test/.well-known/jwks.json",
+            userinfo_endpoint: "https://accounts.test/api/auth/me",
+            code_challenge_methods_supported: ["S256"],
+            id_token_signing_alg_values_supported: ["EdDSA"],
+        });
     });
 });

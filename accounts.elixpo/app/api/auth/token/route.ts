@@ -8,11 +8,15 @@ import {
     getUserById,
     logAuditEvent,
     createRefreshToken as storeRefreshToken,
-    validateOAuthClient,
 } from "@/lib/db";
 import { classifyDevicePollAttempt } from "@/lib/device-auth-service";
-import { createAccessToken, createRefreshToken } from "@/lib/jwt";
+import {
+    createAccessToken,
+    createIdToken,
+    createRefreshToken,
+} from "@/lib/jwt";
 import { parseOAuthScopes } from "@/lib/oauth-scopes";
+import { verifyS256CodeChallenge } from "@/lib/pkce";
 import { rotateRefreshToken } from "@/lib/refresh-rotation";
 import { generateUUID, hashString } from "@/lib/webcrypto";
 
@@ -36,6 +40,7 @@ export async function POST(request: NextRequest) {
             refresh_token,
             device_code,
             scope,
+            code_verifier,
         } = body;
 
         if (!grant_type) {
@@ -50,12 +55,12 @@ export async function POST(request: NextRequest) {
 
         // Authorization Code Flow (RFC 6749 Section 4.1)
         if (grant_type === "authorization_code") {
-            if (!code || !client_id || !client_secret || !redirect_uri) {
+            if (!code || !client_id || !redirect_uri) {
                 return NextResponse.json(
                     {
                         error: "invalid_request",
                         error_description:
-                            "Missing required parameters: code, client_id, client_secret, redirect_uri",
+                            "Missing required parameters: code, client_id, redirect_uri",
                     },
                     { status: 400 },
                 );
@@ -68,10 +73,14 @@ export async function POST(request: NextRequest) {
                     db,
                     client_id,
                 );
-                const validClient = await validateOAuthClient(
+                const clientType = (client as { client_type?: string } | null)
+                    ?.client_type;
+                const validClient = await authenticateOAuthClient(
                     db,
                     client_id,
-                    await hashString(client_secret),
+                    typeof client_secret === "string"
+                        ? await hashString(client_secret)
+                        : null,
                 );
                 if (!client || !validClient) {
                     return NextResponse.json(
@@ -106,6 +115,9 @@ export async function POST(request: NextRequest) {
                     user_id: string | null;
                     redirect_uri: string;
                     scopes: string | null;
+                    nonce: string | null;
+                    code_challenge: string | null;
+                    code_challenge_method: string | null;
                 } | null;
 
                 if (!authRequest || authRequest.redirect_uri !== redirect_uri) {
@@ -114,6 +126,47 @@ export async function POST(request: NextRequest) {
                             error: "invalid_grant",
                             error_description:
                                 "Authorization code not found, expired, used, or mismatched",
+                        },
+                        { status: 400 },
+                    );
+                }
+
+                if (
+                    authRequest.code_challenge &&
+                    (authRequest.code_challenge_method !== "S256" ||
+                        typeof code_verifier !== "string" ||
+                        !(await verifyS256CodeChallenge(
+                            code_verifier,
+                            authRequest.code_challenge,
+                        )))
+                ) {
+                    return NextResponse.json(
+                        {
+                            error: "invalid_grant",
+                            error_description: "PKCE verification failed",
+                        },
+                        { status: 400 },
+                    );
+                }
+                if (clientType === "public" && !authRequest.code_challenge) {
+                    return NextResponse.json(
+                        {
+                            error: "invalid_grant",
+                            error_description:
+                                "PKCE was not bound to this authorization code",
+                        },
+                        { status: 400 },
+                    );
+                }
+                if (
+                    typeof code_verifier === "string" &&
+                    !authRequest.code_challenge
+                ) {
+                    return NextResponse.json(
+                        {
+                            error: "invalid_grant",
+                            error_description:
+                                "PKCE was not bound to this authorization code",
                         },
                         { status: 400 },
                     );
@@ -138,6 +191,9 @@ export async function POST(request: NextRequest) {
 
                 const user = (await getUserById(db, authRequest.user_id)) as {
                     email: string;
+                    email_verified?: number;
+                    display_name?: string | null;
+                    username?: string | null;
                 } | null;
                 if (!user) {
                     return NextResponse.json(
@@ -199,6 +255,23 @@ export async function POST(request: NextRequest) {
                     scopes,
                     oauthClaims,
                 );
+                const idToken = scopes.includes("openid")
+                    ? await createIdToken(
+                          authRequest.user_id,
+                          user.email,
+                          client_id,
+                          parseInt(
+                              process.env.JWT_EXPIRATION_MINUTES || "15",
+                              10,
+                          ),
+                          {
+                              nonce: authRequest.nonce || undefined,
+                              emailVerified: !!user.email_verified,
+                              name: user.display_name,
+                              preferredUsername: user.username,
+                          },
+                      )
+                    : undefined;
 
                 await storeRefreshToken(db, {
                     id: generateUUID(),
@@ -228,6 +301,7 @@ export async function POST(request: NextRequest) {
                         ) * 60,
                     refresh_token: refreshTokenJWT,
                     scope: scopes.join(" "),
+                    ...(idToken ? { id_token: idToken } : {}),
                 });
             } catch (error) {
                 console.error("[Token] Authorization code flow error:", error);
@@ -668,6 +742,22 @@ export async function POST(request: NextRequest) {
                     oauthClaims,
                 );
                 const refreshTokenHash = await hashString(refreshToken);
+                const idToken = scopes.includes("openid")
+                    ? await createIdToken(
+                          row.user_id as string,
+                          user.email,
+                          client_id,
+                          parseInt(
+                              process.env.JWT_EXPIRATION_MINUTES || "15",
+                              10,
+                          ),
+                          {
+                              emailVerified: !!user.email_verified,
+                              name: user.display_name,
+                              preferredUsername: user.username,
+                          },
+                      )
+                    : undefined;
 
                 await storeRefreshToken(db, {
                     id: generateUUID(),
@@ -698,6 +788,7 @@ export async function POST(request: NextRequest) {
                                 10,
                             ) * 60,
                         scope: scopes.join(" "),
+                        ...(idToken ? { id_token: idToken } : {}),
                     },
                     { status: 200 },
                 );

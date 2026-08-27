@@ -5,6 +5,11 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { getContrastColor } from "@/lib/branding-validation";
+import {
+    useVerifiedBranding,
+    VerifiedBrandBanner,
+} from "../../components/verified-brand-banner";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -82,6 +87,7 @@ const MicrosoftIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const LoginContent = () => {
     const searchParams = useSearchParams();
     const next = searchParams.get("next");
+    const branding = useVerifiedBranding(next);
     const addAccount = searchParams.get("add_account") === "1";
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -229,6 +235,7 @@ const LoginContent = () => {
             <div className="max-w-[900px] w-full bg-[var(--surface)]/70 border border-[var(--border)] backdrop-blur-xl rounded-2xl p-6 sm:p-10 shadow-[0_8px_32px_rgba(25,40,55,0.02)] flex flex-col md:flex-row gap-8 sm:gap-12 gsap-login-animate">
                 {/* Email Form Column */}
                 <div className="flex-1 flex flex-col justify-center">
+                    <VerifiedBrandBanner branding={branding} />
                     <div className="text-center mb-8">
                         <div className="flex justify-center mb-3">
                             <img
@@ -240,12 +247,16 @@ const LoginContent = () => {
                         <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight mb-1.5">
                             {addAccount
                                 ? "Add another account"
-                                : "Welcome Back"}
+                                : branding
+                                  ? `Sign in to continue`
+                                  : "Welcome Back"}
                         </h2>
                         <p className="text-sm opacity-60 font-semibold tracking-wide">
                             {addAccount
                                 ? "Sign in without logging out your current account"
-                                : "Sign in to your Elixpo Account"}
+                                : branding
+                                  ? `Use your account to continue to ${branding.displayName}`
+                                  : "Sign in to your Elixpo Account"}
                         </p>
                     </div>
 
@@ -324,7 +335,11 @@ const LoginContent = () => {
                                 </span>
                             </label>
                             <Link
-                                href="/forgot-password"
+                                href={
+                                    next
+                                        ? `/forgot-password?next=${encodeURIComponent(next)}`
+                                        : "/forgot-password"
+                                }
                                 className="text-xs font-bold text-[#ff7759] hover:underline"
                             >
                                 Forgot password?
@@ -343,6 +358,17 @@ const LoginContent = () => {
                             type="submit"
                             disabled={loading}
                             className="w-full mt-2 bg-[#ff7759] hover:brightness-110 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98] select-none flex items-center justify-center gap-2"
+                            style={
+                                branding
+                                    ? {
+                                          backgroundColor:
+                                              branding.primaryColor,
+                                          color: getContrastColor(
+                                              branding.primaryColor,
+                                          ),
+                                      }
+                                    : undefined
+                            }
                         >
                             {loading ? (
                                 <>
@@ -387,7 +413,9 @@ const LoginContent = () => {
                             }
                             className="text-sm font-bold text-[#ff7759] hover:underline"
                         >
-                            Create an Elixpo ID
+                            {branding
+                                ? `Create an account for ${branding.displayName}`
+                                : "Create an Elixpo ID"}
                         </Link>
                     </div>
                 </div>

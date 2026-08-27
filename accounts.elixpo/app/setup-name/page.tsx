@@ -10,7 +10,12 @@ import {
 } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { getContrastColor } from "@/lib/branding-validation";
 import BackgroundAurora from "../components/background-aurora";
+import {
+    useVerifiedBranding,
+    VerifiedBrandBanner,
+} from "../components/verified-brand-banner";
 
 const ACCENT = "#ff7759";
 
@@ -40,6 +45,7 @@ const SetupNameContent = () => {
     const _router = useRouter();
     const searchParams = useSearchParams();
     const next = searchParams.get("next");
+    const branding = useVerifiedBranding(next);
     const [username, setUsername] = useState("");
     const [displayName, setDisplayName] = useState("");
     const [loading, setLoading] = useState(false);
@@ -225,12 +231,15 @@ const SetupNameContent = () => {
                     p: 4,
                 }}
             >
+                <VerifiedBrandBanner branding={branding} />
                 <Box sx={{ textAlign: "center", mb: 3 }}>
                     <Typography
                         variant="h4"
                         sx={{ fontWeight: 700, color: "var(--fg)", mb: 1 }}
                     >
-                        Claim your handle
+                        {branding
+                            ? `Finish setup for ${branding.displayName}`
+                            : "Claim your handle"}
                     </Typography>
                     <Typography
                         sx={{
@@ -238,8 +247,8 @@ const SetupNameContent = () => {
                             fontSize: "0.95rem",
                         }}
                     >
-                        Pick a unique username and a display name. Your username
-                        is how you&apos;re linked across Elixpo services.
+                        Pick a unique username and display name. You will return
+                        to {branding?.domain || "your account"} when finished.
                     </Typography>
                 </Box>
 
@@ -296,8 +305,10 @@ const SetupNameContent = () => {
                     }
                     sx={{
                         mt: 3,
-                        background: ACCENT,
-                        color: "#fff",
+                        background: branding?.primaryColor || ACCENT,
+                        color: branding
+                            ? getContrastColor(branding.primaryColor)
+                            : "#fff",
                         fontWeight: 600,
                         textTransform: "none",
                         fontSize: "0.95rem",

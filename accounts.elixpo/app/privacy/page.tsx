@@ -7,7 +7,9 @@ export const metadata: Metadata = {
     title: "Privacy Policy",
     description:
         "Understand how Elixpo Accounts collects, uses, encrypts, and protects your personal information, active sessions, and client credentials.",
+    alternates: { canonical: "/privacy" },
     openGraph: {
+        url: "/privacy",
         title: "Privacy Policy — Elixpo Accounts",
         description:
             "Understand how Elixpo Accounts collects, uses, encrypts, and protects your personal information.",

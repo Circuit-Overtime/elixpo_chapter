@@ -10,6 +10,10 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import {
+    useVerifiedBranding,
+    VerifiedBrandBanner,
+} from "../../components/verified-brand-banner";
 
 const textFieldSx = {
     "& .MuiOutlinedInput-root": {
@@ -61,6 +65,8 @@ type Stage = "email" | "otp" | "reset" | "done";
 function ForgotPasswordContent() {
     const searchParams = useSearchParams();
     const tokenParam = searchParams.get("token");
+    const next = searchParams.get("next");
+    const branding = useVerifiedBranding(next);
 
     const [stage, setStage] = useState<Stage>(tokenParam ? "otp" : "email");
     const [email, setEmail] = useState("");
@@ -251,6 +257,7 @@ function ForgotPasswordContent() {
                     p: 3,
                 }}
             >
+                <VerifiedBrandBanner branding={branding} />
                 <Box sx={{ mb: 3, textAlign: "center" }}>
                     <Typography
                         variant="h4"
@@ -431,7 +438,11 @@ function ForgotPasswordContent() {
                             You can now sign in with your new password.
                         </Typography>
                         <Button
-                            href="/login"
+                            href={
+                                next
+                                    ? `/login?next=${encodeURIComponent(next)}`
+                                    : "/login"
+                            }
                             fullWidth
                             variant="contained"
                             sx={btnSx}
@@ -454,7 +465,11 @@ function ForgotPasswordContent() {
                             Back to login?
                         </Typography>
                         <Link
-                            href="/login"
+                            href={
+                                next
+                                    ? `/login?next=${encodeURIComponent(next)}`
+                                    : "/login"
+                            }
                             style={{
                                 color: "#ff7759",
                                 textDecoration: "none",

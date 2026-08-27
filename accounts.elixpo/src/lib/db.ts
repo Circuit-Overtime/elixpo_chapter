@@ -150,6 +150,8 @@ export async function createAuthRequest(
         state,
         nonce,
         pkceVerifier,
+        codeChallenge,
+        codeChallengeMethod,
         provider,
         clientId,
         redirectUri,
@@ -160,6 +162,8 @@ export async function createAuthRequest(
         state: string;
         nonce: string;
         pkceVerifier: string;
+        codeChallenge?: string | null;
+        codeChallengeMethod?: "S256" | null;
         provider: string;
         clientId: string;
         redirectUri: string;
@@ -168,8 +172,8 @@ export async function createAuthRequest(
     },
 ) {
     const stmt = db.prepare(
-        `INSERT INTO auth_requests (id, state, nonce, pkce_verifier, provider, client_id, redirect_uri, scopes, expires_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO auth_requests (id, state, nonce, pkce_verifier, code_challenge, code_challenge_method, provider, client_id, redirect_uri, scopes, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     return await stmt
         .bind(
@@ -177,6 +181,8 @@ export async function createAuthRequest(
             state,
             nonce,
             pkceVerifier,
+            codeChallenge ?? null,
+            codeChallengeMethod ?? null,
             provider,
             clientId,
             redirectUri,
@@ -603,7 +609,7 @@ export async function createOAuthClient(
 
 export async function getOAuthClientById(db: D1Database, clientId: string) {
     const stmt = db.prepare(
-        "SELECT client_id, name, redirect_uris, scopes, description, homepage_url, created_at, is_active, client_type FROM oauth_clients WHERE client_id = ?",
+        "SELECT client_id, name, redirect_uris, scopes, description, homepage_url, created_at, is_active, client_type, logo_url, branding_display_name, branding_primary_color, branding_accent_color, privacy_policy_url, terms_of_service_url, is_branding_verified, branding_verified_domain, branding_verified_at FROM oauth_clients WHERE client_id = ?",
     );
     return await stmt.bind(clientId).first();
 }
@@ -661,9 +667,17 @@ export async function updateOAuthClient(
         scopes?: string;
         isActive?: boolean;
         description?: string;
-        homepageUrl?: string;
-        logoUrl?: string;
+        homepageUrl?: string | null;
+        logoUrl?: string | null;
         clientSecretHash?: string;
+        brandingDisplayName?: string | null;
+        brandingPrimaryColor?: string | null;
+        brandingAccentColor?: string | null;
+        privacyPolicyUrl?: string | null;
+        termsOfServiceUrl?: string | null;
+        isBrandingVerified?: boolean;
+        brandingVerifiedDomain?: string | null;
+        brandingVerifiedAt?: string | null;
     },
 ) {
     const setClauses: string[] = [];
@@ -700,6 +714,38 @@ export async function updateOAuthClient(
     if (updates.logoUrl !== undefined) {
         setClauses.push("logo_url = ?");
         values.push(updates.logoUrl);
+    }
+    if (updates.brandingDisplayName !== undefined) {
+        setClauses.push("branding_display_name = ?");
+        values.push(updates.brandingDisplayName);
+    }
+    if (updates.brandingPrimaryColor !== undefined) {
+        setClauses.push("branding_primary_color = ?");
+        values.push(updates.brandingPrimaryColor);
+    }
+    if (updates.brandingAccentColor !== undefined) {
+        setClauses.push("branding_accent_color = ?");
+        values.push(updates.brandingAccentColor);
+    }
+    if (updates.privacyPolicyUrl !== undefined) {
+        setClauses.push("privacy_policy_url = ?");
+        values.push(updates.privacyPolicyUrl);
+    }
+    if (updates.termsOfServiceUrl !== undefined) {
+        setClauses.push("terms_of_service_url = ?");
+        values.push(updates.termsOfServiceUrl);
+    }
+    if (updates.isBrandingVerified !== undefined) {
+        setClauses.push("is_branding_verified = ?");
+        values.push(updates.isBrandingVerified ? 1 : 0);
+    }
+    if (updates.brandingVerifiedDomain !== undefined) {
+        setClauses.push("branding_verified_domain = ?");
+        values.push(updates.brandingVerifiedDomain);
+    }
+    if (updates.brandingVerifiedAt !== undefined) {
+        setClauses.push("branding_verified_at = ?");
+        values.push(updates.brandingVerifiedAt);
     }
 
     if (setClauses.length === 0) {
