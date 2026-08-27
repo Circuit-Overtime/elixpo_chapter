@@ -86,10 +86,7 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#131922' },
-  ],
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
 };
@@ -140,12 +137,19 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSONLD) }}
         />
-        {/* Prevent flash of wrong theme */}
+        {/* Prevent a flash of the wrong theme before React mounts. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             try {
               var t = localStorage.getItem('lixblogs_theme');
-              if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+              var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+              var color = isDark ? '#131922' : '#ffffff';
+              if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+              }
+              document.documentElement.style.backgroundColor = color;
+              var meta = document.querySelector('meta[name="theme-color"]');
+              if (meta) meta.setAttribute('content', color);
             } catch(e) {}
           })();
         `}} />
