@@ -13,14 +13,14 @@
       "status": ""
     },
     "candidates.json": {
-      "expires_at": "2026-08-27T06:50:42.428251+00:00",
+      "expires_at": "2026-08-28T17:23:57.485501+00:00",
       "key": "",
-      "payload_sha256": "664cb829204bcd15f3c51cf66e91c4db0322c7047694a7ab3dcff6d3d5224d0f",
-      "produced_at": "2026-08-26T06:50:42.428251+00:00",
+      "payload_sha256": "8e65b7431b23c85d3b75c86e06681f563a4845a5b7c12ed75db8da900b83c1dc",
+      "produced_at": "2026-08-27T17:23:57.485501+00:00",
       "producer": "scout",
       "run_id": "",
       "schema_version": 1,
-      "sequence": 18,
+      "sequence": 19,
       "state_file": "candidates.json",
       "status": ""
     },
@@ -170,5 +170,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": "2026-08-27T09:48:20.715016+00:00"
+  "updated_at": "2026-08-27T17:23:57.485501+00:00"
 }
