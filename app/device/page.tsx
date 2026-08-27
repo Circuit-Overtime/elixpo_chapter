@@ -167,17 +167,17 @@ function DeviceVerificationContent() {
     }
 
     return (
-        <main className="min-h-screen flex items-center justify-center bg-neutral-950 px-6 py-12">
-            <div className="w-full max-w-md rounded-xl border border-neutral-800 bg-neutral-900 p-8">
+        <main className="min-h-screen flex items-center justify-center bg-[var(--bg)] px-6 py-12">
+            <div className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8">
                 {view.phase === "entering" || view.phase === "loading" ? (
                     <>
-                        <p className="text-xs font-mono uppercase tracking-wide text-neutral-500 mb-2">
+                        <p className="text-xs font-mono uppercase tracking-wide text-[var(--fg-faint)] mb-2">
                             Device sign-in
                         </p>
-                        <h1 className="text-xl font-semibold text-neutral-100 mb-1">
+                        <h1 className="text-xl font-semibold text-[var(--fg)] mb-1">
                             Enter the code on your device
                         </h1>
-                        <p className="text-sm text-neutral-400 mb-6">
+                        <p className="text-sm text-[var(--fg-muted)] mb-6">
                             Look for a code shown in your terminal or on your
                             device&apos;s screen.
                         </p>
@@ -193,7 +193,7 @@ function DeviceVerificationContent() {
                                 spellCheck={false}
                                 maxLength={12}
                                 disabled={view.phase === "loading"}
-                                className="w-full text-center text-2xl tracking-widest font-mono bg-neutral-950 border border-neutral-800 rounded-lg py-4 text-neutral-100 outline-none focus:border-blue-500"
+                                className="w-full text-center text-2xl tracking-widest font-mono bg-[var(--field-bg)] border border-[var(--border)] rounded-lg py-4 text-[var(--fg)] outline-none focus:border-[var(--accent)]"
                             />
                             <button
                                 type="submit"
@@ -201,7 +201,7 @@ function DeviceVerificationContent() {
                                     view.phase === "loading" ||
                                     userCode.trim().length === 0
                                 }
-                                className="mt-4 w-full rounded-lg bg-blue-600 py-3 font-semibold text-white disabled:opacity-50"
+                                className="mt-4 w-full rounded-lg bg-[var(--accent)] py-3 font-semibold text-[var(--accent-contrast)] disabled:opacity-50"
                             >
                                 {view.phase === "loading"
                                     ? "Checking…"
@@ -213,10 +213,10 @@ function DeviceVerificationContent() {
 
                 {view.phase === "ready" ? (
                     <>
-                        <p className="text-xs font-mono uppercase tracking-wide text-neutral-500 mb-2">
+                        <p className="text-xs font-mono uppercase tracking-wide text-[var(--fg-faint)] mb-2">
                             Confirm access
                         </p>
-                        <p className="text-sm text-neutral-200 mb-1">
+                        <p className="text-sm text-[var(--fg)] mb-1">
                             <strong>
                                 {view.details.client_name ||
                                     view.details.client_id}
@@ -224,7 +224,7 @@ function DeviceVerificationContent() {
                             wants to access your account.
                         </p>
                         {view.details.expires_at ? (
-                            <p className="text-xs font-mono text-neutral-500 mb-5">
+                            <p className="text-xs font-mono text-[var(--fg-faint)] mb-5">
                                 Expires{" "}
                                 {new Date(
                                     view.details.expires_at,
@@ -232,7 +232,7 @@ function DeviceVerificationContent() {
                             </p>
                         ) : null}
 
-                        <ul className="rounded-lg border border-neutral-800 overflow-hidden mb-2">
+                        <ul className="rounded-lg border border-[var(--border)] overflow-hidden mb-2">
                             {(view.details.scopes || []).map((scope) => {
                                 const detail = (
                                     LIXBLOGS_SCOPE_DETAILS as Record<
@@ -249,23 +249,25 @@ function DeviceVerificationContent() {
                                 return (
                                     <li
                                         key={scope}
-                                        className={`flex items-start gap-2 px-4 py-3 text-sm border-t border-neutral-800 first:border-t-0 ${
-                                            highImpact ? "bg-amber-950/40" : ""
+                                        className={`flex items-start gap-2 px-4 py-3 text-sm border-t border-[var(--border)] first:border-t-0 ${
+                                            highImpact
+                                                ? "bg-[rgba(217,119,6,0.12)]"
+                                                : ""
                                         }`}
                                     >
                                         <span
                                             className={`mt-1.5 h-1.5 w-1.5 rounded-full flex-none ${
                                                 highImpact
-                                                    ? "bg-amber-400"
-                                                    : "bg-neutral-600"
+                                                    ? "bg-amber-500"
+                                                    : "bg-[var(--fg-faint)]"
                                             }`}
                                         />
-                                        <span className="text-neutral-200">
+                                        <span className="text-[var(--fg)]">
                                             {detail?.label ||
                                                 detail?.description ||
                                                 scope}
                                             {highImpact ? (
-                                                <span className="ml-2 rounded border border-amber-700/50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-400">
+                                                <span className="ml-2 rounded border border-amber-600/40 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-600">
                                                     High impact
                                                 </span>
                                             ) : null}
@@ -278,13 +280,13 @@ function DeviceVerificationContent() {
                         <div className="mt-6 flex flex-col gap-3">
                             <button
                                 onClick={() => resolve("approve")}
-                                className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white"
+                                className="w-full rounded-lg bg-[var(--accent)] py-3 font-semibold text-[var(--accent-contrast)]"
                             >
                                 Approve
                             </button>
                             <button
                                 onClick={() => resolve("deny")}
-                                className="w-full rounded-lg border border-red-900/50 py-3 font-semibold text-red-400"
+                                className="w-full rounded-lg border border-[var(--border)] py-3 font-semibold text-red-500"
                             >
                                 Deny
                             </button>
@@ -297,12 +299,12 @@ function DeviceVerificationContent() {
                         <div className="text-4xl mb-3">
                             {view.outcome === "approved" ? "✓" : "×"}
                         </div>
-                        <h1 className="text-xl font-semibold text-neutral-100 mb-1">
+                        <h1 className="text-xl font-semibold text-[var(--fg)] mb-1">
                             {view.outcome === "approved"
                                 ? "You're all set"
                                 : "Request denied"}
                         </h1>
-                        <p className="text-sm text-neutral-400">
+                        <p className="text-sm text-[var(--fg-muted)]">
                             {view.outcome === "approved"
                                 ? "Your device should sign in automatically within a few seconds. You can close this window."
                                 : "The device won't be able to sign in."}
@@ -312,18 +314,18 @@ function DeviceVerificationContent() {
 
                 {view.phase === "error" ? (
                     <>
-                        <p className="text-xs font-mono uppercase tracking-wide text-neutral-500 mb-2">
+                        <p className="text-xs font-mono uppercase tracking-wide text-[var(--fg-faint)] mb-2">
                             Device sign-in
                         </p>
-                        <h1 className="text-xl font-semibold text-neutral-100 mb-2">
+                        <h1 className="text-xl font-semibold text-[var(--fg)] mb-2">
                             Can&apos;t continue
                         </h1>
-                        <p className="text-sm text-red-400 mb-6">
+                        <p className="text-sm text-red-500 mb-6">
                             {view.message}
                         </p>
                         <button
                             onClick={() => setView({ phase: "entering" })}
-                            className="w-full rounded-lg border border-neutral-800 py-3 font-semibold text-neutral-200"
+                            className="w-full rounded-lg border border-[var(--border)] py-3 font-semibold text-[var(--fg)]"
                         >
                             Enter a new code
                         </button>
