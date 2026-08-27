@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-beta.1
+## 1.0.1
 
 - Add typed OAuth/OIDC discovery.
 - Add S256 PKCE, state, nonce, and authorization callback helpers.

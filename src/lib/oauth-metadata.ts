@@ -50,7 +50,7 @@ export function createAuthorizationServerMetadata(issuerValue?: string) {
             "preferred_username",
         ],
         elixpo_contract_version: ELIXPO_OAUTH_CONTRACT_VERSION,
-        elixpo_min_compatible_sdk_version: "0.1.0-beta.1",
+        elixpo_min_compatible_sdk_version: "1.0.1",
         elixpo_min_compatible_cli_version: "0.1.0",
         elixpo_access_token_lifetime_seconds:
             parseInt(process.env.JWT_EXPIRATION_MINUTES || "15", 10) * 60,

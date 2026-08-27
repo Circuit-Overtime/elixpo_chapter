@@ -1,23 +1,22 @@
-# `@elixpo/accounts`
+# `lixaccounts`
 
 Edge-safe OAuth 2.0 and OpenID Connect primitives for Elixpo Accounts.
 
 The canonical SDK contract and release policy live in the
 [integration reference](https://github.com/elixpo/accounts.elixpo/blob/main/docs/README.md).
 
-> Phase 1 is a prerelease core. Next.js and React adapters are tracked in the
-> next phase and are not exported yet.
+Next.js and React adapters are tracked separately and are not exported yet.
 
 ## Install
 
 ```bash
-npm install @elixpo/accounts
+npm install lixaccounts
 ```
 
 ## Start authorization
 
 ```ts
-import { createAccountsClient } from "@elixpo/accounts";
+import { createAccountsClient } from "lixaccounts";
 
 const accounts = createAccountsClient({
     issuer: "https://accounts.elixpo.com",
@@ -33,7 +32,7 @@ const { url, transaction } = await accounts.createAuthorizationRequest();
 ## Complete authorization
 
 ```ts
-import { parseAuthorizationCallback } from "@elixpo/accounts";
+import { parseAuthorizationCallback } from "lixaccounts";
 
 const { code } = parseAuthorizationCallback(
     request.url,

@@ -159,7 +159,7 @@ export default function DocsClientLayout({
             "",
             "Elixpo Accounts is an OAuth 2.0 and OpenID Connect identity provider running on Cloudflare's edge.",
             "Treat this page and the discovery endpoints as authoritative. Use authorization code flow with S256 PKCE, state, and nonce. Keep secrets and tokens server-side.",
-            "SDK: @elixpo/accounts. Discovery: /.well-known/oauth-authorization-server and /.well-known/openid-configuration.",
+            "SDK: lixaccounts. Discovery: /.well-known/oauth-authorization-server and /.well-known/openid-configuration.",
             "",
             "---",
             "",
