@@ -53,7 +53,9 @@
     "db:tables": "wrangler d1 execute elixpo_auth \"SELECT name FROM sqlite_master WHERE type='table';\" --remote",
     "seed:admin": "npx tsx scripts/seed-admin.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "sdk:build": "tsc -p packages/accounts/tsconfig.build.json",
+    "sdk:pack": "npm run sdk:build && npm pack ./packages/accounts --dry-run"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20240905.0",

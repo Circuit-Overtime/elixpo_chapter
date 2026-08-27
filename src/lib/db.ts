@@ -150,6 +150,8 @@ export async function createAuthRequest(
         state,
         nonce,
         pkceVerifier,
+        codeChallenge,
+        codeChallengeMethod,
         provider,
         clientId,
         redirectUri,
@@ -160,6 +162,8 @@ export async function createAuthRequest(
         state: string;
         nonce: string;
         pkceVerifier: string;
+        codeChallenge?: string | null;
+        codeChallengeMethod?: "S256" | null;
         provider: string;
         clientId: string;
         redirectUri: string;
@@ -168,8 +172,8 @@ export async function createAuthRequest(
     },
 ) {
     const stmt = db.prepare(
-        `INSERT INTO auth_requests (id, state, nonce, pkce_verifier, provider, client_id, redirect_uri, scopes, expires_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO auth_requests (id, state, nonce, pkce_verifier, code_challenge, code_challenge_method, provider, client_id, redirect_uri, scopes, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     return await stmt
         .bind(
@@ -177,6 +181,8 @@ export async function createAuthRequest(
             state,
             nonce,
             pkceVerifier,
+            codeChallenge ?? null,
+            codeChallengeMethod ?? null,
             provider,
             clientId,
             redirectUri,

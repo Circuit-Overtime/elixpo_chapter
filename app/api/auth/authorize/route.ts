@@ -9,6 +9,7 @@ import {
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
 import { parseOAuthScopes, unsupportedOAuthScopes } from "@/lib/oauth-scopes";
+import { isValidPkceValue } from "@/lib/pkce";
 import { generateRandomString, generateUUID } from "@/lib/webcrypto";
 
 // Built-in/trusted domains auto-whitelisted
@@ -23,6 +24,8 @@ export async function GET(request: NextRequest) {
         const scope = searchParams.get("scope") || "openid profile email";
         const state = searchParams.get("state");
         const nonce = searchParams.get("nonce");
+        const codeChallenge = searchParams.get("code_challenge");
+        const codeChallengeMethod = searchParams.get("code_challenge_method");
 
         if (!responseType || !clientId || !redirectUri || !state) {
             return NextResponse.json(
@@ -113,6 +116,23 @@ export async function GET(request: NextRequest) {
                         { status: 401 },
                     );
                 }
+                if (
+                    ((client as any).client_type === "public" &&
+                        !codeChallenge) ||
+                    (!codeChallenge && !!codeChallengeMethod) ||
+                    (codeChallenge &&
+                        (codeChallengeMethod !== "S256" ||
+                            !isValidPkceValue(codeChallenge)))
+                ) {
+                    return NextResponse.json(
+                        {
+                            error: "invalid_request",
+                            error_description:
+                                "Use a valid S256 PKCE code_challenge; public clients require PKCE",
+                        },
+                        { status: 400 },
+                    );
+                }
                 const registeredScopes: string[] = JSON.parse(
                     (client as any).scopes || "[]",
                 );
@@ -150,6 +170,8 @@ export async function GET(request: NextRequest) {
                 state,
                 nonce: nonce || "",
                 pkceVerifier: generateRandomString(128),
+                codeChallenge,
+                codeChallengeMethod: codeChallenge ? "S256" : null,
                 provider: "sso",
                 clientId,
                 redirectUri,
@@ -181,7 +203,15 @@ export async function GET(request: NextRequest) {
 
         response.cookies.set(
             "oauth_sso_state",
-            JSON.stringify({ clientId, redirectUri, scope, state, nonce }),
+            JSON.stringify({
+                clientId,
+                redirectUri,
+                scope,
+                state,
+                nonce,
+                codeChallenge,
+                codeChallengeMethod,
+            }),
             {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",

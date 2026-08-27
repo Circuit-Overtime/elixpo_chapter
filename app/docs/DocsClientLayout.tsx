@@ -90,7 +90,8 @@ export default function DocsClientLayout({
         );
     }, []);
 
-    // Convert docs content to plain markdown copyable for LLMs
+    // Convert the current reference page into portable Markdown with enough
+    // protocol context for coding assistants to use it safely.
     const buildLlmPayload = (): string => {
         const root = document.getElementById("docs-content");
         if (!root) return "";
@@ -156,7 +157,9 @@ export default function DocsClientLayout({
             "",
             `Source: ${url}`,
             "",
-            "This is one section of the Elixpo Accounts developer documentation. Elixpo Accounts is an open OAuth 2.0 single sign-on built on Cloudflare's edge.",
+            "Elixpo Accounts is an OAuth 2.0 and OpenID Connect identity provider running on Cloudflare's edge.",
+            "Treat this page and the discovery endpoints as authoritative. Use authorization code flow with S256 PKCE, state, and nonce. Keep secrets and tokens server-side.",
+            "SDK: @elixpo/accounts. Discovery: /.well-known/oauth-authorization-server and /.well-known/openid-configuration.",
             "",
             "---",
             "",

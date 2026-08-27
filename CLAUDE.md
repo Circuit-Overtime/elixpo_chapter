@@ -6,4 +6,4 @@ Runbooks the agent should follow:
 - `.claude/commands/review.md` — review output format.
 - `.claude/commands/format.md` — biome.sh runbook.
 
-For third-party OAuth integration (external consumer docs): `docs/OAUTH_INTEGRATION.md`.
+For third-party OAuth integration (external consumer docs): `docs/README.md`.

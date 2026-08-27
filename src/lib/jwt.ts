@@ -1,4 +1,5 @@
 import * as jose from "jose";
+import { normalizeIssuer } from "./oauth-metadata";
 import { generateUUID } from "./webcrypto";
 
 export interface JWTPayload {
@@ -8,7 +9,7 @@ export interface JWTPayload {
     scopes?: string[];
     iat: number;
     exp: number;
-    type: "access" | "refresh";
+    type: "access" | "refresh" | "id";
     client_id?: string;
     aud?: string | string[];
     sid?: string;
@@ -18,6 +19,22 @@ export interface OAuthClaims {
     clientId?: string;
     audience?: string | string[];
     sid?: string;
+}
+
+export interface IdTokenClaims {
+    nonce?: string;
+    emailVerified?: boolean;
+    name?: string | null;
+    preferredUsername?: string | null;
+}
+
+let signingMetadataPromise:
+    | Promise<{ key: jose.KeyLike | Uint8Array; kid: string }>
+    | undefined;
+let publicJwkPromise: Promise<jose.JWK> | undefined;
+
+function getIssuer(): string {
+    return normalizeIssuer(process.env.NEXT_PUBLIC_APP_URL);
 }
 
 export async function getSigningKey(): Promise<jose.KeyLike | Uint8Array> {
@@ -33,7 +50,26 @@ export async function getVerifyingKey(): Promise<jose.KeyLike | Uint8Array> {
     if (!publicKeyPEM) {
         throw new Error("JWT_PUBLIC_KEY not found in environment");
     }
-    return jose.importSPKI(publicKeyPEM, "EdDSA");
+    return jose.importSPKI(publicKeyPEM, "EdDSA", { extractable: true });
+}
+
+async function getSigningMetadata() {
+    signingMetadataPromise ??= (async () => {
+        const key = await getSigningKey();
+        const publicJwk = await getPublicJwk();
+        return { key, kid: publicJwk.kid as string };
+    })();
+    return signingMetadataPromise;
+}
+
+export async function getPublicJwk(): Promise<jose.JWK> {
+    publicJwkPromise ??= (async () => {
+        const key = await getVerifyingKey();
+        const jwk = await jose.exportJWK(key);
+        const kid = await jose.calculateJwkThumbprint(jwk, "sha256");
+        return { ...jwk, alg: "EdDSA", kid, use: "sig" };
+    })();
+    return publicJwkPromise;
 }
 
 export async function createAccessToken(
@@ -54,10 +90,12 @@ export async function createAccessToken(
         ...(oauthClaims?.sid && { sid: oauthClaims.sid }),
     };
 
-    const key = await getSigningKey();
+    const { key, kid } = await getSigningMetadata();
 
     let builder = new jose.SignJWT(payload)
-        .setProtectedHeader({ alg: "EdDSA" })
+        .setProtectedHeader({ alg: "EdDSA", kid, typ: "at+jwt" })
+        .setIssuer(getIssuer())
+        .setJti(generateUUID())
         .setIssuedAt()
         .setExpirationTime(`${expiresInMinutes}m`);
 
@@ -85,10 +123,11 @@ export async function createRefreshToken(
         ...(oauthClaims?.sid && { sid: oauthClaims.sid }),
     };
 
-    const key = await getSigningKey();
+    const { key, kid } = await getSigningMetadata();
 
     let builder = new jose.SignJWT(payload)
-        .setProtectedHeader({ alg: "EdDSA" })
+        .setProtectedHeader({ alg: "EdDSA", kid, typ: "JWT" })
+        .setIssuer(getIssuer())
         .setJti(generateUUID())
         .setIssuedAt()
         .setExpirationTime(`${expiresInDays}d`);
@@ -98,6 +137,37 @@ export async function createRefreshToken(
     }
 
     return await builder.sign(key);
+}
+
+export async function createIdToken(
+    userId: string,
+    email: string,
+    clientId: string,
+    expiresInMinutes: number = 15,
+    claims: IdTokenClaims = {},
+): Promise<string> {
+    const { key, kid } = await getSigningMetadata();
+    const payload = {
+        sub: userId,
+        email,
+        email_verified: claims.emailVerified ?? false,
+        type: "id",
+        ...(claims.nonce ? { nonce: claims.nonce } : {}),
+        ...(claims.name ? { name: claims.name } : {}),
+        ...(claims.preferredUsername
+            ? { preferred_username: claims.preferredUsername }
+            : {}),
+    };
+
+    return new jose.SignJWT(payload)
+        .setProtectedHeader({ alg: "EdDSA", kid, typ: "JWT" })
+        .setIssuer(getIssuer())
+        .setAudience(clientId)
+        .setSubject(userId)
+        .setJti(generateUUID())
+        .setIssuedAt()
+        .setExpirationTime(`${expiresInMinutes}m`)
+        .sign(key);
 }
 
 export async function verifyJWT(token: string): Promise<JWTPayload | null> {

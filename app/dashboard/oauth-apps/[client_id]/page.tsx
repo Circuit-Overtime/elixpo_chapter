@@ -1100,7 +1100,7 @@ export default function OAuthAppSettingsPage() {
                     separating localhost/staging/production receivers, each
                     listening to a different subset of events. See the{" "}
                     <a
-                        href="https://github.com/elixpo/accounts.elixpo/blob/main/docs/WEBHOOKS_APP_SUBSCRIPTION.md"
+                        href="/docs/webhooks"
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
