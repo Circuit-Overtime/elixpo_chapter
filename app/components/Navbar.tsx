@@ -90,7 +90,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6 h-[60px] flex items-center gap-3">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 no-underline text-[#111] shrink-0">
+        <Link href="/?noredirect=1" className="flex items-center gap-2.5 no-underline text-[#111] shrink-0">
           <img src="/base_logo.png" alt="ElixpoURL" width={30} height={30} className="rounded-lg" />
           <span className="font-bold text-[1.05rem] tracking-tight text-[#111]">
             Elixpo<span style={{ color: ACCENT }}>URL</span>
