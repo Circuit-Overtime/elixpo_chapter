@@ -179,10 +179,10 @@ export default function QrGenerator() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+    <div className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-stretch">
       <form
         onSubmit={generate}
-        className="rounded-3xl border border-[#e5e5e5] bg-white p-5 shadow-[0_18px_55px_rgba(0,0,0,0.07)] md:p-7"
+        className="rounded-3xl border border-[#e3e3e3] bg-white p-4 shadow-[0_16px_45px_rgba(0,0,0,0.06)] md:p-5"
       >
         <label htmlFor="qr-destination" className="text-sm font-bold text-[#222]">
           Link to turn into a QR code
@@ -207,8 +207,8 @@ export default function QrGenerator() {
           </button>
         </div>
 
-        <div className="mt-7">
-          <div className="flex items-end justify-between gap-4">
+        <div className="mt-5">
+          <div className="flex items-center justify-between gap-4">
             <h2 className="text-sm font-bold text-[#222]">Choose a style</h2>
             {!paid && (
               <Link href="/pricing" className="text-xs font-semibold text-[#c62828] no-underline">
@@ -216,7 +216,7 @@ export default function QrGenerator() {
               </Link>
             )}
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-3 flex flex-wrap gap-2">
             {QR_PRESETS.map((preset, index) => {
               const locked = account.presetLimit !== -1 && index >= account.presetLimit;
               const selected = preset.id === presetId;
@@ -234,30 +234,34 @@ export default function QrGenerator() {
                     setError('');
                     setPresetId(preset.id);
                   }}
-                  className="relative flex min-h-16 items-end overflow-hidden rounded-xl border p-3 text-left transition-all"
+                  className="group inline-flex h-10 items-center gap-2 rounded-full border px-3 text-left text-xs font-bold transition-all"
                   style={{
                     borderColor: selected ? '#e53935' : '#e1e1e1',
-                    background: preset.swatch,
-                    opacity: locked ? 0.45 : 1,
-                    boxShadow: selected ? '0 0 0 2px rgba(229,57,53,0.14)' : 'none',
+                    background: selected ? '#fff6f5' : '#ffffff',
+                    color: locked ? '#888' : '#222',
+                    boxShadow: selected ? '0 0 0 2px rgba(229,57,53,0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
                   }}
                 >
-                  <span className="rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold text-[#222] shadow-sm">
-                    {preset.name}{locked ? ' · Pro' : ''}
+                  <span
+                    className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full border border-black/10"
+                    style={{ background: preset.swatch, opacity: locked ? 0.55 : 1 }}
+                    aria-hidden="true"
+                  >
+                    <span className="absolute inset-[6px] rounded-[2px] border-2 border-white/90" />
                   </span>
+                  <span>{preset.name}</span>
+                  {locked && <span className="rounded-full bg-[#f1f1f1] px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-[#777]">Pro</span>}
+                  {selected && !locked && <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#e53935] text-[10px] text-white" aria-hidden="true">✓</span>}
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="mt-7 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-[#e5e5e5] p-4">
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <div className="rounded-2xl border border-[#e5e5e5] bg-[#fcfcfc] p-3">
             <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-bold text-[#222]">Add a logo</div>
-                <p className="mt-1 text-xs leading-5 text-[#777]">Place a public image in the center.</p>
-              </div>
+              <div className="text-sm font-bold text-[#222]">Center logo</div>
               {!account.allowLogo && <span className="rounded-full bg-[#f5f5f5] px-2 py-1 text-[10px] font-bold text-[#777]">PRO</span>}
             </div>
             {account.allowLogo ? (
@@ -266,25 +270,22 @@ export default function QrGenerator() {
                 value={logoUrl}
                 onChange={(event) => setLogoUrl(event.target.value)}
                 placeholder="https://site.com/logo.png"
-                className="mt-3 w-full rounded-lg border border-[#dddddd] px-3 py-2 text-xs outline-none focus:border-[#e53935]"
+                className="mt-2 w-full rounded-lg border border-[#dddddd] px-3 py-2 text-xs outline-none focus:border-[#e53935]"
               />
             ) : (
-              <Link href="/pricing" className="mt-3 inline-flex text-xs font-semibold text-[#c62828] no-underline">
-                Upgrade to add a logo →
+              <Link href="/pricing" className="mt-2 inline-flex text-xs font-semibold text-[#c62828] no-underline">
+                Unlock logo →
               </Link>
             )}
           </div>
 
-          <div className="rounded-2xl border border-[#e5e5e5] p-4">
+          <div className="rounded-2xl border border-[#e5e5e5] bg-[#fcfcfc] p-3">
             <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-bold text-[#222]">Track QR scans</div>
-                <p className="mt-1 text-xs leading-5 text-[#777]">Use a short link with dashboard analytics.</p>
-              </div>
+              <div className="text-sm font-bold text-[#222]">Scan analytics</div>
               {!paid && <span className="rounded-full bg-[#f5f5f5] px-2 py-1 text-[10px] font-bold text-[#777]">PAID</span>}
             </div>
             {paid ? (
-              <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs font-semibold text-[#444]">
+              <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-semibold text-[#444]">
                 <input
                   type="checkbox"
                   checked={trackScans}
@@ -296,7 +297,7 @@ export default function QrGenerator() {
             ) : (
               <Link
                 href={account.loggedIn ? '/pricing' : '/api/auth/login?return_to=%2Fgenerate'}
-                className="mt-3 inline-flex text-xs font-semibold text-[#c62828] no-underline"
+                className="mt-2 inline-flex text-xs font-semibold text-[#c62828] no-underline"
               >
                 {account.loggedIn ? 'Upgrade for scan analytics →' : 'Sign in to view options →'}
               </Link>
@@ -311,7 +312,7 @@ export default function QrGenerator() {
         )}
       </form>
 
-      <aside className="flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-center">
+      <aside className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-5 text-center lg:min-h-0">
         {qrData ? (
           <>
             <div className="rounded-2xl bg-white p-3 shadow-[0_12px_35px_rgba(0,0,0,0.10)]">
@@ -380,8 +381,7 @@ export default function QrGenerator() {
                 <span key={index} className="rounded-sm bg-[#222]" style={{ opacity: index === 4 ? 0.15 : 1 }} />
               ))}
             </div>
-            <h2 className="mt-5 text-lg font-bold">Your QR code appears here</h2>
-            <p className="mt-2 text-sm leading-6 text-[#777]">Enter a link, choose a style, and generate a print-ready QR code.</p>
+            <h2 className="mt-5 text-base font-bold">Your QR code appears here</h2>
           </div>
         )}
       </aside>
