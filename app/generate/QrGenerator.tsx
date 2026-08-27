@@ -312,7 +312,7 @@ export default function QrGenerator() {
         )}
       </form>
 
-      <aside className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-center lg:min-h-0">
+      <aside className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-[#e5e5e5] bg-[#fafafa] p-6 text-center lg:h-full lg:max-h-[560px] lg:min-h-0 lg:self-start lg:overflow-y-auto">
         {qrData ? (
           <>
             <div className="rounded-2xl bg-white p-3 shadow-[0_12px_35px_rgba(0,0,0,0.10)]">
@@ -333,7 +333,7 @@ export default function QrGenerator() {
                 Open scan analytics →
               </Link>
             )}
-            <div className="mt-5 flex flex-col items-center gap-3">
+            <div className="mt-5 flex w-full max-w-[520px] flex-col items-end gap-3">
               <div className="inline-flex rounded-xl border border-[#d8d8d8] bg-white p-1" aria-label="QR download format">
                 {(['svg', 'png', 'jpeg'] as ExportFormat[]).map((format) => (
                   <button
@@ -351,7 +351,7 @@ export default function QrGenerator() {
                   </button>
                 ))}
               </div>
-              <div className="flex flex-wrap justify-center gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => qrRef.current?.download(exportFormat)}
@@ -366,12 +366,10 @@ export default function QrGenerator() {
                 >
                   {imageCopied ? 'JPG copied' : 'Copy compressed JPG'}
                 </button>
+                <button type="button" onClick={copyQrLink} className="rounded-lg border border-[#d8d8d8] bg-white px-4 py-2 text-xs font-bold text-[#333]">
+                  {copied ? 'Copied' : 'Copy link'}
+                </button>
               </div>
-            </div>
-            <div className="mt-2 flex flex-wrap justify-center gap-2">
-              <button type="button" onClick={copyQrLink} className="rounded-lg border border-[#d8d8d8] bg-white px-4 py-2 text-xs font-bold text-[#333]">
-                {copied ? 'Copied' : 'Copy link'}
-              </button>
             </div>
           </>
         ) : (
