@@ -142,23 +142,6 @@ body {
   font-size: 14px;
 }
 
-/* iOS 26+ samples a fixed, opaque element near the top for browser tinting. */
-#ios-status-bar-shim {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: env(safe-area-inset-top, 0px);
-  background-color: #ffffff;
-  z-index: 99999;
-  pointer-events: none;
-  user-select: none;
-}
-
-[data-theme="dark"] #ios-status-bar-shim {
-  background-color: #131922;
-}
-
 /* Selection */
 ::selection {
   background: var(--selection-bg);

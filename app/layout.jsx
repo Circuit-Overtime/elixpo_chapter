@@ -89,8 +89,6 @@ export const viewport = {
   themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
-  // Required for iOS 26+ to sample the safe-area / status-bar region
-  viewportFit: 'cover',
 };
 
 // Site-wide structured data. `WebSite` + `SearchAction` is what makes Google offer a
@@ -191,8 +189,6 @@ export default function RootLayout({ children }) {
         `}} />
       </head>
       <body className="antialiased" style={{ fontFamily: "'Source Serif 4', 'Georgia', serif" }}>
-        {/* Safari 26+ samples this fixed tint source for the top browser chrome. */}
-        <div id="ios-status-bar-shim" aria-hidden="true" />
         <SeasonalThemeProvider>
           <ThemeProvider>
             <AuthProvider>

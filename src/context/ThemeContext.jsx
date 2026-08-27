@@ -38,18 +38,14 @@ export function ThemeProvider({ children }) {
 
     const color = THEME_COLORS[theme];
 
-    // Keep explicit background colors on the elements Safari observes on iOS 26+.
+    // Keep explicit background colors on the elements Safari observes.
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.backgroundColor = color;
     document.body.style.backgroundColor = color;
     localStorage.setItem('lixblogs_theme', theme);
 
-    // Safari 26 samples this fixed element for the top browser chrome.
-    const shim = document.getElementById('ios-status-bar-shim');
-    if (shim) shim.style.backgroundColor = color;
-
-    // Older iOS uses the meta tag. On iOS 26, changing it is also the most
-    // reliable way to make Safari re-sample the live body/fixed-element color.
+    // Updating the meta tag covers older iOS. Nudging its value also prompts
+    // newer Safari versions to re-sample the live root/body color.
     const meta = ensureThemeColorMeta();
     meta.setAttribute('content', color);
     let nudgeFrame;
