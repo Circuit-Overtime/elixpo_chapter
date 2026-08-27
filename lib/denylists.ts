@@ -28,12 +28,12 @@ export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   'privacy',
   'profile',
   'public',
-  'report',
   'static',
   'settings',
   'terms',
   // Legacy public routes remain reserved after redirects or renames.
   'qr-code-generator',
+  'report',
   // Common reserved auth / admin paths
   'administrator',
   'auth',

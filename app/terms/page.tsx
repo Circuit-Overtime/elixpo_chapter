@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 const UPDATED = '25 August 2026';
 const EMAIL = 'hello@elixpo.com';
 const REPOSITORY = 'https://github.com/elixpo/elixpourl';
+const ABUSE_REPORT_URL = `https://github.com/elixpo/lixrl.com/issues/new?title=${encodeURIComponent('[Abuse report] ')}&body=${encodeURIComponent('Short link:\n\nReason (phishing, malware, spam, impersonation, or other):\n\nDetails:\n\nPlease do not include personal or sensitive information.')}`;
 
 const navigation = [
   { id: 'using-lixrl', label: 'Using LixRL' },
@@ -65,7 +66,7 @@ export default function TermsPage() {
           <li>Probe internal networks, scrape or overload endpoints, automate abusive traffic, or evade safeguards.</li>
         </ul>
         <p>
-          Destinations may be checked with Google Safe Browsing. We may reject, disable, quarantine, or delete links and suspend accounts when reasonably necessary to address abuse, legal requests, security risk, or service integrity. Reports can be submitted through <a href="/report">Report abuse</a>.
+          Destinations may be checked with Google Safe Browsing. We may reject, disable, quarantine, or delete links and suspend accounts when reasonably necessary to address abuse, legal requests, security risk, or service integrity. Reports can be submitted through <a href={ABUSE_REPORT_URL} target="_blank" rel="noopener noreferrer">GitHub Issues</a>.
         </p>
       </LegalSection>
 
