@@ -17,14 +17,23 @@ export const metadata: Metadata = {
  *
  * Server-side auth check before rendering the marketing surface — signed-in
  * users are sent straight to `/dashboard` so they don't have to click
- * through the hero. Anonymous visitors get the full landing page.
+ * through the hero. `?noredirect=1` is the explicit escape hatch used by
+ * authenticated navigation when someone chooses to explore the homepage.
  *
  * `getCurrentUser()` is cheap (KV session lookup → D1 fallback) and runs
  * at the edge, so the redirect adds no perceptible latency.
  */
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ noredirect?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const noRedirect = Array.isArray(params.noredirect)
+    ? params.noredirect.includes('1')
+    : params.noredirect === '1';
   const user = await getCurrentUser();
-  if (user) {
+  if (user && !noRedirect) {
     redirect('/dashboard');
   }
   return <LandingPageClient />;
