@@ -125,7 +125,7 @@ const STEPS: { n: string; icon: ReactNode; title: string; body: string }[] = [
   },
 ];
 
-const FEATURES: { icon: ReactNode; title: string; body: string }[] = [
+const FEATURES: { icon: ReactNode; title: string; body: string; href?: string }[] = [
   {
     icon: <BoltIcon />,
     title: 'Edge-native redirects',
@@ -143,8 +143,9 @@ const FEATURES: { icon: ReactNode; title: string; body: string }[] = [
   },
   {
     icon: <QrIcon />,
-    title: 'Styled QR codes',
-    body: 'Generate a QR for any link, tinted to your accent and exportable as SVG or PNG — ready for print or a slide.',
+    title: 'Quick QR code generator',
+    body: 'Turn any URL into a QR code, export SVG or PNG, and unlock custom styles, logos, and scan tracking when needed.',
+    href: '/qr-code-generator',
   },
   {
     icon: <DomainIcon />,
@@ -463,7 +464,7 @@ export default function LandingPage() {
                 </div>
                 <p className="text-[0.875rem] leading-relaxed text-[#555] flex-1">{f.body}</p>
                 <Link
-                  href="/docs"
+                  href={f.href || '/docs'}
                   className="text-[13px] font-semibold no-underline inline-flex items-center gap-1 self-start"
                   style={{ color: ACCENT }}
                 >
