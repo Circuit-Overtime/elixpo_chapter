@@ -3,7 +3,7 @@
 .preview-floating-toc {
   position: fixed;
   top: 80px;
-  right: 24px;
+  right: max(24px, calc((100vw - 1400px) / 2 + 24px));
   width: 220px;
   z-index: 30;
   max-height: calc(100vh - 120px);
@@ -43,7 +43,7 @@
 }
 
 /* Hide when viewport too narrow for sidebar */
-@media (max-width: 1400px) {
+@media (max-width: 1399px) {
   .preview-floating-toc {
     display: none;
   }
