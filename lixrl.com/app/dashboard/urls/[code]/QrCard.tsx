@@ -2,13 +2,13 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Modal from '@/app/components/Modal';
+import StyledQr, { type StyledQrHandle } from '@/app/components/qr/StyledQr';
 import {
   buildQrOptions,
   DEFAULT_PRESET_ID,
   getPreset,
 } from '@/lib/qr/presets';
 import QrStudio from './QrStudio';
-import StyledQr, { type StyledQrHandle } from './StyledQr';
 
 interface Props {
   shortUrl: string;

@@ -39,6 +39,14 @@ const Icons = {
       <path d="M10 7v6M7 10h6" />
     </svg>
   ),
+  qr: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <rect x="2.5" y="2.5" width="5.5" height="5.5" rx="1" />
+      <rect x="12" y="2.5" width="5.5" height="5.5" rx="1" />
+      <rect x="2.5" y="12" width="5.5" height="5.5" rx="1" />
+      <path d="M12 12h2v2h3.5M12 17.5v-2h2" />
+    </svg>
+  ),
   user: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
       <circle cx="10" cy="7" r="3.5" />
@@ -109,6 +117,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Icons.dashboard },
   { href: '/dashboard/urls', label: 'My URLs', icon: Icons.link },
   { href: '/dashboard/new', label: 'Shorten URL', icon: Icons.plus },
+  { href: '/generate', label: 'QR Generator', icon: Icons.qr },
   { href: '/dashboard/domains', label: 'Subdomains', icon: Icons.domain },
 ];
 
@@ -120,6 +129,7 @@ const accountItems = [
 
 // Secondary links shown lower in the dropdown.
 const resourceItems = [
+  { href: '/generate', label: 'Generate QR code', icon: Icons.qr },
   { href: '/pricing', label: 'Plans & pricing', icon: Icons.sparkle },
   { href: '/docs', label: 'Docs', icon: Icons.docs },
 ];
@@ -177,7 +187,7 @@ export default function Sidebar({ user }: { user: User }) {
       style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)' }}
     >
       {/* Left: Logo */}
-      <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
+      <Link href="/?noredirect=1" className="flex items-center gap-2 no-underline shrink-0">
         <Image src="/logo.png" alt="ElixpoURL" width={26} height={26} className="rounded-lg" />
         <span className="text-base font-sans font-bold text-text-primary hidden sm:inline">
           <span className="text-accent-main">Elixpo</span>URL

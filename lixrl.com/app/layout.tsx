@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 
 const siteUrl = 'https://lixrl.com';
 const title =
-  'Lixrl — Short Links, Branded Subdomains & Link Analytics';
+  'Lixrl — URL Shortener & Quick QR Code Generator';
 const description =
-  'Create fast short links, understand every click, use memorable link names, and give paid links a branded lixrl.com subdomain.';
+  'Shorten URLs, generate QR codes instantly, create branded short links, and track link or QR scan activity from one focused dashboard.';
 
 // Google Search Console — "HTML tag" verification method. Set
 // NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION (the `content` value Google gives you)
@@ -45,6 +45,10 @@ export const metadata: Metadata = {
     'link analytics',
     'link management',
     'qr codes',
+    'QR code generator',
+    'free QR code generator',
+    'URL to QR code',
+    'tracked QR codes',
   ],
   
   authors: [{ name: 'Elixpo', url: 'https://elixpo.com' }],
@@ -145,7 +149,8 @@ export default function RootLayout({
           'Short links',
           'Click analytics',
           'Custom link names',
-          'QR codes',
+          'Quick QR code generator',
+          'Tracked QR code scans',
           'Expiring links',
           'Branded lixrl.com subdomains',
         ],

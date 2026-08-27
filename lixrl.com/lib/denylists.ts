@@ -14,20 +14,27 @@
 // false positives only mean "ask the user for a different slug", not data loss.
 export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   // Top-level Next routes
+  'about',
+  'admin',
   'api',
   'app',
   'dashboard',
   'docs',
+  'generate',
   'login',
   'logout',
   'not-found',
   'pricing',
+  'privacy',
   'profile',
   'public',
   'static',
   'settings',
+  'terms',
+  // Legacy public routes remain reserved after redirects or renames.
+  'qr-code-generator',
+  'report',
   // Common reserved auth / admin paths
-  'admin',
   'administrator',
   'auth',
   'authorize',

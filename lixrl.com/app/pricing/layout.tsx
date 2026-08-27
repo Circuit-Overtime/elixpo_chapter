@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 const description =
-  'Compare Lixrl Free, Pro, and Business plans, including link limits, analytics history, custom names, QR options, and branded subdomains.';
+  'Compare Lixrl Free, Pro, and Business plans for URL shortening, QR code generation, scan tracking, custom styles, analytics, and branded subdomains.';
 
 export const metadata: Metadata = {
   title: 'Pricing',
