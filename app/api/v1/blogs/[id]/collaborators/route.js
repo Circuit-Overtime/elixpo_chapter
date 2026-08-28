@@ -1,11 +1,11 @@
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
-import { authorizeApiRequest } from '../../../../../../../lib/api/v1/authorize';
-import { resolveCollaborationAccess, resolveCollaboratorUser, serializeCollaborator } from '../../../../../../../lib/api/v1/collaboration';
-import { recordApiAudit } from '../../../../../../../lib/api/v1/operations';
-import { apiError, apiSuccess, requestContext } from '../../../../../../../lib/api/v1/responses';
-import { getLimits } from '../../../../../../../lib/tiers';
+import { authorizeApiRequest } from '../../../../../../lib/api/v1/authorize';
+import { resolveCollaborationAccess, resolveCollaboratorUser, serializeCollaborator } from '../../../../../../lib/api/v1/collaboration';
+import { recordApiAudit } from '../../../../../../lib/api/v1/operations';
+import { apiError, apiSuccess, requestContext } from '../../../../../../lib/api/v1/responses';
+import { getLimits } from '../../../../../../lib/tiers';
 
 const ROLES = new Set(['viewer', 'editor', 'admin']);
 

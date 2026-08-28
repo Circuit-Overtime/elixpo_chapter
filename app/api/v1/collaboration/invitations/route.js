@@ -1,9 +1,9 @@
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
-import { authorizeApiRequest } from '../../../../../../lib/api/v1/authorize';
-import { recordApiAudit } from '../../../../../../lib/api/v1/operations';
-import { apiError, apiSuccess, requestContext } from '../../../../../../lib/api/v1/responses';
+import { authorizeApiRequest } from '../../../../../lib/api/v1/authorize';
+import { recordApiAudit } from '../../../../../lib/api/v1/operations';
+import { apiError, apiSuccess, requestContext } from '../../../../../lib/api/v1/responses';
 
 export async function GET(request) {
   const context = requestContext();
