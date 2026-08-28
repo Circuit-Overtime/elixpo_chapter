@@ -26,7 +26,7 @@
  */
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
     AccountSelector,
     type ConsentAccount,
@@ -96,14 +96,26 @@ function DeviceVerificationContent() {
     const [account, setAccount] = useState<ConsentAccount | null>(null);
     const [accounts, setAccounts] = useState<ConsentAccount[]>([]);
     const [isSwitching, setIsSwitching] = useState(false);
+    const autoLookupCode = useRef<string | null>(null);
 
     const doLookup = useCallback(
         async (rawCode: string) => {
             setView({ phase: "loading" });
             try {
-                const res = await fetch(
-                    `/api/auth/device/lookup?user_code=${encodeURIComponent(rawCode)}`,
-                );
+                const [res, meResponse, accountsResponse] = await Promise.all([
+                    fetch(
+                        `/api/auth/device/lookup?user_code=${encodeURIComponent(rawCode)}`,
+                        { cache: "no-store" },
+                    ),
+                    fetch("/api/auth/me", {
+                        credentials: "include",
+                        cache: "no-store",
+                    }),
+                    fetch("/api/auth/accounts", {
+                        credentials: "include",
+                        cache: "no-store",
+                    }).catch(() => null),
+                ]);
                 if (res.status === 404) {
                     setView({
                         phase: "error",
@@ -136,10 +148,6 @@ function DeviceVerificationContent() {
                     return;
                 }
                 const next = currentUrlForNext(rawCode);
-                const meResponse = await fetch("/api/auth/me", {
-                    credentials: "include",
-                    cache: "no-store",
-                });
                 if (!meResponse.ok) {
                     router.push(`/login?next=${encodeURIComponent(next)}`);
                     return;
@@ -155,11 +163,7 @@ function DeviceVerificationContent() {
                     displayName: me.displayName ?? null,
                     avatar: me.avatar ?? null,
                 });
-                const accountsResponse = await fetch("/api/auth/accounts", {
-                    credentials: "include",
-                    cache: "no-store",
-                });
-                if (accountsResponse.ok) {
+                if (accountsResponse?.ok) {
                     const saved: any = await accountsResponse.json();
                     setAccounts(saved.accounts || []);
                 }
@@ -196,7 +200,8 @@ function DeviceVerificationContent() {
     // Auto-lookup when arriving via verification_uri_complete (?user_code=...).
     // Read-only — does not approve or deny anything.
     useEffect(() => {
-        if (prefill) {
+        if (prefill && autoLookupCode.current !== prefill) {
+            autoLookupCode.current = prefill;
             void doLookup(prefill);
         }
     }, [prefill, doLookup]);
@@ -251,9 +256,24 @@ function DeviceVerificationContent() {
         }
     }
 
+    const activeBrand =
+        view.phase === "ready" && view.details.is_branding_verified
+            ? view.details
+            : null;
+
     return (
-        <main className="min-h-screen flex items-center justify-center bg-[var(--bg)] px-6 py-12">
-            <div className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8">
+        <main
+            className="min-h-screen flex items-center justify-center bg-[var(--bg)] px-6 py-12"
+            style={{
+                backgroundImage: `radial-gradient(circle at 15% 18%, color-mix(in srgb, ${activeBrand?.branding_primary_color || "#ff7759"} 16%, transparent), transparent 38%), radial-gradient(circle at 86% 82%, color-mix(in srgb, ${activeBrand?.branding_accent_color || activeBrand?.branding_primary_color || "#ff9b85"} 14%, transparent), transparent 42%)`,
+            }}
+        >
+            <div
+                className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-2xl"
+                style={{
+                    borderTop: `4px solid ${activeBrand?.branding_primary_color || "#ff7759"}`,
+                }}
+            >
                 {view.phase === "entering" || view.phase === "loading" ? (
                     <>
                         <p className="text-xs font-mono uppercase tracking-wide text-[var(--fg-faint)] mb-2">
