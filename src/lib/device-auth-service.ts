@@ -18,7 +18,7 @@ import { generateRandomString, generateUUID, hashString } from "./webcrypto";
 
 const DEVICE_CODE_PREFIX = "dvc_";
 const DEFAULT_EXPIRES_IN_SECONDS = 600; // 10 minutes — RFC 8628 typical range
-const DEFAULT_INTERVAL_SECONDS = 5;
+const DEFAULT_INTERVAL_SECONDS = 2;
 const MAX_CODE_GENERATION_ATTEMPTS = 5;
 
 // Excludes visually ambiguous characters (0/O, 1/I/L) so a user transcribing

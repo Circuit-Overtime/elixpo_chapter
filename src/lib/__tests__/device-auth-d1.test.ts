@@ -128,7 +128,7 @@ describe("device authorization with D1", () => {
         expect(result).toMatchObject({
             verification_uri: "https://accounts.elixpo.com/device",
             expires_in: 600,
-            interval: 5,
+            interval: 2,
         });
         expect(row?.device_code_hash).toBe(
             await hashString(result.device_code),

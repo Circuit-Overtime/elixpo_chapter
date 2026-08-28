@@ -77,7 +77,11 @@ type ViewState =
     | { phase: "loading" }
     | { phase: "ready"; details: LookupResult }
     | { phase: "error"; message: string }
-    | { phase: "resolved"; outcome: "approved" | "denied" };
+    | {
+          phase: "resolved";
+          outcome: "approved" | "denied";
+          details: LookupResult;
+      };
 
 function currentUrlForNext(userCode: string): string {
     const params = new URLSearchParams();
@@ -214,6 +218,8 @@ function DeviceVerificationContent() {
     }
 
     async function resolve(action: "approve" | "deny") {
+        if (view.phase !== "ready") return;
+        const details = view.details;
         setView({ phase: "loading" });
         try {
             const res = await fetch(`/api/auth/device/${action}`, {
@@ -247,6 +253,7 @@ function DeviceVerificationContent() {
             setView({
                 phase: "resolved",
                 outcome: action === "approve" ? "approved" : "denied",
+                details,
             });
         } catch {
             setView({
@@ -257,7 +264,8 @@ function DeviceVerificationContent() {
     }
 
     const activeBrand =
-        view.phase === "ready" && view.details.is_branding_verified
+        (view.phase === "ready" || view.phase === "resolved") &&
+        view.details.is_branding_verified
             ? view.details
             : null;
 
@@ -427,19 +435,48 @@ function DeviceVerificationContent() {
 
                 {view.phase === "resolved" ? (
                     <div className="text-center">
-                        <div className="text-4xl mb-3">
-                            {view.outcome === "approved" ? "✓" : "×"}
+                        <div
+                            className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full border ${
+                                view.outcome === "approved"
+                                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
+                                    : "border-red-500/30 bg-red-500/10 text-red-500"
+                            }`}
+                        >
+                            <span className="text-3xl" aria-hidden="true">
+                                {view.outcome === "approved" ? "✓" : "×"}
+                            </span>
                         </div>
+                        <p className="mb-2 text-xs font-mono uppercase tracking-wide text-[var(--fg-faint)]">
+                            Device sign-in
+                        </p>
                         <h1 className="text-xl font-semibold text-[var(--fg)] mb-1">
                             {view.outcome === "approved"
-                                ? "You're all set"
+                                ? "Connection approved"
                                 : "Request denied"}
                         </h1>
-                        <p className="text-sm text-[var(--fg-muted)]">
+                        <p className="mb-4 text-sm text-[var(--fg-muted)]">
                             {view.outcome === "approved"
-                                ? "Your device should sign in automatically within a few seconds. You can close this window."
+                                ? `${view.details.branding_display_name || view.details.client_name || "Your app"} can now finish signing in.`
                                 : "The device won't be able to sign in."}
                         </p>
+                        {view.outcome === "approved" ? (
+                            <div className="rounded-xl border border-[var(--border)] bg-[var(--overlay)] px-4 py-3">
+                                <p className="text-sm font-medium text-[var(--fg)]">
+                                    Return to your device
+                                </p>
+                                <p className="mt-1 text-xs text-[var(--fg-faint)]">
+                                    It will continue automatically. You can safely
+                                    close this window.
+                                </p>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setView({ phase: "entering" })}
+                                className="w-full rounded-lg border border-[var(--border)] py-3 font-semibold text-[var(--fg)]"
+                            >
+                                Enter another code
+                            </button>
+                        )}
                     </div>
                 ) : null}
 

@@ -605,7 +605,15 @@ export default function OAuthAppSettingsPage() {
                 Back to OAuth Apps
             </Button>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 2,
+                    mb: 3,
+                }}
+            >
                 {/* Favicon */}
                 {faviconUrl ? (
                     <Box
@@ -641,7 +649,7 @@ export default function OAuthAppSettingsPage() {
                         {(app?.name || "A").charAt(0).toUpperCase()}
                     </Box>
                 )}
-                <Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography
                         variant="h5"
                         sx={{ fontWeight: 700, color: "var(--fg)" }}
@@ -682,6 +690,24 @@ export default function OAuthAppSettingsPage() {
                         }}
                     />
                 )}
+                <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSave}
+                    disabled={saving}
+                    sx={{
+                        ml: { xs: 0, sm: "auto" },
+                        width: { xs: "100%", sm: "auto" },
+                        background: "rgba(255, 119, 89,0.15)",
+                        color: "#ff7759",
+                        border: "1px solid rgba(255, 119, 89,0.3)",
+                        fontWeight: 600,
+                        textTransform: "none",
+                        "&:hover": { background: "rgba(255, 119, 89,0.25)" },
+                    }}
+                >
+                    {saving ? "Saving..." : "Save Changes"}
+                </Button>
             </Box>
 
             {message && (
@@ -2601,26 +2627,6 @@ export default function OAuthAppSettingsPage() {
                         {creatingEndpoint ? "Adding…" : "Add endpoint"}
                     </Button>
                 </Box>
-            </Box>
-
-            {/* Save Button */}
-            <Box sx={{ mb: 3 }}>
-                <Button
-                    variant="contained"
-                    startIcon={<SaveIcon />}
-                    onClick={handleSave}
-                    disabled={saving}
-                    sx={{
-                        background: "rgba(255, 119, 89,0.15)",
-                        color: "#ff7759",
-                        border: "1px solid rgba(255, 119, 89,0.3)",
-                        fontWeight: 600,
-                        textTransform: "none",
-                        "&:hover": { background: "rgba(255, 119, 89,0.25)" },
-                    }}
-                >
-                    {saving ? "Saving..." : "Save Changes"}
-                </Button>
             </Box>
 
             {/* Danger Zone */}

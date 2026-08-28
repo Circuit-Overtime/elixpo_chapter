@@ -62,8 +62,8 @@ export function createAuthorizationServerMetadata(issuerValue?: string) {
             reuse_action: "revoke_family",
         },
         elixpo_device_flow_polling: {
-            interval_seconds: 5,
-            max_attempts: 120,
+            interval_seconds: 2,
+            max_attempts: 300,
             slow_down_interval_seconds: 10,
         },
     } as const;

@@ -30,7 +30,7 @@ import { checkDeviceIssuanceRateLimit } from "@/lib/rate-limit-middleware";
  *   "verification_uri": "https://accounts.elixpo.com/device",
  *   "verification_uri_complete": "https://accounts.elixpo.com/device?user_code=WDJB-MJHT",
  *   "expires_in": 600,
- *   "interval": 5
+ *   "interval": 2
  * }
  */
 export async function POST(request: NextRequest) {
