@@ -36,6 +36,7 @@ import { AuthenticatedClient } from "../src/auth/AuthenticatedClient.js";
 import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
 import { OrgClient } from "../src/api/OrgClient.js";
 import { CollaborationClient } from "../src/api/CollaborationClient.js";
+import { AnalyticsClient } from "../src/api/AnalyticsClient.js";
 import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
 import {
   blogCreate,
@@ -64,6 +65,7 @@ import {
   collabRole,
 } from "../src/commands/collab/index.js";
 import { skillInspect, skillInstall, skillList } from "../src/commands/skill/index.js";
+import { analyticsExport, analyticsQuery } from "../src/commands/analytics/index.js";
 
 const OPTIONS = {
   profile: { type: "string" },
@@ -82,6 +84,12 @@ const OPTIONS = {
   status: { type: "string" },
   limit: { type: "string" },
   cursor: { type: "string" },
+  range: { type: "string" },
+  from: { type: "string" },
+  to: { type: "string" },
+  dimension: { type: "string" },
+  format: { type: "string" },
+  output: { type: "string" },
   file: { type: "string" },
   stdin: { type: "boolean", default: false },
   content: { type: "string" },
@@ -148,6 +156,8 @@ Usage:
   lixblogs collab remove <blog-id> [--user <username-or-id>] --yes
   lixblogs collab accept <blog-id> --yes [--hide-on-profile]
   lixblogs collab decline <blog-id> --yes
+  lixblogs analytics query [--scope personal|org:<id>] [--range 30d] [--dimension overview]
+  lixblogs analytics export --output <file> [--format json|csv] [query options]
   lixblogs skill list             [--json]
   lixblogs skill inspect <name>   [--json]
   lixblogs skill install <name>   [--target <directory>] [--dry-run] --yes
@@ -511,6 +521,11 @@ const SKILL_COMMANDS = {
   install: ({ id, options }) => skillInstall({ name: id, options }),
 };
 
+const ANALYTICS_COMMANDS = {
+  query: analyticsQuery,
+  export: analyticsExport,
+};
+
 async function runBlog(opts, args, action) {
   const config = resolveConfig({ flags: configFlags(opts) });
   const profileRegistry = new ProfileRegistry();
@@ -639,6 +654,39 @@ async function runSkill(opts, args, action) {
   }
 }
 
+async function runAnalytics(opts, _args, action) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  const client = new AnalyticsClient(context.http);
+  const normalized = {
+    ...opts,
+    limit: opts.limit === undefined ? undefined : Number.parseInt(opts.limit, 10),
+  };
+  try {
+    const result = await ANALYTICS_COMMANDS[action]({ client, options: normalized });
+    output(opts, { ok: true, data: result });
+    if (opts.json || opts.quiet) return;
+    if (action === 'export') {
+      console.log(`Exported ${result.rows} rows to ${result.output}.`);
+      return;
+    }
+    const payload = result.data;
+    console.log(`${payload.scope.label} · ${payload.dimension} · ${payload.range.key}`);
+    if (payload.dimension === 'overview') {
+      for (const [metric, value] of Object.entries(payload.values.totals)) {
+        console.log(`${metric}\t${value}\t${payload.values.changes[metric]}%`);
+      }
+    } else if (payload.dimension === 'timeline') {
+      payload.values.labels.forEach((label, index) => console.log(`${label}\t${payload.values.views[index]}\t${payload.values.reads[index]}`));
+    } else {
+      for (const row of payload.values) console.log(Object.values(row).join('\t'));
+      if (result.meta?.nextCursor) console.log(`Next cursor: ${result.meta.nextCursor}`);
+    }
+  } catch (error) {
+    fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
+  }
+}
+
 const ROUTES = {
   auth: {
     login: runLogin,
@@ -664,6 +712,10 @@ const ROUTES = {
   skill: Object.fromEntries(Object.keys(SKILL_COMMANDS).map((action) => [
     action,
     (opts, args) => runSkill(opts, args, action),
+  ])),
+  analytics: Object.fromEntries(Object.keys(ANALYTICS_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runAnalytics(opts, args, action),
   ])),
 };
 

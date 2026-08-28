@@ -97,6 +97,22 @@ Viewer, editor, and admin roles grant different editorial authority. None of
 these commands publishes a post; public-state changes still use `blog publish`
 with the publish scope and a separate confirmation.
 
+### Creator analytics
+
+Analytics is read-only and uses bounded date ranges and dimensions:
+
+```bash
+lixblogs login --scope openid --scope profile --scope lixblogs:analytics:read
+lixblogs analytics query --range 30d --dimension overview --json --no-input
+lixblogs analytics query --scope org:ORG_ID --range custom \
+  --from 2026-07-01 --to 2026-07-31 --dimension posts --limit 25 --json --no-input
+lixblogs analytics export --dimension timeline --format csv --output analytics.csv
+```
+
+Organization analytics also requires `lixblogs:org:read`. Results contain
+aggregates only; the API does not expose visitor identifiers or credentials.
+Exports refuse to overwrite an existing file.
+
 ### Agent skills
 
 The npm artifact bundles each skill independently:
@@ -188,10 +204,8 @@ tests.
 See [#135](https://github.com/elixpo/blogs.elixpo/issues/135) for the full
 scope. Rough remaining order:
 
-1. Media, organization, and stats commands
-2. Packaging and release automation
-3. Interactive terminal UI and branding in a separate issue
-4. Agent skill packages and cross-repository E2E coverage
+1. Media commands
+2. Interactive terminal UI and branding in a separate issue
 
 ## Contributing
 

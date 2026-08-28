@@ -39,6 +39,13 @@ logged by the resource API.
 | `DELETE` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collab:write` | Remove a collaborator or leave a team |
 | `GET` | `/api/v1/collaboration/invitations` | `lixblogs:collab:read` | Current identity's invitations |
 | `POST` | `/api/v1/collaboration/invitations` | `lixblogs:collab:write` | Accept or decline an invitation |
+| `GET` | `/api/v1/analytics` | `lixblogs:analytics:read` | Bounded creator analytics dimensions |
+
+`GET /api/v1/analytics` accepts `scope=personal|org:<id>`, `range=7d|30d|90d|12m|custom`,
+`from`, `to`, `dimension=overview|timeline|posts|sources|devices|countries`, `limit=1..100`,
+and an opaque `cursor`. Organization queries additionally require `lixblogs:org:read`
+and an owner, admin, or maintain membership. Responses contain aggregate creator data;
+visitor identifiers are never returned.
 
 `GET /api/v1/blogs` accepts `status=all|draft|published`, `limit=1..100`, and
 an opaque `cursor`. Results include authored blogs, accepted collaborations,

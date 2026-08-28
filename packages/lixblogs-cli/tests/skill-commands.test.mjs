@@ -5,6 +5,7 @@ import { skillInspect, skillInstall, skillList } from '../src/commands/skill/ind
 test('bundled skills are individually discoverable', async () => {
   const skills = await skillList();
   assert.deepEqual(skills.map((skill) => skill.name), [
+    'lixblogs-analytics',
     'lixblogs-author',
     'lixblogs-editorial',
     'lixblogs-organizations',

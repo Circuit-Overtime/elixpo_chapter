@@ -27,6 +27,7 @@ export async function GET() {
       organizationMembers: '/api/v1/orgs/{id}/members',
       collaborators: '/api/v1/blogs/{id}/collaborators',
       collaborationInvitations: '/api/v1/collaboration/invitations',
+      analytics: '/api/v1/analytics',
     },
   });
 }
