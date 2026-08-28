@@ -59,6 +59,9 @@ function optimizeVideo(file) {
   const extension = path.extname(file).toLowerCase();
   const temporary = `${file}.optimized-${process.pid}${extension}`;
   const originalSize = fs.statSync(file).size;
+  // Small source videos have already passed the asset pipeline; avoid a second
+  // lossy encode after Next copies them into the static export.
+  if (originalSize <= 1_250_000) return { saved: 0, changed: false };
   const codecArgs = extension === ".webm"
     ? ["-c:v", "libvpx-vp9", "-crf", "25", "-b:v", "0", "-c:a", "libopus", "-b:a", "128k"]
     : ["-c:v", "libx264", "-crf", "20", "-preset", "slow", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart"];
