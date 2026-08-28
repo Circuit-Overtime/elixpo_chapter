@@ -10,6 +10,15 @@ lixrl whoami
 
 Create a read/write API key at [lixrl.com/profile/keys](https://lixrl.com/profile/keys). Interactive login stores the key in the operating-system keychain. CI can provide `LIXRL_API_KEY` without writing it to disk.
 
+## Sign in securely
+
+1. Sign in to [Lixrl](https://lixrl.com/api/auth/login?return_to=/profile/keys) with your Elixpo account.
+2. Create a key under **Profile → API Keys**. Use `read,write` for link creation or `read` for inspection and analytics only.
+3. Run `lixrl login --open`, then paste the key into the masked prompt.
+4. Verify the active identity with `lixrl whoami`.
+
+The CLI stores interactive credentials in the OS keychain. For CI, set `LIXRL_API_KEY` through the CI secret store and use `--json --no-input`; never place the key in source files or command arguments.
+
 Use `lixrl --help` for the complete command list. `shortner` is provided as a compatibility alias.
 
 ## Core workflows
