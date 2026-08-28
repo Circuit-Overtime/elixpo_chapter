@@ -12,6 +12,7 @@ import { qrRequiresLogin, runQr } from '../src/qr.js';
 import { runSkills } from '../src/skills.js';
 import {
   AccountsDeviceAuth,
+  fetchLixrlCliConfig,
   startLixrlAuthorization,
   waitForDeviceApproval,
   waitForLixrlApproval,
@@ -130,9 +131,11 @@ async function main(argv = process.argv.slice(2)) {
       key = validateKey(process.env.LIXRL_API_KEY || await promptSecret('Paste Lixrl API key: '));
       user = await new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me();
     } else {
+      const deviceConfig = await fetchLixrlCliConfig({ apiUrl: config.apiUrl });
       const auth = new AccountsDeviceAuth({
-        accountsUrl: options['accounts-url'],
-        clientId: options['client-id'],
+        accountsUrl: options['accounts-url'] || deviceConfig.accountsUrl,
+        clientId: options['client-id'] || deviceConfig.clientId,
+        audience: deviceConfig.audience,
       });
       const challenge = await auth.requestDeviceCode();
       if (!options.quiet) {

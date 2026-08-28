@@ -41,14 +41,15 @@ async function json(response) {
 export class AccountsDeviceAuth {
   constructor({
     accountsUrl = DEFAULT_ACCOUNTS_URL,
-    clientId = DEFAULT_CLIENT_ID,
+    clientId,
     audience = DEFAULT_AUDIENCE,
     fetchImpl = globalThis.fetch,
     timeoutMs = DEFAULT_TIMEOUT_MS,
+    env = process.env,
   } = {}) {
     if (typeof fetchImpl !== 'function') throw new TypeError('A fetch implementation is required.');
     this.accountsUrl = trustedBase(accountsUrl);
-    this.clientId = clientId;
+    this.clientId = clientId || env.ELIXPO_LIXRL_CLI_CLIENT_ID || DEFAULT_CLIENT_ID;
     this.audience = audience;
     this.fetchImpl = fetchImpl;
     this.timeoutMs = timeoutMs;
@@ -167,6 +168,26 @@ function lixrlTarget(apiUrl, pathname) {
   const target = new URL(pathname, origin);
   if (target.origin !== origin.origin) throw new DeviceAuthError('unsafe_api_target');
   return target;
+}
+
+export async function fetchLixrlCliConfig({ apiUrl, fetchImpl = globalThis.fetch }) {
+  const target = lixrlTarget(apiUrl, '/api/cli/config');
+  const response = await fetchImpl(target, { headers: { accept: 'application/json' } });
+  const payload = await json(response);
+  if (
+    !response.ok ||
+    typeof payload.client_id !== 'string' ||
+    !payload.client_id.trim() ||
+    typeof payload.accounts_origin !== 'string' ||
+    typeof payload.audience !== 'string'
+  ) {
+    throw new DeviceAuthError('temporarily_unavailable', response.status);
+  }
+  return {
+    clientId: payload.client_id,
+    accountsUrl: trustedBase(payload.accounts_origin),
+    audience: payload.audience,
+  };
 }
 
 export async function startLixrlAuthorization({ apiUrl, accessToken, fetchImpl = globalThis.fetch }) {

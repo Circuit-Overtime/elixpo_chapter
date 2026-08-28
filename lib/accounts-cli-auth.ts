@@ -1,8 +1,8 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { getEnv } from '@/lib/db';
 
 const ACCOUNTS_ORIGIN = 'https://accounts.elixpo.com';
 const ACCOUNTS_ISSUER = ACCOUNTS_ORIGIN;
-const LIXRL_CLI_CLIENT_ID = 'lixrl-cli-prod';
 const LIXRL_AUDIENCE = 'lixrl.com';
 
 interface AccountsMetadata {
@@ -38,6 +38,7 @@ async function loadMetadata(): Promise<AccountsMetadata> {
 }
 
 export async function verifyCliAccountsAccessToken(token: string): Promise<void> {
+  const clientId = getEnv().ELIXPO_LIXRL_CLI_CLIENT_ID;
   const metadata = await loadMetadata();
   if (!jwks) jwks = createRemoteJWKSet(new URL(metadata.jwks_uri));
   const { payload, protectedHeader } = await jwtVerify(token, jwks, {
@@ -49,7 +50,7 @@ export async function verifyCliAccountsAccessToken(token: string): Promise<void>
   if (
     protectedHeader.alg !== 'EdDSA' ||
     payload.type !== 'access' ||
-    payload.client_id !== LIXRL_CLI_CLIENT_ID ||
+    payload.client_id !== clientId ||
     !Array.isArray(payload.scopes) ||
     !payload.scopes.includes('openid') ||
     !payload.scopes.includes('profile') ||

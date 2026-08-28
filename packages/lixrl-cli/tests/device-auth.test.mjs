@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   AccountsDeviceAuth,
+  fetchLixrlCliConfig,
   pollLixrlAuthorization,
   startLixrlAuthorization,
 } from '../src/device-auth.js';
@@ -47,6 +48,48 @@ test('device login requests the registered Lixrl audience and identity scopes', 
   assert.equal(body.client_id, 'lixrl-cli-prod');
   assert.equal(body.audience, 'lixrl.com');
   assert.equal(body.scope, 'openid profile email lixrl:keys:create');
+});
+
+test('device login accepts a configured Accounts client identifier', async () => {
+  const calls = [];
+  const queue = [
+    response(discovery),
+    response({
+      device_code: 'device-secret',
+      user_code: 'LIXR-L123',
+      verification_uri: 'https://accounts.elixpo.com/device',
+      expires_in: 600,
+      interval: 5,
+    }),
+  ];
+  const auth = new AccountsDeviceAuth({
+    env: { ELIXPO_LIXRL_CLI_CLIENT_ID: 'lixrl-cli-staging' },
+    fetchImpl: async (url, options = {}) => {
+      calls.push({ url: String(url), options });
+      return queue.shift();
+    },
+  });
+  await auth.requestDeviceCode();
+  assert.equal(JSON.parse(calls[1].options.body).client_id, 'lixrl-cli-staging');
+});
+
+test('device login discovers its public OAuth configuration from Lixrl', async () => {
+  const result = await fetchLixrlCliConfig({
+    apiUrl: 'https://lixrl.com',
+    fetchImpl: async (url) => {
+      assert.equal(String(url), 'https://lixrl.com/api/cli/config');
+      return response({
+        client_id: 'registered-client-id',
+        accounts_origin: 'https://accounts.elixpo.com',
+        audience: 'lixrl.com',
+      });
+    },
+  });
+  assert.deepEqual(result, {
+    clientId: 'registered-client-id',
+    accountsUrl: 'https://accounts.elixpo.com',
+    audience: 'lixrl.com',
+  });
 });
 
 test('device polling keeps pending responses separate from returned tokens', async () => {
