@@ -38,6 +38,7 @@ import { OrgClient } from "../src/api/OrgClient.js";
 import { CollaborationClient } from "../src/api/CollaborationClient.js";
 import { AnalyticsClient } from "../src/api/AnalyticsClient.js";
 import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
+import { colorEnabled, listenForEnter, loginChallenge, successLine } from "../src/cli/ui.js";
 import {
   blogCreate,
   blogDelete,
@@ -179,7 +180,7 @@ Global flags:
   --collection <id>           organization collection ID
   --dry-run                   validate and show the intended action without writing
   --permanent                 permanently delete instead of moving to trash
-  --open                      open the complete device verification URL
+  --open                      open the device verification URL immediately
   --json                      machine-readable JSON output
   --quiet                     suppress non-essential output
   --yes, -y                   auto-confirm destructive actions (required for revoke)
@@ -280,35 +281,47 @@ async function runLogin(opts) {
   const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
   if (!credentialStore) return;
 
-  const result = await authLogin({
-    provider,
-    credentialStore,
-    profileId,
-    scopes: opts.scope?.length ? opts.scope : DEFAULT_SCOPES,
-    openBrowser: opts.open ? openBrowser : undefined,
-    onStatus: (status) => {
-      if (opts.json) {
-        output(opts, { event: status.type, ...status });
-        return;
-      }
-      if (opts.quiet) return;
-      if (status.type === "verification_pending") {
-        console.log(`To log in, visit: ${status.verificationUriComplete || status.verificationUri}`);
-        console.log(`Enter code: ${status.userCode}`);
-        console.log(`(expires in ${status.expiresInSeconds}s)`);
-      } else if (status.type === "pending") {
-        console.log("Waiting for approval...");
-      } else if (status.type === "slow_down") {
-        console.log("Slowing down polling as requested by the server...");
-      } else if (status.type === "approved") {
-        console.log("Login approved.");
-      } else if (status.type === "denied") {
-        console.log("Login was denied.");
-      } else if (status.type === "expired") {
-        console.log("Device code expired.");
-      }
-    },
-  });
+  let stopEnterListener = () => {};
+  let result;
+  try {
+    result = await authLogin({
+      provider,
+      credentialStore,
+      profileId,
+      scopes: opts.scope?.length ? opts.scope : DEFAULT_SCOPES,
+      openBrowser: opts.open ? openBrowser : undefined,
+      onStatus: (status) => {
+        if (opts.json) {
+          if (status.type !== "pending") output(opts, { event: status.type, ...status });
+          return;
+        }
+        if (opts.quiet) return;
+        if (status.type === "verification_pending") {
+          const url = status.verificationUriComplete || status.verificationUri;
+          const interactive = Boolean(process.stdin.isTTY) && !opts["no-input"];
+          process.stdout.write(loginChallenge({
+            url,
+            code: status.userCode,
+            expiresInSeconds: status.expiresInSeconds,
+            profile: profileId,
+            interactive,
+            color: colorEnabled(),
+          }));
+          if (interactive && !opts.open) {
+            stopEnterListener = listenForEnter({ input: process.stdin, open: openBrowser, url });
+          }
+        } else if (status.type === "approved") {
+          console.log(successLine("Access approved by Elixpo Accounts.", colorEnabled()));
+        } else if (status.type === "denied") {
+          console.log("  Access denied.");
+        } else if (status.type === "expired") {
+          console.log("  Device code expired.");
+        }
+      },
+    });
+  } finally {
+    stopEnterListener();
+  }
 
   if (!result.ok) {
     return fail(opts, result.reason);
@@ -317,7 +330,7 @@ async function runLogin(opts) {
   await profileRegistry.setActive(result.profileId);
   output(opts, { ok: true, profile: result.profileId });
   if (!opts.json && !opts.quiet) {
-    console.log(`Logged in as profile "${result.profileId}".`);
+    console.log(`  Credentials saved to local profile "${result.profileId}".`);
   }
 }
 

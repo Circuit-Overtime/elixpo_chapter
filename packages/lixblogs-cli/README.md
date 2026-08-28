@@ -30,6 +30,9 @@ node bin/lixblogs.mjs --help
 # Log in via device authorization
 node bin/lixblogs.mjs login
 
+# Save credentials under an explicit local profile name
+node bin/lixblogs.mjs login --profile personal
+
 # Check login status
 node bin/lixblogs.mjs whoami
 
@@ -43,6 +46,13 @@ node bin/lixblogs.mjs logout
 # Revoke the token server-side and clear local credentials (destructive)
 node bin/lixblogs.mjs auth revoke --yes
 ```
+
+Interactive login shows one compact device card and stays quiet while Accounts
+approval is pending. Press Enter to open the verification URL locally, use
+`--open` to open it immediately, or copy the URL to any browser when connected
+to a VPS. Device authorization does not require a localhost callback or an
+exposed port. Profile names such as `personal`, `work`, or `test` are local
+credential slots; `whoami` reports the actual Accounts identity.
 
 ### Blog lifecycle
 
