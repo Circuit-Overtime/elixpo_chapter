@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import PixelBloomCanvas from "@/components/PixelBloomCanvas";
 
 const LAST_PROFILE_KEY = "elixpo:last-visited-profile";
@@ -22,10 +22,59 @@ function SearchIcon() {
   );
 }
 
+function paginationItems(total, current, maxItems) {
+  if (total <= maxItems) return Array.from({ length: total }, (_, index) => index);
+
+  const edgeCount = maxItems - 2;
+  if (current < edgeCount - 1) {
+    return [...Array.from({ length: edgeCount }, (_, index) => index), "ellipsis-end", total - 1];
+  }
+  if (current > total - edgeCount) {
+    return [0, "ellipsis-start", ...Array.from({ length: edgeCount }, (_, index) => total - edgeCount + index)];
+  }
+
+  const windowSize = maxItems - 4;
+  const windowStart = current - Math.floor(windowSize / 2);
+  return [
+    0,
+    "ellipsis-start",
+    ...Array.from({ length: windowSize }, (_, index) => windowStart + index),
+    "ellipsis-end",
+    total - 1,
+  ];
+}
+
+function PaginationRail({ profiles, activeIndex, maxItems, className, onSelect }) {
+  return (
+    <ol className={className} aria-label={`Member pages; showing up to ${maxItems} positions`}>
+      {paginationItems(profiles.length, activeIndex, maxItems).map((item) => {
+        if (typeof item === "string") {
+          return <li key={item} className="archive-pagination-ellipsis" aria-hidden="true">…</li>;
+        }
+        const profile = profiles[item];
+        return (
+          <li key={profile.slug}>
+            <button
+              type="button"
+              className={item === activeIndex ? "is-active" : ""}
+              onClick={() => onSelect(item)}
+              aria-label={`Show ${profile.siteName}`}
+              aria-current={item === activeIndex ? "true" : undefined}
+            >
+              <span>{String(item + 1).padStart(2, "0")}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 export default function LandingClient({ profiles }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchOpen, setSearchOpen] = useState(true);
   const [query, setQuery] = useState("");
+  const navigationTimerRef = useRef(null);
 
   const matches = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -71,6 +120,23 @@ export default function LandingClient({ profiles }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeIndex, profiles.length]);
+
+  useEffect(() => () => window.clearTimeout(navigationTimerRef.current), []);
+
+  const handleCardClick = (event, profile, index, active) => {
+    window.localStorage.setItem(LAST_PROFILE_KEY, profile.slug);
+    const modifiedClick = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
+    if (active || modifiedClick) return;
+
+    event.preventDefault();
+    window.clearTimeout(navigationTimerRef.current);
+    document.dispatchEvent(new Event(CAROUSEL_MOTION_EVENT));
+    setActiveIndex(index);
+    setQuery("");
+    navigationTimerRef.current = window.setTimeout(() => {
+      window.location.assign(`/${profile.slug}`);
+    }, 540);
+  };
 
   return (
     <main className="landing-archive relative h-screen min-h-[100svh] w-full overflow-hidden bg-[#1b1009] text-[#ead9b7]">
@@ -157,7 +223,6 @@ export default function LandingClient({ profiles }) {
                 aria-current={active ? "true" : undefined}
                 style={{
                   opacity: distance > 1 ? 0 : 1,
-                  visibility: distance > 1 ? "hidden" : "visible",
                   pointerEvents: distance > 1 ? "none" : "auto",
                   transform: `translateX(-50%) translateX(${offset * 82}%) translateY(-50%) scale(${active ? 1 : 0.78}) rotate(${offset * 3.5}deg)`,
                   zIndex: active ? 20 : 10 - distance,
@@ -168,7 +233,7 @@ export default function LandingClient({ profiles }) {
                   className="member-ticket-link"
                   tabIndex={distance > 1 ? -1 : 0}
                   aria-label={`Open ${profile.siteName}'s portfolio`}
-                  onClick={() => window.localStorage.setItem(LAST_PROFILE_KEY, profile.slug)}
+                  onClick={(event) => handleCardClick(event, profile, index, active)}
                 >
                   <div className="archive-ticket vintage-card">
                   <span className="archive-ticket-index">No. {String(index + 1).padStart(2, "0")}</span>
@@ -212,15 +277,8 @@ export default function LandingClient({ profiles }) {
 
       <nav className="archive-carousel-nav absolute bottom-5 left-1/2 z-40 -translate-x-1/2 sm:bottom-7" aria-label="Portfolio carousel controls">
         <button type="button" className="archive-round-button" onClick={() => selectIndex(activeIndex - 1)} aria-label="Previous member">←</button>
-        <ol>
-          {profiles.map((profile, index) => (
-            <li key={profile.slug}>
-              <button type="button" className={index === activeIndex ? "is-active" : ""} onClick={() => selectIndex(index)} aria-label={`Show ${profile.siteName}`} aria-current={index === activeIndex ? "true" : undefined}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-              </button>
-            </li>
-          ))}
-        </ol>
+        <PaginationRail profiles={profiles} activeIndex={activeIndex} maxItems={10} className="archive-pagination-lg" onSelect={selectIndex} />
+        <PaginationRail profiles={profiles} activeIndex={activeIndex} maxItems={5} className="archive-pagination-sm" onSelect={selectIndex} />
         <button type="button" className="archive-round-button" onClick={() => selectIndex(activeIndex + 1)} aria-label="Next member">→</button>
       </nav>
     </main>

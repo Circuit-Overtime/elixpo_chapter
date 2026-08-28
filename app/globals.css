@@ -213,7 +213,7 @@ body {
   top: 1.25rem;
   z-index: 5;
   font-family: "Bitcount Grid Double", system-ui;
-  font-size: 0.58rem;
+  font-size: 0.68rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: #7b3524;
@@ -231,7 +231,7 @@ body {
 
 .archive-ticket-kicker {
   font-family: "Pathway Gothic One", sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.88rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: #78543a;
@@ -260,7 +260,7 @@ body {
   max-width: 29rem;
   color: #5e402c;
   font-family: "Pathway Gothic One", sans-serif;
-  font-size: clamp(0.78rem, 1.4vw, 1rem);
+  font-size: clamp(1rem, 1.7vw, 1.24rem);
   letter-spacing: 0.09em;
   line-height: 1.2;
   text-transform: uppercase;
@@ -278,12 +278,15 @@ body {
   padding-top: 0.65rem;
   color: #71513a;
   font-family: "Pathway Gothic One", sans-serif;
-  font-size: 0.63rem;
+  font-size: 0.82rem;
   letter-spacing: 0.1em;
 }
 
 .archive-ticket-meta span:last-child {
   overflow: hidden;
+  color: #4a2d20;
+  font-size: clamp(0.88rem, 1.25vw, 1rem);
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -346,7 +349,7 @@ body {
 .archive-ticket-stub > span {
   margin-top: 1.1rem;
   font-family: "Bitcount Grid Double", system-ui;
-  font-size: 0.48rem;
+  font-size: 0.58rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
 }
@@ -355,7 +358,7 @@ body {
   margin-top: 0.25rem;
   color: #8a3423;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .archive-ticket-link {
@@ -368,7 +371,7 @@ body {
   gap: 0.65rem;
   color: #702c20;
   font-family: "Bitcount Grid Double", system-ui;
-  font-size: 0.57rem;
+  font-size: 0.66rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -465,6 +468,22 @@ body {
   padding: 0 0.2rem;
 }
 
+.archive-carousel-nav .archive-pagination-sm { display: none; }
+
+.archive-pagination-ellipsis {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 1.5rem;
+  height: 1.9rem;
+  place-items: center;
+  color: #d1b789;
+  background: #2a180e;
+  font-family: "Pathway Gothic One", sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
 .archive-carousel-nav ol::before {
   content: "";
   position: absolute;
@@ -509,6 +528,8 @@ body {
   .archive-ticket-link { left: 1.4rem; }
   .archive-ticket-stub > span { letter-spacing: 0.12em; }
   .archive-carousel-nav { gap: 0.45rem; }
+  .archive-carousel-nav .archive-pagination-lg { display: none; }
+  .archive-carousel-nav .archive-pagination-sm { display: flex; }
   .archive-carousel-nav ol { gap: 0.35rem; }
   .archive-round-button { width: 2.55rem; height: 2.55rem; }
 }
