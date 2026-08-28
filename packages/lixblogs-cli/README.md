@@ -82,6 +82,21 @@ lixblogs org targets --json
 Organization lookup is membership-bound. A slug alone never grants access;
 the API resolves the authenticated user's role before returning tenant data.
 
+Editorial collaboration stays separate from publishing:
+
+```bash
+lixblogs collab invitations
+lixblogs collab list BLOG_ID
+lixblogs collab invite BLOG_ID --user reviewer --role viewer --yes
+lixblogs collab role BLOG_ID --user reviewer --role editor --yes
+lixblogs collab accept BLOG_ID --yes
+lixblogs collab decline BLOG_ID --yes
+```
+
+Viewer, editor, and admin roles grant different editorial authority. None of
+these commands publishes a post; public-state changes still use `blog publish`
+with the publish scope and a separate confirmation.
+
 `create`, `edit`, `publish`, `unpublish`, `delete`, and `restore` accept
 `--dry-run`. Content input is mutually exclusive: `--file`, `--stdin`,
 `--content`, or `--editor`. Permanent deletion additionally requires

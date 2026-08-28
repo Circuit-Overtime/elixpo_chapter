@@ -35,6 +35,7 @@ import { ProfileRegistry, validateProfileId } from "../src/config/ProfileRegistr
 import { AuthenticatedClient } from "../src/auth/AuthenticatedClient.js";
 import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
 import { OrgClient } from "../src/api/OrgClient.js";
+import { CollaborationClient } from "../src/api/CollaborationClient.js";
 import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
 import {
   blogCreate,
@@ -53,6 +54,15 @@ import {
   orgMembers,
   orgTargets,
 } from "../src/commands/org/index.js";
+import {
+  collabAccept,
+  collabDecline,
+  collabInvitations,
+  collabInvite,
+  collabList,
+  collabRemove,
+  collabRole,
+} from "../src/commands/collab/index.js";
 
 const OPTIONS = {
   profile: { type: "string" },
@@ -92,6 +102,9 @@ const OPTIONS = {
   etag: { type: "string" },
   permanent: { type: "boolean", default: false },
   "idempotency-key": { type: "string" },
+  user: { type: "string" },
+  role: { type: "string" },
+  "hide-on-profile": { type: "boolean", default: false },
   help: { type: "boolean", short: "h", default: false },
 };
 
@@ -125,6 +138,13 @@ Usage:
   lixblogs org collections <id> [--json]
   lixblogs org members <id>  [--json]
   lixblogs org targets       [--json]
+  lixblogs collab list <blog-id> [--json]
+  lixblogs collab invitations   [--json]
+  lixblogs collab invite <blog-id> --user <username> --role <viewer|editor|admin> --yes
+  lixblogs collab role <blog-id> --user <username-or-id> --role <viewer|editor|admin> --yes
+  lixblogs collab remove <blog-id> [--user <username-or-id>] --yes
+  lixblogs collab accept <blog-id> --yes [--hide-on-profile]
+  lixblogs collab decline <blog-id> --yes
 
 Global flags:
   --profile <name>            named profile to use (default: "default")
@@ -469,6 +489,16 @@ const ORG_COMMANDS = {
   targets: orgTargets,
 };
 
+const COLLAB_COMMANDS = {
+  list: collabList,
+  invitations: collabInvitations,
+  invite: collabInvite,
+  role: collabRole,
+  remove: collabRemove,
+  accept: collabAccept,
+  decline: collabDecline,
+};
+
 async function runBlog(opts, args, action) {
   const config = resolveConfig({ flags: configFlags(opts) });
   const profileRegistry = new ProfileRegistry();
@@ -547,6 +577,37 @@ async function runOrg(opts, args, action) {
   }
 }
 
+async function runCollab(opts, args, action) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  const client = new CollaborationClient(context.http);
+  try {
+    const result = await COLLAB_COMMANDS[action]({ client, id: args[0], options: opts });
+    output(opts, { ok: true, data: result });
+    if (opts.json || opts.quiet) return;
+    if (result.dryRun) {
+      console.log(`Dry run: ${result.action} validated; no changes sent.`);
+      return;
+    }
+    const rows = action === 'invitations'
+      ? result
+      : action === 'list'
+        ? result.collaborators || []
+        : [result];
+    for (const row of rows) {
+      console.log([
+        row.blogId || row.userId,
+        row.status,
+        row.role,
+        row.username || row.title,
+        row.notificationState,
+      ].filter(Boolean).join('\t'));
+    }
+  } catch (error) {
+    fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
+  }
+}
+
 const ROUTES = {
   auth: {
     login: runLogin,
@@ -564,6 +625,10 @@ const ROUTES = {
   org: Object.fromEntries(Object.keys(ORG_COMMANDS).map((action) => [
     action,
     (opts, args) => runOrg(opts, args, action),
+  ])),
+  collab: Object.fromEntries(Object.keys(COLLAB_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runCollab(opts, args, action),
   ])),
 };
 

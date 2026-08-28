@@ -33,6 +33,12 @@ logged by the resource API.
 | `GET` | `/api/v1/orgs/{id}` | `lixblogs:org:read` | One caller-visible organization and role |
 | `GET` | `/api/v1/orgs/{id}/collections` | `lixblogs:org:read` | Collections within a caller membership |
 | `GET` | `/api/v1/orgs/{id}/members` | `lixblogs:org:read` | Members and roles within a caller membership |
+| `GET` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collab:read` | Editorial team and effective role |
+| `POST` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collab:write` | Invite or reassign a collaborator |
+| `PATCH` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collab:write` | Change a collaborator role |
+| `DELETE` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collab:write` | Remove a collaborator or leave a team |
+| `GET` | `/api/v1/collaboration/invitations` | `lixblogs:collab:read` | Current identity's invitations |
+| `POST` | `/api/v1/collaboration/invitations` | `lixblogs:collab:write` | Accept or decline an invitation |
 
 `GET /api/v1/blogs` accepts `status=all|draft|published`, `limit=1..100`, and
 an opaque `cursor`. Results include authored blogs, accepted collaborations,
