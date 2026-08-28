@@ -10,6 +10,7 @@ const outputDir = path.resolve(process.argv[2] || "out");
 const marker = path.join(outputDir, ".media-optimized");
 const imageExtensions = new Set([".avif", ".jpeg", ".jpg", ".png", ".webp"]);
 const videoExtensions = new Set([".m4v", ".mov", ".mp4", ".webm"]);
+const imageWorkerCount = 3;
 
 function collectFiles(directory) {
   const files = [];
@@ -95,19 +96,51 @@ async function main() {
     return;
   }
 
-  const media = collectFiles(outputDir);
+  const collectedFiles = collectFiles(outputDir);
+  const staleTemporaryFiles = collectedFiles.filter((file) =>
+    path.basename(file).includes(".optimized-"),
+  );
+
+  for (const temporaryFile of staleTemporaryFiles) {
+    fs.unlinkSync(temporaryFile);
+  }
+
+  if (staleTemporaryFiles.length > 0) {
+    console.log(`>> Removed ${staleTemporaryFiles.length} interrupted optimizer files.`);
+  }
+
+  const media = collectedFiles.filter((file) => !staleTemporaryFiles.includes(file));
   const images = media.filter((file) => imageExtensions.has(path.extname(file).toLowerCase()));
   const videos = media.filter((file) => videoExtensions.has(path.extname(file).toLowerCase()));
   let changed = 0;
   let bytesSaved = 0;
+  let completedImages = 0;
 
-  for (const image of images) {
-    const result = await optimizeImage(image);
-    if (result.changed) changed += 1;
-    bytesSaved += result.saved;
-  }
+  console.log(`>> Optimizing ${images.length} images and ${videos.length} videos in ${outputDir}...`);
 
-  for (const video of videos) {
+  const imageQueue = images.entries();
+  const optimizeImageWorker = async () => {
+    for (const [, image] of imageQueue) {
+      const result = await optimizeImage(image);
+      if (result.changed) changed += 1;
+      bytesSaved += result.saved;
+      completedImages += 1;
+
+      if (completedImages % 10 === 0 || completedImages === images.length) {
+        console.log(`>> Images: ${completedImages}/${images.length}`);
+      }
+    }
+  };
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(imageWorkerCount, Math.max(images.length, 1)) },
+      () => optimizeImageWorker(),
+    ),
+  );
+
+  for (const [index, video] of videos.entries()) {
+    console.log(`>> Video: ${index + 1}/${videos.length} (${path.relative(outputDir, video)})`);
     const result = optimizeVideo(video);
     if (result.changed) changed += 1;
     bytesSaved += result.saved;

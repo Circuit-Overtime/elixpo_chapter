@@ -19,6 +19,7 @@ optimize_export() {
     echo "Error: $EXPORT_DIR/ directory not found. Run ./deploy.sh build first."
     exit 1
   fi
+  echo ">> Checking exported media..."
   node "$OPTIMIZER" "$EXPORT_DIR"
 }
 
@@ -41,7 +42,7 @@ for cmd in "$@"; do
     deploy)
       optimize_export
       echo ">> Deploying to Cloudflare Pages..."
-      npx wrangler pages deploy "$EXPORT_DIR"
+      npx --yes wrangler pages deploy "$EXPORT_DIR" --project-name=elixpome
       echo ">> Deploy complete."
       ;;
     *)
