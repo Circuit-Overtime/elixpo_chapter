@@ -49,6 +49,53 @@ Users sign in via Elixpo Accounts SSO (no separate password). For machine-to-mac
 
 ---
 
+# Developer CLI — @elixpo/lixrl-cli
+
+Install the official CLI with Node.js 20 or newer:
+
+\`\`\`bash
+npm install --global @elixpo/lixrl-cli
+lixrl --help
+\`\`\`
+
+## Interactive authentication
+
+1. Sign in at \`https://lixrl.com/api/auth/login?return_to=/profile/keys\`.
+2. Create a scoped API key under **Profile → API Keys**. Use \`read,write\` to create or modify links and \`read\` for inspection and analytics only.
+3. Run \`lixrl login --open\` and paste the key into the masked prompt.
+4. Verify the active identity with \`lixrl whoami\`.
+
+Interactive credentials are stored in the operating-system keychain. The CLI config stores profile aliases only. Never put an \`elu_…\` key in a URL, source file, issue, chat message, or generated article.
+
+## CI and agents
+
+Provide \`LIXRL_API_KEY\` through the CI platform secret store and always use \`--json --no-input\`:
+
+\`\`\`bash
+lixrl whoami --json --no-input
+lixrl urls create "https://example.com/article" --title "Article" --tag automation --json --no-input
+\`\`\`
+
+## Common commands
+
+\`\`\`bash
+lixrl urls list --search launch --json
+lixrl urls analytics abc123 --days 30 --json
+lixrl urls export --output links.csv
+lixrl qr "https://example.com" --format svg --output code.svg
+lixrl qr "https://example.com" --track --style aurora --output tracked.svg
+lixrl domains list
+lixrl skills install lixrl-links
+\`\`\`
+
+Deletion, key revocation, subdomain unmapping, and file replacement require explicit confirmation. Agent workflows must not add \`--yes\` without user approval.
+
+For published writing, shorten only public canonical destinations selected by the author. Preserve the original destination, show the proposed replacement, and obtain approval before changing the post. LixBlogs OAuth tokens and Lixrl API keys are separate credentials and must never be substituted.
+
+Full guide: \`https://lixrl.com/docs/cli\`.
+
+---
+
 # Authentication
 
 Endpoints require a scoped API key in the standard Bearer header:

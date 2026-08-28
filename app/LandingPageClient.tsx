@@ -247,6 +247,14 @@ export default function LandingPage() {
               with click analytics, custom slugs, and a REST API, all from one
               dashboard.
             </p>
+            <Link
+              href="/docs/cli"
+              className="btn-glass inline-flex items-center gap-2 no-underline"
+              style={{ borderRadius: 9, padding: '10px 16px', fontSize: 14 }}
+            >
+              Developer CLI
+              <ArrowIcon />
+            </Link>
           </div>
 
           {/* Static brand artwork — blends into the white hero surface. */}
