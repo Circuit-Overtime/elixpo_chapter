@@ -4,6 +4,7 @@ import { metadataFromOptions, resolveMarkdownInput } from './input.js';
 import { validateBlogInput } from '../../content/validate.js';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { requireConfirmation } from '../../cli/contract.js';
 
 export async function blogList({ client, options }) {
   return client.list({ status: options.status, limit: options.limit, cursor: options.cursor });
@@ -55,6 +56,7 @@ export async function blogPublish({ client, id, options }) {
   const current = await client.get(id);
   validateBlogInput(current, { publishing: true });
   if (options['dry-run']) return { dryRun: true, id, from: current.status, to: 'published' };
+  requireConfirmation(options, 'Publishing this blog');
   return client.publish(id, { etag: options.etag || current.etag, idempotencyKey: options['idempotency-key'] });
 }
 
@@ -62,6 +64,7 @@ export async function blogUnpublish({ client, id, options }) {
   if (!id) throw new Error('A blog ID is required.');
   const current = await client.get(id);
   if (options['dry-run']) return { dryRun: true, id, from: current.status, to: 'draft' };
+  requireConfirmation(options, 'Unpublishing this blog');
   return client.unpublish(id, { etag: options.etag || current.etag });
 }
 
@@ -77,5 +80,6 @@ export async function blogRestore({ client, id, options }) {
   if (!id) throw new Error('A blog ID is required.');
   const current = await client.get(id);
   if (options['dry-run']) return { dryRun: true, id, restoreTo: current.preDeleteStatus || 'draft' };
+  requireConfirmation(options, 'Restoring this blog');
   return client.restore(id, { etag: options.etag || current.etag });
 }

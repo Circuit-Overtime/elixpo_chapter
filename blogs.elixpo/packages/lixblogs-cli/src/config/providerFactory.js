@@ -29,7 +29,7 @@ export function createAuthProvider(config) {
       accountsBaseUrl: config.accountsBaseUrl,
       clientId: config.clientId,
       audience: config.audience,
-      cliVersion: config.cliVersion || "1.1.0",
+      cliVersion: config.cliVersion || "1.2.0",
       fetchImpl: config.fetchImpl,
     });
 

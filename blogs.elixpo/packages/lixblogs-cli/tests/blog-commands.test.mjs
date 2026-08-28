@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { BlogApiError } from '../src/api/BlogClient.js';
-import { blogCreate, blogDelete, blogEdit } from '../src/commands/blog/index.js';
+import { blogCreate, blogDelete, blogEdit, blogPublish } from '../src/commands/blog/index.js';
 import { blocksToMarkdown, markdownToBlocks } from '../src/content/markdown.js';
 import { validateBlogInput } from '../src/content/validate.js';
 
@@ -40,6 +40,23 @@ test('delete fails closed without explicit confirmation', async () => {
     blogDelete({ client: {}, id: 'blog-1', options: { yes: false } }),
     /requires --yes/,
   );
+});
+
+test('publish validates before requiring explicit confirmation', async () => {
+  const blog = {
+    title: 'Ready', etag: '"one"', status: 'draft',
+    content: markdownToBlocks('one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty'),
+  };
+  await assert.rejects(
+    blogPublish({ client: { get: async () => blog }, id: 'blog-1', options: {} }),
+    /requires --yes/,
+  );
+  const result = await blogPublish({
+    client: { get: async () => blog, publish: async () => ({ id: 'blog-1', status: 'published' }) },
+    id: 'blog-1',
+    options: { yes: true },
+  });
+  assert.equal(result.status, 'published');
 });
 
 test('edit conflict preserves local and server versions on disk', async () => {

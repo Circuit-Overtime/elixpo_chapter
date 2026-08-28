@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { AuthenticatedClient, LoginRequiredError } from "../src/auth/AuthenticatedClient.js";
+import { ApiContractUnavailableError, AuthenticatedClient, LoginRequiredError } from "../src/auth/AuthenticatedClient.js";
 import { AuthProviderError } from "../src/auth/ElixpoAuthProvider.js";
 import { InMemoryCredentialStore } from "../src/config/CredentialStore.js";
 
@@ -64,12 +64,35 @@ test("authenticated requests target the supplied Blogs URL with bearer auth", as
     profileId: "default",
     fetchImpl: async (url, options) => {
       calls.push({ url, options });
-      return new Response(null, { status: 200 });
+      return Response.json({ data: [] }, { status: 200 });
     },
   });
   await client.request("/api/v1/blogs");
   assert.equal(calls[0].url, "https://blogs.elixpo.com/api/v1/blogs");
   assert.equal(calls[0].options.headers.authorization, "Bearer current-access");
+});
+
+test("HTML fallbacks report an unavailable API contract instead of crashing", async () => {
+  const credentialStore = new InMemoryCredentialStore();
+  await credentialStore.set("default", {
+    ...expiredCredentials(),
+    expiresAt: Date.now() + 600_000,
+  });
+  const client = new AuthenticatedClient({
+    provider: {},
+    credentialStore,
+    profileId: "default",
+    fetchImpl: async () => new Response("<html>not found</html>", {
+      status: 200,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    }),
+  });
+  await assert.rejects(
+    client.request("/api/v1/me"),
+    (error) => error instanceof ApiContractUnavailableError
+      && error.code === "api_contract_unavailable"
+      && /Deploy the LixBlogs API v1 stack/.test(error.hint),
+  );
 });
 
 test("authenticated requests cannot send a bearer token to Accounts or another origin", async () => {

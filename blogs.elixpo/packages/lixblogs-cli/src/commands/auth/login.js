@@ -23,6 +23,7 @@ import { redactErrorMessage } from "../../config/redact.js";
  * @param {string} params.profileId - which named profile this login is for
  * @param {string[]} params.scopes - scopes being requested
  * @param {(url: string) => Promise<void>} [params.openBrowser] - optional browser opener
+ * @param {(params: { accessToken: string, requestedProfileId: string }) => Promise<string>} [params.resolveProfileId]
  * @param {(ms: number) => Promise<void>} [params.sleep] - injectable for tests
  * @param {(...args: any[]) => void} [params.onStatus] - callback for UI updates (verification URL, polling status, etc.)
  * @returns {Promise<{ ok: true, profileId: string } | { ok: false, reason: string }>}
@@ -33,6 +34,7 @@ export async function authLogin({
   profileId,
   scopes,
   openBrowser,
+  resolveProfileId,
   sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   onStatus = () => {},
 }) {
@@ -69,14 +71,26 @@ export async function authLogin({
     }
 
     if (result.status === "approved") {
-      await credentialStore.set(profileId, {
+      let resolvedProfileId = profileId;
+      if (resolveProfileId) {
+        try {
+          resolvedProfileId = await resolveProfileId({
+            accessToken: result.token.accessToken,
+            requestedProfileId: profileId,
+          });
+        } catch (err) {
+          return { ok: false, reason: redactErrorMessage(err.message) };
+        }
+      }
+
+      await credentialStore.set(resolvedProfileId, {
         accessToken: result.token.accessToken,
         refreshToken: result.token.refreshToken,
         expiresAt: Date.now() + result.token.expiresInSeconds * 1000,
         scopes: result.token.scopes,
       });
       onStatus({ type: "approved" });
-      return { ok: true, profileId };
+      return { ok: true, profileId: resolvedProfileId };
     }
 
     if (result.status === "denied") {
