@@ -10,6 +10,7 @@ import JoinedToast from './JoinedToast';
 import { CreatorBadgeMark } from './CreatorBadge';
 import { CREATOR_BADGE_MAP } from '../../lib/badgeDefinitions';
 import { useSeasonalTheme } from '../themes/seasonal/SeasonalThemeProvider';
+import { onNotificationsUpdate } from '../utils/notificationEvents';
 
 // ─── Notification type config ───
 const NOTIF_CONFIG = {
@@ -63,7 +64,11 @@ function NotificationDropdown() {
           list.forEach(n => seenIdsRef.current.add(n.id));
           setUnread(0);
         } else {
-          setUnread(list.filter(n => !n.read && !seenIdsRef.current.has(n.id)).length);
+          // Combine the server's authoritative unread count with the client-side
+          // "seen" set so the badge stays cleared for notifications the user
+          // already glimpsed by opening the dropdown.
+          const unseenUnread = list.filter(n => !n.read && !seenIdsRef.current.has(n.id)).length;
+          setUnread(Math.min(unseenUnread, data.unread || 0));
         }
       }
     } catch {}
@@ -74,6 +79,19 @@ function NotificationDropdown() {
     fetchNotifications();
     const interval = setInterval(() => fetchNotifications(), 30000);
     return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  // Listen for external changes (e.g. marking read from the notifications page,
+  // or viewing the page via direct URL) so the navbar badge stays in sync.
+  // If the event carries seenIds, those notifications are marked as seen so
+  // the 30s poll doesn't resurrect the badge for them.
+  useEffect(() => {
+    return onNotificationsUpdate((seenIds) => {
+      if (seenIds) {
+        seenIds.forEach(id => seenIdsRef.current.add(id));
+      }
+      fetchNotifications(false);
+    });
   }, [fetchNotifications]);
 
   // Opening the panel clears the badge immediately, then fetches + marks seen.
@@ -108,7 +126,14 @@ function NotificationDropdown() {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => router.push('/notifications')}
+        onClick={() => {
+          // Clear the badge and remember current notifications as "seen" so
+          // the 30s poll doesn't resurrect the count if the user just viewed
+          // them without marking read.
+          setUnread(0);
+          notifications.forEach(n => seenIdsRef.current.add(n.id));
+          router.push('/notifications');
+        }}
         className="relative flex items-center justify-center w-9 h-9 rounded-lg transition-colors"
         style={{ color: 'var(--text-muted)' }}
         onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
