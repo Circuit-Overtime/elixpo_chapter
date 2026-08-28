@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
+import { getBrandingGate } from "@/lib/branding-gate";
 import { getDatabase } from "@/lib/d1-client";
 import {
     createAuthRequest,
@@ -8,6 +9,7 @@ import {
     getOAuthClientById,
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
+import { findScopeOption, parseCustomScopes } from "@/lib/oauth-scope-registry";
 import { parseOAuthScopes, unsupportedOAuthScopes } from "@/lib/oauth-scopes";
 import { isValidPkceValue } from "@/lib/pkce";
 import { generateRandomString, generateUUID } from "@/lib/webcrypto";
@@ -71,7 +73,9 @@ export async function GET(request: NextRequest) {
         const isBuiltinClient = BUILTIN_DOMAINS.includes(redirectUrl.hostname);
         const db = await getDatabase();
         const requestedScopes = parseOAuthScopes(scope);
-        const unsupported = unsupportedOAuthScopes(requestedScopes);
+        const unsupported = isBuiltinClient
+            ? unsupportedOAuthScopes(requestedScopes)
+            : [];
         if (unsupported.length > 0) {
             return NextResponse.json(
                 {
@@ -116,6 +120,17 @@ export async function GET(request: NextRequest) {
                         { status: 401 },
                     );
                 }
+                const brandingGate = await getBrandingGate(db, clientId);
+                if (brandingGate.verificationRequired) {
+                    return NextResponse.json(
+                        {
+                            error: "branding_verification_required",
+                            error_description:
+                                "This application must verify its brand before accepting more sign-ins.",
+                        },
+                        { status: 403 },
+                    );
+                }
                 if (
                     ((client as any).client_type === "public" &&
                         !codeChallenge) ||
@@ -136,8 +151,12 @@ export async function GET(request: NextRequest) {
                 const registeredScopes: string[] = JSON.parse(
                     (client as any).scopes || "[]",
                 );
+                const customScopes = parseCustomScopes(
+                    (client as any).custom_scopes,
+                );
                 const unregistered = requestedScopes.filter(
                     (requestedScope) =>
+                        !findScopeOption(requestedScope, customScopes) ||
                         !registeredScopes.includes(requestedScope),
                 );
                 if (unregistered.length > 0) {
@@ -329,6 +348,17 @@ export async function POST(request: NextRequest) {
             redirectUrl.searchParams.append(
                 "error_description",
                 "User denied access",
+            );
+            redirectUrl.searchParams.append("state", state);
+            return NextResponse.json({ redirect_uri: redirectUrl.toString() });
+        }
+
+        const brandingGate = await getBrandingGate(db, clientId);
+        if (brandingGate.verificationRequired) {
+            redirectUrl.searchParams.append("error", "temporarily_unavailable");
+            redirectUrl.searchParams.append(
+                "error_description",
+                "This application must verify its brand before accepting more sign-ins.",
             );
             redirectUrl.searchParams.append("state", state);
             return NextResponse.json({ redirect_uri: redirectUrl.toString() });

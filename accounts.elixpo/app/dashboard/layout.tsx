@@ -326,8 +326,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                                 ? "rgba(255, 119, 89,0.1)"
                                                 : "transparent",
                                             borderRadius: "8px",
-                                            width: 38,
+                                            width: { xs: 38, lg: "auto" },
                                             height: 38,
+                                            px: { xs: 0, lg: 1.25 },
+                                            gap: { xs: 0, lg: 0.75 },
                                             transition: "all 0.2s ease",
                                             "&:hover": {
                                                 bgcolor: isActive(item.href)
@@ -342,6 +344,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                         <item.icon
                                             sx={{ fontSize: "1.25rem" }}
                                         />
+                                        <Typography
+                                            component="span"
+                                            sx={{
+                                                display: {
+                                                    xs: "none",
+                                                    lg: "inline",
+                                                },
+                                                fontSize: "0.82rem",
+                                                fontWeight: 650,
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
+                                            {item.label}
+                                        </Typography>
                                     </IconButton>
                                 ))}
                             </Box>

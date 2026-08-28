@@ -2,8 +2,12 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { OAUTH_SCOPE_DETAILS } from "@/lib/oauth-scopes";
+import type { CustomOAuthScope } from "@/lib/oauth-scope-registry";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
+import {
+    AccountSelector,
+    OAuthScopeList,
+} from "../../components/oauth-consent";
 
 interface AuthorizationRequest {
     clientId: string;
@@ -12,6 +16,7 @@ interface AuthorizationRequest {
     homepageUrl?: string;
     redirectUri: string;
     scopes: string[];
+    customScopes: CustomOAuthScope[];
     state: string;
     logoUrl?: string | null;
     brandingDisplayName?: string | null;
@@ -226,6 +231,7 @@ function AuthorizeContent() {
                     homepageUrl: client.homepage_url || null,
                     redirectUri,
                     scopes: scopes.length > 0 ? scopes : client.scopes || [],
+                    customScopes: client.custom_scopes || [],
                     state,
                     logoUrl: client.logo_url || null,
                     brandingDisplayName: client.branding_display_name || null,
@@ -458,11 +464,60 @@ function AuthorizeContent() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "transparent",
+                background: "var(--bg)",
                 padding: 16,
+                position: "relative",
+                overflow: "hidden",
             }}
         >
-            <div style={{ maxWidth: 420, width: "100%" }}>
+            <div
+                aria-hidden="true"
+                style={{
+                    position: "absolute",
+                    width: 520,
+                    height: 520,
+                    left: "-18%",
+                    top: "-22%",
+                    borderRadius: "42% 58% 64% 36%",
+                    background: `radial-gradient(circle, ${
+                        authRequest.isBrandingVerified &&
+                        authRequest.brandingPrimaryColor
+                            ? authRequest.brandingPrimaryColor
+                            : "#ff7759"
+                    } 0%, transparent 68%)`,
+                    filter: "blur(70px)",
+                    opacity: 0.18,
+                    transform: "rotate(18deg)",
+                }}
+            />
+            <div
+                aria-hidden="true"
+                style={{
+                    position: "absolute",
+                    width: 440,
+                    height: 440,
+                    right: "-14%",
+                    bottom: "-24%",
+                    borderRadius: "60% 40% 38% 62%",
+                    background: `radial-gradient(circle, ${
+                        authRequest.isBrandingVerified &&
+                        authRequest.brandingAccentColor
+                            ? authRequest.brandingAccentColor
+                            : authRequest.brandingPrimaryColor || "#ff9b85"
+                    } 0%, transparent 68%)`,
+                    filter: "blur(70px)",
+                    opacity: 0.16,
+                    transform: "rotate(-22deg)",
+                }}
+            />
+            <div
+                style={{
+                    maxWidth: 420,
+                    width: "100%",
+                    position: "relative",
+                    zIndex: 1,
+                }}
+            >
                 {/* Main Card */}
                 <div
                     style={{
@@ -482,7 +537,7 @@ function AuthorizeContent() {
                             gap: 16,
                         }}
                     >
-                        {/* Elixpo logo */}
+                        {/* Verified application logo */}
                         <div
                             style={{
                                 width: 44,
@@ -490,62 +545,7 @@ function AuthorizeContent() {
                                 borderRadius: 12,
                                 overflow: "hidden",
                                 flexShrink: 0,
-                                border: "2px solid rgba(255, 119, 89,0.25)",
-                            }}
-                        >
-                            <img
-                                src="/LOGO/logo.png"
-                                alt="Elixpo"
-                                width={44}
-                                height={44}
-                                style={{ display: "block" }}
-                            />
-                        </div>
-
-                        {/* Connector */}
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                flex: "0 0 auto",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 6,
-                                    height: 6,
-                                    borderRadius: "50%",
-                                    background: "#ff7759",
-                                    opacity: 0.6,
-                                }}
-                            />
-                            <div
-                                style={{
-                                    width: 24,
-                                    height: 2,
-                                    background:
-                                        "linear-gradient(90deg, rgba(255, 119, 89,0.5), rgba(255, 119, 89,0.15))",
-                                }}
-                            />
-                            <div
-                                style={{
-                                    width: 6,
-                                    height: 6,
-                                    borderRadius: "50%",
-                                    background: "#ff7759",
-                                    opacity: 0.6,
-                                }}
-                            />
-                        </div>
-
-                        {/* Client icon */}
-                        <div
-                            style={{
-                                flexShrink: 0,
                                 border: "2px solid var(--border)",
-                                borderRadius: 12,
-                                overflow: "hidden",
                             }}
                         >
                             <ClientIcon
@@ -565,153 +565,114 @@ function AuthorizeContent() {
                             />
                         </div>
 
-                        {/* Text */}
+                        {/* Connector */}
                         <div
                             style={{
-                                minWidth: 0,
-                                maxWidth: 150,
-                                textAlign: "center",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                flex: "0 0 auto",
                             }}
                         >
-                            <p
+                            <div
                                 style={{
-                                    color: "var(--fg)",
-                                    fontWeight: 700,
-                                    fontSize: 15,
-                                    margin: 0,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: "50%",
+                                    background:
+                                        authRequest.brandingPrimaryColor ||
+                                        "#ff7759",
+                                    opacity: 0.6,
                                 }}
-                            >
-                                {authRequest.isBrandingVerified &&
-                                authRequest.brandingDisplayName
-                                    ? authRequest.brandingDisplayName
-                                    : authRequest.clientName}
-                            </p>
-                            {hostname && (
-                                <p
-                                    style={{
-                                        color: "var(--fg-faint)",
-                                        fontSize: 12,
-                                        margin: "2px 0 0",
-                                        fontFamily: "monospace",
-                                    }}
-                                >
-                                    {hostname}
-                                </p>
-                            )}
+                            />
+                            <div
+                                style={{
+                                    width: 24,
+                                    height: 2,
+                                    background: `linear-gradient(90deg, ${authRequest.brandingPrimaryColor || "#ff7759"}, ${authRequest.brandingAccentColor || authRequest.brandingPrimaryColor || "#ff9b85"})`,
+                                }}
+                            />
+                            <div
+                                style={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: "50%",
+                                    background:
+                                        authRequest.brandingAccentColor ||
+                                        authRequest.brandingPrimaryColor ||
+                                        "#ff7759",
+                                    opacity: 0.6,
+                                }}
+                            />
+                        </div>
+
+                        {/* Elixpo Accounts network icon */}
+                        <div
+                            style={{
+                                flexShrink: 0,
+                                border: "2px solid var(--border)",
+                                borderRadius: 12,
+                                overflow: "hidden",
+                            }}
+                        >
+                            <img
+                                src="/LOGO/logo.png"
+                                alt="Elixpo Accounts"
+                                width={44}
+                                height={44}
+                                style={{ display: "block" }}
+                            />
                         </div>
                     </div>
 
-                    {/* Which account this authorization is for */}
-                    {account && (
-                        <div
+                    <p
+                        style={{
+                            color: "var(--fg)",
+                            fontSize: 15,
+                            fontWeight: 700,
+                            textAlign: "center",
+                            margin: "-8px 16px 2px",
+                        }}
+                    >
+                        Continue to{" "}
+                        {authRequest.isBrandingVerified &&
+                        authRequest.brandingDisplayName
+                            ? authRequest.brandingDisplayName
+                            : authRequest.clientName}
+                    </p>
+                    {hostname && (
+                        <p
                             style={{
-                                padding: "0 16px 14px",
+                                color: "var(--fg-faint)",
+                                fontFamily: "monospace",
+                                fontSize: 12,
+                                textAlign: "center",
+                                margin: "0 16px 4px",
                             }}
                         >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    gap: 10,
-                                }}
-                            >
-                                <img
-                                    src={
-                                        account.avatar ||
-                                        generatePixelAvatar(account.email, 32)
-                                    }
-                                    alt=""
-                                    width={32}
-                                    height={32}
-                                    style={{
-                                        borderRadius: "50%",
-                                        flexShrink: 0,
-                                    }}
-                                />
-                                <div
-                                    style={{ minWidth: 0, textAlign: "center" }}
-                                >
-                                    <span
-                                        style={{
-                                            display: "block",
-                                            color: "var(--fg)",
-                                            fontSize: 12.5,
-                                            fontWeight: 650,
-                                        }}
-                                    >
-                                        {account.displayName || account.email}
-                                    </span>
-                                    <span
-                                        style={{
-                                            display: "block",
-                                            color: "var(--fg-faint)",
-                                            fontSize: 11.5,
-                                            overflowWrap: "anywhere",
-                                        }}
-                                    >
-                                        {account.email}
-                                    </span>
-                                </div>
-                            </div>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 10,
-                                    flexWrap: "wrap",
-                                    justifyContent: "center",
-                                    marginTop: 10,
-                                }}
-                            >
-                                {accounts.length > 1 && (
-                                    <select
-                                        aria-label="Choose an account"
-                                        value={account.id}
-                                        disabled={isSwitching}
-                                        onChange={(event) =>
-                                            handleSwitchAccount(
-                                                event.target.value,
-                                            )
-                                        }
-                                        style={{
-                                            minWidth: 0,
-                                            maxWidth: "100%",
-                                            border: "1px solid var(--border)",
-                                            borderRadius: 8,
-                                            background: "var(--surface)",
-                                            color: "var(--fg-muted)",
-                                            fontSize: 12,
-                                            padding: "7px 9px",
-                                        }}
-                                    >
-                                        {accounts.map((candidate) => (
-                                            <option
-                                                key={candidate.id}
-                                                value={candidate.id}
-                                            >
-                                                {candidate.displayName ||
-                                                    candidate.email}
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
-                                <a
-                                    href={`/login?add_account=1&next=${encodeURIComponent(`/authorize?${searchParams.toString()}`)}`}
-                                    style={{
-                                        color: "#ff7759",
-                                        fontSize: 12,
-                                        fontWeight: 650,
-                                        textDecoration: "none",
-                                    }}
-                                >
-                                    Add account
-                                </a>
-                            </div>
-                        </div>
+                            {hostname}
+                        </p>
+                    )}
+                    <p
+                        style={{
+                            color: "var(--fg-faint)",
+                            fontSize: 12,
+                            textAlign: "center",
+                            margin: "0 16px 16px",
+                        }}
+                    >
+                        via global secured Elixpo Accounts Network
+                    </p>
+
+                    {/* Which account this authorization is for */}
+                    {account && (
+                        <AccountSelector
+                            account={account}
+                            accounts={accounts}
+                            disabled={isSwitching}
+                            onSwitch={handleSwitchAccount}
+                            addHref={`/login?add_account=1&next=${encodeURIComponent(`/authorize?${searchParams.toString()}`)}`}
+                        />
                     )}
 
                     {/* Bento grid */}
@@ -749,67 +710,14 @@ function AuthorizeContent() {
                                     : authRequest.clientName}{" "}
                                 will be able to
                             </p>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 6,
-                                }}
-                            >
-                                {authRequest.scopes.map((scope) => {
-                                    const info = OAUTH_SCOPE_DETAILS[
-                                        scope as keyof typeof OAUTH_SCOPE_DETAILS
-                                    ] || {
-                                        label: scope,
-                                        description:
-                                            "Use this permission as described by the application.",
-                                    };
-                                    return (
-                                        <div
-                                            key={scope}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 8,
-                                            }}
-                                        >
-                                            <svg
-                                                width="14"
-                                                height="14"
-                                                viewBox="0 0 20 20"
-                                                fill="#ff7759"
-                                                style={{ flexShrink: 0 }}
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                            <span>
-                                                <strong
-                                                    style={{
-                                                        display: "block",
-                                                        color: "var(--fg)",
-                                                        fontSize: 13,
-                                                    }}
-                                                >
-                                                    {info.label}
-                                                </strong>
-                                                <span
-                                                    style={{
-                                                        color: "var(--fg-muted)",
-                                                        fontSize: 12,
-                                                        lineHeight: 1.45,
-                                                    }}
-                                                >
-                                                    {info.description}
-                                                </span>
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            <OAuthScopeList
+                                scopes={authRequest.scopes}
+                                customScopes={authRequest.customScopes}
+                                accentColor={
+                                    authRequest.brandingPrimaryColor ||
+                                    "#ff7759"
+                                }
+                            />
                         </div>
 
                         {/* Security and expiry chip */}

@@ -18,17 +18,38 @@ import {
     updateOAuthClient,
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
-import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
 import { sendMail } from "@/lib/mails";
+import { normalizeOAuthAudience } from "@/lib/oauth-client-registration";
 import {
-    SUPPORTED_OAUTH_SCOPES,
-    unsupportedOAuthScopes,
-} from "@/lib/oauth-scopes";
+    findScopeOption,
+    parseCustomScopes,
+    SUPPORTED_PRODUCT_SCOPES,
+    validateCustomScopes,
+} from "@/lib/oauth-scope-registry";
+import { SUPPORTED_OAUTH_SCOPES } from "@/lib/oauth-scopes";
 import {
     generateRandomString,
     generateUUID,
     hashString,
 } from "@/lib/webcrypto";
+
+async function canManageClient(
+    db: Awaited<ReturnType<typeof getDatabase>>,
+    app: { owner_id?: string },
+    userId: string,
+): Promise<boolean> {
+    if (app.owner_id === userId) return true;
+    if (
+        app.owner_id !== "system-lixblogs-cli" &&
+        app.owner_id !== "system-lixrl-cli"
+    )
+        return false;
+    const user = await db
+        .prepare("SELECT is_internal FROM users WHERE id = ?")
+        .bind(userId)
+        .first<{ is_internal: number }>();
+    return user?.is_internal === 1;
+}
 
 /**
  * PUT /api/auth/oauth-clients/[client_id]
@@ -69,6 +90,8 @@ export async function PUT(
             branding_accent_color,
             privacy_policy_url,
             terms_of_service_url,
+            audience,
+            custom_scopes,
         } = body;
 
         if (!client_id) {
@@ -88,15 +111,20 @@ export async function PUT(
                 { status: 404 },
             );
         }
-        if (app.owner_id !== payload.sub) {
+        if (!(await canManageClient(db, app, payload.sub))) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         // Validate redirect URIs if provided
         if (redirect_uris !== undefined) {
-            if (!Array.isArray(redirect_uris) || redirect_uris.length === 0) {
+            if (
+                !Array.isArray(redirect_uris) ||
+                (app.client_type !== "public" && redirect_uris.length === 0)
+            ) {
                 return NextResponse.json(
-                    { error: "redirect_uris must be a non-empty array" },
+                    {
+                        error: "redirect_uris must be an array; confidential clients require at least one",
+                    },
                     { status: 400 },
                 );
             }
@@ -129,20 +157,54 @@ export async function PUT(
             }
         }
 
-        const allowedScopes: string[] =
-            app.client_type === "public"
-                ? [...SUPPORTED_OAUTH_SCOPES, ...SUPPORTED_LIXBLOGS_SCOPES]
-                : [...SUPPORTED_OAUTH_SCOPES];
+        let normalizedAudience: string | null | undefined;
+        if (audience !== undefined) {
+            normalizedAudience = normalizeOAuthAudience(audience);
+            if (app.client_type !== "public" || !normalizedAudience) {
+                return NextResponse.json(
+                    {
+                        error:
+                            app.client_type !== "public"
+                                ? "Audience is only supported for public clients"
+                                : "Public clients require a valid host-only audience",
+                    },
+                    { status: 400 },
+                );
+            }
+        }
+
+        const customScopeResult =
+            custom_scopes === undefined
+                ? { scopes: JSON.parse(app.custom_scopes || "[]") }
+                : validateCustomScopes(custom_scopes);
+        if ("error" in customScopeResult) {
+            return NextResponse.json(
+                { error: customScopeResult.error },
+                { status: 400 },
+            );
+        }
+        const customScopeDefinitions = customScopeResult.scopes || [];
+        const existingScopes: string[] = JSON.parse(app.scopes || "[]");
+        const currentCustomScopes = parseCustomScopes(app.custom_scopes);
+        const legacyUnknownScopes = existingScopes.filter(
+            (scope) => !findScopeOption(scope, currentCustomScopes),
+        );
+        const allowedScopes: string[] = [
+            ...SUPPORTED_OAUTH_SCOPES,
+            ...SUPPORTED_PRODUCT_SCOPES,
+            ...customScopeDefinitions.map(
+                (scope: { name: string }) => scope.name,
+            ),
+            ...legacyUnknownScopes,
+        ];
         if (
             scopes !== undefined &&
             (!Array.isArray(scopes) ||
-                (app.client_type === "public"
-                    ? scopes.some(
-                          (scope: unknown) =>
-                              typeof scope !== "string" ||
-                              !allowedScopes.includes(scope),
-                      )
-                    : unsupportedOAuthScopes(scopes).length > 0))
+                scopes.some(
+                    (scope: unknown) =>
+                        typeof scope !== "string" ||
+                        !allowedScopes.includes(scope),
+                ))
         ) {
             return NextResponse.json(
                 {
@@ -292,6 +354,12 @@ export async function PUT(
                     redirectUris: JSON.stringify(redirect_uris),
                 }),
                 ...(scopes !== undefined && { scopes: JSON.stringify(scopes) }),
+                ...(custom_scopes !== undefined && {
+                    customScopes: JSON.stringify(customScopeDefinitions),
+                }),
+                ...(normalizedAudience !== undefined && {
+                    audience: normalizedAudience,
+                }),
                 ...(description !== undefined && { description }),
                 ...(homepage_url !== undefined && {
                     homepageUrl: homepage_url || null,
@@ -323,6 +391,8 @@ export async function PUT(
 
             // Log audit event for branding modifications
             if (
+                scopes !== undefined ||
+                audience !== undefined ||
                 branding_display_name !== undefined ||
                 branding_primary_color !== undefined ||
                 branding_accent_color !== undefined ||
@@ -333,7 +403,10 @@ export async function PUT(
                 await logAuditEvent(db, {
                     id: generateUUID(),
                     userId: payload.sub,
-                    eventType: "client.branding_updated",
+                    eventType:
+                        scopes !== undefined || audience !== undefined
+                            ? "client.registration_updated"
+                            : "client.branding_updated",
                     provider: client_id,
                     status: "success",
                 }).catch(() => {});
@@ -354,8 +427,14 @@ export async function PUT(
             homepage_url: updated?.homepage_url,
             redirect_uris: JSON.parse(updated?.redirect_uris || "[]"),
             scopes: JSON.parse(updated?.scopes || "[]"),
+            custom_scopes: JSON.parse(updated?.custom_scopes || "[]"),
             is_active: Boolean(updated?.is_active),
             client_type: updated?.client_type || "confidential",
+            token_endpoint_auth_method:
+                updated?.client_type === "public"
+                    ? "none"
+                    : "client_secret_post",
+            audience: updated?.audience || null,
             request_count: updated?.request_count ?? 0,
             last_used: updated?.last_used,
             logo_url: updated?.logo_url || null,
@@ -421,7 +500,7 @@ export async function PATCH(
                 { status: 404 },
             );
         }
-        if (app.owner_id !== payload.sub) {
+        if (!(await canManageClient(db, app, payload.sub))) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
         if (app.client_type === "public") {
@@ -499,7 +578,7 @@ export async function DELETE(
                 { status: 404 },
             );
         }
-        if (app.owner_id !== payload.sub) {
+        if (!(await canManageClient(db, app, payload.sub))) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
@@ -591,6 +670,12 @@ export async function GET(
 
         // Get from D1
         let app: any = null;
+        let canManage = false;
+        let auditHistory: Array<{
+            event_type: string;
+            status: string;
+            created_at: string;
+        }> = [];
         try {
             const db = await getDatabase();
             app = await getOAuthClientByIdWithSecret(db, client_id);
@@ -600,10 +685,25 @@ export async function GET(
                     { status: 404 },
                 );
             }
-            if (
-                !(app as any).is_active &&
-                (app as any).owner_id !== payload.sub
-            ) {
+            canManage = await canManageClient(db, app, payload.sub);
+            if (canManage) {
+                const history = await db
+                    .prepare(
+                        `SELECT event_type, status, created_at
+                         FROM audit_logs
+                         WHERE provider = ?
+                         ORDER BY created_at DESC
+                         LIMIT 20`,
+                    )
+                    .bind(client_id)
+                    .all<{
+                        event_type: string;
+                        status: string;
+                        created_at: string;
+                    }>();
+                auditHistory = history.results || [];
+            }
+            if (!(app as any).is_active && !canManage) {
                 return NextResponse.json(
                     { error: "Application is inactive" },
                     { status: 403 },
@@ -635,7 +735,7 @@ export async function GET(
         }
 
         // Return full data (owner gets extra fields, others get public subset)
-        const isOwner = (app as any).owner_id === payload.sub;
+        const isOwner = canManage;
         return NextResponse.json({
             client_id,
             name: (app as any).name,
@@ -643,8 +743,14 @@ export async function GET(
             homepage_url: (app as any).homepage_url || null,
             redirect_uris,
             scopes,
+            custom_scopes: JSON.parse((app as any).custom_scopes || "[]"),
             is_active: Boolean((app as any).is_active),
             client_type: (app as any).client_type || "confidential",
+            token_endpoint_auth_method:
+                (app as any).client_type === "public"
+                    ? "none"
+                    : "client_secret_post",
+            audience: (app as any).audience || null,
             created_at: (app as any).created_at,
             ...(isOwner && {
                 logo_url: (app as any).logo_url,
@@ -662,6 +768,8 @@ export async function GET(
                 branding_verified_domain:
                     (app as any).branding_verified_domain || null,
                 branding_verified_at: (app as any).branding_verified_at || null,
+                owner_id: (app as any).owner_id,
+                audit_history: auditHistory,
             }),
         });
     } catch (error) {

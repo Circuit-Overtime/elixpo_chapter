@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
+import { getBrandingGate } from "@/lib/branding-gate";
 import { getDatabase } from "@/lib/d1-client";
 import {
     cleanupExpiredDeviceAuthorizations,
@@ -29,7 +30,7 @@ import { checkDeviceIssuanceRateLimit } from "@/lib/rate-limit-middleware";
  *   "verification_uri": "https://accounts.elixpo.com/device",
  *   "verification_uri_complete": "https://accounts.elixpo.com/device?user_code=WDJB-MJHT",
  *   "expires_in": 600,
- *   "interval": 5
+ *   "interval": 2
  * }
  */
 export async function POST(request: NextRequest) {
@@ -85,6 +86,17 @@ export async function POST(request: NextRequest) {
         process.env.NEXT_PUBLIC_APP_URL || "https://accounts.elixpo.com";
 
     try {
+        const brandingGate = await getBrandingGate(db, client_id);
+        if (brandingGate.verificationRequired) {
+            return NextResponse.json(
+                {
+                    error: "invalid_client",
+                    error_description:
+                        "This application must verify its brand before accepting more sign-ins.",
+                },
+                { status: 403 },
+            );
+        }
         const result = await createDeviceAuthorization(db, {
             clientId: client_id,
             scope: typeof scope === "string" ? scope : undefined,

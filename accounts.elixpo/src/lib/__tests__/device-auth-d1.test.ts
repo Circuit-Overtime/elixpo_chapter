@@ -31,6 +31,7 @@ async function setupDatabase() {
             scopes TEXT NOT NULL,
             name TEXT NOT NULL,
             audience TEXT,
+            custom_scopes TEXT NOT NULL DEFAULT '[]',
             logo_url TEXT,
             branding_display_name TEXT,
             branding_primary_color TEXT,
@@ -84,19 +85,26 @@ async function insertClient(
         type?: "public" | "confidential";
         active?: boolean;
         audience?: string;
+        scopes?: string[];
+        customScopes?: Array<{
+            name: string;
+            label: string;
+            description: string;
+        }>;
     } = {},
 ) {
     await env.DB.prepare(
-        `INSERT INTO oauth_clients (client_id, client_type, is_active, scopes, name, audience)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO oauth_clients (client_id, client_type, is_active, scopes, name, audience, custom_scopes)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
         .bind(
             clientId,
             options.type || "public",
             options.active === false ? 0 : 1,
-            JSON.stringify(["openid", "lixblogs:blog:read"]),
+            JSON.stringify(options.scopes || ["openid", "lixblogs:blog:read"]),
             "LixBlogs CLI",
             options.audience ?? null,
+            JSON.stringify(options.customScopes || []),
         )
         .run();
 }
@@ -128,7 +136,7 @@ describe("device authorization with D1", () => {
         expect(result).toMatchObject({
             verification_uri: "https://accounts.elixpo.com/device",
             expires_in: 600,
-            interval: 5,
+            interval: 2,
         });
         expect(row?.device_code_hash).toBe(
             await hashString(result.device_code),
@@ -173,6 +181,57 @@ describe("device authorization with D1", () => {
                 clientId: PUBLIC_CLIENT_ID,
                 scope: "lixblogs:blog:delete",
                 ipAddress: "203.0.113.10",
+                appUrl: "https://accounts.elixpo.com",
+            }),
+        ).rejects.toMatchObject({ code: "invalid_scope" });
+    });
+
+    it("issues the Lixrl bootstrap scope for its registered audience", async () => {
+        await insertClient("lixrl-cli-prod", {
+            audience: "lixrl.com",
+            scopes: ["openid", "profile", "email", "lixrl:keys:create"],
+        });
+
+        await expect(
+            createDeviceAuthorization(env.DB, {
+                clientId: "lixrl-cli-prod",
+                audience: "lixrl.com",
+                scope: "openid profile email lixrl:keys:create",
+                ipAddress: "203.0.113.10",
+                appUrl: "https://accounts.elixpo.com",
+            }),
+        ).resolves.toMatchObject({ interval: 2 });
+    });
+
+    it("binds a creator-defined scope only to its owning client", async () => {
+        await insertClient("custom-device-client", {
+            scopes: ["openid", "acme:documents:read"],
+            customScopes: [
+                {
+                    name: "acme:documents:read",
+                    label: "Read documents",
+                    description: "View documents stored in Acme.",
+                },
+            ],
+        });
+
+        await expect(
+            createDeviceAuthorization(env.DB, {
+                clientId: "custom-device-client",
+                scope: "openid acme:documents:read",
+                ipAddress: "203.0.113.10",
+                appUrl: "https://accounts.elixpo.com",
+            }),
+        ).resolves.toMatchObject({ interval: 2 });
+
+        await insertClient("other-device-client", {
+            scopes: ["openid", "acme:documents:read"],
+        });
+        await expect(
+            createDeviceAuthorization(env.DB, {
+                clientId: "other-device-client",
+                scope: "acme:documents:read",
+                ipAddress: "203.0.113.11",
                 appUrl: "https://accounts.elixpo.com",
             }),
         ).rejects.toMatchObject({ code: "invalid_scope" });
