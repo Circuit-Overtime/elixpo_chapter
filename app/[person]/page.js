@@ -1,4 +1,5 @@
 import { getPersonContent } from "@/lib/content";
+import { buildMemberProfileJsonLd } from "@/lib/seo";
 import ContactBanner from "@/components/ContactBanner";
 import { SpotlightScroller } from "@/components/Animations";
 import Masthead from "@/components/Masthead";
@@ -18,6 +19,7 @@ export default async function HomePage({ params }) {
   const home = safeGet(person, "home");
   const spotlight = safeGet(person, "spotlight") || [];
   const recommendations = safeGet(person, "recommendations") || [];
+  const profileJsonLd = buildMemberProfileJsonLd(person);
 
   if (!home) {
     return (
@@ -30,6 +32,12 @@ export default async function HomePage({ params }) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(profileJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       {/* Identity-first masthead (members with a hero block) */}
       {home.hero && <Masthead hero={home.hero} person={person} />}
 

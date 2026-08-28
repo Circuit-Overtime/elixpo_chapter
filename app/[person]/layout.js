@@ -2,7 +2,7 @@ import { getPersonContent, getValidPersons } from "@/lib/content";
 import MenuOverlay from "@/components/MenuOverlay";
 import Footer from "@/components/Footer";
 import { FadeInReveal, InertiaScroll } from "@/components/Animations";
-import { buildMemberMetadata, buildMemberProfileJsonLd } from "@/lib/seo";
+import { buildMemberMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   return getValidPersons().map((person) => ({ person }));
@@ -16,16 +16,9 @@ export async function generateMetadata({ params }) {
 export default async function PersonLayout({ children, params }) {
   const { person } = await params;
   const profile = getPersonContent(person, "profile");
-  const profileJsonLd = buildMemberProfileJsonLd(person);
 
   return (
     <div className="relative min-h-screen bg-white flex flex-col justify-center overflow-x-hidden max-w-[100vw]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(profileJsonLd).replace(/</g, "\\u003c"),
-        }}
-      />
       <MenuOverlay person={person} menuItems={profile.menuItems} currentPath="" />
 
       {/* Paper texture overlay */}
