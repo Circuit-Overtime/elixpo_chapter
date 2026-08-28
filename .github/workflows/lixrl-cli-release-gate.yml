@@ -34,7 +34,8 @@ jobs:
           echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
       - name: Smoke-test packed CLI
         run: |
-          TARBALL="dist/${{ steps.pack.outputs.tarball }}"
+          TARBALL="$GITHUB_WORKSPACE/dist/${{ steps.pack.outputs.tarball }}"
+          test -f "$TARBALL"
           npm install --prefix "$RUNNER_TEMP/lixrl-smoke" "$TARBALL"
           CLI="$RUNNER_TEMP/lixrl-smoke/node_modules/.bin/lixrl"
           "$CLI" --help

@@ -55,12 +55,12 @@ usage() {
   echo "  --patch             Patch package version bump (default)"
   echo "  --minor             Minor package version bump"
   echo "  --major             Major package version bump"
-  echo "  --no-bump           Keep the package version (use for v1.0.1)"
+  echo "  --no-bump           Keep the current package version"
   echo "  --dry-run           Print actions without executing them"
   echo ""
   echo "Examples:"
-  echo "  ./deploy.sh --package build --no-bump"
-  echo "  ./deploy.sh --package deploy --no-bump"
+  echo "  ./deploy.sh --package build deploy"
+  echo "  ./deploy.sh --package build deploy --no-bump"
   echo "  ./deploy.sh --worker build deploy"
   echo "  ./deploy.sh --pages build deploy"
   echo "  ./deploy.sh migrate build deploy"
@@ -188,23 +188,27 @@ package_build() {
 }
 
 package_deploy() {
+  local version
+  version="$(cli_version)"
+  log "Publishing ${BOLD}$CLI_PACKAGE@$version${RESET} to npm..."
+  run_in_dir "$CLI_DIR" npm publish --access public
+  dim "Commit the package.json and package-lock.json version change after publication."
+}
+
+github_deploy() {
   if ! command -v gh >/dev/null 2>&1; then
-    err "gh is required to start the protected npm release workflow"
-    exit 1
-  fi
-  if ! $NO_BUMP; then
-    err "Commit and merge the bumped CLI version, then rerun deploy with --no-bump."
+    err "gh is required to start the protected GitHub release workflow"
     exit 1
   fi
   local version
   version="$(cli_version)"
-  log "Dispatching ${BOLD}$CLI_PACKAGE@$version${RESET} through GitHub's production environment..."
+  log "Dispatching the ${BOLD}$CLI_PACKAGE@$version${RESET} GitHub release workflow..."
   if $DRY_RUN; then
     echo "[dry-run] gh workflow run $PUBLISH_WORKFLOW --ref main -f publish=true"
   else
     gh workflow run "$PUBLISH_WORKFLOW" --ref main -f publish=true
   fi
-  dim "The release gate will test, pack, attest, publish to npm, and create the GitHub release."
+  dim "The workflow will test, pack, attest, publish, and create the GitHub release from main."
 }
 
 do_migrate() {
@@ -292,10 +296,15 @@ run_target_standard() {
   fi
 
   case "$target" in
-    package|github)
+    package)
       package_bump
       if $action_build; then package_build; fi
       if $action_deploy; then package_deploy; fi
+      ;;
+    github)
+      package_bump
+      if $action_build; then package_build; fi
+      if $action_deploy; then github_deploy; fi
       ;;
     worker)
       if $action_build; then worker_build; fi
