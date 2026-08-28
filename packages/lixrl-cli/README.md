@@ -1,6 +1,6 @@
 # @elixpo/lixrl-cli
 
-Official command-line client for [Lixrl](https://lixrl.com). Version 1.0.1 manages production short links and is designed for both people and automated agents.
+Official command-line client for [Lixrl](https://lixrl.com). Manage production short links and QR codes from a terminal, deployment job, or agent workflow.
 
 ```bash
 npm install --global @elixpo/lixrl-cli
@@ -8,16 +8,28 @@ lixrl login --open
 lixrl whoami
 ```
 
-Create a read/write API key at [lixrl.com/profile/keys](https://lixrl.com/profile/keys). Interactive login stores the key in the operating-system keychain. CI can provide `LIXRL_API_KEY` without writing it to disk.
+Device login opens Elixpo Accounts, asks Lixrl to create a scoped API key, and stores that key in the operating-system keychain. The Accounts tokens used during approval remain in memory and are revoked after the exchange.
 
 ## Sign in securely
 
-1. Sign in to [Lixrl](https://lixrl.com/api/auth/login?return_to=/profile/keys) with your Elixpo account.
-2. Create a key under **Profile → API Keys**. Use `read,write` for link creation or `read` for inspection and analytics only.
-3. Run `lixrl login --open`, then paste the key into the masked prompt.
-4. Verify the active identity with `lixrl whoami`.
+### Browser and device flow
 
-The CLI stores interactive credentials in the OS keychain. For CI, set `LIXRL_API_KEY` through the CI secret store and use `--json --no-input`; never place the key in source files or command arguments.
+```bash
+lixrl login --open
+lixrl whoami
+```
+
+The CLI first displays a one-time code and the official Accounts URL. After identity approval, it opens a Lixrl page where you choose the key name, read or read/write access, and an optional expiry date. Lixrl enforces your plan's API-key limit, then delivers the new key directly to the waiting CLI. Passwords, browser cookies, and Accounts refresh tokens are never stored by the CLI.
+
+### Paste an existing key
+
+```bash
+lixrl login --key
+```
+
+Create the key at [lixrl.com/profile/keys](https://lixrl.com/profile/keys), then paste it into the masked prompt. This path is useful when an administrator has already issued a restricted key.
+
+For CI, set `LIXRL_API_KEY` through the CI secret store and use `--json --no-input`; never place the key in source files, command arguments, generated content, or logs.
 
 Use `lixrl --help` for the complete command list. `shortner` is provided as a compatibility alias.
 

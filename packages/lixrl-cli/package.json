@@ -1,6 +1,6 @@
 {
   "name": "@elixpo/lixrl-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Official Lixrl CLI for shortening URLs, managing links and analytics, and generating production-ready QR codes.",
   "author": {
     "name": "Elixpo",
@@ -43,6 +43,9 @@
     "qr-code",
     "analytics",
     "cli",
+    "command-line-url-shortener",
+    "device-authorization",
+    "developer-tools",
     "automation",
     "elixpo"
   ],

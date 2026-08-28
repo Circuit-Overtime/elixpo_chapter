@@ -36,6 +36,7 @@
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.12.0",
     "framer-motion": "^12.38.0",
+    "jose": "^5.9.6",
     "next": "^15.0.0",
     "qr-code-styling": "^1.9.2",
     "react": "^19.0.0",

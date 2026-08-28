@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { parseArgs } from 'node:util';
+import { createRequire } from 'node:module';
 import { resolveConfig, ProfileRegistry, validateProfile } from '../src/config.js';
 import { CredentialStore, validateKey } from '../src/credentials.js';
 import { LixrlClient } from '../src/client.js';
@@ -9,8 +10,15 @@ import { openBrowser, promptSecret } from '../src/ui.js';
 import { runDomains, runKeys, runUrls } from '../src/commands.js';
 import { qrRequiresLogin, runQr } from '../src/qr.js';
 import { runSkills } from '../src/skills.js';
+import {
+  AccountsDeviceAuth,
+  startLixrlAuthorization,
+  waitForDeviceApproval,
+  waitForLixrlApproval,
+} from '../src/device-auth.js';
 
-const VERSION = '1.0.1';
+const require = createRequire(import.meta.url);
+const VERSION = require('../package.json').version;
 const OPTIONS = {
   profile: { type: 'string' },
   'api-url': { type: 'string' },
@@ -18,6 +26,9 @@ const OPTIONS = {
   quiet: { type: 'boolean', default: false },
   'no-input': { type: 'boolean', default: false },
   open: { type: 'boolean', default: false },
+  key: { type: 'boolean', default: false },
+  'accounts-url': { type: 'string' },
+  'client-id': { type: 'string' },
   yes: { type: 'boolean', short: 'y', default: false },
   force: { type: 'boolean', default: false },
   limit: { type: 'string' },
@@ -57,6 +68,7 @@ const HELP = `lixrl — production CLI for Lixrl
 
 Usage:
   lixrl login [--profile <name>] [--open]
+  lixrl login --key [--profile <name>] [--open]
   lixrl logout [--profile <name>] --yes
   lixrl whoami [--profile <name>] [--json]
   lixrl profiles [--json]
@@ -76,12 +88,15 @@ Usage:
   lixrl skills list|inspect|install [name]
 
 Authentication:
-  Create a read/write API key at https://lixrl.com/profile/keys. Login stores it
-  in the OS keychain. For CI, set LIXRL_API_KEY instead of writing a credential.
+  lixrl login uses Elixpo Accounts device authorization, asks Lixrl to create a
+  scoped key, and stores it in the OS keychain. Use --key to paste an existing
+  key into the masked prompt. CI should provide LIXRL_API_KEY instead.
 
 Global flags:
   --profile <name>    select a stored account
   --api-url <url>     API origin (default: https://lixrl.com)
+  --open              open the Accounts approval page during device login
+  --key               paste an existing Lixrl API key instead of device login
   --json              stable machine-readable output
   --no-input          never prompt
   --quiet             suppress ordinary output
@@ -103,12 +118,45 @@ async function main(argv = process.argv.slice(2)) {
   const profile = options.profile ? validateProfile(options.profile) : await registry.selected(config.profile);
 
   if (command === 'login') {
+    const directKeyLogin = options.key || Boolean(process.env.LIXRL_API_KEY);
     if (options['no-input'] && !process.env.LIXRL_API_KEY) {
-      throw Object.assign(new Error('LIXRL_API_KEY is required with --no-input.'), { code: 'login_required', exitCode: EXIT_CODES.AUTH });
+      throw Object.assign(new Error('Device login is interactive. Use lixrl login or provide LIXRL_API_KEY for --no-input.'), { code: 'login_required', exitCode: EXIT_CODES.AUTH });
     }
-    if (options.open) openBrowser(`${config.apiUrl}/profile/keys`);
-    const key = validateKey(process.env.LIXRL_API_KEY || await promptSecret());
-    const user = await new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me();
+
+    let key;
+    let user;
+    if (directKeyLogin) {
+      if (options.open) openBrowser(`${config.apiUrl}/profile/keys`);
+      key = validateKey(process.env.LIXRL_API_KEY || await promptSecret('Paste Lixrl API key: '));
+      user = await new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me();
+    } else {
+      const auth = new AccountsDeviceAuth({
+        accountsUrl: options['accounts-url'],
+        clientId: options['client-id'],
+      });
+      const challenge = await auth.requestDeviceCode();
+      if (!options.quiet) {
+        process.stderr.write(`Open ${challenge.verificationUri}\nEnter code: ${challenge.userCode}\n`);
+      }
+      if (options.open) openBrowser(challenge.verificationUriComplete);
+      const token = await waitForDeviceApproval(auth, challenge);
+      let authorization;
+      try {
+        authorization = await startLixrlAuthorization({
+          apiUrl: config.apiUrl,
+          accessToken: token.accessToken,
+        });
+      } finally {
+        await auth.revoke(token.refreshToken);
+        await auth.revoke(token.accessToken);
+      }
+      if (!options.quiet) process.stderr.write(`Review key access at ${authorization.approvalUrl}\n`);
+      if (options.open) openBrowser(authorization.approvalUrl);
+      const result = await waitForLixrlApproval(config.apiUrl, authorization);
+      key = validateKey(result.key);
+      user = result.user;
+    }
+
     if (!process.env.LIXRL_API_KEY) await credentials.set(profile, key);
     await registry.add(profile);
     return emit({ profile, user: { email: user.email, display_name: user.display_name, tier: user.tier } }, options);
