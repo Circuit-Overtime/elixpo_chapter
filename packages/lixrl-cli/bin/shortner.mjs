@@ -6,6 +6,7 @@ import { CredentialStore, validateKey } from '../src/credentials.js';
 import { LixrlClient } from '../src/client.js';
 import { emit, fail, EXIT_CODES } from '../src/contract.js';
 import { openBrowser, promptSecret } from '../src/ui.js';
+import { runDomains, runKeys, runUrls } from '../src/commands.js';
 
 const VERSION = '1.0.1';
 const OPTIONS = {
@@ -16,6 +17,30 @@ const OPTIONS = {
   'no-input': { type: 'boolean', default: false },
   open: { type: 'boolean', default: false },
   yes: { type: 'boolean', short: 'y', default: false },
+  force: { type: 'boolean', default: false },
+  limit: { type: 'string' },
+  offset: { type: 'string' },
+  search: { type: 'string' },
+  destination: { type: 'string' },
+  slug: { type: 'string' },
+  title: { type: 'string' },
+  'clear-title': { type: 'boolean', default: false },
+  campaign: { type: 'string' },
+  'clear-campaign': { type: 'boolean', default: false },
+  tag: { type: 'string', multiple: true },
+  'clear-tags': { type: 'boolean', default: false },
+  expires: { type: 'string' },
+  'clear-expiry': { type: 'boolean', default: false },
+  'utm-source': { type: 'string' },
+  'utm-medium': { type: 'string' },
+  'utm-campaign': { type: 'string' },
+  'utm-term': { type: 'string' },
+  'utm-content': { type: 'string' },
+  days: { type: 'string' },
+  file: { type: 'string' },
+  output: { type: 'string', short: 'o' },
+  name: { type: 'string' },
+  scopes: { type: 'string' },
   help: { type: 'boolean', short: 'h', default: false },
   version: { type: 'boolean', short: 'v', default: false },
 };
@@ -28,6 +53,16 @@ Usage:
   lixrl whoami [--profile <name>] [--json]
   lixrl profiles [--json]
   lixrl use <profile> [--json]
+  lixrl urls list [--limit 50] [--search <text>]
+  lixrl urls create <destination> [--slug <code>] [--title <title>]
+  lixrl urls get|delete|enable|disable|analytics <code>
+  lixrl urls update <code> [--destination <url>] [--title <title>]
+  lixrl urls bulk-create --file <links.json>
+  lixrl urls bulk-delete <code...> --yes
+  lixrl urls export [--output <file.csv>]
+  lixrl urls export-clicks <code> [--output <file.csv>]
+  lixrl keys list|create|revoke
+  lixrl domains list|claim|verify|default|remove|links|map|unmap
 
 Authentication:
   Create a read/write API key at https://lixrl.com/profile/keys. Login stores it
@@ -47,7 +82,7 @@ Global flags:
 async function main(argv = process.argv.slice(2)) {
   const parsed = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true, strict: false });
   const options = parsed.values;
-  const [command, subcommand] = parsed.positionals;
+  const [command, subcommand, ...args] = parsed.positionals;
   if (options.version) return process.stdout.write(`${VERSION}\n`);
   if (options.help || !command) return process.stdout.write(HELP);
 
@@ -91,6 +126,10 @@ async function main(argv = process.argv.slice(2)) {
     const user = await new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me();
     return emit({ profile, ...user }, options);
   }
+  const client = new LixrlClient({ apiUrl: config.apiUrl, apiKey: key });
+  if (['url', 'urls', 'links'].includes(command)) return runUrls(client, subcommand, args, options);
+  if (['key', 'keys'].includes(command)) return runKeys(client, subcommand, args, options);
+  if (['domain', 'domains', 'subdomains'].includes(command)) return runDomains(client, subcommand, args, options);
 
   throw Object.assign(new Error(`Unknown command: ${command}`), { code: 'unknown_command', exitCode: EXIT_CODES.USAGE });
 }
