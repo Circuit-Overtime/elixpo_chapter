@@ -7,6 +7,8 @@ import { LixrlClient } from '../src/client.js';
 import { emit, fail, EXIT_CODES } from '../src/contract.js';
 import { openBrowser, promptSecret } from '../src/ui.js';
 import { runDomains, runKeys, runUrls } from '../src/commands.js';
+import { qrRequiresLogin, runQr } from '../src/qr.js';
+import { runSkills } from '../src/skills.js';
 
 const VERSION = '1.0.1';
 const OPTIONS = {
@@ -41,6 +43,12 @@ const OPTIONS = {
   output: { type: 'string', short: 'o' },
   name: { type: 'string' },
   scopes: { type: 'string' },
+  format: { type: 'string' },
+  style: { type: 'string' },
+  size: { type: 'string' },
+  logo: { type: 'string' },
+  track: { type: 'boolean', default: false },
+  target: { type: 'string' },
   help: { type: 'boolean', short: 'h', default: false },
   version: { type: 'boolean', short: 'v', default: false },
 };
@@ -63,6 +71,9 @@ Usage:
   lixrl urls export-clicks <code> [--output <file.csv>]
   lixrl keys list|create|revoke
   lixrl domains list|claim|verify|default|remove|links|map|unmap
+  lixrl qr <destination> [--format svg|png|jpg] [--style rounded]
+  lixrl qr <destination> --track [--title <title>]
+  lixrl skills list|inspect|install [name]
 
 Authentication:
   Create a read/write API key at https://lixrl.com/profile/keys. Login stores it
@@ -112,6 +123,11 @@ async function main(argv = process.argv.slice(2)) {
     await registry.use(subcommand);
     return emit({ active: subcommand }, options);
   }
+  if (command === 'skills') return runSkills(subcommand, args, options);
+
+  if (command === 'qr' && !qrRequiresLogin(options)) {
+    return runQr(null, subcommand, options);
+  }
 
   const key = await credentials.get(profile);
   if (!key) throw Object.assign(new Error(`Profile "${profile}" is not logged in. Run lixrl login.`), { code: 'login_required', exitCode: EXIT_CODES.AUTH });
@@ -127,6 +143,7 @@ async function main(argv = process.argv.slice(2)) {
     return emit({ profile, ...user }, options);
   }
   const client = new LixrlClient({ apiUrl: config.apiUrl, apiKey: key });
+  if (command === 'qr') return runQr(client, subcommand, options);
   if (['url', 'urls', 'links'].includes(command)) return runUrls(client, subcommand, args, options);
   if (['key', 'keys'].includes(command)) return runKeys(client, subcommand, args, options);
   if (['domain', 'domains', 'subdomains'].includes(command)) return runDomains(client, subcommand, args, options);
