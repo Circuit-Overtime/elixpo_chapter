@@ -49,6 +49,54 @@ Users sign in via Elixpo Accounts SSO (no separate password). For machine-to-mac
 
 ---
 
+# Developer CLI — @elixpo/lixrl-cli
+
+Install the official CLI with Node.js 20 or newer:
+
+\`\`\`bash
+npm install --global @elixpo/lixrl-cli
+lixrl --help
+\`\`\`
+
+## Device authentication
+
+Run \`lixrl login --open\`. The CLI displays an Elixpo Accounts verification URL and one-time code. After identity approval, it opens a Lixrl approval page where the user selects the key name, read or read/write access, and an optional expiry. Lixrl delivers the key directly to the waiting CLI, which stores it in the operating-system keychain. Passwords, browser sessions, and MFA responses never enter the CLI.
+
+The account plan's active-key and request-rate limits remain authoritative. Temporary Accounts tokens remain in memory and are revoked before the Lixrl key is delivered.
+
+## Existing API key
+
+Run \`lixrl login --key\` and paste an existing \`elu_…\` key into the masked prompt. Create or manage keys at \`https://lixrl.com/profile/keys\`. Never put a key in a URL, source file, issue, chat message, generated article, or command argument.
+
+## CI and agents
+
+Provide \`LIXRL_API_KEY\` through the CI platform secret store and always use \`--json --no-input\`:
+
+\`\`\`bash
+lixrl whoami --json --no-input
+lixrl urls create "https://example.com/article" --title "Article" --tag automation --json --no-input
+\`\`\`
+
+## Common commands
+
+\`\`\`bash
+lixrl urls list --search launch --json
+lixrl urls analytics abc123 --days 30 --json
+lixrl urls export --output links.csv
+lixrl qr "https://example.com" --format svg --output code.svg
+lixrl qr "https://example.com" --track --style aurora --output tracked.svg
+lixrl domains list
+lixrl skills install lixrl-links
+\`\`\`
+
+Deletion, key revocation, subdomain unmapping, and file replacement require explicit confirmation. Agent workflows must not add \`--yes\` without user approval.
+
+For published writing, shorten only public canonical destinations selected by the author. Preserve the original destination, show the proposed replacement, and obtain approval before changing the post. LixBlogs OAuth tokens and Lixrl API keys are separate credentials and must never be substituted.
+
+Full guide: \`https://lixrl.com/docs/cli\`.
+
+---
+
 # Authentication
 
 Endpoints require a scoped API key in the standard Bearer header:
