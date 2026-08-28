@@ -201,8 +201,9 @@ export async function startLixrlAuthorization({ apiUrl, accessToken, fetchImpl =
   });
   const payload = await json(response);
   if (!response.ok || !payload.request_id || !payload.poll_secret || !payload.approval_url) {
-    const error = new DeviceAuthError(response.status === 403 ? 'key_limit_reached' : 'authorization_start_failed', response.status);
+    const error = new DeviceAuthError(payload.code || (response.status === 403 ? 'key_limit_reached' : 'authorization_start_failed'), response.status);
     error.message = payload.error || error.message;
+    error.details = payload;
     throw error;
   }
   return {
@@ -224,8 +225,9 @@ export async function pollLixrlAuthorization({ apiUrl, requestId, pollSecret, fe
   const payload = await json(response);
   if (response.status === 202 && payload.status === 'pending') return { status: 'pending' };
   if (!response.ok || typeof payload.key !== 'string') {
-    const error = new DeviceAuthError(response.status === 403 ? 'access_denied' : 'key_exchange_failed', response.status);
+    const error = new DeviceAuthError(payload.code || (response.status === 403 ? 'access_denied' : 'key_exchange_failed'), response.status);
     error.message = payload.error || error.message;
+    error.details = payload;
     throw error;
   }
   return payload;

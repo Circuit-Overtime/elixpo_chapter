@@ -19,7 +19,7 @@ lixrl login --open
 lixrl whoami
 ```
 
-The CLI first displays a one-time code and the official Accounts URL. After identity approval, it opens a Lixrl page where you choose the key name, read or read/write access, and an optional expiry date. Lixrl enforces your plan's API-key limit, then delivers the new key directly to the waiting CLI. Passwords, browser cookies, and Accounts refresh tokens are never stored by the CLI.
+The CLI displays a prefilled Accounts URL and one-time code. Press Enter to open it or use `--open` to launch it immediately. After identity approval, Lixrl asks you to choose the key name, read or read/write access, and an optional expiry date. If your plan has no free key slot, the CLI offers to open key management so you can revoke an unused key and retry without starting the Accounts login again. Passwords, browser cookies, and Accounts refresh tokens are never stored by the CLI.
 
 ### Paste an existing key
 

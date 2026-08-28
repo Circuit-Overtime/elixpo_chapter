@@ -6,7 +6,16 @@ import { resolveConfig, ProfileRegistry, validateProfile } from '../src/config.j
 import { CredentialStore, validateKey } from '../src/credentials.js';
 import { LixrlClient } from '../src/client.js';
 import { emit, fail, EXIT_CODES } from '../src/contract.js';
-import { openBrowser, promptSecret } from '../src/ui.js';
+import {
+  approvalChallenge,
+  colorEnabled,
+  listenForEnter,
+  loginChallenge,
+  openBrowser,
+  promptConfirm,
+  promptSecret,
+  successLine,
+} from '../src/ui.js';
 import { runDomains, runKeys, runUrls } from '../src/commands.js';
 import { qrRequiresLogin, runQr } from '../src/qr.js';
 import { runSkills } from '../src/skills.js';
@@ -131,6 +140,8 @@ async function main(argv = process.argv.slice(2)) {
       key = validateKey(process.env.LIXRL_API_KEY || await promptSecret('Paste Lixrl API key: '));
       user = await new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me();
     } else {
+      const progress = !options.quiet && !options.json;
+      const color = colorEnabled(process.stderr);
       const deviceConfig = await fetchLixrlCliConfig({ apiUrl: config.apiUrl });
       const auth = new AccountsDeviceAuth({
         accountsUrl: options['accounts-url'] || deviceConfig.accountsUrl,
@@ -138,22 +149,50 @@ async function main(argv = process.argv.slice(2)) {
         audience: deviceConfig.audience,
       });
       const challenge = await auth.requestDeviceCode();
-      if (!options.quiet) {
-        process.stderr.write(`Open ${challenge.verificationUri}\nEnter code: ${challenge.userCode}\n`);
+      const approvalUrl = challenge.verificationUriComplete || challenge.verificationUri;
+      if (progress) process.stderr.write(`${loginChallenge({
+        url: approvalUrl,
+        code: challenge.userCode,
+        expiresInSeconds: challenge.expiresInSeconds,
+        profile,
+        interactive: process.stdin.isTTY && !options.open,
+        color,
+      })}\n`);
+      let stopListening = () => {};
+      if (options.open) openBrowser(approvalUrl);
+      else if (progress && process.stdin.isTTY) {
+        stopListening = listenForEnter({ open: openBrowser, url: approvalUrl });
       }
-      if (options.open) openBrowser(challenge.verificationUriComplete);
-      const token = await waitForDeviceApproval(auth, challenge);
+      let token;
+      try {
+        token = await waitForDeviceApproval(auth, challenge);
+      } finally {
+        stopListening();
+      }
       let authorization;
       try {
-        authorization = await startLixrlAuthorization({
+        const startAuthorization = () => startLixrlAuthorization({
           apiUrl: config.apiUrl,
           accessToken: token.accessToken,
         });
+        try {
+          authorization = await startAuthorization();
+        } catch (error) {
+          const recoverable = ['api_key_limit_reached', 'key_limit_reached'].includes(error?.code);
+          const interactive = !options.quiet && !options.json && !options['no-input'];
+          if (!recoverable || !interactive) throw error;
+
+          const manageUrl = error.details?.manage_url || `${config.apiUrl}/profile/keys`;
+          if (!await promptConfirm('API key limit reached. Open key settings to revoke one?')) throw error;
+          openBrowser(manageUrl);
+          if (!await promptConfirm('After revoking an unused key, retry login now?')) throw error;
+          authorization = await startAuthorization();
+        }
       } finally {
         await auth.revoke(token.refreshToken);
         await auth.revoke(token.accessToken);
       }
-      if (!options.quiet) process.stderr.write(`Review key access at ${authorization.approvalUrl}\n`);
+      if (progress) process.stderr.write(`${approvalChallenge({ url: authorization.approvalUrl, color })}\n`);
       if (options.open) openBrowser(authorization.approvalUrl);
       const result = await waitForLixrlApproval(config.apiUrl, authorization);
       key = validateKey(result.key);
@@ -162,7 +201,13 @@ async function main(argv = process.argv.slice(2)) {
 
     if (!process.env.LIXRL_API_KEY) await credentials.set(profile, key);
     await registry.add(profile);
-    return emit({ profile, user: { email: user.email, display_name: user.display_name, tier: user.tier } }, options);
+    const loginResult = { profile, user: { email: user.email, display_name: user.display_name, tier: user.tier } };
+    if (options.json) return emit(loginResult, options);
+    if (!options.quiet) {
+      process.stdout.write(`${successLine(`Logged in as ${user.email} (${profile}).`, colorEnabled(process.stdout))}\n`);
+      process.stdout.write('  Credentials saved securely in the OS keychain.\n');
+    }
+    return undefined;
   }
 
   if (command === 'profiles') {

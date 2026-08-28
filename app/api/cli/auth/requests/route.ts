@@ -38,6 +38,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       error: `API key limit reached (${limits.maxApiKeys} for ${user.tier} tier)`,
       code: 'api_key_limit_reached',
+      limit: limits.maxApiKeys,
+      tier: user.tier,
+      manage_url: `${getOrigin(request.url)}/profile/keys`,
+      retry_command: 'lixrl login --open',
     }, { status: 403 });
   }
 
