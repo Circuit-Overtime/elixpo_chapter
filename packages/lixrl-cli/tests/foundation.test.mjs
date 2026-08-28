@@ -46,6 +46,23 @@ test('client limits requests to the configured API and reports JSON errors', asy
   await assert.rejects(() => client.request('https://evil.example/api/urls'), ApiError);
 });
 
+test('client preserves actionable API error codes and details', async () => {
+  const client = new LixrlClient({
+    apiUrl: 'https://lixrl.com',
+    apiKey: `elu_${'a'.repeat(24)}`,
+    fetchImpl: async () => new Response(JSON.stringify({
+      error: 'API key limit reached (1 for free tier)',
+      code: 'api_key_limit_reached',
+      limit: 1,
+      tier: 'free',
+    }), { status: 403, headers: { 'content-type': 'application/json' } }),
+  });
+  await assert.rejects(
+    () => client.request('/api/keys', { method: 'POST', body: { name: 'CLI' } }),
+    (error) => error.code === 'api_key_limit_reached' && error.details.limit === 1,
+  );
+});
+
 test('JSON output redacts credential-shaped fields', () => {
   assert.doesNotMatch(safeJson({ apiKey: `elu_${'a'.repeat(24)}`, nested: { token: 'secret' } }), /elu_|secret/);
 });

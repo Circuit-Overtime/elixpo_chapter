@@ -51,7 +51,7 @@ export class LixrlClient {
     if (!response.ok) {
       throw new ApiError(payload?.error || `Lixrl returned HTTP ${response.status}.`, {
         status: response.status,
-        code: response.status === 401 ? 'login_required' : `http_${response.status}`,
+        code: response.status === 401 ? 'login_required' : payload?.code || `http_${response.status}`,
         requestId: response.headers.get('x-request-id'),
         details: payload,
       });

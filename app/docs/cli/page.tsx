@@ -125,8 +125,8 @@ lixrl --help`}</Command>
 
       <h3 id="device-login" className={H3}>Recommended: Accounts device login</h3>
       <ol className="mb-5 list-decimal space-y-2 pl-6 text-[0.96rem] leading-7 text-[#555]">
-        <li>Run the command. The CLI displays an official Accounts URL and one-time code.</li>
-        <li>Approve the Lixrl CLI in your browser. Use <code className="font-mono">--open</code> to open that page automatically.</li>
+        <li>Run the command. The CLI displays a prefilled official Accounts URL and one-time code.</li>
+        <li>Press Enter to open the URL, or use <code className="font-mono">--open</code> to launch it immediately.</li>
         <li>The CLI opens a Lixrl approval page where you choose the key name, read or read/write access, and an optional expiry.</li>
         <li>Lixrl enforces your plan&apos;s key limit, delivers the key directly to the waiting CLI, and stores only its hash.</li>
       </ol>
@@ -136,6 +136,8 @@ lixrl whoami`}</Command>
         Read-only keys can list links, analytics, and exports without changing
         data. Read/write keys can also create, update, disable, and delete
         links. The approval screen shows the active-key allowance for your plan.
+        If that allowance is full, the CLI offers to open key management and
+        retry after you revoke an unused key.
       </p>
       <Note>
         The one-time code authorizes only the displayed Lixrl request. Temporary

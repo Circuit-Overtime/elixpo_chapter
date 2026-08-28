@@ -1,3 +1,5 @@
+import { colorEnabled, failureBlock } from './ui.js';
+
 export const EXIT_CODES = Object.freeze({ OK: 0, ERROR: 1, USAGE: 2, AUTH: 4, CONFIRMATION: 5 });
 
 export function safeJson(value) {
@@ -28,7 +30,10 @@ export function fail(error, options = {}) {
     },
   };
   if (options.json) process.stderr.write(`${safeJson(payload)}\n`);
-  else if (!options.quiet) process.stderr.write(`Error: ${payload.error.message}\n`);
+  else if (!options.quiet) process.stderr.write(`${failureBlock({
+    ...payload.error,
+    details: error?.details,
+  }, colorEnabled(process.stderr))}\n`);
   process.exitCode = error?.exitCode || (error?.code === 'login_required' ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
 }
 

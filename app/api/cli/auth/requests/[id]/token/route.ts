@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auditLog } from '@/lib/auth';
-import { getDB } from '@/lib/db';
+import { getDB, getOrigin } from '@/lib/db';
 import { rateLimit } from '@/lib/ratelimit';
 import { TIER_LIMITS, type Tier } from '@/lib/types';
 import { generateApiKey, hashApiKey } from '@/lib/utils';
@@ -53,7 +53,14 @@ export async function POST(
     'SELECT COUNT(*) as count FROM api_keys WHERE user_id = ? AND is_active = 1',
   ).bind(row.user_id).first<{ count: number }>();
   if ((keyCount?.count || 0) >= limits.maxApiKeys) {
-    return NextResponse.json({ error: `API key limit reached (${limits.maxApiKeys} for ${row.tier} tier)` }, { status: 403 });
+    return NextResponse.json({
+      error: `API key limit reached (${limits.maxApiKeys} for ${row.tier} tier)`,
+      code: 'api_key_limit_reached',
+      limit: limits.maxApiKeys,
+      tier: row.tier,
+      manage_url: `${getOrigin(request.url)}/profile/keys`,
+      retry_command: 'lixrl login --open',
+    }, { status: 403 });
   }
 
   const rawKey = generateApiKey();
