@@ -1,6 +1,8 @@
 import { getPersonContent, getPortfolioPersons } from "@/lib/content";
 import { getAbsoluteUrl, getMemberImagePath, SITE_URL } from "@/lib/seo";
 
+export const dynamic = "force-static";
+
 const SECTION_SLUGS = {
   About: "about",
   Projects: "projects",
