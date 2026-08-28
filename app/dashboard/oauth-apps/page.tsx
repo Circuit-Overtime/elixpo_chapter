@@ -11,11 +11,13 @@ import {
     Alert,
     Box,
     Button,
+    Checkbox,
     Chip,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
+    FormControlLabel,
     IconButton,
     InputAdornment,
     Paper,
@@ -31,6 +33,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
 
 interface OAuthApp {
@@ -41,11 +44,15 @@ interface OAuthApp {
     created_at: string;
     is_active: boolean;
     redirect_uris?: string[];
+    client_type?: "confidential" | "public";
+    audience?: string | null;
 }
 
 interface CreateAppResponse {
     client_id: string;
-    client_secret: string;
+    client_secret?: string;
+    client_type: "confidential" | "public";
+    audience?: string | null;
     name: string;
     redirect_uris: string[];
     scopes: string[];
@@ -164,6 +171,9 @@ const OAuthAppsPage = () => {
         homepage_url: "",
         description: "",
         redirect_uris: [""],
+        client_type: "confidential" as "confidential" | "public",
+        audience: "",
+        scopes: ["openid", "profile", "email"],
     });
 
     // useCallback gives stable refs so the auth/apps fetches don't loop
@@ -226,8 +236,12 @@ const OAuthAppsPage = () => {
         const uris = formData.redirect_uris
             .map((u) => u.trim())
             .filter(Boolean);
-        if (uris.length === 0) {
+        if (formData.client_type === "confidential" && uris.length === 0) {
             setError("At least one redirect URI is required");
+            return;
+        }
+        if (formData.client_type === "public" && !formData.audience.trim()) {
+            setError("A resource audience is required for public clients");
             return;
         }
 
@@ -242,7 +256,12 @@ const OAuthAppsPage = () => {
                     homepage_url: formData.homepage_url,
                     description: formData.description || undefined,
                     redirect_uris: uris,
-                    scopes: ["openid", "profile", "email"],
+                    scopes: formData.scopes,
+                    client_type: formData.client_type,
+                    audience:
+                        formData.client_type === "public"
+                            ? formData.audience.trim()
+                            : undefined,
                 }),
             });
 
@@ -262,6 +281,9 @@ const OAuthAppsPage = () => {
                 homepage_url: "",
                 description: "",
                 redirect_uris: [""],
+                client_type: "confidential",
+                audience: "",
+                scopes: ["openid", "profile", "email"],
             });
             setSuccessMessage("Application registered successfully!");
             await fetchApps();
@@ -319,6 +341,9 @@ const OAuthAppsPage = () => {
             homepage_url: "",
             description: "",
             redirect_uris: [""],
+            client_type: "confidential",
+            audience: "",
+            scopes: ["openid", "profile", "email"],
         });
     };
 
@@ -553,6 +578,22 @@ const OAuthAppsPage = () => {
                                                         >
                                                             {app.name}
                                                         </Typography>
+                                                        {app.client_type ===
+                                                            "public" && (
+                                                            <Typography
+                                                                variant="caption"
+                                                                sx={{
+                                                                    display:
+                                                                        "block",
+                                                                    color: "#ff7759",
+                                                                    fontSize:
+                                                                        "0.68rem",
+                                                                }}
+                                                            >
+                                                                Device flow ·{" "}
+                                                                {app.audience}
+                                                            </Typography>
+                                                        )}
                                                         {app.homepage_url && (
                                                             <Typography
                                                                 component="a"
@@ -807,6 +848,121 @@ const OAuthAppsPage = () => {
                             mb: 0.5,
                         }}
                     >
+                        Application type
+                    </Typography>
+                    <Box
+                        component="select"
+                        value={formData.client_type}
+                        onChange={(event) =>
+                            setFormData({
+                                ...formData,
+                                client_type: event.target.value as
+                                    | "confidential"
+                                    | "public",
+                            })
+                        }
+                        disabled={loading}
+                        sx={{
+                            width: "100%",
+                            bgcolor: "var(--surface)",
+                            color: "var(--fg)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "8px",
+                            p: 1.25,
+                        }}
+                    >
+                        <option value="confidential">Web application</option>
+                        <option value="public">Public CLI / device flow</option>
+                    </Box>
+
+                    {formData.client_type === "public" && (
+                        <>
+                            <TextField
+                                fullWidth
+                                label="Resource audience"
+                                value={formData.audience}
+                                onChange={(event) =>
+                                    setFormData({
+                                        ...formData,
+                                        audience: event.target.value,
+                                    })
+                                }
+                                margin="dense"
+                                placeholder="blogs.elixpo.com"
+                                helperText="Host only. Public clients use device flow and never receive a secret."
+                                sx={textFieldSx}
+                                disabled={loading}
+                            />
+                            <Typography
+                                sx={{
+                                    color: "var(--fg-muted)",
+                                    fontSize: "0.85rem",
+                                    mt: 1.5,
+                                }}
+                            >
+                                Resource scopes
+                            </Typography>
+                            <Box
+                                sx={{
+                                    maxHeight: 190,
+                                    overflowY: "auto",
+                                    display: "grid",
+                                    gridTemplateColumns: {
+                                        xs: "1fr",
+                                        sm: "1fr 1fr",
+                                    },
+                                    border: "1px solid var(--border)",
+                                    borderRadius: "8px",
+                                    p: 1,
+                                }}
+                            >
+                                {SUPPORTED_LIXBLOGS_SCOPES.map((scope) => (
+                                    <FormControlLabel
+                                        key={scope}
+                                        control={
+                                            <Checkbox
+                                                size="small"
+                                                checked={formData.scopes.includes(
+                                                    scope,
+                                                )}
+                                                onChange={(event) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        scopes: event.target
+                                                            .checked
+                                                            ? [
+                                                                  ...formData.scopes,
+                                                                  scope,
+                                                              ]
+                                                            : formData.scopes.filter(
+                                                                  (item) =>
+                                                                      item !==
+                                                                      scope,
+                                                              ),
+                                                    })
+                                                }
+                                            />
+                                        }
+                                        label={scope}
+                                        sx={{
+                                            color: "var(--fg-muted)",
+                                            "& .MuiTypography-root": {
+                                                fontSize: "0.72rem",
+                                            },
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        </>
+                    )}
+                    <Typography
+                        sx={{
+                            color: "var(--fg-muted)",
+                            fontSize: "0.85rem",
+                            mt: 2,
+                            mb: 0.5,
+                        }}
+                    >
                         Redirect URIs
                     </Typography>
                     <Typography
@@ -817,8 +973,9 @@ const OAuthAppsPage = () => {
                             mb: 1,
                         }}
                     >
-                        The callback URLs where users will be redirected after
-                        authorization (up to 5)
+                        {formData.client_type === "public"
+                            ? "Optional for device-only clients"
+                            : "The callback URLs where users return after authorization (up to 5)"}
                     </Typography>
                     {formData.redirect_uris.map((uri, index) => (
                         <Box
@@ -1033,11 +1190,15 @@ const OAuthAppsPage = () => {
                         borderBottom: "1px solid var(--border)",
                     }}
                 >
-                    Your new client secret
+                    Application registered
                 </DialogTitle>
                 <DialogContent sx={{ pt: 3 }}>
                     <Alert
-                        severity="warning"
+                        severity={
+                            newAppData?.client_type === "public"
+                                ? "info"
+                                : "warning"
+                        }
                         sx={{
                             mb: 3,
                             backgroundColor: "rgba(251, 146, 60, 0.1)",
@@ -1045,8 +1206,9 @@ const OAuthAppsPage = () => {
                             borderColor: "rgba(251, 146, 60, 0.3)",
                         }}
                     >
-                        Make sure to copy your new client secret now. You won't
-                        be able to see it again.
+                        {newAppData?.client_type === "public"
+                            ? "Public clients use token endpoint authentication method none. No client secret was created."
+                            : "Copy the client secret now. It will not be shown again."}
                     </Alert>
 
                     {newAppData && (
@@ -1115,63 +1277,66 @@ const OAuthAppsPage = () => {
                                 )}
                             </Box>
 
-                            <Box>
-                                <Typography
-                                    sx={{
-                                        color: "var(--fg-faint)",
-                                        fontSize: "0.8rem",
-                                        mb: 0.75,
-                                    }}
-                                >
-                                    Client Secret
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1,
-                                        background: "var(--surface)",
-                                        p: 1.5,
-                                        borderRadius: "8px",
-                                        border: "1px solid rgba(239, 68, 68, 0.2)",
-                                    }}
-                                >
+                            {newAppData.client_secret && (
+                                <Box>
                                     <Typography
                                         sx={{
-                                            color: "#ef4444",
-                                            fontFamily: "monospace",
-                                            fontSize: "0.85rem",
-                                            flex: 1,
-                                            wordBreak: "break-all",
+                                            color: "var(--fg-faint)",
+                                            fontSize: "0.8rem",
+                                            mb: 0.75,
                                         }}
                                     >
-                                        {newAppData.client_secret}
+                                        Client Secret
                                     </Typography>
-                                    <IconButton
-                                        size="small"
-                                        onClick={() =>
-                                            handleCopyToClipboard(
-                                                newAppData.client_secret,
-                                                "secret",
-                                            )
-                                        }
-                                        sx={{ color: "#ef4444" }}
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 1,
+                                            background: "var(--surface)",
+                                            p: 1.5,
+                                            borderRadius: "8px",
+                                            border: "1px solid rgba(239, 68, 68, 0.2)",
+                                        }}
                                     >
-                                        <ContentCopyIcon fontSize="small" />
-                                    </IconButton>
+                                        <Typography
+                                            sx={{
+                                                color: "#ef4444",
+                                                fontFamily: "monospace",
+                                                fontSize: "0.85rem",
+                                                flex: 1,
+                                                wordBreak: "break-all",
+                                            }}
+                                        >
+                                            {newAppData.client_secret}
+                                        </Typography>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() =>
+                                                handleCopyToClipboard(
+                                                    newAppData.client_secret ||
+                                                        "",
+                                                    "secret",
+                                                )
+                                            }
+                                            sx={{ color: "#ef4444" }}
+                                        >
+                                            <ContentCopyIcon fontSize="small" />
+                                        </IconButton>
+                                    </Box>
+                                    {secretCopied && (
+                                        <Typography
+                                            sx={{
+                                                color: "#ef4444",
+                                                fontSize: "0.75rem",
+                                                mt: 0.5,
+                                            }}
+                                        >
+                                            Copied!
+                                        </Typography>
+                                    )}
                                 </Box>
-                                {secretCopied && (
-                                    <Typography
-                                        sx={{
-                                            color: "#ef4444",
-                                            fontSize: "0.75rem",
-                                            mt: 0.5,
-                                        }}
-                                    >
-                                        Copied!
-                                    </Typography>
-                                )}
-                            </Box>
+                            )}
 
                             <Box>
                                 <Typography

@@ -12,9 +12,11 @@ import {
     Alert,
     Box,
     Button,
+    Checkbox,
     Chip,
     CircularProgress,
     Divider,
+    FormControlLabel,
     IconButton,
     TextField,
     Tooltip,
@@ -22,6 +24,7 @@ import {
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
 
 const cardSx = {
     background: "var(--surface)",
@@ -90,6 +93,8 @@ export default function OAuthAppSettingsPage() {
         branding_accent_color: "",
         privacy_policy_url: "",
         terms_of_service_url: "",
+        audience: "",
+        scopes: ["openid", "profile", "email"] as string[],
     });
 
     // ── Webhook endpoints state ─────────────────────────────────────────
@@ -198,6 +203,10 @@ export default function OAuthAppSettingsPage() {
                     branding_accent_color: data.branding_accent_color || "",
                     privacy_policy_url: data.privacy_policy_url || "",
                     terms_of_service_url: data.terms_of_service_url || "",
+                    audience: data.audience || "",
+                    scopes: Array.isArray(data.scopes)
+                        ? data.scopes
+                        : ["openid", "profile", "email"],
                 });
             } catch {
                 router.push("/dashboard/oauth-apps");
@@ -386,6 +395,10 @@ export default function OAuthAppSettingsPage() {
                     branding_accent_color: form.branding_accent_color,
                     privacy_policy_url: form.privacy_policy_url,
                     terms_of_service_url: form.terms_of_service_url,
+                    ...(app?.client_type === "public" && {
+                        audience: form.audience,
+                        scopes: form.scopes,
+                    }),
                 }),
             });
             if (!res.ok) {
@@ -777,9 +790,17 @@ export default function OAuthAppSettingsPage() {
                             fontWeight: 500,
                         }}
                     >
-                        Client Secret
+                        {app?.client_type === "public"
+                            ? "Token authentication"
+                            : "Client Secret"}
                     </Typography>
-                    {regeneratedSecret ? (
+                    {app?.client_type === "public" ? (
+                        <Alert severity="info">
+                            Public device-flow clients authenticate with method
+                            <strong> none</strong>. No secret exists or can be
+                            regenerated.
+                        </Alert>
+                    ) : regeneratedSecret ? (
                         <>
                             <Box
                                 sx={{
@@ -909,6 +930,22 @@ export default function OAuthAppSettingsPage() {
                             }
                             sx={textFieldSx}
                         />
+                        {app?.client_type === "public" && (
+                            <TextField
+                                fullWidth
+                                label="Resource audience"
+                                value={form.audience}
+                                onChange={(event) =>
+                                    setForm({
+                                        ...form,
+                                        audience: event.target.value,
+                                    })
+                                }
+                                placeholder="blogs.elixpo.com"
+                                helperText="Host only; bound into access tokens"
+                                sx={textFieldSx}
+                            />
+                        )}
                         <Box sx={{ gridColumn: { md: "1 / -1" } }}>
                             <TextField
                                 fullWidth
@@ -1038,28 +1075,80 @@ export default function OAuthAppSettingsPage() {
                         </Typography>
                         <Box
                             sx={{
-                                display: "flex",
-                                gap: 0.75,
-                                flexWrap: "wrap",
+                                display: "grid",
+                                gridTemplateColumns:
+                                    app?.client_type === "public"
+                                        ? { xs: "1fr", md: "1fr 1fr" }
+                                        : "1fr",
+                                gap: 0.5,
+                                maxHeight:
+                                    app?.client_type === "public"
+                                        ? 220
+                                        : "none",
+                                overflowY: "auto",
                             }}
                         >
-                            {(Array.isArray(app?.scopes)
-                                ? app.scopes
-                                : ["openid", "profile", "email"]
-                            ).map((s: string) => (
-                                <Chip
-                                    key={s}
-                                    label={s}
-                                    size="small"
-                                    sx={{
-                                        bgcolor: "rgba(255, 119, 89,0.1)",
-                                        color: "#ff7759",
-                                        border: "1px solid rgba(255, 119, 89,0.2)",
-                                    }}
-                                />
-                            ))}
+                            {app?.client_type === "public"
+                                ? SUPPORTED_LIXBLOGS_SCOPES.map((scope) => (
+                                      <FormControlLabel
+                                          key={scope}
+                                          control={
+                                              <Checkbox
+                                                  size="small"
+                                                  checked={form.scopes.includes(
+                                                      scope,
+                                                  )}
+                                                  onChange={(event) =>
+                                                      setForm({
+                                                          ...form,
+                                                          scopes: event.target
+                                                              .checked
+                                                              ? [
+                                                                    ...form.scopes,
+                                                                    scope,
+                                                                ]
+                                                              : form.scopes.filter(
+                                                                    (item) =>
+                                                                        item !==
+                                                                        scope,
+                                                                ),
+                                                      })
+                                                  }
+                                              />
+                                          }
+                                          label={scope}
+                                          sx={{
+                                              color: "var(--fg-muted)",
+                                              "& .MuiTypography-root": {
+                                                  fontSize: "0.72rem",
+                                              },
+                                          }}
+                                      />
+                                  ))
+                                : form.scopes.map((scope) => (
+                                      <Chip
+                                          key={scope}
+                                          label={scope}
+                                          size="small"
+                                          sx={{
+                                              justifySelf: "start",
+                                              bgcolor: "rgba(255, 119, 89,0.1)",
+                                              color: "#ff7759",
+                                          }}
+                                      />
+                                  ))}
                         </Box>
                     </Box>
+
+                    <Typography
+                        sx={{ color: "var(--fg-faint)", fontSize: "0.8rem" }}
+                    >
+                        Type: {app?.client_type || "confidential"} · Auth:{" "}
+                        {app?.token_endpoint_auth_method ||
+                            "client_secret_post"}
+                        {app?.audience ? ` · Audience: ${app.audience}` : ""}
+                        {app?.owner_id ? ` · Owner: ${app.owner_id}` : ""}
+                    </Typography>
 
                     {app?.request_count !== undefined && (
                         <Box sx={{ mb: 2 }}>
@@ -1105,6 +1194,45 @@ export default function OAuthAppSettingsPage() {
                             </Typography>
                         </Box>
                     )}
+                    {Array.isArray(app?.audit_history) &&
+                        app.audit_history.length > 0 && (
+                            <Box sx={{ mt: 2 }}>
+                                <Typography
+                                    sx={{
+                                        color: "var(--fg-faint)",
+                                        fontSize: "0.8rem",
+                                        mb: 0.75,
+                                    }}
+                                >
+                                    Recent audit history
+                                </Typography>
+                                {app.audit_history
+                                    .slice(0, 5)
+                                    .map(
+                                        (entry: {
+                                            event_type: string;
+                                            status: string;
+                                            created_at: string;
+                                        }) => (
+                                            <Typography
+                                                key={`${entry.event_type}-${entry.created_at}`}
+                                                sx={{
+                                                    color: "var(--fg-faint)",
+                                                    fontSize: "0.72rem",
+                                                    fontFamily: "monospace",
+                                                    mb: 0.5,
+                                                }}
+                                            >
+                                                {entry.event_type} ·{" "}
+                                                {entry.status} ·{" "}
+                                                {new Date(
+                                                    entry.created_at,
+                                                ).toLocaleString()}
+                                            </Typography>
+                                        ),
+                                    )}
+                            </Box>
+                        )}
                 </Box>
             </Box>
 

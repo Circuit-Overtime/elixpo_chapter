@@ -2,12 +2,22 @@ export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
-import { createOAuthClient, getOAuthClientById, getUserById } from "@/lib/db";
+import {
+    createOAuthClient,
+    getOAuthClientById,
+    getUserById,
+    logAuditEvent,
+} from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
 import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
 import { sendMail } from "@/lib/mails";
+import { normalizeOAuthAudience } from "@/lib/oauth-client-registration";
 import { SUPPORTED_OAUTH_SCOPES } from "@/lib/oauth-scopes";
-import { generateRandomString, hashString } from "@/lib/webcrypto";
+import {
+    generateRandomString,
+    generateUUID,
+    hashString,
+} from "@/lib/webcrypto";
 
 async function getAuth(request: NextRequest) {
     const token =
@@ -159,6 +169,7 @@ export async function POST(request: NextRequest) {
             homepage_url,
             scopes,
             client_type = "confidential",
+            audience,
         } = body;
         // Webhooks are no longer set at registration time. Use
         // POST /api/auth/oauth-clients/:client_id/webhooks to add one or
@@ -169,6 +180,21 @@ export async function POST(request: NextRequest) {
         if (client_type !== "confidential" && client_type !== "public") {
             return NextResponse.json(
                 { error: "client_type must be confidential or public" },
+                { status: 400 },
+            );
+        }
+        const normalizedAudience = normalizeOAuthAudience(audience);
+        if (
+            (client_type === "public" && !normalizedAudience) ||
+            (client_type === "confidential" && audience)
+        ) {
+            return NextResponse.json(
+                {
+                    error:
+                        client_type === "public"
+                            ? "Public clients require a valid host-only audience"
+                            : "Audience is only supported for public clients",
+                },
                 { status: 400 },
             );
         }
@@ -272,7 +298,15 @@ export async function POST(request: NextRequest) {
                 webhookSecretHash: null,
                 webhookEvents: null,
                 clientType: client_type,
+                audience: normalizedAudience,
             });
+            await logAuditEvent(db, {
+                id: generateUUID(),
+                userId: auth.sub,
+                eventType: "client.registered",
+                provider: clientId,
+                status: "success",
+            }).catch(() => {});
             console.log("[OAuth Client] Registered: %s (%s)", name, clientId);
 
             // Notify owner via email (fire-and-forget)
@@ -311,6 +345,7 @@ export async function POST(request: NextRequest) {
                 client_id: clientId,
                 ...(clientSecret && { client_secret: clientSecret }),
                 client_type,
+                audience: normalizedAudience,
                 name,
                 redirect_uris: validUris,
                 homepage_url,
@@ -318,10 +353,9 @@ export async function POST(request: NextRequest) {
                 description,
                 scopes: registeredScopes,
                 created_at: now,
-                _notice:
-                    "Store client_secret securely. It will NOT be retrievable. To register webhook endpoints, POST to /api/auth/oauth-clients/" +
-                    clientId +
-                    "/webhooks.",
+                _notice: clientSecret
+                    ? "Store client_secret securely. It will NOT be retrievable."
+                    : "Public clients use token endpoint authentication method none; no client secret was issued.",
             },
             { status: 201 },
         );
@@ -376,6 +410,11 @@ export async function GET(request: NextRequest) {
             created_at: (client as any).created_at,
             is_active: (client as any).is_active,
             client_type: (client as any).client_type || "confidential",
+            token_endpoint_auth_method:
+                (client as any).client_type === "public"
+                    ? "none"
+                    : "client_secret_post",
+            audience: (client as any).audience || null,
             logo_url: brandingVerified
                 ? (client as any).logo_url || null
                 : null,
