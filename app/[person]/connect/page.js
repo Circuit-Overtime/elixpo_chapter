@@ -1,4 +1,5 @@
 import { getPersonContent } from "@/lib/content";
+import { buildMemberMetadata } from "@/lib/seo";
 import CopyEmail from "@/components/CopyEmail";
 import ComingSoon from "@/components/ComingSoon";
 
@@ -12,15 +13,7 @@ function safeGet(person, file) {
 
 export async function generateMetadata({ params }) {
   const { person } = await params;
-  const profile = getPersonContent(person, "profile");
-  const title = `${profile.siteName} - Connect`;
-  const description = `Connect with ${profile.siteName} - ${profile.siteDescription}`;
-  return {
-    title,
-    description,
-    openGraph: { title, description, images: [{ url: `/${person}/og.webp`, width: 1200, height: 630, alt: profile.siteName }] },
-    twitter: { card: "summary_large_image", title, description, images: [`/${person}/og.webp`] },
-  };
+  return buildMemberMetadata({ person, section: "connect" });
 }
 
 export default async function ConnectPage({ params }) {
