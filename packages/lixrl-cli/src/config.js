@@ -30,7 +30,7 @@ export function resolveConfig({ options = {}, env = process.env } = {}) {
 
 function configFile(env = process.env) {
   const root = env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config');
-  return path.join(root, 'elixpo', 'shortner', 'config.json');
+  return path.join(root, 'elixpo', 'lixrl-cli', 'config.json');
 }
 
 export class ProfileRegistry {

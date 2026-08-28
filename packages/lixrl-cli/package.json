@@ -1,5 +1,5 @@
 {
-  "name": "@elixpo/shortner",
+  "name": "@elixpo/lixrl-cli",
   "version": "1.0.1",
   "description": "Official Lixrl CLI for shortening URLs, managing links and analytics, and generating production-ready QR codes.",
   "author": {
@@ -52,7 +52,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/elixpo/lixrl.com.git",
-    "directory": "packages/shortner"
+    "directory": "packages/lixrl-cli"
   },
   "homepage": "https://lixrl.com",
   "bugs": {

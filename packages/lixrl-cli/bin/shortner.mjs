@@ -20,14 +20,14 @@ const OPTIONS = {
   version: { type: 'boolean', short: 'v', default: false },
 };
 
-const HELP = `shortner — production CLI for Lixrl
+const HELP = `lixrl — production CLI for Lixrl
 
 Usage:
-  shortner login [--profile <name>] [--open]
-  shortner logout [--profile <name>] --yes
-  shortner whoami [--profile <name>] [--json]
-  shortner profiles [--json]
-  shortner use <profile> [--json]
+  lixrl login [--profile <name>] [--open]
+  lixrl logout [--profile <name>] --yes
+  lixrl whoami [--profile <name>] [--json]
+  lixrl profiles [--json]
+  lixrl use <profile> [--json]
 
 Authentication:
   Create a read/write API key at https://lixrl.com/profile/keys. Login stores it
@@ -73,13 +73,13 @@ async function main(argv = process.argv.slice(2)) {
     return emit({ active: state.active, profiles: state.profiles }, options);
   }
   if (command === 'use') {
-    if (!subcommand) throw Object.assign(new Error('Usage: shortner use <profile>'), { exitCode: EXIT_CODES.USAGE });
+    if (!subcommand) throw Object.assign(new Error('Usage: lixrl use <profile>'), { exitCode: EXIT_CODES.USAGE });
     await registry.use(subcommand);
     return emit({ active: subcommand }, options);
   }
 
   const key = await credentials.get(profile);
-  if (!key) throw Object.assign(new Error(`Profile "${profile}" is not logged in. Run shortner login.`), { code: 'login_required', exitCode: EXIT_CODES.AUTH });
+  if (!key) throw Object.assign(new Error(`Profile "${profile}" is not logged in. Run lixrl login.`), { code: 'login_required', exitCode: EXIT_CODES.AUTH });
 
   if (command === 'logout') {
     if (!options.yes) throw Object.assign(new Error('Logging out requires --yes.'), { code: 'confirmation_required', exitCode: EXIT_CODES.CONFIRMATION });

@@ -1,4 +1,4 @@
-const SERVICE = 'elixpo-shortner';
+const SERVICE = 'elixpo-lixrl-cli';
 
 function validateKey(value) {
   const key = String(value || '').trim();
