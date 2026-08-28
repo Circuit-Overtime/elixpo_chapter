@@ -2,107 +2,83 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "nix-community/NUR",
+    "full_name": "AdamPlatin123/awesome-dsh-plugins",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 38,
-    "pushed_at": "2026-08-27T17:16:40Z",
-    "reasons": [
-      "1937\u2605 python active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1937,
-    "topics": [
-      "nix-packages",
-      "nixpkgs",
-      "nur",
-      "overlays"
-    ],
-    "url": "https://github.com/nix-community/NUR"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "coder-hxl/x-crawl",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 15,
-    "pushed_at": "2026-08-27T17:20:33Z",
-    "reasons": [
-      "1877\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 52,
-    "stars": 1877,
-    "topics": [
-      "ai",
-      "ai-crawl",
-      "chromium",
-      "crawl",
-      "crawler",
-      "fingerprint",
-      "flexible",
-      "javascript",
-      "multifunction",
-      "nodejs",
-      "puppeteer",
-      "spider",
-      "typescript"
-    ],
-    "url": "https://github.com/coder-hxl/x-crawl"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "visivo-io/visivo",
-    "has_contributing": true,
-    "language": "JavaScript",
     "open_issues": 7,
-    "pushed_at": "2026-08-27T17:20:38Z",
+    "pushed_at": "2026-08-28T18:15:43Z",
     "reasons": [
-      "102\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 102,
-    "topics": [
-      "analytics",
-      "bi",
-      "bi-analytics",
-      "bi-as-code",
-      "business-intelligence",
-      "data",
-      "data-analysis",
-      "data-visualization",
-      "duckdb",
-      "plotlyjs",
-      "pydantic",
-      "python",
-      "reactjs",
-      "sql"
-    ],
-    "url": "https://github.com/visivo-io/visivo"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "felixonmars/archriscv-packages",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 54,
-    "pushed_at": "2026-08-27T17:17:47Z",
-    "reasons": [
-      "273\u2605 shell active",
+      "1426\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 273,
+    "stars": 1426,
     "topics": [
-      "hacktoberfest",
-      "linux"
+      "agent-plugins",
+      "awesome-list",
+      "deepseek-harness",
+      "dsh",
+      "dsh-plugin",
+      "plugin-registry"
     ],
-    "url": "https://github.com/felixonmars/archriscv-packages"
+    "url": "https://github.com/AdamPlatin123/awesome-dsh-plugins"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "tellahq/opensession",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 12,
+    "pushed_at": "2026-08-28T18:16:51Z",
+    "reasons": [
+      "222\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 222,
+    "topics": [],
+    "url": "https://github.com/tellahq/opensession"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "box/box-content-preview",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 43,
+    "pushed_at": "2026-08-28T18:11:23Z",
+    "reasons": [
+      "119\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 51,
+    "stars": 119,
+    "topics": [
+      "box-api",
+      "box-platform",
+      "javascript",
+      "preview",
+      "viewer"
+    ],
+    "url": "https://github.com/box/box-content-preview"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "archie-judd/agent-sandbox.nix",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 14,
+    "pushed_at": "2026-08-28T18:12:13Z",
+    "reasons": [
+      "145\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 145,
+    "topics": [],
+    "url": "https://github.com/archie-judd/agent-sandbox.nix"
   },
   {
     "archived": false,
@@ -110,8 +86,8 @@
     "full_name": "joryirving/home-ops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 4,
-    "pushed_at": "2026-08-27T17:23:16Z",
+    "open_issues": 18,
+    "pushed_at": "2026-08-28T17:26:04Z",
     "reasons": [
       "223\u2605 yaml active",
       "has open issues"
@@ -133,17 +109,370 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "MakazhanAlpamys/Soup",
+    "full_name": "huangruiteng/loopx",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 59,
-    "pushed_at": "2026-08-27T17:20:15Z",
+    "open_issues": 60,
+    "pushed_at": "2026-08-28T18:13:05Z",
     "reasons": [
-      "3295\u2605 python active",
+      "5255\u2605 python active",
+      "has open issues"
+    ],
+    "score": 54,
+    "stars": 5255,
+    "topics": [
+      "agent-control-plane",
+      "agent-harness",
+      "agent-ops",
+      "ai-agents",
+      "codex",
+      "long-horizon",
+      "long-running-agents",
+      "loop-engineering",
+      "loopx",
+      "workflow-automation"
+    ],
+    "url": "https://github.com/huangruiteng/loopx"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "zhu1090093659/dsh-web",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 16,
+    "pushed_at": "2026-08-28T18:09:58Z",
+    "reasons": [
+      "6380\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 55,
+    "stars": 6380,
+    "topics": [
+      "cordis",
+      "deepseek-harness",
+      "dsh",
+      "dsh-plugin",
+      "dsh-web",
+      "dsh-web-ui"
+    ],
+    "url": "https://github.com/zhu1090093659/dsh-web"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "GladysAssistant/Gladys",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 51,
+    "pushed_at": "2026-08-28T18:06:33Z",
+    "reasons": [
+      "3162\u2605 javascript active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 3295,
+    "stars": 3162,
+    "topics": [
+      "assistant",
+      "automation",
+      "gladys",
+      "home",
+      "home-automation",
+      "iot",
+      "nodejs",
+      "raspberry-pi",
+      "smarthome"
+    ],
+    "url": "https://github.com/GladysAssistant/Gladys"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "bitnami/containers",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 3,
+    "pushed_at": "2026-08-28T17:03:39Z",
+    "reasons": [
+      "4450\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 53,
+    "stars": 4450,
+    "topics": [
+      "bitnami",
+      "containers",
+      "docker",
+      "docker-image",
+      "non-root",
+      "vmware"
+    ],
+    "url": "https://github.com/bitnami/containers"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "usnistgov/macos_security",
+    "has_contributing": true,
+    "language": "YAML",
+    "open_issues": 21,
+    "pushed_at": "2026-08-26T18:42:40Z",
+    "reasons": [
+      "2455\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 2455,
+    "topics": [
+      "apple",
+      "bash",
+      "compliance",
+      "macos",
+      "mdm",
+      "mscp",
+      "python3",
+      "zsh"
+    ],
+    "url": "https://github.com/usnistgov/macos_security"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "jxxghp/MoviePilot",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 31,
+    "pushed_at": "2026-08-28T18:10:50Z",
+    "reasons": [
+      "11653\u2605 python active",
+      "has open issues"
+    ],
+    "score": 43,
+    "stars": 11653,
+    "topics": [],
+    "url": "https://github.com/jxxghp/MoviePilot"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "openai/openai-node",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 9,
+    "pushed_at": "2026-08-28T18:00:31Z",
+    "reasons": [
+      "11147\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 58,
+    "stars": 11147,
+    "topics": [
+      "nodejs",
+      "openai",
+      "typescript"
+    ],
+    "url": "https://github.com/openai/openai-node"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "horsicq/Detect-It-Easy",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 32,
+    "pushed_at": "2026-08-28T18:12:55Z",
+    "reasons": [
+      "11436\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 58,
+    "stars": 11436,
+    "topics": [
+      "binary-analysis",
+      "debugger",
+      "detect",
+      "detector",
+      "disassembler",
+      "elf",
+      "entropy",
+      "hacktoberfest",
+      "hacktoberfest2023",
+      "mach-o",
+      "macho",
+      "malware-analysis",
+      "malware-research",
+      "packer",
+      "pentest",
+      "program-analysis",
+      "reverse-engineering",
+      "scanner",
+      "static-analysis",
+      "unpacker"
+    ],
+    "url": "https://github.com/horsicq/Detect-It-Easy"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "DaoCloud/public-image-mirror",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 8,
+    "pushed_at": "2026-08-28T10:02:25Z",
+    "reasons": [
+      "14965\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 45,
+    "stars": 14965,
+    "topics": [
+      "mirror",
+      "speedup"
+    ],
+    "url": "https://github.com/DaoCloud/public-image-mirror"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "armbian/documentation",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 11,
+    "pushed_at": "2026-08-28T18:16:14Z",
+    "reasons": [
+      "234\u2605 python active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 234,
+    "topics": [
+      "best-practices",
+      "code-examples",
+      "docs",
+      "documentation",
+      "faq",
+      "framework",
+      "getting-started",
+      "help",
+      "installation-guides",
+      "manual",
+      "mkdocs",
+      "release-notes",
+      "technical-documentation",
+      "troubleshooting",
+      "user",
+      "userguide"
+    ],
+    "url": "https://github.com/armbian/documentation"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "zws-im/zws",
+    "has_contributing": false,
+    "language": "TypeScript",
+    "open_issues": 3,
+    "pushed_at": "2026-08-28T18:16:14Z",
+    "reasons": [
+      "1847\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 1847,
+    "topics": [
+      "drizzle-orm",
+      "hacktoberfest",
+      "nextjs",
+      "nodejs",
+      "postgres",
+      "typescript",
+      "unicode",
+      "url-shortener",
+      "zws"
+    ],
+    "url": "https://github.com/zws-im/zws"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "arlac77/svelte-websocket-store",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 12,
+    "pushed_at": "2026-08-28T18:16:13Z",
+    "reasons": [
+      "292\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 292,
+    "topics": [
+      "store",
+      "svelte-v3",
+      "websocket"
+    ],
+    "url": "https://github.com/arlac77/svelte-websocket-store"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "pgautoupgrade/docker-pgautoupgrade",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 36,
+    "pushed_at": "2026-08-28T18:04:24Z",
+    "reasons": [
+      "1182\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 1182,
+    "topics": [
+      "docker",
+      "postgres",
+      "postgresql",
+      "postgresql-database",
+      "upgrade"
+    ],
+    "url": "https://github.com/pgautoupgrade/docker-pgautoupgrade"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "haraldkoch/kochhaus-home",
+    "has_contributing": false,
+    "language": "YAML",
+    "open_issues": 7,
+    "pushed_at": "2026-08-28T16:33:13Z",
+    "reasons": [
+      "178\u2605 yaml active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 178,
+    "topics": [
+      "gitops",
+      "helm",
+      "k8s-at-home",
+      "kubernetes",
+      "renovate"
+    ],
+    "url": "https://github.com/haraldkoch/kochhaus-home"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "MakazhanAlpamys/Soup",
+    "has_contributing": true,
+    "language": "Python",
+    "open_issues": 52,
+    "pushed_at": "2026-08-28T18:13:17Z",
+    "reasons": [
+      "3439\u2605 python active",
+      "has open issues"
+    ],
+    "score": 53,
+    "stars": 3439,
     "topics": [
       "cli",
       "consumer-gpu",
@@ -167,390 +496,5 @@
       "transformers"
     ],
     "url": "https://github.com/MakazhanAlpamys/Soup"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "KnockOutEZ/wigolo",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 57,
-    "pushed_at": "2026-08-27T17:23:34Z",
-    "reasons": [
-      "4713\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 4713,
-    "topics": [
-      "agent",
-      "ai",
-      "ai-agent",
-      "claude",
-      "cli",
-      "developer-tools",
-      "local-first",
-      "mcp",
-      "mcp-server",
-      "metasearch",
-      "model-context-protocol",
-      "nodejs",
-      "privacy",
-      "rag",
-      "search",
-      "search-engine",
-      "typescript",
-      "web-crawler",
-      "web-scraping",
-      "web-search"
-    ],
-    "url": "https://github.com/KnockOutEZ/wigolo"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "Countly/countly-server",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 24,
-    "pushed_at": "2026-08-27T17:16:38Z",
-    "reasons": [
-      "5893\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 5893,
-    "topics": [
-      "ai",
-      "analytics",
-      "coppa",
-      "crash-analytics",
-      "customer-engagement",
-      "dashboard",
-      "data-ownership",
-      "data-privacy",
-      "digital-analytics",
-      "feature-flags",
-      "gdpr",
-      "hipaa",
-      "insights",
-      "mobile-analytics",
-      "push-notifications",
-      "remote-configuration",
-      "tracking",
-      "user-feedback",
-      "user-journeys",
-      "web-analytics"
-    ],
-    "url": "https://github.com/Countly/countly-server"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "docker-library/official-images",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 46,
-    "pushed_at": "2026-08-27T16:55:27Z",
-    "reasons": [
-      "6994\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 40,
-    "stars": 6994,
-    "topics": [],
-    "url": "https://github.com/docker-library/official-images"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "usnistgov/macos_security",
-    "has_contributing": true,
-    "language": "YAML",
-    "open_issues": 19,
-    "pushed_at": "2026-08-26T18:42:40Z",
-    "reasons": [
-      "2454\u2605 yaml active",
-      "has open issues"
-    ],
-    "score": 52,
-    "stars": 2454,
-    "topics": [
-      "apple",
-      "bash",
-      "compliance",
-      "macos",
-      "mdm",
-      "mscp",
-      "python3",
-      "zsh"
-    ],
-    "url": "https://github.com/usnistgov/macos_security"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "neuml/txtai",
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 6,
-    "pushed_at": "2026-08-27T16:55:49Z",
-    "reasons": [
-      "12909\u2605 python active",
-      "has open issues"
-    ],
-    "score": 44,
-    "stars": 12909,
-    "topics": [
-      "agents",
-      "ai",
-      "ai-agents",
-      "embeddings",
-      "information-retrieval",
-      "language-model",
-      "large-language-models",
-      "llm",
-      "nlp",
-      "python",
-      "rag",
-      "retrieval-augmented-generation",
-      "search",
-      "search-engine",
-      "semantic-search",
-      "sentence-embeddings",
-      "transformers",
-      "txtai",
-      "vector-database",
-      "vector-search"
-    ],
-    "url": "https://github.com/neuml/txtai"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "kelektiv/node-cron",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 34,
-    "pushed_at": "2026-08-27T17:17:29Z",
-    "reasons": [
-      "8947\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 56,
-    "stars": 8947,
-    "topics": [
-      "hacktoberfest"
-    ],
-    "url": "https://github.com/kelektiv/node-cron"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "Fei-Away/Codex-Dream-Skin",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 47,
-    "pushed_at": "2026-08-27T16:17:35Z",
-    "reasons": [
-      "14150\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 60,
-    "stars": 14150,
-    "topics": [],
-    "url": "https://github.com/Fei-Away/Codex-Dream-Skin"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "pystardust/ani-cli",
-    "has_contributing": true,
-    "language": "Shell",
-    "open_issues": 12,
-    "pushed_at": "2026-08-27T07:41:00Z",
-    "reasons": [
-      "13609\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 60,
-    "stars": 13609,
-    "topics": [
-      "anime",
-      "cli",
-      "fzf",
-      "linux",
-      "mac",
-      "posix",
-      "rofi",
-      "shell",
-      "steamdeck",
-      "syncplay",
-      "terminal",
-      "termux",
-      "webscraping",
-      "windows"
-    ],
-    "url": "https://github.com/pystardust/ani-cli"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "ThinkOffApp/CarWatch",
-    "has_contributing": false,
-    "language": "Python",
-    "open_issues": 3,
-    "pushed_at": "2026-08-27T17:20:22Z",
-    "reasons": [
-      "222\u2605 python active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 222,
-    "topics": [
-      "agents",
-      "ai-agent",
-      "automotive",
-      "car",
-      "doip",
-      "edge-ai",
-      "home-assistant",
-      "llama-cpp",
-      "llm",
-      "local-llm",
-      "obd",
-      "offline-ai",
-      "qwen",
-      "raspberry-pi",
-      "self-hosted"
-    ],
-    "url": "https://github.com/ThinkOffApp/CarWatch"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "gloom-sh/gloomberb",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 10,
-    "pushed_at": "2026-08-27T17:17:35Z",
-    "reasons": [
-      "1990\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 52,
-    "stars": 1990,
-    "topics": [
-      "bloomberg-terminal",
-      "finance",
-      "market-data",
-      "open-source-finance",
-      "portfolio-tracker",
-      "stocks",
-      "terminal",
-      "tui"
-    ],
-    "url": "https://github.com/gloom-sh/gloomberb"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "craftzdog/pouchdb-adapter-react-native-sqlite",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 7,
-    "pushed_at": "2026-08-27T17:18:27Z",
-    "reasons": [
-      "165\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 51,
-    "stars": 165,
-    "topics": [
-      "database",
-      "pouchdb",
-      "react-native",
-      "sqlite3"
-    ],
-    "url": "https://github.com/craftzdog/pouchdb-adapter-react-native-sqlite"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "rootless-containers/usernetes",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 27,
-    "pushed_at": "2026-08-27T17:07:48Z",
-    "reasons": [
-      "987\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 987,
-    "topics": [
-      "containerd",
-      "cri-o",
-      "docker",
-      "kubernetes",
-      "rootless-containers"
-    ],
-    "url": "https://github.com/rootless-containers/usernetes"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "ishioni/homelab-ops",
-    "has_contributing": false,
-    "language": "YAML",
-    "open_issues": 3,
-    "pushed_at": "2026-08-27T17:04:41Z",
-    "reasons": [
-      "168\u2605 yaml active",
-      "has open issues"
-    ],
-    "score": 36,
-    "stars": 168,
-    "topics": [
-      "authentik",
-      "cert-manager",
-      "external-dns",
-      "flux",
-      "helm",
-      "k8s-at-home",
-      "kubernetes",
-      "renovate",
-      "sops",
-      "talos"
-    ],
-    "url": "https://github.com/ishioni/homelab-ops"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "doronz88/pymobiledevice3",
-    "has_contributing": true,
-    "language": "Python",
-    "open_issues": 39,
-    "pushed_at": "2026-08-27T17:14:48Z",
-    "reasons": [
-      "2667\u2605 python active",
-      "has open issues"
-    ],
-    "score": 52,
-    "stars": 2667,
-    "topics": [
-      "afc",
-      "instruments",
-      "ios",
-      "libimobiledevice",
-      "lockdown-services",
-      "lockdownd",
-      "protocol",
-      "python",
-      "python3",
-      "usbmux"
-    ],
-    "url": "https://github.com/doronz88/pymobiledevice3"
   }
 ]
