@@ -1,4 +1,4 @@
-import { SUPPORTED_LIXBLOGS_SCOPES } from "./lixblogs-scopes";
+import { SUPPORTED_PRODUCT_SCOPES } from "./oauth-scope-registry";
 import { SUPPORTED_OAUTH_SCOPES } from "./oauth-scopes";
 
 export const ELIXPO_OAUTH_CONTRACT_VERSION = "1.1.0";
@@ -20,7 +20,7 @@ export function createAuthorizationServerMetadata(issuerValue?: string) {
         revocation_endpoint: `${issuer}/api/auth/revoke`,
         scopes_supported: [
             ...SUPPORTED_OAUTH_SCOPES,
-            ...SUPPORTED_LIXBLOGS_SCOPES,
+            ...SUPPORTED_PRODUCT_SCOPES,
         ],
         grant_types_supported: [
             "authorization_code",
@@ -62,8 +62,8 @@ export function createAuthorizationServerMetadata(issuerValue?: string) {
             reuse_action: "revoke_family",
         },
         elixpo_device_flow_polling: {
-            interval_seconds: 5,
-            max_attempts: 120,
+            interval_seconds: 2,
+            max_attempts: 300,
             slow_down_interval_seconds: 10,
         },
     } as const;
