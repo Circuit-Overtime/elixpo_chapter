@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { resolveConfig, ProfileRegistry, validateProfile } from '../src/config.js';
 import { CredentialStore, validateKey } from '../src/credentials.js';
 import { LixrlClient } from '../src/client.js';
+import { findValidLocalLogin } from '../src/login.js';
 import { emit, fail, EXIT_CODES } from '../src/contract.js';
 import {
   approvalChallenge,
@@ -13,6 +14,7 @@ import {
   loginChallenge,
   openBrowser,
   promptConfirm,
+  promptEnter,
   promptSecret,
   successLine,
 } from '../src/ui.js';
@@ -77,7 +79,7 @@ const OPTIONS = {
 const HELP = `lixrl — production CLI for Lixrl
 
 Usage:
-  lixrl login [--profile <name>] [--open]
+  lixrl login [--profile <name>] [--open] [--force]
   lixrl login --key [--profile <name>] [--open]
   lixrl logout [--profile <name>] --yes
   lixrl whoami [--profile <name>] [--json]
@@ -107,6 +109,7 @@ Global flags:
   --api-url <url>     API origin (default: https://lixrl.com)
   --open              open the Accounts approval page during device login
   --key               paste an existing Lixrl API key instead of device login
+  --force             rotate a valid local login instead of reusing it
   --json              stable machine-readable output
   --no-input          never prompt
   --quiet             suppress ordinary output
@@ -129,12 +132,34 @@ async function main(argv = process.argv.slice(2)) {
 
   if (command === 'login') {
     const directKeyLogin = options.key || Boolean(process.env.LIXRL_API_KEY);
+    let key;
+    let user;
+    const existing = await findValidLocalLogin({
+      credentials,
+      profile,
+      apiUrl: config.apiUrl,
+      force: options.force,
+      directKeyLogin,
+    });
+    if (existing) {
+      user = existing.user;
+      const loginResult = {
+        profile,
+        reused: true,
+        user: { email: user.email, display_name: user.display_name, tier: user.tier },
+      };
+      if (options.json) return emit(loginResult, options);
+      if (!options.quiet) {
+        process.stdout.write(`${successLine(`Already logged in as ${user.email} (${profile}).`, colorEnabled(process.stdout))}\n`);
+        process.stdout.write('  Use `lixrl login --force` only when you want to rotate this key.\n');
+      }
+      return undefined;
+    }
+
     if (options['no-input'] && !process.env.LIXRL_API_KEY) {
       throw Object.assign(new Error('Device login is interactive. Use lixrl login or provide LIXRL_API_KEY for --no-input.'), { code: 'login_required', exitCode: EXIT_CODES.AUTH });
     }
 
-    let key;
-    let user;
     if (directKeyLogin) {
       if (options.open) openBrowser(`${config.apiUrl}/profile/keys`);
       key = validateKey(process.env.LIXRL_API_KEY || await promptSecret('Paste Lixrl API key: '));
@@ -183,9 +208,9 @@ async function main(argv = process.argv.slice(2)) {
           if (!recoverable || !interactive) throw error;
 
           const manageUrl = error.details?.manage_url || `${config.apiUrl}/profile/keys`;
-          if (!await promptConfirm('API key limit reached. Open key settings to revoke one?')) throw error;
+          if (!await promptConfirm('The CLI cannot revoke account keys itself. Open key settings in your browser?')) throw error;
           openBrowser(manageUrl);
-          if (!await promptConfirm('After revoking an unused key, retry login now?')) throw error;
+          await promptEnter('Revoke an active key in the browser and wait until it shows “Revoked”. Then return here.');
           authorization = await startAuthorization();
         }
       } finally {
@@ -201,7 +226,11 @@ async function main(argv = process.argv.slice(2)) {
 
     if (!process.env.LIXRL_API_KEY) await credentials.set(profile, key);
     await registry.add(profile);
-    const loginResult = { profile, user: { email: user.email, display_name: user.display_name, tier: user.tier } };
+    const loginResult = {
+      profile,
+      reused: false,
+      user: { email: user.email, display_name: user.display_name, tier: user.tier },
+    };
     if (options.json) return emit(loginResult, options);
     if (!options.quiet) {
       process.stdout.write(`${successLine(`Logged in as ${user.email} (${profile}).`, colorEnabled(process.stdout))}\n`);

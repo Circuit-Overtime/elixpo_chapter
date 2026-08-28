@@ -50,7 +50,9 @@ export async function POST(
 
   const limits = TIER_LIMITS[row.tier];
   const keyCount = await db.prepare(
-    'SELECT COUNT(*) as count FROM api_keys WHERE user_id = ? AND is_active = 1',
+    `SELECT COUNT(*) as count FROM api_keys
+     WHERE user_id = ? AND is_active = 1
+     AND (expires_at IS NULL OR datetime(expires_at) > datetime('now'))`,
   ).bind(row.user_id).first<{ count: number }>();
   if ((keyCount?.count || 0) >= limits.maxApiKeys) {
     return NextResponse.json({

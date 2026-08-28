@@ -247,6 +247,7 @@ interface ConfirmDialogProps {
   /** "danger" turns the confirm button red — use for destructive actions */
   variant?: 'default' | 'danger';
   loading?: boolean;
+  error?: string;
 }
 
 export function ConfirmDialog({
@@ -259,6 +260,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   variant = 'default',
   loading = false,
+  error,
 }: ConfirmDialogProps) {
   const danger = variant === 'danger';
   return (
@@ -270,6 +272,14 @@ export function ConfirmDialog({
       size="sm"
       disableBackdropClose={loading}
     >
+      {error && (
+        <p
+          role="alert"
+          className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm leading-5 text-red-700"
+        >
+          {error}
+        </p>
+      )}
       <div className="flex gap-2 justify-end">
         <button
           type="button"
