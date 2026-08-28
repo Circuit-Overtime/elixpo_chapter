@@ -1,6 +1,7 @@
 export const runtime = "edge";
 
 import { type NextRequest, NextResponse } from "next/server";
+import { getBrandingGate } from "@/lib/branding-gate";
 import { getDatabase } from "@/lib/d1-client";
 import {
     createAuthRequest,
@@ -114,6 +115,17 @@ export async function GET(request: NextRequest) {
                             error_description: "Client is not active",
                         },
                         { status: 401 },
+                    );
+                }
+                const brandingGate = await getBrandingGate(db, clientId);
+                if (brandingGate.verificationRequired) {
+                    return NextResponse.json(
+                        {
+                            error: "branding_verification_required",
+                            error_description:
+                                "This application must verify its brand before accepting more sign-ins.",
+                        },
+                        { status: 403 },
                     );
                 }
                 if (
@@ -329,6 +341,17 @@ export async function POST(request: NextRequest) {
             redirectUrl.searchParams.append(
                 "error_description",
                 "User denied access",
+            );
+            redirectUrl.searchParams.append("state", state);
+            return NextResponse.json({ redirect_uri: redirectUrl.toString() });
+        }
+
+        const brandingGate = await getBrandingGate(db, clientId);
+        if (brandingGate.verificationRequired) {
+            redirectUrl.searchParams.append("error", "temporarily_unavailable");
+            redirectUrl.searchParams.append(
+                "error_description",
+                "This application must verify its brand before accepting more sign-ins.",
             );
             redirectUrl.searchParams.append("state", state);
             return NextResponse.json({ redirect_uri: redirectUrl.toString() });

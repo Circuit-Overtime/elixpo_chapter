@@ -4,6 +4,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import SearchIcon from "@mui/icons-material/Search";
 import SettingsIcon from "@mui/icons-material/Settings";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
@@ -16,6 +17,7 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
+    InputAdornment,
     Paper,
     Snackbar,
     Table,
@@ -28,7 +30,7 @@ import {
     Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
 
 interface OAuthApp {
@@ -134,6 +136,16 @@ const OAuthAppsPage = () => {
     );
     const [secretCopied, setSecretCopied] = useState(false);
     const [idCopied, setIdCopied] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const filteredApps = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+        if (!query) return apps;
+        return apps.filter((app) =>
+            [app.name, app.client_id, app.homepage_url, app.description].some(
+                (value) => value?.toLowerCase().includes(query),
+            ),
+        );
+    }, [apps, searchQuery]);
 
     const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
     const [toast, setToast] = useState<{
@@ -419,6 +431,28 @@ const OAuthAppsPage = () => {
                     </Alert>
                 )}
 
+                {apps.length > 0 && (
+                    <TextField
+                        fullWidth
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder="Search by app name, domain, or client ID"
+                        aria-label="Search OAuth applications"
+                        sx={{ ...textFieldSx, mb: 2 }}
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon
+                                            sx={{ color: "var(--fg-faint)" }}
+                                        />
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                    />
+                )}
+
                 {/* Applications Table */}
                 <Box
                     sx={{
@@ -457,6 +491,12 @@ const OAuthAppsPage = () => {
                                 application.
                             </Typography>
                         </Box>
+                    ) : filteredApps.length === 0 ? (
+                        <Box sx={{ p: 6, textAlign: "center" }}>
+                            <Typography sx={{ color: "var(--fg-faint)" }}>
+                                No applications match “{searchQuery}”.
+                            </Typography>
+                        </Box>
                     ) : (
                         <TableContainer
                             component={Paper}
@@ -478,7 +518,7 @@ const OAuthAppsPage = () => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody sx={tableBodySx}>
-                                    {apps.map((app) => (
+                                    {filteredApps.map((app) => (
                                         <TableRow key={app.client_id}>
                                             <TableCell>
                                                 <Box

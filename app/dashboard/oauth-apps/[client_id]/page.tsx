@@ -4,6 +4,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import SaveIcon from "@mui/icons-material/Save";
@@ -140,6 +141,9 @@ export default function OAuthAppSettingsPage() {
         unique_users: number;
         active_sessions: number;
         sign_in_timeline: Array<{ date: string; count: number }>;
+        timeline_days: number;
+        can_export_lifetime: boolean;
+        branding_verification_required: boolean;
         webhooks: {
             total_endpoints: number;
             active_endpoints: number;
@@ -147,13 +151,14 @@ export default function OAuthAppSettingsPage() {
         };
     }
     const [stats, setStats] = useState<AppStats | null>(null);
+    const [activityDays, setActivityDays] = useState(30);
 
     useEffect(() => {
         let cancelled = false;
         (async () => {
             try {
                 const res = await fetch(
-                    `/api/auth/oauth-clients/${clientId}/stats`,
+                    `/api/auth/oauth-clients/${clientId}/stats?days=${activityDays}`,
                     { credentials: "include" },
                 );
                 if (!res.ok) return;
@@ -166,7 +171,7 @@ export default function OAuthAppSettingsPage() {
         return () => {
             cancelled = true;
         };
-    }, [clientId]);
+    }, [activityDays, clientId]);
 
     useEffect(() => {
         const fetchApp = async () => {
@@ -1645,7 +1650,7 @@ export default function OAuthAppSettingsPage() {
                                 bgcolor: "var(--surface)",
                                 border: "1px solid var(--border)",
                                 borderRadius: "8px",
-                                minHeight: "380px",
+                                minHeight: "560px",
                                 p: previewMode === "desktop" ? 3 : 1,
                             }}
                         >
@@ -1656,8 +1661,8 @@ export default function OAuthAppSettingsPage() {
                                         ? {
                                               width: "100%",
                                               borderRadius: "6px",
-                                              border: "1px solid rgba(255,255,255,0.08)",
-                                              bgcolor: "#000000",
+                                              border: "1px solid var(--border)",
+                                              bgcolor: "var(--bg)",
                                               boxShadow:
                                                   "0 10px 30px rgba(0,0,0,0.5)",
                                               overflow: "hidden",
@@ -1666,10 +1671,10 @@ export default function OAuthAppSettingsPage() {
                                           }
                                         : {
                                               width: "260px",
-                                              height: "440px",
+                                              height: "580px",
                                               borderRadius: "28px",
                                               border: "10px solid #222",
-                                              bgcolor: "#000000",
+                                              bgcolor: "var(--bg)",
                                               boxShadow:
                                                   "0 10px 30px rgba(0,0,0,0.5)",
                                               overflow: "hidden",
@@ -1682,10 +1687,10 @@ export default function OAuthAppSettingsPage() {
                                 {/* Header / Top Bar */}
                                 <Box
                                     sx={{
-                                        bgcolor: "#111",
+                                        bgcolor: "var(--surface)",
                                         px: 2,
                                         py: 1.5,
-                                        borderBottom: "1px solid #222",
+                                        borderBottom: "1px solid var(--border)",
                                         display: "flex",
                                         alignItems: "center",
                                         gap: 1,
@@ -1717,7 +1722,7 @@ export default function OAuthAppSettingsPage() {
                                     />
                                     <Typography
                                         sx={{
-                                            color: "#666",
+                                            color: "var(--fg-faint)",
                                             fontSize: "0.7rem",
                                             ml: "auto",
                                         }}
@@ -1735,7 +1740,9 @@ export default function OAuthAppSettingsPage() {
                                         flexDirection: "column",
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        color: "#FFFFFF",
+                                        color: "var(--fg)",
+                                        bgcolor: "var(--bg)",
+                                        backgroundImage: `radial-gradient(circle at 12% 15%, color-mix(in srgb, ${form.branding_primary_color || "#ff7759"} 16%, transparent), transparent 38%), radial-gradient(circle at 88% 86%, color-mix(in srgb, ${form.branding_accent_color || form.branding_primary_color || "#ff9b85"} 14%, transparent), transparent 42%)`,
                                     }}
                                 >
                                     {/* Application Logo & Connection Visual */}
@@ -1756,7 +1763,7 @@ export default function OAuthAppSettingsPage() {
                                                     height: "42px",
                                                     borderRadius: "10px",
                                                     objectFit: "cover",
-                                                    border: "1px solid rgba(255,255,255,0.1)",
+                                                    border: "1px solid var(--border)",
                                                 }}
                                                 onError={(e) => {
                                                     (
@@ -1778,7 +1785,7 @@ export default function OAuthAppSettingsPage() {
                                                     justifyItems: "center",
                                                     justifyContent: "center",
                                                     fontWeight: "bold",
-                                                    border: "1px solid rgba(255,255,255,0.1)",
+                                                    border: "1px solid var(--border)",
                                                 }}
                                             >
                                                 {(
@@ -1794,33 +1801,22 @@ export default function OAuthAppSettingsPage() {
                                             sx={{
                                                 fontSize: "1.2rem",
                                                 fontWeight: "bold",
-                                                color: "#666",
+                                                color: "var(--fg-faint)",
                                             }}
                                         >
                                             ↔
                                         </Typography>
                                         <Box
+                                            component="img"
+                                            src="/LOGO/logo.png"
+                                            alt="Elixpo Accounts"
                                             sx={{
-                                                width: "32px",
-                                                height: "32px",
-                                                borderRadius: "50%",
-                                                bgcolor: "#ffffff",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyItems: "center",
-                                                justifyContent: "center",
+                                                width: "42px",
+                                                height: "42px",
+                                                borderRadius: "10px",
+                                                border: "1px solid var(--border)",
                                             }}
-                                        >
-                                            <span
-                                                style={{
-                                                    color: "#000",
-                                                    fontWeight: "bold",
-                                                    fontSize: "1rem",
-                                                }}
-                                            >
-                                                E
-                                            </span>
-                                        </Box>
+                                        />
                                     </Box>
 
                                     <Typography
@@ -1842,21 +1838,22 @@ export default function OAuthAppSettingsPage() {
                                     <Typography
                                         sx={{
                                             fontSize: "0.75rem",
-                                            color: "#999",
+                                            color: "var(--fg-faint)",
                                             textAlign: "center",
                                             mb: 2,
                                         }}
                                     >
-                                        to authenticate via Elixpo Accounts
+                                        via global secured Elixpo Accounts
+                                        Network
                                     </Typography>
 
                                     {/* Dummy Scopes Card */}
                                     <Box
                                         sx={{
                                             width: "100%",
-                                            bgcolor: "#111",
-                                            border: "1px solid #222",
-                                            borderRadius: "6px",
+                                            bgcolor: "var(--surface)",
+                                            border: "1px solid var(--border)",
+                                            borderRadius: "12px",
                                             p: 1.5,
                                             mb: 3,
                                         }}
@@ -1864,7 +1861,7 @@ export default function OAuthAppSettingsPage() {
                                         <Typography
                                             sx={{
                                                 fontSize: "0.7rem",
-                                                color: "#666",
+                                                color: "var(--fg-faint)",
                                                 fontWeight: "bold",
                                                 mb: 1,
                                                 textTransform: "uppercase",
@@ -1899,7 +1896,7 @@ export default function OAuthAppSettingsPage() {
                                                 <Typography
                                                     sx={{
                                                         fontSize: "0.75rem",
-                                                        color: "#ddd",
+                                                        color: "var(--fg)",
                                                     }}
                                                 >
                                                     Access your openid profile
@@ -1925,7 +1922,7 @@ export default function OAuthAppSettingsPage() {
                                                 <Typography
                                                     sx={{
                                                         fontSize: "0.75rem",
-                                                        color: "#ddd",
+                                                        color: "var(--fg)",
                                                     }}
                                                 >
                                                     Read email address
@@ -1934,40 +1931,94 @@ export default function OAuthAppSettingsPage() {
                                         </Box>
                                     </Box>
 
-                                    {/* Action button */}
-                                    <Button
-                                        fullWidth
-                                        variant="contained"
-                                        size="small"
+                                    <Box
                                         sx={{
-                                            bgcolor:
-                                                form.branding_primary_color ||
-                                                "#ff7759",
-                                            color: getContrastColorLocal(
-                                                form.branding_primary_color ||
-                                                    "#ff7759",
-                                            ),
-                                            textTransform: "none",
-                                            fontWeight: 600,
-                                            py: 0.75,
+                                            width: "100%",
+                                            bgcolor: "var(--overlay)",
+                                            border: "1px solid var(--border)",
+                                            borderRadius: "12px",
+                                            p: 1.25,
                                             mb: 1.5,
-                                            "&:hover": {
-                                                bgcolor:
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            gap: 1.5,
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                color: "var(--fg-faint)",
+                                                fontSize: "0.7rem",
+                                            }}
+                                        >
+                                            <strong>Security</strong>
+                                            <br />
+                                            Renewable access. Revoke anytime.
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                color:
                                                     form.branding_accent_color ||
                                                     form.branding_primary_color ||
                                                     "#ff7759",
-                                                opacity: 0.95,
-                                            },
+                                                fontFamily: "monospace",
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            9:53
+                                        </Typography>
+                                    </Box>
+
+                                    <Box
+                                        sx={{
+                                            width: "100%",
+                                            display: "flex",
+                                            gap: 1,
+                                            mb: 1.5,
                                         }}
                                     >
-                                        Authorize & Continue
-                                    </Button>
+                                        <Button
+                                            fullWidth
+                                            size="small"
+                                            sx={{
+                                                color: "var(--fg-faint)",
+                                                border: "1px solid var(--border)",
+                                                textTransform: "none",
+                                            }}
+                                        >
+                                            Deny
+                                        </Button>
+                                        <Button
+                                            fullWidth
+                                            variant="contained"
+                                            size="small"
+                                            sx={{
+                                                bgcolor:
+                                                    form.branding_primary_color ||
+                                                    "#ff7759",
+                                                color: getContrastColorLocal(
+                                                    form.branding_primary_color ||
+                                                        "#ff7759",
+                                                ),
+                                                textTransform: "none",
+                                                fontWeight: 600,
+                                                "&:hover": {
+                                                    bgcolor:
+                                                        form.branding_accent_color ||
+                                                        form.branding_primary_color ||
+                                                        "#ff7759",
+                                                },
+                                            }}
+                                        >
+                                            Authorize
+                                        </Button>
+                                    </Box>
 
                                     {/* Trust marker footer */}
                                     <Typography
                                         sx={{
                                             fontSize: "0.7rem",
-                                            color: "#666",
+                                            color: "var(--fg-faint)",
                                             display: "flex",
                                             alignItems: "center",
                                             gap: 0.5,
@@ -1986,11 +2037,84 @@ export default function OAuthAppSettingsPage() {
             {/* Activity panel — sign-ins, sessions, request count, and a */}
             {stats && (
                 <Box sx={{ ...cardSx, mb: 3 }}>
-                    <Typography
-                        sx={{ color: "var(--fg)", fontWeight: 600, mb: 0.5 }}
+                    {stats.branding_verification_required && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            Sign-ins are paused because this app has more than
+                            20 sign-ins. Verify its branding domain above to
+                            resume authorization.
+                        </Alert>
+                    )}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 1.5,
+                            flexWrap: "wrap",
+                            mb: 0.5,
+                        }}
                     >
-                        Activity
-                    </Typography>
+                        <Typography
+                            sx={{ color: "var(--fg)", fontWeight: 600 }}
+                        >
+                            Activity
+                        </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                            }}
+                        >
+                            <Box
+                                component="select"
+                                aria-label="Activity range"
+                                value={activityDays}
+                                onChange={(event) =>
+                                    setActivityDays(Number(event.target.value))
+                                }
+                                sx={{
+                                    bgcolor: "var(--surface)",
+                                    color: "var(--fg)",
+                                    border: "1px solid var(--border)",
+                                    borderRadius: "8px",
+                                    px: 1.25,
+                                    py: 0.75,
+                                    fontSize: "0.8rem",
+                                }}
+                            >
+                                {[7, 30, 60, 90].map((days) => (
+                                    <option key={days} value={days}>
+                                        Last {days} days
+                                    </option>
+                                ))}
+                            </Box>
+                            <Button
+                                component="a"
+                                href={
+                                    stats.can_export_lifetime
+                                        ? `/api/auth/oauth-clients/${clientId}/stats?export=csv`
+                                        : "/pricing"
+                                }
+                                download={
+                                    stats.can_export_lifetime
+                                        ? `${clientId}-activity.csv`
+                                        : undefined
+                                }
+                                size="small"
+                                startIcon={<DownloadIcon />}
+                                sx={{
+                                    color: "#ff7759",
+                                    textTransform: "none",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {stats.can_export_lifetime
+                                    ? "Lifetime CSV"
+                                    : "Upgrade for CSV"}
+                            </Button>
+                        </Box>
+                    </Box>
                     <Typography
                         sx={{
                             color: "var(--fg-faint)",
@@ -2040,7 +2164,7 @@ export default function OAuthAppSettingsPage() {
                             mb: 1.5,
                         }}
                     >
-                        Sign-ins · last 30 days
+                        Sign-ins · last {activityDays} days
                     </Typography>
                     {stats.sign_in_timeline.length === 0 ? (
                         <Typography

@@ -458,11 +458,60 @@ function AuthorizeContent() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "transparent",
+                background: "var(--bg)",
                 padding: 16,
+                position: "relative",
+                overflow: "hidden",
             }}
         >
-            <div style={{ maxWidth: 420, width: "100%" }}>
+            <div
+                aria-hidden="true"
+                style={{
+                    position: "absolute",
+                    width: 520,
+                    height: 520,
+                    left: "-18%",
+                    top: "-22%",
+                    borderRadius: "42% 58% 64% 36%",
+                    background: `radial-gradient(circle, ${
+                        authRequest.isBrandingVerified &&
+                        authRequest.brandingPrimaryColor
+                            ? authRequest.brandingPrimaryColor
+                            : "#ff7759"
+                    } 0%, transparent 68%)`,
+                    filter: "blur(70px)",
+                    opacity: 0.18,
+                    transform: "rotate(18deg)",
+                }}
+            />
+            <div
+                aria-hidden="true"
+                style={{
+                    position: "absolute",
+                    width: 440,
+                    height: 440,
+                    right: "-14%",
+                    bottom: "-24%",
+                    borderRadius: "60% 40% 38% 62%",
+                    background: `radial-gradient(circle, ${
+                        authRequest.isBrandingVerified &&
+                        authRequest.brandingAccentColor
+                            ? authRequest.brandingAccentColor
+                            : authRequest.brandingPrimaryColor || "#ff9b85"
+                    } 0%, transparent 68%)`,
+                    filter: "blur(70px)",
+                    opacity: 0.16,
+                    transform: "rotate(-22deg)",
+                }}
+            />
+            <div
+                style={{
+                    maxWidth: 420,
+                    width: "100%",
+                    position: "relative",
+                    zIndex: 1,
+                }}
+            >
                 {/* Main Card */}
                 <div
                     style={{
@@ -482,7 +531,7 @@ function AuthorizeContent() {
                             gap: 16,
                         }}
                     >
-                        {/* Elixpo logo */}
+                        {/* Verified application logo */}
                         <div
                             style={{
                                 width: 44,
@@ -490,62 +539,7 @@ function AuthorizeContent() {
                                 borderRadius: 12,
                                 overflow: "hidden",
                                 flexShrink: 0,
-                                border: "2px solid rgba(255, 119, 89,0.25)",
-                            }}
-                        >
-                            <img
-                                src="/LOGO/logo.png"
-                                alt="Elixpo"
-                                width={44}
-                                height={44}
-                                style={{ display: "block" }}
-                            />
-                        </div>
-
-                        {/* Connector */}
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                flex: "0 0 auto",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 6,
-                                    height: 6,
-                                    borderRadius: "50%",
-                                    background: "#ff7759",
-                                    opacity: 0.6,
-                                }}
-                            />
-                            <div
-                                style={{
-                                    width: 24,
-                                    height: 2,
-                                    background:
-                                        "linear-gradient(90deg, rgba(255, 119, 89,0.5), rgba(255, 119, 89,0.15))",
-                                }}
-                            />
-                            <div
-                                style={{
-                                    width: 6,
-                                    height: 6,
-                                    borderRadius: "50%",
-                                    background: "#ff7759",
-                                    opacity: 0.6,
-                                }}
-                            />
-                        </div>
-
-                        {/* Client icon */}
-                        <div
-                            style={{
-                                flexShrink: 0,
                                 border: "2px solid var(--border)",
-                                borderRadius: 12,
-                                overflow: "hidden",
                             }}
                         >
                             <ClientIcon
@@ -565,44 +559,104 @@ function AuthorizeContent() {
                             />
                         </div>
 
-                        {/* Text */}
+                        {/* Connector */}
                         <div
                             style={{
-                                minWidth: 0,
-                                maxWidth: 150,
-                                textAlign: "center",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                flex: "0 0 auto",
                             }}
                         >
-                            <p
+                            <div
                                 style={{
-                                    color: "var(--fg)",
-                                    fontWeight: 700,
-                                    fontSize: 15,
-                                    margin: 0,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: "50%",
+                                    background:
+                                        authRequest.brandingPrimaryColor ||
+                                        "#ff7759",
+                                    opacity: 0.6,
                                 }}
-                            >
-                                {authRequest.isBrandingVerified &&
-                                authRequest.brandingDisplayName
-                                    ? authRequest.brandingDisplayName
-                                    : authRequest.clientName}
-                            </p>
-                            {hostname && (
-                                <p
-                                    style={{
-                                        color: "var(--fg-faint)",
-                                        fontSize: 12,
-                                        margin: "2px 0 0",
-                                        fontFamily: "monospace",
-                                    }}
-                                >
-                                    {hostname}
-                                </p>
-                            )}
+                            />
+                            <div
+                                style={{
+                                    width: 24,
+                                    height: 2,
+                                    background: `linear-gradient(90deg, ${authRequest.brandingPrimaryColor || "#ff7759"}, ${authRequest.brandingAccentColor || authRequest.brandingPrimaryColor || "#ff9b85"})`,
+                                }}
+                            />
+                            <div
+                                style={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: "50%",
+                                    background:
+                                        authRequest.brandingAccentColor ||
+                                        authRequest.brandingPrimaryColor ||
+                                        "#ff7759",
+                                    opacity: 0.6,
+                                }}
+                            />
+                        </div>
+
+                        {/* Elixpo Accounts network icon */}
+                        <div
+                            style={{
+                                flexShrink: 0,
+                                border: "2px solid var(--border)",
+                                borderRadius: 12,
+                                overflow: "hidden",
+                            }}
+                        >
+                            <img
+                                src="/LOGO/logo.png"
+                                alt="Elixpo Accounts"
+                                width={44}
+                                height={44}
+                                style={{ display: "block" }}
+                            />
                         </div>
                     </div>
+
+                    <p
+                        style={{
+                            color: "var(--fg)",
+                            fontSize: 15,
+                            fontWeight: 700,
+                            textAlign: "center",
+                            margin: "-8px 16px 2px",
+                        }}
+                    >
+                        Continue to{" "}
+                        {authRequest.isBrandingVerified &&
+                        authRequest.brandingDisplayName
+                            ? authRequest.brandingDisplayName
+                            : authRequest.clientName}
+                    </p>
+                    {hostname && (
+                        <p
+                            style={{
+                                color: "var(--fg-faint)",
+                                fontFamily: "monospace",
+                                fontSize: 12,
+                                textAlign: "center",
+                                margin: "0 16px 4px",
+                            }}
+                        >
+                            {hostname}
+                        </p>
+                    )}
+                    <p
+                        style={{
+                            color: "var(--fg-faint)",
+                            fontSize: 12,
+                            textAlign: "center",
+                            margin: "0 16px 16px",
+                        }}
+                    >
+                        via global secured Elixpo Accounts Network
+                    </p>
 
                     {/* Which account this authorization is for */}
                     {account && (
