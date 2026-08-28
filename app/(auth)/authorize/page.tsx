@@ -2,8 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { generatePixelAvatar } from "@/lib/pixel-avatar";
 import type { CustomOAuthScope } from "@/lib/oauth-scope-registry";
+import { generatePixelAvatar } from "@/lib/pixel-avatar";
 import {
     AccountSelector,
     OAuthScopeList,

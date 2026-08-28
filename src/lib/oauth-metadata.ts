@@ -1,5 +1,5 @@
-import { SUPPORTED_OAUTH_SCOPES } from "./oauth-scopes";
 import { SUPPORTED_PRODUCT_SCOPES } from "./oauth-scope-registry";
+import { SUPPORTED_OAUTH_SCOPES } from "./oauth-scopes";
 
 export const ELIXPO_OAUTH_CONTRACT_VERSION = "1.1.0";
 

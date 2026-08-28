@@ -31,7 +31,9 @@ export const SUPPORTED_PRODUCT_SCOPES = PRODUCT_OPTIONS.map(
     (scope) => scope.name,
 );
 
-const BUILT_IN_NAMES = new Set(BUILT_IN_SCOPE_OPTIONS.map((scope) => scope.name));
+const BUILT_IN_NAMES = new Set(
+    BUILT_IN_SCOPE_OPTIONS.map((scope) => scope.name),
+);
 const SCOPE_NAME_PATTERN = /^[a-z0-9][a-z0-9._:-]{1,79}$/;
 
 export function parseCustomScopes(value: unknown): CustomOAuthScope[] {
@@ -53,12 +55,16 @@ export function parseCustomScopes(value: unknown): CustomOAuthScope[] {
     );
 }
 
-export function validateCustomScopes(value: unknown):
+export function validateCustomScopes(
+    value: unknown,
+):
     | { scopes: CustomOAuthScope[]; error?: never }
     | { scopes?: never; error: string } {
     if (value === undefined) return { scopes: [] };
-    if (!Array.isArray(value)) return { error: "custom_scopes must be an array" };
-    if (value.length > 20) return { error: "Maximum of 20 custom scopes allowed" };
+    if (!Array.isArray(value))
+        return { error: "custom_scopes must be an array" };
+    if (value.length > 20)
+        return { error: "Maximum of 20 custom scopes allowed" };
 
     const scopes: CustomOAuthScope[] = [];
     const names = new Set<string>();
@@ -67,8 +73,10 @@ export function validateCustomScopes(value: unknown):
             return { error: "Each custom scope must be an object" };
         }
         const candidate = item as Record<string, unknown>;
-        const name = typeof candidate.name === "string" ? candidate.name.trim() : "";
-        const label = typeof candidate.label === "string" ? candidate.label.trim() : "";
+        const name =
+            typeof candidate.name === "string" ? candidate.name.trim() : "";
+        const label =
+            typeof candidate.label === "string" ? candidate.label.trim() : "";
         const description =
             typeof candidate.description === "string"
                 ? candidate.description.trim()
@@ -79,10 +87,18 @@ export function validateCustomScopes(value: unknown):
             };
         }
         if (BUILT_IN_NAMES.has(name)) {
-            return { error: `Custom scope conflicts with built-in scope: ${name}` };
+            return {
+                error: `Custom scope conflicts with built-in scope: ${name}`,
+            };
         }
-        if (names.has(name)) return { error: `Duplicate custom scope: ${name}` };
-        if (!label || label.length > 80 || !description || description.length > 240) {
+        if (names.has(name))
+            return { error: `Duplicate custom scope: ${name}` };
+        if (
+            !label ||
+            label.length > 80 ||
+            !description ||
+            description.length > 240
+        ) {
             return {
                 error: "Custom scopes require a label up to 80 characters and description up to 240 characters",
             };
@@ -99,7 +115,10 @@ export function scopeOptionsForClient(
 ): OAuthScopeOption[] {
     const options: OAuthScopeOption[] = [
         ...BUILT_IN_SCOPE_OPTIONS,
-        ...customScopes.map((scope) => ({ ...scope, group: "custom" as const })),
+        ...customScopes.map((scope) => ({
+            ...scope,
+            group: "custom" as const,
+        })),
     ];
     const known = new Set(options.map((scope) => scope.name));
     for (const name of selectedScopes) {
@@ -107,7 +126,8 @@ export function scopeOptionsForClient(
             options.push({
                 name,
                 label: name,
-                description: "This selected scope is no longer available. Remove it explicitly to continue without it.",
+                description:
+                    "This selected scope is no longer available. Remove it explicitly to continue without it.",
                 group: "unavailable",
             });
         }
@@ -122,11 +142,12 @@ export function filterScopeOptions(
 ): OAuthScopeOption[] {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return options;
-    return options.filter((scope) =>
-        selectedScopes.includes(scope.name) ||
-        [scope.name, scope.label, scope.description].some((value) =>
-            value.toLowerCase().includes(normalized),
-        ),
+    return options.filter(
+        (scope) =>
+            selectedScopes.includes(scope.name) ||
+            [scope.name, scope.label, scope.description].some((value) =>
+                value.toLowerCase().includes(normalized),
+            ),
     );
 }
 
@@ -134,5 +155,7 @@ export function findScopeOption(
     name: string,
     customScopes: CustomOAuthScope[] = [],
 ): OAuthScopeOption | undefined {
-    return scopeOptionsForClient(customScopes).find((scope) => scope.name === name);
+    return scopeOptionsForClient(customScopes).find(
+        (scope) => scope.name === name,
+    );
 }

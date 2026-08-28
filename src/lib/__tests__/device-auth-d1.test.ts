@@ -101,9 +101,7 @@ async function insertClient(
             clientId,
             options.type || "public",
             options.active === false ? 0 : 1,
-            JSON.stringify(
-                options.scopes || ["openid", "lixblogs:blog:read"],
-            ),
+            JSON.stringify(options.scopes || ["openid", "lixblogs:blog:read"]),
             "LixBlogs CLI",
             options.audience ?? null,
             JSON.stringify(options.customScopes || []),

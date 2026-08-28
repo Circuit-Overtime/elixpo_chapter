@@ -16,9 +16,9 @@ describe("OAuth scope registry", () => {
         });
         expect(scope?.description).toContain("one scoped Lixrl API key");
         expect(scope?.description).toContain("does not grant direct access");
-        expect(
-            createAuthorizationServerMetadata().scopes_supported,
-        ).toContain("lixrl:keys:create");
+        expect(createAuthorizationServerMetadata().scopes_supported).toContain(
+            "lixrl:keys:create",
+        );
     });
 
     it("validates app-defined scopes without allowing built-in collisions", () => {
@@ -53,15 +53,19 @@ describe("OAuth scope registry", () => {
             ],
             ["email"],
         );
-        expect(filterScopeOptions(options, "documents").map((item) => item.name)).toContain(
-            "acme:documents:read",
-        );
-        expect(filterScopeOptions(options, "stored in acme").map((item) => item.name)).toContain(
-            "acme:documents:read",
-        );
-        expect(filterScopeOptions(options, "no match", ["email"]).map((item) => item.name)).toEqual([
-            "email",
-        ]);
+        expect(
+            filterScopeOptions(options, "documents").map((item) => item.name),
+        ).toContain("acme:documents:read");
+        expect(
+            filterScopeOptions(options, "stored in acme").map(
+                (item) => item.name,
+            ),
+        ).toContain("acme:documents:read");
+        expect(
+            filterScopeOptions(options, "no match", ["email"]).map(
+                (item) => item.name,
+            ),
+        ).toEqual(["email"]);
     });
 
     it("keeps unavailable selected scopes visible", () => {

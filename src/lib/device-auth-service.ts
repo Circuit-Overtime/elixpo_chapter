@@ -13,9 +13,9 @@
 
 import type { D1Database } from "@cloudflare/workers-types";
 import {
+    type CustomOAuthScope,
     findScopeOption,
     parseCustomScopes,
-    type CustomOAuthScope,
 } from "./oauth-scope-registry";
 import { generateRandomString, generateUUID, hashString } from "./webcrypto";
 
@@ -166,7 +166,8 @@ export async function createDeviceAuthorization(
 
     const scopesValid = requestedScopes.every(
         (scope) =>
-            !!findScopeOption(scope, customScopes) && clientScopes.includes(scope),
+            !!findScopeOption(scope, customScopes) &&
+            clientScopes.includes(scope),
     );
     if (!scopesValid) {
         throw new DeviceAuthorizationRequestError(

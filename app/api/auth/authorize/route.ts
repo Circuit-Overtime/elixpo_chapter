@@ -9,11 +9,8 @@ import {
     getOAuthClientById,
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
+import { findScopeOption, parseCustomScopes } from "@/lib/oauth-scope-registry";
 import { parseOAuthScopes, unsupportedOAuthScopes } from "@/lib/oauth-scopes";
-import {
-    findScopeOption,
-    parseCustomScopes,
-} from "@/lib/oauth-scope-registry";
 import { isValidPkceValue } from "@/lib/pkce";
 import { generateRandomString, generateUUID } from "@/lib/webcrypto";
 

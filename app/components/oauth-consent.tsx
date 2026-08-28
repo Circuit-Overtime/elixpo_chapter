@@ -1,8 +1,8 @@
 "use client";
 
 import {
-    findScopeOption,
     type CustomOAuthScope,
+    findScopeOption,
 } from "@/lib/oauth-scope-registry";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
 
@@ -137,11 +137,11 @@ export function OAuthScopeList({
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {scopes.map((scope) => {
                     const detail = findScopeOption(scope, customScopes) || {
-                            label: scope,
-                            description: "Use this permission as registered.",
-                            highImpact: false,
-                            group: "unavailable" as const,
-                        };
+                        label: scope,
+                        description: "Use this permission as registered.",
+                        highImpact: false,
+                        group: "unavailable" as const,
+                    };
                     const highImpact = detail.highImpact === true;
                     return (
                         <div

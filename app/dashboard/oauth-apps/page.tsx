@@ -32,8 +32,8 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CustomOAuthScope } from "@/lib/oauth-scope-registry";
-import { OAuthScopePicker } from "../../components/oauth-scope-picker";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
+import { OAuthScopePicker } from "../../components/oauth-scope-picker";
 
 interface OAuthApp {
     client_id: string;
@@ -879,24 +879,22 @@ const OAuthAppsPage = () => {
                     </Box>
 
                     {formData.client_type === "public" && (
-                        <>
-                            <TextField
-                                fullWidth
-                                label="Resource audience"
-                                value={formData.audience}
-                                onChange={(event) =>
-                                    setFormData({
-                                        ...formData,
-                                        audience: event.target.value,
-                                    })
-                                }
-                                margin="dense"
-                                placeholder="blogs.elixpo.com"
-                                helperText="Host only. Public clients use device flow and never receive a secret."
-                                sx={textFieldSx}
-                                disabled={loading}
-                            />
-                        </>
+                        <TextField
+                            fullWidth
+                            label="Resource audience"
+                            value={formData.audience}
+                            onChange={(event) =>
+                                setFormData({
+                                    ...formData,
+                                    audience: event.target.value,
+                                })
+                            }
+                            margin="dense"
+                            placeholder="blogs.elixpo.com"
+                            helperText="Host only. Public clients use device flow and never receive a secret."
+                            sx={textFieldSx}
+                            disabled={loading}
+                        />
                     )}
                     <Typography
                         sx={{

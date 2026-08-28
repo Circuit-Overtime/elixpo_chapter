@@ -468,8 +468,8 @@ function DeviceVerificationContent() {
                                     Return to your device
                                 </p>
                                 <p className="mt-1 text-xs text-[var(--fg-faint)]">
-                                    It will continue automatically. You can safely
-                                    close this window.
+                                    It will continue automatically. You can
+                                    safely close this window.
                                 </p>
                             </div>
                         ) : (

@@ -26,9 +26,7 @@ import {
     SUPPORTED_PRODUCT_SCOPES,
     validateCustomScopes,
 } from "@/lib/oauth-scope-registry";
-import {
-    SUPPORTED_OAUTH_SCOPES,
-} from "@/lib/oauth-scopes";
+import { SUPPORTED_OAUTH_SCOPES } from "@/lib/oauth-scopes";
 import {
     generateRandomString,
     generateUUID,

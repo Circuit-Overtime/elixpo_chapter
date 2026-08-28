@@ -4,11 +4,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { createAuthRequest, getOAuthClientById, getUserById } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
+import { findScopeOption, parseCustomScopes } from "@/lib/oauth-scope-registry";
 import { parseOAuthScopes } from "@/lib/oauth-scopes";
-import {
-    findScopeOption,
-    parseCustomScopes,
-} from "@/lib/oauth-scope-registry";
 import { isValidPkceValue } from "@/lib/pkce";
 import { generateRandomString, generateUUID } from "@/lib/webcrypto";
 
