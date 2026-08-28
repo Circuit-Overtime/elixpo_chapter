@@ -20,3 +20,15 @@ test("NO_COLOR disables terminal styling", () => {
   assert.equal(colorEnabled({ isTTY: true }, { NO_COLOR: "1", TERM: "xterm" }), false);
   assert.equal(colorEnabled({ isTTY: true }, { TERM: "xterm" }), true);
 });
+
+test("implicit login explains that the username becomes the profile alias", () => {
+  const card = loginChallenge({
+    url: "https://accounts.elixpo.com/device?user_code=ABCD-EFGH",
+    code: "ABCD-EFGH",
+    expiresInSeconds: 600,
+    profile: null,
+    interactive: true,
+  });
+  assert.match(card, /your Accounts username after approval/);
+  assert.doesNotMatch(card, /default \(local credential slot\)/);
+});

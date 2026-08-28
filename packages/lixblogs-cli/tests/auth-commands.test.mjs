@@ -42,6 +42,31 @@ test("login: immediate approval stores credentials for the profile", async () =>
   assert.ok(statuses.some((s) => s.type === "approved"));
 });
 
+test("login: resolved username replaces the implicit profile before credentials are stored", async () => {
+  const provider = new MockAuthProvider();
+  const credentialStore = new InMemoryCredentialStore();
+  const originalRequest = provider.requestDeviceCode.bind(provider);
+  provider.requestDeviceCode = (params) =>
+    originalRequest({ ...params, scenario: "APPROVE_IMMEDIATELY" });
+
+  const result = await authLogin({
+    provider,
+    credentialStore,
+    profileId: "default",
+    scopes: ["read"],
+    sleep: instantSleep,
+    resolveProfileId: async ({ accessToken, requestedProfileId }) => {
+      assert.ok(accessToken);
+      assert.equal(requestedProfileId, "default");
+      return "elixpohere";
+    },
+  });
+
+  assert.deepEqual(result, { ok: true, profileId: "elixpohere" });
+  assert.equal(await credentialStore.get("default"), null);
+  assert.ok(await credentialStore.get("elixpohere"));
+});
+
 test("login: denied login does not store credentials", async () => {
   const provider = new MockAuthProvider();
   const credentialStore = new InMemoryCredentialStore();
