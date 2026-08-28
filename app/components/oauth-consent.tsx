@@ -1,10 +1,9 @@
 "use client";
 
 import {
-    isHighImpactScope,
-    LIXBLOGS_SCOPE_DETAILS,
-} from "@/lib/lixblogs-scopes";
-import { OAUTH_SCOPE_DETAILS } from "@/lib/oauth-scopes";
+    findScopeOption,
+    type CustomOAuthScope,
+} from "@/lib/oauth-scope-registry";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
 
 export type ConsentAccount = {
@@ -119,9 +118,11 @@ export function AccountSelector({
 
 export function OAuthScopeList({
     scopes,
+    customScopes = [],
     accentColor = "#ff7759",
 }: {
     scopes: string[];
+    customScopes?: CustomOAuthScope[];
     accentColor?: string;
 }) {
     return (
@@ -135,27 +136,13 @@ export function OAuthScopeList({
         >
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {scopes.map((scope) => {
-                    const core =
-                        OAUTH_SCOPE_DETAILS[
-                            scope as keyof typeof OAUTH_SCOPE_DETAILS
-                        ];
-                    const resource = (
-                        LIXBLOGS_SCOPE_DETAILS as Record<
-                            string,
-                            | {
-                                  label: string;
-                                  description: string;
-                                  highImpact: boolean;
-                              }
-                            | undefined
-                        >
-                    )[scope];
-                    const detail = core ||
-                        resource || {
+                    const detail = findScopeOption(scope, customScopes) || {
                             label: scope,
                             description: "Use this permission as registered.",
+                            highImpact: false,
+                            group: "unavailable" as const,
                         };
-                    const highImpact = isHighImpactScope(scope);
+                    const highImpact = detail.highImpact === true;
                     return (
                         <div
                             key={scope}
@@ -188,6 +175,9 @@ export function OAuthScopeList({
                                     }}
                                 >
                                     {detail.label}
+                                    {detail.group === "custom"
+                                        ? " · App-defined"
+                                        : ""}
                                     {highImpact ? " · High impact" : ""}
                                 </strong>
                                 <span

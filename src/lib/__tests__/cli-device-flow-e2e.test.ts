@@ -83,6 +83,7 @@ async function setupDatabase() {
             name TEXT NOT NULL, redirect_uris TEXT NOT NULL, scopes TEXT NOT NULL,
             is_active INTEGER DEFAULT 1, owner_id TEXT, client_type TEXT NOT NULL,
             audience TEXT, homepage_url TEXT,
+            custom_scopes TEXT NOT NULL DEFAULT '[]',
             is_branding_verified INTEGER NOT NULL DEFAULT 0
         )`),
         env.DB.prepare(`CREATE TABLE IF NOT EXISTS device_authorizations (

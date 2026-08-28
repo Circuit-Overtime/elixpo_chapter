@@ -10,6 +10,10 @@ import {
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
 import { parseOAuthScopes, unsupportedOAuthScopes } from "@/lib/oauth-scopes";
+import {
+    findScopeOption,
+    parseCustomScopes,
+} from "@/lib/oauth-scope-registry";
 import { isValidPkceValue } from "@/lib/pkce";
 import { generateRandomString, generateUUID } from "@/lib/webcrypto";
 
@@ -72,7 +76,9 @@ export async function GET(request: NextRequest) {
         const isBuiltinClient = BUILTIN_DOMAINS.includes(redirectUrl.hostname);
         const db = await getDatabase();
         const requestedScopes = parseOAuthScopes(scope);
-        const unsupported = unsupportedOAuthScopes(requestedScopes);
+        const unsupported = isBuiltinClient
+            ? unsupportedOAuthScopes(requestedScopes)
+            : [];
         if (unsupported.length > 0) {
             return NextResponse.json(
                 {
@@ -148,8 +154,12 @@ export async function GET(request: NextRequest) {
                 const registeredScopes: string[] = JSON.parse(
                     (client as any).scopes || "[]",
                 );
+                const customScopes = parseCustomScopes(
+                    (client as any).custom_scopes,
+                );
                 const unregistered = requestedScopes.filter(
                     (requestedScope) =>
+                        !findScopeOption(requestedScope, customScopes) ||
                         !registeredScopes.includes(requestedScope),
                 );
                 if (unregistered.length > 0) {

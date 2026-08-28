@@ -1,5 +1,14 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
+export const LIXRL_SCOPE_DETAILS = {
+    "lixrl:keys:create": {
+        label: "Create one scoped Lixrl API key",
+        description:
+            "Approve creation of one scoped Lixrl API key. This does not grant direct access to your links.",
+        highImpact: true,
+    },
+} as const;
+
 export interface OAuthProvider {
     name: string;
     clientId: string;

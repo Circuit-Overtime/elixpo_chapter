@@ -11,13 +11,11 @@ import {
     Alert,
     Box,
     Button,
-    Checkbox,
     Chip,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
-    FormControlLabel,
     IconButton,
     InputAdornment,
     Paper,
@@ -33,7 +31,8 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
+import type { CustomOAuthScope } from "@/lib/oauth-scope-registry";
+import { OAuthScopePicker } from "../../components/oauth-scope-picker";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
 
 interface OAuthApp {
@@ -174,6 +173,7 @@ const OAuthAppsPage = () => {
         client_type: "confidential" as "confidential" | "public",
         audience: "",
         scopes: ["openid", "profile", "email"],
+        custom_scopes: [] as CustomOAuthScope[],
     });
 
     // useCallback gives stable refs so the auth/apps fetches don't loop
@@ -257,6 +257,7 @@ const OAuthAppsPage = () => {
                     description: formData.description || undefined,
                     redirect_uris: uris,
                     scopes: formData.scopes,
+                    custom_scopes: formData.custom_scopes,
                     client_type: formData.client_type,
                     audience:
                         formData.client_type === "public"
@@ -284,6 +285,7 @@ const OAuthAppsPage = () => {
                 client_type: "confidential",
                 audience: "",
                 scopes: ["openid", "profile", "email"],
+                custom_scopes: [],
             });
             setSuccessMessage("Application registered successfully!");
             await fetchApps();
@@ -344,6 +346,7 @@ const OAuthAppsPage = () => {
             client_type: "confidential",
             audience: "",
             scopes: ["openid", "profile", "email"],
+            custom_scopes: [],
         });
     };
 
@@ -767,7 +770,7 @@ const OAuthAppsPage = () => {
             <Dialog
                 open={openDialog}
                 onClose={handleCloseDialog}
-                maxWidth="sm"
+                maxWidth="md"
                 fullWidth
                 PaperProps={{ sx: dialogPaperSx }}
             >
@@ -893,68 +896,28 @@ const OAuthAppsPage = () => {
                                 sx={textFieldSx}
                                 disabled={loading}
                             />
-                            <Typography
-                                sx={{
-                                    color: "var(--fg-muted)",
-                                    fontSize: "0.85rem",
-                                    mt: 1.5,
-                                }}
-                            >
-                                Resource scopes
-                            </Typography>
-                            <Box
-                                sx={{
-                                    maxHeight: 190,
-                                    overflowY: "auto",
-                                    display: "grid",
-                                    gridTemplateColumns: {
-                                        xs: "1fr",
-                                        sm: "1fr 1fr",
-                                    },
-                                    border: "1px solid var(--border)",
-                                    borderRadius: "8px",
-                                    p: 1,
-                                }}
-                            >
-                                {SUPPORTED_LIXBLOGS_SCOPES.map((scope) => (
-                                    <FormControlLabel
-                                        key={scope}
-                                        control={
-                                            <Checkbox
-                                                size="small"
-                                                checked={formData.scopes.includes(
-                                                    scope,
-                                                )}
-                                                onChange={(event) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        scopes: event.target
-                                                            .checked
-                                                            ? [
-                                                                  ...formData.scopes,
-                                                                  scope,
-                                                              ]
-                                                            : formData.scopes.filter(
-                                                                  (item) =>
-                                                                      item !==
-                                                                      scope,
-                                                              ),
-                                                    })
-                                                }
-                                            />
-                                        }
-                                        label={scope}
-                                        sx={{
-                                            color: "var(--fg-muted)",
-                                            "& .MuiTypography-root": {
-                                                fontSize: "0.72rem",
-                                            },
-                                        }}
-                                    />
-                                ))}
-                            </Box>
                         </>
                     )}
+                    <Typography
+                        sx={{
+                            color: "var(--fg-muted)",
+                            fontSize: "0.85rem",
+                            mt: 2,
+                            mb: 0.75,
+                        }}
+                    >
+                        OAuth scopes
+                    </Typography>
+                    <OAuthScopePicker
+                        selectedScopes={formData.scopes}
+                        customScopes={formData.custom_scopes}
+                        onSelectedScopesChange={(scopes) =>
+                            setFormData({ ...formData, scopes })
+                        }
+                        onCustomScopesChange={(custom_scopes) =>
+                            setFormData({ ...formData, custom_scopes })
+                        }
+                    />
                     <Typography
                         sx={{
                             color: "var(--fg-muted)",

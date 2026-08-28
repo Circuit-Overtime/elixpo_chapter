@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
+import type { CustomOAuthScope } from "@/lib/oauth-scope-registry";
 import {
     AccountSelector,
     OAuthScopeList,
@@ -15,6 +16,7 @@ interface AuthorizationRequest {
     homepageUrl?: string;
     redirectUri: string;
     scopes: string[];
+    customScopes: CustomOAuthScope[];
     state: string;
     logoUrl?: string | null;
     brandingDisplayName?: string | null;
@@ -229,6 +231,7 @@ function AuthorizeContent() {
                     homepageUrl: client.homepage_url || null,
                     redirectUri,
                     scopes: scopes.length > 0 ? scopes : client.scopes || [],
+                    customScopes: client.custom_scopes || [],
                     state,
                     logoUrl: client.logo_url || null,
                     brandingDisplayName: client.branding_display_name || null,
@@ -709,6 +712,7 @@ function AuthorizeContent() {
                             </p>
                             <OAuthScopeList
                                 scopes={authRequest.scopes}
+                                customScopes={authRequest.customScopes}
                                 accentColor={
                                     authRequest.brandingPrimaryColor ||
                                     "#ff7759"

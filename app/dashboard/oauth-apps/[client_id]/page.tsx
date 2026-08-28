@@ -12,11 +12,9 @@ import {
     Alert,
     Box,
     Button,
-    Checkbox,
     Chip,
     CircularProgress,
     Divider,
-    FormControlLabel,
     IconButton,
     TextField,
     Tooltip,
@@ -24,7 +22,8 @@ import {
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
+import type { CustomOAuthScope } from "@/lib/oauth-scope-registry";
+import { OAuthScopePicker } from "../../../components/oauth-scope-picker";
 
 const cardSx = {
     background: "var(--surface)",
@@ -95,6 +94,7 @@ export default function OAuthAppSettingsPage() {
         terms_of_service_url: "",
         audience: "",
         scopes: ["openid", "profile", "email"] as string[],
+        custom_scopes: [] as CustomOAuthScope[],
     });
 
     // ── Webhook endpoints state ─────────────────────────────────────────
@@ -207,6 +207,9 @@ export default function OAuthAppSettingsPage() {
                     scopes: Array.isArray(data.scopes)
                         ? data.scopes
                         : ["openid", "profile", "email"],
+                    custom_scopes: Array.isArray(data.custom_scopes)
+                        ? data.custom_scopes
+                        : [],
                 });
             } catch {
                 router.push("/dashboard/oauth-apps");
@@ -395,9 +398,10 @@ export default function OAuthAppSettingsPage() {
                     branding_accent_color: form.branding_accent_color,
                     privacy_policy_url: form.privacy_policy_url,
                     terms_of_service_url: form.terms_of_service_url,
+                    scopes: form.scopes,
+                    custom_scopes: form.custom_scopes,
                     ...(app?.client_type === "public" && {
                         audience: form.audience,
-                        scopes: form.scopes,
                     }),
                 }),
             });
@@ -1099,71 +1103,16 @@ export default function OAuthAppSettingsPage() {
                         >
                             Scopes
                         </Typography>
-                        <Box
-                            sx={{
-                                display: "grid",
-                                gridTemplateColumns:
-                                    app?.client_type === "public"
-                                        ? { xs: "1fr", md: "1fr 1fr" }
-                                        : "1fr",
-                                gap: 0.5,
-                                maxHeight:
-                                    app?.client_type === "public"
-                                        ? 220
-                                        : "none",
-                                overflowY: "auto",
-                            }}
-                        >
-                            {app?.client_type === "public"
-                                ? SUPPORTED_LIXBLOGS_SCOPES.map((scope) => (
-                                      <FormControlLabel
-                                          key={scope}
-                                          control={
-                                              <Checkbox
-                                                  size="small"
-                                                  checked={form.scopes.includes(
-                                                      scope,
-                                                  )}
-                                                  onChange={(event) =>
-                                                      setForm({
-                                                          ...form,
-                                                          scopes: event.target
-                                                              .checked
-                                                              ? [
-                                                                    ...form.scopes,
-                                                                    scope,
-                                                                ]
-                                                              : form.scopes.filter(
-                                                                    (item) =>
-                                                                        item !==
-                                                                        scope,
-                                                                ),
-                                                      })
-                                                  }
-                                              />
-                                          }
-                                          label={scope}
-                                          sx={{
-                                              color: "var(--fg-muted)",
-                                              "& .MuiTypography-root": {
-                                                  fontSize: "0.72rem",
-                                              },
-                                          }}
-                                      />
-                                  ))
-                                : form.scopes.map((scope) => (
-                                      <Chip
-                                          key={scope}
-                                          label={scope}
-                                          size="small"
-                                          sx={{
-                                              justifySelf: "start",
-                                              bgcolor: "rgba(255, 119, 89,0.1)",
-                                              color: "#ff7759",
-                                          }}
-                                      />
-                                  ))}
-                        </Box>
+                        <OAuthScopePicker
+                            selectedScopes={form.scopes}
+                            customScopes={form.custom_scopes}
+                            onSelectedScopesChange={(scopes) =>
+                                setForm({ ...form, scopes })
+                            }
+                            onCustomScopesChange={(custom_scopes) =>
+                                setForm({ ...form, custom_scopes })
+                            }
+                        />
                     </Box>
 
                     <Typography

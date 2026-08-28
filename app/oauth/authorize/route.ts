@@ -4,7 +4,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/d1-client";
 import { createAuthRequest, getOAuthClientById, getUserById } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
-import { parseOAuthScopes, unsupportedOAuthScopes } from "@/lib/oauth-scopes";
+import { parseOAuthScopes } from "@/lib/oauth-scopes";
+import {
+    findScopeOption,
+    parseCustomScopes,
+} from "@/lib/oauth-scope-registry";
 import { isValidPkceValue } from "@/lib/pkce";
 import { generateRandomString, generateUUID } from "@/lib/webcrypto";
 
@@ -138,12 +142,12 @@ export async function GET(request: NextRequest) {
 
         const requestedScopes = parseOAuthScopes(scope);
         const registeredScopes: string[] = JSON.parse(client.scopes || "[]");
-        const invalidScopes = [
-            ...unsupportedOAuthScopes(requestedScopes),
-            ...requestedScopes.filter(
-                (requestedScope) => !registeredScopes.includes(requestedScope),
-            ),
-        ];
+        const customScopes = parseCustomScopes(client.custom_scopes);
+        const invalidScopes = requestedScopes.filter(
+            (requestedScope) =>
+                !findScopeOption(requestedScope, customScopes) ||
+                !registeredScopes.includes(requestedScope),
+        );
         if (invalidScopes.length > 0) {
             parsedRedirect.searchParams.set("error", "invalid_scope");
             parsedRedirect.searchParams.set(

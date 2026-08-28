@@ -9,9 +9,12 @@ import {
     logAuditEvent,
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
-import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
 import { sendMail } from "@/lib/mails";
 import { normalizeOAuthAudience } from "@/lib/oauth-client-registration";
+import {
+    SUPPORTED_PRODUCT_SCOPES,
+    validateCustomScopes,
+} from "@/lib/oauth-scope-registry";
 import { SUPPORTED_OAUTH_SCOPES } from "@/lib/oauth-scopes";
 import {
     generateRandomString,
@@ -170,6 +173,7 @@ export async function POST(request: NextRequest) {
             scopes,
             client_type = "confidential",
             audience,
+            custom_scopes,
         } = body;
         // Webhooks are no longer set at registration time. Use
         // POST /api/auth/oauth-clients/:client_id/webhooks to add one or
@@ -246,10 +250,19 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate scopes if provided
-        const validScopes: string[] =
-            client_type === "public"
-                ? [...SUPPORTED_OAUTH_SCOPES, ...SUPPORTED_LIXBLOGS_SCOPES]
-                : [...SUPPORTED_OAUTH_SCOPES];
+        const customScopeResult = validateCustomScopes(custom_scopes);
+        if ("error" in customScopeResult) {
+            return NextResponse.json(
+                { error: customScopeResult.error },
+                { status: 400 },
+            );
+        }
+        const customScopeDefinitions = customScopeResult.scopes;
+        const validScopes: string[] = [
+            ...SUPPORTED_OAUTH_SCOPES,
+            ...SUPPORTED_PRODUCT_SCOPES,
+            ...customScopeDefinitions.map((scope) => scope.name),
+        ];
         const registeredScopes = scopes || [...SUPPORTED_OAUTH_SCOPES];
         if (scopes !== undefined && !Array.isArray(scopes)) {
             return NextResponse.json(
@@ -299,6 +312,7 @@ export async function POST(request: NextRequest) {
                 webhookEvents: null,
                 clientType: client_type,
                 audience: normalizedAudience,
+                customScopes: JSON.stringify(customScopeDefinitions),
             });
             await logAuditEvent(db, {
                 id: generateUUID(),
@@ -352,6 +366,7 @@ export async function POST(request: NextRequest) {
                 logo_uri,
                 description,
                 scopes: registeredScopes,
+                custom_scopes: customScopeDefinitions,
                 created_at: now,
                 _notice: clientSecret
                     ? "Store client_secret securely. It will NOT be retrievable."
@@ -407,6 +422,7 @@ export async function GET(request: NextRequest) {
             homepage_url: (client as any).homepage_url || null,
             redirect_uris: JSON.parse((client as any).redirect_uris || "[]"),
             scopes: JSON.parse((client as any).scopes || "[]"),
+            custom_scopes: JSON.parse((client as any).custom_scopes || "[]"),
             created_at: (client as any).created_at,
             is_active: (client as any).is_active,
             client_type: (client as any).client_type || "confidential",

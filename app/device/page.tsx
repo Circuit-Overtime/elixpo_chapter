@@ -27,6 +27,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import type { CustomOAuthScope } from "@/lib/oauth-scope-registry";
 import {
     AccountSelector,
     type ConsentAccount,
@@ -38,6 +39,7 @@ interface LookupResult {
     client_id?: string;
     client_name?: string;
     scopes?: string[];
+    custom_scopes?: CustomOAuthScope[];
     expires_at?: string;
     logo_url?: string | null;
     branding_display_name?: string | null;
@@ -397,6 +399,7 @@ function DeviceVerificationContent() {
 
                         <OAuthScopeList
                             scopes={view.details.scopes || []}
+                            customScopes={view.details.custom_scopes || []}
                             accentColor={
                                 view.details.branding_primary_color || "#ff7759"
                             }

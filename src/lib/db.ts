@@ -564,6 +564,7 @@ export async function createOAuthClient(
         webhookEvents,
         clientType = "confidential",
         audience,
+        customScopes = "[]",
     }: {
         clientId: string;
         clientSecretHash: string;
@@ -578,6 +579,7 @@ export async function createOAuthClient(
         webhookEvents?: string | null; // JSON stringified array
         clientType?: "confidential" | "public";
         audience?: string | null;
+        customScopes?: string;
     },
 ) {
     const webhookSecretSetAt =
@@ -587,8 +589,8 @@ export async function createOAuthClient(
             client_id, client_secret_hash, name, redirect_uris, scopes,
             owner_id, description, homepage_url,
             webhook_url, webhook_secret_hash, webhook_events, webhook_secret_set_at,
-            client_type, audience
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            client_type, audience, custom_scopes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     return await stmt
         .bind(
@@ -606,13 +608,14 @@ export async function createOAuthClient(
             webhookSecretSetAt,
             clientType,
             audience ?? null,
+            customScopes,
         )
         .run();
 }
 
 export async function getOAuthClientById(db: D1Database, clientId: string) {
     const stmt = db.prepare(
-        "SELECT client_id, name, redirect_uris, scopes, description, homepage_url, created_at, is_active, client_type, audience, logo_url, branding_display_name, branding_primary_color, branding_accent_color, privacy_policy_url, terms_of_service_url, is_branding_verified, branding_verified_domain, branding_verified_at FROM oauth_clients WHERE client_id = ?",
+        "SELECT client_id, name, redirect_uris, scopes, custom_scopes, description, homepage_url, created_at, is_active, client_type, audience, logo_url, branding_display_name, branding_primary_color, branding_accent_color, privacy_policy_url, terms_of_service_url, is_branding_verified, branding_verified_domain, branding_verified_at FROM oauth_clients WHERE client_id = ?",
     );
     return await stmt.bind(clientId).first();
 }
@@ -668,6 +671,7 @@ export async function updateOAuthClient(
         name?: string;
         redirectUris?: string;
         scopes?: string;
+        customScopes?: string;
         isActive?: boolean;
         description?: string;
         homepageUrl?: string | null;
@@ -702,6 +706,10 @@ export async function updateOAuthClient(
     if (updates.scopes !== undefined) {
         setClauses.push("scopes = ?");
         values.push(updates.scopes);
+    }
+    if (updates.customScopes !== undefined) {
+        setClauses.push("custom_scopes = ?");
+        values.push(updates.customScopes);
     }
     if (updates.audience !== undefined) {
         setClauses.push("audience = ?");
@@ -1206,7 +1214,7 @@ export async function listUserOAuthClients(db: D1Database, userId: string) {
          AND (
            owner_id = ?
            OR (
-             owner_id = 'system-lixblogs-cli'
+             owner_id IN ('system-lixblogs-cli', 'system-lixrl-cli')
              AND EXISTS (
                SELECT 1 FROM users
                WHERE id = ? AND is_internal = 1

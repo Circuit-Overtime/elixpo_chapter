@@ -18,12 +18,16 @@ import {
     updateOAuthClient,
 } from "@/lib/db";
 import { verifyJWT } from "@/lib/jwt";
-import { SUPPORTED_LIXBLOGS_SCOPES } from "@/lib/lixblogs-scopes";
 import { sendMail } from "@/lib/mails";
 import { normalizeOAuthAudience } from "@/lib/oauth-client-registration";
 import {
+    findScopeOption,
+    parseCustomScopes,
+    SUPPORTED_PRODUCT_SCOPES,
+    validateCustomScopes,
+} from "@/lib/oauth-scope-registry";
+import {
     SUPPORTED_OAUTH_SCOPES,
-    unsupportedOAuthScopes,
 } from "@/lib/oauth-scopes";
 import {
     generateRandomString,
@@ -37,7 +41,11 @@ async function canManageClient(
     userId: string,
 ): Promise<boolean> {
     if (app.owner_id === userId) return true;
-    if (app.owner_id !== "system-lixblogs-cli") return false;
+    if (
+        app.owner_id !== "system-lixblogs-cli" &&
+        app.owner_id !== "system-lixrl-cli"
+    )
+        return false;
     const user = await db
         .prepare("SELECT is_internal FROM users WHERE id = ?")
         .bind(userId)
@@ -85,6 +93,7 @@ export async function PUT(
             privacy_policy_url,
             terms_of_service_url,
             audience,
+            custom_scopes,
         } = body;
 
         if (!client_id) {
@@ -166,20 +175,38 @@ export async function PUT(
             }
         }
 
-        const allowedScopes: string[] =
-            app.client_type === "public"
-                ? [...SUPPORTED_OAUTH_SCOPES, ...SUPPORTED_LIXBLOGS_SCOPES]
-                : [...SUPPORTED_OAUTH_SCOPES];
+        const customScopeResult =
+            custom_scopes === undefined
+                ? { scopes: JSON.parse(app.custom_scopes || "[]") }
+                : validateCustomScopes(custom_scopes);
+        if ("error" in customScopeResult && customScopeResult.error) {
+            return NextResponse.json(
+                { error: customScopeResult.error },
+                { status: 400 },
+            );
+        }
+        const customScopeDefinitions = customScopeResult.scopes || [];
+        const existingScopes: string[] = JSON.parse(app.scopes || "[]");
+        const currentCustomScopes = parseCustomScopes(app.custom_scopes);
+        const legacyUnknownScopes = existingScopes.filter(
+            (scope) => !findScopeOption(scope, currentCustomScopes),
+        );
+        const allowedScopes: string[] = [
+            ...SUPPORTED_OAUTH_SCOPES,
+            ...SUPPORTED_PRODUCT_SCOPES,
+            ...customScopeDefinitions.map(
+                (scope: { name: string }) => scope.name,
+            ),
+            ...legacyUnknownScopes,
+        ];
         if (
             scopes !== undefined &&
             (!Array.isArray(scopes) ||
-                (app.client_type === "public"
-                    ? scopes.some(
-                          (scope: unknown) =>
-                              typeof scope !== "string" ||
-                              !allowedScopes.includes(scope),
-                      )
-                    : unsupportedOAuthScopes(scopes).length > 0))
+                scopes.some(
+                    (scope: unknown) =>
+                        typeof scope !== "string" ||
+                        !allowedScopes.includes(scope),
+                ))
         ) {
             return NextResponse.json(
                 {
@@ -329,6 +356,9 @@ export async function PUT(
                     redirectUris: JSON.stringify(redirect_uris),
                 }),
                 ...(scopes !== undefined && { scopes: JSON.stringify(scopes) }),
+                ...(custom_scopes !== undefined && {
+                    customScopes: JSON.stringify(customScopeDefinitions),
+                }),
                 ...(normalizedAudience !== undefined && {
                     audience: normalizedAudience,
                 }),
@@ -399,6 +429,7 @@ export async function PUT(
             homepage_url: updated?.homepage_url,
             redirect_uris: JSON.parse(updated?.redirect_uris || "[]"),
             scopes: JSON.parse(updated?.scopes || "[]"),
+            custom_scopes: JSON.parse(updated?.custom_scopes || "[]"),
             is_active: Boolean(updated?.is_active),
             client_type: updated?.client_type || "confidential",
             token_endpoint_auth_method:
@@ -714,6 +745,7 @@ export async function GET(
             homepage_url: (app as any).homepage_url || null,
             redirect_uris,
             scopes,
+            custom_scopes: JSON.parse((app as any).custom_scopes || "[]"),
             is_active: Boolean((app as any).is_active),
             client_type: (app as any).client_type || "confidential",
             token_endpoint_auth_method:
