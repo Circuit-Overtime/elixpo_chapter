@@ -104,11 +104,13 @@ Usage:
   lixblogs auth use <name> [--json]
   lixblogs blog list      [--status <status>] [--limit <n>] [--cursor <cursor>] [--json]
   lixblogs blog get <id>  [--json]
+  lixblogs blog preview <id> [--json]
   lixblogs blog create    [--file <post.md>|--stdin|--content <markdown>|--editor] [metadata]
   lixblogs blog edit <id> [--file <post.md>|--stdin|--content <markdown>|--editor] [metadata]
   lixblogs blog publish <id> --yes [--dry-run] [--json]
   lixblogs blog unpublish <id> --yes [--dry-run] [--json]
   lixblogs blog delete <id> --yes [--permanent] [--dry-run] [--json]
+  lixblogs blog trash <id> --yes [--dry-run] [--json]
   lixblogs blog restore <id> --yes [--dry-run] [--json]
 
 Global flags:
@@ -436,11 +438,13 @@ async function runUse(opts, args) {
 const BLOG_COMMANDS = {
   list: blogList,
   get: blogGet,
+  preview: blogGet,
   create: blogCreate,
   edit: blogEdit,
   publish: blogPublish,
   unpublish: blogUnpublish,
   delete: blogDelete,
+  trash: blogDelete,
   restore: blogRestore,
 };
 
