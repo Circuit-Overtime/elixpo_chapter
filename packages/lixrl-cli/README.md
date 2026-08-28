@@ -21,6 +21,21 @@ lixrl urls analytics abc123 --days 30
 lixrl urls export --output links.csv
 lixrl keys create --name deploy --scopes read,write
 lixrl domains claim team
+lixrl qr https://example.com --format png --style rounded --output launch.png
+lixrl qr https://example.com --track --style aurora --output campaign.svg
 ```
 
 Deletion, API-key revocation, mapping removal, and file replacement require `--yes`. Use `--json --no-input` for automation.
+
+## Agent skills
+
+The npm package contains focused skills for link management and QR generation. They are not copied anywhere during installation.
+
+```bash
+lixrl skills list
+lixrl skills inspect lixrl-links
+lixrl skills install lixrl-links
+lixrl skills install lixrl-qr
+```
+
+`skills install` copies the selected skill into the current Codex skills directory. This keeps the skill version tied to the installed CLI release.
