@@ -34,6 +34,7 @@ import { authProfiles, authUse } from "../src/commands/auth/profiles.js";
 import { ProfileRegistry, validateProfileId } from "../src/config/ProfileRegistry.js";
 import { AuthenticatedClient } from "../src/auth/AuthenticatedClient.js";
 import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
+import { OrgClient } from "../src/api/OrgClient.js";
 import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
 import {
   blogCreate,
@@ -45,6 +46,13 @@ import {
   blogRestore,
   blogUnpublish,
 } from "../src/commands/blog/index.js";
+import {
+  orgCollections,
+  orgGet,
+  orgList,
+  orgMembers,
+  orgTargets,
+} from "../src/commands/org/index.js";
 
 const OPTIONS = {
   profile: { type: "string" },
@@ -112,6 +120,11 @@ Usage:
   lixblogs blog delete <id> --yes [--permanent] [--dry-run] [--json]
   lixblogs blog trash <id> --yes [--dry-run] [--json]
   lixblogs blog restore <id> --yes [--dry-run] [--json]
+  lixblogs org list          [--json]
+  lixblogs org get <id>      [--json]
+  lixblogs org collections <id> [--json]
+  lixblogs org members <id>  [--json]
+  lixblogs org targets       [--json]
 
 Global flags:
   --profile <name>            named profile to use (default: "default")
@@ -304,7 +317,7 @@ async function authenticatedBlogClient(opts) {
   let provider;
   try { provider = createAuthProvider(config); } catch (error) { fail(opts, error); return null; }
   const http = new AuthenticatedClient({ provider, credentialStore, profileId, apiBaseUrl: config.apiBaseUrl });
-  return { client: new BlogClient(http), config, credentialStore, profileId };
+  return { client: new BlogClient(http), http, config, credentialStore, profileId };
 }
 
 async function runWhoami(opts) {
@@ -448,6 +461,14 @@ const BLOG_COMMANDS = {
   restore: blogRestore,
 };
 
+const ORG_COMMANDS = {
+  list: orgList,
+  get: orgGet,
+  collections: orgCollections,
+  members: orgMembers,
+  targets: orgTargets,
+};
+
 async function runBlog(opts, args, action) {
   const config = resolveConfig({ flags: configFlags(opts) });
   const profileRegistry = new ProfileRegistry();
@@ -494,6 +515,38 @@ async function runBlog(opts, args, action) {
   }
 }
 
+async function runOrg(opts, args, action) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  const client = new OrgClient(context.http);
+  try {
+    const result = await ORG_COMMANDS[action]({ client, id: args[0], options: opts });
+    output(opts, { ok: true, data: result });
+    if (opts.json || opts.quiet) return;
+    if (action === 'targets') {
+      console.log('personal\tPersonal Blog');
+      for (const org of result.organizations || []) {
+        console.log(`${org.target}\t${org.role}\t${org.name}`);
+        for (const collection of org.collections || []) {
+          console.log(`  collection:${collection.id}\t${collection.name}`);
+        }
+      }
+      return;
+    }
+    const rows = action === 'list' ? result.data || [] : Array.isArray(result) ? result : [result];
+    for (const row of rows) {
+      console.log([
+        row.id || row.userId || row.orgId,
+        row.role,
+        row.slug || row.username,
+        row.name || row.displayName,
+      ].filter(Boolean).join('\t'));
+    }
+  } catch (error) {
+    fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
+  }
+}
+
 const ROUTES = {
   auth: {
     login: runLogin,
@@ -507,6 +560,10 @@ const ROUTES = {
   blog: Object.fromEntries(Object.keys(BLOG_COMMANDS).map((action) => [
     action,
     (opts, args) => runBlog(opts, args, action),
+  ])),
+  org: Object.fromEntries(Object.keys(ORG_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runOrg(opts, args, action),
   ])),
 };
 

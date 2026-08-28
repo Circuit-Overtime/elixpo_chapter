@@ -21,6 +21,10 @@ export async function GET() {
       publish: '/api/v1/blogs/{id}/publish',
       unpublish: '/api/v1/blogs/{id}/unpublish',
       restore: '/api/v1/blogs/{id}/restore',
+      organizations: '/api/v1/orgs',
+      organization: '/api/v1/orgs/{id}',
+      organizationCollections: '/api/v1/orgs/{id}/collections',
+      organizationMembers: '/api/v1/orgs/{id}/members',
     },
   });
 }

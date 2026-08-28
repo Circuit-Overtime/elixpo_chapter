@@ -29,6 +29,10 @@ logged by the resource API.
 | `POST` | `/api/v1/blogs/{id}/unpublish` | `lixblogs:blog:publish` | Return a post to draft |
 | `DELETE` | `/api/v1/blogs/{id}` | `lixblogs:blog:delete` | Move a post to trash |
 | `POST` | `/api/v1/blogs/{id}/restore` | `lixblogs:blog:delete` | Restore a trashed post |
+| `GET` | `/api/v1/orgs` | `lixblogs:org:read` | Organizations the caller belongs to |
+| `GET` | `/api/v1/orgs/{id}` | `lixblogs:org:read` | One caller-visible organization and role |
+| `GET` | `/api/v1/orgs/{id}/collections` | `lixblogs:org:read` | Collections within a caller membership |
+| `GET` | `/api/v1/orgs/{id}/members` | `lixblogs:org:read` | Members and roles within a caller membership |
 
 `GET /api/v1/blogs` accepts `status=all|draft|published`, `limit=1..100`, and
 an opaque `cursor`. Results include authored blogs, accepted collaborations,

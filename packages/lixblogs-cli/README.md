@@ -69,6 +69,19 @@ lixblogs blog list --status trashed
 lixblogs blog restore <id> --yes
 ```
 
+Inspect valid publication targets before assigning organization metadata:
+
+```bash
+lixblogs org list
+lixblogs org get ORG_ID
+lixblogs org collections ORG_ID
+lixblogs org members ORG_ID
+lixblogs org targets --json
+```
+
+Organization lookup is membership-bound. A slug alone never grants access;
+the API resolves the authenticated user's role before returning tenant data.
+
 `create`, `edit`, `publish`, `unpublish`, `delete`, and `restore` accept
 `--dry-run`. Content input is mutually exclusive: `--file`, `--stdin`,
 `--content`, or `--editor`. Permanent deletion additionally requires
