@@ -57,6 +57,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const docsSections: MetadataRoute.Sitemap = [
     'quickstart',
+    'cli',
     'api',
     'keys',
     'analytics',
