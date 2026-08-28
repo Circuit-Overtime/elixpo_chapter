@@ -27,7 +27,9 @@ export function loginChallenge({ url, code, expiresInSeconds, profile, interacti
     `  URL      ${url}`,
     `  Code     ${paint(code, ANSI.bold, color)}`,
     `  Expires  ${Math.ceil(expiresInSeconds / 60)} min`,
-    `  Profile  ${profile} ${paint("(local credential slot)", ANSI.dim, color)}`,
+    profile
+      ? `  Profile  ${profile} ${paint("(local credential slot)", ANSI.dim, color)}`
+      : `  Profile  ${paint("your Accounts username after approval", ANSI.dim, color)}`,
     "",
     `  ${instruction}`,
     "  No localhost callback or exposed port is required.",

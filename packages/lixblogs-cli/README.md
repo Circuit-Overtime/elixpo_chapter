@@ -29,6 +29,7 @@ node bin/lixblogs.mjs --help
 ```bash
 # Log in via device authorization
 node bin/lixblogs.mjs login
+# Credentials are saved under the authenticated username and made active.
 
 # Save credentials under an explicit local profile name
 node bin/lixblogs.mjs login --profile personal
@@ -51,8 +52,10 @@ Interactive login shows one compact device card and stays quiet while Accounts
 approval is pending. Press Enter to open the verification URL locally, use
 `--open` to open it immediately, or copy the URL to any browser when connected
 to a VPS. Device authorization does not require a localhost callback or an
-exposed port. Profile names such as `personal`, `work`, or `test` are local
-credential slots; `whoami` reports the actual Accounts identity.
+exposed port. The authenticated username becomes the local profile alias unless
+`--profile` explicitly overrides it. Run `lixblogs login` again to add another
+account, `lixblogs profiles` to list saved accounts, and
+`lixblogs use <username>` to switch the active one.
 
 ### Blog lifecycle
 
@@ -148,7 +151,7 @@ command exits with code 3 and retains both versions under
 `.lixblogs-conflicts/`; it never overwrites the newer server revision.
 
 Global flags:
-- `--profile <name>` — named profile to use (default: `"default"`)
+- `--profile <name>` — override the username-based local account alias
 - `--env <environment>` — override environment (`development` | `staging` | `production`)
 - `--scope <scope>` — request an additional/alternate OAuth scope; repeatable
 - `--open` — open the verification URL with the device code pre-filled

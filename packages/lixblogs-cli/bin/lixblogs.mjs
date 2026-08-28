@@ -31,6 +31,7 @@ import { authStatus } from "../src/commands/auth/status.js";
 import { authLogout } from "../src/commands/auth/logout.js";
 import { authRevoke } from "../src/commands/auth/revoke.js";
 import { authProfiles, authUse } from "../src/commands/auth/profiles.js";
+import { profileAliasFromIdentity } from "../src/commands/auth/profileAlias.js";
 import { ProfileRegistry, validateProfileId } from "../src/config/ProfileRegistry.js";
 import { AuthenticatedClient } from "../src/auth/AuthenticatedClient.js";
 import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
@@ -164,7 +165,7 @@ Usage:
   lixblogs skill install <name>   [--target <directory>] [--dry-run] --yes
 
 Global flags:
-  --profile <name>            named profile to use (default: "default")
+  --profile <name>            local account alias (defaults to the signed-in username)
   --env <environment>         override environment (development|staging|production)
   --auth-provider <provider>  elixpo, or mock in development/test only
   --accounts-url <url>        override the Accounts discovery origin
@@ -269,7 +270,11 @@ async function getCredentialStoreOrFail(opts, profileRegistry) {
 async function runLogin(opts) {
   const config = resolveConfig({ flags: configFlags(opts) });
   const profileRegistry = new ProfileRegistry();
-  const profileId = await selectedProfile(config, profileRegistry);
+  const requestedProfileId = validateProfileId(config.profile);
+  const scopes = opts.scope?.length ? [...opts.scope] : [...DEFAULT_SCOPES];
+  if (!config.profileExplicit && !scopes.includes("lixblogs:profile:read")) {
+    scopes.push("lixblogs:profile:read");
+  }
 
   let provider;
   try {
@@ -287,9 +292,15 @@ async function runLogin(opts) {
     result = await authLogin({
       provider,
       credentialStore,
-      profileId,
-      scopes: opts.scope?.length ? opts.scope : DEFAULT_SCOPES,
+      profileId: requestedProfileId,
+      scopes,
       openBrowser: opts.open ? openBrowser : undefined,
+      resolveProfileId: config.profileExplicit
+        ? undefined
+        : ({ accessToken }) => profileAliasFromIdentity({
+            accessToken,
+            apiBaseUrl: config.apiBaseUrl,
+          }),
       onStatus: (status) => {
         if (opts.json) {
           if (status.type !== "pending") output(opts, { event: status.type, ...status });
@@ -303,7 +314,7 @@ async function runLogin(opts) {
             url,
             code: status.userCode,
             expiresInSeconds: status.expiresInSeconds,
-            profile: profileId,
+            profile: config.profileExplicit ? requestedProfileId : null,
             interactive,
             color: colorEnabled(),
           }));
@@ -331,6 +342,8 @@ async function runLogin(opts) {
   output(opts, { ok: true, profile: result.profileId });
   if (!opts.json && !opts.quiet) {
     console.log(`  Credentials saved to local profile "${result.profileId}".`);
+    console.log("  Tip: add another account with `lixblogs login`, list accounts with `lixblogs profiles`,");
+    console.log("       and switch with `lixblogs use <username>`.");
   }
 }
 
