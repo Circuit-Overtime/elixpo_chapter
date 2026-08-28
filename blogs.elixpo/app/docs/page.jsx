@@ -14,7 +14,7 @@ export default function DocsIndex() {
         <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent)]">LixBlogs documentation</p>
         <h1 className="text-4xl font-extrabold tracking-tight text-[var(--text-primary)]">Publish with confidence</h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--text-muted)]">
-          Learn how to write, collaborate, manage media, understand your audience, connect services, and build with LixEditor.
+          Learn how to write, collaborate, manage media, automate with the CLI, understand your audience, connect services, and build with LixEditor.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/docs/writing-publishing" className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white">Start writing</Link>

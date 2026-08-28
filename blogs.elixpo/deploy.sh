@@ -5,41 +5,43 @@ set -euo pipefail
 # LixBlogs Deploy & Release
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #
-# Usage: ./deploy.sh [command ...] [options]
+# Usage: ./deploy.sh TARGET [SELECTOR] PHASE... [options]
 #
-# Infra Commands:
-#   deploy      Build & deploy website to Cloudflare Pages
-#   worker      Deploy the collab Worker
-#   secrets     Upload .env vars to Worker + Pages
-#   build       Build Pages only (no deploy)
+# Targets:
+#   --package           npm packages (lixeditor + CLI by default)
+#   --package --vs      VS Code extension
+#   --worker            Cloudflare Workers
+#   --pages             Cloudflare Pages
+#   --github            GitHub Packages mirror
 #
-# Release Commands:
-#   release [targets]   Full release with version bump + changelog + publish
-#                       Targets: editor, cli, web, all (default: all)
+# Package selectors:
+#   --lixeditor         Only @elixpo/lixeditor
+#   --cli               Only @elixpo/lixblogs-cli
 #
-# Options (for release):
+# Phases:
+#   build               Build/package the target
+#   deploy              Publish/deploy the target
+#
+# Options:
 #   --patch     Patch version bump (default)
 #   --minor     Minor version bump
 #   --major     Major version bump
 #   --no-bump   Publish the version already present in package.json
 #   --dry-run   Print what would happen, don't execute
-#   --skip-changelog  Skip changelog generation
-#
-# Shorthand:
-#   all         secrets + worker + deploy (infra only, no release)
 #
 # Auth tokens are read automatically from .env:
 #   NPM_TOKEN            → npm publish
-#   GITHUB_ACCESS_TOKEN  → gh release create + GitHub Packages
+#   GITHUB_ACCESS_TOKEN  → GitHub Packages
+#   VSCE_PAT             → VS Code Marketplace
 #
 # Examples:
-#   ./deploy.sh deploy                    # Quick website deploy
-#   ./deploy.sh release all --minor       # Release everything with minor bump
-#   ./deploy.sh release editor --patch   # Publish lixeditor to npm + GitHub
-#   ./deploy.sh release cli --no-bump    # Publish current lixblogs-cli version
-#   ./deploy.sh release web               # Deploy website only
-#   ./deploy.sh release all --dry-run     # Preview full release
-#   ./deploy.sh all                       # Infra: secrets + worker + deploy
+#   ./deploy.sh --package build deploy
+#   ./deploy.sh --package --lixeditor build deploy
+#   ./deploy.sh --package --cli build deploy
+#   ./deploy.sh --package --vs build deploy
+#   ./deploy.sh --worker build deploy
+#   ./deploy.sh --pages build deploy
+#   ./deploy.sh --github build deploy
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
@@ -227,6 +229,289 @@ worker() {
   else
     echo "==> Skipping cron worker (ENABLE_WEEKLY_DIGEST is not true)"
   fi
+}
+
+# ── Target-based deployment standard ────────────────────────
+
+run_in_dir() {
+  local directory="$1"
+  shift
+  if $DRY_RUN; then
+    printf '[dry-run] cd %q &&' "$directory"
+    printf ' %q' "$@"
+    printf '\n'
+  else
+    (cd "$directory" && "$@")
+  fi
+}
+
+pages_build() {
+  echo "==> Building Cloudflare Pages..."
+  run_in_dir "$SCRIPT_DIR" npm run pages:build
+  echo "==> Pages build complete."
+}
+
+pages_deploy() {
+  if ! $DRY_RUN && [ ! -d "$SCRIPT_DIR/.vercel/output/static" ]; then
+    echo "Error: Pages output is missing. Run './deploy.sh --pages build deploy'."
+    exit 1
+  fi
+  echo "==> Deploying Cloudflare Pages ($PAGES_PROJECT)..."
+  run_in_dir "$SCRIPT_DIR" npx wrangler pages deploy .vercel/output/static \
+    --project-name "$PAGES_PROJECT" --branch "$PAGES_BRANCH"
+  echo "==> Pages deploy complete."
+}
+
+worker_build() {
+  echo "==> Building collab Worker bundle..."
+  run_in_dir "$SCRIPT_DIR" npx wrangler deploy --config worker/collab/wrangler.toml \
+    --dry-run --outdir .wrangler/deploy/collab
+
+  if grep -q 'ENABLE_WEEKLY_DIGEST=true' "$ENV_FILE" 2>/dev/null; then
+    echo "==> Building cron Worker bundle..."
+    run_in_dir "$SCRIPT_DIR" npx wrangler deploy --config worker/cron/wrangler.toml \
+      --dry-run --outdir .wrangler/deploy/cron
+  fi
+}
+
+worker_deploy() {
+  echo "==> Deploying collab Worker..."
+  run_in_dir "$SCRIPT_DIR" npx wrangler deploy --config worker/collab/wrangler.toml
+
+  if grep -q 'ENABLE_WEEKLY_DIGEST=true' "$ENV_FILE" 2>/dev/null; then
+    echo "==> Deploying cron Worker..."
+    run_in_dir "$SCRIPT_DIR" npx wrangler deploy --config worker/cron/wrangler.toml
+  fi
+  echo "==> Worker deploy complete."
+}
+
+selected_package_dirs() {
+  $SELECT_LIXEDITOR && printf '%s\n' "$SCRIPT_DIR/packages/lixeditor"
+  $SELECT_CLI && printf '%s\n' "$SCRIPT_DIR/packages/lixblogs-cli"
+}
+
+bump_selected_packages() {
+  $NO_BUMP && {
+    echo "==> Keeping package versions (--no-bump)."
+    return
+  }
+
+  local directory
+  while IFS= read -r directory; do
+    [ -n "$directory" ] || continue
+    echo "==> Bumping $(basename "$directory") ($BUMP)..."
+    run_in_dir "$directory" npm version "$BUMP" --no-git-tag-version
+  done < <(selected_package_dirs)
+}
+
+build_selected_packages() {
+  if $SELECT_LIXEDITOR; then
+    echo "==> Building @elixpo/lixeditor..."
+    run_in_dir "$SCRIPT_DIR/packages/lixeditor" npm run build
+  fi
+  if $SELECT_CLI; then
+    echo "==> Verifying @elixpo/lixblogs-cli package..."
+    run_in_dir "$SCRIPT_DIR/packages/lixblogs-cli" npm test
+    run_in_dir "$SCRIPT_DIR/packages/lixblogs-cli" npm pack --dry-run
+  fi
+}
+
+publish_npm_package() {
+  local directory="$1"
+  local package_name
+  case "$(basename "$directory")" in
+    lixeditor) package_name="@elixpo/lixeditor" ;;
+    lixblogs-cli) package_name="@elixpo/lixblogs-cli" ;;
+    *) package_name="$(basename "$directory")" ;;
+  esac
+  echo "==> Publishing $package_name to npm..."
+
+  if [ -n "$NPM_PUBLISH_TOKEN" ]; then
+    run_in_dir "$directory" npm publish --access public \
+      --registry https://registry.npmjs.org/ \
+      "--//registry.npmjs.org/:_authToken=$NPM_PUBLISH_TOKEN"
+  else
+    if ! $DRY_RUN && ! npm whoami --registry https://registry.npmjs.org/ >/dev/null 2>&1; then
+      echo "Error: npm is not authenticated. Run 'npm login' or set NPM_TOKEN."
+      exit 1
+    fi
+    run_in_dir "$directory" npm publish --access public \
+      --registry https://registry.npmjs.org/
+  fi
+}
+
+publish_selected_npm_packages() {
+  NPM_PUBLISH_TOKEN="${NPM_TOKEN:-}"
+  if $DRY_RUN; then
+    NPM_PUBLISH_TOKEN="dry-run"
+  elif [ -z "$NPM_PUBLISH_TOKEN" ] && ! npm whoami --registry https://registry.npmjs.org/ >/dev/null 2>&1; then
+    load_env
+    NPM_PUBLISH_TOKEN="${NPM_TOKEN:-}"
+  fi
+  local directory
+  while IFS= read -r directory; do
+    [ -n "$directory" ] || continue
+    publish_npm_package "$directory"
+  done < <(selected_package_dirs)
+}
+
+publish_github_package() {
+  local directory="$1"
+  local package_name
+  case "$(basename "$directory")" in
+    lixeditor) package_name="@elixpo/lixeditor" ;;
+    lixblogs-cli) package_name="@elixpo/lixblogs-cli" ;;
+    *) package_name="$(basename "$directory")" ;;
+  esac
+  echo "==> Publishing $package_name to GitHub Packages..."
+
+  if [ -z "$GITHUB_PUBLISH_TOKEN" ]; then
+    echo "Error: GITHUB_ACCESS_TOKEN or GH_TOKEN is required for GitHub Packages."
+    exit 1
+  fi
+
+  run_in_dir "$directory" npm publish --access public \
+    --registry https://npm.pkg.github.com/ \
+    "--//npm.pkg.github.com/:_authToken=$GITHUB_PUBLISH_TOKEN"
+}
+
+publish_selected_github_packages() {
+  GITHUB_PUBLISH_TOKEN="${GITHUB_ACCESS_TOKEN:-${GH_TOKEN:-}}"
+  if $DRY_RUN; then
+    GITHUB_PUBLISH_TOKEN="dry-run"
+  elif [ -z "$GITHUB_PUBLISH_TOKEN" ]; then
+    GITHUB_PUBLISH_TOKEN="$(gh auth token 2>/dev/null || true)"
+    if [ -z "$GITHUB_PUBLISH_TOKEN" ]; then
+      load_env
+      GITHUB_PUBLISH_TOKEN="${GITHUB_ACCESS_TOKEN:-${GH_TOKEN:-}}"
+    fi
+  fi
+  local directory
+  while IFS= read -r directory; do
+    [ -n "$directory" ] || continue
+    publish_github_package "$directory"
+  done < <(selected_package_dirs)
+}
+
+vscode_build() {
+  echo "==> Building VS Code extension..."
+  run_in_dir "$SCRIPT_DIR/packages/vscode-lixeditor" npm run build
+  run_in_dir "$SCRIPT_DIR/packages/vscode-lixeditor" npx @vscode/vsce package --no-dependencies
+}
+
+vscode_deploy() {
+  VSCE_PUBLISH_TOKEN="${VSCE_PAT:-}"
+  if $DRY_RUN; then
+    VSCE_PUBLISH_TOKEN="dry-run"
+  elif [ -z "$VSCE_PUBLISH_TOKEN" ]; then
+    load_env
+    VSCE_PUBLISH_TOKEN="${VSCE_PAT:-}"
+  fi
+  if [ -z "$VSCE_PUBLISH_TOKEN" ]; then
+    echo "Error: VSCE_PAT is required to publish the VS Code extension."
+    exit 1
+  fi
+  echo "==> Publishing VS Code extension..."
+  run_in_dir "$SCRIPT_DIR/packages/vscode-lixeditor" npx @vscode/vsce publish \
+    --no-dependencies --pat "$VSCE_PUBLISH_TOKEN"
+}
+
+run_target_standard() {
+  local target=""
+  local use_vscode=false
+  local selector_seen=false
+  local action_build=false
+  local action_deploy=false
+
+  SELECT_LIXEDITOR=false
+  SELECT_CLI=false
+  BUMP="patch"
+  NO_BUMP=false
+  DRY_RUN=false
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --package|--worker|--pages|--github)
+        if [ -n "$target" ]; then
+          echo "Error: choose exactly one deployment target."
+          exit 1
+        fi
+        target="${1#--}"
+        ;;
+      --vs) use_vscode=true ;;
+      --lixeditor) SELECT_LIXEDITOR=true; selector_seen=true ;;
+      --cli) SELECT_CLI=true; selector_seen=true ;;
+      --patch) BUMP="patch" ;;
+      --minor) BUMP="minor" ;;
+      --major) BUMP="major" ;;
+      --no-bump) NO_BUMP=true ;;
+      --dry-run) DRY_RUN=true ;;
+      build) action_build=true ;;
+      deploy) action_deploy=true ;;
+      -h|--help|help) usage; return ;;
+      *) echo "Error: unknown argument '$1'."; usage; exit 1 ;;
+    esac
+    shift
+  done
+
+  if [ -z "$target" ]; then
+    echo "Error: choose --package, --worker, --pages, or --github."
+    exit 1
+  fi
+  if ! $action_build && ! $action_deploy; then
+    echo "Error: choose at least one phase: build or deploy."
+    exit 1
+  fi
+
+  if $use_vscode && [ "$target" != "package" ]; then
+    echo "Error: --vs is only valid with --package."
+    exit 1
+  fi
+  if $selector_seen && [ "$target" != "package" ] && [ "$target" != "github" ]; then
+    echo "Error: --lixeditor and --cli are only valid with package targets."
+    exit 1
+  fi
+  if $use_vscode && $selector_seen; then
+    echo "Error: --vs cannot be combined with --lixeditor or --cli."
+    exit 1
+  fi
+
+  if [ "$target" = "package" ] && $use_vscode; then
+    if ! $NO_BUMP; then
+      run_in_dir "$SCRIPT_DIR/packages/vscode-lixeditor" npm version "$BUMP" --no-git-tag-version
+    fi
+    $action_build && vscode_build
+    $action_deploy && vscode_deploy
+    return
+  fi
+
+  if [ "$target" = "package" ] || [ "$target" = "github" ]; then
+    if ! $selector_seen; then
+      SELECT_LIXEDITOR=true
+      SELECT_CLI=true
+    fi
+    bump_selected_packages
+    $action_build && build_selected_packages
+    if $action_deploy; then
+      if [ "$target" = "package" ]; then
+        publish_selected_npm_packages
+      else
+        publish_selected_github_packages
+      fi
+    fi
+    return
+  fi
+
+  case "$target" in
+    worker)
+      $action_build && worker_build
+      $action_deploy && worker_deploy
+      ;;
+    pages)
+      $action_build && pages_build
+      $action_deploy && pages_deploy
+      ;;
+  esac
 }
 
 # ── Release Commands ─────────────────────────────────────────
@@ -523,39 +808,41 @@ do_release() {
 # ── Usage ────────────────────────────────────────────────────
 
 usage() {
-  echo "Usage: ./deploy.sh [command ...] [options]"
+  echo "Usage: ./deploy.sh TARGET [SELECTOR] PHASE... [options]"
   echo ""
-  echo "Infra Commands:"
-  echo "  deploy              Build & deploy website to Cloudflare Pages"
-  echo "  worker              Deploy the collab Worker"
-  echo "  secrets             Upload .env vars to Worker + Pages"
-  echo "  build               Build Pages only (no deploy)"
-  echo "  all                 secrets + worker + deploy"
+  echo "Targets:"
+  echo "  --package           npm packages; defaults to lixeditor + CLI"
+  echo "  --package --vs      VS Code extension"
+  echo "  --worker            Cloudflare Workers"
+  echo "  --pages             Cloudflare Pages site"
+  echo "  --github            GitHub Packages mirror; defaults to lixeditor + CLI"
   echo ""
-  echo "Release Commands:"
-  echo "  release [targets]   Full release with version bump + changelog + publish"
-  echo "                      Targets: editor (npm+github), cli, npm, github, web, all"
+  echo "Package selectors:"
+  echo "  --lixeditor         Select only @elixpo/lixeditor"
+  echo "  --cli               Select only @elixpo/lixblogs-cli"
+  echo "  (none)              Select and auto-bump both packages"
   echo ""
-  echo "Release Options:"
-  echo "  --patch             Patch version bump (default)"
+  echo "Phases:"
+  echo "  build               Build/package the selected target"
+  echo "  deploy              Publish/deploy the selected target"
+  echo ""
+  echo "Options:"
+  echo "  --patch             Patch package version bump (default)"
   echo "  --minor             Minor version bump"
   echo "  --major             Major version bump"
-  echo "  --no-bump           Publish versions already present in package manifests"
-  echo "  --dry-run           Preview without executing"
-  echo "  --skip-changelog    Skip changelog generation"
-  echo ""
-  echo "Auth (auto-loaded from .env):"
-  echo "  NPM_TOKEN           npm publish authentication"
-  echo "  GITHUB_ACCESS_TOKEN GitHub release creation"
+  echo "  --no-bump           Keep package manifest versions"
+  echo "  --dry-run           Print actions without executing them"
   echo ""
   echo "Examples:"
-  echo "  ./deploy.sh deploy                     # Quick website deploy"
-  echo "  ./deploy.sh release all --minor        # Release everything"
-  echo "  ./deploy.sh release editor --patch     # Publish lixeditor to npm + GitHub"
-  echo "  ./deploy.sh release cli --no-bump      # Publish lixblogs-cli at its current version"
-  echo "  ./deploy.sh release npm --patch        # Publish lixeditor to npm only"
-  echo "  ./deploy.sh release github --patch     # Publish lixeditor to GitHub Packages only"
-  echo "  ./deploy.sh release all --dry-run      # Preview full release"
+  echo "  ./deploy.sh --package build deploy"
+  echo "  ./deploy.sh --package --lixeditor build deploy"
+  echo "  ./deploy.sh --package --cli build deploy"
+  echo "  ./deploy.sh --package --vs build deploy"
+  echo "  ./deploy.sh --worker build deploy"
+  echo "  ./deploy.sh --pages build deploy"
+  echo "  ./deploy.sh --github build deploy"
+  echo ""
+  echo "Legacy commands remain available during migration: release, secrets, all."
 }
 
 # ── Entrypoint ───────────────────────────────────────────────
@@ -583,7 +870,9 @@ run_command() {
   esac
 }
 
-if [ $# -eq 0 ]; then
+if [ $# -gt 0 ] && [[ "$1" =~ ^--(package|worker|pages|github)$ ]]; then
+  run_target_standard "$@"
+elif [ $# -eq 0 ]; then
   deploy
 elif [ "$1" = "release" ]; then
   shift

@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { createCredentialStore } from "../src/config/credentialStoreFactory.js";
 import { CredentialStoreUnavailableError } from "../src/config/CredentialStore.js";
 import { probeKeychainAvailability } from "../src/config/KeychainCredentialStore.js";
+import { ProfileRegistry } from "../src/config/ProfileRegistry.js";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 // These tests exercise the REAL keychain backend of whatever machine runs
 // them, not a mock — this is intentional, since the whole point of this
@@ -38,7 +41,8 @@ test("createCredentialStore: without --allow-insecure-fallback, throws clearly i
 });
 
 test("createCredentialStore: with --allow-insecure-fallback, always succeeds", async () => {
-  const store = await createCredentialStore({ allowInsecureFallback: true });
+  const profileRegistry = new ProfileRegistry(path.join(tmpdir(), `lixblogs-factory-${process.pid}.json`));
+  const store = await createCredentialStore({ allowInsecureFallback: true, profileRegistry });
   assert.ok(store);
 
   // Should be usable regardless of which backend it resolved to.

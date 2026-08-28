@@ -66,6 +66,11 @@ export class BlogClient {
     if (typeof this.http.requireScopes === 'function') await this.http.requireScopes(scopes);
   }
 
+  async whoami() {
+    await this.requireScopes(['lixblogs:profile:read']);
+    return (await this.request('/api/v1/me')).payload.data;
+  }
+
   async list({ status = 'all', limit = 20, cursor } = {}) {
     await this.requireScopes(['lixblogs:blog:read']);
     const query = new URLSearchParams({ status, limit: String(limit) });
