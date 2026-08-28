@@ -1,8 +1,7 @@
-# Release 1.0.1
+# Release @elixpo/lixrl-cli
 
-1. Merge the three CLI PRs in stack order.
-2. Run `npm ci` and `npm test` in `packages/lixrl-cli`.
-3. Run `npm pack --dry-run` and inspect the included files.
-4. Configure `NPM_TOKEN` in the protected GitHub `production` environment.
-5. Tag merged `main` as `lixrl-cli-v1.0.1`, or dispatch the publish workflow on merged `main`.
-6. Verify `npm view @elixpo/lixrl-cli@1.0.1 version dist.integrity`.
+1. Merge the package version and changelog into `main`.
+2. Confirm the publishing account with `npm whoami`.
+3. Run `./deploy.sh --package build deploy --no-bump` from the repository root. The command installs, tests, packs, and publishes the current version.
+4. Alternatively, dispatch `publish-lixrl-cli.yml` on merged `main` for the protected, attested npm and GitHub release. Do not run both publication paths for the same version.
+5. Verify the released version and integrity with `npm view @elixpo/lixrl-cli@<version> version dist.integrity`.
