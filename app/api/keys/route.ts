@@ -31,7 +31,11 @@ export async function POST(request: NextRequest) {
   const resolvedScopes = scopes || 'read,write';
   if (!isValidScopes(resolvedScopes)) return badRequest('scopes must be "read" or "read,write"');
 
-  const keyCount = await db.prepare('SELECT COUNT(*) as count FROM api_keys WHERE user_id = ? AND is_active = 1')
+  const keyCount = await db.prepare(
+    `SELECT COUNT(*) as count FROM api_keys
+     WHERE user_id = ? AND is_active = 1
+     AND (expires_at IS NULL OR datetime(expires_at) > datetime('now'))`,
+  )
     .bind(user.id).first<{ count: number }>();
 
   if ((keyCount?.count || 0) >= limits.maxApiKeys) {
