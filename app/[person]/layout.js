@@ -2,6 +2,7 @@ import { getPersonContent, getValidPersons } from "@/lib/content";
 import MenuOverlay from "@/components/MenuOverlay";
 import Footer from "@/components/Footer";
 import { FadeInReveal, InertiaScroll } from "@/components/Animations";
+import { buildMemberMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   return getValidPersons().map((person) => ({ person }));
@@ -9,22 +10,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { person } = await params;
-  const profile = getPersonContent(person, "profile");
-  return {
-    title: `${profile.siteName} - Home`,
-    description: `${profile.siteDescription} - ${profile.siteName}'s personal portfolio`,
-    openGraph: {
-      title: `${profile.siteName} - Home`,
-      description: `${profile.siteDescription} - ${profile.siteName}'s personal portfolio`,
-      images: [{ url: `/${person}/og.webp`, width: 1200, height: 630, alt: profile.siteName }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `${profile.siteName} - Home`,
-      description: `${profile.siteDescription} - ${profile.siteName}'s personal portfolio`,
-      images: [`/${person}/og.webp`],
-    },
-  };
+  return buildMemberMetadata({ person });
 }
 
 export default async function PersonLayout({ children, params }) {
@@ -49,7 +35,7 @@ export default async function PersonLayout({ children, params }) {
         </a>
         <ion-icon
           name="list"
-          class="cursor-pointer text-lg sm:text-xl md:text-2xl z-10"
+          className="cursor-pointer text-lg sm:text-xl md:text-2xl z-10"
           id="scrollInMenu"
           style={{ cursor: "pointer" }}
         />
