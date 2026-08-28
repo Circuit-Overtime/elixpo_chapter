@@ -40,7 +40,7 @@ export default function OverviewPage() {
 
       <h2 id="get-started" className={H2}>Get started</h2>
       <p className={P}>
-        Three ways into ElixpoURL, depending on how you like to work.
+        Choose the dashboard, Developer CLI, or API depending on how you work.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         <Link href="/docs/quickstart" className={CARD} style={CARD_STYLE}>
@@ -53,6 +53,12 @@ export default function OverviewPage() {
           <div className="font-semibold text-white mb-1">Shortening API</div>
           <div className="text-sm text-white/55">
             Endpoints to create, list, update, and delete short links.
+          </div>
+        </Link>
+        <Link href="/docs/cli" className={CARD} style={CARD_STYLE}>
+          <div className="font-semibold text-white mb-1">Developer CLI</div>
+          <div className="text-sm text-white/55">
+            Shorten links, export analytics, and generate QR codes from a terminal or agent workflow.
           </div>
         </Link>
         <Link href="/docs/analytics" className={CARD} style={CARD_STYLE}>

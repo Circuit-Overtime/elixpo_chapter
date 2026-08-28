@@ -44,6 +44,9 @@ export const metadata: Metadata = {
     'url analytics',
     'link analytics',
     'link management',
+    'URL shortener CLI',
+    'QR code CLI',
+    'command line link management',
     'qr codes',
     'QR code generator',
     'free QR code generator',
@@ -153,6 +156,7 @@ export default function RootLayout({
           'Tracked QR code scans',
           'Expiring links',
           'Branded lixrl.com subdomains',
+          'Developer CLI for short links and QR codes',
         ],
         offers: {
           '@type': 'Offer',

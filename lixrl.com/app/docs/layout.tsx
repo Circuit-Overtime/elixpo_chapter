@@ -13,6 +13,7 @@ const REPO_URL = 'https://github.com/elixpo/elixpourl';
 const DOCS_NAV = [
   { label: 'Overview', href: '/docs' },
   { label: 'Quickstart', href: '/docs/quickstart' },
+  { label: 'Developer CLI', href: '/docs/cli' },
   { label: 'Shortening API', href: '/docs/api' },
   { label: 'API Keys', href: '/docs/keys' },
   { label: 'Click Analytics', href: '/docs/analytics' },
