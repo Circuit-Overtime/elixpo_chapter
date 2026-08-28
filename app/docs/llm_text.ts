@@ -58,14 +58,15 @@ npm install --global @elixpo/lixrl-cli
 lixrl --help
 \`\`\`
 
-## Interactive authentication
+## Device authentication
 
-1. Sign in at \`https://lixrl.com/api/auth/login?return_to=/profile/keys\`.
-2. Create a scoped API key under **Profile → API Keys**. Use \`read,write\` to create or modify links and \`read\` for inspection and analytics only.
-3. Run \`lixrl login --open\` and paste the key into the masked prompt.
-4. Verify the active identity with \`lixrl whoami\`.
+Run \`lixrl login --open\`. The CLI displays an Elixpo Accounts verification URL and one-time code. After identity approval, it opens a Lixrl approval page where the user selects the key name, read or read/write access, and an optional expiry. Lixrl delivers the key directly to the waiting CLI, which stores it in the operating-system keychain. Passwords, browser sessions, and MFA responses never enter the CLI.
 
-Interactive credentials are stored in the operating-system keychain. The CLI config stores profile aliases only. Never put an \`elu_…\` key in a URL, source file, issue, chat message, or generated article.
+The account plan's active-key and request-rate limits remain authoritative. Temporary Accounts tokens remain in memory and are revoked before the Lixrl key is delivered.
+
+## Existing API key
+
+Run \`lixrl login --key\` and paste an existing \`elu_…\` key into the masked prompt. Create or manage keys at \`https://lixrl.com/profile/keys\`. Never put a key in a URL, source file, issue, chat message, generated article, or command argument.
 
 ## CI and agents
 

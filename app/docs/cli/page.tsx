@@ -5,10 +5,24 @@ import type { ReactNode } from 'react';
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
-  title: '@elixpo/lixrl-cli — Developer CLI',
+  title: 'URL Shortener CLI and QR Code Generator — @elixpo/lixrl-cli',
   description:
-    'Install the official Lixrl CLI to shorten URLs, manage links and analytics, generate QR codes, and automate Lixrl safely from agents and CI.',
+    'Shorten URLs, generate QR codes, manage branded links, and export click analytics from your terminal with secure Elixpo Accounts device login.',
+  keywords: [
+    'URL shortener CLI',
+    'QR code generator CLI',
+    'command line URL shortener',
+    'short link automation',
+    'QR code automation',
+    'link analytics CLI',
+  ],
   alternates: { canonical: '/docs/cli' },
+  openGraph: {
+    title: 'Lixrl CLI — Short URLs and QR codes from your terminal',
+    description: 'Create, track, and manage short links and QR codes without leaving your command line.',
+    url: '/docs/cli',
+    type: 'website',
+  },
 };
 
 const H2 = 'mt-12 mb-3 text-[1.45rem] font-extrabold tracking-tight text-[#111]';
@@ -34,19 +48,36 @@ function Note({ children }: { children: ReactNode }) {
 }
 
 export default function CliDocsPage() {
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Lixrl CLI',
+    alternateName: '@elixpo/lixrl-cli',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Linux, macOS, Windows',
+    description: 'Command-line URL shortener and QR code generator with link management, analytics exports, and secure device login.',
+    downloadUrl: 'https://www.npmjs.com/package/@elixpo/lixrl-cli',
+    softwareRequirements: 'Node.js 20 or newer',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  };
+
   return (
     <article className="text-[#111]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <div className="rounded-2xl border border-[#e6e2dc] bg-gradient-to-br from-white to-[#fff8f7] p-6 md:p-8">
         <div className="mb-4 inline-flex rounded-full border border-[#f1c8c6] bg-white px-3 py-1 font-mono text-xs font-semibold text-[#c62828]">
-          @elixpo/lixrl-cli · v1.0.1
+          @elixpo/lixrl-cli
         </div>
         <h1 className="mb-4 max-w-[760px] text-[2.2rem] font-black leading-tight tracking-[-0.035em] text-[#111] md:text-[2.8rem]">
           Short links and QR codes from your terminal
         </h1>
         <p className="max-w-[740px] text-base leading-7 text-[#555] md:text-[1.05rem]">
-          The official Lixrl CLI creates and manages production links, exports
-          analytics, generates styled QR images, and gives agents a stable JSON
-          interface without exposing dashboard sessions.
+          Create short URLs, generate QR codes, export analytics, and manage
+          every production link from one command line. Keep work moving without
+          switching between link tools, dashboards, and manual copy-paste steps.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <a
@@ -58,10 +89,10 @@ export default function CliDocsPage() {
             View npm package
           </a>
           <Link
-            href="/profile/keys"
+            href="#sign-in"
             className="rounded-lg border border-[#d8d8d8] bg-white px-4 py-2.5 text-sm font-bold text-[#222] no-underline"
           >
-            Create an API key
+            See secure sign-in
           </Link>
         </div>
       </div>
@@ -76,35 +107,54 @@ export default function CliDocsPage() {
 lixrl --version
 lixrl --help`}</Command>
 
-      <h2 id="sign-in" className={H2}>Sign in and authenticate</h2>
+      <h2 id="why-cli" className={H2}>One link workflow for people and automation</h2>
       <p className={P}>
-        Browser sessions and CLI credentials have separate jobs. First sign in
-        with Elixpo Accounts to create a scoped Lixrl API key. The CLI then
-        validates that key and stores it in your operating-system keychain.
+        Link work often begins in a terminal, deployment job, or writing agent,
+        but finishes through disconnected browser steps. Lixrl keeps short URLs,
+        QR assets, link status, and analytics in one predictable workflow while
+        still giving you a clear dashboard whenever you want a visual view.
       </p>
 
-      <h3 id="interactive-login" className={H3}>Interactive login</h3>
+      <h2 id="sign-in" className={H2}>Sign in and authenticate</h2>
+      <p className={P}>
+        Choose browser-based device login for everyday use or paste a key you
+        already created. Both paths store the final Lixrl key in your
+        operating-system keychain; passwords and browser cookies never enter
+        the CLI.
+      </p>
+
+      <h3 id="device-login" className={H3}>Recommended: Accounts device login</h3>
       <ol className="mb-5 list-decimal space-y-2 pl-6 text-[0.96rem] leading-7 text-[#555]">
-        <li>
-          <Link href="/api/auth/login?return_to=/profile/keys" className="font-semibold text-[#c62828]">
-            Sign in to Lixrl
-          </Link>{' '}
-          and open <strong>Profile → API Keys</strong>.
-        </li>
-        <li>
-          Create a <code className="font-mono">read,write</code> key for link
-          creation, or a <code className="font-mono">read</code> key for
-          inspection, analytics, and exports only.
-        </li>
-        <li>Copy the key when it is shown. Lixrl stores only its hash and cannot display it again.</li>
-        <li>Run the login command and paste the key into the masked prompt.</li>
+        <li>Run the command. The CLI displays an official Accounts URL and one-time code.</li>
+        <li>Approve the Lixrl CLI in your browser. Use <code className="font-mono">--open</code> to open that page automatically.</li>
+        <li>The CLI opens a Lixrl approval page where you choose the key name, read or read/write access, and an optional expiry.</li>
+        <li>Lixrl enforces your plan&apos;s key limit, delivers the key directly to the waiting CLI, and stores only its hash.</li>
       </ol>
       <Command>{`lixrl login --open
 lixrl whoami`}</Command>
+      <p className={P}>
+        Read-only keys can list links, analytics, and exports without changing
+        data. Read/write keys can also create, update, disable, and delete
+        links. The approval screen shows the active-key allowance for your plan.
+      </p>
+      <Note>
+        The one-time code authorizes only the displayed Lixrl request. Temporary
+        Accounts tokens remain in memory and are revoked before the Lixrl key is
+        delivered. The CLI never receives your password, browser session, or MFA response.
+      </Note>
+
+      <h3 id="direct-key-login" className={H3}>Paste an existing API key</h3>
+      <p className={P}>
+        If you or an administrator already created a restricted key under{' '}
+        <Link href="/profile/keys" className="font-semibold text-[#c62828]">
+          Profile → API Keys
+        </Link>, paste it through the masked prompt:
+      </p>
+      <Command>{`lixrl login --key
+lixrl whoami`}</Command>
       <Note>
         Never place an <code className="font-mono">elu_…</code> key in a URL,
-        source file, generated article, issue, or chat message. Interactive
-        login writes the credential to the OS keychain, not the CLI config file.
+        source file, generated article, issue, or chat message.
       </Note>
 
       <h3 id="profiles" className={H3}>Multiple accounts</h3>
