@@ -12,7 +12,7 @@ Determine the default path for components and styles.
 If default path for components is not /components/ui, provide instructions on why it's important to create this folder
 Copy-paste this component to /components/ui folder:
 ```tsx
-zoom-parallax.tsx
+zoom-parallax.tsxs
 'use client';
 
 import { useScroll, useTransform, motion } from 'framer-motion';
