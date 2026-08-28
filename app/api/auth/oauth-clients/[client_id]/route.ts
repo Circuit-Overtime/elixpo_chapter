@@ -177,7 +177,7 @@ export async function PUT(
             custom_scopes === undefined
                 ? { scopes: JSON.parse(app.custom_scopes || "[]") }
                 : validateCustomScopes(custom_scopes);
-        if ("error" in customScopeResult && customScopeResult.error) {
+        if ("error" in customScopeResult) {
             return NextResponse.json(
                 { error: customScopeResult.error },
                 { status: 400 },

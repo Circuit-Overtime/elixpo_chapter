@@ -58,8 +58,8 @@ export function parseCustomScopes(value: unknown): CustomOAuthScope[] {
 export function validateCustomScopes(
     value: unknown,
 ):
-    | { scopes: CustomOAuthScope[]; error?: never }
-    | { scopes?: never; error: string } {
+    | { scopes: CustomOAuthScope[] }
+    | { error: string } {
     if (value === undefined) return { scopes: [] };
     if (!Array.isArray(value))
         return { error: "custom_scopes must be an array" };
