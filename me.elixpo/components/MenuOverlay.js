@@ -258,7 +258,7 @@ export default function MenuOverlay({ person, menuItems, currentPath }) {
           <ion-icon
             name="close"
             id="scrollOutMenu"
-            class="absolute right-[20px] sm:right-[30px] cursor-pointer text-[#E2D9C8] hover:text-[#B63B12] transition-[0.25s] text-3xl sm:text-4xl"
+            className="absolute right-[20px] sm:right-[30px] cursor-pointer text-[#E2D9C8] hover:text-[#B63B12] transition-[0.25s] text-3xl sm:text-4xl"
             onClick={closeMenu}
             style={{ cursor: "pointer", fontSize: "2rem" }}
           />

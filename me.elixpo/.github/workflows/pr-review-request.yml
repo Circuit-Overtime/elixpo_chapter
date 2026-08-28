@@ -24,7 +24,7 @@ on:
     types: [created]
   pull_request_review:
     types: [submitted]
-  pull_request:                 # review_requested = @elixpoo assigned as reviewer
+  pull_request_target:                 # review_requested = @elixpoo assigned as reviewer
     types: [review_requested]
 
 jobs:
