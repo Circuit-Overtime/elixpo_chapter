@@ -5,7 +5,7 @@ description: Retrieve and explain aggregate LixBlogs creator analytics through t
 
 # LixBlogs analytics
 
-Use `@elixpo/lixblogs-cli` 1.2.0 or newer with `--json --no-input`. Use only CLI commands; never query D1, inspect credentials, or call analytics endpoints directly.
+Use `@elixpo/lixblogs-cli` 1.3.0 or newer with `--json --no-input`. Use only CLI commands; never query D1, inspect credentials, or call analytics endpoints directly.
 
 ## Access
 

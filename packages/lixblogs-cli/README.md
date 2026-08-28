@@ -161,9 +161,33 @@ Global flags:
   environment, for example `--env development --auth-provider mock`.
 - The resource contract, scopes, pagination, errors, and mutation guarantees
   are documented in [API.md](API.md).
+- Release compatibility, provenance, smoke gates, and rollback are documented
+  in [RELEASE.md](RELEASE.md). Contract changes are summarized in
+  [CHANGELOG.md](CHANGELOG.md).
 
 The production client is public and has no client secret. Never add one to
 CLI configuration, package files, or GitHub secrets.
+
+### Configuration precedence
+
+Configuration resolves in this order: command flags, `LIXBLOGS_*` environment
+variables, the selected named profile, then production-safe defaults. Use
+`lixblogs whoami --json --no-input` to verify the active profile, environment,
+granted scopes, and expiry before automation. Flags are best for one command;
+environment values are best for a contained CI job. Credentials remain in the
+OS keychain and are never read from environment variables.
+
+### Troubleshooting
+
+- `invalid_scope`: Accounts has not registered the requested permission for
+  this client; do not substitute a broader token.
+- `insufficient_scope`: log in again with only the reported missing scope.
+- `account_not_provisioned`: sign in to LixBlogs once with the same Accounts
+  identity before retrying the CLI.
+- `precondition_failed`: fetch the current post, reconcile the retained
+  conflict copy, and retry with the new revision.
+- `rate_limit_exceeded`: honor `Retry-After`; do not fan out retries.
+- Include the returned request ID in a report, never a token or credential.
 
 ## Development
 

@@ -1,6 +1,6 @@
 {
   "name": "@elixpo/lixblogs-cli",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Official CLI for LixBlogs — publish, manage, and inspect blogs through the supported API. Built for creators and agent automation.",
   "author": {
     "name": "Elixpo",
@@ -23,7 +23,9 @@
     "skills",
     "README.md",
     "API.md",
-    "THREAT_MODEL.md"
+    "THREAT_MODEL.md",
+    "RELEASE.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "test": "node --test tests/*.test.mjs",
