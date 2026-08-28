@@ -20,6 +20,17 @@ export class LoginRequiredError extends Error {
   }
 }
 
+export class ApiContractUnavailableError extends Error {
+  constructor(status, contentType) {
+    super("The configured LixBlogs origin is not serving the API v1 JSON contract.");
+    this.name = "ApiContractUnavailableError";
+    this.code = "api_contract_unavailable";
+    this.status = status;
+    this.details = { contentType: contentType || "unknown" };
+    this.hint = "Deploy the LixBlogs API v1 stack, or select an origin that exposes /api/v1.";
+  }
+}
+
 export class AuthenticatedClient {
   constructor({
     provider,
@@ -98,6 +109,10 @@ export class AuthenticatedClient {
     if (response.status === 401) {
       credentials = await this.credentials({ forceRefresh: true });
       response = await send();
+    }
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().includes("application/json")) {
+      throw new ApiContractUnavailableError(response.status, contentType);
     }
     return response;
   }

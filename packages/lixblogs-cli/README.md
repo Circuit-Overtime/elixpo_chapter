@@ -1,11 +1,11 @@
-# lixblogs-cli
+# @elixpo/lixblogs-cli
 
 The official CLI for LixBlogs — publish, manage, and inspect blogs through
 the supported API. Built for creators and agent/automation use.
 
-**Status: initial release.** This package implements production device-flow
-authentication and the core blog lifecycle over the stable LixBlogs API v1
-contract. The interactive terminal UI is intentionally a separate follow-up.
+This package implements production device-flow authentication and the core
+blog lifecycle over the stable LixBlogs API v1 contract. Its output stays
+compact and predictable for both terminals and automation.
 
 ## Install (local development)
 
@@ -14,9 +14,8 @@ cd packages/lixblogs-cli
 npm install
 ```
 
-There's no published npm release yet. Once available, install will be:
 ```bash
-npm install -g lixblogs-cli
+npm install -g @elixpo/lixblogs-cli
 ```
 
 ## Usage
@@ -29,21 +28,31 @@ node bin/lixblogs.mjs --help
 
 ```bash
 # Log in via device authorization
-node bin/lixblogs.mjs auth login
+node bin/lixblogs.mjs login
+
+# Save credentials under an explicit local profile name
+node bin/lixblogs.mjs login --profile personal
 
 # Check login status
-node bin/lixblogs.mjs auth status
+node bin/lixblogs.mjs whoami
 
 # List profiles and choose the active one
-node bin/lixblogs.mjs auth profiles
-node bin/lixblogs.mjs auth use work
+node bin/lixblogs.mjs profiles
+node bin/lixblogs.mjs use work
 
 # Log out (clears local credentials only)
-node bin/lixblogs.mjs auth logout
+node bin/lixblogs.mjs logout
 
 # Revoke the token server-side and clear local credentials (destructive)
 node bin/lixblogs.mjs auth revoke --yes
 ```
+
+Interactive login shows one compact device card and stays quiet while Accounts
+approval is pending. Press Enter to open the verification URL locally, use
+`--open` to open it immediately, or copy the URL to any browser when connected
+to a VPS. Device authorization does not require a localhost callback or an
+exposed port. Profile names such as `personal`, `work`, or `test` are local
+credential slots; `whoami` reports the actual Accounts identity.
 
 ### Blog lifecycle
 
@@ -63,12 +72,71 @@ lixblogs blog list --status draft
 lixblogs blog create --file post.md --title "A new post" --tag engineering
 lixblogs blog get <id> --json
 lixblogs blog edit <id> --editor
-lixblogs blog publish <id>
-lixblogs blog unpublish <id>
+lixblogs blog publish <id> --yes
+lixblogs blog unpublish <id> --yes
 lixblogs blog delete <id> --yes
 lixblogs blog list --status trashed
-lixblogs blog restore <id>
+lixblogs blog restore <id> --yes
 ```
+
+Inspect valid publication targets before assigning organization metadata:
+
+```bash
+lixblogs org list
+lixblogs org get ORG_ID
+lixblogs org collections ORG_ID
+lixblogs org members ORG_ID
+lixblogs org targets --json
+```
+
+Organization lookup is membership-bound. A slug alone never grants access;
+the API resolves the authenticated user's role before returning tenant data.
+
+Editorial collaboration stays separate from publishing:
+
+```bash
+lixblogs collab invitations
+lixblogs collab list BLOG_ID
+lixblogs collab invite BLOG_ID --user reviewer --role viewer --yes
+lixblogs collab role BLOG_ID --user reviewer --role editor --yes
+lixblogs collab accept BLOG_ID --yes
+lixblogs collab decline BLOG_ID --yes
+```
+
+Viewer, editor, and admin roles grant different editorial authority. None of
+these commands publishes a post; public-state changes still use `blog publish`
+with the publish scope and a separate confirmation.
+
+### Creator analytics
+
+Analytics is read-only and uses bounded date ranges and dimensions:
+
+```bash
+lixblogs login --scope openid --scope profile --scope lixblogs:analytics:read
+lixblogs analytics query --range 30d --dimension overview --json --no-input
+lixblogs analytics query --scope org:ORG_ID --range custom \
+  --from 2026-07-01 --to 2026-07-31 --dimension posts --limit 25 --json --no-input
+lixblogs analytics export --dimension timeline --format csv --output analytics.csv
+```
+
+Organization analytics also requires `lixblogs:organizations:read`. Results contain
+aggregates only; the API does not expose visitor identifiers or credentials.
+Exports refuse to overwrite an existing file.
+
+### Agent skills
+
+The npm artifact bundles each skill independently:
+
+```bash
+lixblogs skill list
+lixblogs skill inspect lixblogs-author
+lixblogs skill install lixblogs-author --target .agents/skills --dry-run
+lixblogs skill install lixblogs-author --target .agents/skills --yes
+```
+
+Install only the skill needed by the current agent. Existing files are not
+replaced unless `--force --yes` is explicit. The bundled skill declares its
+minimum compatible CLI version and scopes.
 
 `create`, `edit`, `publish`, `unpublish`, `delete`, and `restore` accept
 `--dry-run`. Content input is mutually exclusive: `--file`, `--stdin`,
@@ -89,7 +157,7 @@ Global flags:
   `https://blogs.elixpo.com`
 - `--json` — machine-readable JSON output
 - `--quiet` — suppress non-essential output
-- `--yes`, `-y` — auto-confirm destructive actions (required for `revoke`)
+- `--yes`, `-y` — confirm publishing and destructive state changes
 - `--allow-insecure-fallback` — explicit opt-in: if the OS keychain is
   unavailable, use a non-persistent in-memory store instead of failing
 
@@ -103,9 +171,33 @@ Global flags:
   environment, for example `--env development --auth-provider mock`.
 - The resource contract, scopes, pagination, errors, and mutation guarantees
   are documented in [API.md](API.md).
+- Release compatibility, provenance, smoke gates, and rollback are documented
+  in [RELEASE.md](RELEASE.md). Contract changes are summarized in
+  [CHANGELOG.md](CHANGELOG.md).
 
 The production client is public and has no client secret. Never add one to
 CLI configuration, package files, or GitHub secrets.
+
+### Configuration precedence
+
+Configuration resolves in this order: command flags, `LIXBLOGS_*` environment
+variables, the selected named profile, then production-safe defaults. Use
+`lixblogs whoami --json --no-input` to verify the active profile, environment,
+granted scopes, and expiry before automation. Flags are best for one command;
+environment values are best for a contained CI job. Credentials remain in the
+OS keychain and are never read from environment variables.
+
+### Troubleshooting
+
+- `invalid_scope`: Accounts has not registered the requested permission for
+  this client; do not substitute a broader token.
+- `insufficient_scope`: log in again with only the reported missing scope.
+- `account_not_provisioned`: sign in to LixBlogs once with the same Accounts
+  identity before retrying the CLI.
+- `precondition_failed`: fetch the current post, reconcile the retained
+  conflict copy, and retry with the new revision.
+- `rate_limit_exceeded`: honor `Retry-After`; do not fan out retries.
+- Include the returned request ID in a report, never a token or credential.
 
 ## Development
 
@@ -146,10 +238,8 @@ tests.
 See [#135](https://github.com/elixpo/blogs.elixpo/issues/135) for the full
 scope. Rough remaining order:
 
-1. Media, organization, and stats commands
-2. Packaging and release automation
-3. Interactive terminal UI and branding in a separate issue
-4. Agent skill packages and cross-repository E2E coverage
+1. Media commands
+2. Interactive terminal UI and branding in a separate issue
 
 ## Contributing
 
