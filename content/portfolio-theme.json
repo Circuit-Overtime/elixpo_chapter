@@ -9,7 +9,7 @@
     "animation": "wave"
   },
   "background": {
-    "cellSize": 14,
+    "cellSize": 9,
     "vignette": 70,
     "animation": "wave",
     "loopSeconds": 12
