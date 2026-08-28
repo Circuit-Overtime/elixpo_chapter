@@ -31,7 +31,7 @@ export default function AuthorizeCliClient({ requestId, defaultName, activeKeys,
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      setError(payload.error || 'Could not approve this CLI request.');
+      setError((payload as any).error || 'Could not approve this CLI request.');
       setStatus('idle');
       return;
     }
