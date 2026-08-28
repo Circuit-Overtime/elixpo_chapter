@@ -119,7 +119,7 @@ lixblogs analytics query --scope org:ORG_ID --range custom \
 lixblogs analytics export --dimension timeline --format csv --output analytics.csv
 ```
 
-Organization analytics also requires `lixblogs:org:read`. Results contain
+Organization analytics also requires `lixblogs:organizations:read`. Results contain
 aggregates only; the API does not expose visitor identifiers or credentials.
 Exports refuse to overwrite an existing file.
 

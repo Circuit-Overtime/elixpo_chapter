@@ -9,7 +9,7 @@ Use `@elixpo/lixblogs-cli` 1.3.0 or newer with `--json --no-input`. Use only CLI
 
 ## Access
 
-Personal analytics requires `lixblogs:analytics:read`. Organization analytics also requires `lixblogs:org:read` and a current owner, admin, or maintain role.
+Personal analytics requires `lixblogs:analytics:read`. Organization analytics also requires `lixblogs:organizations:read` and a current owner, admin, or maintain role.
 
 ```bash
 lixblogs whoami --json --no-input

@@ -22,7 +22,7 @@ export class AnalyticsClient {
     const scope = options.scope || 'personal';
     await this.http.requireScopes([
       'lixblogs:analytics:read',
-      ...(scope.startsWith('org:') ? ['lixblogs:org:read'] : []),
+      ...(scope.startsWith('org:') ? ['lixblogs:organizations:read'] : []),
     ]);
     const query = new URLSearchParams({
       scope,

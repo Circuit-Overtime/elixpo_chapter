@@ -8,7 +8,7 @@ import {
     apiSuccess,
     requestContext,
 } from "../../../../../../lib/api/v1/responses";
-const READ_SCOPE = "lixblogs:org:read";
+const READ_SCOPE = "lixblogs:organizations:read";
 
 function serializeCollection(row) {
     return {

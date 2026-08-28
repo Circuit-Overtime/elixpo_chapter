@@ -9,7 +9,7 @@ Use `@elixpo/lixblogs-cli` 1.2.0 or newer and add `--json --no-input` for automa
 
 ## Access
 
-This read-only workflow requires `lixblogs:org:read`. It does not authorize organization changes or publication. Verify the active identity and scope first:
+This read-only workflow requires `lixblogs:organizations:read`. It does not authorize organization changes or publication. Verify the active identity and scope first:
 
 ```bash
 lixblogs whoami --json --no-input
@@ -36,7 +36,7 @@ Roles `admin`, `maintain`, and `write` may appear as writable. `read` is inspect
 ## Safety and recovery
 
 - `org_not_found` also represents inaccessible tenants. Do not probe alternate identifiers.
-- `insufficient_scope`: request only `lixblogs:org:read`.
+- `insufficient_scope`: request only `lixblogs:organizations:read`.
 - A missing target means the current identity cannot publish there; stop instead of falling back to a similarly named organization.
 - Re-run `org targets` immediately before a draft changes publication tenant because memberships and roles can change.
 - Report request IDs for diagnosis without printing credentials.

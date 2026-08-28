@@ -36,7 +36,7 @@ async function audit(state, action, targetUserId) {
 }
 
 export async function GET(request, { params }) {
-  const state = await contextFor(request, params, ['lixblogs:collab:read'], 'collaborators.list');
+  const state = await contextFor(request, params, ['lixblogs:collaboration:read'], 'collaborators.list');
   if (state.response) return state.response;
   try {
     const rows = await state.db.prepare(`
@@ -59,7 +59,7 @@ export async function GET(request, { params }) {
 }
 
 export async function POST(request, { params }) {
-  const state = await contextFor(request, params, ['lixblogs:collab:write'], 'collaborators.invite');
+  const state = await contextFor(request, params, ['lixblogs:collaboration:write'], 'collaborators.invite');
   if (state.response) return state.response;
   if (!state.access.canManage) {
     return apiError(state.context, 'role_forbidden', 'Only the owner, an organization manager, or an accepted admin collaborator may invite people.', 403, { headers: state.rateHeaders });
@@ -102,7 +102,7 @@ export async function POST(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  const state = await contextFor(request, params, ['lixblogs:collab:write'], 'collaborators.role');
+  const state = await contextFor(request, params, ['lixblogs:collaboration:write'], 'collaborators.role');
   if (state.response) return state.response;
   if (!state.access.canManage) return apiError(state.context, 'role_forbidden', 'You cannot change collaborator roles for this blog.', 403, { headers: state.rateHeaders });
   try {
@@ -122,7 +122,7 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const state = await contextFor(request, params, ['lixblogs:collab:write'], 'collaborators.remove');
+  const state = await contextFor(request, params, ['lixblogs:collaboration:write'], 'collaborators.remove');
   if (state.response) return state.response;
   try {
     const body = await request.json().catch(() => ({}));

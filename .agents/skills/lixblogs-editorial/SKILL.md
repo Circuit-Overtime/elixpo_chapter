@@ -14,7 +14,7 @@ Use `@elixpo/lixblogs-cli` 1.2.0 or newer. Automation must include `--json --no-
 - `admin`: may edit and manage collaborators after accepting. Publishing remains a separate operation.
 - Blog owner and eligible organization managers may manage the team.
 
-Read workflows require `lixblogs:collab:read`. Invitations, role changes, acceptance, decline, and removal require `lixblogs:collab:write`. Do not request `lixblogs:blog:publish` unless the user separately asks to publish.
+Read workflows require `lixblogs:collaboration:read`. Invitations, role changes, acceptance, decline, and removal require `lixblogs:collaboration:write`. Do not request `lixblogs:blog:publish` unless the user separately asks to publish.
 
 ## Inspect
 

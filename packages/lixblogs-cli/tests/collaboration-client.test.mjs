@@ -15,7 +15,7 @@ test('collaboration reads require the read scope and stay under API v1', async (
   });
   await client.invitations();
   await client.list('blog 1');
-  assert.deepEqual(scopes, [['lixblogs:collab:read'], ['lixblogs:collab:read']]);
+  assert.deepEqual(scopes, [['lixblogs:collaboration:read'], ['lixblogs:collaboration:read']]);
   assert.deepEqual(requests, ['/api/v1/collaboration/invitations', '/api/v1/blogs/blog%201/collaborators']);
 });
 

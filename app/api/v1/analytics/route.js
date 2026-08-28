@@ -111,7 +111,7 @@ export async function GET(request) {
   const context = requestContext();
   const params = new URL(request.url).searchParams;
   const requestedScope = params.get('scope') || 'personal';
-  const requiredScopes = [ANALYTICS_SCOPE, ...(requestedScope.startsWith('org:') ? ['lixblogs:org:read'] : [])];
+  const requiredScopes = [ANALYTICS_SCOPE, ...(requestedScope.startsWith('org:') ? ['lixblogs:organizations:read'] : [])];
   const authorized = await authorizeApiRequest(request, context, requiredScopes, 'analytics.read');
   if (authorized.response) return authorized.response;
   const { auth, db, rateHeaders } = authorized;

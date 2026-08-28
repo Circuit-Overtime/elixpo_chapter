@@ -29,21 +29,21 @@ logged by the resource API.
 | `POST` | `/api/v1/blogs/{id}/unpublish` | `lixblogs:blog:publish` | Return a post to draft |
 | `DELETE` | `/api/v1/blogs/{id}` | `lixblogs:blog:delete` | Move a post to trash |
 | `POST` | `/api/v1/blogs/{id}/restore` | `lixblogs:blog:delete` | Restore a trashed post |
-| `GET` | `/api/v1/orgs` | `lixblogs:org:read` | Organizations the caller belongs to |
-| `GET` | `/api/v1/orgs/{id}` | `lixblogs:org:read` | One caller-visible organization and role |
-| `GET` | `/api/v1/orgs/{id}/collections` | `lixblogs:org:read` | Collections within a caller membership |
-| `GET` | `/api/v1/orgs/{id}/members` | `lixblogs:org:read` | Members and roles within a caller membership |
-| `GET` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collab:read` | Editorial team and effective role |
-| `POST` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collab:write` | Invite or reassign a collaborator |
-| `PATCH` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collab:write` | Change a collaborator role |
-| `DELETE` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collab:write` | Remove a collaborator or leave a team |
-| `GET` | `/api/v1/collaboration/invitations` | `lixblogs:collab:read` | Current identity's invitations |
-| `POST` | `/api/v1/collaboration/invitations` | `lixblogs:collab:write` | Accept or decline an invitation |
+| `GET` | `/api/v1/orgs` | `lixblogs:organizations:read` | Organizations the caller belongs to |
+| `GET` | `/api/v1/orgs/{id}` | `lixblogs:organizations:read` | One caller-visible organization and role |
+| `GET` | `/api/v1/orgs/{id}/collections` | `lixblogs:organizations:read` | Collections within a caller membership |
+| `GET` | `/api/v1/orgs/{id}/members` | `lixblogs:organizations:read` | Members and roles within a caller membership |
+| `GET` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collaboration:read` | Editorial team and effective role |
+| `POST` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collaboration:write` | Invite or reassign a collaborator |
+| `PATCH` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collaboration:write` | Change a collaborator role |
+| `DELETE` | `/api/v1/blogs/{id}/collaborators` | `lixblogs:collaboration:write` | Remove a collaborator or leave a team |
+| `GET` | `/api/v1/collaboration/invitations` | `lixblogs:collaboration:read` | Current identity's invitations |
+| `POST` | `/api/v1/collaboration/invitations` | `lixblogs:collaboration:write` | Accept or decline an invitation |
 | `GET` | `/api/v1/analytics` | `lixblogs:analytics:read` | Bounded creator analytics dimensions |
 
 `GET /api/v1/analytics` accepts `scope=personal|org:<id>`, `range=7d|30d|90d|12m|custom`,
 `from`, `to`, `dimension=overview|timeline|posts|sources|devices|countries`, `limit=1..100`,
-and an opaque `cursor`. Organization queries additionally require `lixblogs:org:read`
+and an opaque `cursor`. Organization queries additionally require `lixblogs:organizations:read`
 and an owner, admin, or maintain membership. Responses contain aggregate creator data;
 visitor identifiers are never returned.
 

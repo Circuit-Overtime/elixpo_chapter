@@ -10,7 +10,7 @@ function response(body, status = 200, headers = {}) {
     });
 }
 
-test("OrgClient.list requires lixblogs:org:read scope and calls /api/v1/orgs", async () => {
+test("OrgClient.list requires lixblogs:organizations:read scope and calls /api/v1/orgs", async () => {
     let requiredScope;
     let requestedUrl;
     const client = new OrgClient({
@@ -34,7 +34,7 @@ test("OrgClient.list requires lixblogs:org:read scope and calls /api/v1/orgs", a
     });
 
     const result = await client.list();
-    assert.deepEqual(requiredScope, ["lixblogs:org:read"]);
+    assert.deepEqual(requiredScope, ["lixblogs:organizations:read"]);
     assert.equal(requestedUrl, "/api/v1/orgs");
     assert.equal(result.data.length, 1);
     assert.equal(result.data[0].slug, "engineering");

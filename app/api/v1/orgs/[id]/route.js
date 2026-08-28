@@ -9,7 +9,7 @@ import {
     requestContext,
 } from "../../../../../lib/api/v1/responses";
 
-const READ_SCOPE = "lixblogs:org:read";
+const READ_SCOPE = "lixblogs:organizations:read";
 
 export async function GET(request, { params }) {
     const context = requestContext();

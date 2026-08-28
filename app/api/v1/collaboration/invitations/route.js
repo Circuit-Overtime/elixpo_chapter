@@ -7,7 +7,7 @@ import { apiError, apiSuccess, requestContext } from '../../../../../../lib/api/
 
 export async function GET(request) {
   const context = requestContext();
-  const authorized = await authorizeApiRequest(request, context, ['lixblogs:collab:read'], 'collaboration.invitations.list');
+  const authorized = await authorizeApiRequest(request, context, ['lixblogs:collaboration:read'], 'collaboration.invitations.list');
   if (authorized.response) return authorized.response;
   const { auth, db, rateHeaders } = authorized;
   try {
@@ -44,7 +44,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   const context = requestContext();
-  const authorized = await authorizeApiRequest(request, context, ['lixblogs:collab:write'], 'collaboration.invitations.resolve');
+  const authorized = await authorizeApiRequest(request, context, ['lixblogs:collaboration:write'], 'collaboration.invitations.resolve');
   if (authorized.response) return authorized.response;
   const { auth, db, rateHeaders } = authorized;
   try {

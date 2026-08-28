@@ -89,20 +89,20 @@ export class OrgClient {
     }
 
     async list() {
-        await this.requireScopes(["lixblogs:org:read"]);
+        await this.requireScopes(["lixblogs:organizations:read"]);
         return (await this.request("/api/v1/orgs")).payload;
     }
 
     async get(id) {
         if (!id) throw new Error("An organization ID or handle is required.");
-        await this.requireScopes(["lixblogs:org:read"]);
+        await this.requireScopes(["lixblogs:organizations:read"]);
         return (await this.request(`/api/v1/orgs/${encodeURIComponent(id)}`))
             .payload.data;
     }
 
     async collections(id) {
         if (!id) throw new Error("An organization ID or handle is required.");
-        await this.requireScopes(["lixblogs:org:read"]);
+        await this.requireScopes(["lixblogs:organizations:read"]);
         return (
             await this.request(
                 `/api/v1/orgs/${encodeURIComponent(id)}/collections`,
@@ -112,14 +112,14 @@ export class OrgClient {
 
     async members(id) {
         if (!id) throw new Error("An organization ID or handle is required.");
-        await this.requireScopes(["lixblogs:org:read"]);
+        await this.requireScopes(["lixblogs:organizations:read"]);
         return (
             await this.request(`/api/v1/orgs/${encodeURIComponent(id)}/members`)
         ).payload.data;
     }
 
     async targets() {
-        await this.requireScopes(["lixblogs:org:read"]);
+        await this.requireScopes(["lixblogs:organizations:read"]);
         const orgsList = await this.list();
         const orgs = orgsList?.data || [];
         const writableOrgs = orgs.filter((org) => org.canWrite);

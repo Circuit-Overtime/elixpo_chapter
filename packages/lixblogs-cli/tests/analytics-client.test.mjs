@@ -25,7 +25,7 @@ test('organization analytics additionally requires org read scope', async () => 
     request: async () => response({ values: [] }),
   });
   await client.query({ scope: 'org:o1', range: 'custom', from: '2026-07-01', to: '2026-07-31', dimension: 'posts', limit: 10, cursor: 'MTA=' });
-  assert.deepEqual(required, ['lixblogs:analytics:read', 'lixblogs:org:read']);
+  assert.deepEqual(required, ['lixblogs:analytics:read', 'lixblogs:organizations:read']);
 });
 
 test('authorization failures retain machine-readable API errors', async () => {

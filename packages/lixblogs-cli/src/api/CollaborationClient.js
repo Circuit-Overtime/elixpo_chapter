@@ -32,38 +32,38 @@ export class CollaborationClient {
   }
 
   async list(blogId) {
-    await this.http.requireScopes(['lixblogs:collab:read']);
+    await this.http.requireScopes(['lixblogs:collaboration:read']);
     return this.request(`/api/v1/blogs/${encodeURIComponent(blogId)}/collaborators`);
   }
 
   async invitations() {
-    await this.http.requireScopes(['lixblogs:collab:read']);
+    await this.http.requireScopes(['lixblogs:collaboration:read']);
     return this.request('/api/v1/collaboration/invitations');
   }
 
   async invite(blogId, { user, role, idempotencyKey = randomUUID() }) {
-    await this.http.requireScopes(['lixblogs:collab:write']);
+    await this.http.requireScopes(['lixblogs:collaboration:write']);
     return this.request(`/api/v1/blogs/${encodeURIComponent(blogId)}/collaborators`, {
       method: 'POST', headers: { 'idempotency-key': idempotencyKey }, body: JSON.stringify({ user, role }),
     });
   }
 
   async role(blogId, { user, role, idempotencyKey = randomUUID() }) {
-    await this.http.requireScopes(['lixblogs:collab:write']);
+    await this.http.requireScopes(['lixblogs:collaboration:write']);
     return this.request(`/api/v1/blogs/${encodeURIComponent(blogId)}/collaborators`, {
       method: 'PATCH', headers: { 'idempotency-key': idempotencyKey }, body: JSON.stringify({ user, role }),
     });
   }
 
   async remove(blogId, { user, idempotencyKey = randomUUID() } = {}) {
-    await this.http.requireScopes(['lixblogs:collab:write']);
+    await this.http.requireScopes(['lixblogs:collaboration:write']);
     return this.request(`/api/v1/blogs/${encodeURIComponent(blogId)}/collaborators`, {
       method: 'DELETE', headers: { 'idempotency-key': idempotencyKey }, body: JSON.stringify({ ...(user ? { user } : {}) }),
     });
   }
 
   async resolveInvitation(blogId, { action, showOnProfile = true, idempotencyKey = randomUUID() }) {
-    await this.http.requireScopes(['lixblogs:collab:write']);
+    await this.http.requireScopes(['lixblogs:collaboration:write']);
     return this.request('/api/v1/collaboration/invitations', {
       method: 'POST',
       headers: { 'idempotency-key': idempotencyKey },
