@@ -34,6 +34,7 @@ import { authProfiles, authUse } from "../src/commands/auth/profiles.js";
 import { ProfileRegistry, validateProfileId } from "../src/config/ProfileRegistry.js";
 import { AuthenticatedClient } from "../src/auth/AuthenticatedClient.js";
 import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
+import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
 import {
   blogCreate,
   blogDelete,
@@ -89,6 +90,12 @@ const OPTIONS = {
 const HELP_TEXT = `lixblogs — LixBlogs CLI
 
 Usage:
+  lixblogs login         [--profile <name>] [--open]
+  lixblogs register      [--profile <name>] [--open]
+  lixblogs logout        [--profile <name>]
+  lixblogs whoami        [--profile <name>] [--json]
+  lixblogs profiles      [--json]
+  lixblogs use <name>    [--json]
   lixblogs auth login    [--profile <name>] [--env <environment>] [--json] [--quiet] [--allow-insecure-fallback]
   lixblogs auth status   [--profile <name>] [--json]
   lixblogs auth logout   [--profile <name>] [--json] [--quiet]
@@ -99,10 +106,10 @@ Usage:
   lixblogs blog get <id>  [--json]
   lixblogs blog create    [--file <post.md>|--stdin|--content <markdown>|--editor] [metadata]
   lixblogs blog edit <id> [--file <post.md>|--stdin|--content <markdown>|--editor] [metadata]
-  lixblogs blog publish <id>   [--dry-run] [--json]
-  lixblogs blog unpublish <id> [--dry-run] [--json]
+  lixblogs blog publish <id> --yes [--dry-run] [--json]
+  lixblogs blog unpublish <id> --yes [--dry-run] [--json]
   lixblogs blog delete <id> --yes [--permanent] [--dry-run] [--json]
-  lixblogs blog restore <id>   [--dry-run] [--json]
+  lixblogs blog restore <id> --yes [--dry-run] [--json]
 
 Global flags:
   --profile <name>            named profile to use (default: "default")
@@ -129,8 +136,9 @@ Global flags:
                                non-persistent in-memory store instead of failing
   --help, -h                  show this help
 
-Note: interactive confirmation prompting is not implemented yet (CLI-shell/UX
-work, a later issue) — destructive actions require --yes explicitly, always.
+Machine mode:
+  --json --no-input produces stable JSON on stdout, diagnostics on stderr, and
+  never prompts. Publishing and destructive state changes require --yes.
 `;
 
 const DEFAULT_SCOPES = [
@@ -169,14 +177,18 @@ function output(opts, data) {
   }
 }
 
-function fail(opts, message, exitCode = 1) {
-  const safeMessage = redactErrorMessage(message);
+function fail(opts, error, exitCode = EXIT_CODES.ERROR) {
+  const value = error && typeof error === 'object' ? error : { message: String(error) };
+  const safeMessage = redactErrorMessage(value.message);
+  const envelope = errorEnvelope({ ...value, message: safeMessage });
   if (opts.json) {
-    process.stdout.write(safeJsonStringify({ ok: false, error: safeMessage }) + "\n");
+    process.stdout.write(safeJsonStringify(envelope) + "\n");
   } else if (!opts.quiet) {
     process.stderr.write(`Error: ${safeMessage}\n`);
+    if (value.hint) process.stderr.write(`Hint: ${value.hint}\n`);
+    if (value.requestId) process.stderr.write(`Request: ${value.requestId}\n`);
   }
-  process.exitCode = exitCode;
+  process.exitCode = value.exitCode || exitCode;
 }
 
 /**
@@ -279,6 +291,60 @@ async function runStatus(opts) {
       }
     }
   }
+}
+
+async function authenticatedBlogClient(opts) {
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
+  if (!credentialStore) return null;
+  let provider;
+  try { provider = createAuthProvider(config); } catch (error) { fail(opts, error); return null; }
+  const http = new AuthenticatedClient({ provider, credentialStore, profileId, apiBaseUrl: config.apiBaseUrl });
+  return { client: new BlogClient(http), config, credentialStore, profileId };
+}
+
+async function runWhoami(opts) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  try {
+    const [identity, credentials] = await Promise.all([
+      context.client.whoami(),
+      context.credentialStore.get(context.profileId),
+    ]);
+    const result = {
+      ok: true,
+      profile: context.profileId,
+      environment: context.config.environment,
+      identity,
+      scopes: credentials?.scopes || [],
+      expiresAt: credentials?.expiresAt ? new Date(credentials.expiresAt).toISOString() : null,
+      expired: credentials ? Date.now() >= credentials.expiresAt : true,
+    };
+    output(opts, result);
+    if (!opts.json && !opts.quiet) {
+      console.log(`${identity.displayName || identity.username} (@${identity.username})`);
+      console.log(`Profile: ${context.profileId} · ${result.environment}`);
+      console.log(`Scopes: ${result.scopes.join(', ') || 'none'}`);
+      console.log(`Expires: ${result.expiresAt || 'unknown'}`);
+    }
+  } catch (error) {
+    fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
+  }
+}
+
+async function runRegister(opts) {
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const registrationUrl = new URL('/register', config.accountsBaseUrl).toString();
+  if (opts['no-input']) {
+    output(opts, { ok: true, registrationUrl, next: 'lixblogs login' });
+    if (!opts.json && !opts.quiet) console.log(registrationUrl);
+    return;
+  }
+  await openBrowser(registrationUrl);
+  if (!opts.quiet) console.log(`Create your account at ${registrationUrl}, then approve the device login.`);
+  await runLogin(opts);
 }
 
 async function runLogout(opts) {
@@ -420,7 +486,7 @@ async function runBlog(opts, args, action) {
       process.exitCode = error.status === 412 ? 3 : 1;
       return;
     }
-    return fail(opts, `${error.message}${error.requestId ? ` (request ${error.requestId})` : ''}`, error.status === 412 ? 3 : 1);
+    return fail(opts, error, error.status === 412 ? EXIT_CODES.CONFLICT : EXIT_CODES.ERROR);
   }
 }
 
@@ -428,6 +494,7 @@ const ROUTES = {
   auth: {
     login: runLogin,
     status: runStatus,
+    whoami: runWhoami,
     logout: runLogout,
     revoke: runRevoke,
     profiles: runProfiles,
@@ -453,7 +520,7 @@ async function main() {
     // unrecognized flags rather than silently ignoring them — surface that
     // clearly instead of an unhandled exception.
     process.stderr.write(`Error: Invalid flag. ${err.message}\n`);
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.USAGE;
     return;
   }
 
@@ -462,13 +529,19 @@ async function main() {
     return;
   }
 
+  if (positionals[0] === 'register') {
+    await runRegister(values);
+    return;
+  }
+
+  positionals = normalizeCommand(positionals);
   const [category, action] = positionals;
   const categoryRoutes = ROUTES[category];
 
   if (!categoryRoutes) {
     process.stderr.write(`Error: Unknown command category "${category}".\n`);
     process.stderr.write(`Available categories: ${Object.keys(ROUTES).join(", ")}\n`);
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.USAGE;
     return;
   }
 
@@ -480,7 +553,7 @@ async function main() {
         .map((a) => `${category} ${a}`)
         .join(", ")}\n`
     );
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.USAGE;
     return;
   }
 

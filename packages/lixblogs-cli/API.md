@@ -20,6 +20,7 @@ logged by the resource API.
 | Method | Path | Scope | Behavior |
 | --- | --- | --- | --- |
 | `GET` | `/api/v1` | public | API and compatibility metadata |
+| `GET` | `/api/v1/me` | `lixblogs:profile:read` | Current LixBlogs identity |
 | `GET` | `/api/v1/blogs` | `lixblogs:blog:read` | Accessible blog metadata |
 | `GET` | `/api/v1/blogs/{id}` | `lixblogs:blog:read` | One accessible blog and its content |
 | `POST` | `/api/v1/blogs` | `lixblogs:blog:write` | Create a draft |

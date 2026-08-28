@@ -15,6 +15,7 @@ export async function GET() {
       audience: 'blogs.elixpo.com',
     },
     resources: {
+      profile: '/api/v1/me',
       blogs: '/api/v1/blogs',
       blog: '/api/v1/blogs/{id}',
       publish: '/api/v1/blogs/{id}/publish',

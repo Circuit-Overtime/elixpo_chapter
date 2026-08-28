@@ -1,11 +1,11 @@
-# lixblogs-cli
+# @elixpo/lixblogs-cli
 
 The official CLI for LixBlogs — publish, manage, and inspect blogs through
 the supported API. Built for creators and agent/automation use.
 
-**Status: initial release.** This package implements production device-flow
-authentication and the core blog lifecycle over the stable LixBlogs API v1
-contract. The interactive terminal UI is intentionally a separate follow-up.
+This package implements production device-flow authentication and the core
+blog lifecycle over the stable LixBlogs API v1 contract. Its output stays
+compact and predictable for both terminals and automation.
 
 ## Install (local development)
 
@@ -14,9 +14,8 @@ cd packages/lixblogs-cli
 npm install
 ```
 
-There's no published npm release yet. Once available, install will be:
 ```bash
-npm install -g lixblogs-cli
+npm install -g @elixpo/lixblogs-cli
 ```
 
 ## Usage
@@ -29,17 +28,17 @@ node bin/lixblogs.mjs --help
 
 ```bash
 # Log in via device authorization
-node bin/lixblogs.mjs auth login
+node bin/lixblogs.mjs login
 
 # Check login status
-node bin/lixblogs.mjs auth status
+node bin/lixblogs.mjs whoami
 
 # List profiles and choose the active one
-node bin/lixblogs.mjs auth profiles
-node bin/lixblogs.mjs auth use work
+node bin/lixblogs.mjs profiles
+node bin/lixblogs.mjs use work
 
 # Log out (clears local credentials only)
-node bin/lixblogs.mjs auth logout
+node bin/lixblogs.mjs logout
 
 # Revoke the token server-side and clear local credentials (destructive)
 node bin/lixblogs.mjs auth revoke --yes
@@ -63,11 +62,11 @@ lixblogs blog list --status draft
 lixblogs blog create --file post.md --title "A new post" --tag engineering
 lixblogs blog get <id> --json
 lixblogs blog edit <id> --editor
-lixblogs blog publish <id>
-lixblogs blog unpublish <id>
+lixblogs blog publish <id> --yes
+lixblogs blog unpublish <id> --yes
 lixblogs blog delete <id> --yes
 lixblogs blog list --status trashed
-lixblogs blog restore <id>
+lixblogs blog restore <id> --yes
 ```
 
 `create`, `edit`, `publish`, `unpublish`, `delete`, and `restore` accept
@@ -89,7 +88,7 @@ Global flags:
   `https://blogs.elixpo.com`
 - `--json` — machine-readable JSON output
 - `--quiet` — suppress non-essential output
-- `--yes`, `-y` — auto-confirm destructive actions (required for `revoke`)
+- `--yes`, `-y` — confirm publishing and destructive state changes
 - `--allow-insecure-fallback` — explicit opt-in: if the OS keychain is
   unavailable, use a non-persistent in-memory store instead of failing
 

@@ -1,5 +1,5 @@
 {
-  "name": "lixblogs-cli",
+  "name": "@elixpo/lixblogs-cli",
   "version": "1.1.1",
   "description": "Official CLI for LixBlogs — publish, manage, and inspect blogs through the supported API. Built for creators and agent automation.",
   "author": {
