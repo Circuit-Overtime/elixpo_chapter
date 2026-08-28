@@ -264,6 +264,7 @@ export interface DeviceAuthorizationLookupResult {
     terms_of_service_url?: string | null;
     is_branding_verified?: boolean;
     branding_verified_domain?: string | null;
+    audience?: string | null;
 }
 
 /**
@@ -279,7 +280,7 @@ export async function lookupDeviceAuthorizationByUserCode(
 
     const row = (await db
         .prepare(
-            `SELECT da.status, da.expires_at, da.scopes, da.client_id, oc.name AS client_name, oc.logo_url, oc.branding_display_name, oc.branding_primary_color, oc.branding_accent_color, oc.privacy_policy_url, oc.terms_of_service_url, oc.is_branding_verified, oc.branding_verified_domain
+            `SELECT da.status, da.expires_at, da.scopes, da.audience, da.client_id, oc.name AS client_name, oc.logo_url, oc.branding_display_name, oc.branding_primary_color, oc.branding_accent_color, oc.privacy_policy_url, oc.terms_of_service_url, oc.is_branding_verified, oc.branding_verified_domain
              FROM device_authorizations da
              JOIN oauth_clients oc ON oc.client_id = da.client_id
              WHERE da.user_code_hash = ?`,
@@ -299,6 +300,7 @@ export async function lookupDeviceAuthorizationByUserCode(
         terms_of_service_url: string | null;
         is_branding_verified: number;
         branding_verified_domain: string | null;
+        audience: string | null;
     } | null;
 
     if (!row) {
@@ -320,6 +322,7 @@ export async function lookupDeviceAuthorizationByUserCode(
         client_name: row.client_name,
         scopes: row.scopes.split(" ").filter(Boolean),
         expires_at: row.expires_at,
+        audience: row.audience,
         logo_url: row.is_branding_verified === 1 ? row.logo_url || null : null,
         branding_display_name:
             row.is_branding_verified === 1

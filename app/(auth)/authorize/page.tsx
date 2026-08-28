@@ -2,8 +2,11 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { OAUTH_SCOPE_DETAILS } from "@/lib/oauth-scopes";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
+import {
+    AccountSelector,
+    OAuthScopeList,
+} from "../../components/oauth-consent";
 
 interface AuthorizationRequest {
     clientId: string;
@@ -660,112 +663,13 @@ function AuthorizeContent() {
 
                     {/* Which account this authorization is for */}
                     {account && (
-                        <div
-                            style={{
-                                padding: "0 16px 14px",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    gap: 10,
-                                }}
-                            >
-                                <img
-                                    src={
-                                        account.avatar ||
-                                        generatePixelAvatar(account.email, 32)
-                                    }
-                                    alt=""
-                                    width={32}
-                                    height={32}
-                                    style={{
-                                        borderRadius: "50%",
-                                        flexShrink: 0,
-                                    }}
-                                />
-                                <div
-                                    style={{ minWidth: 0, textAlign: "center" }}
-                                >
-                                    <span
-                                        style={{
-                                            display: "block",
-                                            color: "var(--fg)",
-                                            fontSize: 12.5,
-                                            fontWeight: 650,
-                                        }}
-                                    >
-                                        {account.displayName || account.email}
-                                    </span>
-                                    <span
-                                        style={{
-                                            display: "block",
-                                            color: "var(--fg-faint)",
-                                            fontSize: 11.5,
-                                            overflowWrap: "anywhere",
-                                        }}
-                                    >
-                                        {account.email}
-                                    </span>
-                                </div>
-                            </div>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 10,
-                                    flexWrap: "wrap",
-                                    justifyContent: "center",
-                                    marginTop: 10,
-                                }}
-                            >
-                                {accounts.length > 1 && (
-                                    <select
-                                        aria-label="Choose an account"
-                                        value={account.id}
-                                        disabled={isSwitching}
-                                        onChange={(event) =>
-                                            handleSwitchAccount(
-                                                event.target.value,
-                                            )
-                                        }
-                                        style={{
-                                            minWidth: 0,
-                                            maxWidth: "100%",
-                                            border: "1px solid var(--border)",
-                                            borderRadius: 8,
-                                            background: "var(--surface)",
-                                            color: "var(--fg-muted)",
-                                            fontSize: 12,
-                                            padding: "7px 9px",
-                                        }}
-                                    >
-                                        {accounts.map((candidate) => (
-                                            <option
-                                                key={candidate.id}
-                                                value={candidate.id}
-                                            >
-                                                {candidate.displayName ||
-                                                    candidate.email}
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
-                                <a
-                                    href={`/login?add_account=1&next=${encodeURIComponent(`/authorize?${searchParams.toString()}`)}`}
-                                    style={{
-                                        color: "#ff7759",
-                                        fontSize: 12,
-                                        fontWeight: 650,
-                                        textDecoration: "none",
-                                    }}
-                                >
-                                    Add account
-                                </a>
-                            </div>
-                        </div>
+                        <AccountSelector
+                            account={account}
+                            accounts={accounts}
+                            disabled={isSwitching}
+                            onSwitch={handleSwitchAccount}
+                            addHref={`/login?add_account=1&next=${encodeURIComponent(`/authorize?${searchParams.toString()}`)}`}
+                        />
                     )}
 
                     {/* Bento grid */}
@@ -803,67 +707,13 @@ function AuthorizeContent() {
                                     : authRequest.clientName}{" "}
                                 will be able to
                             </p>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 6,
-                                }}
-                            >
-                                {authRequest.scopes.map((scope) => {
-                                    const info = OAUTH_SCOPE_DETAILS[
-                                        scope as keyof typeof OAUTH_SCOPE_DETAILS
-                                    ] || {
-                                        label: scope,
-                                        description:
-                                            "Use this permission as described by the application.",
-                                    };
-                                    return (
-                                        <div
-                                            key={scope}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 8,
-                                            }}
-                                        >
-                                            <svg
-                                                width="14"
-                                                height="14"
-                                                viewBox="0 0 20 20"
-                                                fill="#ff7759"
-                                                style={{ flexShrink: 0 }}
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                            <span>
-                                                <strong
-                                                    style={{
-                                                        display: "block",
-                                                        color: "var(--fg)",
-                                                        fontSize: 13,
-                                                    }}
-                                                >
-                                                    {info.label}
-                                                </strong>
-                                                <span
-                                                    style={{
-                                                        color: "var(--fg-muted)",
-                                                        fontSize: 12,
-                                                        lineHeight: 1.45,
-                                                    }}
-                                                >
-                                                    {info.description}
-                                                </span>
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            <OAuthScopeList
+                                scopes={authRequest.scopes}
+                                accentColor={
+                                    authRequest.brandingPrimaryColor ||
+                                    "#ff7759"
+                                }
+                            />
                         </div>
 
                         {/* Security and expiry chip */}
