@@ -16,3 +16,11 @@ export function getValidPersons() {
       fs.statSync(path.join(contentDir, entry)).isDirectory()
     );
 }
+
+export function getPortfolioPersons() {
+  const orderPath = path.join(contentDir, "portfolio-order.json");
+  const order = JSON.parse(fs.readFileSync(orderPath, "utf-8"));
+  const validPersons = new Set(getValidPersons());
+
+  return order.filter((person) => validPersons.has(person));
+}

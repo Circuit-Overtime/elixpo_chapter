@@ -1,66 +1,26 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
-ASSETS_DIR="public/assets"
-CONTENT_DIR="content"
-SRC_DIRS=("app" "components")
+EXPORT_DIR="out"
+OPTIMIZER="scripts/optimize-deploy-media.mjs"
 
 usage() {
   echo "Usage: ./deploy.sh [optimize] [build] [deploy]"
-  echo "  optimize - Compress images in $ASSETS_DIR to .webp and update references"
-  echo "  build    - Run optimize + next build (static export to out/)"
-  echo "  deploy   - Deploy out/ to Cloudflare Pages via wrangler"
+  echo "  optimize - Compress media in the generated $EXPORT_DIR/ export"
+  echo "  build    - Run next build, then optimize the static export"
+  echo "  deploy   - Deploy $EXPORT_DIR/ to Cloudflare Pages via wrangler"
   echo "  Commands can be combined: ./deploy.sh build deploy"
   exit 1
 }
 
-optimize_assets() {
-  # Skip if no original images remain
-  local remaining
-  remaining=$(find "$ASSETS_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) | wc -l)
-  if [ "$remaining" -eq 0 ]; then
-    echo ">> Assets already optimized, skipping."
-    return
+optimize_export() {
+  if [ ! -d "$EXPORT_DIR" ]; then
+    echo "Error: $EXPORT_DIR/ directory not found. Run ./deploy.sh build first."
+    exit 1
   fi
-
-  echo ">> Optimizing $remaining images..."
-
-  # Install cwebp if not available
-  if ! command -v cwebp &>/dev/null; then
-    echo ">> Installing webp tools..."
-     apt-get update -qq &&  apt-get install -y -qq webp
-  fi
-
-  # Convert png, jpg, jpeg to webp (skip files already having a .webp counterpart)
-  local count=0
-  while IFS= read -r -d '' img; do
-    webp_path="${img%.*}.webp"
-    if [ ! -f "$webp_path" ]; then
-      cwebp -q 80 -quiet "$img" -o "$webp_path"
-      count=$((count + 1))
-    fi
-  done < <(find "$ASSETS_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) -print0)
-
-  echo ">> Converted $count images to .webp"
-
-  # Update local asset references (skip external URLs like https://)
-  # Only replace .png/.jpg/.jpeg that follow /assets/ paths
-  find "$CONTENT_DIR" -type f -name '*.json' -exec \
-    sed -i -E 's#(/assets/[^"]*)\.(png|jpg|jpeg)#\1.webp#g' {} +
-
-  # Update references in source files (app/, components/)
-  for dir in "${SRC_DIRS[@]}"; do
-    if [ -d "$dir" ]; then
-      find "$dir" -type f \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \) -exec \
-        sed -i -E 's#(/assets/[^"'\''`) ]*)\.(png|jpg|jpeg)#\1.webp#g' {} +
-    fi
-  done
-
-  # Remove original files now that .webp versions exist
-  find "$ASSETS_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) -delete
-
-  echo ">> Asset optimization complete."
+  echo ">> Checking exported media..."
+  node "$OPTIMIZER" "$EXPORT_DIR"
 }
 
 if [ $# -eq 0 ]; then
@@ -70,21 +30,19 @@ fi
 for cmd in "$@"; do
   case "$cmd" in
     optimize)
-      optimize_assets
+      optimize_export
       ;;
     build)
-      optimize_assets
       echo ">> Building Next.js static export..."
-       npx next build
-      echo ">> Build complete. Output in out/"
+      npx next build
+      rm -f "$EXPORT_DIR/.media-optimized"
+      optimize_export
+      echo ">> Build complete. Output in $EXPORT_DIR/"
       ;;
     deploy)
-      if [ ! -d "out" ]; then
-        echo "Error: out/ directory not found. Run ./deploy.sh build first."
-        exit 1
-      fi
+      optimize_export
       echo ">> Deploying to Cloudflare Pages..."
-       npx wrangler pages deploy out
+      npx --yes wrangler pages deploy "$EXPORT_DIR" --project-name=elixpome
       echo ">> Deploy complete."
       ;;
     *)

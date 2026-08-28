@@ -36,8 +36,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "deploy": "next build && npx wrangler pages deploy out",
-    "gen:asset": "node --env-file=.env.local scripts/generate-asset.mjs"
+    "deploy": "./deploy.sh build deploy",
+    "optimize:media": "node scripts/optimize-deploy-media.mjs out",
+    "gen:asset": "node scripts/generate-asset.mjs",
+    "gen:members": "node scripts/generate-asset.mjs members"
   },
   "dependencies": {
     "express": "^5.2.1",

@@ -44,7 +44,7 @@ export default function Footer({ profile, person }) {
             <ion-icon
               key={social.platform}
               name={social.icon}
-              class="socialIcon text-xl sm:text-2xl md:text-[1.8em] cursor-pointer hover:text-white hover:-translate-y-0.5 transition-all duration-200"
+              className="socialIcon text-xl sm:text-2xl md:text-[1.8em] cursor-pointer hover:text-white hover:-translate-y-0.5 transition-all duration-200"
               onClick={() => window.open(social.url, "_blank")}
               style={{ cursor: "pointer" }}
             />

@@ -7,6 +7,21 @@ export const metadata = {
     template: "%s | Elixpo",
   },
   description: "Personalized portfolio showcase for Elixpo organization members",
+  alternates: { canonical: "/" },
+  creator: "Elixpo",
+  publisher: "Elixpo",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   manifest: "/site.webmanifest",
   openGraph: {
     type: "website",

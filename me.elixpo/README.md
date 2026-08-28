@@ -57,7 +57,7 @@ No CMS. No database. Just clean, static content that deploys to the edge.
 | | Member | Portfolio | Role |
 |---|--------|-----------|------|
 | <img src="https://github.com/Circuit-Overtime.png" width="30" style="border-radius:50%" /> | **Ayushman** | [`me.elixpo.com/ayushman`](https://me.elixpo.com/ayushman) | Founder & Lead Dev |
-| <img src="https://github.com/CSE-Anwesha.png" width="30" style="border-radius:50%" /> | **Anwesha** | [`me.elixpo.com/anwesha`](https://me.elixpo.com/anwesha) | Co-Dev & Admin |
+| <img src="https://github.com/anwe-ch.png" width="30" style="border-radius:50%" /> | **Anwesha** | [`me.elixpo.com/anwesha`](https://me.elixpo.com/anwesha) | Co-Dev & Admin |
 | <img src="https://github.com/ez-vivek.png" width="30" style="border-radius:50%" /> | **Vivek** | [`me.elixpo.com/vivek`](https://me.elixpo.com/vivek) | Frontend Developer |
 
 ### Features
