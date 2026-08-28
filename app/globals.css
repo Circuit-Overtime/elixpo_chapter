@@ -148,7 +148,8 @@ body {
 .member-ticket-shell {
   width: clamp(19rem, 62vw, 45rem);
   transform-origin: center;
-  transition: transform 760ms cubic-bezier(0.16, 1, 0.3, 1), opacity 520ms ease, filter 520ms ease;
+  will-change: transform;
+  transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms ease;
 }
 
 .member-ticket-shell:not([data-active]) {
@@ -156,18 +157,18 @@ body {
   filter: blur(5px) sepia(0.46) brightness(0.62) saturate(0.72);
 }
 
-.member-ticket-shell[data-distance="2"] { filter: blur(12px) sepia(0.55) brightness(0.42); }
+.member-ticket-shell[data-distance="2"] { filter: none; }
 .member-ticket-link { display: block; color: inherit; outline: none; }
 .member-ticket-link:focus-visible .archive-ticket { box-shadow: 0 0 0 3px #d8b674, 0 28px 80px rgba(15, 7, 2, 0.58); }
 
 .member-ticket-shell[data-active] .archive-ticket {
-  animation: archive-ticket-settle 680ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: archive-ticket-settle 420ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes archive-ticket-settle {
-  0% { transform: scale(0.955) rotateX(2deg); filter: blur(3px) brightness(0.78); }
-  58% { transform: scale(1.012) rotateX(0deg); filter: blur(0) brightness(1.04); }
-  100% { transform: scale(1); filter: blur(0) brightness(1); }
+  0% { transform: scale(0.975) rotateX(1deg); }
+  62% { transform: scale(1.006) rotateX(0deg); }
+  100% { transform: scale(1); }
 }
 
 .archive-ticket {

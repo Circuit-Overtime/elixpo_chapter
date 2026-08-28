@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import theme from "@/content/portfolio-theme.json";
 
+const CAROUSEL_MOTION_EVENT = "elixpo:carousel-motion";
+
 function coverMedia(context, media, width, height) {
   const mediaWidth = media.videoWidth || media.naturalWidth;
   const mediaHeight = media.videoHeight || media.naturalHeight;
@@ -92,6 +94,7 @@ export default function PixelBloomCanvas({
     let renderedStaticFrame = false;
     let ready = !image && !video;
     let pageVisible = !document.hidden;
+    let suspendUntil = 0;
     let glassPattern = null;
     let glassSize = 0;
     let vignette = null;
@@ -153,9 +156,14 @@ export default function PixelBloomCanvas({
       scheduleRender();
     };
 
+    const handleCarouselMotion = () => {
+      suspendUntil = performance.now() + 560;
+    };
+
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener(CAROUSEL_MOTION_EVENT, handleCarouselMotion);
     resize();
 
     function scheduleRender() {
@@ -169,6 +177,10 @@ export default function PixelBloomCanvas({
     const render = (time) => {
       frameId = 0;
       if (!ready || !pageVisible) {
+        scheduleRender();
+        return;
+      }
+      if (time < suspendUntil) {
         scheduleRender();
         return;
       }
@@ -240,6 +252,7 @@ export default function PixelBloomCanvas({
       cancelAnimationFrame(frameId);
       observer.disconnect();
       document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener(CAROUSEL_MOTION_EVENT, handleCarouselMotion);
       if (image) image.onload = null;
       if (video) {
         video.removeEventListener("loadeddata", handleVideoLoad);

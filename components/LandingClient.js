@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import PixelBloomCanvas from "@/components/PixelBloomCanvas";
 
 const LAST_PROFILE_KEY = "elixpo:last-visited-profile";
+const CAROUSEL_MOTION_EVENT = "elixpo:carousel-motion";
 
 function carouselOffset(index, activeIndex, length) {
   let offset = index - activeIndex;
@@ -37,6 +38,7 @@ export default function LandingClient({ profiles }) {
   }, [profiles, query]);
 
   const selectIndex = (index) => {
+    document.dispatchEvent(new Event(CAROUSEL_MOTION_EVENT));
     setActiveIndex((index + profiles.length) % profiles.length);
     setQuery("");
   };
@@ -50,8 +52,11 @@ export default function LandingClient({ profiles }) {
   useEffect(() => {
     if (!query.trim() || matches.length === 0) return;
     const firstMatchIndex = profiles.findIndex((profile) => profile.slug === matches[0].slug);
-    if (firstMatchIndex >= 0) setActiveIndex(firstMatchIndex);
-  }, [matches, profiles, query]);
+    if (firstMatchIndex >= 0 && firstMatchIndex !== activeIndex) {
+      document.dispatchEvent(new Event(CAROUSEL_MOTION_EVENT));
+      setActiveIndex(firstMatchIndex);
+    }
+  }, [activeIndex, matches, profiles, query]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -120,6 +125,7 @@ export default function LandingClient({ profiles }) {
                     type="button"
                     onClick={() => {
                       setActiveIndex(index);
+                      document.dispatchEvent(new Event(CAROUSEL_MOTION_EVENT));
                       setQuery(profile.siteName);
                     }}
                     role="option"
@@ -151,6 +157,7 @@ export default function LandingClient({ profiles }) {
                 aria-current={active ? "true" : undefined}
                 style={{
                   opacity: distance > 1 ? 0 : 1,
+                  visibility: distance > 1 ? "hidden" : "visible",
                   pointerEvents: distance > 1 ? "none" : "auto",
                   transform: `translateX(-50%) translateX(${offset * 82}%) translateY(-50%) scale(${active ? 1 : 0.78}) rotate(${offset * 3.5}deg)`,
                   zIndex: active ? 20 : 10 - distance,
@@ -178,15 +185,12 @@ export default function LandingClient({ profiles }) {
 
                   <div className="archive-ticket-stub">
                     <div className="archive-portrait">
-                      {distance <= 1 && (
-                        <img
-                          src={`/assets/${profile.slug}/about/ptr-11.webp`}
-                          alt={`Portrait of ${profile.siteName}`}
-                          loading={active ? "eager" : "lazy"}
-                          decoding="async"
-                          fetchPriority={active ? "high" : "low"}
-                        />
-                      )}
+                      <img
+                        src={`/assets/${profile.slug}/about/landing-card.webp`}
+                        alt={`Portrait of ${profile.siteName}`}
+                        loading="eager"
+                        decoding="async"
+                      />
                     </div>
                     <span>Member registry</span>
                     <strong>{String(index + 1).padStart(2, "0")}</strong>
