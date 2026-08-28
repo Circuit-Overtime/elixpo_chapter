@@ -98,3 +98,16 @@ Exit codes:
 - unavailable keychain: configure the OS keychain or explicitly use the documented non-persistent fallback.
 
 `lixblogs auth revoke --yes` revokes the server credential and clears its local profile. `logout` only clears local credentials.
+
+## Agent skills
+
+The package includes individually installable authoring, publishing, organization, and editorial skills:
+
+```bash
+lixblogs skill list --json
+lixblogs skill inspect lixblogs-author
+lixblogs skill install lixblogs-author --target .agents/skills --dry-run
+lixblogs skill install lixblogs-author --target .agents/skills --yes
+```
+
+Install only the workflow needed for the current task. Skill installation never overwrites an existing folder unless `--force --yes` is explicit. Each skill uses the same JSON, scope, confirmation, and recovery contracts documented above.

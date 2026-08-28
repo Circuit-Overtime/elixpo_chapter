@@ -5,7 +5,7 @@ description: Inspect LixBlogs organization memberships, roles, collections, and 
 
 # LixBlogs organizations
 
-Use `@elixpo/lixblogs-cli` 1.1.1 or newer and add `--json --no-input` for automation. Use only CLI commands; never access D1, cookies, passwords, tokens, or endpoints directly.
+Use `@elixpo/lixblogs-cli` 1.2.0 or newer and add `--json --no-input` for automation. Use only CLI commands; never access D1, cookies, passwords, tokens, or endpoints directly.
 
 ## Access
 

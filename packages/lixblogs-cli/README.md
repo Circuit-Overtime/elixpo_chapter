@@ -97,6 +97,21 @@ Viewer, editor, and admin roles grant different editorial authority. None of
 these commands publishes a post; public-state changes still use `blog publish`
 with the publish scope and a separate confirmation.
 
+### Agent skills
+
+The npm artifact bundles each skill independently:
+
+```bash
+lixblogs skill list
+lixblogs skill inspect lixblogs-author
+lixblogs skill install lixblogs-author --target .agents/skills --dry-run
+lixblogs skill install lixblogs-author --target .agents/skills --yes
+```
+
+Install only the skill needed by the current agent. Existing files are not
+replaced unless `--force --yes` is explicit. The bundled skill declares its
+minimum compatible CLI version and scopes.
+
 `create`, `edit`, `publish`, `unpublish`, `delete`, and `restore` accept
 `--dry-run`. Content input is mutually exclusive: `--file`, `--stdin`,
 `--content`, or `--editor`. Permanent deletion additionally requires

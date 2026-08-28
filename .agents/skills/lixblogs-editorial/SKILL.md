@@ -5,7 +5,7 @@ description: Manage LixBlogs collaborators, invitations, review roles, and edito
 
 # LixBlogs editorial
 
-Use `@elixpo/lixblogs-cli` 1.1.1 or newer. Automation must include `--json --no-input`. Never use D1, browser cookies, passwords, raw credentials, or direct API calls.
+Use `@elixpo/lixblogs-cli` 1.2.0 or newer. Automation must include `--json --no-input`. Never use D1, browser cookies, passwords, raw credentials, or direct API calls.
 
 ## Authority model
 

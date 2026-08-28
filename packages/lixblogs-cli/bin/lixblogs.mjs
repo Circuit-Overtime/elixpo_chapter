@@ -63,6 +63,7 @@ import {
   collabRemove,
   collabRole,
 } from "../src/commands/collab/index.js";
+import { skillInspect, skillInstall, skillList } from "../src/commands/skill/index.js";
 
 const OPTIONS = {
   profile: { type: "string" },
@@ -105,6 +106,8 @@ const OPTIONS = {
   user: { type: "string" },
   role: { type: "string" },
   "hide-on-profile": { type: "boolean", default: false },
+  target: { type: "string" },
+  force: { type: "boolean", default: false },
   help: { type: "boolean", short: "h", default: false },
 };
 
@@ -145,6 +148,9 @@ Usage:
   lixblogs collab remove <blog-id> [--user <username-or-id>] --yes
   lixblogs collab accept <blog-id> --yes [--hide-on-profile]
   lixblogs collab decline <blog-id> --yes
+  lixblogs skill list             [--json]
+  lixblogs skill inspect <name>   [--json]
+  lixblogs skill install <name>   [--target <directory>] [--dry-run] --yes
 
 Global flags:
   --profile <name>            named profile to use (default: "default")
@@ -499,6 +505,12 @@ const COLLAB_COMMANDS = {
   decline: collabDecline,
 };
 
+const SKILL_COMMANDS = {
+  list: ({ options }) => skillList(options),
+  inspect: ({ id }) => skillInspect({ name: id }),
+  install: ({ id, options }) => skillInstall({ name: id, options }),
+};
+
 async function runBlog(opts, args, action) {
   const config = resolveConfig({ flags: configFlags(opts) });
   const profileRegistry = new ProfileRegistry();
@@ -608,6 +620,25 @@ async function runCollab(opts, args, action) {
   }
 }
 
+async function runSkill(opts, args, action) {
+  try {
+    const result = await SKILL_COMMANDS[action]({ id: args[0], options: opts });
+    output(opts, { ok: true, data: result });
+    if (opts.json || opts.quiet) return;
+    if (action === 'list') {
+      for (const skill of result) console.log(`${skill.name}\tCLI >= ${skill.minimumCliVersion || 'unknown'}\t${skill.description}`);
+    } else if (action === 'inspect') {
+      process.stdout.write(result.content);
+    } else if (result.dryRun) {
+      console.log(`Dry run: install ${result.name} to ${result.target}${result.replace ? ' (replace)' : ''}.`);
+    } else {
+      console.log(`Installed ${result.name} at ${result.target}.`);
+    }
+  } catch (error) {
+    fail(opts, error);
+  }
+}
+
 const ROUTES = {
   auth: {
     login: runLogin,
@@ -629,6 +660,10 @@ const ROUTES = {
   collab: Object.fromEntries(Object.keys(COLLAB_COMMANDS).map((action) => [
     action,
     (opts, args) => runCollab(opts, args, action),
+  ])),
+  skill: Object.fromEntries(Object.keys(SKILL_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runSkill(opts, args, action),
   ])),
 };
 

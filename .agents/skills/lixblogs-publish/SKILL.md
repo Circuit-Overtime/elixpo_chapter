@@ -5,7 +5,7 @@ description: Safely preview, publish, unpublish, trash, restore, or permanently 
 
 # LixBlogs publish
 
-Use `@elixpo/lixblogs-cli` 1.1.1 or newer with `--json --no-input`. Never use D1, cookies, raw tokens, or direct HTTP calls.
+Use `@elixpo/lixblogs-cli` 1.2.0 or newer with `--json --no-input`. Never use D1, cookies, raw tokens, or direct HTTP calls.
 
 ## Access and approval
 
