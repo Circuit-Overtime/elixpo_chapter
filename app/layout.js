@@ -1,12 +1,15 @@
 import "./globals.css";
 import Script from "next/script";
+import { LANDING_DESCRIPTION, LANDING_TITLE } from "@/lib/seo";
 
 export const metadata = {
   title: {
-    default: "Elixpo",
+    default: LANDING_TITLE,
     template: "%s | Elixpo",
   },
-  description: "Personalized portfolio showcase for Elixpo organization members",
+  description: LANDING_DESCRIPTION,
+  applicationName: "Elixpo Member Portfolios",
+  category: "portfolio",
   alternates: { canonical: "/" },
   creator: "Elixpo",
   publisher: "Elixpo",
@@ -26,15 +29,17 @@ export const metadata = {
   openGraph: {
     type: "website",
     siteName: "Elixpo",
-    title: "Elixpo",
-    description: "Personalized portfolio showcase for Elixpo organization members",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Elixpo" }],
+    url: "/",
+    locale: "en_IN",
+    title: LANDING_TITLE,
+    description: LANDING_DESCRIPTION,
+    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Elixpo member portfolios" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Elixpo",
-    description: "Personalized portfolio showcase for Elixpo organization members",
-    images: ["/og-image.webp"],
+    title: LANDING_TITLE,
+    description: LANDING_DESCRIPTION,
+    images: [{ url: "/og-image.webp", alt: "Elixpo member portfolios" }],
   },
   metadataBase: new URL("https://me.elixpo.com"),
 };
