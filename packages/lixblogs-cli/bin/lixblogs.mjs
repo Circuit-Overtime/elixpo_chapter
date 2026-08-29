@@ -31,6 +31,9 @@ import { authStatus } from "../src/commands/auth/status.js";
 import { authLogout } from "../src/commands/auth/logout.js";
 import { authRevoke } from "../src/commands/auth/revoke.js";
 import { authProfiles, authUse } from "../src/commands/auth/profiles.js";
+import { IntegrationsClient } from "../src/api/IntegrationsClient.js";
+import { cloudinaryStatus } from "../src/commands/integrations/cloudinary-status.js";
+import { cloudinaryDisconnect } from "../src/commands/integrations/cloudinary-disconnect.js";
 import { ProfileRegistry, validateProfileId } from "../src/config/ProfileRegistry.js";
 import { AuthenticatedClient } from "../src/auth/AuthenticatedClient.js";
 import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
@@ -44,6 +47,7 @@ import {
   blogRestore,
   blogUnpublish,
 } from "../src/commands/blog/index.js";
+
 
 const OPTIONS = {
   profile: { type: "string" },
@@ -89,6 +93,8 @@ const OPTIONS = {
 const HELP_TEXT = `lixblogs — LixBlogs CLI
 
 Usage:
+  lixblogs integrations cloudinary-status     [--profile <name>] [--json]
+  lixblogs integrations cloudinary-disconnect [--profile <name>] [--json] [--quiet] --yes
   lixblogs auth login    [--profile <name>] [--env <environment>] [--json] [--quiet] [--allow-insecure-fallback]
   lixblogs auth status   [--profile <name>] [--json]
   lixblogs auth logout   [--profile <name>] [--json] [--quiet]
@@ -336,7 +342,44 @@ async function runRevoke(opts) {
     console.log(`Revoked and logged out profile "${profileId}".`);
   }
 }
+async function runIntegrations(opts, args, action) {
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
 
+  if (action === 'cloudinary-disconnect' && !opts.yes) {
+    return fail(
+      opts,
+      "This is a destructive action. Re-run with --yes to confirm (interactive confirmation prompt not yet implemented)."
+    );
+  }
+
+  let provider;
+  try {
+    provider = createAuthProvider(config);
+  } catch (err) {
+    return fail(opts, err.message);
+  }
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
+  if (!credentialStore) return;
+
+  const http = new AuthenticatedClient({
+    provider, credentialStore, profileId, apiBaseUrl: config.apiBaseUrl,
+  });
+  const integrationsClient = new IntegrationsClient(http);
+
+  const result = action === 'cloudinary-status'
+    ? await cloudinaryStatus({ integrationsClient })
+    : await cloudinaryDisconnect({ integrationsClient, confirmed: true });
+
+  if (!result.ok) return fail(opts, result.reason);
+  output(opts, result);
+  if (!opts.json && !opts.quiet) {
+    console.log(action === 'cloudinary-status'
+      ? `Cloudinary: ${result.data.connected ? `connected (${result.data.cloudName})` : 'not connected'}`
+      : 'Cloudinary connection disconnected.');
+  }
+}
 async function runProfiles(opts) {
   const profileRegistry = new ProfileRegistry();
   const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
@@ -437,6 +480,10 @@ const ROUTES = {
     action,
     (opts, args) => runBlog(opts, args, action),
   ])),
+    integrations: {
+      "cloudinary-status": (opts, args) => runIntegrations(opts, args, "cloudinary-status"),
+      "cloudinary-disconnect": (opts, args) => runIntegrations(opts, args, "cloudinary-disconnect"),
+  },
 };
 
 async function main() {
