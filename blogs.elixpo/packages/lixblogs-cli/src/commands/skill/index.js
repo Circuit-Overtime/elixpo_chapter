@@ -3,7 +3,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { requireConfirmation } from '../../cli/contract.js';
 
-const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
+// Source commands live at src/commands/skill; the published executable lives
+// at dist/. Supporting both keeps source-level tests and the bundled CLI on
+// the same implementation without embedding an installation path at build time.
+const packageRoot = path.basename(moduleDirectory) === 'dist'
+  ? path.resolve(moduleDirectory, '..')
+  : path.resolve(moduleDirectory, '../../..');
 const bundledRoot = path.join(packageRoot, 'skills');
 const developmentRoot = path.resolve(packageRoot, '../..', '.agents', 'skills');
 

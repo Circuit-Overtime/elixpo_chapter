@@ -47,6 +47,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
 PAGES_PROJECT="lixblogs"
 PAGES_BRANCH="main"
+RELEASE_ARTIFACT_ROOT="$SCRIPT_DIR/.release/packages"
 
 # ── Helpers ──────────────────────────────────────────────────
 
@@ -299,25 +300,134 @@ bump_selected_packages() {
   local directory
   while IFS= read -r directory; do
     [ -n "$directory" ] || continue
-    echo "==> Bumping $(basename "$directory") ($BUMP)..."
-    run_in_dir "$directory" npm version "$BUMP" --no-git-tag-version
+    local package_name current_version remote_version should_bump
+    package_name=$(node -p "require('$directory/package.json').name")
+    current_version=$(node -p "require('$directory/package.json').version")
+    should_bump=false
+
+    if $DRY_RUN || [ "${FORCE_PACKAGE_BUMP:-false}" = "true" ]; then
+      should_bump=true
+    else
+      remote_version=$(npm view "$package_name" version --registry https://registry.npmjs.org/ 2>/dev/null || true)
+      if [ "$current_version" = "$remote_version" ] || npm view "$package_name@$current_version" version --registry https://registry.npmjs.org/ >/dev/null 2>&1; then
+        should_bump=true
+      fi
+    fi
+
+    if $should_bump; then
+      echo "==> Bumping $(basename "$directory") ($BUMP)..."
+      run_in_dir "$directory" npm version "$BUMP" --no-git-tag-version
+    else
+      echo "==> Keeping unpublished $package_name@$current_version."
+    fi
+    if [ "$(basename "$directory")" = "lixeditor" ] && ! $DRY_RUN; then
+      local version
+      version=$(node -p "require('$directory/package.json').version")
+      node -e '
+        const fs = require("node:fs");
+        const [lockPath, version] = process.argv.slice(1);
+        const lock = JSON.parse(fs.readFileSync(lockPath, "utf8"));
+        if (lock.packages?.["packages/lixeditor"]) {
+          lock.packages["packages/lixeditor"].version = version;
+          fs.writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
+        }
+      ' "$SCRIPT_DIR/package-lock.json" "$version"
+    fi
   done < <(selected_package_dirs)
+}
+
+package_artifact_dir() {
+  printf '%s/%s\n' "$RELEASE_ARTIFACT_ROOT" "$(basename "$1")"
+}
+
+pack_package_artifact() {
+  local directory="$1"
+  local artifact_dir
+  artifact_dir=$(package_artifact_dir "$directory")
+
+  if $DRY_RUN; then
+    echo "[dry-run] pack $(basename "$directory") into $artifact_dir"
+    return
+  fi
+
+  mkdir -p "$artifact_dir"
+  rm -f "$artifact_dir"/*.tgz "$artifact_dir"/*.sha256
+
+  local tarball
+  tarball=$(cd "$directory" && npm pack --silent --pack-destination "$artifact_dir" | tail -n 1)
+  if [ -z "$tarball" ] || [ ! -f "$artifact_dir/$tarball" ]; then
+    echo "Error: npm did not create the expected package artifact for $(basename "$directory")."
+    exit 1
+  fi
+  (cd "$artifact_dir" && sha256sum "$tarball" > "$tarball.sha256")
+  echo "==> Packed $artifact_dir/$tarball"
 }
 
 build_selected_packages() {
   if $SELECT_LIXEDITOR; then
     echo "==> Building @elixpo/lixeditor..."
     run_in_dir "$SCRIPT_DIR/packages/lixeditor" npm run build
+    pack_package_artifact "$SCRIPT_DIR/packages/lixeditor"
   fi
   if $SELECT_CLI; then
-    echo "==> Verifying @elixpo/lixblogs-cli package..."
-    run_in_dir "$SCRIPT_DIR/packages/lixblogs-cli" npm test
-    run_in_dir "$SCRIPT_DIR/packages/lixblogs-cli" npm pack --dry-run
+    echo "==> Building and verifying @elixpo/lixblogs-cli package..."
+    pack_package_artifact "$SCRIPT_DIR/packages/lixblogs-cli"
   fi
+}
+
+package_artifact() {
+  local directory="$1"
+  local artifact_dir
+  artifact_dir=$(package_artifact_dir "$directory")
+
+  if $DRY_RUN; then
+    printf '%s/%s-dry-run.tgz\n' "$artifact_dir" "$(basename "$directory")"
+    return
+  fi
+
+  local artifacts=("$artifact_dir"/*.tgz)
+  if [ ${#artifacts[@]} -ne 1 ] || [ ! -f "${artifacts[0]}" ]; then
+    echo "Error: expected one packed artifact in $artifact_dir. Run the build phase first." >&2
+    exit 1
+  fi
+  printf '%s\n' "${artifacts[0]}"
+}
+
+published_artifact_matches() {
+  local package_name="$1"
+  local version="$2"
+  local artifact="$3"
+  local registry="$4"
+  local auth_token="${5:-}"
+  local remote_integrity=""
+  local local_integrity
+
+  if [ -n "$auth_token" ]; then
+    remote_integrity=$(npm view "$package_name@$version" dist.integrity \
+      --registry "$registry" \
+      "--//${registry#https://}:_authToken=$auth_token" 2>/dev/null || true)
+  else
+    remote_integrity=$(npm view "$package_name@$version" dist.integrity \
+      --registry "$registry" 2>/dev/null || true)
+  fi
+  [ -n "$remote_integrity" ] || return 1
+
+  local_integrity=$(node -e '
+    const { createHash } = require("node:crypto");
+    const { readFileSync } = require("node:fs");
+    process.stdout.write(`sha512-${createHash("sha512").update(readFileSync(process.argv[1])).digest("base64")}`);
+  ' "$artifact")
+  if [ "$local_integrity" != "$remote_integrity" ]; then
+    echo "Error: $package_name@$version already exists at $registry with different contents." >&2
+    exit 1
+  fi
+  echo "==> $package_name@$version already exists at $registry with matching integrity; skipping."
 }
 
 publish_npm_package() {
   local directory="$1"
+  local artifact
+  artifact=$(package_artifact "$directory")
   local package_name
   case "$(basename "$directory")" in
     lixeditor) package_name="@elixpo/lixeditor" ;;
@@ -325,17 +435,27 @@ publish_npm_package() {
     *) package_name="$(basename "$directory")" ;;
   esac
   echo "==> Publishing $package_name to npm..."
+  local version
+  version=$(node -p "require('$directory/package.json').version")
+
+  if ! $DRY_RUN && published_artifact_matches "$package_name" "$version" "$artifact" "https://registry.npmjs.org/"; then
+    return
+  fi
 
   if [ -n "$NPM_PUBLISH_TOKEN" ]; then
-    run_in_dir "$directory" npm publish --access public \
+    run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \
       --registry https://registry.npmjs.org/ \
+      --provenance \
       "--//registry.npmjs.org/:_authToken=$NPM_PUBLISH_TOKEN"
+  elif [ "${NPM_TRUSTED_PUBLISHING:-false}" = "true" ]; then
+    run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \
+      --registry https://registry.npmjs.org/ --provenance
   else
     if ! $DRY_RUN && ! npm whoami --registry https://registry.npmjs.org/ >/dev/null 2>&1; then
       echo "Error: npm is not authenticated. Run 'npm login' or set NPM_TOKEN."
       exit 1
     fi
-    run_in_dir "$directory" npm publish --access public \
+    run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \
       --registry https://registry.npmjs.org/
   fi
 }
@@ -344,7 +464,7 @@ publish_selected_npm_packages() {
   NPM_PUBLISH_TOKEN="${NPM_TOKEN:-}"
   if $DRY_RUN; then
     NPM_PUBLISH_TOKEN="dry-run"
-  elif [ -z "$NPM_PUBLISH_TOKEN" ] && ! npm whoami --registry https://registry.npmjs.org/ >/dev/null 2>&1; then
+  elif [ -z "$NPM_PUBLISH_TOKEN" ] && [ "${NPM_TRUSTED_PUBLISHING:-false}" != "true" ] && ! npm whoami --registry https://registry.npmjs.org/ >/dev/null 2>&1; then
     load_env
     NPM_PUBLISH_TOKEN="${NPM_TOKEN:-}"
   fi
@@ -357,6 +477,8 @@ publish_selected_npm_packages() {
 
 publish_github_package() {
   local directory="$1"
+  local artifact
+  artifact=$(package_artifact "$directory")
   local package_name
   case "$(basename "$directory")" in
     lixeditor) package_name="@elixpo/lixeditor" ;;
@@ -370,7 +492,13 @@ publish_github_package() {
     exit 1
   fi
 
-  run_in_dir "$directory" npm publish --access public \
+  local version
+  version=$(node -p "require('$directory/package.json').version")
+  if ! $DRY_RUN && published_artifact_matches "$package_name" "$version" "$artifact" "https://npm.pkg.github.com/" "$GITHUB_PUBLISH_TOKEN"; then
+    return
+  fi
+
+  run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \
     --registry https://npm.pkg.github.com/ \
     "--//npm.pkg.github.com/:_authToken=$GITHUB_PUBLISH_TOKEN"
 }
@@ -395,6 +523,9 @@ publish_selected_github_packages() {
 
 vscode_build() {
   echo "==> Building VS Code extension..."
+  if ! $DRY_RUN; then
+    rm -f "$SCRIPT_DIR/packages/vscode-lixeditor"/*.vsix
+  fi
   run_in_dir "$SCRIPT_DIR/packages/vscode-lixeditor" npm run build
   run_in_dir "$SCRIPT_DIR/packages/vscode-lixeditor" npx @vscode/vsce package --no-dependencies
 }
@@ -411,9 +542,16 @@ vscode_deploy() {
     echo "Error: VSCE_PAT is required to publish the VS Code extension."
     exit 1
   fi
+  local artifacts=("$SCRIPT_DIR/packages/vscode-lixeditor"/*.vsix)
+  if ! $DRY_RUN && { [ ${#artifacts[@]} -ne 1 ] || [ ! -f "${artifacts[0]}" ]; }; then
+    echo "Error: expected one VS Code package. Run the build phase first."
+    exit 1
+  fi
+  local artifact="${artifacts[0]}"
+  $DRY_RUN && artifact="$SCRIPT_DIR/packages/vscode-lixeditor/lixeditor-dry-run.vsix"
   echo "==> Publishing VS Code extension..."
   run_in_dir "$SCRIPT_DIR/packages/vscode-lixeditor" npx @vscode/vsce publish \
-    --no-dependencies --pat "$VSCE_PUBLISH_TOKEN"
+    --packagePath "$artifact" --pat "$VSCE_PUBLISH_TOKEN"
 }
 
 run_target_standard() {

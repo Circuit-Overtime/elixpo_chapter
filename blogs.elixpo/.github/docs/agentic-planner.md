@@ -117,7 +117,7 @@ These are not part of the organization agent bundle:
 - `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`: production deployment.
 - `ELIXPO_PAY_API_KEY`: payout catalog and deployment configuration.
 - `MODERATION_SECRET`: moderation workflow authentication.
-- `NPM_LIXEDITOR_PUBLISH_TOKEN`: npm publishing.
+- `NPM_TOKEN`: npm publishing for LixEditor and the LixBlogs CLI.
 - `VSCODE_LIXSKETCH_EXT_PUBLISH_TOKEN`: VS Code Marketplace publishing.
 
 ## Cost-aware routes

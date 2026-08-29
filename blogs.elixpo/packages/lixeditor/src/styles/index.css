@@ -2,9 +2,9 @@
  * @elixpo/lixeditor styles
  * Import in your app: import '@elixpo/lixeditor/styles';
  *
- * KaTeX is bundled inline (the package depends on katex directly) so
- * BlockEquation / InlineEquation render correctly without consumers
- * needing a separate `import 'katex/dist/katex.min.css'` line.
+ * KaTeX remains an automatic import (the package depends on it directly) so
+ * equations render without a second consumer import. The package build keeps
+ * this dependency import external to avoid duplicating KaTeX's font assets.
  */
 
 @import 'katex/dist/katex.min.css';
