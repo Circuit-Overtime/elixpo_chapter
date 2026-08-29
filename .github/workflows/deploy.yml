@@ -115,7 +115,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
       - name: Use a trusted-publishing capable npm
         run: npm install --global npm@latest
       - name: Install package dependencies
