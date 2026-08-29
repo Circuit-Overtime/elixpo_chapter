@@ -173,10 +173,11 @@ Global flags:
 - The mock provider is available only with an explicit non-production
   environment, for example `--env development --auth-provider mock`.
 - The resource contract, scopes, pagination, errors, and mutation guarantees
-  are documented in [API.md](API.md).
+  are documented in the [API reference](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/API.md).
 - Release compatibility, provenance, smoke gates, and rollback are documented
-  in [RELEASE.md](RELEASE.md). Contract changes are summarized in
-  [CHANGELOG.md](CHANGELOG.md).
+  in the [release policy](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/RELEASE.md).
+  Contract changes are summarized in the
+  [changelog](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/CHANGELOG.md).
 
 The production client is public and has no client secret. Never add one to
 CLI configuration, package files, or GitHub secrets.
@@ -210,14 +211,15 @@ npm test          # runs the full CLI test suite
 
 Tests exercise both a mocked auth provider and, where relevant, the real
 OS keychain backend on whatever machine runs them — see
-`THREAT_MODEL.md` and inline comments in `src/config/KeychainCredentialStore.js`
+the [threat model](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/THREAT_MODEL.md)
+and inline comments in `src/config/KeychainCredentialStore.js`
 for known platform-specific behavior (e.g. a documented WSL/keyring-rs quirk).
 
 ## Architecture
 
 ```
-bin/lixblogs.mjs         CLI entry point (Node's native util.parseArgs, no
-                         third-party parsing dependency)
+bin/lixblogs.mjs         Source CLI entry point (Node's native util.parseArgs)
+dist/lixblogs.mjs        Minified executable shipped in the npm package
 src/auth/                Accounts provider, development mock, refresh-safe
                          authenticated client, and production safety gate
 src/commands/auth/       Command logic (login, status, logout, revoke) —
@@ -228,7 +230,7 @@ src/content/             Dependency-free Markdown/block conversion
 src/config/              Credential storage (real keychain + gated fallback),
                          profile registry, config resolution, token redaction
 tests/                   Full test suite
-THREAT_MODEL.md          Security threat model for the auth system
+THREAT_MODEL.md          Security threat model (repository documentation)
 ```
 
 Command logic under `src/commands/` is deliberately decoupled from the CLI

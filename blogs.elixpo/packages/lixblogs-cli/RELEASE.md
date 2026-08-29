@@ -10,16 +10,23 @@
 
 ## Release
 
-1. Update the package version and `CHANGELOG.md` in a reviewed PR.
-2. Run the manual **LixBlogs CLI release gate**. It tests the package, installs the exact tarball, checks bundled skills, verifies Blogs resource contracts, and runs the Accounts device-flow contract.
-3. Tag the reviewed commit as `lixblogs-cli-vX.Y.Z`.
-4. The publish workflow reruns the gate, checks that tag and package versions match, attests the tarball, publishes it through npm trusted publishing with provenance, and creates generated GitHub release notes.
+1. Merge a reviewed CLI change to `main`, or manually dispatch **Deploy** with the `packages` target.
+2. `deploy.yml` selects the CLI branch from the changed paths and calls `./deploy.sh --package --cli build`.
+3. The deployment enforces the size and smoke contracts, signs the exact checksummed tarball, then passes it back to `deploy.sh` for npm and GitHub Packages publishing.
+4. The workflow commits the generated patch version with `[skip deploy]`, creates `lixblogs-cli-vX.Y.Z`, and attaches the tarball and checksum to the GitHub release.
 
-No npm token is stored in this workflow. The npm package must configure this repository and `publish-lixblogs-cli.yml` as a trusted publisher.
+The `npm` environment must expose `NPM_TOKEN` with publish access to both scoped packages. GitHub Packages uses the workflow token with `packages: write`.
+
+Consumers can verify a downloaded release with:
+
+```bash
+sha256sum --check elixpo-lixblogs-cli-*.tgz.sha256
+gh attestation verify elixpo-lixblogs-cli-*.tgz --repo elixpo/blogs.elixpo
+```
 
 ## Smoke criteria
 
-The packed artifact must install into an empty prefix, render `--help`, discover all five scoped skills, and pass auth, blog lifecycle, organization, collaboration, and analytics command tests. Accounts must pass device approval, refresh rotation, replay protection, and revocation. Blogs must pass bearer validation, concurrency/idempotency, analytics, and media request-boundary tests.
+The packed artifact must remain within the [100 KiB distribution budget](SIZE_BUDGET.md), install into an empty prefix, render `--help`, discover all five scoped skills, and pass auth, blog lifecycle, organization, collaboration, and analytics command tests. Accounts must pass device approval, refresh rotation, replay protection, and revocation. Blogs must pass bearer validation, concurrency/idempotency, analytics, and media request-boundary tests.
 
 ## Rollback
 
