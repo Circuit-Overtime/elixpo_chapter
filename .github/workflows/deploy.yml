@@ -115,7 +115,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Use a trusted-publishing capable npm
+      - name: Use a provenance-capable npm
         run: npm install --global npm@latest
       - name: Install package dependencies
         env:
@@ -177,8 +177,12 @@ jobs:
           subject-path: .release/packages/**/*.tgz
       - name: Publish exact artifacts to npm
         env:
-          NPM_TRUSTED_PUBLISHING: 'true'
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error::NPM_TOKEN is not available in the npm environment."
+            exit 1
+          fi
           args=(--package --no-bump)
           if [ "${{ needs.changes.outputs.lixeditor }}" = "true" ] && [ "${{ needs.changes.outputs.cli }}" != "true" ]; then args+=(--lixeditor); fi
           if [ "${{ needs.changes.outputs.cli }}" = "true" ] && [ "${{ needs.changes.outputs.lixeditor }}" != "true" ]; then args+=(--cli); fi

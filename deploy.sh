@@ -393,6 +393,37 @@ package_artifact() {
   printf '%s\n' "${artifacts[0]}"
 }
 
+published_artifact_matches() {
+  local package_name="$1"
+  local version="$2"
+  local artifact="$3"
+  local registry="$4"
+  local auth_token="${5:-}"
+  local remote_integrity=""
+  local local_integrity
+
+  if [ -n "$auth_token" ]; then
+    remote_integrity=$(npm view "$package_name@$version" dist.integrity \
+      --registry "$registry" \
+      "--//${registry#https://}:_authToken=$auth_token" 2>/dev/null || true)
+  else
+    remote_integrity=$(npm view "$package_name@$version" dist.integrity \
+      --registry "$registry" 2>/dev/null || true)
+  fi
+  [ -n "$remote_integrity" ] || return 1
+
+  local_integrity=$(node -e '
+    const { createHash } = require("node:crypto");
+    const { readFileSync } = require("node:fs");
+    process.stdout.write(`sha512-${createHash("sha512").update(readFileSync(process.argv[1])).digest("base64")}`);
+  ' "$artifact")
+  if [ "$local_integrity" != "$remote_integrity" ]; then
+    echo "Error: $package_name@$version already exists at $registry with different contents." >&2
+    exit 1
+  fi
+  echo "==> $package_name@$version already exists at $registry with matching integrity; skipping."
+}
+
 publish_npm_package() {
   local directory="$1"
   local artifact
@@ -404,10 +435,17 @@ publish_npm_package() {
     *) package_name="$(basename "$directory")" ;;
   esac
   echo "==> Publishing $package_name to npm..."
+  local version
+  version=$(node -p "require('$directory/package.json').version")
+
+  if ! $DRY_RUN && published_artifact_matches "$package_name" "$version" "$artifact" "https://registry.npmjs.org/"; then
+    return
+  fi
 
   if [ -n "$NPM_PUBLISH_TOKEN" ]; then
     run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \
       --registry https://registry.npmjs.org/ \
+      --provenance \
       "--//registry.npmjs.org/:_authToken=$NPM_PUBLISH_TOKEN"
   elif [ "${NPM_TRUSTED_PUBLISHING:-false}" = "true" ]; then
     run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \
@@ -452,6 +490,12 @@ publish_github_package() {
   if [ -z "$GITHUB_PUBLISH_TOKEN" ]; then
     echo "Error: GITHUB_ACCESS_TOKEN or GH_TOKEN is required for GitHub Packages."
     exit 1
+  fi
+
+  local version
+  version=$(node -p "require('$directory/package.json').version")
+  if ! $DRY_RUN && published_artifact_matches "$package_name" "$version" "$artifact" "https://npm.pkg.github.com/" "$GITHUB_PUBLISH_TOKEN"; then
+    return
   fi
 
   run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \

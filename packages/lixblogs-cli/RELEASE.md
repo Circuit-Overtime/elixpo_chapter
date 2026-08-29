@@ -15,7 +15,7 @@
 3. The deployment enforces the size and smoke contracts, signs the exact checksummed tarball, then passes it back to `deploy.sh` for npm and GitHub Packages publishing.
 4. The workflow commits the generated patch version with `[skip deploy]`, creates `lixblogs-cli-vX.Y.Z`, and attaches the tarball and checksum to the GitHub release.
 
-No npm token is stored in this workflow. The npm package must configure this repository and `deploy.yml` as a trusted publisher.
+The `npm` environment must expose `NPM_TOKEN` with publish access to both scoped packages. GitHub Packages uses the workflow token with `packages: write`.
 
 Consumers can verify a downloaded release with:
 
