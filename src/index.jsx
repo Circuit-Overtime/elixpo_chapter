@@ -115,9 +115,9 @@ function DailyTipCard({ user, authLoading }) {
         <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ color: 'var(--accent)', backgroundColor: 'var(--bg-surface)' }}>
           <ion-icon name="bulb-outline" style={{ fontSize: '17px' }} />
         </div>
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--accent)' }}>Tip of the day</p>
-          <p className="mt-1 text-[13px] leading-5" style={{ color: 'var(--text-body)' }}>{dailyTip.tip}</p>
+        <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--accent)' }}>Tip of the day</p>
+          <p className="mt-1 text-[13px] leading-5 break-words" style={{ color: \'var(--text-body)\' }}>{dailyTip.tip}</p>
         </div>
       </div>
       <button
