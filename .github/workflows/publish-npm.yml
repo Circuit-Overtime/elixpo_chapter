@@ -181,8 +181,6 @@ jobs:
           --provenance
 
       # ── Mirror to GitHub Packages ───────────────────────────────────
-      # GitHub Packages requires `repository.url` to match the running
-      # repo, so we rewrite it just-in-time and restore it.
       - name: Reconfigure Node for GitHub Packages
         uses: actions/setup-node@v4
         with:
@@ -203,29 +201,14 @@ jobs:
         # Or replace `secrets.GITHUB_TOKEN` with a PAT that has the
         # `write:packages` scope.
         continue-on-error: true
-        working-directory: packages/lixeditor
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ORIGINAL_REPO=$(node -p "JSON.stringify(require('./package.json').repository || null)")
-          node -e "
-            const fs = require('fs');
-            const pkg = require('./package.json');
-            pkg.repository = { type: 'git', url: 'git+https://github.com/${{ github.repository }}.git' };
-            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          if npm publish --access public --registry https://npm.pkg.github.com; then
+          if npm publish "release-artifacts/lixeditor/${{ steps.package.outputs.tarball }}" --access public --registry https://npm.pkg.github.com; then
             echo "::notice::Published to GitHub Packages."
           else
             echo "::warning::GitHub Packages publish failed (likely permission_denied: write_package). The npmjs publish above is canonical; this mirror is best-effort. See the comment in this step for how to fix the org permissions."
           fi
-          node -e "
-            const fs = require('fs');
-            const pkg = require('./package.json');
-            const orig = $ORIGINAL_REPO;
-            if (orig) pkg.repository = orig; else delete pkg.repository;
-            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
 
       # ── Commit the auto-bumped version back to main ─────────────────
       # Only runs when we actually bumped this run; if the human already
@@ -245,11 +228,30 @@ jobs:
           git push origin HEAD:main
 
       - name: Tag the release
-        if: steps.version.outputs.auto_bumped == 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          if git rev-parse "refs/tags/lixeditor-v${VERSION}" >/dev/null 2>&1; then
+            echo "Tag lixeditor-v${VERSION} already exists."
+            exit 0
+          fi
           git tag -a "lixeditor-v${VERSION}" -m "lixeditor v${VERSION}"
           git push origin "lixeditor-v${VERSION}"
+
+      - name: Publish checksum and package on GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="lixeditor-v${{ steps.version.outputs.version }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-artifacts/lixeditor/*.tgz release-artifacts/lixeditor/*.sha256 --clobber
+          else
+            gh release create "$TAG" \
+              release-artifacts/lixeditor/*.tgz \
+              release-artifacts/lixeditor/*.sha256 \
+              --verify-tag \
+              --generate-notes \
+              --title "@elixpo/lixeditor ${{ steps.version.outputs.version }}"
+          fi
 
       - name: Summary
         run: |
