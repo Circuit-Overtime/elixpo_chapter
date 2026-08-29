@@ -10,12 +10,12 @@
 
 ## Release
 
-1. Update the package version and `CHANGELOG.md` in a reviewed PR.
-2. Run the manual **LixBlogs CLI release gate**. It tests the package, installs the exact tarball, checks bundled skills, verifies Blogs resource contracts, and runs the Accounts device-flow contract.
-3. Tag the reviewed commit as `lixblogs-cli-vX.Y.Z`.
-4. The publish workflow reruns the gate, checks that tag and package versions match, verifies the SHA-256 checksum, signs a GitHub/Sigstore build-provenance attestation for the exact tarball, publishes that tarball through npm trusted publishing and GitHub Packages, and creates generated GitHub release notes.
+1. Merge a reviewed CLI change to `main`, or manually dispatch **Deploy** with the `packages` target.
+2. `deploy.yml` selects the CLI branch from the changed paths and calls `./deploy.sh --package --cli build`.
+3. The deployment enforces the size and smoke contracts, signs the exact checksummed tarball, then passes it back to `deploy.sh` for npm and GitHub Packages publishing.
+4. The workflow commits the generated patch version with `[skip deploy]`, creates `lixblogs-cli-vX.Y.Z`, and attaches the tarball and checksum to the GitHub release.
 
-No npm token is stored in this workflow. The npm package must configure this repository and `publish-lixblogs-cli.yml` as a trusted publisher.
+No npm token is stored in this workflow. The npm package must configure this repository and `deploy.yml` as a trusted publisher.
 
 Consumers can verify a downloaded release with:
 

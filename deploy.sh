@@ -300,8 +300,26 @@ bump_selected_packages() {
   local directory
   while IFS= read -r directory; do
     [ -n "$directory" ] || continue
-    echo "==> Bumping $(basename "$directory") ($BUMP)..."
-    run_in_dir "$directory" npm version "$BUMP" --no-git-tag-version
+    local package_name current_version remote_version should_bump
+    package_name=$(node -p "require('$directory/package.json').name")
+    current_version=$(node -p "require('$directory/package.json').version")
+    should_bump=false
+
+    if $DRY_RUN || [ "${FORCE_PACKAGE_BUMP:-false}" = "true" ]; then
+      should_bump=true
+    else
+      remote_version=$(npm view "$package_name" version --registry https://registry.npmjs.org/ 2>/dev/null || true)
+      if [ "$current_version" = "$remote_version" ] || npm view "$package_name@$current_version" version --registry https://registry.npmjs.org/ >/dev/null 2>&1; then
+        should_bump=true
+      fi
+    fi
+
+    if $should_bump; then
+      echo "==> Bumping $(basename "$directory") ($BUMP)..."
+      run_in_dir "$directory" npm version "$BUMP" --no-git-tag-version
+    else
+      echo "==> Keeping unpublished $package_name@$current_version."
+    fi
     if [ "$(basename "$directory")" = "lixeditor" ] && ! $DRY_RUN; then
       local version
       version=$(node -p "require('$directory/package.json').version")
