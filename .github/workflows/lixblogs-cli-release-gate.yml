@@ -23,7 +23,7 @@ jobs:
         run: |
           npm ci
           npm test
-      - name: Pack the release artifact
+      - name: Build and pack the release artifact
         id: pack
         working-directory: packages/lixblogs-cli
         run: |
@@ -31,7 +31,23 @@ jobs:
           TARBALL=$(npm pack --silent | tail -n 1)
           test -n "$TARBALL"
           mv "$TARBALL" ../../dist/
+          cd ../..
+          PACK_ROOT="$RUNNER_TEMP/lixblogs-package"
+          mkdir -p "$PACK_ROOT"
+          tar -xzf "dist/$TARBALL" -C "$PACK_ROOT"
+          UNPACKED_BYTES=$(find "$PACK_ROOT/package" -type f -printf '%s\n' | awk '{ total += $1 } END { print total + 0 }')
+          PACKED_BYTES=$(wc -c < "dist/$TARBALL")
+          if [ "$UNPACKED_BYTES" -gt 102400 ]; then
+            echo "Package is ${UNPACKED_BYTES} bytes unpacked; the release budget is 102400 bytes." >&2
+            exit 1
+          fi
+          cd dist
+          sha256sum "$TARBALL" > "$TARBALL.sha256"
+          cd ..
+          echo "Packed: ${PACKED_BYTES} bytes; unpacked: ${UNPACKED_BYTES} bytes (budget: 102400)."
           echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+          echo "packed_bytes=$PACKED_BYTES" >> "$GITHUB_OUTPUT"
+          echo "unpacked_bytes=$UNPACKED_BYTES" >> "$GITHUB_OUTPUT"
       - name: Install and smoke-test the packed artifact
         run: |
           TARBALL="dist/${{ steps.pack.outputs.tarball }}"
@@ -42,7 +58,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: lixblogs-cli-package
-          path: dist/*.tgz
+          path: |
+            dist/*.tgz
+            dist/*.sha256
           if-no-files-found: error
 
   blogs-contract:
