@@ -42,9 +42,12 @@ jobs:
           PACKAGE_VERSION=$(node -p "require('./packages/lixblogs-cli/package.json').version")
           test "$GITHUB_REF_NAME" = "lixblogs-cli-v${PACKAGE_VERSION}"
       - name: Attest package provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest@v4
         with:
           subject-path: dist/*.tgz
+      - name: Verify release checksum
+        working-directory: dist
+        run: sha256sum --check *.sha256
       - name: Publish to npm with provenance
         run: npm publish dist/*.tgz --access public --provenance
       - name: Publish generated changelog and artifact
@@ -52,6 +55,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release create "lixblogs-cli-v$(node -p "require('./packages/lixblogs-cli/package.json').version")"
-          dist/*.tgz
+          dist/*.tgz dist/*.sha256
           --generate-notes
           --title "@elixpo/lixblogs-cli $(node -p "require('./packages/lixblogs-cli/package.json').version")"
