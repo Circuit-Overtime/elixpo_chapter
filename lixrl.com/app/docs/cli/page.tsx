@@ -133,6 +133,14 @@ lixrl --help`}</Command>
       <Command>{`lixrl login --open
 lixrl whoami`}</Command>
       <p className={P}>
+        Running <code className="font-mono">lixrl login</code> again reuses a
+        valid key already stored for the selected profile. Use{' '}
+        <code className="font-mono">lixrl login --force</code> only to rotate it.
+        The CLI cannot revoke account keys during device login; when the limit
+        is full, revoke one in the browser, wait for the **Revoked** status, and
+        then press Enter in the terminal.
+      </p>
+      <p className={P}>
         Read-only keys can list links, analytics, and exports without changing
         data. Read/write keys can also create, update, disable, and delete
         links. The approval screen shows the active-key allowance for your plan.

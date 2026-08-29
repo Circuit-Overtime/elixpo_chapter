@@ -45,6 +45,7 @@ export default function ApiKeysPage() {
   // Revoke confirm state
   const [revokeTarget, setRevokeTarget] = useState<ApiKey | null>(null);
   const [revoking, setRevoking] = useState(false);
+  const [revokeError, setRevokeError] = useState('');
 
   const fetchKeys = async () => {
     const res = await fetch('/api/keys');
@@ -86,11 +87,19 @@ export default function ApiKeysPage() {
 
   const handleRevokeConfirm = async () => {
     if (!revokeTarget) return;
+    setRevokeError('');
     setRevoking(true);
     try {
-      await fetch(`/api/keys/${revokeTarget.id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/keys/${revokeTarget.id}`, { method: 'DELETE' });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        setRevokeError(data?.error || 'The key could not be revoked. Refresh and try again.');
+        return;
+      }
       setRevokeTarget(null);
-      fetchKeys();
+      await fetchKeys();
+    } catch {
+      setRevokeError('Could not reach Lixrl. Check your connection and try again.');
     } finally {
       setRevoking(false);
     }
@@ -275,7 +284,10 @@ export default function ApiKeysPage() {
                   {k.is_active === 1 && (
                     <button
                       type="button"
-                      onClick={() => setRevokeTarget(k)}
+                      onClick={() => {
+                        setRevokeError('');
+                        setRevokeTarget(k);
+                      }}
                       className="text-xs text-white/55 hover:text-[#f87171] transition-colors px-2 py-1"
                       style={{ background: 'transparent', border: 'none' }}
                     >
@@ -475,13 +487,19 @@ export default function ApiKeysPage() {
       {/* ─────── Revoke confirm ─────── */}
       <ConfirmDialog
         open={!!revokeTarget}
-        onClose={() => !revoking && setRevokeTarget(null)}
+        onClose={() => {
+          if (!revoking) {
+            setRevokeError('');
+            setRevokeTarget(null);
+          }
+        }}
         onConfirm={handleRevokeConfirm}
         title={`Revoke "${revokeTarget?.name ?? ''}"?`}
         description="Any app using this key will lose access immediately. This cannot be undone."
         confirmLabel="Revoke key"
         variant="danger"
         loading={revoking}
+        error={revokeError}
       />
     </div>
   );
