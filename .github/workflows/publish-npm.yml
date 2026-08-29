@@ -20,6 +20,8 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
+  attestations: write
 
 jobs:
   publish:
@@ -104,6 +106,63 @@ jobs:
             echo "auto_bumped=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Build and pack the exact release artifact
+        id: package
+        working-directory: packages/lixeditor
+        run: |
+          npm run build
+          TARBALL=$(npm pack --silent | tail -n 1)
+          test -n "$TARBALL"
+          ARTIFACT_DIR="$GITHUB_WORKSPACE/release-artifacts/lixeditor"
+          mkdir -p "$ARTIFACT_DIR"
+          mv "$TARBALL" "$ARTIFACT_DIR/"
+
+          PACK_ROOT=$(mktemp -d)
+          tar -xzf "$ARTIFACT_DIR/$TARBALL" -C "$PACK_ROOT"
+          UNPACKED_BYTES=$(find "$PACK_ROOT/package" -type f -printf '%s\n' | awk '{ total += $1 } END { print total + 0 }')
+          PACKED_BYTES=$(wc -c < "$ARTIFACT_DIR/$TARBALL")
+          if [ "$UNPACKED_BYTES" -gt 256000 ]; then
+            echo "Package is ${UNPACKED_BYTES} bytes unpacked; the release budget is 256000 bytes." >&2
+            exit 1
+          fi
+
+          test -f "$PACK_ROOT/package/dist/index.js"
+          test -f "$PACK_ROOT/package/dist/index.cjs"
+          test -f "$PACK_ROOT/package/dist/styles/index.css"
+          test -f "$PACK_ROOT/package/index.d.ts"
+          test ! -d "$PACK_ROOT/package/src"
+          test -z "$(find "$PACK_ROOT/package" -name '*.map' -print -quit)"
+          grep -q '@import"katex/dist/katex.min.css"' "$PACK_ROOT/package/dist/styles/index.css"
+          for SYMBOL in LixEditor LixPreview LixThemeProvider MermaidBlock BlockEquation; do
+            grep -q "$SYMBOL" "$PACK_ROOT/package/dist/index.js"
+            grep -q "$SYMBOL" "$PACK_ROOT/package/dist/index.cjs"
+          done
+
+          cd "$ARTIFACT_DIR"
+          sha256sum "$TARBALL" > "$TARBALL.sha256"
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+          echo "packed_bytes=$PACKED_BYTES" >> "$GITHUB_OUTPUT"
+          echo "unpacked_bytes=$UNPACKED_BYTES" >> "$GITHUB_OUTPUT"
+          echo "Packed: ${PACKED_BYTES} bytes; unpacked: ${UNPACKED_BYTES} bytes (budget: 256000)."
+
+      - name: Upload packed release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lixeditor-package
+          path: |
+            release-artifacts/lixeditor/*.tgz
+            release-artifacts/lixeditor/*.sha256
+          if-no-files-found: error
+
+      - name: Attest GitHub build provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: release-artifacts/lixeditor/*.tgz
+
+      - name: Verify release checksum
+        working-directory: release-artifacts/lixeditor
+        run: sha256sum --check *.sha256
+
       # ── Publish to npmjs ────────────────────────────────────────────
       # The `actions/setup-node@v4` step above with `registry-url` writes
       # a project-level `.npmrc` that maps the registry to `${NODE_AUTH_
@@ -113,10 +172,13 @@ jobs:
       # but were producing E404 "Not Found - PUT" here — npm treats that
       # as auth-failed and returns 404 rather than 403.
       - name: Publish to NPM
-        working-directory: packages/lixeditor
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_LIXEDITOR_PUBLISH_TOKEN }}
-        run: npm publish --access public
+        run: >-
+          npm publish
+          "release-artifacts/lixeditor/${{ steps.package.outputs.tarball }}"
+          --access public
+          --provenance
 
       # ── Mirror to GitHub Packages ───────────────────────────────────
       # GitHub Packages requires `repository.url` to match the running
