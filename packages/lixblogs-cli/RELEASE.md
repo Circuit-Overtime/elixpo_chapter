@@ -13,7 +13,7 @@
 1. Update the package version and `CHANGELOG.md` in a reviewed PR.
 2. Run the manual **LixBlogs CLI release gate**. It tests the package, installs the exact tarball, checks bundled skills, verifies Blogs resource contracts, and runs the Accounts device-flow contract.
 3. Tag the reviewed commit as `lixblogs-cli-vX.Y.Z`.
-4. The publish workflow reruns the gate, checks that tag and package versions match, verifies the SHA-256 checksum, signs a GitHub/Sigstore build-provenance attestation for the exact tarball, publishes it through npm trusted publishing with provenance, and creates generated GitHub release notes.
+4. The publish workflow reruns the gate, checks that tag and package versions match, verifies the SHA-256 checksum, signs a GitHub/Sigstore build-provenance attestation for the exact tarball, publishes that tarball through npm trusted publishing and GitHub Packages, and creates generated GitHub release notes.
 
 No npm token is stored in this workflow. The npm package must configure this repository and `publish-lixblogs-cli.yml` as a trusted publisher.
 

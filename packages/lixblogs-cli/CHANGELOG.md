@@ -2,6 +2,13 @@
 
 Release notes are generated from merged pull requests. This file records contract-level changes that users must see before upgrading.
 
+## 1.4.2
+
+- Use the package-local, lockfile-pinned esbuild binary so packing does not
+  depend on an ephemeral `npx` cache.
+- Publish the attested release tarball to GitHub Packages as well as npm and
+  GitHub Releases.
+
 ## 1.3.4
 
 - Ship the complete CLI as one minified Node executable while retaining the
