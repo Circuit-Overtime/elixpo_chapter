@@ -101,6 +101,17 @@ export async function promptConfirm(label, { input = process.stdin, output = pro
   }
 }
 
+export async function promptEnter(label, { input = process.stdin, output = process.stderr } = {}) {
+  if (!input.isTTY || !output.isTTY) return false;
+  const prompt = createInterface({ input, output });
+  try {
+    await prompt.question(`${label}\nPress Enter to retry.`);
+    return true;
+  } finally {
+    prompt.close();
+  }
+}
+
 export async function promptSecret(label = 'Lixrl API key: ') {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     const chunks = [];

@@ -21,6 +21,8 @@ lixrl whoami
 
 The CLI displays a prefilled Accounts URL and one-time code. Press Enter to open it or use `--open` to launch it immediately. After identity approval, Lixrl asks you to choose the key name, read or read/write access, and an optional expiry date. If your plan has no free key slot, the CLI offers to open key management so you can revoke an unused key and retry without starting the Accounts login again. Passwords, browser cookies, and Accounts refresh tokens are never stored by the CLI.
 
+Running `lixrl login` again reuses a valid key already stored for the selected profile. Use `lixrl login --force` only when you intentionally want to rotate that key. The CLI cannot revoke account keys by itself during device login; if the active-key allowance is full, revoke one in the browser, wait until its status shows **Revoked**, and then press Enter in the terminal.
+
 ### Paste an existing key
 
 ```bash
