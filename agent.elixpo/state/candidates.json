@@ -2,70 +2,86 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "msp1974/ViewAssist_Companion_App",
-    "has_contributing": false,
+    "full_name": "DexForce/EmbodiChain",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 47,
-    "pushed_at": "2026-08-29T12:25:18Z",
+    "open_issues": 33,
+    "pushed_at": "2026-08-30T11:23:22Z",
     "reasons": [
-      "465\u2605 python active",
+      "213\u2605 python active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 465,
+    "score": 51,
+    "stars": 213,
     "topics": [
-      "android",
-      "home-assistant",
-      "view-assist"
+      "agents",
+      "data-generation",
+      "embodied-ai",
+      "generative-simulation",
+      "gpu-acceleration",
+      "motion-generation",
+      "physics-simulation",
+      "real2sim",
+      "robot-learning",
+      "robotics",
+      "sim2real"
     ],
-    "url": "https://github.com/msp1974/ViewAssist_Companion_App"
+    "url": "https://github.com/DexForce/EmbodiChain"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "vmoranv/jshookmcp",
+    "full_name": "visgl/loaders.gl",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 17,
-    "pushed_at": "2026-08-29T12:25:43Z",
+    "open_issues": 44,
+    "pushed_at": "2026-08-30T11:24:44Z",
     "reasons": [
-      "1960\u2605 typescript active",
+      "853\u2605 typescript active",
       "has open issues"
     ],
-    "score": 52,
-    "stars": 1960,
+    "score": 51,
+    "stars": 853,
     "topics": [
-      "browser-automation",
-      "debugging",
-      "deobfuscation",
-      "js-reverse",
-      "mcp",
-      "network-analysis",
-      "reverse-engineering",
-      "security-analysis"
+      "3d-tiles",
+      "apache-arrow",
+      "apache-parquet",
+      "basis",
+      "csv",
+      "draco",
+      "geoarrow",
+      "geoparquet",
+      "gltf",
+      "i3s",
+      "javascript",
+      "las",
+      "loaders",
+      "nodejs",
+      "obj",
+      "ply",
+      "streaming",
+      "wkb",
+      "wkt",
+      "workers"
     ],
-    "url": "https://github.com/vmoranv/jshookmcp"
+    "url": "https://github.com/visgl/loaders.gl"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "AdguardTeam/HostlistsRegistry",
-    "has_contributing": false,
+    "full_name": "AkariLabs/akari-video",
+    "has_contributing": true,
     "language": "JavaScript",
-    "open_issues": 47,
-    "pushed_at": "2026-08-29T12:23:29Z",
+    "open_issues": 9,
+    "pushed_at": "2026-08-30T11:24:47Z",
     "reasons": [
-      "390\u2605 javascript active",
+      "168\u2605 javascript active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 390,
-    "topics": [
-      "adguard",
-      "adguard-dns",
-      "adguard-home"
-    ],
-    "url": "https://github.com/AdguardTeam/HostlistsRegistry"
+    "score": 51,
+    "stars": 168,
+    "topics": [],
+    "url": "https://github.com/AkariLabs/akari-video"
   },
   {
     "archived": false,
@@ -74,7 +90,7 @@
     "has_contributing": true,
     "language": "Shell",
     "open_issues": 10,
-    "pushed_at": "2026-08-29T12:12:52Z",
+    "pushed_at": "2026-08-30T11:09:36Z",
     "reasons": [
       "322\u2605 shell active",
       "has open issues"
@@ -100,7 +116,7 @@
     "has_contributing": true,
     "language": "YAML",
     "open_issues": 46,
-    "pushed_at": "2026-08-29T11:34:46Z",
+    "pushed_at": "2026-08-30T08:49:40Z",
     "reasons": [
       "831\u2605 yaml active",
       "has open issues"
@@ -115,190 +131,192 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "huangruiteng/loopx",
+    "full_name": "WenyuChiou/awesome-agentic-ai-zh",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 55,
-    "pushed_at": "2026-08-29T12:10:27Z",
-    "reasons": [
-      "5271\u2605 python active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 5271,
-    "topics": [
-      "agent-control-plane",
-      "agent-harness",
-      "agent-ops",
-      "ai-agents",
-      "codex",
-      "long-horizon",
-      "long-running-agents",
-      "loop-engineering",
-      "loopx",
-      "workflow-automation"
-    ],
-    "url": "https://github.com/huangruiteng/loopx"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "hanydd/BilibiliSponsorBlock",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 55,
-    "pushed_at": "2026-08-29T12:15:52Z",
-    "reasons": [
-      "5985\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 5985,
-    "topics": [
-      "adblock",
-      "bilibili",
-      "browser-extension",
-      "chrome",
-      "chrome-extension",
-      "sponsorblock",
-      "web-extension"
-    ],
-    "url": "https://github.com/hanydd/BilibiliSponsorBlock"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "laoma2053/awesome-zhuiju-free",
-    "has_contributing": true,
-    "language": "JavaScript",
     "open_issues": 12,
-    "pushed_at": "2026-08-29T12:09:15Z",
+    "pushed_at": "2026-08-30T11:05:36Z",
     "reasons": [
-      "6428\u2605 javascript active",
+      "6512\u2605 python active",
       "has open issues"
     ],
     "score": 55,
-    "stars": 6428,
+    "stars": 6512,
     "topics": [
+      "agentic-ai",
+      "agentic-workflows",
+      "ai-agent",
+      "ai-agents",
       "awesome-list",
-      "bt-search",
-      "chinese",
-      "cloud-drive-search",
-      "free",
-      "free-streaming",
-      "iptv",
-      "magnet-search",
-      "media-player",
-      "movie",
-      "movie-guide",
-      "movie-resources",
-      "no-ads",
-      "subtitles",
-      "tvbox",
-      "tvbox-config"
+      "chinese-llm",
+      "claude-code",
+      "claude-skills",
+      "cli",
+      "learning-roadmap",
+      "llm",
+      "llm-agents",
+      "mcp",
+      "model-context-protocol",
+      "multi-agent-systems",
+      "prompt-engineering",
+      "rag",
+      "trilingual",
+      "tutorial"
     ],
-    "url": "https://github.com/laoma2053/awesome-zhuiju-free"
+    "url": "https://github.com/WenyuChiou/awesome-agentic-ai-zh"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "czlonkowski/n8n-skills",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 8,
-    "pushed_at": "2026-08-29T12:14:27Z",
+    "full_name": "kucherenko/jscpd",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 39,
+    "pushed_at": "2026-08-30T11:03:05Z",
     "reasons": [
-      "6150\u2605 shell active",
+      "6072\u2605 typescript active",
       "has open issues"
     ],
-    "score": 40,
-    "stars": 6150,
+    "score": 55,
+    "stars": 6072,
     "topics": [
-      "ai-agents",
-      "n8n",
-      "workflow-automation"
+      "ai",
+      "clones-detection",
+      "code-quality",
+      "coding-agents",
+      "copy-paste",
+      "copy-paste-detection",
+      "cpd",
+      "detector",
+      "dry",
+      "duplicates",
+      "duplications",
+      "mcp",
+      "quality",
+      "skill",
+      "skills"
     ],
-    "url": "https://github.com/czlonkowski/n8n-skills"
+    "url": "https://github.com/kucherenko/jscpd"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "onedr0p/cluster-template",
+    "full_name": "IsmaelMartinez/teams-for-linux",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 34,
+    "pushed_at": "2026-08-30T10:44:54Z",
+    "reasons": [
+      "4989\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 54,
+    "stars": 4989,
+    "topics": [
+      "electron",
+      "linux",
+      "microsoft",
+      "teams"
+    ],
+    "url": "https://github.com/IsmaelMartinez/teams-for-linux"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "alexbelgium/hassio-addons",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 57,
+    "pushed_at": "2026-08-30T07:50:13Z",
+    "reasons": [
+      "2582\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 2582,
+    "topics": [
+      "addons",
+      "haos",
+      "hassio",
+      "hassio-addons",
+      "home-assistant",
+      "homeassistant"
+    ],
+    "url": "https://github.com/alexbelgium/hassio-addons"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "onedr0p/home-ops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 3,
-    "pushed_at": "2026-08-29T10:28:59Z",
+    "open_issues": 4,
+    "pushed_at": "2026-08-29T20:43:04Z",
     "reasons": [
-      "2795\u2605 yaml active",
+      "2866\u2605 yaml active",
       "has open issues"
     ],
     "score": 37,
-    "stars": 2795,
+    "stars": 2866,
     "topics": [
-      "cilium",
       "flux",
       "gitops",
+      "justfile",
       "kubernetes",
+      "kubesearch",
       "mise",
-      "sops",
+      "renovate",
+      "selfhosted",
       "talos"
     ],
-    "url": "https://github.com/onedr0p/cluster-template"
+    "url": "https://github.com/onedr0p/home-ops"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "MervinPraison/PraisonAI",
-    "has_contributing": true,
+    "full_name": "jxxghp/MoviePilot",
+    "has_contributing": false,
     "language": "Python",
-    "open_issues": 59,
-    "pushed_at": "2026-08-29T10:51:51Z",
+    "open_issues": 28,
+    "pushed_at": "2026-08-30T09:18:10Z",
     "reasons": [
-      "8978\u2605 python active",
+      "11659\u2605 python active",
       "has open issues"
     ],
-    "score": 56,
-    "stars": 8978,
-    "topics": [
-      "agents",
-      "ai",
-      "ai-agent-framework",
-      "ai-agent-sdk",
-      "ai-agents",
-      "ai-agents-framework",
-      "ai-agents-sdk",
-      "ai-framwork",
-      "aiagent",
-      "aiagentframework",
-      "aiagents",
-      "aiagentsframework",
-      "framework",
-      "hermes",
-      "hermes-agent",
-      "multi-agent",
-      "multi-agent-system",
-      "multi-agents",
-      "multi-ai-agents",
-      "openclaw"
-    ],
-    "url": "https://github.com/MervinPraison/PraisonAI"
+    "score": 43,
+    "stars": 11659,
+    "topics": [],
+    "url": "https://github.com/jxxghp/MoviePilot"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "toss/es-toolkit",
+    "full_name": "Milkdown/milkdown",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 49,
-    "pushed_at": "2026-08-29T11:44:09Z",
+    "open_issues": 30,
+    "pushed_at": "2026-08-30T10:52:12Z",
     "reasons": [
-      "11316\u2605 typescript active",
+      "11866\u2605 typescript active",
       "has open issues"
     ],
     "score": 58,
-    "stars": 11316,
-    "topics": [],
-    "url": "https://github.com/toss/es-toolkit"
+    "stars": 11866,
+    "topics": [
+      "editor",
+      "gfm",
+      "javascript",
+      "markdown",
+      "markdown-editor",
+      "milkdown",
+      "prosemirror",
+      "remarkjs",
+      "rich-text-editor",
+      "typescript",
+      "wysiwyg",
+      "wysiwyg-editor"
+    ],
+    "url": "https://github.com/Milkdown/milkdown"
   },
   {
     "archived": false,
@@ -307,13 +325,13 @@
     "has_contributing": true,
     "language": "JavaScript",
     "open_issues": 32,
-    "pushed_at": "2026-08-29T10:00:33Z",
+    "pushed_at": "2026-08-30T10:58:47Z",
     "reasons": [
-      "11441\u2605 javascript active",
+      "11447\u2605 javascript active",
       "has open issues"
     ],
     "score": 58,
-    "stars": 11441,
+    "stars": 11447,
     "topics": [
       "binary-analysis",
       "debugger",
@@ -341,166 +359,171 @@
   {
     "archived": false,
     "band": "large",
-    "full_name": "DaoCloud/public-image-mirror",
+    "full_name": "nelvko/clash-for-linux-install",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 8,
-    "pushed_at": "2026-08-28T10:02:25Z",
+    "open_issues": 30,
+    "pushed_at": "2026-08-29T18:29:22Z",
     "reasons": [
-      "14965\u2605 shell active",
+      "14619\u2605 shell active",
       "has open issues"
     ],
     "score": 45,
-    "stars": 14965,
+    "stars": 14619,
     "topics": [
-      "mirror",
-      "speedup"
+      "clash",
+      "clash-meta",
+      "linux",
+      "mihomo",
+      "subconverter"
     ],
-    "url": "https://github.com/DaoCloud/public-image-mirror"
+    "url": "https://github.com/nelvko/clash-for-linux-install"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "dgrauet/ltx-2-mlx",
+    "full_name": "High-Logic/Genie-TTS",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 4,
-    "pushed_at": "2026-08-29T12:25:25Z",
+    "open_issues": 32,
+    "pushed_at": "2026-08-30T11:22:20Z",
     "reasons": [
-      "105\u2605 python active",
+      "1759\u2605 python active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 105,
+    "score": 37,
+    "stars": 1759,
     "topics": [
-      "apple-silicon",
-      "diffusion-models",
-      "ltx-video",
-      "metal",
-      "mlx",
-      "video-generation"
+      "gpt-sovits",
+      "text-to-speech",
+      "tts",
+      "vits",
+      "voice-clone",
+      "voice-cloning"
     ],
-    "url": "https://github.com/dgrauet/ltx-2-mlx"
+    "url": "https://github.com/High-Logic/Genie-TTS"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "apollographql/apollo-client-devtools",
+    "full_name": "WatermelonCorp/watermelon-platform",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 51,
-    "pushed_at": "2026-08-29T12:25:51Z",
+    "open_issues": 9,
+    "pushed_at": "2026-08-30T11:23:41Z",
     "reasons": [
-      "1528\u2605 typescript active",
+      "385\u2605 typescript active",
       "has open issues"
     ],
-    "score": 52,
-    "stars": 1528,
-    "topics": [
-      "apollo-client",
-      "apollo-client-devtools",
-      "chrome-extension",
-      "devtools",
-      "firefox-extension",
-      "graphql"
-    ],
-    "url": "https://github.com/apollographql/apollo-client-devtools"
+    "score": 51,
+    "stars": 385,
+    "topics": [],
+    "url": "https://github.com/WatermelonCorp/watermelon-platform"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "xmanrui/dsh-im",
+    "full_name": "jasonkneen/tiny-world-builder",
     "has_contributing": false,
     "language": "JavaScript",
-    "open_issues": 13,
-    "pushed_at": "2026-08-29T12:22:20Z",
+    "open_issues": 6,
+    "pushed_at": "2026-08-30T11:20:49Z",
     "reasons": [
-      "975\u2605 javascript active",
+      "1548\u2605 javascript active",
       "has open issues"
     ],
-    "score": 36,
-    "stars": 975,
+    "score": 37,
+    "stars": 1548,
     "topics": [
-      "ai-agents",
-      "chatbot",
-      "cordis",
-      "deepseek",
-      "deepseek-harness",
-      "dingtalk-bot",
-      "discord-bot",
-      "dsh",
-      "dsh-plugin",
-      "feishu-bot",
-      "im-bot",
-      "slack-bot",
-      "telegram-bot",
-      "wechat-bot",
-      "whatsapp-bot"
+      "build",
+      "minecraft",
+      "voxel"
     ],
-    "url": "https://github.com/xmanrui/dsh-im"
+    "url": "https://github.com/jasonkneen/tiny-world-builder"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "ImMALWARE/dns.malw.link",
+    "full_name": "micro5k/microg-unofficial-installer",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 5,
-    "pushed_at": "2026-08-29T12:13:14Z",
+    "open_issues": 22,
+    "pushed_at": "2026-08-30T11:10:45Z",
     "reasons": [
-      "447\u2605 shell active",
+      "327\u2605 shell active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 447,
-    "topics": [],
-    "url": "https://github.com/ImMALWARE/dns.malw.link"
+    "stars": 327,
+    "topics": [
+      "android",
+      "debloater",
+      "flashable-zip",
+      "gapps",
+      "microg",
+      "privacy"
+    ],
+    "url": "https://github.com/micro5k/microg-unofficial-installer"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "joryirving/home-ops",
+    "full_name": "Mafyuh/iac",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 5,
-    "pushed_at": "2026-08-29T10:23:19Z",
+    "open_issues": 9,
+    "pushed_at": "2026-08-30T10:14:08Z",
     "reasons": [
-      "223\u2605 yaml active",
+      "951\u2605 yaml active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 223,
+    "stars": 951,
     "topics": [
-      "flux",
+      "actions",
+      "ansible",
+      "devops",
+      "docker",
+      "docker-compose",
       "gitops",
+      "iac",
+      "k8s",
+      "k8s-at-home",
       "kubernetes",
       "kubesearch",
-      "renovate",
-      "self-hosted",
-      "talos",
+      "nixos",
+      "opentofu",
+      "packer",
       "terraform"
     ],
-    "url": "https://github.com/joryirving/home-ops"
+    "url": "https://github.com/Mafyuh/iac"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "onnxsim/onnxsim",
-    "has_contributing": false,
+    "full_name": "huangruiteng/loopx",
+    "has_contributing": true,
     "language": "Python",
-    "open_issues": 7,
-    "pushed_at": "2026-08-29T12:25:33Z",
+    "open_issues": 48,
+    "pushed_at": "2026-08-30T11:18:09Z",
     "reasons": [
-      "4392\u2605 python active",
+      "5305\u2605 python active",
       "has open issues"
     ],
-    "score": 38,
-    "stars": 4392,
+    "score": 54,
+    "stars": 5305,
     "topics": [
-      "deep-learning",
-      "onnx",
-      "pytorch"
+      "agent-control-plane",
+      "agent-harness",
+      "agent-ops",
+      "ai-agents",
+      "codex",
+      "long-horizon",
+      "long-running-agents",
+      "loop-engineering",
+      "loopx",
+      "workflow-automation"
     ],
-    "url": "https://github.com/onnxsim/onnxsim"
+    "url": "https://github.com/huangruiteng/loopx"
   }
 ]
