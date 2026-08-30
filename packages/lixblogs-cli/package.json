@@ -1,6 +1,6 @@
 {
-  "name": "lixblogs-cli",
-  "version": "1.1.1",
+  "name": "@elixpo/lixblogs-cli",
+  "version": "1.4.4",
   "description": "Official CLI for LixBlogs — publish, manage, and inspect blogs through the supported API. Built for creators and agent automation.",
   "author": {
     "name": "Elixpo",
@@ -15,17 +15,19 @@
   ],
   "type": "module",
   "bin": {
-    "lixblogs": "bin/lixblogs.mjs"
+    "lixblogs": "dist/lixblogs.mjs"
   },
   "files": [
-    "src",
-    "bin",
-    "README.md",
-    "API.md",
-    "THREAT_MODEL.md"
+    "dist",
+    "skills",
+    "README.md"
   ],
   "scripts": {
+    "build": "esbuild bin/lixblogs.mjs --bundle --platform=node --format=esm --target=node18 --minify --tree-shaking=true --legal-comments=none --external:@napi-rs/keyring --outfile=dist/lixblogs.mjs",
     "test": "node --test tests/*.test.mjs",
+    "skills:sync": "node scripts/sync-skills.mjs",
+    "prepack": "npm run skills:sync && npm run build && npm test",
+    "postpack": "node scripts/sync-skills.mjs --clean",
     "prepublishOnly": "npm test"
   },
   "engines": {
@@ -67,5 +69,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.3"
   }
 }

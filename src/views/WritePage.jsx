@@ -55,7 +55,7 @@ function AvatarImg({ src, name, size = 32 }) {
     );
 }
 
-function BufferedSlugInput({ value, disabled, onCommit }) {
+function BufferedSlugInput({ value, disabled, onCommit, onDraftChange }) {
     const [draft, setDraft] = useState(value || "");
     const timerRef = useRef(null);
 
@@ -81,6 +81,7 @@ function BufferedSlugInput({ value, disabled, onCommit }) {
             onChange={(event) => {
                 const next = normalize(event.target.value);
                 setDraft(next);
+                onDraftChange?.(next);
                 clearTimeout(timerRef.current);
                 timerRef.current = setTimeout(() => onCommit(next), 250);
             }}
@@ -867,12 +868,14 @@ export default function WritePage({ slugid }) {
     const [showColorPanel, setShowColorPanel] = useState(false);
     const [pageColor, setPageColor] = useState(null);
     const [slug, setSlug] = useState("");
+    const pendingSlugRef = useRef("");
     const [slugManual, setSlugManual] = useState(false); // user typed a custom slug → stop auto-deriving from title
     const [slugAvail, setSlugAvail] = useState({ state: "idle" }); // idle | checking | available | taken
     const [isOwner, setIsOwner] = useState(true); // owner (author / org admin) — only owners may change a slug
     const [slugLockHint, setSlugLockHint] = useState(null);
     const [ownerInfo, setOwnerInfo] = useState(null); // real author {username, display_name, avatar_url} — shown to collaborators
     const [publishing, setPublishing] = useState(false);
+    const [publishError, setPublishError] = useState("");
     const [savingDraft, setSavingDraft] = useState(false);
     const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
     const [inviteUsername, setInviteUsername] = useState("");
@@ -883,6 +886,12 @@ export default function WritePage({ slugid }) {
     const [collabLock, setCollabLock] = useState(null);
     const [collabLockDismissed, setCollabLockDismissed] = useState(false);
     const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+
+    const titleWords = (title || "").trim().split(/\s+/).filter(Boolean).length;
+    const titleValid = titleWords >= 2;
+    const bodyValid = wordCount >= 20;
+    const canPublishNow = titleValid && bodyValid;
+
     const [conflict, setConflict] = useState(null); // { message, currentVersion, status }
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [isSavingLeave, setIsSavingLeave] = useState(false);
@@ -893,6 +902,10 @@ export default function WritePage({ slugid }) {
     const mdUploadRef = useRef(null);
 
     const username = user?.username || "you";
+
+    useEffect(() => {
+        pendingSlugRef.current = slug;
+    }, [slug]);
 
     // The URL param (`slugid`) is the human slug or a new-blog id — client-facing.
     // `blogId` is the canonical DB id used for every read/write; it's resolved from
@@ -1659,14 +1672,27 @@ export default function WritePage({ slugid }) {
             const trimmed = rawTag.trim().toLowerCase();
             if (!trimmed || tags.includes(trimmed) || tags.length >= 5)
                 return false;
-            setTags([...tags, trimmed]);
+            const nextTags = [...tags, trimmed];
+            draftDataRef.current = {
+                ...draftDataRef.current,
+                tags: nextTags,
+            };
+            setTags(nextTags);
             return true;
         },
         [tags],
     );
 
     const removeTag = useCallback(
-        (tag) => setTags((current) => current.filter((item) => item !== tag)),
+        (tag) =>
+            setTags((current) => {
+                const nextTags = current.filter((item) => item !== tag);
+                draftDataRef.current = {
+                    ...draftDataRef.current,
+                    tags: nextTags,
+                };
+                return nextTags;
+            }),
         [],
     );
 
@@ -2267,8 +2293,9 @@ export default function WritePage({ slugid }) {
     }, [secret, draftLoading, blogId]);
 
     const doPublish = async (targetStatus) => {
-        if (!title.trim() || publishing) return;
+        if (!canPublishNow || publishing) return;
         setPublishing(true);
+        setPublishError("");
         setShowPublishMenu(false);
         try {
             await coverUploadRef.current;
@@ -2286,6 +2313,13 @@ export default function WritePage({ slugid }) {
         const persistedCover = persistableCover(
             draftDataRef.current.coverPreview,
         );
+        // Buffered metadata inputs intentionally avoid re-rendering the large editor
+        // on every keypress. Read their live values here so clicking Update during
+        // the debounce window cannot publish the previous slug or tag set.
+        const publishSlug = pendingSlugRef.current || slug;
+        const publishTags = Array.isArray(draftDataRef.current.tags)
+            ? draftDataRef.current.tags
+            : tags;
         try {
             const res = await fetch("/api/blogs/publish", {
                 method: "POST",
@@ -2294,7 +2328,7 @@ export default function WritePage({ slugid }) {
                     slugid: blogId,
                     title,
                     subtitle,
-                    tags,
+                    tags: publishTags,
                     publishAs,
                     collectionId,
                     editorContent: draftDataRef.current.editorContent,
@@ -2302,7 +2336,7 @@ export default function WritePage({ slugid }) {
                     coverUrl: persistedCover,
                     coverPos,
                     coverZoom,
-                    slug,
+                    slug: publishSlug,
                     status: targetStatus,
                     lastKnownUpdatedAt: syncedUpdatedAt || lastKnownUpdatedAt,
                     secret,
@@ -2381,8 +2415,17 @@ export default function WritePage({ slugid }) {
                 window.location.replace(destination);
                 return;
             }
-        } catch {
-            /* silent */
+
+            const data = await res.json().catch(() => ({}));
+            setPublishError(
+                data.error ||
+                    `The blog could not be ${isPublished ? "updated" : "published"}. Please try again.`,
+            );
+        } catch (error) {
+            console.error("Publish request failed:", error);
+            setPublishError(
+                `The blog could not be ${isPublished ? "updated" : "published"}. Check your connection and try again.`,
+            );
         }
         setPublishing(false);
     };
@@ -4826,6 +4869,10 @@ export default function WritePage({ slugid }) {
                                     <BufferedSlugInput
                                         value={slug}
                                         disabled={slugLocked}
+                                        onDraftChange={(nextSlug) => {
+                                            pendingSlugRef.current = nextSlug;
+                                            setHasUnsavedEdits(true);
+                                        }}
                                         onCommit={(nextSlug) => {
                                             setSlugManual(true);
                                             setSlug(nextSlug);
@@ -5209,22 +5256,50 @@ export default function WritePage({ slugid }) {
                     className="p-5 space-y-2"
                     style={{ borderTop: "1px solid var(--border-default)" }}
                 >
-                    <button
-                        onClick={() => {
-                            if (isPublished) setShowPublishConfirm(true);
-                            else handlePublish();
-                        }}
-                        disabled={!title.trim() || publishing || hasNoChanges()}
-                        className="w-full py-2.5 bg-[#9b7bf7] text-white font-bold rounded-xl text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        {publishing
-                            ? isPublished
-                                ? "Updating..."
-                                : "Publishing..."
-                            : isPublished
-                              ? "Update now"
-                              : "Publish now"}
-                    </button>
+                    <div className="relative group/panelpublish">
+                        <button
+                            onClick={() => {
+                                if (isPublished) setShowPublishConfirm(true);
+                                else handlePublish();
+                            }}
+                            disabled={!canPublishNow || publishing || (isPublished && hasNoChanges())}
+                            className="w-full py-2.5 bg-[#9b7bf7] text-white font-bold rounded-xl text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            {publishing
+                                ? isPublished
+                                    ? "Updating..."
+                                    : "Publishing..."
+                                : isPublished
+                                  ? "Update now"
+                                  : "Publish now"}
+                        </button>
+                        {!canPublishNow && !publishing && !(isPublished && hasNoChanges()) && (
+                            <div
+                                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap px-3 py-1.5 rounded-lg text-[11px] font-medium z-50 opacity-0 group-hover/panelpublish:opacity-100 transition-opacity pointer-events-none"
+                                style={{
+                                    backgroundColor: "var(--bg-elevated)",
+                                    color: "var(--text-muted)",
+                                    border: "1px solid var(--border-default)",
+                                    boxShadow: "var(--shadow-sm)",
+                                }}
+                            >
+                                {!titleValid && !bodyValid
+                                    ? "Title needs at least 2 words and body at least 20 words"
+                                    : !titleValid
+                                      ? "Title must have at least 2 words to publish"
+                                      : "Body must have at least 20 words to publish"}
+                            </div>
+                        )}
+                    </div>
+                    {publishError && (
+                        <p
+                            role="alert"
+                            className="text-center text-[11px] leading-4"
+                            style={{ color: "#f87171" }}
+                        >
+                            {publishError}
+                        </p>
+                    )}
                     <button
                         onClick={handleSaveDraft}
                         disabled={publishing || savingDraft || hasNoChanges()}

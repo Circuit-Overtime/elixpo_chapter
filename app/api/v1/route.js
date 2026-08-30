@@ -15,11 +15,19 @@ export async function GET() {
       audience: 'blogs.elixpo.com',
     },
     resources: {
+      profile: '/api/v1/me',
       blogs: '/api/v1/blogs',
       blog: '/api/v1/blogs/{id}',
       publish: '/api/v1/blogs/{id}/publish',
       unpublish: '/api/v1/blogs/{id}/unpublish',
       restore: '/api/v1/blogs/{id}/restore',
+      organizations: '/api/v1/orgs',
+      organization: '/api/v1/orgs/{id}',
+      organizationCollections: '/api/v1/orgs/{id}/collections',
+      organizationMembers: '/api/v1/orgs/{id}/members',
+      collaborators: '/api/v1/blogs/{id}/collaborators',
+      collaborationInvitations: '/api/v1/collaboration/invitations',
+      analytics: '/api/v1/analytics',
     },
   });
 }

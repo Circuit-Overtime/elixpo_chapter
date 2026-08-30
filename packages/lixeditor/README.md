@@ -42,6 +42,10 @@ function App() {
 }
 ```
 
+The stylesheet import continues to include KaTeX automatically. LixEditor
+reuses the fonts from its installed `katex` dependency instead of shipping a
+duplicate copy inside the editor package.
+
 ## Features
 
 | Feature | Default | Description |

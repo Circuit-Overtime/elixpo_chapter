@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
-import { useSeasonalTheme } from '../themes/seasonal/SeasonalThemeProvider';
 
 const TABS = ['Overview', 'Posts', 'Audience', 'Acquisition'];
 const RANGES = [
@@ -14,12 +13,6 @@ const DEFAULT_ANALYTICS_PALETTE = {
   primary: '#9b7bf7', blue: '#60a5fa', green: '#4ade80', orange: '#f59e0b',
   cyan: '#22d3ee', sky: '#38bdf8', rose: '#f472b6', violet: '#a78bfa',
   categories: ['#9b7bf7', '#60a5fa', '#f472b6', '#4ade80', '#f59e0b'],
-};
-
-const INDEPENDENCE_ANALYTICS_PALETTE = {
-  primary: '#1a4b8c', blue: '#2874a6', green: '#138808', orange: '#ff9933',
-  cyan: '#2b7a78', sky: '#3f78a8', rose: '#df7828', violet: '#315f99',
-  categories: ['#ff9933', '#1a4b8c', '#138808', '#f2b36f', '#4f7ea8'],
 };
 
 const fmt = (value) => new Intl.NumberFormat('en', { notation: Number(value) >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(Number(value) || 0);
@@ -187,8 +180,7 @@ function CollectingNotice({ accent = '#9b7bf7' }) {
 
 export default function StatsPage() {
   const { user, loading } = useAuth();
-  const { activeTheme } = useSeasonalTheme();
-  const palette = activeTheme?.id === 'india-independence-day' ? INDEPENDENCE_ANALYTICS_PALETTE : DEFAULT_ANALYTICS_PALETTE;
+  const palette = DEFAULT_ANALYTICS_PALETTE;
   const [tab, setTab] = useState('Overview');
   const [range, setRange] = useState('30d');
   const [scope, setScope] = useState('personal');

@@ -31,12 +31,15 @@ import { authStatus } from "../src/commands/auth/status.js";
 import { authLogout } from "../src/commands/auth/logout.js";
 import { authRevoke } from "../src/commands/auth/revoke.js";
 import { authProfiles, authUse } from "../src/commands/auth/profiles.js";
-import { IntegrationsClient } from "../src/api/IntegrationsClient.js";
-import { cloudinaryStatus } from "../src/commands/integrations/cloudinary-status.js";
-import { cloudinaryDisconnect } from "../src/commands/integrations/cloudinary-disconnect.js";
+import { profileAliasFromIdentity } from "../src/commands/auth/profileAlias.js";
 import { ProfileRegistry, validateProfileId } from "../src/config/ProfileRegistry.js";
 import { AuthenticatedClient } from "../src/auth/AuthenticatedClient.js";
 import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
+import { OrgClient } from "../src/api/OrgClient.js";
+import { CollaborationClient } from "../src/api/CollaborationClient.js";
+import { AnalyticsClient } from "../src/api/AnalyticsClient.js";
+import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
+import { colorEnabled, listenForEnter, loginChallenge, successLine } from "../src/cli/ui.js";
 import {
   blogCreate,
   blogDelete,
@@ -47,6 +50,24 @@ import {
   blogRestore,
   blogUnpublish,
 } from "../src/commands/blog/index.js";
+import {
+  orgCollections,
+  orgGet,
+  orgList,
+  orgMembers,
+  orgTargets,
+} from "../src/commands/org/index.js";
+import {
+  collabAccept,
+  collabDecline,
+  collabInvitations,
+  collabInvite,
+  collabList,
+  collabRemove,
+  collabRole,
+} from "../src/commands/collab/index.js";
+import { skillInspect, skillInstall, skillList } from "../src/commands/skill/index.js";
+import { analyticsExport, analyticsQuery } from "../src/commands/analytics/index.js";
 
 
 const OPTIONS = {
@@ -66,6 +87,12 @@ const OPTIONS = {
   status: { type: "string" },
   limit: { type: "string" },
   cursor: { type: "string" },
+  range: { type: "string" },
+  from: { type: "string" },
+  to: { type: "string" },
+  dimension: { type: "string" },
+  format: { type: "string" },
+  output: { type: "string" },
   file: { type: "string" },
   stdin: { type: "boolean", default: false },
   content: { type: "string" },
@@ -87,14 +114,23 @@ const OPTIONS = {
   etag: { type: "string" },
   permanent: { type: "boolean", default: false },
   "idempotency-key": { type: "string" },
+  user: { type: "string" },
+  role: { type: "string" },
+  "hide-on-profile": { type: "boolean", default: false },
+  target: { type: "string" },
+  force: { type: "boolean", default: false },
   help: { type: "boolean", short: "h", default: false },
 };
 
 const HELP_TEXT = `lixblogs — LixBlogs CLI
 
 Usage:
-  lixblogs integrations cloudinary-status     [--profile <name>] [--json]
-  lixblogs integrations cloudinary-disconnect [--profile <name>] [--json] [--quiet] --yes
+  lixblogs login         [--profile <name>] [--open]
+  lixblogs register      [--profile <name>] [--open]
+  lixblogs logout        [--profile <name>]
+  lixblogs whoami        [--profile <name>] [--json]
+  lixblogs profiles      [--json]
+  lixblogs use <name>    [--json]
   lixblogs auth login    [--profile <name>] [--env <environment>] [--json] [--quiet] [--allow-insecure-fallback]
   lixblogs auth status   [--profile <name>] [--json]
   lixblogs auth logout   [--profile <name>] [--json] [--quiet]
@@ -103,15 +139,34 @@ Usage:
   lixblogs auth use <name> [--json]
   lixblogs blog list      [--status <status>] [--limit <n>] [--cursor <cursor>] [--json]
   lixblogs blog get <id>  [--json]
+  lixblogs blog preview <id> [--json]
   lixblogs blog create    [--file <post.md>|--stdin|--content <markdown>|--editor] [metadata]
   lixblogs blog edit <id> [--file <post.md>|--stdin|--content <markdown>|--editor] [metadata]
-  lixblogs blog publish <id>   [--dry-run] [--json]
-  lixblogs blog unpublish <id> [--dry-run] [--json]
+  lixblogs blog publish <id> --yes [--dry-run] [--json]
+  lixblogs blog unpublish <id> --yes [--dry-run] [--json]
   lixblogs blog delete <id> --yes [--permanent] [--dry-run] [--json]
-  lixblogs blog restore <id>   [--dry-run] [--json]
+  lixblogs blog trash <id> --yes [--dry-run] [--json]
+  lixblogs blog restore <id> --yes [--dry-run] [--json]
+  lixblogs org list          [--json]
+  lixblogs org get <id>      [--json]
+  lixblogs org collections <id> [--json]
+  lixblogs org members <id>  [--json]
+  lixblogs org targets       [--json]
+  lixblogs collab list <blog-id> [--json]
+  lixblogs collab invitations   [--json]
+  lixblogs collab invite <blog-id> --user <username> --role <viewer|editor|admin> --yes
+  lixblogs collab role <blog-id> --user <username-or-id> --role <viewer|editor|admin> --yes
+  lixblogs collab remove <blog-id> [--user <username-or-id>] --yes
+  lixblogs collab accept <blog-id> --yes [--hide-on-profile]
+  lixblogs collab decline <blog-id> --yes
+  lixblogs analytics query [--scope personal|org:<id>] [--range 30d] [--dimension overview]
+  lixblogs analytics export --output <file> [--format json|csv] [query options]
+  lixblogs skill list             [--json]
+  lixblogs skill inspect <name>   [--json]
+  lixblogs skill install <name>   [--target <directory>] [--dry-run] --yes
 
 Global flags:
-  --profile <name>            named profile to use (default: "default")
+  --profile <name>            local account alias (defaults to the signed-in username)
   --env <environment>         override environment (development|staging|production)
   --auth-provider <provider>  elixpo, or mock in development/test only
   --accounts-url <url>        override the Accounts discovery origin
@@ -127,7 +182,7 @@ Global flags:
   --collection <id>           organization collection ID
   --dry-run                   validate and show the intended action without writing
   --permanent                 permanently delete instead of moving to trash
-  --open                      open the complete device verification URL
+  --open                      open the device verification URL immediately
   --json                      machine-readable JSON output
   --quiet                     suppress non-essential output
   --yes, -y                   auto-confirm destructive actions (required for revoke)
@@ -135,8 +190,9 @@ Global flags:
                                non-persistent in-memory store instead of failing
   --help, -h                  show this help
 
-Note: interactive confirmation prompting is not implemented yet (CLI-shell/UX
-work, a later issue) — destructive actions require --yes explicitly, always.
+Machine mode:
+  --json --no-input produces stable JSON on stdout, diagnostics on stderr, and
+  never prompts. Publishing and destructive state changes require --yes.
 `;
 
 const DEFAULT_SCOPES = [
@@ -175,14 +231,18 @@ function output(opts, data) {
   }
 }
 
-function fail(opts, message, exitCode = 1) {
-  const safeMessage = redactErrorMessage(message);
+function fail(opts, error, exitCode = EXIT_CODES.ERROR) {
+  const value = error && typeof error === 'object' ? error : { message: String(error) };
+  const safeMessage = redactErrorMessage(value.message);
+  const envelope = errorEnvelope({ ...value, message: safeMessage });
   if (opts.json) {
-    process.stdout.write(safeJsonStringify({ ok: false, error: safeMessage }) + "\n");
+    process.stdout.write(safeJsonStringify(envelope) + "\n");
   } else if (!opts.quiet) {
     process.stderr.write(`Error: ${safeMessage}\n`);
+    if (value.hint) process.stderr.write(`Hint: ${value.hint}\n`);
+    if (value.requestId) process.stderr.write(`Request: ${value.requestId}\n`);
   }
-  process.exitCode = exitCode;
+  process.exitCode = value.exitCode || exitCode;
 }
 
 /**
@@ -211,7 +271,11 @@ async function getCredentialStoreOrFail(opts, profileRegistry) {
 async function runLogin(opts) {
   const config = resolveConfig({ flags: configFlags(opts) });
   const profileRegistry = new ProfileRegistry();
-  const profileId = await selectedProfile(config, profileRegistry);
+  const requestedProfileId = validateProfileId(config.profile);
+  const scopes = opts.scope?.length ? [...opts.scope] : [...DEFAULT_SCOPES];
+  if (!config.profileExplicit && !scopes.includes("lixblogs:profile:read")) {
+    scopes.push("lixblogs:profile:read");
+  }
 
   let provider;
   try {
@@ -223,35 +287,53 @@ async function runLogin(opts) {
   const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
   if (!credentialStore) return;
 
-  const result = await authLogin({
-    provider,
-    credentialStore,
-    profileId,
-    scopes: opts.scope?.length ? opts.scope : DEFAULT_SCOPES,
-    openBrowser: opts.open ? openBrowser : undefined,
-    onStatus: (status) => {
-      if (opts.json) {
-        output(opts, { event: status.type, ...status });
-        return;
-      }
-      if (opts.quiet) return;
-      if (status.type === "verification_pending") {
-        console.log(`To log in, visit: ${status.verificationUriComplete || status.verificationUri}`);
-        console.log(`Enter code: ${status.userCode}`);
-        console.log(`(expires in ${status.expiresInSeconds}s)`);
-      } else if (status.type === "pending") {
-        console.log("Waiting for approval...");
-      } else if (status.type === "slow_down") {
-        console.log("Slowing down polling as requested by the server...");
-      } else if (status.type === "approved") {
-        console.log("Login approved.");
-      } else if (status.type === "denied") {
-        console.log("Login was denied.");
-      } else if (status.type === "expired") {
-        console.log("Device code expired.");
-      }
-    },
-  });
+  let stopEnterListener = () => {};
+  let result;
+  try {
+    result = await authLogin({
+      provider,
+      credentialStore,
+      profileId: requestedProfileId,
+      scopes,
+      openBrowser: opts.open ? openBrowser : undefined,
+      resolveProfileId: config.profileExplicit
+        ? undefined
+        : ({ accessToken }) => profileAliasFromIdentity({
+            accessToken,
+            apiBaseUrl: config.apiBaseUrl,
+          }),
+      onStatus: (status) => {
+        if (opts.json) {
+          if (status.type !== "pending") output(opts, { event: status.type, ...status });
+          return;
+        }
+        if (opts.quiet) return;
+        if (status.type === "verification_pending") {
+          const url = status.verificationUriComplete || status.verificationUri;
+          const interactive = Boolean(process.stdin.isTTY) && !opts["no-input"];
+          process.stdout.write(loginChallenge({
+            url,
+            code: status.userCode,
+            expiresInSeconds: status.expiresInSeconds,
+            profile: config.profileExplicit ? requestedProfileId : null,
+            interactive,
+            color: colorEnabled(),
+          }));
+          if (interactive && !opts.open) {
+            stopEnterListener = listenForEnter({ input: process.stdin, open: openBrowser, url });
+          }
+        } else if (status.type === "approved") {
+          console.log(successLine("Access approved by Elixpo Accounts.", colorEnabled()));
+        } else if (status.type === "denied") {
+          console.log("  Access denied.");
+        } else if (status.type === "expired") {
+          console.log("  Device code expired.");
+        }
+      },
+    });
+  } finally {
+    stopEnterListener();
+  }
 
   if (!result.ok) {
     return fail(opts, result.reason);
@@ -260,7 +342,9 @@ async function runLogin(opts) {
   await profileRegistry.setActive(result.profileId);
   output(opts, { ok: true, profile: result.profileId });
   if (!opts.json && !opts.quiet) {
-    console.log(`Logged in as profile "${result.profileId}".`);
+    console.log(`  Credentials saved to local profile "${result.profileId}".`);
+    console.log("  Tip: add another account with `lixblogs login`, list accounts with `lixblogs profiles`,");
+    console.log("       and switch with `lixblogs use <username>`.");
   }
 }
 
@@ -285,6 +369,60 @@ async function runStatus(opts) {
       }
     }
   }
+}
+
+async function authenticatedBlogClient(opts) {
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
+  if (!credentialStore) return null;
+  let provider;
+  try { provider = createAuthProvider(config); } catch (error) { fail(opts, error); return null; }
+  const http = new AuthenticatedClient({ provider, credentialStore, profileId, apiBaseUrl: config.apiBaseUrl });
+  return { client: new BlogClient(http), http, config, credentialStore, profileId };
+}
+
+async function runWhoami(opts) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  try {
+    const [identity, credentials] = await Promise.all([
+      context.client.whoami(),
+      context.credentialStore.get(context.profileId),
+    ]);
+    const result = {
+      ok: true,
+      profile: context.profileId,
+      environment: context.config.environment,
+      identity,
+      scopes: credentials?.scopes || [],
+      expiresAt: credentials?.expiresAt ? new Date(credentials.expiresAt).toISOString() : null,
+      expired: credentials ? Date.now() >= credentials.expiresAt : true,
+    };
+    output(opts, result);
+    if (!opts.json && !opts.quiet) {
+      console.log(`${identity.displayName || identity.username} (@${identity.username})`);
+      console.log(`Profile: ${context.profileId} · ${result.environment}`);
+      console.log(`Scopes: ${result.scopes.join(', ') || 'none'}`);
+      console.log(`Expires: ${result.expiresAt || 'unknown'}`);
+    }
+  } catch (error) {
+    fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
+  }
+}
+
+async function runRegister(opts) {
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const registrationUrl = new URL('/register', config.accountsBaseUrl).toString();
+  if (opts['no-input']) {
+    output(opts, { ok: true, registrationUrl, next: 'lixblogs login' });
+    if (!opts.json && !opts.quiet) console.log(registrationUrl);
+    return;
+  }
+  await openBrowser(registrationUrl);
+  if (!opts.quiet) console.log(`Create your account at ${registrationUrl}, then approve the device login.`);
+  await runLogin(opts);
 }
 
 async function runLogout(opts) {
@@ -413,12 +551,43 @@ async function runUse(opts, args) {
 const BLOG_COMMANDS = {
   list: blogList,
   get: blogGet,
+  preview: blogGet,
   create: blogCreate,
   edit: blogEdit,
   publish: blogPublish,
   unpublish: blogUnpublish,
   delete: blogDelete,
+  trash: blogDelete,
   restore: blogRestore,
+};
+
+const ORG_COMMANDS = {
+  list: orgList,
+  get: orgGet,
+  collections: orgCollections,
+  members: orgMembers,
+  targets: orgTargets,
+};
+
+const COLLAB_COMMANDS = {
+  list: collabList,
+  invitations: collabInvitations,
+  invite: collabInvite,
+  role: collabRole,
+  remove: collabRemove,
+  accept: collabAccept,
+  decline: collabDecline,
+};
+
+const SKILL_COMMANDS = {
+  list: ({ options }) => skillList(options),
+  inspect: ({ id }) => skillInspect({ name: id }),
+  install: ({ id, options }) => skillInstall({ name: id, options }),
+};
+
+const ANALYTICS_COMMANDS = {
+  query: analyticsQuery,
+  export: analyticsExport,
 };
 
 async function runBlog(opts, args, action) {
@@ -463,7 +632,122 @@ async function runBlog(opts, args, action) {
       process.exitCode = error.status === 412 ? 3 : 1;
       return;
     }
-    return fail(opts, `${error.message}${error.requestId ? ` (request ${error.requestId})` : ''}`, error.status === 412 ? 3 : 1);
+    return fail(opts, error, error.status === 412 ? EXIT_CODES.CONFLICT : EXIT_CODES.ERROR);
+  }
+}
+
+async function runOrg(opts, args, action) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  const client = new OrgClient(context.http);
+  try {
+    const result = await ORG_COMMANDS[action]({ client, id: args[0], options: opts });
+    output(opts, { ok: true, data: result });
+    if (opts.json || opts.quiet) return;
+    if (action === 'targets') {
+      console.log('personal\tPersonal Blog');
+      for (const org of result.organizations || []) {
+        console.log(`${org.target}\t${org.role}\t${org.name}`);
+        for (const collection of org.collections || []) {
+          console.log(`  collection:${collection.id}\t${collection.name}`);
+        }
+      }
+      return;
+    }
+    const rows = action === 'list' ? result.data || [] : Array.isArray(result) ? result : [result];
+    for (const row of rows) {
+      console.log([
+        row.id || row.userId || row.orgId,
+        row.role,
+        row.slug || row.username,
+        row.name || row.displayName,
+      ].filter(Boolean).join('\t'));
+    }
+  } catch (error) {
+    fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
+  }
+}
+
+async function runCollab(opts, args, action) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  const client = new CollaborationClient(context.http);
+  try {
+    const result = await COLLAB_COMMANDS[action]({ client, id: args[0], options: opts });
+    output(opts, { ok: true, data: result });
+    if (opts.json || opts.quiet) return;
+    if (result.dryRun) {
+      console.log(`Dry run: ${result.action} validated; no changes sent.`);
+      return;
+    }
+    const rows = action === 'invitations'
+      ? result
+      : action === 'list'
+        ? result.collaborators || []
+        : [result];
+    for (const row of rows) {
+      console.log([
+        row.blogId || row.userId,
+        row.status,
+        row.role,
+        row.username || row.title,
+        row.notificationState,
+      ].filter(Boolean).join('\t'));
+    }
+  } catch (error) {
+    fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
+  }
+}
+
+async function runSkill(opts, args, action) {
+  try {
+    const result = await SKILL_COMMANDS[action]({ id: args[0], options: opts });
+    output(opts, { ok: true, data: result });
+    if (opts.json || opts.quiet) return;
+    if (action === 'list') {
+      for (const skill of result) console.log(`${skill.name}\tCLI >= ${skill.minimumCliVersion || 'unknown'}\t${skill.description}`);
+    } else if (action === 'inspect') {
+      process.stdout.write(result.content);
+    } else if (result.dryRun) {
+      console.log(`Dry run: install ${result.name} to ${result.target}${result.replace ? ' (replace)' : ''}.`);
+    } else {
+      console.log(`Installed ${result.name} at ${result.target}.`);
+    }
+  } catch (error) {
+    fail(opts, error);
+  }
+}
+
+async function runAnalytics(opts, _args, action) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  const client = new AnalyticsClient(context.http);
+  const normalized = {
+    ...opts,
+    limit: opts.limit === undefined ? undefined : Number.parseInt(opts.limit, 10),
+  };
+  try {
+    const result = await ANALYTICS_COMMANDS[action]({ client, options: normalized });
+    output(opts, { ok: true, data: result });
+    if (opts.json || opts.quiet) return;
+    if (action === 'export') {
+      console.log(`Exported ${result.rows} rows to ${result.output}.`);
+      return;
+    }
+    const payload = result.data;
+    console.log(`${payload.scope.label} · ${payload.dimension} · ${payload.range.key}`);
+    if (payload.dimension === 'overview') {
+      for (const [metric, value] of Object.entries(payload.values.totals)) {
+        console.log(`${metric}\t${value}\t${payload.values.changes[metric]}%`);
+      }
+    } else if (payload.dimension === 'timeline') {
+      payload.values.labels.forEach((label, index) => console.log(`${label}\t${payload.values.views[index]}\t${payload.values.reads[index]}`));
+    } else {
+      for (const row of payload.values) console.log(Object.values(row).join('\t'));
+      if (result.meta?.nextCursor) console.log(`Next cursor: ${result.meta.nextCursor}`);
+    }
+  } catch (error) {
+    fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
   }
 }
 
@@ -471,6 +755,7 @@ const ROUTES = {
   auth: {
     login: runLogin,
     status: runStatus,
+    whoami: runWhoami,
     logout: runLogout,
     revoke: runRevoke,
     profiles: runProfiles,
@@ -480,10 +765,22 @@ const ROUTES = {
     action,
     (opts, args) => runBlog(opts, args, action),
   ])),
-    integrations: {
-      "cloudinary-status": (opts, args) => runIntegrations(opts, args, "cloudinary-status"),
-      "cloudinary-disconnect": (opts, args) => runIntegrations(opts, args, "cloudinary-disconnect"),
-  },
+  org: Object.fromEntries(Object.keys(ORG_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runOrg(opts, args, action),
+  ])),
+  collab: Object.fromEntries(Object.keys(COLLAB_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runCollab(opts, args, action),
+  ])),
+  skill: Object.fromEntries(Object.keys(SKILL_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runSkill(opts, args, action),
+  ])),
+  analytics: Object.fromEntries(Object.keys(ANALYTICS_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runAnalytics(opts, args, action),
+  ])),
 };
 
 async function main() {
@@ -500,7 +797,7 @@ async function main() {
     // unrecognized flags rather than silently ignoring them — surface that
     // clearly instead of an unhandled exception.
     process.stderr.write(`Error: Invalid flag. ${err.message}\n`);
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.USAGE;
     return;
   }
 
@@ -509,13 +806,19 @@ async function main() {
     return;
   }
 
+  if (positionals[0] === 'register') {
+    await runRegister(values);
+    return;
+  }
+
+  positionals = normalizeCommand(positionals);
   const [category, action] = positionals;
   const categoryRoutes = ROUTES[category];
 
   if (!categoryRoutes) {
     process.stderr.write(`Error: Unknown command category "${category}".\n`);
     process.stderr.write(`Available categories: ${Object.keys(ROUTES).join(", ")}\n`);
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.USAGE;
     return;
   }
 
@@ -527,7 +830,7 @@ async function main() {
         .map((a) => `${category} ${a}`)
         .join(", ")}\n`
     );
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.USAGE;
     return;
   }
 

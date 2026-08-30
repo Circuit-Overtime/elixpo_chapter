@@ -6,6 +6,7 @@ import AppShell from '../components/AppShell';
 import Link from 'next/link';
 import { CreatorBadgeMark } from '../components/CreatorBadge';
 import { CREATOR_BADGE_MAP } from '../../lib/badgeDefinitions';
+import { dispatchNotificationsUpdate } from '../utils/notificationEvents';
 
 const NOTIF_CONFIG = {
   follow:         { icon: 'person-add-outline',     color: '#9b7bf7', label: 'followed you' },
@@ -102,22 +103,36 @@ export default function NotificationsPage() {
       const res = await fetch(`/api/notifications?limit=50&offset=${newOffset}`);
       if (res.ok) {
         const data = await res.json();
+        const list = data.notifications || [];
         if (reset) {
-          setNotifications(data.notifications || []);
+          setNotifications(list);
         } else {
-          setNotifications(prev => [...prev, ...(data.notifications || [])]);
+          setNotifications(prev => [...prev, ...list]);
         }
         setUnread(data.unread || 0);
-        setHasMore((data.notifications || []).length === 50);
+        setHasMore(list.length === 50);
         if (reset) setOffset(50);
         else setOffset(prev => prev + 50);
+        setLoading(false);
+        return list;
       }
     } catch {}
     setLoading(false);
   }, [offset]);
 
   useEffect(() => {
-    if (user) fetchNotifications(true);
+    if (user) {
+      fetchNotifications(true).then(list => {
+        if (list) {
+          // Viewing the notifications page counts as having seen them, so
+          // clear the local unread count for this page's own display and tell
+          // the navbar to mark the current notifications as seen (so the badge
+          // doesn't resurrect on the next poll for direct URL navigation).
+          setUnread(0);
+          dispatchNotificationsUpdate(list.map(n => n.id));
+        }
+      });
+    }
   }, [user]);
 
   const markAllRead = async () => {
@@ -128,6 +143,7 @@ export default function NotificationsPage() {
     });
     setUnread(0);
     setNotifications(prev => prev.map(n => ({ ...n, read: 1 })));
+    dispatchNotificationsUpdate();
   };
 
   const markRead = async (id) => {
@@ -138,6 +154,7 @@ export default function NotificationsPage() {
     });
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: 1 } : n));
     setUnread(prev => Math.max(0, prev - 1));
+    dispatchNotificationsUpdate();
   };
 
   const toggleRead = async (id, read) => {
@@ -163,6 +180,7 @@ export default function NotificationsPage() {
       ? Math.max(0, prev - 1)
       : prev + 1
   );
+  dispatchNotificationsUpdate();
 };
 
   if (authLoading) {
