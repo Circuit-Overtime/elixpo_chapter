@@ -2,61 +2,41 @@
 set -euo pipefail
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# LixSketch Deploy & Release
+# LixSketch Deploy — unified flag-based standard (elixpo/sketch.elixpo#124)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #
-# Usage: ./deploy.sh [command ...] [options]
+# Usage:
+#   ./deploy.sh --package [--name <pkg>] build|deploy   (npm package)
+#   ./deploy.sh --package --vs           build|deploy   (VS Code extension)
+#   ./deploy.sh --worker                 build|deploy   (Cloudflare Worker)
+#   ./deploy.sh --pages                  build|deploy   (Cloudflare Pages)
+#   ./deploy.sh --github                 build|deploy   (GitHub Packages mirror of npm)
 #
-# Infra Commands:
-#   deploy      Build & deploy website to Cloudflare Pages
-#   worker      Deploy the collab Worker
-#   secrets     Upload .env vars to Worker + Pages
-#   build       Build Pages only (no deploy)
+# build and deploy may be passed together (build deploy) or separately —
+# CI can run them as two steps for caching, a human can run them together.
 #
-# Release Commands:
-#   release [targets]   Full release with version bump + changelog + publish
-#                       Targets: engine, vscode, web, all (default: all)
-#
-# Options (for release):
-#   --patch     Patch version bump (default)
-#   --minor     Minor version bump
-#   --major     Major version bump
-#   --dry-run   Print what would happen, don't execute
-#   --skip-changelog  Skip changelog generation
-#
-# Shorthand:
-#   all         secrets + worker + deploy (infra only, no release)
-#
-# Auth tokens are read automatically from .env:
-#   NPM_TOKEN            → npm publish
-#   VSCE_PAT             → VS Code extension publish
-#   GITHUB_ACCESS_TOKEN  → gh release create
-#
-# Examples:
-#   ./deploy.sh deploy                    # Quick website deploy
-#   ./deploy.sh release all --minor       # Release everything with minor bump
-#   ./deploy.sh release engine --patch    # Publish npm package only
-#   ./deploy.sh release vscode            # Publish VS Code extension only
-#   ./deploy.sh release all --dry-run     # Preview full release
-#   ./deploy.sh all                       # Infra: secrets + worker + deploy
+# Bump/publish-safety logic below is ported from publish-npm.yml /
+# publish-vscode.yml (this repo's CI), not re-derived — those workflows'
+# registry-check + loop-guard behavior is more robust than this script's
+# previous version and is now the single source of truth for both a
+# local run and a CI run.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
 PAGES_PROJECT="lixsketch"
 PAGES_BRANCH="main"
+NPM_PACKAGE_DIR="packages/lixsketch"
+NPM_PACKAGE_NAME="@elixpo/lixsketch"
+VSCODE_DIR="packages/vscode"
+VSCODE_EXT_ID="elixpo.lixsketch"
 
-# ── Helpers ──────────────────────────────────────────────────
+# ── Env loading (unchanged from the existing script — SOPS-aware) ──
 
 load_env() {
   if [ ! -f "$ENV_FILE" ]; then
     echo "Error: .env not found at $ENV_FILE"
     exit 1
   fi
-  # The committed .env is SOPS-encrypted. Bare `source .env` crashed
-  # with `AGE: command not found` because the structural fields
-  # (e.g. `sops_age__list_0__map_enc=-----BEGIN AGE ENCRYPTED FILE-----`)
-  # carry unquoted whitespace. Decrypt with sops, strip the `sops_*`
-  # metadata, then export each remaining `KEY=value` line.
   local _env_content
   if grep -q 'ENC\[' "$ENV_FILE" 2>/dev/null || grep -q '^sops' "$ENV_FILE" 2>/dev/null; then
     if ! command -v sops >/dev/null 2>&1; then
@@ -76,25 +56,9 @@ load_env() {
   fi
   while IFS= read -r line || [ -n "$line" ]; do
     [[ -z "$line" || "$line" =~ ^# ]] && continue
-    # Skip the SOPS structural metadata — those rows carry unquoted
-    # spaces and aren't real env vars.
     [[ "$line" =~ ^sops_ ]] && continue
     export "$line" 2>/dev/null || true
   done <<< "$_env_content"
-}
-
-get_binding_ids() {
-  load_env
-  D1_DB_ID="${D1_DATABASE_ID:?D1_DATABASE_ID not set in .env}"
-  KV_ID="${KV_NAMESPACE_ID:?KV_NAMESPACE_ID not set in .env}"
-}
-
-dry_run() {
-  if $DRY_RUN; then
-    echo "[dry-run] $*"
-  else
-    eval "$@"
-  fi
 }
 
 auth_remote() {
@@ -103,303 +67,278 @@ auth_remote() {
   echo "${url/https:\/\//https:\/\/${GITHUB_ACCESS_TOKEN}@}"
 }
 
-# ── Infra Commands ───────────────────────────────────────────
-
-secrets() {
-  echo "==> Uploading secrets from .env..."
-  load_env
-
-  while IFS='=' read -r key value; do
-    [[ -z "$key" || "$key" =~ ^# || "$key" =~ ^NEXT_PUBLIC_ ]] && continue
-    [[ "$key" =~ ^(CLOUDFLARE_ACCOUNT|D1_DATABASE_ID|KV_NAMESPACE_ID)$ ]] && continue
-
-    echo "  -> $key (worker)"
-    printf '%s\n' "$value" | npx wrangler versions secret put "$key" --name lixsketch-collab || echo "    [warn] worker secret failed for $key"
-    echo "  -> $key (pages)"
-    printf '%s\n' "$value" | npx wrangler pages secret put "$key" --project-name "$PAGES_PROJECT" || echo "    [warn] pages secret failed for $key"
-  done < "$ENV_FILE"
-
-  echo "==> Secrets uploaded to Worker + Pages."
+configure_bot_git() {
+  git config --global user.name "elixpoo"
+  git config --global user.email "269200728+elixpoo@users.noreply.github.com"
 }
 
-build() {
-  echo "==> Building for Cloudflare Pages..."
-  npm version patch --no-git-tag-version
-  npx @cloudflare/next-on-pages
-  echo "==> Build complete (.vercel/output/static)"
-}
+# ── Ported bump-detection (from publish-npm.yml / publish-vscode.yml) ──
 
-deploy() {
-  if [ ! -d "$SCRIPT_DIR/.vercel/output/static" ]; then
-    echo "==> No build found, building first..."
-    build
+compute_npm_version_bump() {
+  local pkg_dir="$1" pkg_name="$2" bump_kind="${3:-patch}"
+  local local_version remote_version
+  local_version=$(node -p "require('./$pkg_dir/package.json').version")
+  remote_version=$(npm view "$pkg_name" version 2>/dev/null || echo "unknown")
+
+  echo "  Local  version: $local_version"
+  echo "  Remote version: $remote_version"
+
+  local needs_bump=false
+  if [ "$local_version" = "$remote_version" ]; then
+    needs_bump=true
+  elif [ "$remote_version" = "unknown" ]; then
+    if npm view "${pkg_name}@${local_version}" version >/dev/null 2>&1; then
+      echo "  $local_version already exists on the registry — bumping."
+      needs_bump=true
+    fi
   fi
 
-  echo "==> Deploying to Cloudflare Pages ($PAGES_PROJECT)..."
-  npx wrangler pages deploy .vercel/output/static \
-    --project-name "$PAGES_PROJECT" \
-    --branch "$PAGES_BRANCH"
-
-  echo "==> Pages deploy complete."
-
-  VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "unknown")
-  git add -A
-  if git diff --cached --quiet; then
-    echo "==> No changes to commit."
+  if [ "$needs_bump" = "true" ]; then
+    (cd "$pkg_dir" && npm version "$bump_kind" --no-git-tag-version > /dev/null)
+    BUMP_VERSION=$(node -p "require('./$pkg_dir/package.json').version")
+    BUMP_HAPPENED=true
+    echo "  Bumped to $BUMP_VERSION"
   else
-    git commit -m "deploy: v${VERSION}"
-    load_env
-    git push "$(auth_remote)" main
-    echo "==> Pushed v${VERSION} to origin/main."
+    BUMP_VERSION="$local_version"
+    BUMP_HAPPENED=false
+    echo "  Local ($local_version) ahead of remote — using as-is."
   fi
 }
 
-worker() {
-  echo "==> Deploying Worker (lixsketch-collab)..."
+compute_vscode_version_bump() {
+  local pkg_dir="$1" ext_id="$2" bump_kind="${3:-patch}"
+  local local_version remote_version
+  local_version=$(node -p "require('./$pkg_dir/package.json').version")
+  remote_version=$(npx --yes @vscode/vsce show "$ext_id" --json 2>/dev/null \
+    | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{try{const j=JSON.parse(s);console.log(j.versions?.[0]?.version||'0.0.0')}catch{console.log('0.0.0')}})" \
+    || echo "0.0.0")
+
+  echo "  Local  version: $local_version"
+  echo "  Remote version: $remote_version"
+
+  if [ "$local_version" = "$remote_version" ]; then
+    (cd "$pkg_dir" && npm version "$bump_kind" --no-git-tag-version > /dev/null)
+    BUMP_VERSION=$(node -p "require('./$pkg_dir/package.json').version")
+    BUMP_HAPPENED=true
+    echo "  Bumped to $BUMP_VERSION"
+  else
+    BUMP_VERSION="$local_version"
+    BUMP_HAPPENED=false
+    echo "  Local ($local_version) ahead of remote — using as-is."
+  fi
+}
+
+commit_and_tag_bump() {
+  local pkg_dir="$1" bump_label="$2" tag_prefix="$3"
+  load_env
+  configure_bot_git
+  git add "$pkg_dir/package.json" "$pkg_dir/package-lock.json" 2>/dev/null || \
+    git add "$pkg_dir/package.json"
+  git commit -m "chore(release): bump ${bump_label} to v${BUMP_VERSION}
+
+Auto-bumped by deploy.sh after a change under ${pkg_dir}/** was
+published without a manual version bump.
+
+[skip ci]"
+  git push "$(auth_remote)" main
+  git tag -a "${tag_prefix}v${BUMP_VERSION}" -m "${bump_label} v${BUMP_VERSION}"
+  git push "$(auth_remote)" "${tag_prefix}v${BUMP_VERSION}"
+}
+
+package_build() {
+  local pkg_dir="$1"
+  echo "==> Installing dependencies for $pkg_dir..."
+  npm ci
+}
+
+package_deploy() {
+  local pkg_dir="$1" pkg_name="$2" bump_kind="${3:-patch}"
+  load_env
+  local _npm_token="${NPM_TOKEN:?NPM_TOKEN not set in .env}"
+
+  echo "==> Checking version for $pkg_name..."
+  compute_npm_version_bump "$pkg_dir" "$pkg_name" "$bump_kind"
+
+  echo "==> Publishing $pkg_name to npm..."
+  (cd "$pkg_dir" && NPM_TOKEN="$_npm_token" npm publish --access public \
+    --registry https://registry.npmjs.org/ \
+    --//registry.npmjs.org/:_authToken="$_npm_token")
+
+  if [ "$BUMP_HAPPENED" = "true" ]; then
+    commit_and_tag_bump "$pkg_dir" "$pkg_name" "$(basename "$pkg_dir")-"
+  fi
+  echo "==> $pkg_name published to npm."
+}
+
+vscode_build() {
+  echo "==> Building VS Code extension..."
+  (cd "$VSCODE_DIR" && npm run build)
+}
+
+vscode_deploy() {
+  local bump_kind="${1:-patch}"
+  load_env
+  local _vsce_pat="${VSCE_PAT:?VSCE_PAT not set in .env}"
+
+  echo "==> Checking version for $VSCODE_EXT_ID..."
+  compute_vscode_version_bump "$VSCODE_DIR" "$VSCODE_EXT_ID" "$bump_kind"
+
+  echo "==> Packaging & publishing $VSCODE_EXT_ID..."
+  (cd "$VSCODE_DIR" && npx @vscode/vsce package --no-dependencies && \
+    VSCE_PAT="$_vsce_pat" npx @vscode/vsce publish --no-dependencies --pat "$_vsce_pat")
+
+  if [ "$BUMP_HAPPENED" = "true" ]; then
+    commit_and_tag_bump "$VSCODE_DIR" "$VSCODE_EXT_ID" "vscode-lixsketch-"
+  fi
+  echo "==> $VSCODE_EXT_ID published to VS Code Marketplace."
+}
+
+github_deploy() {
+  local pkg_dir="$1"
+  load_env
+  local _gh_token="${GITHUB_ACCESS_TOKEN:?GITHUB_ACCESS_TOKEN not set in .env}"
+
+  echo "==> Publishing to GitHub Packages (best-effort mirror)..."
+  local original_repo
+  original_repo=$(node -p "JSON.stringify(require('./$pkg_dir/package.json').repository || null)")
+  node -e "
+    const fs = require('fs');
+    const pkg = require('./$pkg_dir/package.json');
+    pkg.repository = { type: 'git', url: 'git+' + require('child_process').execSync('git remote get-url origin').toString().trim().replace(/^git@github.com:/, 'https://github.com/') + '.git' };
+    fs.writeFileSync('./$pkg_dir/package.json', JSON.stringify(pkg, null, 2) + '\n');
+  "
+  if (cd "$pkg_dir" && npm publish --access public --registry https://npm.pkg.github.com/ \
+      --//npm.pkg.github.com/:_authToken="$_gh_token"); then
+    echo "==> Published to GitHub Packages."
+  else
+    echo "==> [warn] GitHub Packages publish failed. npmjs is canonical; this mirror is best-effort."
+  fi
+  node -e "
+    const fs = require('fs');
+    const pkg = require('./$pkg_dir/package.json');
+    const orig = $original_repo;
+    if (orig) pkg.repository = orig; else delete pkg.repository;
+    fs.writeFileSync('./$pkg_dir/package.json', JSON.stringify(pkg, null, 2) + '\n');
+  "
+}
+
+worker_build() {
+  echo "==> Installing dependencies for worker..."
+  npm ci
+}
+
+worker_deploy() {
+  echo "==> Deploying Worker..."
   npx wrangler deploy
   echo "==> Worker deploy complete."
 }
 
-# ── Release Commands ─────────────────────────────────────────
-
-generate_changelog() {
-  if $SKIP_CHANGELOG; then
-    echo "==> Skipping changelog generation"
-    return
-  fi
-
-  echo "==> Generating changelog..."
-
-  LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-  if [ -z "$LAST_TAG" ]; then
-    RANGE="HEAD"
-  else
-    RANGE="${LAST_TAG}..HEAD"
-  fi
-
-  local DATE
-  DATE=$(date +%Y-%m-%d)
-
-  FEATS=$(git log "$RANGE" --oneline --format='%s' 2>/dev/null | grep -E '^feat' | sed 's/^feat(\([^)]*\)): /- **\1**: /' | sed 's/^feat: /- /' || true)
-  FIXES=$(git log "$RANGE" --oneline --format='%s' 2>/dev/null | grep -E '^fix' | sed 's/^fix(\([^)]*\)): /- **\1**: /' | sed 's/^fix: /- /' || true)
-  OTHER=$(git log "$RANGE" --oneline --format='%s' 2>/dev/null | grep -vE '^(feat|fix|docs|chore|ci|style|refactor|test)' || true)
-
-  {
-    echo ""
-    echo "## v${NEW_VERSION} ($DATE)"
-    echo ""
-    if [ -n "$FEATS" ]; then
-      echo "### Features"
-      echo "$FEATS"
-      echo ""
-    fi
-    if [ -n "$FIXES" ]; then
-      echo "### Fixes"
-      echo "$FIXES"
-      echo ""
-    fi
-    if [ -n "$OTHER" ] && [ "$(echo "$OTHER" | wc -l)" -gt 0 ]; then
-      echo "### Other"
-      echo "$OTHER" | head -10 | sed 's/^/- /'
-      echo ""
-    fi
-  } > /tmp/changelog_entry.md
-
-  if [ -f "$SCRIPT_DIR/CHANGELOG.md" ]; then
-    head -1 "$SCRIPT_DIR/CHANGELOG.md" > /tmp/cl_head.md
-    cat /tmp/changelog_entry.md > /tmp/cl_new.md
-    tail -n +2 "$SCRIPT_DIR/CHANGELOG.md" > /tmp/cl_tail.md
-    cat /tmp/cl_head.md /tmp/cl_new.md /tmp/cl_tail.md > "$SCRIPT_DIR/CHANGELOG.md"
-  else
-    echo "# Changelog" > "$SCRIPT_DIR/CHANGELOG.md"
-    cat /tmp/changelog_entry.md >> "$SCRIPT_DIR/CHANGELOG.md"
-  fi
-
-  echo "==> Changelog updated"
+pages_build() {
+  echo "==> Building for Cloudflare Pages..."
+  npx @cloudflare/next-on-pages
+  echo "==> Build complete (.vercel/output/static)"
 }
 
-do_release() {
-  local BUMP="patch"
-  local DRY_RUN=false
-  local SKIP_CHANGELOG=false
-  local RELEASE_ENGINE=false
-  local RELEASE_VSCODE=false
-  local RELEASE_WEB=false
-  local TARGETS=()
-
-  # Parse release sub-args
-  for arg in "$@"; do
-    case "$arg" in
-      --patch)  BUMP="patch" ;;
-      --minor)  BUMP="minor" ;;
-      --major)  BUMP="major" ;;
-      --dry-run) DRY_RUN=true ;;
-      --skip-changelog) SKIP_CHANGELOG=true ;;
-      engine) TARGETS+=("engine") ;;
-      vscode) TARGETS+=("vscode") ;;
-      web)    TARGETS+=("web") ;;
-      all)    TARGETS+=("all") ;;
-    esac
-  done
-
-  # Default to 'all'
-  if [ ${#TARGETS[@]} -eq 0 ]; then
-    TARGETS=("all")
+pages_deploy() {
+  if [ ! -d "$SCRIPT_DIR/.vercel/output/static" ]; then
+    echo "==> No build found, building first..."
+    pages_build
   fi
-
-  for t in "${TARGETS[@]}"; do
-    case "$t" in
-      engine) RELEASE_ENGINE=true ;;
-      vscode) RELEASE_VSCODE=true ;;
-      web)    RELEASE_WEB=true ;;
-      all)    RELEASE_ENGINE=true; RELEASE_VSCODE=true; RELEASE_WEB=true ;;
-    esac
-  done
-
-  # ── Load tokens from .env ──
-  load_env
-  local _NPM_TOKEN="${NPM_TOKEN:?NPM_TOKEN not set in .env}"
-  local _VSCE_PAT="${VSCE_PAT:?VSCE_PAT not set in .env}"
-  local _GH_TOKEN="${GITHUB_ACCESS_TOKEN:?GITHUB_ACCESS_TOKEN not set in .env}"
-
-  echo "==> Tokens loaded from .env"
-
-  # ── Version Bump ──
-  echo "==> Bumping versions ($BUMP)..."
-
-  if $RELEASE_ENGINE; then
-    dry_run " npm version $BUMP --no-git-tag-version -w packages/lixsketch"
-  fi
-  if $RELEASE_VSCODE; then
-    dry_run " npm version $BUMP --no-git-tag-version -w packages/vscode"
-  fi
-  if $RELEASE_WEB; then
-    dry_run " npm version $BUMP --no-git-tag-version"
-  fi
-
-  if $RELEASE_ENGINE; then
-    NEW_VERSION=$(node -p "require('./packages/lixsketch/package.json').version" 2>/dev/null || echo "0.0.0")
-  else
-    NEW_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
-  fi
-
-  echo "==> New version: v${NEW_VERSION}"
-
-  # ── Changelog ──
-  generate_changelog
-
-  # ── Build & Publish ──
-  if $RELEASE_ENGINE; then
-    echo "==> Publishing @elixpo/lixsketch to npm..."
-    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' &&  NPM_TOKEN='$_NPM_TOKEN' npm publish --access public --registry https://registry.npmjs.org/ --//registry.npmjs.org/:_authToken='$_NPM_TOKEN'"
-    echo "==> Publishing @elixpo/lixsketch to GitHub Packages..."
-    dry_run "cd '$SCRIPT_DIR/packages/lixsketch' &&  npm publish --access public --registry https://npm.pkg.github.com/ --//npm.pkg.github.com/:_authToken='$_GH_TOKEN'"
-    echo "==> Engine published (npm + GitHub Packages)"
-  fi
-
-  if $RELEASE_VSCODE; then
-    echo "==> Building VS Code extension..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode' &&  npm run build"
-    echo "==> Packaging & publishing VS Code extension..."
-    dry_run "cd '$SCRIPT_DIR/packages/vscode' &&  npx @vscode/vsce package --no-dependencies &&  VSCE_PAT='$_VSCE_PAT' npx @vscode/vsce publish --no-dependencies --pat '$_VSCE_PAT'"
-    echo "==> VS Code extension published"
-  fi
-
-  if $RELEASE_WEB; then
-    echo "==> Building & deploying website..."
-    dry_run "cd '$SCRIPT_DIR' &&  npx @cloudflare/next-on-pages"
-    dry_run "cd '$SCRIPT_DIR' &&  npx wrangler pages deploy .vercel/output/static --project-name lixsketch --branch main"
-    echo "==> Website deployed"
-  fi
-
-  # ── Git Tag & Push ──
-  echo "==> Committing and tagging v${NEW_VERSION}..."
-  dry_run " git add -A"
-  dry_run " git commit -m 'release: v${NEW_VERSION}' || true"
-  dry_run " git tag 'v${NEW_VERSION}'"
-  dry_run " git push \"\$(auth_remote)\" main --tags"
-
-  # ── GitHub Release ──
-  echo "==> Creating GitHub release..."
-  dry_run " GH_TOKEN='$_GH_TOKEN' GITHUB_TOKEN='$_GH_TOKEN' gh release create 'v${NEW_VERSION}' --generate-notes --title 'v${NEW_VERSION}'"
-
-  echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "  Release v${NEW_VERSION} complete!"
-  echo ""
-  $RELEASE_ENGINE && echo "  - @elixpo/lixsketch published to npm"
-  $RELEASE_VSCODE && echo "  - LixSketch VS Code extension published"
-  $RELEASE_WEB    && echo "  - Website deployed to Cloudflare Pages"
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "==> Deploying to Cloudflare Pages ($PAGES_PROJECT)..."
+  npx wrangler pages deploy .vercel/output/static \
+    --project-name "$PAGES_PROJECT" \
+    --branch "$PAGES_BRANCH"
+  echo "==> Pages deploy complete."
 }
-
-# ── Usage ────────────────────────────────────────────────────
 
 usage() {
-  echo "Usage: ./deploy.sh [command ...] [options]"
-  echo ""
-  echo "Infra Commands:"
-  echo "  deploy              Build & deploy website to Cloudflare Pages"
-  echo "  worker              Deploy the collab Worker"
-  echo "  secrets             Upload .env vars to Worker + Pages"
-  echo "  build               Build Pages only (no deploy)"
-  echo "  all                 secrets + worker + deploy"
-  echo ""
-  echo "Release Commands:"
-  echo "  release [targets]   Full release with version bump + changelog + publish"
-  echo "                      Targets: engine, vscode, web, all (default: all)"
-  echo ""
-  echo "Release Options:"
-  echo "  --patch             Patch version bump (default)"
-  echo "  --minor             Minor version bump"
-  echo "  --major             Major version bump"
-  echo "  --dry-run           Preview without executing"
-  echo "  --skip-changelog    Skip changelog generation"
-  echo ""
-  echo "Auth (auto-loaded from .env):"
-  echo "  NPM_TOKEN           npm publish authentication"
-  echo "  VSCE_PAT            VS Code Marketplace publish"
-  echo "  GITHUB_ACCESS_TOKEN GitHub release creation"
-  echo ""
-  echo "Examples:"
-  echo "  ./deploy.sh deploy                     # Quick website deploy"
-  echo "  ./deploy.sh release all --minor        # Release everything"
-  echo "  ./deploy.sh release engine --patch     # Publish npm package only"
-  echo "  ./deploy.sh release vscode             # Publish VS Code extension"
-  echo "  ./deploy.sh release all --dry-run      # Preview full release"
+  cat <<'USAGE_EOF'
+Usage:
+  ./deploy.sh --package [--name <pkg>] build|deploy   npm package (default: lixsketch)
+  ./deploy.sh --package --vs           build|deploy   VS Code extension
+  ./deploy.sh --worker                 build|deploy   Cloudflare Worker
+  ./deploy.sh --pages                  build|deploy   Cloudflare Pages
+  ./deploy.sh --github                 build|deploy   GitHub Packages mirror of npm
+
+Options:
+  --name <pkg>   which npm package, when a repo has more than one
+  --patch/--minor/--major   version bump kind for publish steps (default: patch)
+
+Examples:
+  ./deploy.sh --package build deploy         # build + publish lixsketch to npm
+  ./deploy.sh --package --vs build deploy    # build + publish VS Code extension
+  ./deploy.sh --worker build deploy          # deploy the collab Worker
+  ./deploy.sh --pages build deploy           # build + deploy the website
+  ./deploy.sh --github deploy                # mirror lixsketch to GitHub Packages
+USAGE_EOF
 }
 
-# ── Entrypoint ───────────────────────────────────────────────
+MODE=""
+PACKAGE_NAME=""
+IS_VSCODE=false
+BUMP_KIND="patch"
+ACTIONS=()
 
-# DRY_RUN default for non-release commands
-DRY_RUN=false
-SKIP_CHANGELOG=false
-NEW_VERSION=""
-
-run_command() {
+while [ $# -gt 0 ]; do
   case "$1" in
-    deploy)  deploy ;;
-    worker)  worker ;;
-    secrets) secrets ;;
-    build)   build ;;
-    all)     secrets; worker; deploy ;;
-    release) shift; do_release "$@"; exit 0 ;;
-    -h|--help|help) usage ;;
+    --package) MODE="package" ;;
+    --worker)  MODE="worker" ;;
+    --pages)   MODE="pages" ;;
+    --github)  MODE="github" ;;
+    --vs)      IS_VSCODE=true ;;
+    --name)    shift; PACKAGE_NAME="${1:-}" ;;
+    --patch)   BUMP_KIND="patch" ;;
+    --minor)   BUMP_KIND="minor" ;;
+    --major)   BUMP_KIND="major" ;;
+    build|deploy) ACTIONS+=("$1") ;;
+    -h|--help|help) usage; exit 0 ;;
     *)
-      echo "Unknown command: $1"
+      echo "Unknown argument: $1"
       usage
       exit 1
       ;;
   esac
-}
-
-if [ $# -eq 0 ]; then
-  deploy
-elif [ "$1" = "release" ]; then
   shift
-  do_release "$@"
-else
-  for cmd in "$@"; do
-    run_command "$cmd"
-  done
+done
+
+if [ -z "$MODE" ]; then
+  echo "Error: one of --package, --worker, --pages, --github is required."
+  usage
+  exit 1
 fi
+if [ ${#ACTIONS[@]} -eq 0 ]; then
+  echo "Error: at least one of 'build' or 'deploy' is required."
+  usage
+  exit 1
+fi
+
+for action in "${ACTIONS[@]}"; do
+  case "$MODE" in
+    package)
+      if $IS_VSCODE; then
+        [ "$action" = "build" ]  && vscode_build
+        [ "$action" = "deploy" ] && vscode_deploy "$BUMP_KIND"
+      else
+        target_dir="$NPM_PACKAGE_DIR"
+        target_name="$NPM_PACKAGE_NAME"
+        if [ -n "$PACKAGE_NAME" ]; then
+          echo "==> [warn] --name '$PACKAGE_NAME' given, but this repo only has one npm package (lixsketch). Ignoring."
+        fi
+        [ "$action" = "build" ]  && package_build "$target_dir"
+        [ "$action" = "deploy" ] && package_deploy "$target_dir" "$target_name" "$BUMP_KIND"
+      fi
+      ;;
+    worker)
+      [ "$action" = "build" ]  && worker_build
+      [ "$action" = "deploy" ] && worker_deploy
+      ;;
+    pages)
+      [ "$action" = "build" ]  && pages_build
+      [ "$action" = "deploy" ] && pages_deploy
+      ;;
+    github)
+      [ "$action" = "deploy" ] && github_deploy "$NPM_PACKAGE_DIR"
+      [ "$action" = "build" ]  && echo "==> [info] --github has no separate build step; use --package build first."
+      ;;
+  esac
+done
