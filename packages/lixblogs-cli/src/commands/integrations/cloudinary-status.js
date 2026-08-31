@@ -14,6 +14,6 @@ export async function cloudinaryStatus({ integrationsClient }) {
     const data = await integrationsClient.cloudinaryStatus();
     return { ok: true, data };
   } catch (error) {
-    return { ok: false, reason: error.message };
+    return { ok: false, error };
   }
 }

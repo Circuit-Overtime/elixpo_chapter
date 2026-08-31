@@ -15,6 +15,8 @@ export class IntegrationsClient {
       const error = new Error(payload?.error?.message || `Request failed with HTTP ${response.status}`);
       error.code = payload?.error?.code || `http_${response.status}`;
       error.status = response.status;
+      error.requestId = payload?.error?.requestId || response.headers.get('x-request-id') || null;
+      error.details = payload?.error?.details || null;
       throw error;
     }
     return payload.data;

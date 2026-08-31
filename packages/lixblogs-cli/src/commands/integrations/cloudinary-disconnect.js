@@ -34,6 +34,6 @@ export async function cloudinaryDisconnect({ integrationsClient, confirmed }) {
     const data = await integrationsClient.cloudinaryDisconnect();
     return { ok: true, data };
   } catch (error) {
-    return { ok: false, reason: error.message };
+    return { ok: false, error };
   }
 }

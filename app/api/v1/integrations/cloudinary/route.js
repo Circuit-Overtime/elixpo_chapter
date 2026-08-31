@@ -6,7 +6,6 @@ import { apiError, apiSuccess, requestContext } from '../../../../../lib/api/v1/
 import { recordApiAudit } from '../../../../../lib/api/v1/operations';
 import {
   USER_CLOUDINARY,
-  getUserCloudinaryConnection,
 } from '../../../../../lib/cloudinaryConnections';
 import { decryptIntegrationSecret } from '../../../../../lib/integrationSecrets';
 import { revokeCloudinaryToken } from '../../../../../lib/cloudinaryOAuth';
@@ -19,11 +18,17 @@ async function connectionStatus(db, userId) {
     SELECT cloud_name, enabled, created_at, updated_at, auth_method
     FROM cloudinary_connections WHERE user_id = ?
   `).bind(userId).first();
+  const usage = await db.prepare(`
+    SELECT COUNT(*) AS count, COALESCE(SUM(size_bytes), 0) AS bytes
+    FROM media_uploads WHERE user_id = ? AND storage_provider = ?
+  `).bind(userId, USER_CLOUDINARY).first();
   return {
     connected: !!connection,
     useForUploads: !!connection?.enabled,
     cloudName: connection?.cloud_name || null,
     authMethod: connection?.auth_method || null,
+    mediaCount: Number(usage?.count || 0),
+    trackedBytes: Number(usage?.bytes || 0),
     connectedAt: connection?.created_at || null,
     updatedAt: connection?.updated_at || null,
   };
