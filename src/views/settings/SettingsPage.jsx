@@ -1420,6 +1420,7 @@ function IntegrationsTab() {
     invalid_state: { ok: false, text: 'The Pollinations authorization session expired. Start again.' },
     scope_missing: { ok: false, text: 'The connection did not grant usage access. Reconnect and approve the requested scope.' },
     authorization_failed: { ok: false, text: 'Pollinations rejected the authorization request.' },
+    scope_missing: { ok: false, text: 'Pollinations did not grant read-only usage access. Reconnect and approve the requested scope.' },
     config_error: { ok: false, text: 'Pollinations BYOP is not configured on this deployment.' },
     disabled: { ok: false, text: 'Pollinations image generation is not enabled yet.' },
     failed: { ok: false, text: 'Pollinations could not be connected. Check the App Key and exact callback URI.' },
@@ -1555,7 +1556,7 @@ function IntegrationsTab() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-base font-bold text-[var(--text-primary)]">Pollinations image generation</h3>
-                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">Coming soon</span>
+                {pollinations && !pollinations.enabled && <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">Coming soon</span>}
                 {pollinations && <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${pollinations.connected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}>{pollinations.connected ? 'Connected' : pollinations.status}</span>}
               </div>
               <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">Authorize LixBlogs through BYOP to generate images with your Pollen. Your key stays encrypted on the server and is never returned to the browser or CLI.</p>
@@ -1576,6 +1577,8 @@ function IntegrationsTab() {
               <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Pollen balance</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{pollinations.balance ?? '—'}</p></div>
               <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Approved budget</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{pollinations.budget ?? 'Provider default'}</p></div>
               <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Expires</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{pollinations.expiresAt ? new Date(pollinations.expiresAt * 1000).toLocaleDateString() : 'Provider managed'}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Recent requests</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{pollinations.usageTotals?.requests || 0}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Recent Pollen used</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{Number(pollinations.usageTotals?.pollen || 0).toFixed(2)}</p></div>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
               <p className="text-[var(--text-muted)]">Models: {(pollinations.models || []).join(', ') || '—'}</p>

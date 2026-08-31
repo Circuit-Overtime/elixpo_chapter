@@ -24,7 +24,7 @@ export async function POST(request) {
       const form = await request.formData();
       input = Object.fromEntries([...form.entries()].filter(([, value]) => typeof value === 'string'));
       referenceFile = form.get('referenceImage');
-      if (!(referenceFile instanceof File)) referenceFile = null;
+      if (!referenceFile || typeof referenceFile.arrayBuffer !== 'function' || typeof referenceFile.size !== 'number') referenceFile = null;
     } else input = await request.json();
     const { prompt, model = 'flux', generationId, destination = 'inline' } = input;
     const seed = input.seed === undefined || input.seed === '' ? undefined : Number(input.seed);

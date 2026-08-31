@@ -16,6 +16,12 @@ import { isAllowedMime, ALLOWED_IMAGE_MIME_TYPES } from '../../../../src/utils/a
 // Profile image types — these get overwritten (no history), no storage tracking
 const PROFILE_TYPES = ['avatar', 'banner', 'org_avatar', 'org_banner'];
 
+function uploadTransformation(mediaType) {
+  if (mediaType === 'avatar' || mediaType === 'org_avatar') return 'c_fill,g_face,w_512,h_512,q_auto:low,f_webp';
+  if (mediaType === 'banner' || mediaType === 'org_banner' || mediaType === 'cover') return 'c_limit,w_1920,h_1080,q_auto:low,f_webp';
+  return 'c_limit,w_1920,q_auto:low,f_webp';
+}
+
 async function uploadIdentity(request) {
   const session = await getSession();
   if (session?.userId) return session;
@@ -284,6 +290,7 @@ export async function POST(request) {
         folder,
         publicId,
         mimeType: file.type,
+        transformation: uploadTransformation(mediaType),
         // Covers also use a deterministic public id (`.../<blogId>/cover`).
         // Without overwrite, every replacement is rejected by Cloudinary
         // because the asset already exists.
@@ -339,7 +346,7 @@ export async function POST(request) {
     // Blog content images: track in media_uploads + update storage
     if (db) {
       try {
-        const fileBytes = file.size;
+        const fileBytes = Number(result.bytes) || file.size;
         const mediaId = uploadId || crypto.randomUUID();
         const now = Math.floor(Date.now() / 1000);
 
