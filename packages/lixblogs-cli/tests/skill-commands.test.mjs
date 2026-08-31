@@ -8,11 +8,13 @@ test('bundled skills are individually discoverable', async () => {
     'lixblogs-analytics',
     'lixblogs-author',
     'lixblogs-editorial',
+    'lixblogs-media',
     'lixblogs-organizations',
     'lixblogs-publish',
   ]);
   assert.equal(skills.find((skill) => skill.name === 'lixblogs-analytics').minimumCliVersion, '1.3.0');
-  assert.ok(skills.filter((skill) => skill.name !== 'lixblogs-analytics').every((skill) => skill.minimumCliVersion === '1.2.0'));
+  assert.equal(skills.find((skill) => skill.name === 'lixblogs-media').minimumCliVersion, '1.5.0');
+  assert.ok(skills.filter((skill) => !['lixblogs-analytics', 'lixblogs-media'].includes(skill.name)).every((skill) => skill.minimumCliVersion === '1.2.0'));
 });
 
 test('skill inspection returns the exact agent instruction', async () => {
