@@ -387,6 +387,7 @@ export default function BlogPreview({
   const { isDark } = useTheme();
   const contentRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const linkPreview = useLinkPreview();
   const linkPreviewRef = useRef(linkPreview);
   linkPreviewRef.current = linkPreview;
@@ -394,7 +395,19 @@ export default function BlogPreview({
   const mentionTimerRef = useRef(null);
 
   useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setShowBackToTop(window.scrollY > 400);
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const progress = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
+          setScrollProgress(Math.min(1, Math.max(0, progress)));
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -959,7 +972,21 @@ export default function BlogPreview({
           className="preview-back-to-top"
           onClick={() => document.getElementById('blog-preview-top')?.scrollIntoView({ behavior: 'smooth' })}
           title="Back to top"
+          style={{ position: 'fixed', bottom: '2rem', right: '2rem', width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-elevated)', border: 'none', cursor: 'pointer', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
         >
+          <svg width="40" height="40" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', transform: 'rotate(-90deg)' }}>
+            <circle
+              cx="20"
+              cy="20"
+              r="18"
+              fill="none"
+              stroke="var(--accent)"
+              strokeWidth="2"
+              strokeDasharray={2 * Math.PI * 18}
+              strokeDashoffset={2 * Math.PI * 18 * (1 - scrollProgress)}
+              strokeLinecap="round"
+            />
+          </svg>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
         </button>
       )}

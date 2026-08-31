@@ -85,6 +85,7 @@ jobs:
               case "$file" in
                 packages/lixeditor/*) lixeditor=true ;;
                 packages/lixblogs-cli/*|.agents/skills/*) cli=true ;;
+                .github/workflows/deploy.yml|deploy.sh) lixeditor=true; cli=true ;;
                 packages/vscode-lixeditor/*) vscode=true ;;
                 worker/*) worker=true ;;
                 payouts.catalog.json|scripts/sync-payouts-tiers.mjs) catalog=true ;;
@@ -146,9 +147,12 @@ jobs:
             root=$(mktemp -d)
             tar -xzf "$archive" -C "$root"
             bytes=$(find "$root/package" -type f -printf '%s\n' | awk '{ total += $1 } END { print total + 0 }')
-            test "$bytes" -le "$budget"
             PACKAGE_ROOT="$root/package"
             echo "$(basename "$archive"): $bytes bytes unpacked (budget: $budget)"
+            if [ "$bytes" -gt "$budget" ]; then
+              echo "::error::$(basename "$archive") exceeds its unpacked-size budget by $((bytes - budget)) bytes."
+              return 1
+            fi
           }
           if [ "$BUILD_LIXEDITOR" = "true" ]; then
             archive=$(find .release/packages/lixeditor -name '*.tgz' -print -quit)
@@ -189,8 +193,12 @@ jobs:
           ./deploy.sh "${args[@]}" deploy
       - name: Publish the same artifacts to GitHub Packages
         env:
-          GITHUB_ACCESS_TOKEN: ${{ github.token }}
+          GITHUB_ACCESS_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
         run: |
+          if [ -z "$GITHUB_ACCESS_TOKEN" ]; then
+            echo "::error::ELIXPOO_GITHUB_AGENTIC_TOKEN is required with the write:packages scope."
+            exit 1
+          fi
           args=(--github --no-bump)
           if [ "${{ needs.changes.outputs.lixeditor }}" = "true" ] && [ "${{ needs.changes.outputs.cli }}" != "true" ]; then args+=(--lixeditor); fi
           if [ "${{ needs.changes.outputs.cli }}" = "true" ] && [ "${{ needs.changes.outputs.lixeditor }}" != "true" ]; then args+=(--cli); fi

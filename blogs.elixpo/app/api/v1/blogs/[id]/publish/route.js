@@ -30,6 +30,9 @@ export async function POST(request, { params }) {
   if (!idempotencyKey) return apiError(context, 'idempotency_key_required', 'Idempotency-Key is required.', 400, { headers: rateHeaders });
 
   try {
+    const body = await request.json().catch(() => ({}));
+    const targetStatus = body.status || 'published';
+    if (!['published', 'unlisted'].includes(targetStatus)) return apiError(context, 'invalid_status', 'status must be published or unlisted.', 400, { headers: rateHeaders });
     const blog = await db.prepare('SELECT * FROM blogs WHERE id = ? AND deleted_at IS NULL').bind(id).first();
     if (!blog || !(await canEditBlog(db, id, auth.userId)).ok) {
       return apiError(context, 'blog_not_found', 'The blog was not found.', 404, { headers: rateHeaders });
@@ -44,7 +47,7 @@ export async function POST(request, { params }) {
       return apiError(context, 'content_too_short', 'A post needs at least 20 words before publishing.', 400, { headers: rateHeaders });
     }
 
-    const requestHash = await hashApiRequest({ id, etag: request.headers.get('if-match') });
+    const requestHash = await hashApiRequest({ id, status: targetStatus, etag: request.headers.get('if-match') });
     const reservation = await beginIdempotentOperation(db, {
       userId: auth.userId, operation: 'blogs.publish', key: idempotencyKey, requestHash,
     });
@@ -62,13 +65,13 @@ export async function POST(request, { params }) {
     }
     const now = Math.floor(Date.now() / 1000);
     await db.prepare(`
-      UPDATE blogs SET status = 'published', published_at = COALESCE(published_at, ?),
+      UPDATE blogs SET status = ?, published_at = COALESCE(published_at, ?),
         read_time_minutes = ?, updated_at = ? WHERE id = ?
-    `).bind(now, readTimeFromWords(countBlockWords(content)), now, id).run();
+    `).bind(targetStatus, now, readTimeFromWords(countBlockWords(content)), now, id).run();
     const updated = await db.prepare('SELECT * FROM blogs WHERE id = ?').bind(id).first();
     const etag = await blogEntityTag(updated);
     const path = await getBlogCanonicalPath(db, id);
-    const result = { id, slug: updated.slug, status: 'published', updatedAt: now, etag, url: `https://blogs.elixpo.com${path}` };
+    const result = { id, slug: updated.slug, status: targetStatus, updatedAt: now, etag, url: `https://blogs.elixpo.com${path}` };
     await completeIdempotentOperation(db, {
       userId: auth.userId, operation: 'blogs.publish', key: idempotencyKey, requestHash,
       status: 200, body: { data: result },

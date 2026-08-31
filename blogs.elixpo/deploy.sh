@@ -442,21 +442,28 @@ publish_npm_package() {
     return
   fi
 
+  local publish_args=(publish "$artifact" --access public --registry https://registry.npmjs.org/)
+  # npm provenance depends on GitHub Actions' OIDC environment. Passing the
+  # flag from a developer terminal makes npm fail with provider: null.
+  if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+    publish_args+=(--provenance)
+  fi
+
   if [ -n "$NPM_PUBLISH_TOKEN" ]; then
-    run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \
-      --registry https://registry.npmjs.org/ \
-      --provenance \
-      "--//registry.npmjs.org/:_authToken=$NPM_PUBLISH_TOKEN"
+    publish_args+=("--//registry.npmjs.org/:_authToken=$NPM_PUBLISH_TOKEN")
+    run_in_dir "$SCRIPT_DIR" npm "${publish_args[@]}"
   elif [ "${NPM_TRUSTED_PUBLISHING:-false}" = "true" ]; then
-    run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \
-      --registry https://registry.npmjs.org/ --provenance
+    if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
+      echo "Error: npm trusted publishing requires the GitHub Actions OIDC environment."
+      exit 1
+    fi
+    run_in_dir "$SCRIPT_DIR" npm "${publish_args[@]}"
   else
     if ! $DRY_RUN && ! npm whoami --registry https://registry.npmjs.org/ >/dev/null 2>&1; then
       echo "Error: npm is not authenticated. Run 'npm login' or set NPM_TOKEN."
       exit 1
     fi
-    run_in_dir "$SCRIPT_DIR" npm publish "$artifact" --access public \
-      --registry https://registry.npmjs.org/
+    run_in_dir "$SCRIPT_DIR" npm "${publish_args[@]}"
   fi
 }
 

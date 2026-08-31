@@ -38,6 +38,8 @@ import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
 import { OrgClient } from "../src/api/OrgClient.js";
 import { CollaborationClient } from "../src/api/CollaborationClient.js";
 import { AnalyticsClient } from "../src/api/AnalyticsClient.js";
+import { IntegrationsClient } from "../src/api/IntegrationsClient.js";
+import { MediaClient } from "../src/api/MediaClient.js";
 import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
 import { colorEnabled, listenForEnter, loginChallenge, successLine } from "../src/cli/ui.js";
 import {
@@ -45,9 +47,11 @@ import {
   blogDelete,
   blogEdit,
   blogGet,
+  blogHistory,
   blogList,
   blogPublish,
   blogRestore,
+  blogRestoreVersion,
   blogUnpublish,
 } from "../src/commands/blog/index.js";
 import {
@@ -68,6 +72,11 @@ import {
 } from "../src/commands/collab/index.js";
 import { skillInspect, skillInstall, skillList } from "../src/commands/skill/index.js";
 import { analyticsExport, analyticsQuery } from "../src/commands/analytics/index.js";
+import { cloudinaryDisconnect } from "../src/commands/integrations/cloudinary-disconnect.js";
+import { cloudinaryStatus } from "../src/commands/integrations/cloudinary-status.js";
+import { mediaDelete, mediaGenerate, mediaUpload } from "../src/commands/media/index.js";
+import { commentAdd, commentDelete, commentList, commentReply } from "../src/commands/comment/index.js";
+
 
 const OPTIONS = {
   profile: { type: "string" },
@@ -118,6 +127,25 @@ const OPTIONS = {
   "hide-on-profile": { type: "boolean", default: false },
   target: { type: "string" },
   force: { type: "boolean", default: false },
+  prompt: { type: "string" },
+  reference: { type: "string" },
+  model: { type: "string" },
+  seed: { type: "string" },
+  width: { type: "string" },
+  height: { type: "string" },
+  blog: { type: "string" },
+  type: { type: "string" },
+  attach: { type: "boolean", default: false },
+  caption: { type: "string" },
+  "upload-id": { type: "string" },
+  version: { type: "string" },
+  parent: { type: "string" },
+  comment: { type: "string" },
+  "allow-comments": { type: "boolean", default: false },
+  "no-comments": { type: "boolean", default: false },
+  "cover-x": { type: "string" },
+  "cover-y": { type: "string" },
+  "cover-zoom": { type: "string" },
   help: { type: "boolean", short: "h", default: false },
 };
 
@@ -146,6 +174,12 @@ Usage:
   lixblogs blog delete <id> --yes [--permanent] [--dry-run] [--json]
   lixblogs blog trash <id> --yes [--dry-run] [--json]
   lixblogs blog restore <id> --yes [--dry-run] [--json]
+  lixblogs blog history <id> [--json]
+  lixblogs blog restore-version <id> --version <version-id> --yes [--json]
+  lixblogs comment list <blog-id> [--json]
+  lixblogs comment add <blog-id> --content <text> [--json]
+  lixblogs comment reply <blog-id> --parent <comment-id> --content <text> [--json]
+  lixblogs comment delete <blog-id> --comment <comment-id> --yes [--json]
   lixblogs org list          [--json]
   lixblogs org get <id>      [--json]
   lixblogs org collections <id> [--json]
@@ -160,9 +194,18 @@ Usage:
   lixblogs collab decline <blog-id> --yes
   lixblogs analytics query [--scope personal|org:<id>] [--range 30d] [--dimension overview]
   lixblogs analytics export --output <file> [--format json|csv] [query options]
+  lixblogs integrations cloudinary-status [--json]
+  lixblogs integrations cloudinary-disconnect --yes [--json]
+  lixblogs integrations pollinations-status [--json]
+  lixblogs integrations pollinations-disconnect --yes [--json]
+  lixblogs media generate --prompt <text> [--model flux] [--reference <image>] [--blog <id> --type inline|cover --attach] [--output <file>]
+  lixblogs media upload --file <image> --blog <id> [--type inline|cover] [--attach]
+  lixblogs media delete <media-id> --yes [--json]
   lixblogs skill list             [--json]
   lixblogs skill inspect <name>   [--json]
   lixblogs skill install <name>   [--target <directory>] [--dry-run] --yes
+  lixblogs disconnect cloudinary --yes
+  lixblogs disconnect pollinations
 
 Global flags:
   --profile <name>            local account alias (defaults to the signed-in username)
@@ -196,7 +239,12 @@ Machine mode:
 
 const DEFAULT_SCOPES = [
   "openid", "profile", "email",
-  "lixblogs:profile:read", "lixblogs:blog:read",
+  "lixblogs:profile:read", "lixblogs:profile:write",
+  "lixblogs:blog:read", "lixblogs:blog:write", "lixblogs:blog:publish", "lixblogs:blog:delete",
+  "lixblogs:media:read", "lixblogs:media:write",
+  "lixblogs:organizations:read", "lixblogs:organizations:write",
+  "lixblogs:collaboration:read", "lixblogs:collaboration:write",
+  "lixblogs:analytics:read", "lixblogs:notifications:read",
 ];
 
 function configFlags(opts) {
@@ -479,7 +527,51 @@ async function runRevoke(opts) {
     console.log(`Revoked and logged out profile "${profileId}".`);
   }
 }
+async function runIntegrations(opts, args, action) {
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
 
+  if ((action === 'cloudinary-disconnect' || action === 'pollinations-disconnect') && !opts.yes) {
+    return fail(
+      opts,
+      "This is a destructive action. Re-run with --yes to confirm (interactive confirmation prompt not yet implemented)."
+    );
+  }
+
+  let provider;
+  try {
+    provider = createAuthProvider(config);
+  } catch (err) {
+    return fail(opts, err.message);
+  }
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
+  if (!credentialStore) return;
+
+  const http = new AuthenticatedClient({
+    provider, credentialStore, profileId, apiBaseUrl: config.apiBaseUrl,
+  });
+  const integrationsClient = new IntegrationsClient(http);
+
+  let result;
+  if (action === 'cloudinary-status') result = await cloudinaryStatus({ integrationsClient });
+  else if (action === 'cloudinary-disconnect') result = await cloudinaryDisconnect({ integrationsClient, confirmed: true });
+  else {
+    try {
+      result = { ok: true, data: action === 'pollinations-status'
+        ? await integrationsClient.pollinationsStatus({ refresh: opts.force })
+        : await integrationsClient.pollinationsDisconnect() };
+    } catch (error) { result = { ok: false, error }; }
+  }
+
+  if (!result.ok) return fail(opts, result.error || result.reason);
+  output(opts, result);
+  if (!opts.json && !opts.quiet) {
+    if (action === 'cloudinary-status') console.log(`Cloudinary: ${result.data.connected ? `connected (${result.data.cloudName})` : 'not connected'}`);
+    else if (action === 'pollinations-status') console.log(`Pollinations: ${result.data.connected ? `connected${result.data.handle ? ` as ${result.data.handle}` : ''} · ${result.data.balance ?? 'unknown'} Pollen` : `${result.data.status}. Connect at ${result.data.connectUrl || 'https://blogs.elixpo.com/settings?tab=integrations'}`}`);
+    else console.log(`${action.startsWith('pollinations') ? 'Pollinations' : 'Cloudinary'} connection disconnected.`);
+  }
+}
 async function runProfiles(opts) {
   const profileRegistry = new ProfileRegistry();
   const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
@@ -521,6 +613,8 @@ const BLOG_COMMANDS = {
   delete: blogDelete,
   trash: blogDelete,
   restore: blogRestore,
+  history: blogHistory,
+  'restore-version': blogRestoreVersion,
 };
 
 const ORG_COMMANDS = {
@@ -552,6 +646,9 @@ const ANALYTICS_COMMANDS = {
   export: analyticsExport,
 };
 
+const MEDIA_COMMANDS = { generate: mediaGenerate, upload: mediaUpload, delete: mediaDelete };
+const COMMENT_COMMANDS = { list: commentList, add: commentAdd, reply: commentReply, delete: commentDelete };
+
 async function runBlog(opts, args, action) {
   const config = resolveConfig({ flags: configFlags(opts) });
   const profileRegistry = new ProfileRegistry();
@@ -579,6 +676,8 @@ async function runBlog(opts, args, action) {
         if (result.meta?.nextCursor) console.log(`Next cursor: ${result.meta.nextCursor}`);
       } else if (action === 'get') {
         console.log(`${result.title || '(untitled)'} [${result.status}]\n${result.markdown || ''}`);
+      } else if (action === 'history') {
+        for (const version of result.data || []) console.log(`${version.id}\t${version.label || 'snapshot'}\t${version.created_at}\t${version.username || 'system'}`);
       } else if (result.dryRun) {
         console.log(`Dry run: ${action} validated; no changes sent.`);
       } else {
@@ -628,6 +727,36 @@ async function runOrg(opts, args, action) {
   } catch (error) {
     fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR);
   }
+}
+
+async function runMedia(opts, args, action) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  try {
+    const result = await MEDIA_COMMANDS[action]({
+      mediaClient: new MediaClient(context.http), blogClient: context.client, id: args[0], options: opts,
+    });
+    output(opts, { ok: true, data: result });
+    if (!opts.json && !opts.quiet) {
+      if (action === 'delete') console.log(`Deleted media ${result.id}.`);
+      else console.log(`${action === 'generate' ? 'Generated' : 'Uploaded'} image: ${result.media?.url || result.output || result.media?.publicId}`);
+      if (result.blog) console.log(`Attached to blog ${opts.blog}.`);
+    }
+  } catch (error) { fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR); }
+}
+
+async function runComment(opts, args, action) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  try {
+    const result = await COMMENT_COMMANDS[action]({ client: context.client, id: args[0], options: opts });
+    output(opts, { ok: true, data: result });
+    if (!opts.json && !opts.quiet) {
+      if (action === 'list') {
+        for (const row of result) console.log(`${row.id}\t${row.parent_id ? 'reply' : 'comment'}\t${row.display_name || row.username || 'Anonymous'}\t${row.content}`);
+      } else console.log(`${action} completed for ${result.id}.`);
+    }
+  } catch (error) { fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR); }
 }
 
 async function runCollab(opts, args, action) {
@@ -743,6 +872,24 @@ const ROUTES = {
     action,
     (opts, args) => runAnalytics(opts, args, action),
   ])),
+  media: Object.fromEntries(Object.keys(MEDIA_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runMedia(opts, args, action),
+  ])),
+  comment: Object.fromEntries(Object.keys(COMMENT_COMMANDS).map((action) => [
+    action,
+    (opts, args) => runComment(opts, args, action),
+  ])),
+  integrations: {
+    'cloudinary-status': (opts, args) => runIntegrations(opts, args, 'cloudinary-status'),
+    'cloudinary-disconnect': (opts, args) => runIntegrations(opts, args, 'cloudinary-disconnect'),
+    'pollinations-status': (opts, args) => runIntegrations(opts, args, 'pollinations-status'),
+    'pollinations-disconnect': (opts, args) => runIntegrations(opts, args, 'pollinations-disconnect'),
+  },
+  disconnect: {
+    cloudinary: (opts, args) => runIntegrations(opts, args, 'cloudinary-disconnect'),
+    pollinations: (opts, args) => runIntegrations(opts, args, 'pollinations-disconnect'),
+  },
 };
 
 async function main() {

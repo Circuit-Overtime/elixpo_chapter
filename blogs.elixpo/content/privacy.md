@@ -1,12 +1,12 @@
 # Privacy Policy
 
-_Last updated: August 3, 2026_
+_Last updated: August 31, 2026_
 
 LixBlogs is a blogging platform operated by **Elixpo (Ayushman Bhattacharya)**. This policy explains the information LixBlogs processes, why it is used, when it is shared, and the choices available to you. Questions can be sent to **hello@elixpo.com**.
 
 ## Scope
 
-This policy applies to LixBlogs websites, applications, and platform features. Connected services such as Elixpo Accounts, Cloudinary, LixRL, and Elixpo Pay have their own privacy policies for processing they perform independently.
+This policy applies to LixBlogs websites, applications, and platform features. Connected services such as Elixpo Accounts, Cloudinary, Pollinations, LixRL, and Elixpo Pay have their own privacy policies for processing they perform independently.
 
 ## Information we process
 
@@ -66,6 +66,12 @@ When you connect LixRL, LixBlogs sends your Elixpo Accounts identifier, email, d
 
 Disconnecting prevents new shortening requests from LixBlogs. Existing short links remain stored and active in LixRL until you manage them there.
 
+### Pollinations
+
+When you connect Pollinations, LixBlogs uses OAuth authorization code with PKCE to receive a temporary provider key restricted by the models, Pollen budget, expiry, and usage access you approve. The key is encrypted before database storage and is never returned to the browser or CLI. LixBlogs stores a non-secret fingerprint, connection status, permitted models, expiry, balance and usage summary, generation attempt identifier, outcome, provider status, and duration. Prompts and generated image bytes are not stored in the generation audit table.
+
+Pollinations receives the image prompt, selected model, dimensions, seed, optional reference image, and technical request data. A completed image is passed into the normal Cloudinary media pipeline. Disconnecting deletes the LixBlogs connection; provider-side revocation is managed in Pollinations, while images already copied to Cloudinary remain until deleted there through LixBlogs.
+
 ## Service providers and data locations
 
 LixBlogs uses:
@@ -75,6 +81,7 @@ LixBlogs uses:
 - **Cloudinary** for platform-managed or creator-authorized media storage and delivery;
 - **Elixpo Accounts** for identity;
 - **LixRL** when you connect short-link features;
+- **Pollinations** when you connect user-funded image generation;
 - **Elixpo Pay and its payment providers** when you start a paid checkout.
 
 These services may process data in countries other than yours under their own infrastructure and legal obligations.
