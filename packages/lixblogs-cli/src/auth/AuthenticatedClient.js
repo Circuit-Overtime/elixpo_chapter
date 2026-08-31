@@ -96,6 +96,15 @@ export class AuthenticatedClient {
   }
 
   async request(url, options = {}) {
+    const response = await this.requestRaw(url, options);
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().includes("application/json")) {
+      throw new ApiContractUnavailableError(response.status, contentType);
+    }
+    return response;
+  }
+
+  async requestRaw(url, options = {}) {
     const target = new URL(url, this.apiBaseUrl);
     if (target.origin !== this.apiBaseUrl.origin || !target.pathname.startsWith("/api/v1/")) {
       throw new Error("Authenticated CLI requests are restricted to the configured LixBlogs /api/v1 resource server.");
@@ -109,10 +118,6 @@ export class AuthenticatedClient {
     if (response.status === 401) {
       credentials = await this.credentials({ forceRefresh: true });
       response = await send();
-    }
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.toLowerCase().includes("application/json")) {
-      throw new ApiContractUnavailableError(response.status, contentType);
     }
     return response;
   }

@@ -40,6 +40,13 @@ logged by the resource API.
 | `GET` | `/api/v1/collaboration/invitations` | `lixblogs:collaboration:read` | Current identity's invitations |
 | `POST` | `/api/v1/collaboration/invitations` | `lixblogs:collaboration:write` | Accept or decline an invitation |
 | `GET` | `/api/v1/analytics` | `lixblogs:analytics:read` | Bounded creator analytics dimensions |
+| `GET`, `POST` | `/api/v1/blogs/{id}/versions` | `lixblogs:blog:read`, `lixblogs:blog:write` | List or restore retained versions |
+| `GET`, `POST` | `/api/v1/blogs/{id}/comments` | `lixblogs:blog:read`, `lixblogs:blog:write` | List, comment, or reply |
+| `DELETE` | `/api/v1/blogs/{id}/comments/{commentId}` | `lixblogs:blog:write` | Delete an owned comment or moderate an authored blog |
+| `GET`, `DELETE` | `/api/v1/integrations/pollinations` | `lixblogs:media:read`, `lixblogs:media:write` | Inspect or disconnect the caller's BYOP connection |
+| `POST` | `/api/v1/media/generate` | `lixblogs:media:write` | Generate one image using the caller's connected Pollinations budget |
+| `POST` | `/api/v1/media/upload` | `lixblogs:media:write` | Send an image through the canonical storage pipeline |
+| `DELETE` | `/api/v1/media/{id}` | `lixblogs:media:write` | Delete an owned tracked asset from its storage provider |
 
 `GET /api/v1/analytics` accepts `scope=personal|org:<id>`, `range=7d|30d|90d|12m|custom`,
 `from`, `to`, `dimension=overview|timeline|posts|sources|devices|countries`, `limit=1..100`,

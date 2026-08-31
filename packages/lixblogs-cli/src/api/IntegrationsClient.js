@@ -31,4 +31,14 @@ export class IntegrationsClient {
     await this.requireScopes(['lixblogs:integrations:cloudinary:disconnect']);
     return this._request('/api/v1/integrations/cloudinary', { method: 'DELETE' });
   }
+
+  async pollinationsStatus({ refresh = false } = {}) {
+    await this.requireScopes(['lixblogs:media:read']);
+    return this._request(`/api/v1/integrations/pollinations${refresh ? '?refresh=1' : ''}`);
+  }
+
+  async pollinationsDisconnect() {
+    await this.requireScopes(['lixblogs:media:write']);
+    return this._request('/api/v1/integrations/pollinations', { method: 'DELETE' });
+  }
 }

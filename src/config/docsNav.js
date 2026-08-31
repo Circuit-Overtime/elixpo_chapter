@@ -16,6 +16,7 @@ export const docsNav = [
       { title: 'Integrations overview', slug: 'integrations', description: 'Connect services, understand permissions, and disconnect them safely.' },
       { title: 'Cloudinary storage', slug: 'cloudinary', description: 'Store new blog media in your own Cloudinary product environment.' },
       { title: 'LixRL short links', slug: 'lixrl', description: 'Create account-owned lixrl.com links from the editor.' },
+      { title: 'Pollinations images', slug: 'pollinations', description: 'Generate blog images with your own Pollen balance and scoped authorization.' },
     ],
   },
   {
