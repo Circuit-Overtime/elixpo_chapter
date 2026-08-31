@@ -146,9 +146,12 @@ jobs:
             root=$(mktemp -d)
             tar -xzf "$archive" -C "$root"
             bytes=$(find "$root/package" -type f -printf '%s\n' | awk '{ total += $1 } END { print total + 0 }')
-            test "$bytes" -le "$budget"
             PACKAGE_ROOT="$root/package"
             echo "$(basename "$archive"): $bytes bytes unpacked (budget: $budget)"
+            if [ "$bytes" -gt "$budget" ]; then
+              echo "::error::$(basename "$archive") exceeds its unpacked-size budget by $((bytes - budget)) bytes."
+              return 1
+            fi
           }
           if [ "$BUILD_LIXEDITOR" = "true" ]; then
             archive=$(find .release/packages/lixeditor -name '*.tgz' -print -quit)
