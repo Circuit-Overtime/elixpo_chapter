@@ -54,6 +54,21 @@ const monoBox = {
     p: 1.5,
 };
 
+function appIconSources(homepageUrl: string, logoUrl: string): string[] {
+    const sources = logoUrl ? [logoUrl] : [];
+    if (!homepageUrl) return sources;
+    try {
+        const url = new URL(homepageUrl);
+        sources.push(
+            `${url.origin}/favicon.ico`,
+            `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=64`,
+        );
+        return [...new Set(sources)];
+    } catch {
+        return sources;
+    }
+}
+
 export default function OAuthAppSettingsPage() {
     const params = useParams();
     const router = useRouter();
@@ -80,6 +95,7 @@ export default function OAuthAppSettingsPage() {
         null,
     );
     const [regenerating, setRegenerating] = useState(false);
+    const [iconStage, setIconStage] = useState(0);
 
     const [form, setForm] = useState({
         name: "",
@@ -568,15 +584,12 @@ export default function OAuthAppSettingsPage() {
         }
     };
 
-    const faviconUrl = form.homepage_url
-        ? (() => {
-              try {
-                  return `https://www.google.com/s2/favicons?domain=${new URL(form.homepage_url).hostname}&sz=64`;
-              } catch {
-                  return null;
-              }
-          })()
-        : null;
+    const iconSources = appIconSources(form.homepage_url, form.logo_url);
+    const faviconUrl = iconSources[iconStage] || null;
+    useEffect(
+        () => setIconStage(0),
+        [form.homepage_url, form.logo_url],
+    );
 
     if (loading) {
         return (
@@ -611,11 +624,22 @@ export default function OAuthAppSettingsPage() {
 
             <Box
                 sx={{
+                    position: "sticky",
+                    top: { xs: 56, sm: 64 },
+                    zIndex: 10,
                     display: "flex",
                     alignItems: "center",
                     flexWrap: "wrap",
                     gap: 2,
                     mb: 3,
+                    mx: { xs: -1, sm: 0 },
+                    px: { xs: 1, sm: 1.5 },
+                    py: 1.5,
+                    bgcolor: "color-mix(in srgb, var(--bg) 88%, transparent)",
+                    backdropFilter: "blur(16px)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "14px",
+                    boxShadow: "0 8px 24px var(--overlay)",
                 }}
             >
                 {/* Favicon */}
@@ -624,6 +648,7 @@ export default function OAuthAppSettingsPage() {
                         component="img"
                         src={faviconUrl}
                         alt=""
+                        referrerPolicy="no-referrer"
                         sx={{
                             width: 40,
                             height: 40,
@@ -631,9 +656,7 @@ export default function OAuthAppSettingsPage() {
                             bgcolor: "var(--overlay)",
                             p: 0.5,
                         }}
-                        onError={(e: any) => {
-                            e.target.style.display = "none";
-                        }}
+                        onError={() => setIconStage((stage) => stage + 1)}
                     />
                 ) : (
                     <Box
@@ -997,7 +1020,7 @@ export default function OAuthAppSettingsPage() {
                 </Box>
 
                 {/* Redirect URIs */}
-                <Box sx={cardSx}>
+                <Box sx={{ ...cardSx, gridColumn: { lg: "1 / -1" } }}>
                     <Typography
                         sx={{ color: "var(--fg)", fontWeight: 600, mb: 0.5 }}
                     >
@@ -1086,7 +1109,7 @@ export default function OAuthAppSettingsPage() {
                 </Box>
 
                 {/* Scopes + Stats */}
-                <Box sx={cardSx}>
+                <Box sx={{ ...cardSx, gridColumn: { lg: "1 / -1" } }}>
                     <Typography
                         sx={{ color: "var(--fg)", fontWeight: 600, mb: 2 }}
                     >
