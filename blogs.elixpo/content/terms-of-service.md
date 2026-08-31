@@ -1,6 +1,6 @@
 # Terms of Service
 
-_Last updated: August 3, 2026_
+_Last updated: August 31, 2026_
 
 These Terms govern your use of **LixBlogs**, operated by **Elixpo (Ayushman Bhattacharya)**. By accessing or using LixBlogs, you agree to these Terms and the [Privacy Policy](/privacy). If you do not agree, do not use the service.
 
@@ -49,6 +49,8 @@ If you connect personal Cloudinary storage, you authorize LixBlogs to upload and
 ## Connected services
 
 Cloudinary, LixRL, Elixpo Accounts, Elixpo Pay, and other optional integrations are separate services governed by their own terms. Connecting a service authorizes LixBlogs to exchange the information and perform the actions described during connection and in the [Privacy Policy](/privacy).
+
+Pollinations image generation spends the Pollen balance and budget you approve directly with Pollinations. You are responsible for provider charges, prompts, generated output, and ensuring that you have rights to use any reference image. Each generation is an explicit request; failures, moderation decisions, rate limits, or provider availability do not guarantee a refund from LixBlogs.
 
 You can disconnect optional integrations, but completed actions may remain with the provider. In particular, existing LixRL links can remain active, and personal Cloudinary assets must be removed before the connection that manages them can be deleted.
 

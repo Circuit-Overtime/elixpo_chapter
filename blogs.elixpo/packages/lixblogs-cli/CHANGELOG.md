@@ -2,6 +2,12 @@
 
 Release notes are generated from merged pull requests. This file records contract-level changes that users must see before upgrading.
 
+## 1.5.0
+
+- Add complete publish metadata, version history and restore, comments and replies, and provider-backed media deletion.
+- Add Pollinations BYOP status and image generation/upload/attachment commands without exposing provider credentials.
+- Bundle the `lixblogs-media` agent skill with explicit billing, retry, and recovery rules.
+
 ## 1.4.2
 
 - Use the package-local, lockfile-pinned esbuild binary so packing does not

@@ -6,6 +6,8 @@ import { IMAGE_ACCEPT_ATTR } from '../../../utils/allowedImageTypes';
 import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload } from '../../../utils/mediaUploadQueue';
 import MediaStorageChip from '../MediaStorageChip';
 
+const IMAGE_MODELS = ['gptimage', 'flux', 'klein'];
+
 export const BlogImageUploadContext = createContext({ blogId: null });
 
 export const BlogImageBlock = createReactBlockSpec(
@@ -36,6 +38,10 @@ function BlogImageRenderer({ block, editor }) {
   const [embedUrl, setEmbedUrl] = useState('');
   const [embedError, setEmbedError] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
+  const [aiModel, setAiModel] = useState('flux');
+  const [aiSeed, setAiSeed] = useState('');
+  const [aiReference, setAiReference] = useState(null);
+  const [pollinations, setPollinations] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isImgLoaded, setIsImgLoaded] = useState(false);
 
@@ -57,6 +63,15 @@ function BlogImageRenderer({ block, editor }) {
   const blockRef = useRef(null);
   const embedInputRef = useRef(null);
   const aiInputRef = useRef(null);
+  const aiReferenceRef = useRef(null);
+
+  useEffect(() => {
+    if (mode !== 'generate' || pollinations) return;
+    fetch('/api/integrations/pollinations', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then(setPollinations)
+      .catch(() => setPollinations({ connected: false, status: 'unavailable' }));
+  }, [mode, pollinations]);
 
   useEffect(() => {
     if (_uploading !== 'uploading' || !_uploadJobId) return;
@@ -170,11 +185,18 @@ function BlogImageRenderer({ block, editor }) {
     if (!aiPrompt.trim()) return;
     setMode('generating');
     try {
-      const res = await fetch('/api/ai/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt.trim(), model: 'flux' })
-      });
+      const generation = { prompt: aiPrompt.trim(), model: aiModel, generationId: crypto.randomUUID(), destination: 'inline', width: 1280, height: 720, seed: aiSeed || undefined };
+      let body;
+      let headers;
+      if (aiReference) {
+        body = new FormData();
+        Object.entries(generation).forEach(([key, value]) => value !== undefined && body.append(key, String(value)));
+        body.append('referenceImage', aiReference);
+      } else {
+        headers = { 'Content-Type': 'application/json' };
+        body = JSON.stringify(generation);
+      }
+      const res = await fetch('/api/ai/image', { method: 'POST', headers, body });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || 'Failed to generate image');
@@ -185,13 +207,14 @@ function BlogImageRenderer({ block, editor }) {
       
       setMode('idle');
       setAiPrompt('');
+      setAiReference(null);
       uploadFile(file);
     } catch (err) {
       console.error('AI image generation failed:', err);
       showFailToast(err.message || 'Image generation failed');
       setMode('idle');
     }
-  }, [aiPrompt, uploadFile]);
+  }, [aiPrompt, aiModel, aiSeed, aiReference, uploadFile]);
 
   const showFailToast = useCallback((msg) => {
     const toast = document.createElement('div');
@@ -411,29 +434,37 @@ function BlogImageRenderer({ block, editor }) {
         )}
 
         {mode === 'generate' && (
-          <div className="blog-img-input-row">
-            <input
+          <div className="w-full space-y-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4">
+            {pollinations?.connected ? (
+              <div className="flex flex-wrap justify-between gap-2 text-[11px] text-[var(--text-muted)]"><span className="font-semibold text-emerald-500">Pollinations connected</span><span>{pollinations.balance ?? '—'} Pollen</span></div>
+            ) : pollinations && (
+              <div className="flex justify-between gap-3 rounded-lg bg-amber-500/10 px-3 py-2 text-[11px] text-amber-600"><span>Connect Pollinations to generate images.</span><a href="/settings?tab=integrations" className="font-semibold underline">Connect</a></div>
+            )}
+            <textarea
               ref={aiInputRef}
-              type="text"
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && aiPrompt.trim()) handleGenerate();
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && aiPrompt.trim()) handleGenerate();
                 if (e.key === 'Escape') { setMode('idle'); setAiPrompt(''); }
               }}
-              placeholder="Describe the image you want..."
-              className="blog-img-url-input blog-img-ai-input"
+              rows={3}
+              placeholder="Describe the subject, composition, lighting, and style…"
+              className="w-full resize-y rounded-lg border border-[var(--border-default)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
-            <button className="blog-img-submit-btn blog-img-ai-submit" onClick={handleGenerate} disabled={!aiPrompt.trim()}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21"/>
-              </svg>
-            </button>
-            <button className="blog-img-cancel-btn" onClick={() => { setMode('idle'); setAiPrompt(''); }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <select value={aiModel} onChange={(e) => setAiModel(e.target.value)} className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-app)] px-3 py-2 text-xs text-[var(--text-primary)]">{IMAGE_MODELS.map((model) => <option key={model}>{model}</option>)}</select>
+              <input type="number" min="0" max="2147483647" value={aiSeed} onChange={(e) => setAiSeed(e.target.value)} placeholder="Seed (optional)" className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-app)] px-3 py-2 text-xs text-[var(--text-primary)]" />
+              <button type="button" onClick={() => aiReferenceRef.current?.click()} className="truncate rounded-lg border border-[var(--border-default)] bg-[var(--bg-app)] px-3 py-2 text-left text-xs text-[var(--text-primary)]">{aiReference?.name || 'Reference image'}</button>
+              <input ref={aiReferenceRef} type="file" accept={IMAGE_ACCEPT_ATTR} className="hidden" onChange={(e) => setAiReference(e.target.files?.[0] || null)} />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] text-[var(--text-faint)]">One billable request · no automatic retries</span>
+              <div className="flex gap-2">
+                <button className="rounded-lg border border-[var(--border-default)] px-3 py-2 text-xs text-[var(--text-muted)]" onClick={() => { setMode('idle'); setAiPrompt(''); setAiReference(null); }}>Cancel</button>
+                <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50" onClick={handleGenerate} disabled={!aiPrompt.trim() || !pollinations?.connected}>Generate</button>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -35,6 +35,7 @@ lixblogs blog preview BLOG_ID --json --no-input
 ```bash
 lixblogs blog publish BLOG_ID --etag ETAG --idempotency-key KEY --dry-run --json --no-input
 lixblogs blog publish BLOG_ID --etag ETAG --idempotency-key KEY --yes --json --no-input
+lixblogs blog publish BLOG_ID --status unlisted --etag ETAG --idempotency-key KEY --yes --json --no-input
 lixblogs blog unpublish BLOG_ID --etag ETAG --yes --json --no-input
 lixblogs blog trash BLOG_ID --etag ETAG --yes --json --no-input
 lixblogs blog restore BLOG_ID --etag ETAG --yes --json --no-input

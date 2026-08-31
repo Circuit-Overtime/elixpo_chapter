@@ -34,6 +34,7 @@ export async function createCloudinaryUploadSignature({
   folder,
   publicId,
   overwrite = false,
+  transformation,
   config: suppliedConfig,
 }) {
   const config = resolveConfig(suppliedConfig);
@@ -42,6 +43,7 @@ export async function createCloudinaryUploadSignature({
   const timestamp = Math.floor(Date.now() / 1000);
   const params = { folder, timestamp };
   if (publicId) params.public_id = publicId;
+  if (transformation) params.transformation = transformation;
   if (overwrite) {
     params.overwrite = 'true';
     params.invalidate = 'true';
@@ -66,7 +68,7 @@ const PROFILE_TRANSFORMS = 'q_auto:low,f_webp';
 const AVATAR_TRANSFORMS = 'q_auto:low,f_webp,w_256,h_256,c_fill,g_face';
 const BANNER_TRANSFORMS = 'q_auto:low,f_webp,w_1920,h_480,c_fill';
 
-export async function uploadToCloudinary(fileBuffer, { folder, publicId, overwrite = false, resourceType = 'image', mimeType = 'application/octet-stream', config = null }) {
+export async function uploadToCloudinary(fileBuffer, { folder, publicId, overwrite = false, transformation = '', resourceType = 'image', mimeType = 'application/octet-stream', config = null }) {
   const resolvedConfig = resolveConfig(config);
   assertCloudinaryConfig(resolvedConfig);
 
@@ -74,6 +76,7 @@ export async function uploadToCloudinary(fileBuffer, { folder, publicId, overwri
   formData.append('file', new Blob([fileBuffer], { type: mimeType }));
   formData.append('folder', folder);
   if (publicId) formData.append('public_id', publicId);
+  if (transformation) formData.append('transformation', transformation);
   if (overwrite) {
     formData.append('overwrite', 'true');
     formData.append('invalidate', 'true');
@@ -87,6 +90,7 @@ export async function uploadToCloudinary(fileBuffer, { folder, publicId, overwri
       folder,
       publicId,
       overwrite,
+      transformation,
       config: resolvedConfig,
     });
     formData.append('timestamp', timestamp.toString());

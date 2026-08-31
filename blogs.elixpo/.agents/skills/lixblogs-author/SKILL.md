@@ -36,7 +36,9 @@ lixblogs blog edit BLOG_ID --file post.md --dry-run --json --no-input
 lixblogs blog edit BLOG_ID --file post.md --json --no-input
 ```
 
-Metadata-only revisions use `--title`, `--subtitle`, `--slug`, repeatable `--tag`, `--emoji`, `--cover`, `--publication`, and `--collection`. Content inputs `--file`, `--stdin`, `--content`, and `--editor` are mutually exclusive.
+Metadata-only revisions use `--title`, `--subtitle`, `--slug`, repeatable `--tag`, `--emoji`, `--cover`, `--cover-x`, `--cover-y`, `--cover-zoom`, `--publication`, `--collection`, `--member-only` / `--no-member-only`, `--allow-comments` / `--no-comments`, and `--secret` / `--not-secret`. Content inputs `--file`, `--stdin`, `--content`, and `--editor` are mutually exclusive.
+
+Use `lixblogs blog history BLOG_ID` to inspect snapshots and `lixblogs blog restore-version BLOG_ID --version VERSION_ID --yes` only with explicit approval. Use the separate `lixblogs-media` skill for uploads or billable Pollinations generation.
 
 ## Recovery
 
