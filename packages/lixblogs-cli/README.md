@@ -80,7 +80,11 @@ lixblogs blog unpublish <id> --yes
 lixblogs blog delete <id> --yes
 lixblogs blog list --status trashed
 lixblogs blog restore <id> --yes
+lixblogs blog history <id>
+lixblogs blog restore-version <id> --version <version-id> --yes
 ```
+
+Titles, subtitles, slugs, tags, icon emoji, cover URL/position/zoom, publication target, collection, comment policy, membership, secret state, and published/unlisted visibility are supported by `blog create`, `blog edit`, and `blog publish`.
 
 Inspect valid publication targets before assigning organization metadata:
 
@@ -125,6 +129,23 @@ lixblogs analytics export --dimension timeline --format csv --output analytics.c
 Organization analytics also requires `lixblogs:organizations:read`. Results contain
 aggregates only; the API does not expose visitor identifiers or credentials.
 Exports refuse to overwrite an existing file.
+
+### Comments and media
+
+```bash
+lixblogs comment list BLOG_ID
+lixblogs comment add BLOG_ID --content "Clear explanation"
+lixblogs comment reply BLOG_ID --parent COMMENT_ID --content "Following up"
+lixblogs comment delete BLOG_ID --comment COMMENT_ID --yes
+
+lixblogs media upload --file diagram.webp --blog BLOG_ID --type inline --attach
+lixblogs integrations pollinations-status --json
+lixblogs media generate --prompt "Editorial illustration" --model flux \
+  --blog BLOG_ID --type cover --attach --output cover.jpg
+lixblogs media delete MEDIA_ID --yes
+```
+
+Pollinations generation uses the creator's BYOP connection in LixBlogs Settings. The provider key is never stored by the CLI. Generation is an explicit billable request and is not retried automatically; retain the local output and use `media upload` if Cloudinary persistence needs to be retried.
 
 ### Agent skills
 
@@ -243,8 +264,7 @@ tests.
 See [#135](https://github.com/elixpo/blogs.elixpo/issues/135) for the full
 scope. Rough remaining order:
 
-1. Media commands
-2. Interactive terminal UI and branding in a separate issue
+1. Interactive terminal UI and branding in a separate issue
 
 ## Contributing
 

@@ -33,3 +33,12 @@ test('CLI entrypoint exposes bearer-authenticated Cloudinary integration command
   assert.match(entrypoint, /'cloudinary-disconnect':/);
   assert.match(entrypoint, /disconnect cloudinary --yes/);
 });
+
+test('CLI entrypoint exposes Pollinations, media, history, and comment controls', () => {
+  const entrypoint = readFileSync(new URL('../bin/lixblogs.mjs', import.meta.url), 'utf8');
+  assert.match(entrypoint, /integrations pollinations-status/);
+  assert.match(entrypoint, /media generate --prompt/);
+  assert.match(entrypoint, /media delete <media-id> --yes/);
+  assert.match(entrypoint, /blog restore-version <id>/);
+  assert.match(entrypoint, /comment reply <blog-id>/);
+});

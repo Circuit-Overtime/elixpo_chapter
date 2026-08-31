@@ -50,7 +50,9 @@ Use one content source: `--file`, `--stdin`, `--content`, or `--editor`. `--publ
 
 Edits carry the current ETag. A concurrent change exits with code 3 and stores the local input and latest server Markdown under `.lixblogs-conflicts/` instead of overwriting either version.
 
-## Publish and recover
+Metadata flags include `--title`, `--subtitle`, `--slug`, repeated `--tag`, `--emoji`, `--cover`, publication and collection targets, membership/secret/comment controls, and cover position or zoom.
+
+## Publish, history, and recover
 
 ```bash
 lixblogs blog publish BLOG_ID --dry-run
@@ -58,9 +60,27 @@ lixblogs blog publish BLOG_ID --yes
 lixblogs blog unpublish BLOG_ID --yes
 lixblogs blog delete BLOG_ID --yes
 lixblogs blog restore BLOG_ID --yes
+lixblogs blog history BLOG_ID
+lixblogs blog restore-version BLOG_ID --version VERSION_ID --yes
 ```
 
 Publishing and state transitions require `--yes`. Deletion moves a post to trash by default. Permanent deletion additionally needs `--permanent`, the permanent-delete scope, and explicit confirmation.
+
+## Comments and media
+
+```bash
+lixblogs comment list BLOG_ID
+lixblogs comment add BLOG_ID --content "Clear explanation"
+lixblogs comment reply BLOG_ID --parent COMMENT_ID --content "Following up"
+lixblogs comment delete BLOG_ID --comment COMMENT_ID --yes
+
+lixblogs media upload --file diagram.webp --blog BLOG_ID --type inline --attach
+lixblogs integrations pollinations-status --json
+lixblogs media generate --prompt "Editorial illustration" --model flux --blog BLOG_ID --type cover --attach
+lixblogs media delete MEDIA_ID --yes
+```
+
+Image generation uses the Pollinations account connected in **Settings → Integrations**. The provider key stays on the server. Each generate command is one explicit billable attempt and is never automatically retried; keep the local output so a failed Cloudinary upload can be retried without regenerating.
 
 ## Automation contract
 
@@ -101,7 +121,7 @@ Exit codes:
 
 ## Agent skills
 
-The package includes individually installable authoring, publishing, organization, and editorial skills:
+The package includes individually installable authoring, publishing, organization, editorial, analytics, and media skills:
 
 ```bash
 lixblogs skill list --json

@@ -55,9 +55,23 @@ export async function blogPublish({ client, id, options }) {
   if (!id) throw new Error('A blog ID is required.');
   const current = await client.get(id);
   validateBlogInput(current, { publishing: true });
-  if (options['dry-run']) return { dryRun: true, id, from: current.status, to: 'published' };
+  const targetStatus = options.status || 'published';
+  if (!['published', 'unlisted'].includes(targetStatus)) throw new Error('--status must be published or unlisted.');
+  if (options['dry-run']) return { dryRun: true, id, from: current.status, to: targetStatus };
   requireConfirmation(options, 'Publishing this blog');
-  return client.publish(id, { etag: options.etag || current.etag, idempotencyKey: options['idempotency-key'] });
+  return client.publish(id, { etag: options.etag || current.etag, status: targetStatus, idempotencyKey: options['idempotency-key'] });
+}
+
+export async function blogHistory({ client, id }) {
+  if (!id) throw new Error('A blog ID is required.');
+  return { data: await client.versions(id) };
+}
+
+export async function blogRestoreVersion({ client, id, options }) {
+  if (!id || !options.version) throw new Error('A blog ID and --version are required.');
+  requireConfirmation(options, 'Restoring this historical version');
+  const current = await client.get(id);
+  return client.restoreVersion(id, options.version, { etag: options.etag || current.etag });
 }
 
 export async function blogUnpublish({ client, id, options }) {

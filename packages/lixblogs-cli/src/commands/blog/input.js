@@ -55,5 +55,11 @@ export function metadataFromOptions(options) {
   if (options['no-member-only']) input.memberOnly = false;
   if (options.secret) input.secret = true;
   if (options['not-secret']) input.secret = false;
+  if (options['allow-comments']) input.allowComments = true;
+  if (options['no-comments']) input.allowComments = false;
+  if (options['cover-x'] !== undefined || options['cover-y'] !== undefined) {
+    input.coverPosition = { x: Number(options['cover-x'] ?? 50), y: Number(options['cover-y'] ?? 50) };
+  }
+  if (options['cover-zoom'] !== undefined) input.coverZoom = Number(options['cover-zoom']);
   return input;
 }

@@ -173,7 +173,7 @@ function BlogImageRenderer({ block, editor }) {
       const res = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt.trim(), model: 'flux' })
+        body: JSON.stringify({ prompt: aiPrompt.trim(), model: 'flux', generationId: crypto.randomUUID(), destination: 'inline', width: 1280, height: 720 })
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));

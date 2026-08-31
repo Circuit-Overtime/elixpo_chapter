@@ -16,9 +16,20 @@ import { isAllowedMime, ALLOWED_IMAGE_MIME_TYPES } from '../../../../src/utils/a
 // Profile image types — these get overwritten (no history), no storage tracking
 const PROFILE_TYPES = ['avatar', 'banner', 'org_avatar', 'org_banner'];
 
+async function uploadIdentity(request) {
+  const session = await getSession();
+  if (session?.userId) return session;
+  if (!request.headers.get('authorization')?.startsWith('Bearer ')) return null;
+  try {
+    const { requireBearerAuth } = await import('../../../../lib/api/v1/bearerAuth');
+    const auth = await requireBearerAuth(request, ['lixblogs:media:write']);
+    return { userId: auth.userId, apiClientId: auth.clientId };
+  } catch { return null; }
+}
+
 export async function POST(request) {
   try {
-    const session = await getSession();
+    const session = await uploadIdentity(request);
     if (!session?.userId) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
@@ -411,7 +422,7 @@ export async function POST(request) {
 // Remove a profile image → clears the DB pointer so it falls back to the default
 // (avatar → initials, banner → blank, org logo → pixel avatar). Body: { type, orgId }.
 export async function DELETE(request) {
-  const session = await getSession();
+  const session = await uploadIdentity(request);
   if (!session?.userId) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }

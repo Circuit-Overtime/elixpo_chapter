@@ -23,3 +23,19 @@ CREATE TABLE IF NOT EXISTS pollinations_connections (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_pollinations_token_fingerprint
   ON pollinations_connections(token_fingerprint);
+
+CREATE TABLE IF NOT EXISTS pollinations_generation_attempts (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  model TEXT NOT NULL,
+  destination TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'started',
+  provider_status INTEGER,
+  error_code TEXT,
+  duration_ms INTEGER,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  completed_at INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_pollinations_attempts_user_created
+  ON pollinations_generation_attempts(user_id, created_at DESC);

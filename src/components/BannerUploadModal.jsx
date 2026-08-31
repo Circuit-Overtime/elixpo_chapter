@@ -7,6 +7,7 @@ const ASPECT_RATIO = 16 / 5;
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = Math.round(CANVAS_WIDTH / ASPECT_RATIO);
 const OUTPUT_QUALITY = 0.45;
+const IMAGE_MODELS = ['flux', 'gptimage', 'kontext', 'nanobanana-2'];
 
 export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
   const [tab, setTab] = useState('upload');
@@ -17,11 +18,24 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
   const [filters, setFilters] = useState({ brightness: 100, contrast: 100 });
   const [dragging, setDragging] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [aiModel, setAiModel] = useState('flux');
+  const [aiSeed, setAiSeed] = useState('');
+  const [aiReference, setAiReference] = useState(null);
+  const [pollinations, setPollinations] = useState(null);
   const dragStart = useRef({ x: 0, y: 0, cropX: 0, cropY: 0 });
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const fileInputRef = useRef(null);
   const containerRef = useRef(null);
+  const referenceInputRef = useRef(null);
+
+  useEffect(() => {
+    if (tab !== 'generate' || pollinations) return;
+    fetch('/api/integrations/pollinations', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then(setPollinations)
+      .catch(() => setPollinations({ connected: false, status: 'unavailable' }));
+  }, [tab, pollinations]);
 
   const resetState = () => {
     setImageSrc(null);
@@ -91,11 +105,18 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
         // ignore
       }
 
-      const res = await fetch('/api/ai/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: themePrompt, model: 'flux' })
-      });
+      const generation = { prompt: themePrompt, model: aiModel, generationId: crypto.randomUUID(), destination: 'banner', width: 1600, height: 500, seed: aiSeed || undefined };
+      let body;
+      let headers;
+      if (aiReference) {
+        body = new FormData();
+        Object.entries(generation).forEach(([key, value]) => value !== undefined && body.append(key, String(value)));
+        body.append('referenceImage', aiReference);
+      } else {
+        headers = { 'Content-Type': 'application/json' };
+        body = JSON.stringify(generation);
+      }
+      const res = await fetch('/api/ai/image', { method: 'POST', headers, body });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || 'Failed to generate image');
@@ -104,14 +125,7 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
       const objectUrl = URL.createObjectURL(blob);
       loadImage(objectUrl);
     } catch (err) {
-      // Fallback
-      try {
-        const { generateBlogBanner } = await import('../utils/pixelAvatar');
-        const dataUrl = generateBlogBanner(urlInput.trim());
-        loadImage(dataUrl);
-      } catch (e) {
-        setUrlError(err.message || 'Image generation failed');
-      }
+      setUrlError(err.message || 'Image generation failed');
     } finally {
       setSaving(false);
     }
@@ -306,24 +320,49 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
           )}
 
           {tab === 'generate' && !imageSrc && (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <input
-                  type="text"
+            <div className="space-y-4 rounded-xl border border-[var(--border-default)] bg-[var(--bg-app)] p-4">
+              {pollinations?.connected ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--text-muted)]">
+                  <span className="font-semibold text-emerald-500">Pollinations connected</span>
+                  <span>{pollinations.balance ?? '—'} Pollen · budget {pollinations.budget ?? 'provider default'}</span>
+                </div>
+              ) : pollinations && (
+                <div className="flex items-center justify-between gap-3 rounded-lg bg-amber-500/10 px-3 py-2 text-[11px] text-amber-600">
+                  <span>Connect Pollinations before generating an image.</span>
+                  <a href="/settings?tab=integrations" className="font-semibold underline">Connect</a>
+                </div>
+              )}
+              <textarea
                   value={urlInput}
                   onChange={(e) => { setUrlInput(e.target.value); setUrlError(''); }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateBanner()}
-                  placeholder="Describe the banner image..."
-                  className="flex-1 bg-[var(--bg-app)] text-[var(--text-primary)] rounded-lg px-4 py-2.5 outline-none text-[13px] border border-[var(--border-default)] focus:border-[var(--border-hover)] transition-colors placeholder-[#6b7a8d]"
+                  placeholder="Describe the composition, subject, lighting, and visual style…"
+                  rows={4}
+                  className="w-full resize-y rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] px-4 py-3 text-[13px] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="text-[11px] text-[var(--text-muted)]">Model
+                  <select value={aiModel} onChange={(e) => setAiModel(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-2 text-[12px] text-[var(--text-primary)]">
+                    {IMAGE_MODELS.map((model) => <option key={model}>{model}</option>)}
+                  </select>
+                </label>
+                <label className="text-[11px] text-[var(--text-muted)]">Seed (optional)
+                  <input type="number" min="0" max="2147483647" value={aiSeed} onChange={(e) => setAiSeed(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-2 text-[12px] text-[var(--text-primary)]" />
+                </label>
+                <label className="text-[11px] text-[var(--text-muted)]">Reference (optional)
+                  <button type="button" onClick={() => referenceInputRef.current?.click()} className="mt-1 block w-full truncate rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] px-3 py-2 text-left text-[12px] text-[var(--text-primary)]">{aiReference?.name || 'Choose image'}</button>
+                  <input ref={referenceInputRef} type="file" accept={IMAGE_ACCEPT_ATTR} className="hidden" onChange={(e) => setAiReference(e.target.files?.[0] || null)} />
+                </label>
+              </div>
+              <div className="flex justify-end">
                 <button
                   onClick={handleGenerateBanner}
-                  disabled={saving}
-                  className="px-5 py-2.5 bg-[#9b7bf7] text-[var(--text-primary)] font-semibold rounded-lg text-[13px] hover:bg-[#b69aff] transition-colors disabled:opacity-50 flex items-center gap-2"
+                  disabled={saving || !pollinations?.connected || !urlInput.trim()}
+                  className="flex items-center gap-2 rounded-lg bg-[#9b7bf7] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#8b6ae6] disabled:opacity-50"
                 >
                   {saving ? 'Generating...' : 'Generate'}
                 </button>
               </div>
+              <p className="text-[10px] leading-4 text-[var(--text-faint)]">One click makes one billable request against your approved Pollen budget. Failed generations are not retried automatically.</p>
               {urlError && <p className="text-red-400 text-[11px]">{urlError}</p>}
             </div>
           )}
