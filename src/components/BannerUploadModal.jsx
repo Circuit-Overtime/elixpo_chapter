@@ -80,10 +80,21 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
     if (!urlInput.trim()) return;
     setSaving(true);
     try {
+      let themePrompt = urlInput.trim();
+      try {
+        const { getActiveSeasonalTheme } = await import('../themes/seasonal/index.js');
+        const theme = getActiveSeasonalTheme();
+        if (theme && theme.id) {
+          themePrompt += ` (theme: ${theme.id} style)`;
+        }
+      } catch (e) {
+        // ignore
+      }
+
       const res = await fetch('/api/ai/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: urlInput.trim(), model: 'flux' })
+        body: JSON.stringify({ prompt: themePrompt, model: 'flux' })
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -93,7 +104,14 @@ export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
       const objectUrl = URL.createObjectURL(blob);
       loadImage(objectUrl);
     } catch (err) {
-      setUrlError(err.message || 'Image generation failed');
+      // Fallback
+      try {
+        const { generateBlogBanner } = await import('../utils/pixelAvatar');
+        const dataUrl = generateBlogBanner(urlInput.trim());
+        loadImage(dataUrl);
+      } catch (e) {
+        setUrlError(err.message || 'Image generation failed');
+      }
     } finally {
       setSaving(false);
     }
