@@ -50,6 +50,18 @@ export const LIXBLOGS_SCOPE_DETAILS = {
         description: "Make a draft publicly visible.",
         highImpact: true,
     },
+    "lixblogs:integrations:cloudinary:read": {
+        label: "Read your Cloudinary connection",
+        description:
+            "Check whether a personal Cloudinary account is connected for storing media.",
+        highImpact: false,
+    },
+    "lixblogs:integrations:cloudinary:disconnect": {
+        label: "Disconnect Cloudinary",
+        description:
+            "Remove your personal Cloudinary connection. Media already stored there is not deleted, but new uploads will use LixBlogs' default storage instead.",
+        highImpact: true,
+    },
     "lixblogs:blog:delete": {
         label: "Permanently delete blogs",
         description: "Permanently remove a blog post. This cannot be undone.",

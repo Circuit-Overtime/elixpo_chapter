@@ -25,12 +25,18 @@ describe("LixBlogs scope registry", () => {
         expect(isHighImpactScope("lixblogs:blog:publish")).toBe(true);
         expect(isHighImpactScope("lixblogs:blog:delete")).toBe(true);
         expect(isHighImpactScope("lixblogs:account:delete")).toBe(true);
+        expect(
+            isHighImpactScope("lixblogs:integrations:cloudinary:disconnect"),
+        ).toBe(true);
     });
 
     it("does not flag ordinary read/write scopes as high impact", () => {
         expect(isHighImpactScope("lixblogs:blog:read")).toBe(false);
         expect(isHighImpactScope("lixblogs:blog:write")).toBe(false);
         expect(isHighImpactScope("lixblogs:profile:write")).toBe(false);
+        expect(
+            isHighImpactScope("lixblogs:integrations:cloudinary:read"),
+        ).toBe(false);
     });
 
     it("filters a scope list down to only the high-impact members", () => {
