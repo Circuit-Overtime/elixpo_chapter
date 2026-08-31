@@ -6,6 +6,8 @@ import { IMAGE_ACCEPT_ATTR } from '../../../utils/allowedImageTypes';
 import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload } from '../../../utils/mediaUploadQueue';
 import MediaStorageChip from '../MediaStorageChip';
 
+const IMAGE_MODELS = ['flux', 'gptimage', 'kontext', 'nanobanana-2'];
+
 export const BlogImageUploadContext = createContext({ blogId: null });
 
 export const BlogImageBlock = createReactBlockSpec(
@@ -36,6 +38,10 @@ function BlogImageRenderer({ block, editor }) {
   const [embedUrl, setEmbedUrl] = useState('');
   const [embedError, setEmbedError] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
+  const [aiModel, setAiModel] = useState('flux');
+  const [aiSeed, setAiSeed] = useState('');
+  const [aiReference, setAiReference] = useState(null);
+  const [pollinations, setPollinations] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isImgLoaded, setIsImgLoaded] = useState(false);
 
@@ -57,6 +63,15 @@ function BlogImageRenderer({ block, editor }) {
   const blockRef = useRef(null);
   const embedInputRef = useRef(null);
   const aiInputRef = useRef(null);
+  const aiReferenceRef = useRef(null);
+
+  useEffect(() => {
+    if (mode !== 'generate' || pollinations) return;
+    fetch('/api/integrations/pollinations', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then(setPollinations)
+      .catch(() => setPollinations({ connected: false, status: 'unavailable' }));
+  }, [mode, pollinations]);
 
   useEffect(() => {
     if (_uploading !== 'uploading' || !_uploadJobId) return;
@@ -170,11 +185,18 @@ function BlogImageRenderer({ block, editor }) {
     if (!aiPrompt.trim()) return;
     setMode('generating');
     try {
-      const res = await fetch('/api/ai/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt.trim(), model: 'flux', generationId: crypto.randomUUID(), destination: 'inline', width: 1280, height: 720 })
-      });
+      const generation = { prompt: aiPrompt.trim(), model: aiModel, generationId: crypto.randomUUID(), destination: 'inline', width: 1280, height: 720, seed: aiSeed || undefined };
+      let body;
+      let headers;
+      if (aiReference) {
+        body = new FormData();
+        Object.entries(generation).forEach(([key, value]) => value !== undefined && body.append(key, String(value)));
+        body.append('referenceImage', aiReference);
+      } else {
+        headers = { 'Content-Type': 'application/json' };
+        body = JSON.stringify(generation);
+      }
+      const res = await fetch('/api/ai/image', { method: 'POST', headers, body });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || 'Failed to generate image');
@@ -185,13 +207,14 @@ function BlogImageRenderer({ block, editor }) {
       
       setMode('idle');
       setAiPrompt('');
+      setAiReference(null);
       uploadFile(file);
     } catch (err) {
       console.error('AI image generation failed:', err);
       showFailToast(err.message || 'Image generation failed');
       setMode('idle');
     }
-  }, [aiPrompt, uploadFile]);
+  }, [aiPrompt, aiModel, aiSeed, aiReference, uploadFile]);
 
   const showFailToast = useCallback((msg) => {
     const toast = document.createElement('div');
