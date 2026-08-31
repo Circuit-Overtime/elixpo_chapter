@@ -1275,6 +1275,10 @@ function IntegrationsTab() {
   const [cloudinaryBusy, setCloudinaryBusy] = useState(false);
   const [cloudinaryError, setCloudinaryError] = useState('');
   const [cloudinaryCloudName, setCloudinaryCloudName] = useState('');
+  const [pollinations, setPollinations] = useState(null);
+  const [pollinationsLoading, setPollinationsLoading] = useState(true);
+  const [pollinationsBusy, setPollinationsBusy] = useState(false);
+  const [pollinationsError, setPollinationsError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1307,6 +1311,33 @@ function IntegrationsTab() {
   }, []);
 
   useEffect(() => { loadCloudinary(); }, [loadCloudinary]);
+
+  const loadPollinations = useCallback(async (refresh = false) => {
+    setPollinationsLoading(true);
+    setPollinationsError('');
+    try {
+      const response = await fetch(`/api/integrations/pollinations${refresh ? '?refresh=1' : ''}`, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load Pollinations');
+      setPollinations(data);
+    } catch (err) { setPollinationsError(err.message || 'Unable to load Pollinations'); }
+    finally { setPollinationsLoading(false); }
+  }, []);
+
+  useEffect(() => { loadPollinations(); }, [loadPollinations]);
+
+  const disconnectPollinations = async () => {
+    if (!window.confirm('Disconnect Pollinations from LixBlogs? Revoke the issued key from Pollinations for immediate provider-side revocation.')) return;
+    setPollinationsBusy(true);
+    setPollinationsError('');
+    try {
+      const response = await fetch('/api/integrations/pollinations', { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to disconnect Pollinations');
+      setPollinations(data);
+    } catch (err) { setPollinationsError(err.message || 'Unable to disconnect Pollinations'); }
+    finally { setPollinationsBusy(false); }
+  };
 
   const changeConnection = async (connect) => {
     setBusy(true);
@@ -1365,6 +1396,8 @@ function IntegrationsTab() {
 
   const oauthResult = searchParams.get('cloudinary');
   const oauthReference = searchParams.get('cloudinary_ref');
+  const pollinationsResult = searchParams.get('pollinations');
+  const pollinationsReference = searchParams.get('pollinations_ref');
   const oauthMessage = {
     connected: { ok: true, text: 'Cloudinary connected. New blog media can now use your product environment.' },
     denied: { ok: false, text: 'Cloudinary authorization was cancelled.' },
@@ -1381,6 +1414,16 @@ function IntegrationsTab() {
     failed_persistence: { ok: false, text: 'Cloudinary authorized successfully, but LixBlogs could not save the encrypted connection. Please retry.' },
     failed: { ok: false, text: 'Cloudinary could not be connected. Check the OAuth app scopes and redirect URI.' },
   }[oauthResult];
+  const pollinationsMessage = {
+    connected: { ok: true, text: 'Pollinations connected. Image generation will spend the budget you approved.' },
+    denied: { ok: false, text: 'Pollinations authorization was cancelled.' },
+    invalid_state: { ok: false, text: 'The Pollinations authorization session expired. Start again.' },
+    scope_missing: { ok: false, text: 'The connection did not grant usage access. Reconnect and approve the requested scope.' },
+    authorization_failed: { ok: false, text: 'Pollinations rejected the authorization request.' },
+    config_error: { ok: false, text: 'Pollinations BYOP is not configured on this deployment.' },
+    disabled: { ok: false, text: 'Pollinations image generation is not enabled yet.' },
+    failed: { ok: false, text: 'Pollinations could not be connected. Check the App Key and exact callback URI.' },
+  }[pollinationsResult];
 
   return (
     <div>
@@ -1503,6 +1546,44 @@ function IntegrationsTab() {
           </div>
         )}
         {cloudinaryError && <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{cloudinaryError}</p>}
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-2xl text-amber-500"><ion-icon name="color-wand-outline" /></div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Pollinations image generation</h3>
+                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">Coming soon</span>
+                {pollinations && <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${pollinations.connected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}>{pollinations.connected ? 'Connected' : pollinations.status}</span>}
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">Authorize LixBlogs through BYOP to generate images with your Pollen. Your key stays encrypted on the server and is never returned to the browser or CLI.</p>
+            </div>
+          </div>
+          {!pollinationsLoading && pollinations?.enabled && (
+            pollinations.connected
+              ? <button disabled={pollinationsBusy} onClick={disconnectPollinations} className="shrink-0 rounded-lg border border-red-400/25 px-4 py-2 text-xs font-semibold text-red-500 hover:bg-red-500/10 disabled:opacity-50">Disconnect</button>
+              : <a href="/api/integrations/pollinations/connect" className="shrink-0 rounded-lg bg-[#9b7bf7] px-4 py-2 text-center text-xs font-semibold text-white hover:bg-[#8b6ae6]">Connect Pollinations</a>
+          )}
+        </div>
+        {pollinationsMessage && <p className={`mt-4 rounded-lg px-3 py-2 text-xs ${pollinationsMessage.ok ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'}`}>{pollinationsMessage.text}{pollinationsReference && !pollinationsMessage.ok ? ` Reference: ${pollinationsReference}` : ''}</p>}
+        {pollinationsLoading && <div className="mt-5 h-20 animate-pulse rounded-xl bg-[var(--bg-elevated)]" />}
+        {pollinations?.connected && (
+          <div className="mt-5 border-t border-[var(--border-default)] pt-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Account</p><p className="mt-1 truncate text-sm font-semibold text-[var(--text-primary)]">{pollinations.handle || 'Connected user'}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Pollen balance</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{pollinations.balance ?? '—'}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Approved budget</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{pollinations.budget ?? 'Provider default'}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wider text-[var(--text-faint)]">Expires</p><p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{pollinations.expiresAt ? new Date(pollinations.expiresAt * 1000).toLocaleDateString() : 'Provider managed'}</p></div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <p className="text-[var(--text-muted)]">Models: {(pollinations.models || []).join(', ') || '—'}</p>
+              <div className="flex gap-3"><button disabled={pollinationsBusy} onClick={() => loadPollinations(true)} className="font-medium text-[#9b7bf7] hover:underline">Refresh</button><a href="https://enter.pollinations.ai" target="_blank" rel="noreferrer" className="font-medium text-[#9b7bf7] hover:underline">Open dashboard ↗</a><a href="/api/integrations/pollinations/connect" className="font-medium text-[#9b7bf7] hover:underline">Reconnect</a></div>
+            </div>
+          </div>
+        )}
+        {pollinationsError && <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{pollinationsError}</p>}
       </div>
     </div>
   );
