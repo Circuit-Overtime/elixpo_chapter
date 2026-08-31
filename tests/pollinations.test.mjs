@@ -28,6 +28,10 @@ test('Pollinations authorization uses code PKCE and only usage scope', async () 
   }
 });
 
+test('Pollinations limits image access to the supported default models', () => {
+  assert.deepEqual(POLLINATIONS_MODELS, ['gptimage', 'flux', 'klein']);
+});
+
 test('token fingerprints are stable and do not expose the token', async () => {
   const token = 'sk_super-secret-value';
   const first = await tokenFingerprint(token);
@@ -37,7 +41,7 @@ test('token fingerprints are stable and do not expose the token', async () => {
 
 test('public connection shape never returns encrypted credential material', () => {
   const result = publicConnection({
-    access_token_encrypted: 'v1.secret', status: 'connected', permitted_models: '["flux"]',
+    access_token_encrypted: 'v1.secret', status: 'connected', permitted_models: '["flux","kontext"]',
     usage_summary: '{"requests":2}', granted_scope: 'usage', expires_at: 9999999999,
   });
   assert.equal(result.connected, true);

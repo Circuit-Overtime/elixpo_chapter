@@ -7,7 +7,7 @@ const ASPECT_RATIO = 16 / 5;
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = Math.round(CANVAS_WIDTH / ASPECT_RATIO);
 const OUTPUT_QUALITY = 0.45;
-const IMAGE_MODELS = ['flux', 'gptimage', 'kontext', 'nanobanana-2'];
+const IMAGE_MODELS = ['gptimage', 'flux', 'klein'];
 
 export default function BannerUploadModal({ onSave, onClose, currentBanner }) {
   const [tab, setTab] = useState('upload');

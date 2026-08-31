@@ -6,7 +6,7 @@ import { IMAGE_ACCEPT_ATTR } from '../../../utils/allowedImageTypes';
 import { createMediaUploadId, enqueueMediaUpload, resumeMediaUpload } from '../../../utils/mediaUploadQueue';
 import MediaStorageChip from '../MediaStorageChip';
 
-const IMAGE_MODELS = ['flux', 'gptimage', 'kontext', 'nanobanana-2'];
+const IMAGE_MODELS = ['gptimage', 'flux', 'klein'];
 
 export const BlogImageUploadContext = createContext({ blogId: null });
 
