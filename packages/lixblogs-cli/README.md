@@ -1,11 +1,7 @@
 # @elixpo/lixblogs-cli
 
-The official CLI for LixBlogs — publish, manage, and inspect blogs through
-the supported API. Built for creators and agent/automation use.
-
-This package implements production device-flow authentication and the core
-blog lifecycle over the stable LixBlogs API v1 contract. Its output stays
-compact and predictable for both terminals and automation.
+Publish, manage, and inspect LixBlogs through its stable API v1. The CLI uses
+device authorization and predictable terminal or JSON output.
 
 ```bash
 npm install -g @elixpo/lixblogs-cli
@@ -15,24 +11,12 @@ lixblogs --help
 ### Authentication
 
 ```bash
-# Log in via device authorization
 node bin/lixblogs.mjs login
-# Credentials are saved under the authenticated username and made active.
-
-# Save credentials under an explicit local profile name
 node bin/lixblogs.mjs login --profile personal
-
-# Check login status
 node bin/lixblogs.mjs whoami
-
-# List profiles and choose the active one
 node bin/lixblogs.mjs profiles
 node bin/lixblogs.mjs use work
-
-# Log out (clears local credentials only)
 node bin/lixblogs.mjs logout
-
-# Revoke the token server-side and clear local credentials (destructive)
 node bin/lixblogs.mjs auth revoke --yes
 ```
 
@@ -109,7 +93,9 @@ lixblogs media generate --prompt "Editorial illustration" --model flux \
 lixblogs media delete MEDIA_ID --yes
 ```
 
-Pollinations generation uses the creator's BYOP connection in LixBlogs Settings. The provider key is never stored by the CLI. Generation is an explicit billable request and is not retried automatically; retain the local output and use `media upload` if Cloudinary persistence needs to be retried.
+Pollinations generation uses the creator's BYOP connection in Settings. The
+CLI never stores its key or retries a billable generation automatically. Keep
+the local output for a manual `media upload` retry.
 
 ### Agent skills
 
@@ -122,42 +108,32 @@ lixblogs skill install lixblogs-author --target .agents/skills --dry-run
 lixblogs skill install lixblogs-author --target .agents/skills --yes
 ```
 
-Install only the skill needed by the current agent. Existing files are not
-replaced unless `--force --yes` is explicit. The bundled skill declares its
-minimum compatible CLI version and scopes.
+Install only the needed skill. Existing files require explicit `--force --yes`.
+Each skill declares its minimum CLI version and scopes.
 
 `create`, `edit`, `publish`, `unpublish`, `delete`, and `restore` accept
 `--dry-run`. Content input is mutually exclusive: `--file`, `--stdin`,
-`--content`, or `--editor`. Permanent deletion additionally requires
+`--content`, or `--editor`. Permanent deletion requires
 `--permanent --yes` and the `lixblogs:blog:delete:permanent` scope.
 
-Edits use the server ETag automatically. If another editor wins the race, the
-command exits with code 3 and retains both versions under
-`.lixblogs-conflicts/`; it never overwrites the newer server revision.
+Edits use the server ETag. Conflicts exit with code 3 and retain both versions
+under `.lixblogs-conflicts/` without overwriting the server revision.
 
 ### Service boundary
 
 - `https://accounts.elixpo.com` issues, refreshes, and revokes OAuth tokens.
 - `https://blogs.elixpo.com/api/v1` is the only production resource API.
-- The CLI rejects incompatible discovery metadata and unexpected origins.
-- See the repository [API contract](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/API.md), [release policy](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/RELEASE.md), and [changelog](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/CHANGELOG.md).
+- Incompatible discovery metadata and unexpected origins are rejected.
+- See the [API contract](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/API.md), [release policy](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/RELEASE.md), and [changelog](https://github.com/elixpo/blogs.elixpo/blob/main/packages/lixblogs-cli/CHANGELOG.md).
 
-The production client is public and has no client secret. Never add one to
-CLI configuration, package files, or GitHub secrets.
+The public production client has no client secret. Never add one.
 
 ### Troubleshooting
 
-- `invalid_scope`: Accounts has not registered the requested permission for
-  this client; do not substitute a broader token.
+- `invalid_scope`: Accounts has not registered the requested permission.
 - `insufficient_scope`: log in again with only the reported missing scope.
-- `account_not_provisioned`: sign in to LixBlogs once with the same Accounts
-  identity before retrying the CLI.
+- `account_not_provisioned`: sign in to LixBlogs once, then retry.
 - `precondition_failed`: fetch the current post, reconcile the retained
   conflict copy, and retry with the new revision.
 - `rate_limit_exceeded`: honor `Retry-After`; do not fan out retries.
-- Include the returned request ID in a report, never a token or credential.
-
-## Contributing
-
-This package is part of the [blogs.elixpo](https://github.com/elixpo/blogs.elixpo)
-monorepo. See the root repository's contribution guidelines.
+- Report the request ID, never a token or credential.
