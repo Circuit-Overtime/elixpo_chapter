@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { EXIT_CODES, errorEnvelope, normalizeCommand, requireConfirmation } from '../src/cli/contract.js';
 
 test('top-level authentication commands preserve auth aliases', () => {
@@ -22,4 +23,13 @@ test('state transitions fail closed without explicit approval', () => {
     (error) => error.code === 'confirmation_required' && error.exitCode === EXIT_CODES.CONFIRMATION,
   );
   assert.doesNotThrow(() => requireConfirmation({ yes: true }, 'Publishing this blog'));
+});
+
+test('CLI entrypoint exposes bearer-authenticated Cloudinary integration commands', () => {
+  const entrypoint = readFileSync(new URL('../bin/lixblogs.mjs', import.meta.url), 'utf8');
+  assert.match(entrypoint, /integrations cloudinary-status/);
+  assert.match(entrypoint, /integrations cloudinary-disconnect --yes/);
+  assert.match(entrypoint, /'cloudinary-status':/);
+  assert.match(entrypoint, /'cloudinary-disconnect':/);
+  assert.match(entrypoint, /disconnect cloudinary --yes/);
 });

@@ -38,6 +38,7 @@ import { BlogClient, BlogApiError } from "../src/api/BlogClient.js";
 import { OrgClient } from "../src/api/OrgClient.js";
 import { CollaborationClient } from "../src/api/CollaborationClient.js";
 import { AnalyticsClient } from "../src/api/AnalyticsClient.js";
+import { IntegrationsClient } from "../src/api/IntegrationsClient.js";
 import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
 import { colorEnabled, listenForEnter, loginChallenge, successLine } from "../src/cli/ui.js";
 import {
@@ -69,6 +70,9 @@ import {
 import { skillInspect, skillInstall, skillList } from "../src/commands/skill/index.js";
 import { analyticsExport, analyticsQuery } from "../src/commands/analytics/index.js";
 import { integrationDisconnect } from "../src/commands/integration/index.js";
+import { cloudinaryDisconnect } from "../src/commands/integrations/cloudinary-disconnect.js";
+import { cloudinaryStatus } from "../src/commands/integrations/cloudinary-status.js";
+
 
 const OPTIONS = {
   profile: { type: "string" },
@@ -161,10 +165,12 @@ Usage:
   lixblogs collab decline <blog-id> --yes
   lixblogs analytics query [--scope personal|org:<id>] [--range 30d] [--dimension overview]
   lixblogs analytics export --output <file> [--format json|csv] [query options]
+  lixblogs integrations cloudinary-status [--json]
+  lixblogs integrations cloudinary-disconnect --yes [--json]
   lixblogs skill list             [--json]
   lixblogs skill inspect <name>   [--json]
   lixblogs skill install <name>   [--target <directory>] [--dry-run] --yes
-  lixblogs disconnect cloudinary
+  lixblogs disconnect cloudinary --yes
   lixblogs disconnect pollinations
 
 Global flags:
@@ -482,7 +488,44 @@ async function runRevoke(opts) {
     console.log(`Revoked and logged out profile "${profileId}".`);
   }
 }
+async function runIntegrations(opts, args, action) {
+  const config = resolveConfig({ flags: configFlags(opts) });
+  const profileRegistry = new ProfileRegistry();
+  const profileId = await selectedProfile(config, profileRegistry);
 
+  if (action === 'cloudinary-disconnect' && !opts.yes) {
+    return fail(
+      opts,
+      "This is a destructive action. Re-run with --yes to confirm (interactive confirmation prompt not yet implemented)."
+    );
+  }
+
+  let provider;
+  try {
+    provider = createAuthProvider(config);
+  } catch (err) {
+    return fail(opts, err.message);
+  }
+  const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
+  if (!credentialStore) return;
+
+  const http = new AuthenticatedClient({
+    provider, credentialStore, profileId, apiBaseUrl: config.apiBaseUrl,
+  });
+  const integrationsClient = new IntegrationsClient(http);
+
+  const result = action === 'cloudinary-status'
+    ? await cloudinaryStatus({ integrationsClient })
+    : await cloudinaryDisconnect({ integrationsClient, confirmed: true });
+
+  if (!result.ok) return fail(opts, result.error || result.reason);
+  output(opts, result);
+  if (!opts.json && !opts.quiet) {
+    console.log(action === 'cloudinary-status'
+      ? `Cloudinary: ${result.data.connected ? `connected (${result.data.cloudName})` : 'not connected'}`
+      : 'Cloudinary connection disconnected.');
+  }
+}
 async function runProfiles(opts) {
   const profileRegistry = new ProfileRegistry();
   const credentialStore = await getCredentialStoreOrFail(opts, profileRegistry);
@@ -761,8 +804,12 @@ const ROUTES = {
     action,
     (opts, args) => runAnalytics(opts, args, action),
   ])),
+  integrations: {
+    'cloudinary-status': (opts, args) => runIntegrations(opts, args, 'cloudinary-status'),
+    'cloudinary-disconnect': (opts, args) => runIntegrations(opts, args, 'cloudinary-disconnect'),
+  },
   disconnect: {
-    cloudinary: (opts, args) => runIntegration(opts, args, 'cloudinary'),
+    cloudinary: (opts, args) => runIntegrations(opts, args, 'cloudinary-disconnect'),
     pollinations: (opts, args) => runIntegration(opts, args, 'pollinations'),
   },
 };
