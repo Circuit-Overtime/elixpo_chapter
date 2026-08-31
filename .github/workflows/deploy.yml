@@ -85,6 +85,7 @@ jobs:
               case "$file" in
                 packages/lixeditor/*) lixeditor=true ;;
                 packages/lixblogs-cli/*|.agents/skills/*) cli=true ;;
+                .github/workflows/deploy.yml|deploy.sh) lixeditor=true; cli=true ;;
                 packages/vscode-lixeditor/*) vscode=true ;;
                 worker/*) worker=true ;;
                 payouts.catalog.json|scripts/sync-payouts-tiers.mjs) catalog=true ;;
