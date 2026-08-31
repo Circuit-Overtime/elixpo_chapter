@@ -39,6 +39,7 @@ interface OAuthApp {
     client_id: string;
     name: string;
     homepage_url?: string;
+    logo_url?: string;
     description?: string;
     created_at: string;
     is_active: boolean;
@@ -90,24 +91,27 @@ const tableBodySx = {
     },
 };
 
-// Favicon sources tried in order: the app's OWN /favicon.ico (real brand icon),
-// then Google's favicon service (cached), then a generated pixel avatar.
-function faviconSources(homepageUrl?: string): string[] {
-    if (!homepageUrl) return [];
+// Prefer the configured brand asset, then the app's own favicon and a cached
+// favicon lookup before falling back to a generated avatar.
+function faviconSources(homepageUrl?: string, logoUrl?: string): string[] {
+    const sources = logoUrl ? [logoUrl] : [];
+    if (!homepageUrl) return sources;
     try {
         const u = new URL(homepageUrl);
-        return [
+        sources.push(
             `${u.origin}/favicon.ico`,
             `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=64`,
-        ];
+        );
+        return [...new Set(sources)];
     } catch {
-        return [];
+        return sources;
     }
 }
 
 function AppIcon({ app, size = 28 }: { app: OAuthApp; size?: number }) {
     const [stage, setStage] = useState(0);
-    const sources = faviconSources(app.homepage_url);
+    const sources = faviconSources(app.homepage_url, app.logo_url);
+    useEffect(() => setStage(0), [app.homepage_url, app.logo_url]);
     const src =
         stage < sources.length
             ? sources[stage]
@@ -117,6 +121,7 @@ function AppIcon({ app, size = 28 }: { app: OAuthApp; size?: number }) {
             component="img"
             src={src}
             alt=""
+            referrerPolicy="no-referrer"
             sx={{
                 width: size,
                 height: size,

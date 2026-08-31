@@ -2,8 +2,12 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
 import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
     Box,
     Button,
     Checkbox,
@@ -12,7 +16,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
     type CustomOAuthScope,
     filterScopeOptions,
@@ -40,6 +44,7 @@ export function OAuthScopePicker({
     onCustomScopesChange: (scopes: CustomOAuthScope[]) => void;
 }) {
     const [query, setQuery] = useState("");
+    const deferredQuery = useDeferredValue(query);
     const [draft, setDraft] = useState<CustomOAuthScope>({
         name: "",
         label: "",
@@ -49,8 +54,8 @@ export function OAuthScopePicker({
 
     const visibleOptions = useMemo(() => {
         const all = scopeOptionsForClient(customScopes, selectedScopes);
-        return filterScopeOptions(all, query, selectedScopes);
-    }, [customScopes, query, selectedScopes]);
+        return filterScopeOptions(all, deferredQuery, selectedScopes);
+    }, [customScopes, deferredQuery, selectedScopes]);
 
     const toggle = (name: string, checked: boolean) => {
         onSelectedScopesChange(
@@ -134,6 +139,138 @@ export function OAuthScopePicker({
                             (scope) => scope.group === group,
                         );
                         if (options.length === 0) return null;
+
+                        const renderScope = (scope: OAuthScopeOption) => (
+                            <Box
+                                key={scope.name}
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: 0.5,
+                                    py: 0.5,
+                                }}
+                            >
+                                <Checkbox
+                                    size="small"
+                                    checked={selectedScopes.includes(
+                                        scope.name,
+                                    )}
+                                    onChange={(event) =>
+                                        toggle(
+                                            scope.name,
+                                            event.target.checked,
+                                        )
+                                    }
+                                    inputProps={{
+                                        "aria-label": `${scope.label} (${scope.name})`,
+                                    }}
+                                />
+                                <Box
+                                    sx={{
+                                        flex: 1,
+                                        minWidth: 0,
+                                        pt: 0.35,
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            color: "var(--fg)",
+                                            fontSize: "0.82rem",
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        {scope.label}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            color: "var(--fg-faint)",
+                                            fontFamily: "monospace",
+                                            fontSize: "0.7rem",
+                                        }}
+                                    >
+                                        {scope.name}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            color: "var(--fg-muted)",
+                                            fontSize: "0.72rem",
+                                        }}
+                                    >
+                                        {scope.description}
+                                    </Typography>
+                                </Box>
+                                {group === "custom" ? (
+                                    <IconButton
+                                        size="small"
+                                        aria-label={`Delete custom scope ${scope.name}`}
+                                        onClick={() =>
+                                            removeCustomScope(scope.name)
+                                        }
+                                    >
+                                        <DeleteOutlineIcon fontSize="small" />
+                                    </IconButton>
+                                ) : null}
+                            </Box>
+                        );
+
+                        if (group === "product") {
+                            const groupedByPrefix = options.reduce((acc, scope) => {
+                                const prefix = scope.name.split(':')[0];
+                                if (!acc[prefix]) acc[prefix] = [];
+                                acc[prefix].push(scope);
+                                return acc;
+                            }, {} as Record<string, OAuthScopeOption[]>);
+
+                            return (
+                                <Box
+                                    key={group}
+                                    sx={{ mb: 1.5, "&:last-child": { mb: 0 } }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            color: "var(--fg-faint)",
+                                            fontSize: "0.7rem",
+                                            fontWeight: 700,
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.08em",
+                                            mb: 0.5,
+                                        }}
+                                    >
+                                        {GROUP_LABELS[group]}
+                                    </Typography>
+                                    {Object.entries(groupedByPrefix).map(([prefix, scopes]) => (
+                                        <Accordion
+                                            key={prefix}
+                                            disableGutters
+                                            elevation={0}
+                                            sx={{
+                                                border: "1px solid var(--border)",
+                                                mb: 1,
+                                                "&:last-child": { mb: 0 },
+                                                "&:before": { display: "none" },
+                                                bgcolor: "transparent",
+                                            }}
+                                        >
+                                            <AccordionSummary
+                                                expandIcon={<ExpandMoreIcon sx={{ color: "var(--fg-faint)" }} />}
+                                                sx={{
+                                                    minHeight: 36,
+                                                    "& .MuiAccordionSummary-content": { my: 1 },
+                                                }}
+                                            >
+                                                <Typography sx={{ color: "var(--fg)", fontSize: "0.8rem", fontWeight: 600 }}>
+                                                    {prefix}
+                                                </Typography>
+                                            </AccordionSummary>
+                                            <AccordionDetails sx={{ p: 1, pt: 0 }}>
+                                                {(scopes as OAuthScopeOption[]).map(renderScope)}
+                                            </AccordionDetails>
+                                        </Accordion>
+                                    ))}
+                                </Box>
+                            );
+                        }
+
                         return (
                             <Box
                                 key={group}
@@ -151,80 +288,7 @@ export function OAuthScopePicker({
                                 >
                                     {GROUP_LABELS[group]}
                                 </Typography>
-                                {options.map((scope) => (
-                                    <Box
-                                        key={scope.name}
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "flex-start",
-                                            gap: 0.5,
-                                            py: 0.5,
-                                        }}
-                                    >
-                                        <Checkbox
-                                            size="small"
-                                            checked={selectedScopes.includes(
-                                                scope.name,
-                                            )}
-                                            onChange={(event) =>
-                                                toggle(
-                                                    scope.name,
-                                                    event.target.checked,
-                                                )
-                                            }
-                                            inputProps={{
-                                                "aria-label": `${scope.label} (${scope.name})`,
-                                            }}
-                                        />
-                                        <Box
-                                            sx={{
-                                                flex: 1,
-                                                minWidth: 0,
-                                                pt: 0.35,
-                                            }}
-                                        >
-                                            <Typography
-                                                sx={{
-                                                    color: "var(--fg)",
-                                                    fontSize: "0.82rem",
-                                                    fontWeight: 600,
-                                                }}
-                                            >
-                                                {scope.label}
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    color: "var(--fg-faint)",
-                                                    fontFamily: "monospace",
-                                                    fontSize: "0.7rem",
-                                                }}
-                                            >
-                                                {scope.name}
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    color: "var(--fg-muted)",
-                                                    fontSize: "0.72rem",
-                                                }}
-                                            >
-                                                {scope.description}
-                                            </Typography>
-                                        </Box>
-                                        {group === "custom" ? (
-                                            <IconButton
-                                                size="small"
-                                                aria-label={`Delete custom scope ${scope.name}`}
-                                                onClick={() =>
-                                                    removeCustomScope(
-                                                        scope.name,
-                                                    )
-                                                }
-                                            >
-                                                <DeleteOutlineIcon fontSize="small" />
-                                            </IconButton>
-                                        ) : null}
-                                    </Box>
-                                ))}
+                                {options.map(renderScope)}
                             </Box>
                         );
                     })
