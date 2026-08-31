@@ -1418,7 +1418,6 @@ function IntegrationsTab() {
     connected: { ok: true, text: 'Pollinations connected. Image generation will spend the budget you approved.' },
     denied: { ok: false, text: 'Pollinations authorization was cancelled.' },
     invalid_state: { ok: false, text: 'The Pollinations authorization session expired. Start again.' },
-    scope_missing: { ok: false, text: 'The connection did not grant usage access. Reconnect and approve the requested scope.' },
     authorization_failed: { ok: false, text: 'Pollinations rejected the authorization request.' },
     scope_missing: { ok: false, text: 'Pollinations did not grant read-only usage access. Reconnect and approve the requested scope.' },
     config_error: { ok: false, text: 'Pollinations BYOP is not configured on this deployment.' },
