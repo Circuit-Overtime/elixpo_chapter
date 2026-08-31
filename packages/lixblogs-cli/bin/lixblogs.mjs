@@ -68,6 +68,7 @@ import {
 } from "../src/commands/collab/index.js";
 import { skillInspect, skillInstall, skillList } from "../src/commands/skill/index.js";
 import { analyticsExport, analyticsQuery } from "../src/commands/analytics/index.js";
+import { integrationDisconnect } from "../src/commands/integration/index.js";
 
 
 const OPTIONS = {
@@ -164,6 +165,8 @@ Usage:
   lixblogs skill list             [--json]
   lixblogs skill inspect <name>   [--json]
   lixblogs skill install <name>   [--target <directory>] [--dry-run] --yes
+  lixblogs disconnect cloudinary
+  lixblogs disconnect pollinations
 
 Global flags:
   --profile <name>            local account alias (defaults to the signed-in username)
@@ -751,6 +754,21 @@ async function runAnalytics(opts, _args, action) {
   }
 }
 
+async function runIntegration(opts, args, action) {
+  const context = await authenticatedBlogClient(opts);
+  if (!context) return;
+  const client = context.client;
+  try {
+    const result = await integrationDisconnect({ client, target: action });
+    output(opts, { ok: true, data: result });
+    if (!opts.json && !opts.quiet) {
+      console.log(`Disconnected ${result.provider}.`);
+    }
+  } catch (error) {
+    fail(opts, error);
+  }
+}
+
 const ROUTES = {
   auth: {
     login: runLogin,
@@ -781,6 +799,10 @@ const ROUTES = {
     action,
     (opts, args) => runAnalytics(opts, args, action),
   ])),
+  disconnect: {
+    cloudinary: (opts, args) => runIntegration(opts, args, 'cloudinary'),
+    pollinations: (opts, args) => runIntegration(opts, args, 'pollinations'),
+  },
 };
 
 async function main() {
