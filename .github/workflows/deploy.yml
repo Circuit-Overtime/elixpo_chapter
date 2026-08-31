@@ -192,8 +192,12 @@ jobs:
           ./deploy.sh "${args[@]}" deploy
       - name: Publish the same artifacts to GitHub Packages
         env:
-          GITHUB_ACCESS_TOKEN: ${{ github.token }}
+          GITHUB_ACCESS_TOKEN: ${{ secrets.ELIXPOO_GITHUB_AGENTIC_TOKEN }}
         run: |
+          if [ -z "$GITHUB_ACCESS_TOKEN" ]; then
+            echo "::error::ELIXPOO_GITHUB_AGENTIC_TOKEN is required with the write:packages scope."
+            exit 1
+          fi
           args=(--github --no-bump)
           if [ "${{ needs.changes.outputs.lixeditor }}" = "true" ] && [ "${{ needs.changes.outputs.cli }}" != "true" ]; then args+=(--lixeditor); fi
           if [ "${{ needs.changes.outputs.cli }}" = "true" ] && [ "${{ needs.changes.outputs.lixeditor }}" != "true" ]; then args+=(--cli); fi
