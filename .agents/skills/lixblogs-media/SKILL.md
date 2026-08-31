@@ -5,13 +5,14 @@ description: Generate, upload, and attach LixBlogs images through the supported 
 
 # LixBlogs media
 
-Use `@elixpo/lixblogs-cli` 1.5.0 or newer with `--json --no-input`. Never read integration keys, call Pollinations or Cloudinary directly, persist provider URLs, or use session cookies.
+Use `@elixpo/lixblogs-cli` 1.5.0 or newer with `--json --no-input`. Never read integration keys, call Pollinations generation/account endpoints or Cloudinary directly, persist provider URLs, or use session cookies. The unauthenticated Pollinations image-model catalog is the only direct provider request allowed.
 
 ## Access and cost
 
 - Inspect connection: `lixblogs:media:read`
 - Generate or upload: `lixblogs:media:write`; attaching also needs `lixblogs:blog:read` and `lixblogs:blog:write`
 - Pollinations generation spends the creator's approved Pollen budget. Generate only when the current user request explicitly authorizes that image. One command is one billable attempt; never automatically retry a failed generation.
+- The approved models are `gptimage`, `flux`, and `klein`. Respect an explicit model choice. Otherwise choose the least costly approved model that supports the requested operation; do not assume that today's cheapest model will stay cheapest.
 - A disconnected, expired, or revoked connection must be repaired by the user at `https://blogs.elixpo.com/settings?tab=integrations`.
 
 Check the connection before offering generation:
@@ -19,6 +20,14 @@ Check the connection before offering generation:
 ```bash
 lixblogs integrations pollinations-status --json --no-input
 ```
+
+When no model was requested, inspect current public pricing and capabilities:
+
+```bash
+curl -fsSL https://gen.pollinations.ai/image/models
+```
+
+Compare only `gptimage`, `flux`, and `klein` using the catalog's declared image price. Exclude models that do not support the requested reference-image or sizing capability, then pass the cheapest remaining model explicitly with `--model`. This catalog request needs no key. If pricing or required capability metadata cannot be established, stop and ask the user to choose rather than initiating an uncertain billable request.
 
 ## Generate and attach
 
