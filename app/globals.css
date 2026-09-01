@@ -22,6 +22,31 @@ body {
   width: 100%;
 }
 
+@media (max-width: 639px) {
+  .media-decode-enabled img:not(.media-decoded),
+  .media-decode-enabled [style*="background-image"]:not(.media-decoded) {
+    visibility: hidden;
+  }
+
+  .media-decode-enabled .media-decoded {
+    visibility: visible;
+    animation: media-decode-in 260ms ease-out;
+  }
+}
+
+@keyframes media-decode-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-decode-enabled .media-decoded {
+    animation: none;
+  }
+}
+
 /* ===== SCROLLBAR HIDING ===== */
 .appContainer::-webkit-scrollbar,
 .spotlight::-webkit-scrollbar,
@@ -687,6 +712,41 @@ body {
 }
 .featuredTileSpecialDesc {
   font-family: "Pathway Gothic One", sans-serif;
+}
+.spotlightSwipeCue {
+  color: #5e5548;
+  font-family: "Bitcount Grid Double", system-ui;
+  font-size: 1.35rem;
+  line-height: 1;
+  animation: spotlight-swipe-cue 1.5s ease-in-out infinite;
+}
+.spotlightSwipeCue:first-of-type {
+  animation-name: spotlight-swipe-cue-left;
+}
+.spotlightSwipeCue:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+@keyframes spotlight-swipe-cue-left {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateX(-5px);
+    opacity: 1;
+  }
+}
+@keyframes spotlight-swipe-cue {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateX(5px);
+    opacity: 1;
+  }
 }
 
 /* ===== WEBSITE SECTION ===== */

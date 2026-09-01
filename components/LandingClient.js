@@ -253,8 +253,9 @@ export default function LandingClient({ profiles }) {
                       <img
                         src={`/assets/${profile.slug}/about/landing-card.webp`}
                         alt={`Portrait of ${profile.siteName}`}
-                        loading="eager"
+                        loading={active ? "eager" : "lazy"}
                         decoding="async"
+                        fetchPriority={active ? "high" : "low"}
                       />
                     </div>
                     <span>Member registry</span>

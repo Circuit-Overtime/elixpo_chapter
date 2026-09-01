@@ -48,9 +48,11 @@ export default async function HomePage({ params }) {
           return (
             <span key={index} className="contents">
               {index === midIndex && (
-                <div id="spotlightCenter" className="featuredTileSpecial relative h-[280px] sm:h-[350px] w-[280px] sm:w-[450px] flex-shrink-0 flex flex-col items-center mt-[10px] border-r-2 border-l-2 border-[#888] px-3 sm:px-5">
+                <div id="spotlightCenter" className="featuredTileSpecial relative h-[280px] sm:h-[350px] w-[280px] sm:w-[450px] flex-shrink-0 flex flex-col items-center justify-center sm:justify-start gap-3 sm:gap-0 mt-[10px] border-r-2 border-l-2 border-[#888] px-3 sm:px-5">
+                  <span className="spotlightSwipeCue sm:hidden" aria-hidden="true">←</span>
                   <p className="featuredTileSpecialText text-2xl sm:text-[4em] font-extrabold tracking-wide relative">SPOTLIGHT!</p>
-                  <p className="featuredTileSpecialDesc text-sm sm:text-[1.8em] font-thin relative text-center">These are the  latest catches in my career</p>
+                  <span className="spotlightSwipeCue sm:hidden" aria-hidden="true">→</span>
+                  <p className="featuredTileSpecialDesc hidden sm:block text-sm sm:text-[1.8em] font-thin relative text-center">These are the latest catches in my career</p>
                 </div>
               )}
               {news.url ? (
@@ -304,6 +306,8 @@ export default async function HomePage({ params }) {
                       className="sm:w-[50px] sm:h-[50px] md:w-[60px] md:h-[60px]"
                       src={skill.src}
                       alt={skill.alt}
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <p key={i} className="font-extrabold text-sm sm:text-base md:text-lg lg:text-xl xl:text-[2em]">

@@ -1,6 +1,7 @@
 import "./globals.css";
 import Script from "next/script";
 import { LANDING_DESCRIPTION, LANDING_TITLE } from "@/lib/seo";
+import { MediaDecodeReveal } from "@/components/Animations";
 
 export const metadata = {
   title: {
@@ -46,7 +47,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" className="media-decode-enabled">
       <head>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -68,6 +69,10 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         {children}
+        <MediaDecodeReveal />
+        <noscript>
+          <style>{`.media-decode-enabled img, .media-decode-enabled [style*="background-image"] { visibility: visible !important; }`}</style>
+        </noscript>
         <Script
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"
           strategy="beforeInteractive"

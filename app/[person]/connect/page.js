@@ -78,6 +78,8 @@ export default async function ConnectPage({ params }) {
             <img
               src={connectData.contactImage}
               alt={`${connectData.heading} contact portrait`}
+              loading="lazy"
+              decoding="async"
               className="absolute inset-0 h-full w-full object-cover object-center opacity-80 mix-blend-luminosity transition-transform duration-700 hover:scale-[1.025]"
             />
             <div className="pointer-events-none absolute inset-3 rounded-[8px] border border-[#E2D9C8]/55 sm:inset-4" />
