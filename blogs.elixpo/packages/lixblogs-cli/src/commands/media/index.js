@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { requireConfirmation } from '../../cli/contract.js';
+import { BlogApiError } from '../../api/BlogClient.js';
 
 function dimensions(options) {
   const value = (key) => options[key] === undefined ? undefined : Number.parseInt(options[key], 10);
@@ -18,16 +19,25 @@ const MIME_BY_EXTENSION = Object.freeze({
   '.webp': 'image/webp',
 });
 
-async function attach({ blogClient, blogId, media, type, caption }) {
+export async function attachMediaToBlog({ blogClient, blogId, media, type, caption }) {
   if (!blogId) return null;
-  const blog = await blogClient.get(blogId);
-  if (type === 'cover') return blogClient.update(blogId, { coverUrl: media.url }, { etag: blog.etag });
-  const content = [...(blog.content || []), {
-    id: randomUUID(), type: 'image',
-    props: { url: media.url, caption: caption || '', _mediaId: media.id || '' },
-    content: [], children: [],
-  }];
-  return blogClient.update(blogId, { content }, { etag: blog.etag });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const blog = await blogClient.get(blogId);
+    const input = type === 'cover' ? { coverUrl: media.url } : {
+      content: [...(blog.content || []), {
+        id: randomUUID(), type: 'image',
+        props: { url: media.url, caption: caption || '', _mediaId: media.id || '' },
+        content: [], children: [],
+      }],
+    };
+    try {
+      return await blogClient.update(blogId, input, { etag: blog.etag });
+    } catch (error) {
+      const retryableConflict = error instanceof BlogApiError && error.code === 'revision_conflict';
+      if (!retryableConflict || attempt === 2) throw error;
+    }
+  }
+  return null;
 }
 
 export async function mediaGenerate({ mediaClient, blogClient, options }) {
@@ -51,7 +61,7 @@ export async function mediaGenerate({ mediaClient, blogClient, options }) {
   let blog = null;
   if (options.blog) {
     media = await mediaClient.upload({ bytes: generated.bytes, mimeType: generated.mimeType, blogId: options.blog, mediaType: type, uploadId: generated.generationId });
-    if (options.attach) blog = await attach({ blogClient, blogId: options.blog, media, type, caption: options.caption });
+    if (options.attach) blog = await attachMediaToBlog({ blogClient, blogId: options.blog, media, type, caption: options.caption });
   }
   return { generationId: generated.generationId, output, mimeType: generated.mimeType, media, blog };
 }
@@ -66,7 +76,7 @@ export async function mediaUpload({ mediaClient, blogClient, options }) {
   const mimeType = MIME_BY_EXTENSION[extension];
   if (!mimeType) throw new Error('Unsupported image type. Use AVIF, BMP, JPEG, PNG, SVG, or WebP.');
   const media = await mediaClient.upload({ bytes, mimeType, blogId: options.blog, mediaType: type, uploadId: options['upload-id'] || randomUUID() });
-  const blog = options.attach ? await attach({ blogClient, blogId: options.blog, media, type, caption: options.caption }) : null;
+  const blog = options.attach ? await attachMediaToBlog({ blogClient, blogId: options.blog, media, type, caption: options.caption }) : null;
   return { media, blog };
 }
 

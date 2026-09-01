@@ -121,7 +121,7 @@ export default function PricingPage() {
           {[
             ['Regional pricing', 'Available plan prices are adjusted by country and shown before checkout.'],
             ['Bring your own storage', 'Connect personal Cloudinary on any available plan; provider charges and quotas remain separate.'],
-            ['Coming soon means coming soon', 'Preview features, including image generation, are not included in today’s paid entitlement.'],
+            ['Bring your own image generation', 'Connect Pollinations on any plan. Generations use your Pollinations Pollen balance and provider limits.'],
           ].map(([title, copy]) => (
             <div key={title} className="rounded-xl bg-[var(--bg-surface)] p-4">
               <h2 className="text-sm font-bold text-[var(--text-primary)]">{title}</h2>

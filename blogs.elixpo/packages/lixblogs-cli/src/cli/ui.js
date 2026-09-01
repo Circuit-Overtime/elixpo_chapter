@@ -41,6 +41,45 @@ export function successLine(message, color = false) {
   return `  ${paint("✓", ANSI.green, color)} ${message}`;
 }
 
+const PROGRESS_FRAMES = Object.freeze(["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]);
+
+export function startProgress(message, {
+  stream = process.stderr,
+  enabled = Boolean(stream.isTTY),
+  intervalMs = 80,
+} = {}) {
+  if (!enabled) return { stop() {} };
+  let frame = 0;
+  const render = () => {
+    stream.write(`\r\u001b[2K${paint(PROGRESS_FRAMES[frame], ANSI.violet, colorEnabled(stream))} ${message}`);
+    frame = (frame + 1) % PROGRESS_FRAMES.length;
+  };
+  render();
+  const timer = setInterval(render, intervalMs);
+  timer.unref?.();
+  let stopped = false;
+  return {
+    stop() {
+      if (stopped) return;
+      stopped = true;
+      clearInterval(timer);
+      stream.write("\r\u001b[2K");
+    },
+  };
+}
+
+export async function withProgress(options, message, operation, settings = {}) {
+  const progress = startProgress(message, {
+    ...settings,
+    enabled: settings.enabled ?? (!options?.json && !options?.quiet && Boolean((settings.stream || process.stderr).isTTY)),
+  });
+  try {
+    return await operation();
+  } finally {
+    progress.stop();
+  }
+}
+
 export function listenForEnter({ input = process.stdin, open, url }) {
   if (!input.isTTY || typeof open !== "function") return () => {};
   const onData = () => { Promise.resolve(open(url)).catch(() => {}); };

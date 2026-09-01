@@ -8,7 +8,10 @@ import { isAllowedMime } from '../../../../src/utils/allowedImageTypes';
 const ALLOWED_MODELS = new Set(POLLINATIONS_MODELS);
 
 export async function POST(request) {
-  const { session, error } = await enforceAILimits({ requireMember: true, request });
+  // Generation uses the creator's connected Pollinations account. Access is
+  // available on every LixBlogs tier; this guard only authenticates the caller
+  // and applies the tier's daily abuse limit.
+  const { session, error } = await enforceAILimits({ request });
   if (error) return error;
 
   let db;

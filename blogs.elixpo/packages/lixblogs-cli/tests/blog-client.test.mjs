@@ -35,6 +35,14 @@ test('create and publish send idempotency and revision headers', async () => {
   assert.equal(requests[1].options.headers['idempotency-key'], 'publish-key');
 });
 
+test('get prefers the strong payload ETag when an edge rewrites the response header', async () => {
+  const client = new BlogClient({ request: async () => response({
+    data: { id: 'blog-1', etag: '"strong"' },
+  }, 200, { etag: 'W/"strong"' }) });
+
+  assert.equal((await client.get('blog-1')).etag, '"strong"');
+});
+
 test('API errors retain machine code, request ID, and conflict details', async () => {
   const client = new BlogClient({ request: async () => response({
     error: {
