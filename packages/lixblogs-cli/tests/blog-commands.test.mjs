@@ -15,6 +15,28 @@ test('Markdown conversion retains supported structural blocks', () => {
   assert.match(blocksToMarkdown(blocks), /```mermaid/);
 });
 
+test('Markdown conversion retains inline emphasis, code, and HTTPS links', () => {
+  const markdown = 'Use **bold**, *italic*, `code`, and [the docs](https://blogs.elixpo.com/docs).';
+  const blocks = markdownToBlocks(markdown);
+
+  assert.deepEqual(blocks[0].content, [
+    { type: 'text', text: 'Use ' },
+    { type: 'text', text: 'bold', styles: { bold: true } },
+    { type: 'text', text: ', ' },
+    { type: 'text', text: 'italic', styles: { italic: true } },
+    { type: 'text', text: ', ' },
+    { type: 'text', text: 'code', styles: { code: true } },
+    { type: 'text', text: ', and ' },
+    {
+      type: 'link',
+      href: 'https://blogs.elixpo.com/docs',
+      content: [{ type: 'text', text: 'the docs', styles: {} }],
+    },
+    { type: 'text', text: '.' },
+  ]);
+  assert.equal(blocksToMarkdown(blocks), markdown);
+});
+
 test('create dry-run validates input without calling the API', async () => {
   let called = false;
   const result = await blogCreate({
