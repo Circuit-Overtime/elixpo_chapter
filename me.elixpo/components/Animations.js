@@ -22,6 +22,129 @@ export function FadeInReveal() {
   return null;
 }
 
+export function MediaDecodeReveal() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+
+    if (!mediaQuery.matches) {
+      root.classList.remove("media-decode-enabled");
+      return;
+    }
+
+    const cleanups = [];
+    const processedImages = new WeakSet();
+    const processedBackgrounds = new WeakSet();
+    const reveal = (element) => element.classList.add("media-decoded");
+    const decodeImage = (element) => {
+      if (processedImages.has(element)) return;
+      processedImages.add(element);
+      const finish = () => reveal(element);
+
+      if (element.complete) {
+        if (element.naturalWidth === 0) {
+          finish();
+          return;
+        }
+        if (typeof element.decode === "function") {
+          element.decode().catch(() => {}).finally(finish);
+        } else {
+          finish();
+        }
+        return;
+      }
+
+      element.addEventListener("load", finish, { once: true });
+      element.addEventListener("error", finish, { once: true });
+      cleanups.push(() => {
+        element.removeEventListener("load", finish);
+        element.removeEventListener("error", finish);
+      });
+    };
+
+    document.querySelectorAll("img").forEach(decodeImage);
+
+    const backgroundElements = Array.from(
+      document.querySelectorAll('[style*="background-image"]'),
+    );
+    const decodeBackground = (element) => {
+      if (processedBackgrounds.has(element)) return;
+      processedBackgrounds.add(element);
+      const urls = Array.from(
+        getComputedStyle(element).backgroundImage.matchAll(/url\(["']?([^"')]+)["']?\)/g),
+        (match) => match[1],
+      );
+
+      if (urls.length === 0) {
+        reveal(element);
+        return;
+      }
+
+      Promise.all(
+        urls.map((url) => {
+          const image = new Image();
+          image.src = url;
+          return typeof image.decode === "function"
+            ? image.decode().catch(() => {})
+            : new Promise((resolve) => {
+                image.onload = resolve;
+                image.onerror = resolve;
+              });
+        }),
+      ).finally(() => reveal(element));
+    };
+
+    let backgroundObserver = null;
+    if ("IntersectionObserver" in window) {
+      backgroundObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            backgroundObserver.unobserve(entry.target);
+            decodeBackground(entry.target);
+          });
+        },
+        { rootMargin: "240px 0px" },
+      );
+
+      backgroundElements.forEach((element) => backgroundObserver.observe(element));
+      cleanups.push(() => backgroundObserver.disconnect());
+    } else {
+      backgroundElements.forEach(decodeBackground);
+    }
+
+    const mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach(({ addedNodes }) => {
+        addedNodes.forEach((node) => {
+          if (!(node instanceof Element)) return;
+
+          const images = [
+            ...(node.matches("img") ? [node] : []),
+            ...node.querySelectorAll("img"),
+          ];
+          images.forEach(decodeImage);
+
+          const backgrounds = [
+            ...(node.matches('[style*="background-image"]') ? [node] : []),
+            ...node.querySelectorAll('[style*="background-image"]'),
+          ];
+          backgrounds.forEach((element) => {
+            if (backgroundObserver) backgroundObserver.observe(element);
+            else decodeBackground(element);
+          });
+        });
+      });
+    });
+
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+    cleanups.push(() => mutationObserver.disconnect());
+
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, []);
+
+  return null;
+}
+
 export function InertiaScroll() {
   useEffect(() => {
     const appContainer = document.getElementById("appContainer");
@@ -116,6 +239,7 @@ export function SpotlightScroller({ children }) {
       ref={scrollRef}
       className="spotlight relative h-[300px] sm:h-[350px] mb-[20px] px-3 sm:px-6 md:px-[40px] box-border py-[20px] sm:py-[40px] gap-[15px] sm:gap-[20px] overflow-x-auto overflow-y-hidden flex-nowrap flex flex-row select-none"
       style={{ cursor: isDragging ? "grabbing" : "grab" }}
+      aria-label="Horizontally scrollable member spotlight"
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseLeave}

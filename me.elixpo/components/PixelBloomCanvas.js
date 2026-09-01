@@ -5,7 +5,7 @@ import theme from "@/content/portfolio-theme.json";
 
 const CAROUSEL_MOTION_EVENT = "elixpo:carousel-motion";
 
-function coverMedia(context, media, width, height) {
+function coverMedia(context, media, width, height, focusX = 0.5, focusY = 0.5) {
   const mediaWidth = media.videoWidth || media.naturalWidth;
   const mediaHeight = media.videoHeight || media.naturalHeight;
   if (!mediaWidth || !mediaHeight) return;
@@ -13,10 +13,18 @@ function coverMedia(context, media, width, height) {
   const scale = Math.max(width / mediaWidth, height / mediaHeight);
   const sourceWidth = width / scale;
   const sourceHeight = height / scale;
+  const sourceX = Math.min(
+    mediaWidth - sourceWidth,
+    Math.max(0, mediaWidth * focusX - sourceWidth / 2),
+  );
+  const sourceY = Math.min(
+    mediaHeight - sourceHeight,
+    Math.max(0, mediaHeight * focusY - sourceHeight / 2),
+  );
   context.drawImage(
     media,
-    (mediaWidth - sourceWidth) / 2,
-    (mediaHeight - sourceHeight) / 2,
+    sourceX,
+    sourceY,
     sourceWidth,
     sourceHeight,
     0,
@@ -203,8 +211,10 @@ export default function PixelBloomCanvas({
       sampleContext.filter = mode === "background"
         ? "blur(0.55px) brightness(0.6) saturate(0.82) sepia(0.34)"
         : "blur(0.35px) brightness(0.82) saturate(0.9) sepia(0.24)";
-      if (video) coverMedia(sampleContext, video, gridWidth, gridHeight);
-      else if (image) coverMedia(sampleContext, image, gridWidth, gridHeight);
+      if (video) {
+        const videoFocusX = mobile && mode === "background" ? 0.29 : 0.5;
+        coverMedia(sampleContext, video, gridWidth, gridHeight, videoFocusX, 0.5);
+      } else if (image) coverMedia(sampleContext, image, gridWidth, gridHeight);
       else drawProceduralFrame(sampleContext, gridWidth, gridHeight, phase);
       sampleContext.restore();
 

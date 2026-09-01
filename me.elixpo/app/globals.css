@@ -22,6 +22,31 @@ body {
   width: 100%;
 }
 
+@media (max-width: 639px) {
+  .media-decode-enabled img:not(.media-decoded),
+  .media-decode-enabled [style*="background-image"]:not(.media-decoded) {
+    visibility: hidden;
+  }
+
+  .media-decode-enabled .media-decoded {
+    visibility: visible;
+    animation: media-decode-in 260ms ease-out;
+  }
+}
+
+@keyframes media-decode-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-decode-enabled .media-decoded {
+    animation: none;
+  }
+}
+
 /* ===== SCROLLBAR HIDING ===== */
 .appContainer::-webkit-scrollbar,
 .spotlight::-webkit-scrollbar,
@@ -516,17 +541,83 @@ body {
 }
 
 @media (max-width: 640px) {
-  .archive-masthead { gap: 0.5rem; }
+  .archive-masthead { gap: 0.65rem; }
   .archive-masthead::after { right: 1.25rem; left: 1.25rem; }
-  .archive-masthead-copy { max-width: 24vw; overflow: hidden; text-overflow: ellipsis; }
-  .archive-search-field.is-open { width: min(12rem, 44vw); }
-  .member-ticket-shell { width: min(90vw, 23rem); }
-  .archive-ticket { aspect-ratio: 1.25 / 1; grid-template-columns: minmax(0, 1fr) 38%; }
-  .archive-ticket-copy { padding: 3rem 1.4rem 4.6rem; }
-  .archive-ticket h2 { font-size: clamp(2.65rem, 14vw, 4rem); }
-  .archive-ticket-meta { inset-inline: 1.4rem; flex-direction: column; gap: 0.1rem; }
-  .archive-ticket-link { left: 1.4rem; }
-  .archive-ticket-stub > span { letter-spacing: 0.12em; }
+  .archive-masthead-copy {
+    max-width: none;
+    flex: 0 0 auto;
+    overflow: visible;
+    font-size: 0.5rem;
+    letter-spacing: 0.28em;
+  }
+  .archive-search-field.is-open { width: min(12.5rem, 50vw); }
+  .archive-search-field input {
+    padding: 0.64rem 0.88rem;
+    font-size: 0.96rem;
+  }
+  .member-ticket-shell { width: min(calc(100vw - 2rem), 24rem); }
+  .archive-ticket {
+    aspect-ratio: 1.12 / 1;
+    grid-template-columns: minmax(0, 1fr) 36%;
+  }
+  .archive-ticket::after { inset: 0.55rem; }
+  .archive-ticket-index {
+    left: 1.15rem;
+    top: 1.05rem;
+    font-size: 0.56rem;
+  }
+  .archive-ticket-copy {
+    justify-content: flex-start;
+    padding: 3.3rem 1.15rem 4.7rem;
+  }
+  .archive-ticket-kicker {
+    font-size: 0.68rem;
+    line-height: 1.35;
+    letter-spacing: 0.18em;
+  }
+  .archive-ticket h2 {
+    margin-top: 0.45rem;
+    overflow: visible;
+    font-size: clamp(2.15rem, 10.5vw, 2.85rem);
+    line-height: 0.86;
+    text-overflow: clip;
+  }
+  .archive-ticket-mark { margin: 0.65rem 0 0.4rem; }
+  .archive-ticket-copy > p {
+    font-size: clamp(0.78rem, 3.45vw, 0.92rem);
+    line-height: 1.12;
+    letter-spacing: 0.065em;
+  }
+  .archive-ticket-meta {
+    inset-inline: 1.15rem;
+    bottom: 2.25rem;
+    flex-direction: column;
+    gap: 0.08rem;
+    padding-top: 0.38rem;
+    font-size: 0.62rem;
+    line-height: 1.1;
+  }
+  .archive-ticket-meta span:last-child { font-size: 0.69rem; }
+  .archive-ticket-link {
+    left: 1.15rem;
+    bottom: 0.72rem;
+    font-size: 0.52rem;
+  }
+  .archive-ticket-stub {
+    justify-content: flex-start;
+    padding: 5.4rem 0.4rem 2rem;
+  }
+  .archive-portrait { width: min(78%, 7rem); }
+  .archive-ticket-stub > span {
+    margin-top: 0.85rem;
+    font-size: 0.44rem;
+    line-height: 1.3;
+    letter-spacing: 0.09em;
+  }
+  .archive-ticket-stub > strong {
+    margin-top: 0.15rem;
+    font-size: 1.15rem;
+  }
   .archive-carousel-nav { gap: 0.45rem; }
   .archive-carousel-nav .archive-pagination-lg { display: none; }
   .archive-carousel-nav .archive-pagination-sm { display: flex; }
@@ -687,6 +778,41 @@ body {
 }
 .featuredTileSpecialDesc {
   font-family: "Pathway Gothic One", sans-serif;
+}
+.spotlightSwipeCue {
+  color: #5e5548;
+  font-family: "Bitcount Grid Double", system-ui;
+  font-size: 1.35rem;
+  line-height: 1;
+  animation: spotlight-swipe-cue 1.5s ease-in-out infinite;
+}
+.spotlightSwipeCue:first-of-type {
+  animation-name: spotlight-swipe-cue-left;
+}
+.spotlightSwipeCue:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+@keyframes spotlight-swipe-cue-left {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateX(-5px);
+    opacity: 1;
+  }
+}
+@keyframes spotlight-swipe-cue {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateX(5px);
+    opacity: 1;
+  }
 }
 
 /* ===== WEBSITE SECTION ===== */
