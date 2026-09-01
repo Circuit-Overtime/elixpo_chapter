@@ -162,8 +162,15 @@ export default function DocsPage() {
               <i className="bx bx-plug text-base" />
               Connectors
             </Link>
+            <Link
+              href="/docs/mcp"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] transition-all"
+            >
+              <i className="bx bx-plug text-base" />
+              MCP Server
+            </Link>
             <NavItem href="#api" label="JavaScript API" icon="bx-code-alt" active={activeSection === 'api'} />
-            <NavItem href="#llm" label="LLM Spec" icon="bx-bot" active={activeSection === 'llm'} />
+            <NavItem href="#llm" label="LixScript Spec" icon="bx-code-block" active={activeSection === 'llm'} />
 
             <p className="text-text-dim text-[10px] uppercase tracking-widest px-3 pt-5 pb-2">Install</p>
             <Link
@@ -195,18 +202,18 @@ export default function DocsPage() {
             ))}
           </div>
 
-          {/* LLM copy button in sidebar */}
+          {/* MCP link in sidebar */}
           <div className="mt-8 p-3 rounded-xl bg-surface-card border border-white/[0.06]">
-            <p className="text-text-dim text-[10px] uppercase tracking-widest mb-2">LixScript MCP</p>
-            <button
-              disabled
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium bg-surface-hover text-text-dim border border-border cursor-not-allowed"
+            <p className="text-text-dim text-[10px] uppercase tracking-widest mb-2">Package MCP</p>
+            <Link
+              href="/docs/mcp"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium bg-accent/15 text-accent border border-accent/25 hover:bg-accent/20"
             >
-              <i className="bx bx-time-five text-base" />
-              Coming soon
-            </button>
+              <i className="bx bx-plug text-base" />
+              Setup MCP
+            </Link>
             <p className="text-text-dim text-[10px] mt-2 leading-relaxed">
-              The supported MCP interface for the platform is in development.
+              Structured canvas tools are available in the LixSketch package.
             </p>
           </div>
         </nav>
@@ -542,11 +549,11 @@ const result = window.__lixscriptRender(parsed)`} />
 
           {/* LLM Spec */}
           <div id="llm" className="mb-10">
-            <Section id="llm-inner" title="LixScript MCP Spec — Coming Soon" icon="bx-plug" defaultOpen={true}>
+            <Section id="llm-inner" title="LixScript Compact Spec — Coming Soon" icon="bx-code-block" defaultOpen={true}>
               <div className="mt-4 mb-4">
                 <p className="text-text-muted text-sm leading-relaxed mb-4">
-                  Preview of the compact LixScript specification planned for the platform MCP integration.
-                  Execution and the supported MCP contract are not available yet.
+                  Preview of the compact LixScript specification planned for programmable canvas generation.
+                  This interface is separate from the available package MCP server.
                 </p>
                 <div className="flex items-center gap-3 mb-4">
                   <button
@@ -554,7 +561,7 @@ const result = window.__lixscriptRender(parsed)`} />
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-surface-hover text-text-dim border border-border cursor-not-allowed"
                   >
                     <i className="bx bx-time-five text-base" />
-                    MCP access coming soon
+                    LixScript access coming soon
                   </button>
                   <span className="text-text-dim text-xs">~2.5k tokens</span>
                 </div>
@@ -567,9 +574,9 @@ const result = window.__lixscriptRender(parsed)`} />
               </div>
 
               <div className="mt-6 p-4 rounded-xl bg-purple-500/5 border border-purple-500/10">
-                <h4 className="text-purple-400 text-sm font-medium mb-2">Planned MCP workflow</h4>
+                <h4 className="text-purple-400 text-sm font-medium mb-2">Need MCP today?</h4>
                 <p className="text-text-muted text-sm leading-relaxed">
-                  The production flow will expose LixScript through the platform MCP, then place generated components onto the editable canvas. Connection details will be published when the integration is ready.
+                  Use the package-native MCP server for structured scene patches, previews, and published template imports. <Link href="/docs/mcp" className="text-accent hover:underline">Open the MCP setup guide.</Link>
                 </p>
               </div>
             </Section>

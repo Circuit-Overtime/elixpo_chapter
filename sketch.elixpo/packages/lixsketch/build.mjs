@@ -7,6 +7,7 @@ const dist = resolve('dist');
 
 if (existsSync(dist)) rmSync(dist, { recursive: true, force: true });
 mkdirSync(join(dist, 'react'), { recursive: true });
+mkdirSync(join(dist, 'mcp'), { recursive: true });
 
 // roughjs / perfect-freehand are listed as runtime deps so consumers
 // pull them via npm. react / react-dom are peer deps. We keep them
@@ -40,6 +41,42 @@ await build({
   banner: { js: '"use client";' },
 });
 
+// Runtime-neutral MCP factory for browser, Worker, and custom hosts.
+await build({
+  entryPoints: [join(src, 'mcp', 'index.js')],
+  bundle: true,
+  format: 'esm',
+  outfile: join(dist, 'mcp', 'index.js'),
+  target: 'es2022',
+  platform: 'neutral',
+  minify: false,
+  sourcemap: true,
+});
+
+// Node-only MCP utilities and executable. Keeping these separate prevents
+// node:fs/readline imports from entering browser or Cloudflare bundles.
+await build({
+  entryPoints: [join(src, 'mcp', 'node.js')],
+  bundle: true,
+  format: 'esm',
+  outfile: join(dist, 'mcp', 'node.js'),
+  target: 'node20',
+  platform: 'node',
+  minify: false,
+  sourcemap: true,
+});
+
+await build({
+  entryPoints: [join(src, 'mcp', 'stdio.js')],
+  bundle: true,
+  format: 'esm',
+  outfile: join(dist, 'mcp', 'stdio.js'),
+  target: 'node20',
+  platform: 'node',
+  minify: false,
+  sourcemap: true,
+});
+
 // ── Bundle the React subpath's CSS into a single file ─────────────────
 // Consumer does `import '@elixpo/lixsketch/react/styles'`.
 await build({
@@ -61,4 +98,4 @@ await build({
   minify: false,
 });
 
-console.log('✓ Built React subpath (ESM, code-split) and bundled CSS to dist/react/');
+console.log('✓ Built React and MCP package subpaths.');
