@@ -4,6 +4,9 @@ const ANSI = Object.freeze({
   dim: "\u001b[2m",
   violet: "\u001b[38;5;141m",
   green: "\u001b[38;5;42m",
+  yellow: "\u001b[38;5;220m",
+  red: "\u001b[38;5;203m",
+  gray: "\u001b[38;5;245m",
 });
 
 export function colorEnabled(stream = process.stdout, env = process.env) {
@@ -38,7 +41,19 @@ export function loginChallenge({ url, code, expiresInSeconds, profile, interacti
 }
 
 export function successLine(message, color = false) {
-  return `  ${paint("✓", ANSI.green, color)} ${message}`;
+  return `  ${paint(`✓ ${message}`, ANSI.green, color)}`;
+}
+
+export function warningLine(message, color = false) {
+  return `  ${paint(`! ${message}`, ANSI.yellow, color)}`;
+}
+
+export function infoLine(message, color = false) {
+  return `  ${paint(`• ${message}`, ANSI.gray, color)}`;
+}
+
+export function errorLine(message, color = false) {
+  return `  ${paint(`✕ ${message}`, ANSI.red, color)}`;
 }
 
 const PROGRESS_FRAMES = Object.freeze(["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]);
