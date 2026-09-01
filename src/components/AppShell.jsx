@@ -448,7 +448,7 @@ function DropdownItem({ href, onClick, icon, accent, faint, children }) {
   );
 }
 
-export default function AppShell({ children }) {
+export default function AppShell({ children, showSidebar = true }) {
   const pathname = usePathname();
   const { user, loading, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -473,6 +473,22 @@ export default function AppShell({ children }) {
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <GitHubStars />
+            <Link
+              href="/docs"
+              aria-label="Documentation"
+              aria-current={pathname.startsWith('/docs') ? 'page' : undefined}
+              className="flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 transition-colors sm:px-3"
+              style={{
+                color: pathname.startsWith('/docs') ? 'var(--accent)' : 'var(--text-muted)',
+                backgroundColor: pathname.startsWith('/docs') ? 'var(--accent-subtle)' : 'transparent',
+              }}
+              onMouseEnter={e => { if (!pathname.startsWith('/docs')) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+              onMouseLeave={e => { if (!pathname.startsWith('/docs')) e.currentTarget.style.backgroundColor = 'transparent'; }}
+              title="Documentation"
+            >
+              <ion-icon name="document-text-outline" style={{ fontSize: '17px' }} />
+              <span className="hidden text-[14px] sm:inline">Docs</span>
+            </Link>
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -516,7 +532,7 @@ export default function AppShell({ children }) {
       {/* Layout with sidebar */}
       <div className="max-w-[1400px] mx-auto flex">
         {/* Left Sidebar */}
-        <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] px-4 py-6 justify-between" style={{ borderRight: '1px solid var(--border-default)' }}>
+        {showSidebar && <aside className="hidden lg:flex flex-col w-[220px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] px-4 py-6 justify-between" style={{ borderRight: '1px solid var(--border-default)' }}>
           <nav className="flex flex-col gap-1">
             {NAV_ITEMS.filter((item) => user || item.href === '/').map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -608,7 +624,7 @@ export default function AppShell({ children }) {
               </div>
             )}
           </div>
-        </aside>
+        </aside>}
 
         {/* Main Content */}
         <main className="flex-1 min-w-0">
