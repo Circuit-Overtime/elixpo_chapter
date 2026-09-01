@@ -236,7 +236,7 @@ export function parseMarkdownToBlocks(text) {
 
     // GitHub-style task list. Match before the generic bullet rule so the
     // marker becomes checkbox state instead of visible "[ ]" text.
-    const taskMatch = trimmed.match(/^[-*]\s+\[([ xX])\](?:\s+(.*))?$/);
+    const taskMatch = trimmed.match(/^(?:[-*]\s+)?\[([ xX])\](?:\s+(.*))?$/);
     if (taskMatch) {
       blocks.push({
         type: 'checkListItem',

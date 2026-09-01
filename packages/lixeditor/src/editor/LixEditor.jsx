@@ -392,6 +392,27 @@ const LixEditor = forwardRef(function LixEditor({
     const el = wrapperRef.current;
     if (!el) return;
     const onKeyDown = (e) => {
+      if (e.key === ' ' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const block = editor.getTextCursorPosition()?.block;
+        if (block?.type === 'paragraph') {
+          const value = (block.content || []).map((item) => item.text || '').join('');
+          const marker = value.match(/^\s?\[([ xX])\]$/);
+          if (marker) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            editor.updateBlock(block.id, {
+              type: 'checkListItem',
+              props: { checked: marker[1].toLowerCase() === 'x' },
+              content: [],
+            });
+            requestAnimationFrame(() => {
+              try { editor.setTextCursorPosition(block.id, 'end'); } catch {}
+            });
+            return;
+          }
+        }
+      }
+
       if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey
         && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
         e.stopImmediatePropagation();

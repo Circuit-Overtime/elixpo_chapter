@@ -54,7 +54,7 @@ export function markdownToBlocks(markdown) {
       blocks.push({ type: 'heading', props: { level: String(heading[1].length) }, content: inline(heading[2]) });
       continue;
     }
-    const task = trimmed.match(/^[-*]\s+\[([ xX])\](?:\s+(.*))?$/);
+    const task = trimmed.match(/^(?:[-*]\s+)?\[([ xX])\](?:\s+(.*))?$/);
     if (task) {
       flush();
       blocks.push({

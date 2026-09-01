@@ -1213,6 +1213,8 @@
   width: 200px;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   z-index: 30;
   opacity: 0.5;
   transition: opacity 0.2s;
@@ -1268,14 +1270,11 @@
   }
 }
 
-/* Scrollbar styling for outline */
+/* Keep the outline scrollable without adding a second visible scrollbar. */
 .editor-outline-sidebar::-webkit-scrollbar {
-  width: 2px;
-}
-
-.editor-outline-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(155, 123, 247, 0.2);
-  border-radius: 2px;
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* ===== Table delete button ===== */
