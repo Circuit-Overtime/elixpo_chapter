@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { colorEnabled, loginChallenge, startProgress, withProgress } from "../src/cli/ui.js";
+import {
+  colorEnabled,
+  errorLine,
+  infoLine,
+  loginChallenge,
+  startProgress,
+  successLine,
+  warningLine,
+  withProgress,
+} from "../src/cli/ui.js";
 
 test("device login card remains useful without a TTY or colors", () => {
   const card = loginChallenge({
@@ -54,4 +63,13 @@ test("machine-readable commands never emit progress output", async () => {
   );
   assert.equal(result, "done");
   assert.deepEqual(writes, []);
+});
+
+test("status lines use distinct terminal tones without affecting plain output", () => {
+  assert.match(successLine("Published.", true), /\u001b\[38;5;42m/);
+  assert.match(warningLine("Dry run.", true), /\u001b\[38;5;220m/);
+  assert.match(infoLine("Loading.", true), /\u001b\[38;5;245m/);
+  assert.match(errorLine("Failed.", true), /\u001b\[38;5;203m/);
+  assert.equal(successLine("Published.", false), "  ✓ Published.");
+  assert.equal(warningLine("Dry run.", false), "  ! Dry run.");
 });

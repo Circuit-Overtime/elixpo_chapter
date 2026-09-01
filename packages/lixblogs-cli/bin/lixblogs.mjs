@@ -41,7 +41,16 @@ import { AnalyticsClient } from "../src/api/AnalyticsClient.js";
 import { IntegrationsClient } from "../src/api/IntegrationsClient.js";
 import { MediaClient } from "../src/api/MediaClient.js";
 import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
-import { colorEnabled, listenForEnter, loginChallenge, successLine, withProgress } from "../src/cli/ui.js";
+import {
+  colorEnabled,
+  errorLine,
+  infoLine,
+  listenForEnter,
+  loginChallenge,
+  successLine,
+  warningLine,
+  withProgress,
+} from "../src/cli/ui.js";
 import {
   blogCreate,
   blogDelete,
@@ -285,9 +294,10 @@ function fail(opts, error, exitCode = EXIT_CODES.ERROR) {
   if (opts.json) {
     process.stdout.write(safeJsonStringify(envelope) + "\n");
   } else if (!opts.quiet) {
-    process.stderr.write(`Error: ${safeMessage}\n`);
-    if (value.hint) process.stderr.write(`Hint: ${value.hint}\n`);
-    if (value.requestId) process.stderr.write(`Request: ${value.requestId}\n`);
+    const color = colorEnabled(process.stderr);
+    process.stderr.write(`${errorLine(safeMessage, color)}\n`);
+    if (value.hint) process.stderr.write(`${warningLine(`Hint: ${value.hint}`, color)}\n`);
+    if (value.requestId) process.stderr.write(`${infoLine(`Request: ${value.requestId}`, color)}\n`);
   }
   process.exitCode = value.exitCode || exitCode;
 }
@@ -372,9 +382,9 @@ async function runLogin(opts) {
         } else if (status.type === "approved") {
           console.log(successLine("Access approved by Elixpo Accounts.", colorEnabled()));
         } else if (status.type === "denied") {
-          console.log("  Access denied.");
+          console.log(warningLine("Access denied.", colorEnabled()));
         } else if (status.type === "expired") {
-          console.log("  Device code expired.");
+          console.log(warningLine("Device code expired.", colorEnabled()));
         }
       },
     });
@@ -389,9 +399,8 @@ async function runLogin(opts) {
   await profileRegistry.setActive(result.profileId);
   output(opts, { ok: true, profile: result.profileId });
   if (!opts.json && !opts.quiet) {
-    console.log(`  Credentials saved to local profile "${result.profileId}".`);
-    console.log("  Tip: add another account with `lixblogs login`, list accounts with `lixblogs profiles`,");
-    console.log("       and switch with `lixblogs use <username>`.");
+    console.log(successLine(`Credentials saved to local profile "${result.profileId}".`, colorEnabled()));
+    console.log(infoLine("Add another account with `lixblogs login`; switch with `lixblogs use <username>`.", colorEnabled()));
   }
 }
 
@@ -468,7 +477,7 @@ async function runRegister(opts) {
     return;
   }
   await openBrowser(registrationUrl);
-  if (!opts.quiet) console.log(`Create your account at ${registrationUrl}, then approve the device login.`);
+  if (!opts.quiet) console.log(infoLine(`Create your account at ${registrationUrl}, then approve the device login.`, colorEnabled()));
   await runLogin(opts);
 }
 
@@ -482,7 +491,7 @@ async function runLogout(opts) {
   const result = await authLogout({ credentialStore, profileId });
   output(opts, result);
   if (!opts.json && !opts.quiet) {
-    console.log(`Logged out profile "${profileId}".`);
+    console.log(successLine(`Logged out profile "${profileId}".`, colorEnabled()));
   }
 }
 
@@ -524,7 +533,7 @@ async function runRevoke(opts) {
   }
   output(opts, result);
   if (!opts.json && !opts.quiet) {
-    console.log(`Revoked and logged out profile "${profileId}".`);
+    console.log(successLine(`Revoked and logged out profile "${profileId}".`, colorEnabled()));
   }
 }
 async function runIntegrations(opts, args, action) {
@@ -566,9 +575,9 @@ async function runIntegrations(opts, args, action) {
   if (!result.ok) return fail(opts, result.error || result.reason);
   output(opts, result);
   if (!opts.json && !opts.quiet) {
-    if (action === 'cloudinary-status') console.log(`Cloudinary: ${result.data.connected ? `connected (${result.data.cloudName})` : 'not connected'}`);
-    else if (action === 'pollinations-status') console.log(`Pollinations: ${result.data.connected ? `connected${result.data.handle ? ` as ${result.data.handle}` : ''} · ${result.data.balance ?? 'unknown'} Pollen` : `${result.data.status}. Connect at ${result.data.connectUrl || 'https://blogs.elixpo.com/settings?tab=integrations'}`}`);
-    else console.log(`${action.startsWith('pollinations') ? 'Pollinations' : 'Cloudinary'} connection disconnected.`);
+    if (action === 'cloudinary-status') console.log(infoLine(`Cloudinary: ${result.data.connected ? `connected (${result.data.cloudName})` : 'not connected'}`, colorEnabled()));
+    else if (action === 'pollinations-status') console.log(infoLine(`Pollinations: ${result.data.connected ? `connected${result.data.handle ? ` as ${result.data.handle}` : ''} · ${result.data.balance ?? 'unknown'} Pollen` : `${result.data.status}. Connect at ${result.data.connectUrl || 'https://blogs.elixpo.com/settings?tab=integrations'}`}`, colorEnabled()));
+    else console.log(successLine(`${action.startsWith('pollinations') ? 'Pollinations' : 'Cloudinary'} connection disconnected.`, colorEnabled()));
   }
 }
 async function runProfiles(opts) {
@@ -578,7 +587,7 @@ async function runProfiles(opts) {
   const result = await authProfiles({ credentialStore, profileRegistry });
   output(opts, result);
   if (!opts.json) {
-    if (!result.profiles.length) console.log("No profiles. Run `lixblogs auth login` first.");
+    if (!result.profiles.length) console.log(warningLine("No profiles. Run `lixblogs auth login` first.", colorEnabled()));
     for (const profile of result.profiles) {
       console.log(`${profile.active ? "*" : " "} ${profile.profileId}${profile.expired ? " (expired)" : ""}`);
     }
@@ -598,7 +607,7 @@ async function runUse(opts, args) {
   const result = await authUse({ credentialStore, profileRegistry, profileId });
   if (!result.ok) return fail(opts, result.reason);
   output(opts, result);
-  if (!opts.json && !opts.quiet) console.log(`Using profile "${profileId}".`);
+  if (!opts.json && !opts.quiet) console.log(successLine(`Using profile "${profileId}".`, colorEnabled()));
 }
 
 const BLOG_COMMANDS = {
@@ -672,15 +681,15 @@ async function runBlog(opts, args, action) {
     if (!opts.json && !opts.quiet) {
       if (action === 'list') {
         for (const blog of result.data || []) console.log(`${blog.id}\t${blog.status}\t${blog.title || '(untitled)'}`);
-        if (result.meta?.nextCursor) console.log(`Next cursor: ${result.meta.nextCursor}`);
+        if (result.meta?.nextCursor) console.log(infoLine(`Next cursor: ${result.meta.nextCursor}`, colorEnabled()));
       } else if (action === 'get') {
         console.log(`${result.title || '(untitled)'} [${result.status}]\n${result.markdown || ''}`);
       } else if (action === 'history') {
         for (const version of result.data || []) console.log(`${version.id}\t${version.label || 'snapshot'}\t${version.created_at}\t${version.username || 'system'}`);
       } else if (result.dryRun) {
-        console.log(`Dry run: ${action} validated; no changes sent.`);
+        console.log(warningLine(`Dry run: ${action} validated; no changes sent.`, colorEnabled()));
       } else {
-        console.log(result.url || `${action} completed for ${result.id}.`);
+        console.log(successLine(result.url || `${action} completed for ${result.id}.`, colorEnabled()));
       }
     }
   } catch (error) {
@@ -738,9 +747,12 @@ async function runMedia(opts, args, action) {
       }));
     output(opts, { ok: true, data: result });
     if (!opts.json && !opts.quiet) {
-      if (action === 'delete') console.log(`Deleted media ${result.id}.`);
-      else console.log(`${action === 'generate' ? 'Generated' : 'Uploaded'} image: ${result.media?.url || result.output || result.media?.publicId}`);
-      if (result.blog) console.log(`Attached to blog ${opts.blog}.`);
+      if (action === 'delete') console.log(successLine(`Deleted media ${result.id}.`, colorEnabled()));
+      else {
+        const verb = action === 'generate' ? 'Generated' : 'Uploaded';
+        const attached = result.blog ? ` and attached to blog ${opts.blog}` : '';
+        console.log(successLine(`${verb}${attached}: ${result.media?.url || result.output || result.media?.publicId}`, colorEnabled()));
+      }
     }
   } catch (error) { fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR); }
 }
@@ -754,7 +766,7 @@ async function runComment(opts, args, action) {
     if (!opts.json && !opts.quiet) {
       if (action === 'list') {
         for (const row of result) console.log(`${row.id}\t${row.parent_id ? 'reply' : 'comment'}\t${row.display_name || row.username || 'Anonymous'}\t${row.content}`);
-      } else console.log(`${action} completed for ${result.id}.`);
+      } else console.log(successLine(`${action} completed for ${result.id}.`, colorEnabled()));
     }
   } catch (error) { fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR); }
 }
@@ -768,7 +780,11 @@ async function runCollab(opts, args, action) {
     output(opts, { ok: true, data: result });
     if (opts.json || opts.quiet) return;
     if (result.dryRun) {
-      console.log(`Dry run: ${result.action} validated; no changes sent.`);
+      console.log(warningLine(`Dry run: ${result.action} validated; no changes sent.`, colorEnabled()));
+      return;
+    }
+    if (action !== 'list' && action !== 'invitations') {
+      console.log(successLine(`${action} completed for ${result.blogId || result.userId || args[0]}.`, colorEnabled()));
       return;
     }
     const rows = action === 'invitations'
@@ -800,9 +816,9 @@ async function runSkill(opts, args, action) {
     } else if (action === 'inspect') {
       process.stdout.write(result.content);
     } else if (result.dryRun) {
-      console.log(`Dry run: install ${result.name} to ${result.target}${result.replace ? ' (replace)' : ''}.`);
+      console.log(warningLine(`Dry run: install ${result.name} to ${result.target}${result.replace ? ' (replace)' : ''}.`, colorEnabled()));
     } else {
-      console.log(`Installed ${result.name} at ${result.target}.`);
+      console.log(successLine(`Installed ${result.name} at ${result.target}.`, colorEnabled()));
     }
   } catch (error) {
     fail(opts, error);
@@ -822,7 +838,7 @@ async function runAnalytics(opts, _args, action) {
     output(opts, { ok: true, data: result });
     if (opts.json || opts.quiet) return;
     if (action === 'export') {
-      console.log(`Exported ${result.rows} rows to ${result.output}.`);
+      console.log(successLine(`Exported ${result.rows} rows to ${result.output}.`, colorEnabled()));
       return;
     }
     const payload = result.data;
