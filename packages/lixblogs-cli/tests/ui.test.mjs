@@ -47,9 +47,11 @@ test("interactive progress renders and clears on completion", () => {
   const progress = startProgress("Uploading image…", {
     stream: { isTTY: true, write: (value) => writes.push(value) },
     intervalMs: 10_000,
+    color: true,
   });
   progress.stop();
   assert.match(writes[0], /Uploading image/);
+  assert.match(writes[0], /\u001b\[38;5;245mUploading image/);
   assert.equal(writes.at(-1), "\r\u001b[2K");
 });
 
