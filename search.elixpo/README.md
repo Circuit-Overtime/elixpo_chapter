@@ -213,7 +213,10 @@ Returns a standard `chat.completion` object with `usage` (prompt/completion toke
 | `/api/search` | POST/GET | Legacy search endpoint (SSE) |
 | `/api/stats` | GET | Redis memory, disk archive stats, session counts |
 | `/api/health` | GET | Health check |
+| `/mcp` | POST/GET/DELETE | Stateless Streamable HTTP MCP: research, deep research, PDF export |
 | `/docs` | GET | Interactive API documentation (Scalar UI) |
+
+MCP setup, authentication, tools, and limits are documented in [docs/MCP.md](docs/MCP.md).
 
 ---
 

@@ -15,6 +15,17 @@ tools = [
                         "type": "string",
                         "enum": ["quick", "standard", "thorough"],
                         "description": "quick=1-2 URLs, standard=2-5, thorough=4-10. Default: standard."
+                    },
+                    "freshness": {
+                        "type": "string",
+                        "enum": ["any", "day", "week", "month", "year"],
+                        "description": "Recency window. Use day or week for latest news; default any."
+                    },
+                    "exclude_domains": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "maxItems": 10,
+                        "description": "Domains to omit when they are low-quality or irrelevant."
                     }
                 },
                 "required": ["query"]

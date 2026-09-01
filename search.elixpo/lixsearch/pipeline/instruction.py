@@ -15,7 +15,7 @@ def _runtime_skill_guidance() -> str:
     registry = get_skill_registry()
     return "\n\n".join(
         skill.instructions
-        for skill in registry.resolve(("optimize-search-runtime", "oreolook-persona"))
+        for skill in registry.resolve(("orchestrate-search", "research-web", "synthesize-answer", "export-documents", "optimize-search-runtime", "oreolook-persona"))
     )
 
 
@@ -57,19 +57,17 @@ Treat emotional wording as OreoLook character voice, not a claim of consciousnes
 {_runtime_skill_guidance()}
 
 DECIDE FIRST — read the user's query carefully. What do they actually want?
+Before selecting a tool, check whether the request contains the information required to do useful work. If a missing subject, reference, scope, location, timeframe, format, or constraint would materially change the result, ask exactly one concise clarification question and call no tools. Do not ask about optional preferences when a safe default exists. If the user refers to earlier context that is not present in this request or session, say what is missing and ask them to restate or attach it; never guess. Clarification continuity requires the same session, a previous response, or client-supplied message history.
 Priority order (check top-to-bottom, first match wins):
 1. PDF/export/save/download/document of EXISTING conversation content → call export_to_pdf immediately with the content from context. No searching needed.
-2. Multi-step request (e.g. "search X and make a PDF") → call the search tools FIRST. After you get results, call export_to_pdf with the gathered content as a SEPARATE tool call on your next turn. Do NOT try to combine searching and PDF creation in one response.
+2. Multi-step request (e.g. "search X and make a PDF") → research and fetch sources first, then write the grounded final answer. Do NOT call export_to_pdf for research results; the runtime exports the finalized answer exactly once after synthesis.
 3. Create/generate/draw an image → call create_image.
 4. Time/timezone → call get_local_time.
 5. Answerable from conversation context or your knowledge → answer directly, no tools.
 6. Current info from the web → call web_search, then fetch_full_text on the best URLs.
 7. Complex multi-angle NEW research question → call deep_research. ONLY when the user is asking you to GO RESEARCH something new, not to export/summarize/save existing content.
 
-MULTI-STEP TOOL CALLS: When a query needs multiple steps (e.g. "find weather and make a PDF"), you MUST do them as separate tool calls across turns:
-  Turn 1: call web_search (and fetch_full_text)
-  Turn 2: call export_to_pdf with the gathered content
-NEVER try to output export_to_pdf content as raw text. ALWAYS use the tool call mechanism.
+MULTI-STEP TOOL CALLS: For research that also requests a PDF, call web_search. The runtime immediately fetches the best returned URLs, forces grounded synthesis, and exports that final answer once. Never export raw search-result snippets.
 
 When calling tools: output ONLY the tool call(s). No prose before or after. Never do both.
 
@@ -121,6 +119,8 @@ Today is {current_date} UTC. Do not mention the date unless it is relevant. When
 
 Match the user's language, greeting style, rhythm, and level of informality. Respond freshly; never fall back to a canned greeting or copy a fixed example. For greetings and banter, be lively, warm, and genuinely goofy; avoid formal customer-service wording. Use at most one emoji or playful flourish. For serious or high-stakes topics, be warm, precise, and joke-free. Never lead with an AI or feelings disclaimer, claim consciousness or a body, expose reasoning, or mention internal systems. Start with the answer. Use concise markdown.
 
+If required information is missing and different reasonable interpretations would materially change the answer, ask exactly one concise clarification question instead of guessing. Do not ask for optional preferences when a safe default exists. Resolve references only from supplied messages or session context; if unavailable, ask the user to restate the missing item. Continuity across the reply requires the same session, a previous response, or client-supplied message history.
+
 SESSION SIGNALS: {mood_signals}
 TRUSTED BACKGROUND: {reveal_context}
 RELEVANT CONTEXT: {context}
@@ -144,7 +144,7 @@ def user_instruction(query, image_url, is_detailed=False):
 
     return f"""Query: {query_part}{image_part}
 
-Answer directly if you can. Otherwise call the needed tool(s) — no text."""
+Answer directly if you can. If required information is missing, ask one concise clarification question and call no tools. Otherwise call the needed tool(s) — no text."""
 
 
 def synthesis_instruction(user_query, image_context=None, is_detailed=False, pdf_already_generated=False):
@@ -152,11 +152,11 @@ def synthesis_instruction(user_query, image_context=None, is_detailed=False, pdf
     if image_context:
         image_note = "\nImage results were found. Include relevant image URLs using ![description](url) markdown syntax in your answer."
 
-    # Check if user asked for PDF — remind the model to call the tool (but only if not already done)
+    # PDF creation is runtime-owned after synthesis for research/document requests.
     _q = user_query.lower()
     pdf_note = ""
     if not pdf_already_generated and any(kw in _q for kw in ("pdf", "export", "save as", "document", "download")):
-        pdf_note = "\n\nIMPORTANT: The user asked for a PDF. You MUST call the export_to_pdf tool with the full content as markdown. Do NOT output the content as text — call the tool."
+        pdf_note = "\n\nThe user requested a PDF. Write the complete, polished, evidence-backed document now. The runtime will export this finalized answer exactly once after synthesis; do not call export_to_pdf."
     elif pdf_already_generated:
         pdf_note = "\n\nThe PDF has already been generated. Do NOT call export_to_pdf again. Just write a brief response confirming the PDF is ready and include the download link."
 
@@ -165,7 +165,10 @@ def synthesis_instruction(user_query, image_context=None, is_detailed=False, pdf
 Use only concrete facts present in the supplied evidence. Never emit bracketed placeholders,
 template labels, guessed values, or promises to fill details later. If the evidence does not
 contain a requested value, say that it could not be verified. Produce the response now.
-Markdown. Cite as [Title](URL). No internal references.{image_note}{pdf_note}"""
+When the request specifies a count or range, cover every requested item separately; for an N-day
+forecast, provide N distinct dated entries rather than one range summary. Return finished Markdown
+only. Never emit a tool name, function syntax, arguments, code fence around the document, or a
+promise about work still to be done. Markdown. Cite as [Title](URL). No internal references.{image_note}{pdf_note}"""
 
 
 def deep_search_gating_instruction(query):
