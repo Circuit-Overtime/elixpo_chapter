@@ -60,6 +60,7 @@ lz4
 markdown-it-py
 MarkupSafe
 mdurl
+mcp>=1.29,<2
 mmh3
 mpmath
 multidict
