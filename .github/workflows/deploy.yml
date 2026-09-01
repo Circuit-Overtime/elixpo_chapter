@@ -317,6 +317,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Validate Pages configuration
+        env:
+          NEXT_PUBLIC_ELIXPO_CLIENT_ID: ${{ vars.NEXT_PUBLIC_ELIXPO_CLIENT_ID }}
+        run: |
+          if [ -z "$NEXT_PUBLIC_ELIXPO_CLIENT_ID" ]; then
+            echo "::error::NEXT_PUBLIC_ELIXPO_CLIENT_ID is required for the production OAuth build"
+            exit 1
+          fi
       - name: Build and deploy Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
