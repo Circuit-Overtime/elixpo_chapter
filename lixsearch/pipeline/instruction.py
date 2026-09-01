@@ -15,7 +15,7 @@ def _runtime_skill_guidance() -> str:
     registry = get_skill_registry()
     return "\n\n".join(
         skill.instructions
-        for skill in registry.resolve(("optimize-search-runtime", "oreolook-persona"))
+        for skill in registry.resolve(("orchestrate-search", "research-web", "synthesize-answer", "export-documents", "optimize-search-runtime", "oreolook-persona"))
     )
 
 
@@ -59,17 +59,14 @@ Treat emotional wording as OreoLook character voice, not a claim of consciousnes
 DECIDE FIRST — read the user's query carefully. What do they actually want?
 Priority order (check top-to-bottom, first match wins):
 1. PDF/export/save/download/document of EXISTING conversation content → call export_to_pdf immediately with the content from context. No searching needed.
-2. Multi-step request (e.g. "search X and make a PDF") → call the search tools FIRST. After you get results, call export_to_pdf with the gathered content as a SEPARATE tool call on your next turn. Do NOT try to combine searching and PDF creation in one response.
+2. Multi-step request (e.g. "search X and make a PDF") → research and fetch sources first, then write the grounded final answer. Do NOT call export_to_pdf for research results; the runtime exports the finalized answer exactly once after synthesis.
 3. Create/generate/draw an image → call create_image.
 4. Time/timezone → call get_local_time.
 5. Answerable from conversation context or your knowledge → answer directly, no tools.
 6. Current info from the web → call web_search, then fetch_full_text on the best URLs.
 7. Complex multi-angle NEW research question → call deep_research. ONLY when the user is asking you to GO RESEARCH something new, not to export/summarize/save existing content.
 
-MULTI-STEP TOOL CALLS: When a query needs multiple steps (e.g. "find weather and make a PDF"), you MUST do them as separate tool calls across turns:
-  Turn 1: call web_search (and fetch_full_text)
-  Turn 2: call export_to_pdf with the gathered content
-NEVER try to output export_to_pdf content as raw text. ALWAYS use the tool call mechanism.
+MULTI-STEP TOOL CALLS: For research that also requests a PDF, call web_search. The runtime immediately fetches the best returned URLs, forces grounded synthesis, and exports that final answer once. Never export raw search-result snippets.
 
 When calling tools: output ONLY the tool call(s). No prose before or after. Never do both.
 
@@ -152,11 +149,11 @@ def synthesis_instruction(user_query, image_context=None, is_detailed=False, pdf
     if image_context:
         image_note = "\nImage results were found. Include relevant image URLs using ![description](url) markdown syntax in your answer."
 
-    # Check if user asked for PDF — remind the model to call the tool (but only if not already done)
+    # PDF creation is runtime-owned after synthesis for research/document requests.
     _q = user_query.lower()
     pdf_note = ""
     if not pdf_already_generated and any(kw in _q for kw in ("pdf", "export", "save as", "document", "download")):
-        pdf_note = "\n\nIMPORTANT: The user asked for a PDF. You MUST call the export_to_pdf tool with the full content as markdown. Do NOT output the content as text — call the tool."
+        pdf_note = "\n\nThe user requested a PDF. Write the complete, polished, evidence-backed document now. The runtime will export this finalized answer exactly once after synthesis; do not call export_to_pdf."
     elif pdf_already_generated:
         pdf_note = "\n\nThe PDF has already been generated. Do NOT call export_to_pdf again. Just write a brief response confirming the PDF is ready and include the download link."
 

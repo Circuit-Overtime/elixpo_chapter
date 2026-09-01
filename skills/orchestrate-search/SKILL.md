@@ -12,7 +12,7 @@ Build a bounded execution graph. Prefer deterministic routing over an extra mode
 1. Classify the request without executing tools.
 2. Select only necessary skills: `research-web`, `handle-media`, `recall-memory`, `export-documents`, and `synthesize-answer`.
 3. Run independent skills concurrently.
-4. Preserve dependencies: search before fetching URLs; content before export; evidence before synthesis.
+4. Preserve dependencies: search → fetch → synthesize → export. Export is a single terminal step after the answer is finalized.
 5. Stream progress as tasks begin and results arrive.
 6. Cancel optional work once sufficient evidence exists.
 
@@ -22,6 +22,7 @@ Build a bounded execution graph. Prefer deterministic routing over an extra mode
 - Use web research for information likely to have changed.
 - Use deep research only for genuinely multi-part investigations.
 - Do not invoke media, memory, or export speculatively.
+- Never recall semantic memory for a self-contained current-information request. Memory provides continuity, not fresh evidence.
 - Reuse equivalent results already present in request memory.
 - Never create unbounded tasks.
 

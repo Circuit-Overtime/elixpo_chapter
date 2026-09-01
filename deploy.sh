@@ -612,14 +612,6 @@ frontend_build() {
     [ -s search.elixpo/out/index.html ] || { error "Frontend export is missing search.elixpo/out/index.html"; exit 1; }
     success "Frontend built — search.elixpo/out/"
 
-    # Next.js replaces the out directory during static export. A running bind
-    # mount keeps the old directory inode, so restart is insufficient: recreate
-    # Nginx to attach the newly generated export.
-    if compose ps -q nginx 2>/dev/null | grep -q .; then
-        info "Refreshing nginx frontend bind mount..."
-        compose up -d --no-deps --force-recreate nginx
-        success "Nginx recreated with the new frontend export"
-    fi
 }
 
 frontend_install_node() {
@@ -635,13 +627,15 @@ frontend_install_node() {
 }
 
 frontend_deploy() {
-    frontend_build
-    info "Deploying to Cloudflare Pages..."
-    cd search.elixpo
-    npx wrangler pages deploy out || { cd ..; error "Pages deploy failed"; exit 1; }
-    cd ..
-    success "Frontend deployed to Cloudflare Pages"
-    success "Nginx is serving the frontend export"
+    check_env
+    check_docker
+    [ -s search.elixpo/out/index.html ] || {
+        error "Frontend export missing. Run: ./deploy.sh --pages build deploy"
+        exit 1
+    }
+    info "Deploying frontend through the production Nginx container..."
+    compose up -d --no-deps --force-recreate --wait --wait-timeout 120 nginx
+    success "Frontend deployed through Nginx"
 }
 
 # ── Version display ────────────────────────────────────
@@ -678,11 +672,225 @@ release_all() {
     release_version all
 }
 
+# ── Targeted deployment interface ─────────────────────
+
+DRY_RUN=false
+
+run_cmd() {
+    if [ "$DRY_RUN" = "true" ]; then
+        printf '%s' "[dry-run]"
+        printf ' %q' "$@"
+        printf '\n'
+    else
+        "$@"
+    fi
+}
+
+compose_cmd() {
+    if [ "$DRY_RUN" = "true" ]; then
+        printf '%s' "[dry-run] docker compose --env-file $COMPOSE_ENV_FILE -f $COMPOSE_FILE"
+        printf ' %q' "$@"
+        printf '\n'
+    else
+        compose "$@"
+    fi
+}
+
+_python_bin() {
+    if [ -x "venv/bin/python" ]; then
+        echo "venv/bin/python"
+    elif command -v python3.11 >/dev/null 2>&1; then
+        echo "python3.11"
+    else
+        echo "python3"
+    fi
+}
+
+parse_target_actions() {
+    WANT_BUILD=false
+    WANT_DEPLOY=false
+    NO_CACHE=false
+    PULL=false
+    QUICK=false
+    REPLICAS="${APP_REPLICAS:-2}"
+    SELECTED_SERVICES=()
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            build)      WANT_BUILD=true ;;
+            deploy)     WANT_DEPLOY=true ;;
+            --quick)    QUICK=true ;;
+            --no-cache) NO_CACHE=true ;;
+            --pull)     PULL=true ;;
+            --redis)    SELECTED_SERVICES+=(redis) ;;
+            --qdrant)   SELECTED_SERVICES+=(qdrant) ;;
+            --ipc)      SELECTED_SERVICES+=(ipc-service) ;;
+            --app)      SELECTED_SERVICES+=(lixsearch-app) ;;
+            --monitor)  SELECTED_SERVICES+=(monitor) ;;
+            --nginx)    SELECTED_SERVICES+=(nginx) ;;
+            --all)      SELECTED_SERVICES=() ;;
+            --dry-run)  DRY_RUN=true ;;
+            --replicas)
+                shift
+                [ "$#" -gt 0 ] || { error "--replicas requires a number"; exit 1; }
+                REPLICAS="$1"
+                ;;
+            *) error "Unknown target option: $1"; exit 1 ;;
+        esac
+        shift
+    done
+
+    if [ "$WANT_BUILD" != "true" ] && [ "$WANT_DEPLOY" != "true" ]; then
+        error "Choose at least one action: build and/or deploy"
+        exit 1
+    fi
+    [[ "$REPLICAS" =~ ^[1-9][0-9]*$ ]] || {
+        error "--replicas must be a positive integer"
+        exit 1
+    }
+}
+
+pages_target() {
+    parse_target_actions "$@"
+    [ ${#SELECTED_SERVICES[@]} -eq 0 ] || {
+        error "Service selectors apply only to --model"
+        exit 1
+    }
+    if [ "$WANT_BUILD" = "true" ]; then
+        if [ "$DRY_RUN" = "true" ]; then
+            echo "[dry-run] build search.elixpo static export"
+        else
+            frontend_build
+        fi
+    fi
+    if [ "$WANT_DEPLOY" = "true" ]; then
+        if [ "$DRY_RUN" = "true" ]; then
+            compose_cmd up -d --no-deps --force-recreate --wait --wait-timeout 120 nginx
+        else
+            frontend_deploy
+        fi
+    fi
+}
+
+model_target() {
+    parse_target_actions "$@"
+    check_env
+    check_docker
+
+    if [ "$QUICK" = "true" ]; then
+        [ ${#SELECTED_SERVICES[@]} -eq 0 ] || {
+            error "--quick cannot be combined with service selectors"
+            exit 1
+        }
+        [ "$WANT_BUILD" != "true" ] || run_cmd "$(_python_bin)" -m compileall -q lixsearch
+        if [ "$WANT_DEPLOY" = "true" ]; then
+            if [ "$DRY_RUN" = "true" ]; then
+                echo "[dry-run] hot-copy lixsearch/, skills/, public/, and openapi.yaml; restart app workers"
+            else
+                "$0" hotfix
+            fi
+        fi
+        return
+    fi
+
+    local buildable=()
+    local pullable=()
+    if [ ${#SELECTED_SERVICES[@]} -eq 0 ]; then
+        buildable=(lixsearch-app ipc-service monitor)
+        pullable=(redis qdrant nginx)
+    else
+        local service
+        for service in "${SELECTED_SERVICES[@]}"; do
+            case "$service" in
+                lixsearch-app|ipc-service|monitor) buildable+=("$service") ;;
+                redis|qdrant|nginx) pullable+=("$service") ;;
+            esac
+        done
+    fi
+
+    if [ "$WANT_BUILD" = "true" ]; then
+        if [ ${#pullable[@]} -gt 0 ] && [ "$PULL" = "true" ]; then
+            compose_cmd pull "${pullable[@]}"
+        fi
+        if [ ${#buildable[@]} -gt 0 ]; then
+            local build_args=(build)
+            [ "$PULL" != "true" ] || build_args+=(--pull)
+            [ "$NO_CACHE" != "true" ] || build_args+=(--no-cache)
+            build_args+=("${buildable[@]}")
+            compose_cmd "${build_args[@]}"
+        elif [ "$PULL" != "true" ]; then
+            info "Selected services use upstream images; add --pull to refresh them"
+        fi
+    fi
+
+    if [ "$WANT_DEPLOY" = "true" ]; then
+        if [ ${#SELECTED_SERVICES[@]} -eq 0 ]; then
+            compose_cmd up -d --remove-orphans --wait --wait-timeout 240 --scale "lixsearch-app=$REPLICAS"
+        else
+            local up_args=(up -d --no-deps --wait --wait-timeout 180)
+            if [[ " ${SELECTED_SERVICES[*]} " == *" lixsearch-app "* ]]; then
+                up_args+=(--scale "lixsearch-app=$REPLICAS")
+            fi
+            up_args+=("${SELECTED_SERVICES[@]}")
+            compose_cmd "${up_args[@]}"
+        fi
+        [ "$DRY_RUN" = "true" ] || show_status
+    fi
+}
+
+mcp_target() {
+    parse_target_actions "$@"
+    [ ${#SELECTED_SERVICES[@]} -eq 0 ] || {
+        error "Service selectors apply only to --model"
+        exit 1
+    }
+    check_env
+    check_docker
+    local py
+    py="$(_python_bin)"
+
+    if [ "$WANT_BUILD" = "true" ]; then
+        run_cmd "$py" -m compileall -q lixsearch/mcpServer
+        if [ "$DRY_RUN" = "true" ]; then
+            echo "[dry-run] PYTHONPATH=lixsearch $py -m pytest -q tester/test_mcp_server.py tester/test_structured_evidence.py"
+        else
+            PYTHONPATH=lixsearch "$py" -m pytest -q \
+                tester/test_mcp_server.py tester/test_structured_evidence.py
+        fi
+        local build_args=(build)
+        [ "$PULL" != "true" ] || build_args+=(--pull)
+        [ "$NO_CACHE" != "true" ] || build_args+=(--no-cache)
+        build_args+=(lixsearch-app)
+        compose_cmd "${build_args[@]}"
+    fi
+
+    if [ "$WANT_DEPLOY" = "true" ]; then
+        compose_cmd up -d --no-deps --wait --wait-timeout 180 --scale "lixsearch-app=$REPLICAS" lixsearch-app
+        [ "$DRY_RUN" = "true" ] || show_status
+    fi
+}
+
 show_help() {
     cat << EOF
 ${BLUE}lixSearch Production Deployment Helper${NC}
 
-${YELLOW}Usage:${NC}
+${YELLOW}Targeted usage:${NC}
+  ./deploy.sh --pages build deploy
+  ./deploy.sh --model build deploy [OPTIONS]
+  ./deploy.sh --mcp build deploy [OPTIONS]
+
+${YELLOW}Target options:${NC}
+  --quick             Validate and hot-copy model code without rebuilding images
+  --app | --ipc       Select app workers or the shared IPC service
+  --redis | --qdrant  Select a state service (add --pull to refresh its image)
+  --monitor | --nginx Select monitoring or edge proxy
+  --all               Select the complete model stack (default)
+  --replicas N        App replica count (default: APP_REPLICAS or 2)
+  --pull              Pull base/upstream images while building
+  --no-cache          Disable Docker build cache
+  --dry-run           Print commands without changing services
+
+${YELLOW}Legacy usage:${NC}
   ./deploy.sh COMMAND [ARGS]
 
 ${YELLOW}Commands:${NC}
@@ -737,6 +945,25 @@ EOF
 }
 
 case "${1:-help}" in
+    --pages)
+        shift
+        pages_target "$@"
+        exit 0
+        ;;
+    --model)
+        shift
+        model_target "$@"
+        exit 0
+        ;;
+    --mcp)
+        shift
+        mcp_target "$@"
+        exit 0
+        ;;
+esac
+
+case "${1:-help}" in
+
     build)
         build_image "$2"
         ;;
@@ -771,6 +998,7 @@ case "${1:-help}" in
         for cid in $containers; do
             cname=$(docker inspect --format '{{.Name}}' "$cid" | sed 's|^/||')
             docker cp lixsearch/. "$cid":/app/lixsearch/
+            docker cp skills/. "$cid":/app/skills/
             docker cp openapi.yaml "$cid":/app/openapi.yaml
             docker cp public/. "$cid":/app/public/
             info "  Updated $cname"
@@ -780,6 +1008,7 @@ case "${1:-help}" in
         ipc_cid=$(compose ps -q ipc-service 2>/dev/null)
         if [ -n "$ipc_cid" ]; then
             docker cp lixsearch/. "$ipc_cid":/app/lixsearch/
+            docker cp skills/. "$ipc_cid":/app/skills/
             info "  Updated ipc-service"
         fi
         info "Restarting $count app container(s)..."

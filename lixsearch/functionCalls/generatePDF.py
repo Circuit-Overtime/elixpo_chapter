@@ -71,13 +71,13 @@ def _parse_inline(text: str):
         if m.group("bold_italic"):
             segments.append(("bold_italic", m.group(2)))
         elif m.group("bold"):
-            segments.append(("bold", m.group(3)))
+            segments.append(("bold", m.group(4)))
         elif m.group("italic"):
-            segments.append(("italic", m.group(4)))
+            segments.append(("italic", m.group(6)))
         elif m.group("code"):
-            segments.append(("code", m.group(6)))
+            segments.append(("code", m.group(8)))
         elif m.group("link"):
-            segments.append(("link", m.group(8), m.group(9)))
+            segments.append(("link", m.group(10), m.group(11)))
         last = m.end()
     if last < len(text):
         segments.append(("text", text[last:]))
@@ -125,6 +125,7 @@ def _write_md(pdf, text: str, font: str = "DejaVu", size: int = 11,
 
 def _markdown_to_pdf(markdown_text: str, title: str = "lixSearch Response") -> bytes:
     from fpdf import FPDF
+    from fpdf.enums import XPos, YPos
 
     class BrandedPDF(FPDF):
         def header(self):
@@ -148,16 +149,19 @@ def _markdown_to_pdf(markdown_text: str, title: str = "lixSearch Response") -> b
     pdf = BrandedPDF()
 
     if os.path.exists(_DEJAVU_PATH):
+        # Some slim/container font packages ship only part of the DejaVu
+        # family. Register every style the renderer requests, falling back to
+        # a compatible face instead of letting fpdf raise "Undefined font".
+        bold_path = _DEJAVU_BOLD_PATH if os.path.exists(_DEJAVU_BOLD_PATH) else _DEJAVU_PATH
+        italic_path = _DEJAVU_ITALIC_PATH if os.path.exists(_DEJAVU_ITALIC_PATH) else _DEJAVU_PATH
+        bold_italic_path = _DEJAVU_BI_PATH if os.path.exists(_DEJAVU_BI_PATH) else bold_path
+        mono_path = _DEJAVU_MONO_PATH if os.path.exists(_DEJAVU_MONO_PATH) else _DEJAVU_PATH
+
         pdf.add_font("DejaVu", "", _DEJAVU_PATH, uni=True)
-        pdf.add_font("DejaVu", "B", _DEJAVU_BOLD_PATH, uni=True)
-        if os.path.exists(_DEJAVU_ITALIC_PATH):
-            pdf.add_font("DejaVu", "I", _DEJAVU_ITALIC_PATH, uni=True)
-        if os.path.exists(_DEJAVU_BI_PATH):
-            pdf.add_font("DejaVu", "BI", _DEJAVU_BI_PATH, uni=True)
-        if os.path.exists(_DEJAVU_MONO_PATH):
-            pdf.add_font("DejaVuMono", "", _DEJAVU_MONO_PATH, uni=True)
-        else:
-            pdf.add_font("DejaVuMono", "", _DEJAVU_PATH, uni=True)
+        pdf.add_font("DejaVu", "B", bold_path, uni=True)
+        pdf.add_font("DejaVu", "I", italic_path, uni=True)
+        pdf.add_font("DejaVu", "BI", bold_italic_path, uni=True)
+        pdf.add_font("DejaVuMono", "", mono_path, uni=True)
     else:
         pdf.add_font("DejaVu", "", "Helvetica")
         pdf.add_font("DejaVuMono", "", "Courier")
@@ -169,7 +173,7 @@ def _markdown_to_pdf(markdown_text: str, title: str = "lixSearch Response") -> b
     title = _strip_emojis(title)
     pdf.set_font("DejaVu", "B", 20)
     pdf.set_text_color(30, 30, 60)
-    pdf.multi_cell(0, 10, title)
+    pdf.multi_cell(0, 10, title, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(2)
 
     pdf.set_font("DejaVu", "", 9)
@@ -202,7 +206,11 @@ def _markdown_to_pdf(markdown_text: str, title: str = "lixSearch Response") -> b
             pdf.set_font("DejaVuMono", "", 9)
             pdf.set_text_color(60, 60, 60)
             pdf.set_fill_color(245, 245, 245)
-            pdf.multi_cell(0, 5, f"  {stripped}", fill=True)
+            # Reset after every multiline cell; width=0 otherwise inherits the right edge.
+            pdf.multi_cell(
+                0, 5, f"  {stripped}", fill=True,
+                new_x=XPos.LMARGIN, new_y=YPos.NEXT,
+            )
             continue
 
         if stripped.startswith("### "):

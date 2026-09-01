@@ -70,7 +70,7 @@ async def try_image_synthesis(messages, user_query, image_pool, headers, event_i
 
 async def auto_generate_pdf(final_content, query_lower, memoized_results, event_id):
     _already_has_pdf = bool(memoized_results.get("generated_pdfs"))
-    if _already_has_pdf:
+    if _already_has_pdf or memoized_results.get("pdf_export_attempted"):
         return None
     if not any(kw in query_lower for kw in ("pdf", "export", "save as", "document")):
         return None
@@ -81,7 +81,12 @@ async def auto_generate_pdf(final_content, query_lower, memoized_results, event_
     from functionCalls.generatePDF import create_pdf_from_content
     _title_match = re.search(r'^#+\s+(.+)', final_content, re.MULTILINE)
     _title = _title_match.group(1).strip() if _title_match else None
-    pdf_url = await create_pdf_from_content(final_content, _title)
+    memoized_results["pdf_export_attempted"] = True
+    try:
+        pdf_url = await create_pdf_from_content(final_content, _title)
+    except Exception as exc:
+        memoized_results["pdf_export_error"] = str(exc)
+        raise
     if "generated_pdfs" not in memoized_results:
         memoized_results["generated_pdfs"] = []
     memoized_results["generated_pdfs"].append(pdf_url)

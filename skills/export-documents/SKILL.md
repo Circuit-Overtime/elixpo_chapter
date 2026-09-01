@@ -9,15 +9,18 @@ Export completed content without repeating research.
 
 ## Workflow
 
-1. Accept finalized Markdown and an optional title.
+1. Accept finalized Markdown and an optional title. If research is requested in the same turn, wait until sources are fetched and synthesis is complete. For a referential follow-up such as "make that a PDF", export the last substantive grounded assistant answer verbatim; do not regenerate or broaden it.
 2. Ensure content is non-empty and remove internal task messages.
 3. Preserve headings, lists, links, citations, and code blocks.
-4. Call `export_to_pdf` once.
+4. Call `export_to_pdf` exactly once. Never call it once per source or once per reasoning turn.
 5. Return the download URL unchanged.
 
 ## Guardrails
 
 - Depend on synthesis when content is not finalized.
+- Never export search snippets, memory excerpts, placeholders, prior PDF confirmations, errors, or a draft that has not passed synthesis.
+- In a continuation, preserve the earlier answer and its citations. Do not replace it with generic background knowledge.
+- A successful export must return its stable download URL; after success, stop exporting.
 - Do not invent citations or expand source content.
 - Do not export without explicit user intent.
 - Preserve the text response if export fails.

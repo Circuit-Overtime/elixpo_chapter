@@ -1,5 +1,5 @@
 """
-Elixpo CI Configuration — agent.elixpo
+Elixpo CI Configuration — OreoLook / search.elixpo
 Single source of truth for all CI workflows and scripts.
 """
 
@@ -20,9 +20,9 @@ LLM_MAX_TOKENS_SEARCH = 2500
 LLM_MODEL = LLM_MODEL_CHAT
 
 # ── Repository ──────────────────────────────────────
-REPO = "elixpo/agent.elixpo"
-PROJECT_NAME = "agent.elixpo"
-PROJECT_DESCRIPTION = "Elixpo agent orchestration hub"
+REPO = "pollinations/search.elixpo"
+PROJECT_NAME = "OreoLook"
+PROJECT_DESCRIPTION = "OpenAI-compatible live web research, synthesis, PDF export, and MCP search service"
 
 # ── GitHub Projects V2 ──────────────────────────────
 # Shared org-wide projects (linked to all elixpo repos).
@@ -132,4 +132,4 @@ AGENT_LABEL = "ELIXPO"
 # ── README update heuristics ────────────────────────
 # Path prefixes that count as "core" for this repo — changes touching these
 # are more likely to warrant a README update. Override per-repo.
-CORE_PATHS = ()  # TODO: list path prefixes that count as "core" for README-update heuristics
+CORE_PATHS = ("lixsearch/", "skills/", "search.elixpo/", "Dockerfile", "docker-compose.yml", "nginx.conf")

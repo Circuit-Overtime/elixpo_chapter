@@ -177,7 +177,9 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
             web_event = emit_event_func("INFO", f"<TASK>Searching for '{search_query[:60]}'</TASK>")
             if web_event:
                 yield web_event
-            cache_key = f"{cached_web_search_key(search_query)}::{search_depth}"
+            _freshness = function_args.get("freshness") or "any"
+            _excluded = ",".join(sorted(function_args.get("exclude_domains") or []))
+            cache_key = f"{cached_web_search_key(search_query)}::{search_depth}::{_freshness}::{_excluded}"
             if cache_key in memoized_results["web_searches"]:
                 logger.info(f"Using cached web search for: {search_query}")
                 cached_result = memoized_results["web_searches"][cache_key]
@@ -187,7 +189,12 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
                 return
             logger.info(f"Performing optimized web search for: {search_query}")
             result_limit = {"quick": 2, "standard": 5, "thorough": 10}.get(search_depth, 5)
-            evidence = await structured_search(search_query, num_results=result_limit)
+            evidence = await structured_search(
+                search_query,
+                num_results=result_limit,
+                freshness=function_args.get("freshness"),
+                exclude_domains=function_args.get("exclude_domains"),
+            )
             elapsed = time.time() - start_time
             source_urls = [item.url for item in evidence]
             tool_result = {
@@ -254,8 +261,16 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
                 yield f"[ERROR] Image generation failed: {str(e)[:ERROR_MESSAGE_TRUNCATE]}"
 
         elif function_name == "export_to_pdf":
-            content = function_args.get("content", "")
-            title = function_args.get("title")
+            if memoized_results.get("generated_pdfs"):
+                yield f"PDF already exported.\nDownload: {memoized_results['generated_pdfs'][-1]}"
+                return
+            # Exactly-once includes failed attempts: never export an error reply.
+            memoized_results["pdf_export_attempted"] = True
+            continuation_content = memoized_results.get("continuation_pdf_content")
+            content = continuation_content or function_args.get("content", "")
+            # Derive the title from the trusted prior answer when exporting a
+            # continuation; the model-provided title may describe a rewrite.
+            title = None if continuation_content else function_args.get("title")
             if not content or not content.strip():
                 yield "[ERROR] No content provided for PDF export. Provide the markdown content to export."
                 return
@@ -275,6 +290,7 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
                 yield result
             except Exception as e:
                 logger.error(f"PDF generation error: {e}")
+                memoized_results["pdf_export_error"] = str(e)[:ERROR_MESSAGE_TRUNCATE]
                 yield f"[ERROR] PDF generation failed: {str(e)[:ERROR_MESSAGE_TRUNCATE]}"
 
         elif function_name == "image_search":

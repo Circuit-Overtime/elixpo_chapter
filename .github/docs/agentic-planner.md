@@ -89,11 +89,10 @@ For another Elixpo repository, use the canonical bundle in
 `--apply` opens one reviewable update PR per repository. Do not manually copy
 individual workflow files because that recreates version drift.
 
-Required organization secrets:
+Secrets used by `pollinations/search.elixpo`:
 
 - `ELIXPO_POLLINATIONS_API_KEY`
 - `ELIXPOO_GITHUB_AGENTIC_TOKEN`
-- `AGENT_GITHUB_SOLVER_TOKEN`
 - `ELIXPOO_GIST_AGENTIC_TOKEN`
 
 No `GH_SECRET` is required. GitHub supplies `GITHUB_TOKEN` automatically, while
@@ -110,15 +109,9 @@ changelog jobs.
 unset; `on-merge.yml` creates a changelog gist on the first merge and persists
 the resulting ID for later runs.
 
-### Other secrets referenced only by this repository
+### Runtime and deployment credentials
 
-These are not part of the organization agent bundle:
-
-- `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`: production deployment.
-- `ELIXPO_PAY_API_KEY`: payout catalog and deployment configuration.
-- `MODERATION_SECRET`: moderation workflow authentication.
-- `NPM_LIXEDITOR_PUBLISH_TOKEN`: npm publishing.
-- `VSCODE_LIXSKETCH_EXT_PUBLISH_TOKEN`: VS Code Marketplace publishing.
+OreoLook runtime credentials stay in the VPS `.env.local`. The repository workflows do not need `API_KEY`, `POLLINATIONS_API_KEY`, Redis, Qdrant, SOPS, TLS, Cloudflare, npm, or VPS deployment secrets. Production deployment remains a manual `./deploy.sh` operation on the server.
 
 ## Cost-aware routes
 

@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "lixsearch"))
 
 from pipeline.instruction import format_human_date
-from pipeline.lixsearch import _parse_decision_mode
+from pipeline.lixsearch import _parse_context_mode, _parse_decision_mode
 
 
 def test_human_date_ordinals():
@@ -31,3 +31,9 @@ def test_decision_mode_parser_is_strict_and_safe():
     assert _parse_decision_mode("DIRECT") == "direct"
     assert _parse_decision_mode("tools") == "tools"
     assert _parse_decision_mode("unknown") == "tools"
+
+
+def test_context_mode_defaults_to_session_isolation():
+    assert _parse_context_mode('{"mode":"TOOLS","context":"STANDALONE"}') == "standalone"
+    assert _parse_context_mode('{"mode":"DIRECT","context":"CONTINUATION"}') == "continuation"
+    assert _parse_context_mode("malformed router output") == "standalone"

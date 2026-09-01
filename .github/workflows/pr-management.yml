@@ -75,12 +75,12 @@ jobs:
               {
                 label: 'frontend',
                 color: '1d76db',
-                test: (p) => p.startsWith('src/components/') || p.startsWith('src/app/') || p.startsWith('pages/'),
+                test: (p) => p.startsWith('search.elixpo/app/') || p.startsWith('search.elixpo/components/') || p.startsWith('search.elixpo/public/'),
               },
               {
                 label: 'backend',
                 color: 'e99695',
-                test: (p) => p.startsWith('src/api/') || p.startsWith('api/') || p.startsWith('routes/') || p.startsWith('server/'),
+                test: (p) => p.startsWith('lixsearch/') || p.startsWith('skills/'),
               },
               {
                 label: 'infra',
@@ -95,7 +95,7 @@ jobs:
               {
                 label: 'tests',
                 color: 'bfd4f2',
-                test: (p) => /\.(test|spec)\./.test(p) || p.startsWith('tests/'),
+                test: (p) => /\.(test|spec)\./.test(p) || p.startsWith('tester/'),
               },
               {
                 label: 'dependencies',

@@ -34,6 +34,7 @@ from pipeline.synthesis import (
 from pipeline.response_builder import (
     is_placeholder_or_fallback,
     try_image_synthesis,
+    auto_generate_pdf,
     assemble_images,
     append_sources,
     build_fallback_response,
@@ -50,10 +51,12 @@ MODEL = LLM_MODEL
 MODEL_FALLBACK = LLM_MODEL_FALLBACK
 
 
-_DECISION_INSTRUCTION = """Classify whether this request needs OreoLook tools.
-Return exactly DIRECT or TOOLS, with no explanation.
-TOOLS: live or current web facts, search, URL reading, time zones, images, audio, YouTube, PDF export, or multi-step research.
-DIRECT: greetings, casual conversation, opinions, explanations, writing, coding, math, and stable knowledge that needs no external action.
+_DECISION_INSTRUCTION = """Classify tool need and conversation dependence for this request.
+Return only JSON: {"mode":"DIRECT|TOOLS","context":"STANDALONE|CONTINUATION"}.
+TOOLS: live/current facts, search, URL reading, time zones, images, audio, YouTube, PDF export, or multi-step research.
+DIRECT: greetings, casual conversation, opinions, explanations, writing, coding, math, and stable knowledge.
+CONTINUATION: the request cannot be interpreted correctly without earlier turns, such as explicit references to "that", "it", "the previous answer", continuing prior work, recaps, or exporting existing conversation content.
+STANDALONE: the request states a complete subject and desired output. Repeated or reformulated complete requests remain STANDALONE even when a session exists. "Give me a PDF of the latest news from India" is STANDALONE because it requests new live research, not prior content.
 Attached images require TOOLS. Never answer the request."""
 
 
@@ -62,7 +65,12 @@ def _parse_decision_mode(content: str) -> str:
     return match.group(1).lower() if match else "tools"
 
 
-async def _decide_request_mode(user_query: str, image_count: int, headers: dict) -> str:
+def _parse_context_mode(content: str) -> str:
+    match = re.search(r"\b(STANDALONE|CONTINUATION)\b", content or "", re.IGNORECASE)
+    return match.group(1).lower() if match else "standalone"
+
+
+async def _decide_request_mode(user_query: str, image_count: int, headers: dict) -> tuple[str, str]:
     """Run the cheap routing decision while local context is prepared."""
     query = user_query or "(no text)"
     if image_count:
@@ -73,7 +81,7 @@ async def _decide_request_mode(user_query: str, image_count: int, headers: dict)
             {"role": "system", "content": _DECISION_INSTRUCTION},
             {"role": "user", "content": query},
         ],
-        "max_tokens": 6,
+        "max_tokens": 30,
         "temperature": 0,
     }
 
@@ -84,15 +92,16 @@ async def _decide_request_mode(user_query: str, image_count: int, headers: dict)
         )
         response.raise_for_status()
         message = response.json()["choices"][0]["message"]
-        return _parse_decision_mode(message.get("content", ""))
+        content = message.get("content", "")
+        return _parse_decision_mode(content), _parse_context_mode(content)
 
     try:
-        mode = await asyncio.to_thread(_call)
-        logger.debug(f"[pipeline] request_mode={mode}")
-        return mode
+        mode, context_mode = await asyncio.to_thread(_call)
+        logger.debug(f"[pipeline] request_mode={mode} context_mode={context_mode}")
+        return mode, context_mode
     except Exception as exc:
-        logger.debug(f"[pipeline] decision fallback=tools error={exc}")
-        return "tools"
+        logger.debug(f"[pipeline] decision fallback=tools/standalone error={exc}")
+        return "tools", "standalone"
 
 
 async def _stream_llm_call(payload: dict, headers: dict):
@@ -350,29 +359,10 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
         final_message_content = None
         tool_call_count = 0
 
-        # --- RAG retrieval (only include chunks that are actually relevant) ---
+        # Request memory is opt-in through the recall-memory tool. Automatically
+        # mixing semantic memory into a self-contained live-web request can turn
+        # old, merely similar text into apparent evidence.
         rag_context = ""
-        _RAG_MIN_SCORE = 0.25
-        if core_service:
-            try:
-                active_top_k = RETRIEVAL_TOP_K * 2 if is_detailed_mode else RETRIEVAL_TOP_K
-                retrieval_result = await asyncio.wait_for(
-                    asyncio.to_thread(core_service.retrieve, user_query, active_top_k), timeout=2.0
-                )
-                if retrieval_result.get("count", 0) > 0:
-                    relevant = [r for r in retrieval_result.get("results", []) if r.get("score", 0) >= _RAG_MIN_SCORE]
-                    if relevant:
-                        _rag_chunks = [r["metadata"]["text"] for r in relevant]
-                        rag_context = "\n".join(_rag_chunks)
-                        if len(rag_context) > 8000:
-                            rag_context = rag_context[:8000]
-                        rag_event = emit_event("INFO", f"<TASK>Recalling {len(relevant)} related snippet{'s' if len(relevant) != 1 else ''} from memory</TASK>")
-                        if rag_event:
-                            yield rag_event
-            except asyncio.TimeoutError:
-                logger.warning("[Pipeline] Vector store retrieval timed out")
-            except Exception:
-                logger.warning("[Pipeline] Vector store retrieval failed")
 
         # --- One bounded DB4 lookup shared by every replica; fail open. ---
         global_revelations = ""
@@ -415,7 +405,10 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             global_revelations=global_revelations, rag_context="",
         )
 
-        # --- Inject conversation history ---
+        request_mode, context_mode = await decision_task
+
+        # Explicit OpenAI messages history is authoritative. Server-loaded
+        # session history enters only genuine continuation requests.
         _injected_history = 0
         _history_token_budget = HISTORY_TOKEN_BUDGET_DETAILED if is_detailed_mode else HISTORY_TOKEN_BUDGET
         _history_tokens_used = 0
@@ -432,7 +425,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     messages.append({"role": _role, "content": _content})
                     _history_tokens_used += _msg_tokens
                     _injected_history += 1
-        elif session_id and session_context:
+        elif context_mode == "continuation" and session_id and session_context:
             try:
                 _prev = session_context.get_context()
                 if _prev and _prev[-1].get("role") == "user" and _prev[-1].get("content") == user_query:
@@ -457,6 +450,22 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             except Exception as e:
                 logger.warning(f"[Pipeline] Failed to inject conversation history: {e}")
 
+        # A referential PDF follow-up must export the prior grounded answer,
+        # not ask the model to recreate it from general knowledge.
+        _pdf_terms = ("pdf", "export", "download", "document", "save as")
+        if context_mode == "continuation" and any(term in user_query.lower() for term in _pdf_terms):
+            _history_source = chat_history if chat_history is not None else previous_messages
+            for _candidate in reversed(_history_source or []):
+                _candidate_content = _candidate.get("content", "")
+                if (
+                    _candidate.get("role") == "assistant"
+                    and len(_candidate_content.strip()) >= 200
+                    and "[ERROR]" not in _candidate_content
+                    and "<TASK>" not in _candidate_content
+                ):
+                    memoized_results["continuation_pdf_content"] = _candidate_content.strip()
+                    break
+
         # Inject timing context for returning users
         if _injected_history > 0 and _last_msg_ts:
             try:
@@ -476,7 +485,6 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
         messages.append({"role": "user", "content": user_msg_content})
         force_synthesis = False
-        request_mode = await decision_task
 
         # Detect meta-queries (summaries, recaps)
         _query_lower = user_query.lower()
@@ -793,6 +801,21 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     yield format_sse("INFO", f"<TASK>Found {len(collected_sources)} sources</TASK>")
                     status_tracker.touch()
 
+                # Search results are leads, not evidence. Follow the strongest
+                # URLs immediately instead of spending another model round-trip
+                # asking it to issue fetch calls.
+                if not fetch_calls:
+                    import uuid as _uuid
+                    for url in clean_source_list(memoized_results.get("current_search_urls", []))[:active_max_links]:
+                        fetch_calls.append({
+                            "id": f"auto-fetch-{_uuid.uuid4().hex[:8]}",
+                            "type": "function",
+                            "function": {
+                                "name": "fetch_full_text",
+                                "arguments": json.dumps({"url": url}),
+                            },
+                        })
+
             # --- Other tools ---
             _tool_labels = {"image_search": "Searching for images", "youtubeMetadata": "Looking up YouTube videos",
                             "transcribe_audio": "Transcribing audio", "get_local_time": "Getting local time", "create_image": "Generating image"}
@@ -872,7 +895,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                                 pass
                         ingest_tasks.append(ingest_url_async(url))
                     tool_outputs.append({"role": "tool", "tool_call_id": fr["tool_call_id"], "name": "fetch_full_text",
-                                         "content": str(fr["result"])[:500] if fr["result"] else "No result"})
+                                         "content": str(fr["result"])[:FETCH_EVIDENCE_MAX_CHARS] if fr["result"] else "No result"})
 
                 # Fire-and-forget: ingest into vector store without blocking the response
                 if ingest_tasks:
@@ -1031,6 +1054,18 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             if not _already_streamed:
                 final_message_content = await sanitize_final_response(final_message_content, user_query, collected_sources, headers)
             final_message_content = _scrub_tool_names(final_message_content)
+
+            # Research/document requests are exported only after synthesis. This
+            # single runtime-owned call prevents partial exports and tool loops.
+            try:
+                await auto_generate_pdf(
+                    final_message_content,
+                    original_user_query.lower(),
+                    memoized_results,
+                    event_id,
+                )
+            except Exception as exc:
+                logger.error(f"[FINAL] PDF auto-generation failed: {exc}")
 
             # If we got placeholder content with images, try one more synthesis
             if not _already_streamed and is_placeholder_or_fallback(final_message_content) and (collected_images_from_web or collected_similar_images):
