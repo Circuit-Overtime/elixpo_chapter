@@ -14,6 +14,8 @@ from chatEngine.main import initialize_chat_engine
 from commons.requestID import RequestIDMiddleware
 from app.gateways import health, search, session, stats, surf, completions, responses, image, export, content
 from app.auth import install_api_auth
+from mcpServer import build_mcp_server
+from mcpServer.asgi import MCPMount
 logger = logging.getLogger("lixsearch-api")
 
 
@@ -106,10 +108,12 @@ class lixSearch:
         self.pipeline_initialized = False
         self.skill_registry = None
         self.initialization_lock = asyncio.Lock()
+        self._mcp_session_context = None
         
         self._setup_cors()
         install_api_auth(self.app)
         self._setup_middleware()
+        self._setup_mcp()
         self._register_routes()
         self._register_error_handlers()
         self._register_lifecycle_hooks()
@@ -120,6 +124,11 @@ class lixSearch:
     def _setup_middleware(self):
         middleware = RequestIDMiddleware(self.app.asgi_app)
         self.app.asgi_app = middleware
+
+    def _setup_mcp(self):
+        self.mcp_server = build_mcp_server(lambda: self.pipeline_initialized)
+        self.mcp_app = self.mcp_server.streamable_http_app()
+        self.app.asgi_app = MCPMount(self.app.asgi_app, self.mcp_app)
     
     def _register_routes(self):
         async def health_check_wrapper():
@@ -273,6 +282,10 @@ class lixSearch:
 
                     self.pipeline_initialized = True
                     logger.info("[APP] lixSearch initialized and ready")
+
+                    self._mcp_session_context = self.mcp_server.session_manager.run()
+                    await self._mcp_session_context.__aenter__()
+                    logger.info("[APP] OreoLook MCP ready at /mcp")
                 except Exception as e:
                     logger.error(f"[APP] Initialization failed: {e}", exc_info=True)
                     raise
@@ -305,6 +318,11 @@ class lixSearch:
         @self.app.after_serving
         async def shutdown():
             logger.info("[APP] Shutting down lixSearch — flushing active sessions to disk...")
+            if self._mcp_session_context is not None:
+                try:
+                    await self._mcp_session_context.__aexit__(None, None, None)
+                except Exception as e:
+                    logger.warning(f"[APP] MCP shutdown error: {e}")
             try:
                 await asyncio.to_thread(_run_archive_cleanup)
             except Exception as e:
