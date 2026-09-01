@@ -1,4 +1,4 @@
-export default function Masthead({ hero, person }) {
+export default function Masthead({ hero, person, memberName }) {
   return (
     <section className="masthead relative w-full flex flex-col border-b-2 border-[#111] px-2 sm:px-5 pt-4 sm:pt-8 pb-6 sm:pb-10">
       {/* Focus-tag dateline */}
@@ -15,6 +15,7 @@ export default function Masthead({ hero, person }) {
       {/* Charcoal headline block - the role statement */}
       <div className="mastheadHeadlineBlock w-full flex items-center bg-[#1B1B19] opacity-90 select-none rounded-[10px] sm:rounded-[15px] px-5 sm:px-10 py-6 sm:py-10 md:py-12">
         <h1 className="text-[#E2D9C8] font-[Canopee,serif] tracking-[1px] sm:tracking-[2px] text-3xl sm:text-5xl md:text-6xl lg:text-[5em] leading-[1.05]">
+          {memberName && <span className="sr-only">{memberName} — </span>}
           {hero.headline}
         </h1>
       </div>

@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 
 const contentDir = path.join(process.cwd(), "content");
+let memberSeoCache;
 
 export function getPersonContent(person, file) {
   const filePath = path.join(contentDir, person, `${file}.json`);
@@ -23,4 +24,13 @@ export function getPortfolioPersons() {
   const validPersons = new Set(getValidPersons());
 
   return order.filter((person) => validPersons.has(person));
+}
+
+export function getMemberSeo(person) {
+  if (!memberSeoCache) {
+    const seoPath = path.join(contentDir, "member-seo.json");
+    memberSeoCache = JSON.parse(fs.readFileSync(seoPath, "utf-8"));
+  }
+
+  return memberSeoCache[person] || {};
 }
