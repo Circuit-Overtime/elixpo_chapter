@@ -1,3 +1,5 @@
+import { normalizeLegacyChecklistBlocks } from './normalizeChecklistBlocks.js';
+
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const escAttr = (s) => String(s ?? '').replace(/"/g, '&quot;');
 
@@ -29,6 +31,7 @@ export function buttonBlockToHTML(props = {}) {
  */
 export function renderBlocksToHTML(blocks) {
   if (!blocks || !blocks.length) return '';
+  blocks = normalizeLegacyChecklistBlocks(blocks);
 
   function inlineToHTML(content) {
     if (!content || !Array.isArray(content)) return '';
