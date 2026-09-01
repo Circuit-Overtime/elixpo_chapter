@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { BlogApiError } from '../src/api/BlogClient.js';
-import { blogCreate, blogDelete, blogEdit, blogPublish } from '../src/commands/blog/index.js';
+import { blogCreate, blogDelete, blogEdit, blogPublish, enrichBlogMutationResult } from '../src/commands/blog/index.js';
 import { blocksToMarkdown, markdownToBlocks } from '../src/content/markdown.js';
 import { validateBlogInput } from '../src/content/validate.js';
 
@@ -13,6 +13,37 @@ test('Markdown conversion retains supported structural blocks', () => {
   const blocks = markdownToBlocks(markdown);
   assert.deepEqual(blocks.map((block) => block.type), ['heading', 'bulletListItem', 'mermaidBlock']);
   assert.match(blocksToMarkdown(blocks), /```mermaid/);
+});
+
+test('Markdown conversion retains inline emphasis, code, and HTTPS links', () => {
+  const markdown = 'Use **bold**, *italic*, `code`, and [the docs](https://blogs.elixpo.com/docs).';
+  const blocks = markdownToBlocks(markdown);
+
+  assert.deepEqual(blocks[0].content, [
+    { type: 'text', text: 'Use ' },
+    { type: 'text', text: 'bold', styles: { bold: true } },
+    { type: 'text', text: ', ' },
+    { type: 'text', text: 'italic', styles: { italic: true } },
+    { type: 'text', text: ', ' },
+    { type: 'text', text: 'code', styles: { code: true } },
+    { type: 'text', text: ', and ' },
+    {
+      type: 'link',
+      href: 'https://blogs.elixpo.com/docs',
+      content: [{ type: 'text', text: 'the docs', styles: {} }],
+    },
+    { type: 'text', text: '.' },
+  ]);
+  assert.equal(blocksToMarkdown(blocks), markdown);
+});
+
+test('Markdown conversion accepts task lists with optional bullets', () => {
+  const markdown = '[ ] Draft the post\n\n- [x] Publish the post';
+  const blocks = markdownToBlocks(markdown);
+
+  assert.deepEqual(blocks.map((block) => block.type), ['checkListItem', 'checkListItem']);
+  assert.deepEqual(blocks.map((block) => block.props.checked), [false, true]);
+  assert.equal(blocksToMarkdown(blocks), '- [ ] Draft the post\n\n- [x] Publish the post');
 });
 
 test('create dry-run validates input without calling the API', async () => {
@@ -40,6 +71,37 @@ test('delete fails closed without explicit confirmation', async () => {
     blogDelete({ client: {}, id: 'blog-1', options: { yes: false } }),
     /requires --yes/,
   );
+});
+
+test('blog mutation results include the latest status and canonical URL', async () => {
+  const result = await enrichBlogMutationResult({
+    client: {
+      get: async () => ({
+        id: 'blog-1',
+        status: 'unlisted',
+        url: 'https://blogs.elixpo.com/author/post',
+      }),
+    },
+    action: 'edit',
+    result: { id: 'blog-1', status: 'unlisted' },
+  });
+
+  assert.equal(result.status, 'unlisted');
+  assert.equal(result.url, 'https://blogs.elixpo.com/author/post');
+});
+
+test('permanent deletion retains the former URL and reports deleted status', async () => {
+  const result = await blogDelete({
+    client: {
+      get: async () => ({ etag: '"one"', url: 'https://blogs.elixpo.com/author/post' }),
+      delete: async () => ({ id: 'blog-1', permanentlyDeleted: true }),
+    },
+    id: 'blog-1',
+    options: { yes: true, permanent: true },
+  });
+
+  assert.equal(result.status, 'deleted');
+  assert.equal(result.url, 'https://blogs.elixpo.com/author/post');
 });
 
 test('publish validates before requiring explicit confirmation', async () => {

@@ -234,6 +234,18 @@ export function parseMarkdownToBlocks(text) {
       i++; continue;
     }
 
+    // GitHub-style task list. Match before the generic bullet rule so the
+    // marker becomes checkbox state instead of visible "[ ]" text.
+    const taskMatch = trimmed.match(/^(?:[-*]\s+)?\[([ xX])\](?:\s+(.*))?$/);
+    if (taskMatch) {
+      blocks.push({
+        type: 'checkListItem',
+        props: { checked: taskMatch[1].toLowerCase() === 'x' },
+        content: parseInlineContent(taskMatch[2] || ''),
+      });
+      i++; continue;
+    }
+
     // Bullet list
     if (trimmed.match(/^[-*]\s+/)) {
       blocks.push({ type: 'bulletListItem', content: parseInlineContent(trimmed.replace(/^[-*]\s+/, '')) });

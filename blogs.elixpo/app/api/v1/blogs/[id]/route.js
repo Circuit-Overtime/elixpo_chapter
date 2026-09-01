@@ -18,6 +18,7 @@ import { checkIfMatch } from '../../../../../lib/api/v1/preconditions';
 import { apiError, apiSuccess, requestContext } from '../../../../../lib/api/v1/responses';
 import { compressBlogContent, decompressBlogContent } from '../../../../../lib/compress';
 import { excerptFromBlocks } from '../../../../../lib/excerpt';
+import { getBlogCanonicalPath } from '../../../../../lib/blogUrl';
 import { ensureUniqueBlogSlug } from '../../../../../lib/namespace';
 import { canEditBlog } from '../../../../../lib/permissions';
 import { readTimeFromWords } from '../../../../../lib/readTime';
@@ -58,10 +59,11 @@ export async function GET(request, { params }) {
       return apiError(context, 'blog_not_found', 'The blog was not found.', 404, { headers: rateHeaders });
     }
 
-    const [tags, permission, etag] = await Promise.all([
+    const [tags, permission, etag, canonicalPath] = await Promise.all([
       db.prepare('SELECT tag FROM blog_tags WHERE blog_id = ? ORDER BY tag').bind(blog.id).all(),
       canEditBlog(db, blog.id, auth.userId),
       blogEntityTag(blog),
+      getBlogCanonicalPath(db, blog.id),
     ]);
     let content = blog.content;
     try { content = decompressBlogContent(content); } catch {}
@@ -99,6 +101,7 @@ export async function GET(request, { params }) {
       publishedAt: blog.published_at || null,
       deletedAt: blog.deleted_at || null,
       preDeleteStatus: blog.pre_delete_status || null,
+      url: `https://blogs.elixpo.com${canonicalPath}`,
       etag,
     }, { headers: { ...rateHeaders, ETag: etag } });
   } catch (error) {
