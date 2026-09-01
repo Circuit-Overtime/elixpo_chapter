@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { BlogApiError } from '../src/api/BlogClient.js';
-import { blogCreate, blogDelete, blogEdit, blogPublish } from '../src/commands/blog/index.js';
+import { blogCreate, blogDelete, blogEdit, blogPublish, enrichBlogMutationResult } from '../src/commands/blog/index.js';
 import { blocksToMarkdown, markdownToBlocks } from '../src/content/markdown.js';
 import { validateBlogInput } from '../src/content/validate.js';
 
@@ -62,6 +62,37 @@ test('delete fails closed without explicit confirmation', async () => {
     blogDelete({ client: {}, id: 'blog-1', options: { yes: false } }),
     /requires --yes/,
   );
+});
+
+test('blog mutation results include the latest status and canonical URL', async () => {
+  const result = await enrichBlogMutationResult({
+    client: {
+      get: async () => ({
+        id: 'blog-1',
+        status: 'unlisted',
+        url: 'https://blogs.elixpo.com/author/post',
+      }),
+    },
+    action: 'edit',
+    result: { id: 'blog-1', status: 'unlisted' },
+  });
+
+  assert.equal(result.status, 'unlisted');
+  assert.equal(result.url, 'https://blogs.elixpo.com/author/post');
+});
+
+test('permanent deletion retains the former URL and reports deleted status', async () => {
+  const result = await blogDelete({
+    client: {
+      get: async () => ({ etag: '"one"', url: 'https://blogs.elixpo.com/author/post' }),
+      delete: async () => ({ id: 'blog-1', permanentlyDeleted: true }),
+    },
+    id: 'blog-1',
+    options: { yes: true, permanent: true },
+  });
+
+  assert.equal(result.status, 'deleted');
+  assert.equal(result.url, 'https://blogs.elixpo.com/author/post');
 });
 
 test('publish validates before requiring explicit confirmation', async () => {

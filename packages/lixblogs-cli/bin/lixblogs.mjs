@@ -55,6 +55,7 @@ import {
   blogCreate,
   blogDelete,
   blogEdit,
+  enrichBlogMutationResult,
   blogGet,
   blogHistory,
   blogList,
@@ -63,6 +64,7 @@ import {
   blogRestoreVersion,
   blogUnpublish,
 } from "../src/commands/blog/index.js";
+import { blogMutationMessage, mediaMutationMessage } from "../src/cli/resultMessages.js";
 import {
   orgCollections,
   orgGet,
@@ -674,22 +676,25 @@ async function runBlog(opts, args, action) {
     limit: opts.limit === undefined ? undefined : Number.parseInt(opts.limit, 10),
   };
   try {
-    const result = await withProgress(opts, `${action === 'list' ? 'Loading' : action === 'get' || action === 'preview' ? 'Opening' : 'Updating'} blog…`, () => BLOG_COMMANDS[action]({
+    const result = await withProgress(opts, `${action === 'list' ? 'Loading' : action === 'get' || action === 'preview' ? 'Opening' : 'Updating'} blog…`, async () => {
+      const commandResult = await BLOG_COMMANDS[action]({
         client, id: args[0], options: normalized, stdin: process.stdin,
-      }));
+      });
+      return enrichBlogMutationResult({ client, action, result: commandResult });
+    });
     output(opts, { ok: true, ...result });
     if (!opts.json && !opts.quiet) {
       if (action === 'list') {
         for (const blog of result.data || []) console.log(`${blog.id}\t${blog.status}\t${blog.title || '(untitled)'}`);
         if (result.meta?.nextCursor) console.log(infoLine(`Next cursor: ${result.meta.nextCursor}`, colorEnabled()));
-      } else if (action === 'get') {
+      } else if (action === 'get' || action === 'preview') {
         console.log(`${result.title || '(untitled)'} [${result.status}]\n${result.markdown || ''}`);
       } else if (action === 'history') {
         for (const version of result.data || []) console.log(`${version.id}\t${version.label || 'snapshot'}\t${version.created_at}\t${version.username || 'system'}`);
       } else if (result.dryRun) {
         console.log(warningLine(`Dry run: ${action} validated; no changes sent.`, colorEnabled()));
       } else {
-        console.log(successLine(result.url || `${action} completed for ${result.id}.`, colorEnabled()));
+        console.log(successLine(blogMutationMessage(action, result), colorEnabled()));
       }
     }
   } catch (error) {
@@ -747,12 +752,7 @@ async function runMedia(opts, args, action) {
       }));
     output(opts, { ok: true, data: result });
     if (!opts.json && !opts.quiet) {
-      if (action === 'delete') console.log(successLine(`Deleted media ${result.id}.`, colorEnabled()));
-      else {
-        const verb = action === 'generate' ? 'Generated' : 'Uploaded';
-        const attached = result.blog ? ` and attached to blog ${opts.blog}` : '';
-        console.log(successLine(`${verb}${attached}: ${result.media?.url || result.output || result.media?.publicId}`, colorEnabled()));
-      }
+      console.log(successLine(mediaMutationMessage(action, result, opts.blog), colorEnabled()));
     }
   } catch (error) { fail(opts, error, error.status === 401 || error.status === 403 ? EXIT_CODES.AUTH : EXIT_CODES.ERROR); }
 }

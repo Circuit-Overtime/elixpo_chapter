@@ -6,6 +6,34 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { requireConfirmation } from '../../cli/contract.js';
 
+const MUTATION_ACTIONS = new Set([
+  'create',
+  'edit',
+  'publish',
+  'unpublish',
+  'delete',
+  'trash',
+  'restore',
+  'restore-version',
+]);
+
+export async function enrichBlogMutationResult({ client, action, result }) {
+  if (!MUTATION_ACTIONS.has(action) || result?.dryRun || !result?.id) return result;
+  if (result.url && result.status) return result;
+  try {
+    const current = await client.get(result.id);
+    return {
+      ...result,
+      status: current.status || result.status,
+      url: current.url || result.url,
+    };
+  } catch {
+    // The write already succeeded. A presentation-only follow-up read must not
+    // turn it into a failed command (notably after permanent deletion).
+    return result;
+  }
+}
+
 export async function blogList({ client, options }) {
   return client.list({ status: options.status, limit: options.limit, cursor: options.cursor });
 }
@@ -87,7 +115,12 @@ export async function blogDelete({ client, id, options }) {
   if (!options.yes) throw new Error('Deletion requires --yes. Trash is the default; add --permanent for irreversible deletion.');
   const current = await client.get(id);
   if (options['dry-run']) return { dryRun: true, id, permanent: options.permanent };
-  return client.delete(id, { etag: options.etag || current.etag, permanent: options.permanent });
+  const result = await client.delete(id, { etag: options.etag || current.etag, permanent: options.permanent });
+  return {
+    ...result,
+    status: options.permanent ? 'deleted' : 'trashed',
+    url: current.url || result.url,
+  };
 }
 
 export async function blogRestore({ client, id, options }) {
