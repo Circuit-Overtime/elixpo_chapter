@@ -335,7 +335,16 @@ export default function Header() {
   // View mode or Zen mode: only show the menu button floating in top-right
   if (viewMode || zenMode) {
     return (
-      <div className="fixed top-3 right-4 z-[1001] font-[lixFont]">
+      <div className="fixed top-3 right-4 z-[1001] flex items-center gap-2 font-[lixFont]">
+        <Link
+          href="/templates"
+          title="Browse template marketplace"
+          aria-label="Browse template marketplace"
+          className="flex h-8 items-center gap-1.5 rounded-lg bg-surface px-2.5 text-xs text-text-muted transition-all duration-200 hover:bg-surface-hover hover:text-text-primary"
+        >
+          <i className="bx bx-store-alt text-base" />
+          <span className="hidden sm:inline">Templates</span>
+        </Link>
         <button
           onClick={toggleMenu}
           className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all duration-200 cursor-pointer"
@@ -389,6 +398,16 @@ export default function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
+        <Link
+          href="/templates"
+          title="Browse template marketplace"
+          aria-label="Browse template marketplace"
+          className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm text-text-muted transition-all duration-200 hover:bg-surface-hover hover:text-text-primary"
+        >
+          <i className="bx bx-store-alt text-base" aria-hidden="true" />
+          <span className="hidden xl:inline">Templates</span>
+        </Link>
+
         {/* Profile pill owns identity, save state, and E2E status. */}
         <ProfileDropdown />
 

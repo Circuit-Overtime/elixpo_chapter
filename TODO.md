@@ -134,3 +134,4 @@
 - [x] Add one-site web embed frames with HTTPS allowlisting and restore-time URL validation.
 - [x] Keep the last selected secondary tool visible on the More toolbar trigger.
 - [x] Add an unsupported-embed whitelist request action and structured GitHub issue form.
+- [x] Backlink the public template marketplace from canvas, view, and zen modes.
