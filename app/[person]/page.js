@@ -17,6 +17,7 @@ function safeGet(person, file) {
 export default async function HomePage({ params }) {
   const { person } = await params;
   const home = safeGet(person, "home");
+  const profile = safeGet(person, "profile");
   const spotlight = safeGet(person, "spotlight") || [];
   const recommendations = safeGet(person, "recommendations") || [];
   const profileJsonLd = buildMemberProfileJsonLd(person);
@@ -39,7 +40,7 @@ export default async function HomePage({ params }) {
         }}
       />
       {/* Identity-first masthead (members with a hero block) */}
-      {home.hero && <Masthead hero={home.hero} person={person} />}
+      {home.hero && <Masthead hero={home.hero} person={person} memberName={profile?.name || profile?.siteName} />}
 
       {/* Spotlight Section */}
       <SpotlightScroller>
