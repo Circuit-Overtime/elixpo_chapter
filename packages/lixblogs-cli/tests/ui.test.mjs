@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { colorEnabled, loginChallenge } from "../src/cli/ui.js";
+import { colorEnabled, loginChallenge, startProgress, withProgress } from "../src/cli/ui.js";
 
 test("device login card remains useful without a TTY or colors", () => {
   const card = loginChallenge({
@@ -31,4 +31,27 @@ test("implicit login explains that the username becomes the profile alias", () =
   });
   assert.match(card, /your Accounts username after approval/);
   assert.doesNotMatch(card, /default \(local credential slot\)/);
+});
+
+test("interactive progress renders and clears on completion", () => {
+  const writes = [];
+  const progress = startProgress("Uploading image…", {
+    stream: { isTTY: true, write: (value) => writes.push(value) },
+    intervalMs: 10_000,
+  });
+  progress.stop();
+  assert.match(writes[0], /Uploading image/);
+  assert.equal(writes.at(-1), "\r\u001b[2K");
+});
+
+test("machine-readable commands never emit progress output", async () => {
+  const writes = [];
+  const result = await withProgress(
+    { json: true, "no-input": true },
+    "Loading…",
+    async () => "done",
+    { stream: { isTTY: true, write: (value) => writes.push(value) } },
+  );
+  assert.equal(result, "done");
+  assert.deepEqual(writes, []);
 });
