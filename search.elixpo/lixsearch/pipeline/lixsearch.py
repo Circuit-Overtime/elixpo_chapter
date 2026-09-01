@@ -41,6 +41,8 @@ from pipeline.response_builder import (
     save_to_caches,
     normalize_pdf_document,
     requested_coverage_gap,
+    requested_day_count,
+    missing_local_date_anchor,
 )
 from pipeline.deep_search import _run_deep_search_pipeline
 from functionCalls.getImagePrompt import describe_image, replyFromImage
@@ -662,25 +664,42 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
                     raw_content = normalize_pdf_document(raw_content)
                     assistant_message["content"] = raw_content
                     gap = requested_coverage_gap(original_user_query, raw_content)
-                    if gap and current_iteration < max_iterations:
-                        required, observed = gap
+                    missing_anchor = missing_local_date_anchor(
+                        original_user_query, raw_content, memoized_results.get("timezone_info", {}),
+                    )
+                    if (gap or missing_anchor) and current_iteration < max_iterations:
+                        required = requested_day_count(original_user_query)
+                        observed = gap[1] if gap else required
                         memoized_results["coverage_retry"] = True
+                        coverage_note = (
+                            f"The draft covered only {observed} of {required} requested days. " if gap else ""
+                        )
+                        anchor_note = (
+                            f"The range must start on the resolved local date {missing_anchor}. "
+                            if missing_anchor else ""
+                        )
                         messages.append({
                             "role": "user",
                             "content": (
-                                f"The draft covered only {observed} of {required} requested days. "
-                                f"Rewrite the final document with exactly {required} distinct dated entries, one per day, "
-                                "using only fetched evidence. Return finished Markdown only: no preamble, code fence, "
-                                "function name, arguments, or export instructions."
+                                coverage_note + anchor_note
+                                + (f"Rewrite the final document with exactly {required} distinct dated entries, one per day, "
+                                   if required else "Rewrite the final document with the complete requested local date range, ")
+                                + "using only fetched evidence. Return finished Markdown only: no preamble, code fence, "
+                                + "function name, arguments, or export instructions."
                             ),
                         })
                         continue
-                    if gap:
-                        required, observed = gap
+                    if gap or missing_anchor:
+                        required = requested_day_count(original_user_query)
+                        observed = gap[1] if gap else required
                         memoized_results["suppress_pdf_export"] = True
+                        detail = (
+                            f"{observed} of {required} dated entries were available" if gap
+                            else f"the required local start date {missing_anchor} was missing"
+                        )
                         raw_content = (
-                            f"I could not verify a complete {required}-day report from the fetched sources "
-                            f"({observed} distinct dated entries were available), so I did not create a misleading PDF."
+                            "I could not verify the complete requested date range from the fetched sources "
+                            f"({detail}), so I did not create a misleading PDF."
                         )
                         assistant_message["content"] = raw_content
 
