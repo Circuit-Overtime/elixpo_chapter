@@ -81,7 +81,9 @@ export class BlogClient {
   async get(id) {
     await this.requireScopes(['lixblogs:blog:read']);
     const result = await this.request(`/api/v1/blogs/${encodeURIComponent(id)}`);
-    return { ...result.payload.data, etag: result.etag || result.payload.data.etag };
+    // Production CDNs may rewrite the HTTP ETag as a weak validator. The API's
+    // JSON ETag is the authoritative strong validator required by If-Match.
+    return { ...result.payload.data, etag: result.payload.data.etag || result.etag };
   }
 
   async create(input, { idempotencyKey = randomUUID() } = {}) {

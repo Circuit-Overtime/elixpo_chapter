@@ -41,7 +41,7 @@ import { AnalyticsClient } from "../src/api/AnalyticsClient.js";
 import { IntegrationsClient } from "../src/api/IntegrationsClient.js";
 import { MediaClient } from "../src/api/MediaClient.js";
 import { EXIT_CODES, errorEnvelope, normalizeCommand } from "../src/cli/contract.js";
-import { colorEnabled, listenForEnter, loginChallenge, successLine } from "../src/cli/ui.js";
+import { colorEnabled, listenForEnter, loginChallenge, successLine, withProgress } from "../src/cli/ui.js";
 import {
   blogCreate,
   blogDelete,
@@ -434,10 +434,10 @@ async function runWhoami(opts) {
   const context = await authenticatedBlogClient(opts);
   if (!context) return;
   try {
-    const [identity, credentials] = await Promise.all([
-      context.client.whoami(),
-      context.credentialStore.get(context.profileId),
-    ]);
+    const [identity, credentials] = await withProgress(opts, "Loading account…", () => Promise.all([
+        context.client.whoami(),
+        context.credentialStore.get(context.profileId),
+      ]));
     const result = {
       ok: true,
       profile: context.profileId,
@@ -553,16 +553,15 @@ async function runIntegrations(opts, args, action) {
   });
   const integrationsClient = new IntegrationsClient(http);
 
-  let result;
-  if (action === 'cloudinary-status') result = await cloudinaryStatus({ integrationsClient });
-  else if (action === 'cloudinary-disconnect') result = await cloudinaryDisconnect({ integrationsClient, confirmed: true });
-  else {
+  const result = await withProgress(opts, action.endsWith('status') ? "Checking integration…" : "Disconnecting integration…", async () => {
+    if (action === 'cloudinary-status') return cloudinaryStatus({ integrationsClient });
+    if (action === 'cloudinary-disconnect') return cloudinaryDisconnect({ integrationsClient, confirmed: true });
     try {
-      result = { ok: true, data: action === 'pollinations-status'
+      return { ok: true, data: action === 'pollinations-status'
         ? await integrationsClient.pollinationsStatus({ refresh: opts.force })
         : await integrationsClient.pollinationsDisconnect() };
-    } catch (error) { result = { ok: false, error }; }
-  }
+    } catch (error) { return { ok: false, error }; }
+  });
 
   if (!result.ok) return fail(opts, result.error || result.reason);
   output(opts, result);
@@ -666,9 +665,9 @@ async function runBlog(opts, args, action) {
     limit: opts.limit === undefined ? undefined : Number.parseInt(opts.limit, 10),
   };
   try {
-    const result = await BLOG_COMMANDS[action]({
-      client, id: args[0], options: normalized, stdin: process.stdin,
-    });
+    const result = await withProgress(opts, `${action === 'list' ? 'Loading' : action === 'get' || action === 'preview' ? 'Opening' : 'Updating'} blog…`, () => BLOG_COMMANDS[action]({
+        client, id: args[0], options: normalized, stdin: process.stdin,
+      }));
     output(opts, { ok: true, ...result });
     if (!opts.json && !opts.quiet) {
       if (action === 'list') {
@@ -702,7 +701,7 @@ async function runOrg(opts, args, action) {
   if (!context) return;
   const client = new OrgClient(context.http);
   try {
-    const result = await ORG_COMMANDS[action]({ client, id: args[0], options: opts });
+    const result = await withProgress(opts, "Loading organization…", () => ORG_COMMANDS[action]({ client, id: args[0], options: opts }));
     output(opts, { ok: true, data: result });
     if (opts.json || opts.quiet) return;
     if (action === 'targets') {
@@ -733,9 +732,10 @@ async function runMedia(opts, args, action) {
   const context = await authenticatedBlogClient(opts);
   if (!context) return;
   try {
-    const result = await MEDIA_COMMANDS[action]({
-      mediaClient: new MediaClient(context.http), blogClient: context.client, id: args[0], options: opts,
-    });
+    const message = action === 'generate' ? 'Generating image…' : action === 'upload' ? 'Uploading image…' : 'Deleting media…';
+    const result = await withProgress(opts, message, () => MEDIA_COMMANDS[action]({
+        mediaClient: new MediaClient(context.http), blogClient: context.client, id: args[0], options: opts,
+      }));
     output(opts, { ok: true, data: result });
     if (!opts.json && !opts.quiet) {
       if (action === 'delete') console.log(`Deleted media ${result.id}.`);
@@ -749,7 +749,7 @@ async function runComment(opts, args, action) {
   const context = await authenticatedBlogClient(opts);
   if (!context) return;
   try {
-    const result = await COMMENT_COMMANDS[action]({ client: context.client, id: args[0], options: opts });
+    const result = await withProgress(opts, action === 'list' ? "Loading comments…" : "Updating comments…", () => COMMENT_COMMANDS[action]({ client: context.client, id: args[0], options: opts }));
     output(opts, { ok: true, data: result });
     if (!opts.json && !opts.quiet) {
       if (action === 'list') {
@@ -764,7 +764,7 @@ async function runCollab(opts, args, action) {
   if (!context) return;
   const client = new CollaborationClient(context.http);
   try {
-    const result = await COLLAB_COMMANDS[action]({ client, id: args[0], options: opts });
+    const result = await withProgress(opts, "Updating collaborators…", () => COLLAB_COMMANDS[action]({ client, id: args[0], options: opts }));
     output(opts, { ok: true, data: result });
     if (opts.json || opts.quiet) return;
     if (result.dryRun) {
@@ -818,7 +818,7 @@ async function runAnalytics(opts, _args, action) {
     limit: opts.limit === undefined ? undefined : Number.parseInt(opts.limit, 10),
   };
   try {
-    const result = await ANALYTICS_COMMANDS[action]({ client, options: normalized });
+    const result = await withProgress(opts, action === 'export' ? "Exporting analytics…" : "Loading analytics…", () => ANALYTICS_COMMANDS[action]({ client, options: normalized }));
     output(opts, { ok: true, data: result });
     if (opts.json || opts.quiet) return;
     if (action === 'export') {
