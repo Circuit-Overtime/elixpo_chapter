@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getLimits } from '../lib/tiers.js';
 import { mediaInventoryCacheKey } from '../lib/cache.js';
+import { PLANS } from '../lib/pricing.js';
 
 test('free managed storage is capped at 10 MB without changing Member storage', () => {
   assert.equal(getLimits('free').totalStorageBytes, 10 * 1024 * 1024);
@@ -10,4 +11,12 @@ test('free managed storage is capped at 10 MB without changing Member storage', 
 
 test('media inventory caches are private to a versioned user key', () => {
   assert.equal(mediaInventoryCacheKey('user-123'), 'v3:media-inventory:user-123');
+});
+
+test('Pollinations BYOP image generation is included in the Free plan', () => {
+  const free = PLANS.find((plan) => plan.id === 'free');
+  const paidPlans = PLANS.filter((plan) => plan.id !== 'free');
+
+  assert.ok(free.features.some((feature) => feature.includes('Pollinations image generation')));
+  assert.ok(paidPlans.every((plan) => !(plan.upcomingFeatures || []).some((feature) => feature.includes('Pollinations'))));
 });
