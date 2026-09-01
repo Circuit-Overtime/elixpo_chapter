@@ -63,6 +63,8 @@ export default async function ProjectsPage({ params }) {
                 <img
                   src={data.ownerLogo}
                   alt={data.owner}
+                  loading="lazy"
+                  decoding="async"
                   className="h-[16px] w-[16px] sm:h-[20px] sm:w-[20px] rounded-full"
                 />
                 <p className="text-sm sm:text-[1.2em] text-[#555] font-semibold">
