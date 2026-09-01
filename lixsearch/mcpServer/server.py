@@ -18,6 +18,9 @@ from starlette.responses import JSONResponse
 from functionCalls.generatePDF import create_pdf_from_content
 from pipeline.deep_search import _run_deep_search_pipeline
 from pipeline.lixsearch import run_elixposearch_pipeline
+from searching.citations import normalize_citations
+from searching.evidence import fetch_pages as fetch_evidence_pages
+from searching.evidence import structured_search
 
 _URL_RE = re.compile(r"https?://[^\s<>\]\)\"']+")
 _TASK_RE = re.compile(r"<TASK>.*?</TASK>", re.IGNORECASE | re.DOTALL)
@@ -119,6 +122,28 @@ async def _maybe_pdf(answer: str, title: str | None, include_pdf: bool) -> str |
     return await create_pdf_from_content(answer[:MCP_PDF_MAX_CHARS], title=title)
 
 
+async def _search_evidence(query: str, limit: int):
+    try:
+        return await structured_search(query, num_results=limit, include_highlights=True)
+    except Exception:
+        return []
+
+
+def _research_result(
+    answer: str, evidence: list[Any], depth: str, limit: int, started: float
+) -> dict[str, Any]:
+    citations = normalize_citations(answer, evidence, limit)
+    source_urls = [citation.url for citation in citations] or _sources(answer, limit)
+    return {
+        "answer": answer,
+        "sources": source_urls,
+        "citations": [citation.to_dict() for citation in citations],
+        "evidence": [item.to_dict() for item in evidence[:limit]],
+        "depth": depth,
+        "duration_ms": round((time.monotonic() - started) * 1000),
+    }
+
+
 def build_mcp_server(is_ready: Callable[[], bool] | None = None) -> FastMCP:
     """Build one MCP server per app replica; every tool call remains stateless."""
     ready = is_ready or (lambda: True)
@@ -138,8 +163,8 @@ def build_mcp_server(is_ready: Callable[[], bool] | None = None) -> FastMCP:
     server = FastMCP(
         "oreolook-mcp",
         instructions=(
-            "Use research_web for focused live questions and deep_research for multi-angle "
-            "investigations. Both return synthesized, cited answers rather than raw search results. "
+            "Use search_web for structured discovery and fetch_pages to read known URLs. "
+            "Use research_web for focused synthesis and deep_research for multi-angle investigations. "
             "Use export_research_pdf only for content already available in the conversation."
         ),
         website_url="https://search.elixpo.com",
@@ -163,12 +188,60 @@ def build_mcp_server(is_ready: Callable[[], bool] | None = None) -> FastMCP:
                 "transport": "streamable-http",
                 "stateless": True,
                 "ready": healthy,
-                "tools": ["research_web", "deep_research", "export_research_pdf"],
+                "tools": ["search_web", "fetch_pages", "research_web", "deep_research", "export_research_pdf"],
             },
             status_code=200 if healthy else 503,
         )
 
-    @server.tool(name="research_web", description="Research a focused question using live web sources and return a concise synthesized answer with citations. Use deep_research for multi-angle investigations.", structured_output=True)
+    @server.tool(
+        name="search_web",
+        description="Search the live web and return bounded structured results. Use research_web when you need a synthesized answer.",
+        structured_output=True,
+    )
+    async def search_web(
+        query: str,
+        num_results: int = 5,
+        freshness: str | None = None,
+        include_domains: list[str] | None = None,
+        exclude_domains: list[str] | None = None,
+        include_highlights: bool = True,
+    ) -> dict[str, Any]:
+        async with _research_slots:
+            async with asyncio.timeout(MCP_RESEARCH_TIMEOUT_SECONDS):
+                results = await structured_search(
+                    query,
+                    num_results=num_results,
+                    freshness=freshness,
+                    include_domains=include_domains,
+                    exclude_domains=exclude_domains,
+                    include_highlights=include_highlights,
+                )
+        return {"query": query, "count": len(results), "results": [item.to_dict() for item in results]}
+
+    @server.tool(
+        name="fetch_pages",
+        description="Fetch up to eight public HTTPS pages as clean structured text. Redirects and private network targets are blocked.",
+        structured_output=True,
+    )
+    async def fetch_pages(
+        urls: list[str], max_characters: int = 8_000, max_concurrency: int = 4,
+        browser_fallback: bool = False,
+    ) -> dict[str, Any]:
+        async with _research_slots:
+            async with asyncio.timeout(MCP_RESEARCH_TIMEOUT_SECONDS):
+                pages = await fetch_evidence_pages(
+                    urls,
+                    max_characters=max_characters,
+                    max_concurrency=max_concurrency,
+                    browser_fallback=browser_fallback,
+                )
+        return {
+            "count": len(pages),
+            "successful": sum(page.status == "ok" for page in pages),
+            "pages": [page.to_dict() for page in pages],
+        }
+
+    @server.tool(name="research_web", description="Research a focused question using live web sources and return a concise synthesized answer with normalized citations and evidence.", structured_output=True)
     async def research_web(query: str, ctx: Context, max_sources: int = 4, include_pdf: bool = False, title: str | None = None) -> dict[str, Any]:
         query = _clean_query(query)
         max_sources = _bounded_integer(max_sources, name="max_sources", minimum=1, maximum=4)
@@ -176,16 +249,18 @@ def build_mcp_server(is_ready: Callable[[], bool] | None = None) -> FastMCP:
         await ctx.report_progress(0, 2, "Searching and reading sources")
         async with _research_slots:
             async with asyncio.timeout(MCP_RESEARCH_TIMEOUT_SECONDS):
-                answer = await _quick_research(query)
+                answer, evidence = await asyncio.gather(
+                    _quick_research(query), _search_evidence(query, max_sources)
+                )
         await ctx.report_progress(1, 2, "Synthesizing cited answer")
         pdf_url = await _maybe_pdf(answer, title, include_pdf)
         await ctx.report_progress(2, 2, "Complete")
-        result: dict[str, Any] = {"answer": answer, "sources": _sources(answer, max_sources), "depth": "research", "duration_ms": round((time.monotonic() - started) * 1000)}
+        result = _research_result(answer, evidence, "research", max_sources, started)
         if pdf_url:
             result["pdf_url"] = pdf_url
         return result
 
-    @server.tool(name="deep_research", description="Run a bounded multi-angle investigation in parallel and return detailed synthesized findings with citations. Use only for comparisons or comprehensive evidence reviews.", structured_output=True)
+    @server.tool(name="deep_research", description="Run a bounded multi-angle investigation in parallel and return detailed findings with normalized citations and evidence.", structured_output=True)
     async def deep_research(query: str, ctx: Context, max_sources: int = 8, include_pdf: bool = False, title: str | None = None) -> dict[str, Any]:
         query = _clean_query(query)
         max_sources = _bounded_integer(max_sources, name="max_sources", minimum=2, maximum=8)
@@ -193,11 +268,13 @@ def build_mcp_server(is_ready: Callable[[], bool] | None = None) -> FastMCP:
         await ctx.report_progress(0, 3, "Planning research threads")
         async with _research_slots:
             async with asyncio.timeout(MCP_DEEP_RESEARCH_TIMEOUT_SECONDS):
-                answer = await _deep_research(query)
+                answer, evidence = await asyncio.gather(
+                    _deep_research(query), _search_evidence(query, max_sources)
+                )
         await ctx.report_progress(2, 3, "Combining findings and citations")
         pdf_url = await _maybe_pdf(answer, title, include_pdf)
         await ctx.report_progress(3, 3, "Complete")
-        result: dict[str, Any] = {"answer": answer, "sources": _sources(answer, max_sources), "depth": "deep", "duration_ms": round((time.monotonic() - started) * 1000)}
+        result = _research_result(answer, evidence, "deep", max_sources, started)
         if pdf_url:
             result["pdf_url"] = pdf_url
         return result

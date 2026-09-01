@@ -8,11 +8,13 @@ from functionCalls.generatePDF import create_pdf_from_content
 import asyncio
 import time
 import json
-from commons.searching_based import fetch_url_content_parallel, webSearch, imageSearch
+from commons.searching_based import imageSearch
+from searching.evidence import fetch_pages as fetch_evidence_pages
+from searching.evidence import structured_search
 from commons.minimal import cleanQuery
 from functionCalls.getYoutubeDetails import transcribe_audio, youtubeMetadata
 from pipeline.utils import get_model_server, cached_web_search_key
-from pipeline.config import MAX_IMAGES_TO_INCLUDE, LOG_MESSAGE_QUERY_TRUNCATE, LOG_MESSAGE_PREVIEW_TRUNCATE, ERROR_MESSAGE_TRUNCATE, REQUEST_ID_HEX_SLICE_SIZE, FETCH_MIN_USEFUL_CHARS
+from pipeline.config import MAX_IMAGES_TO_INCLUDE, LOG_MESSAGE_QUERY_TRUNCATE, LOG_MESSAGE_PREVIEW_TRUNCATE, ERROR_MESSAGE_TRUNCATE, REQUEST_ID_HEX_SLICE_SIZE
 from pipeline.formalOptimization import ConstrainedOptimizer
 from commons.robustnessFramework import ToolOutputSanitizer, SanitizationPolicy
 from urllib.parse import urlparse
@@ -175,24 +177,31 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
             web_event = emit_event_func("INFO", f"<TASK>Searching for '{search_query[:60]}'</TASK>")
             if web_event:
                 yield web_event
-            cache_key = cached_web_search_key(search_query)
+            cache_key = f"{cached_web_search_key(search_query)}::{search_depth}"
             if cache_key in memoized_results["web_searches"]:
                 logger.info(f"Using cached web search for: {search_query}")
-                yield memoized_results["web_searches"][cache_key]
+                cached_result = memoized_results["web_searches"][cache_key]
+                memoized_results["current_search_urls"] = [item["url"] for item in cached_result.get("results", [])]
+                memoized_results["current_search_evidence"] = cached_result.get("results", [])
+                yield json.dumps(cached_result, ensure_ascii=False)
                 return
             logger.info(f"Performing optimized web search for: {search_query}")
-            tool_result = await webSearch(search_query)
+            result_limit = {"quick": 2, "standard": 5, "thorough": 10}.get(search_depth, 5)
+            evidence = await structured_search(search_query, num_results=result_limit)
             elapsed = time.time() - start_time
-            source_urls = tool_result
+            source_urls = [item.url for item in evidence]
+            tool_result = {
+                "query": search_query,
+                "count": len(evidence),
+                "results": [item.to_dict() for item in evidence],
+            }
             memoized_results["web_searches"][cache_key] = tool_result
-            if "current_search_urls" not in memoized_results:
-                memoized_results["current_search_urls"] = []
             memoized_results["current_search_urls"] = source_urls
-            url_count = len(source_urls) if isinstance(source_urls, list) else 0
-            done_event = emit_event_func("INFO", f"<TASK>Found {url_count} results in {elapsed:.1f}s</TASK>")
+            memoized_results["current_search_evidence"] = tool_result["results"]
+            done_event = emit_event_func("INFO", f"<TASK>Found {len(evidence)} results in {elapsed:.1f}s</TASK>")
             if done_event:
                 yield done_event
-            yield tool_result
+            yield json.dumps(tool_result, ensure_ascii=False)
 
         elif function_name == "generate_prompt_from_image":
             image_url = function_args.get("imageURL")
@@ -356,48 +365,29 @@ Sources: {cache_metadata.get('sources', 'N/A')}"""
         elif function_name == "fetch_full_text":
             url = function_args.get("url")
             fetch_start = time.time()
-            logger.info(f"Fetching webpage content: {url[:60]}")
+            logger.info(f"Fetching webpage content: {str(url)[:60]}")
             web_event = emit_event_func("INFO", f"<TASK>Reading {_display_url(url)}</TASK>")
             if web_event:
                 yield web_event
-
             try:
-                queries = memoized_results.get("search_query", "")
-                if isinstance(queries, str):
-                    queries = [queries]
-                collecting_event = emit_event_func("INFO", f"<TASK>Collecting content from {_display_url(url)}</TASK>")
-                if collecting_event:
-                    yield collecting_event
-                parallel_results = await asyncio.wait_for(
-                    asyncio.to_thread(fetch_url_content_parallel, queries, [url]),
-                    timeout=10.0
+                pages = await asyncio.wait_for(
+                    fetch_evidence_pages([url], max_characters=12_000, max_concurrency=1),
+                    timeout=15.0,
                 )
-                content_len = len(parallel_results) if parallel_results else 0
-
-                # Browser fallback: if plain HTTP got <120 chars, try Playwright
-                if content_len < FETCH_MIN_USEFUL_CHARS:
-                    logger.info(f"[fetch_full_text] Plain fetch too short ({content_len} chars), trying browser fallback for {url[:60]}")
-                    try:
-                        from ipcService.coreServiceManager import CoreServiceManager
-                        search_agents = CoreServiceManager.get_instance().get_search_agents()
-                        browser_text = await asyncio.wait_for(
-                            asyncio.to_thread(search_agents.browser_fetch, url),
-                            timeout=18.0
-                        )
-                        if browser_text and len(browser_text) > content_len:
-                            parallel_results = f"URL: {url}\n{browser_text}"
-                            content_len = len(parallel_results)
-                            logger.info(f"[fetch_full_text] Browser fallback got {content_len} chars from {url[:50]}")
-                    except Exception as e:
-                        logger.warning(f"[fetch_full_text] Browser fallback failed for {url[:50]}: {e}")
-
+                page = pages[0]
+                memoized_results.setdefault("fetched_evidence", {})[url] = page.to_dict()
                 fetch_elapsed = time.time() - fetch_start
-                logger.info(f"[fetch_full_text] Fetched {content_len} chars from {url[:50]} in {fetch_elapsed:.1f}s")
-
-                yield parallel_results if parallel_results else "[No content fetched from URL]"
+                logger.info(
+                    f"[fetch_full_text] status={page.status} chars={len(page.text)} "
+                    f"url={str(url)[:50]} elapsed={fetch_elapsed:.1f}s"
+                )
+                if page.status == "ok":
+                    yield json.dumps(page.to_dict(), ensure_ascii=False)
+                else:
+                    yield f"[ERROR] Failed to fetch {url}: {page.error or page.status}"
             except asyncio.TimeoutError:
                 logger.warning(f"URL fetch timed out for {url}")
-                timeout_event = emit_event_func("INFO", f"<TASK>Source timed out, moving on</TASK>")
+                timeout_event = emit_event_func("INFO", "<TASK>Source timed out, moving on</TASK>")
                 if timeout_event:
                     yield timeout_event
                 yield f"[TIMEOUT] Fetching {url} took too long"

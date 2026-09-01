@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT / "lixsearch"))
 from mcpServer.asgi import MCPMount
 from mcpServer.server import _bounded_integer, _clean_query, _sources, build_mcp_server
 import mcpServer.server as mcp_server_module
+from searching.evidence import FetchedPage, SearchResult
 
 
 async def _fallback(scope, receive, send):
@@ -84,7 +85,7 @@ async def test_stateless_initialize_and_tool_catalog(monkeypatch):
                 json={"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
             )
             names = {tool["name"] for tool in _sse_payload(listed)["result"]["tools"]}
-            assert names == {"research_web", "deep_research", "export_research_pdf"}
+            assert names == {"search_web", "fetch_pages", "research_web", "deep_research", "export_research_pdf"}
             assert listed.headers.get("mcp-session-id") is None
 
 
@@ -118,8 +119,12 @@ async def test_research_tools_return_bounded_structured_results(monkeypatch):
     async def deep(_query):
         return "Deep answer [A](https://a.test/page), [B](https://b.test/page), and https://c.test/page."
 
+    async def evidence(_query, limit):
+        return [SearchResult(title="A", url="https://a.test/page", highlights=["Evidence A"])]
+
     monkeypatch.setattr(mcp_server_module, "_quick_research", quick)
     monkeypatch.setattr(mcp_server_module, "_deep_research", deep)
+    monkeypatch.setattr(mcp_server_module, "_search_evidence", evidence)
     server = build_mcp_server()
     app = MCPMount(_fallback, server.streamable_http_app())
     headers = {"Authorization": "Bearer mcp-test-secret", "Accept": "application/json, text/event-stream"}
@@ -128,6 +133,7 @@ async def test_research_tools_return_bounded_structured_results(monkeypatch):
             quick_result = await _call_tool(client, headers, 3, "research_web", {"query": "test", "max_sources": 1})
             assert quick_result["structuredContent"]["depth"] == "research"
             assert quick_result["structuredContent"]["sources"] == ["https://a.test/page"]
+            assert quick_result["structuredContent"]["citations"][0]["title"] == "A"
 
             deep_result = await _call_tool(client, headers, 4, "deep_research", {"query": "test", "max_sources": 2})
             assert deep_result["structuredContent"]["depth"] == "deep"
@@ -151,3 +157,27 @@ async def test_pdf_tool_returns_native_resource_link(monkeypatch):
             assert result["structuredContent"]["mime_type"] == "application/pdf"
             links = [item for item in result["content"] if item["type"] == "resource_link"]
             assert links[0]["uri"].endswith("/test.pdf")
+
+
+@pytest.mark.asyncio
+async def test_search_and_fetch_tools_return_structured_evidence(monkeypatch):
+    monkeypatch.setenv("API_KEY", "mcp-test-secret")
+
+    async def search(*args, **kwargs):
+        return [SearchResult(title="Result", url="https://a.test/page", rank=1)]
+
+    async def fetch(*args, **kwargs):
+        return [FetchedPage(url="https://a.test/page", canonical_url="https://a.test/page", title="Result", text="Useful evidence", status="ok")]
+
+    monkeypatch.setattr(mcp_server_module, "structured_search", search)
+    monkeypatch.setattr(mcp_server_module, "fetch_evidence_pages", fetch)
+    server = build_mcp_server()
+    app = MCPMount(_fallback, server.streamable_http_app())
+    headers = {"Authorization": "Bearer mcp-test-secret", "Accept": "application/json, text/event-stream"}
+    async with server.session_manager.run():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://search.elixpo.com") as client:
+            searched = await _call_tool(client, headers, 6, "search_web", {"query": "test", "num_results": 3})
+            assert searched["structuredContent"]["results"][0]["title"] == "Result"
+            fetched = await _call_tool(client, headers, 7, "fetch_pages", {"urls": ["https://a.test/page"]})
+            assert fetched["structuredContent"]["successful"] == 1
+            assert fetched["structuredContent"]["pages"][0]["text"] == "Useful evidence"

@@ -29,6 +29,33 @@ The server reads `MCP_API_KEY`, falling back to `API_KEY`. Never put either key 
 
 ## Tools
 
+### `search_web`
+
+Structured live-web discovery with stable result objects. Results can include title,
+URL, author, publication date, ranked highlights, and provider metadata.
+
+| Argument | Type | Default | Limit |
+| --- | --- | --- | --- |
+| `query` | string | required | 4,000 characters |
+| `num_results` | integer | `5` | 1-10 |
+| `freshness` | string/null | `null` | `any`, `day`, `week`, `month`, `year` |
+| `include_domains` | string[]/null | `null` | 10 domains |
+| `exclude_domains` | string[]/null | `null` | 10 domains |
+| `include_highlights` | boolean | `true` | - |
+
+### `fetch_pages`
+
+Fetch up to eight public HTTPS pages as clean structured content. Initial URLs,
+redirect targets, DNS results, ports, response types, and response sizes are bounded.
+Failures are returned per page so one blocked URL does not discard successful pages.
+
+| Argument | Type | Default | Limit |
+| --- | --- | --- | --- |
+| `urls` | string[] | required | 1-8 public HTTPS URLs |
+| `max_characters` | integer | `8000` | 200-20,000 per page |
+| `max_concurrency` | integer | `4` | 1-4 |
+| `browser_fallback` | boolean | `false` | guarded JS rendering after normal extraction fails |
+
 ### `research_web`
 
 Focused live-web research. OreoLook searches, reads the strongest pages, synthesizes the answer, and returns citations.
@@ -103,6 +130,11 @@ The defaults are configurable through environment variables:
 | `MCP_ALLOWED_ORIGINS` | `https://search.elixpo.com` |
 
 Requests do not create conversation sessions, response chains, or durable user memories. Internal caches may still reuse public research results according to the service cache policy.
+
+Research results include both the backwards-compatible `sources` URL list and
+normalized `citations` and `evidence` arrays. Citation objects carry a stable ID,
+title, canonical URL, author, publication/access timestamps, bounded excerpt,
+the surrounding answer claim, and confidence.
 
 ## Pollinations integration
 
