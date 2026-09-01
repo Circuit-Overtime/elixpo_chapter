@@ -9,6 +9,7 @@ import { normalizeMermaidSource } from '../../utils/mermaidConfig';
 import { renderMermaidSvg } from '../../utils/mermaidRenderer';
 import { getLixShikiHighlighter, normalizeShikiLanguage } from '../../utils/shikiHighlighter';
 import { clearInheritedBlockTextColors } from '../../utils/blockColorNormalization';
+import { normalizeLegacyChecklistBlocks } from '../../utils/checklistBlocks';
 
 let previewLanguageLoadTail = Promise.resolve();
 const previewLoadedLanguages = new Set();
@@ -125,7 +126,7 @@ function FloatingTOC({ headings }) {
 
 function renderBlocksToHTML(blocks) {
   if (!blocks || !blocks.length) return '';
-  blocks = clearInheritedBlockTextColors(blocks);
+  blocks = clearInheritedBlockTextColors(normalizeLegacyChecklistBlocks(blocks));
 
   const publishedTextColor = (value) => {
     // BlockNote can carry its internal named gray mark out of a code block and
