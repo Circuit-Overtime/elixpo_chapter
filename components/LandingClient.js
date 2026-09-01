@@ -150,7 +150,8 @@ export default function LandingClient({ profiles }) {
 
       <header className="archive-masthead absolute inset-x-0 top-0 z-40 flex items-center justify-between gap-4 px-5 py-5 sm:px-9 sm:py-7">
         <div className="archive-masthead-copy">
-          <span>The Elixpo Organisation</span>
+          <span className="sm:hidden">Elixpo</span>
+          <span className="hidden sm:inline">The Elixpo Organisation</span>
           <span className="hidden sm:inline">Member Registry</span>
           <span className="hidden lg:inline">Est. MMXXIII</span>
           <span className="hidden xl:inline">Portfolio Series</span>
