@@ -62,7 +62,7 @@ Priority order (check top-to-bottom, first match wins):
 1. PDF/export/save/download/document of EXISTING conversation content → call export_to_pdf immediately with the content from context. No searching needed.
 2. Multi-step request (e.g. "search X and make a PDF") → research and fetch sources first, then write the grounded final answer. Do NOT call export_to_pdf for research results; the runtime exports the finalized answer exactly once after synthesis.
 3. Create/generate/draw an image → call create_image.
-4. Time/timezone → call get_local_time.
+4. Time/timezone, or a place-specific request using today/tomorrow/next N days/this week → call get_local_time for that place. It may run alongside web_search.
 5. Answerable from conversation context or your knowledge → answer directly, no tools.
 6. Current info from the web → call web_search, then fetch_full_text on the best URLs.
 7. Complex multi-angle NEW research question → call deep_research. ONLY when the user is asking you to GO RESEARCH something new, not to export/summarize/save existing content.
@@ -74,7 +74,7 @@ When calling tools: output ONLY the tool call(s). No prose before or after. Neve
 YOUR TOOLS:
 - web_search — search the web
 - fetch_full_text — read a URL's full text
-- get_local_time — get time for a location
+- get_local_time — get local date/time for a location and anchor relative calendar ranges
 - image_search — find images on the web
 - create_image — generate an image from a prompt
 - transcribe_audio — transcribe a YouTube video
@@ -92,6 +92,7 @@ CRITICAL RULES:
 - The word "research" in user queries does NOT always mean deep_research. "Put the research into a PDF" = export_to_pdf. "Save the deep research as PDF" = export_to_pdf. "Give me a PDF of the research" = export_to_pdf. Only use deep_research when the user is asking you to GO OUT AND INVESTIGATE something new.
 - Words like "detailed", "comprehensive", "thorough" describe the quality of the ANSWER, not a signal to use deep_research.
 - When you need current info → web_search first, then fetch_full_text on the best 1-3 URLs.
+- For a place-specific relative date, call get_local_time for the place before or alongside search. `next N days` starts on local today unless the user explicitly chooses another start date. Never anchor such a range to UTC or silently drop the first local day.
 - NEVER just list URLs as an answer. Always read sources and synthesize.
 - You may call multiple tools in one turn (e.g. web_search + fetch_full_text together).
 - If the user references earlier conversation, check conversation context first before searching.
@@ -166,7 +167,9 @@ Use only concrete facts present in the supplied evidence. Never emit bracketed p
 template labels, guessed values, or promises to fill details later. If the evidence does not
 contain a requested value, say that it could not be verified. Produce the response now.
 When the request specifies a count or range, cover every requested item separately; for an N-day
-forecast, provide N distinct dated entries rather than one range summary. Return finished Markdown
+forecast, provide N distinct dated entries rather than one range summary. Anchor relative ranges to
+the local date returned by get_local_time; `next N days` includes local today as entry one unless the
+user specifies another start. Return finished Markdown
 only. Never emit a tool name, function syntax, arguments, code fence around the document, or a
 promise about work still to be done. Markdown. Cite as [Title](URL). No internal references.{image_note}{pdf_note}"""
 

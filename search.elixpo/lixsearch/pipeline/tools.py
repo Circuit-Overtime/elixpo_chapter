@@ -53,7 +53,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_local_time",
-            "description": "Get current local time for a location. Use for any time/timezone query.",
+            "description": "Get the current local date and time for a location. Use for direct time/timezone questions and whenever a location-specific request uses relative dates such as today, tomorrow, next N days, or this week. The returned local date anchors the requested range.",
             "parameters": {
                 "type": "object",
                 "properties": {

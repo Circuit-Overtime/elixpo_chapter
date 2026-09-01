@@ -8,6 +8,8 @@ from pipeline.response_builder import (
     derive_pdf_title,
     normalize_pdf_document,
     requested_coverage_gap,
+    requested_day_count,
+    missing_local_date_anchor,
 )
 from pipeline.tools import tools
 
@@ -35,6 +37,18 @@ def test_pdf_synthesis_requests_final_content_not_an_export_tool_call():
 def test_web_search_exposes_freshness_window():
     properties = _tool_schema("web_search")["parameters"]["properties"]
     assert properties["freshness"]["enum"] == ["any", "day", "week", "month", "year"]
+
+
+def test_local_time_tool_anchors_relative_location_dates():
+    tool = _tool_schema("get_local_time")
+    assert "relative dates" in tool["description"]
+    assert "local date anchors" in tool["description"]
+
+
+def test_pdf_synthesis_includes_local_today_in_next_n_days():
+    prompt = synthesis_instruction("weather in Kolkata for next 7 days")
+    assert "Anchor relative ranges to" in prompt
+    assert "includes local today as entry one" in prompt
 
 
 def test_runtime_pdf_export_is_idempotent():
@@ -117,11 +131,12 @@ def test_leaked_python_pdf_wrapper_is_unwrapped_to_document_only():
     assert normalize_pdf_document(leaked) == "# Kolkata Forecast\n\n## September 2nd 2026\nRain"
 
 
-def test_seven_day_forecast_requires_seven_distinct_dates():
-    query = "give me a pdf of the weather in Kolkata for next 7 days"
-    incomplete = "September 2nd 2026 through September 8th 2026"
-    complete = "\n".join(f"## September {day}th 2026" for day in range(2, 9))
-    assert requested_coverage_gap(query, incomplete) == (7, 2)
+def test_bounded_day_coverage_is_generic_for_any_subject_and_count():
+    query = "make a PDF itinerary for next 3 days"
+    incomplete = "September 2nd 2026 through September 4th 2026"
+    complete = "\n".join(f"## September {day}th 2026" for day in range(2, 5))
+    assert requested_day_count(query) == 3
+    assert requested_coverage_gap(query, incomplete) == (3, 2)
     assert requested_coverage_gap(query, complete) is None
 
 
@@ -129,3 +144,17 @@ def test_pdf_title_comes_from_subject_not_conversational_preamble():
     query = "give me a pdf of the latest weather forecast for Kolkata for next 7 days"
     content = "Got it! I will whip up a PDF of that."
     assert derive_pdf_title(query, content) == "Latest Weather Forecast For Kolkata For Next 7 Days"
+
+
+def test_local_date_anchor_must_be_present_in_range():
+    info = {"Kolkata": "The current time in Kolkata is 12:30 AM on 2026-09-02"}
+    query = "weather in Kolkata for next 7 days"
+    assert missing_local_date_anchor(query, "## September 3rd 2026", info) == "2026-09-02"
+    assert missing_local_date_anchor(query, "## September 2nd 2026", info) is None
+
+
+def test_explicit_tomorrow_shifts_generic_local_anchor():
+    info = {"Tokyo": "The current time in Tokyo is 11:30 PM on 2026-09-02"}
+    query = "make a three day itinerary starting tomorrow"
+    assert missing_local_date_anchor(query, "## September 2nd 2026", info) == "2026-09-03"
+    assert missing_local_date_anchor(query, "## September 3rd 2026", info) is None

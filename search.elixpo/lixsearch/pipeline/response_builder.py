@@ -51,15 +51,43 @@ def normalize_pdf_document(content: str) -> str:
     return value.strip()
 
 
-def requested_coverage_gap(query: str, content: str) -> tuple[int, int] | None:
-    """Return required and observed counts for bounded weather forecasts."""
-    match = re.search(r"\b(?:next|for)\s+(\d{1,2})\s+days?\b", query or "", re.IGNORECASE)
-    if not match or "weather" not in (query or "").lower():
+def requested_day_count(query: str) -> int | None:
+    match = re.search(
+        r"\b(?:(?:next|coming|for)\s+(\d{1,3})\s+days?|"
+        r"(\d{1,3})[- ]day(?:s)?(?:\s+range|\s+plan|\s+report|\s+forecast)?)\b",
+        query or "", re.IGNORECASE,
+)
+    if not match:
         return None
-    required = min(int(match.group(1)), 31)
+    return min(int(match.group(1) or match.group(2)), 366)
+
+
+def requested_coverage_gap(query: str, content: str) -> tuple[int, int] | None:
+    """Return required and observed counts for any bounded day range."""
+    required = requested_day_count(query)
+    if not required:
+        return None
     observed = len({m.group(0).lower() for m in _MONTH_DATE_RE.finditer(content or "")})
     return (required, observed) if observed < required else None
 
+
+def missing_local_date_anchor(query: str, content: str, timezone_info: dict) -> str | None:
+    if not re.search(r"\b(?:today|tomorrow|next\s+\d+\s+days?|this\s+week)\b", query or "", re.I):
+        return None
+    joined = " ".join(str(value) for value in (timezone_info or {}).values())
+    match = re.search(r"\b(\d{4})-(\d{2})-(\d{2})\b", joined)
+    if not match:
+        return None
+    from datetime import datetime, timedelta
+    anchor = datetime.strptime(match.group(0), "%Y-%m-%d")
+    if re.search(r"\b(?:starting|start|from)\s+tomorrow\b", query or "", re.I):
+        anchor += timedelta(days=1)
+    label = f"{anchor.strftime('%B')} {anchor.day}"
+    present = re.search(
+        rf"\b{re.escape(label)}(?:st|nd|rd|th)?(?:,?\s+{anchor.year})?\b",
+        content or "", re.I,
+)
+    return None if present else anchor.strftime("%Y-%m-%d")
 
 def derive_pdf_title(query: str, content: str) -> str:
     heading = re.search(r"^#{1,3}\s+(.+)$", content or "", re.MULTILINE)
