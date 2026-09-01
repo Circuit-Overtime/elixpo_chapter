@@ -14,12 +14,14 @@ const MESSAGES = {
   missing_code: 'Elixpo Accounts did not return an authorization code.',
   user_info_failed: 'Your profile could not be read from Elixpo Accounts.',
   account_deleted: 'This account has been permanently deleted and cannot be recovered.',
+  oauth_not_configured: 'Sign-in is temporarily unavailable because the LixBlogs account connection is not configured.',
   server: 'LixBlogs could not create a secure session.',
 };
 
 export default async function AuthError({ searchParams }) {
   const params = await searchParams;
   const message = MESSAGES[params?.code] || 'The account connection could not be completed.';
+  const canRetry = params?.code !== 'oauth_not_configured';
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg-app)' }}>
@@ -31,7 +33,7 @@ export default async function AuthError({ searchParams }) {
           Authentication is handled only by <strong>accounts.elixpo.com</strong>. LixBlogs never asks for or stores your account password.
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
-          <Link href="/api/auth/login" className="rounded-full bg-[#9b7bf7] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#8b6ae6]">Try again securely</Link>
+          {canRetry && <Link href="/api/auth/login" className="rounded-full bg-[#9b7bf7] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#8b6ae6]">Try again securely</Link>}
           <Link href="/" className="rounded-full px-5 py-2.5 text-sm font-medium" style={{ border: '1px solid var(--border-default)', color: 'var(--text-muted)' }}>Return home</Link>
         </div>
       </section>
