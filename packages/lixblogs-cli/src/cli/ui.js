@@ -62,11 +62,12 @@ export function startProgress(message, {
   stream = process.stderr,
   enabled = Boolean(stream.isTTY),
   intervalMs = 80,
+  color = colorEnabled(stream),
 } = {}) {
   if (!enabled) return { stop() {} };
   let frame = 0;
   const render = () => {
-    stream.write(`\r\u001b[2K${paint(PROGRESS_FRAMES[frame], ANSI.violet, colorEnabled(stream))} ${message}`);
+    stream.write(`\r\u001b[2K${paint(PROGRESS_FRAMES[frame], ANSI.violet, color)} ${paint(message, ANSI.gray, color)}`);
     frame = (frame + 1) % PROGRESS_FRAMES.length;
   };
   render();
