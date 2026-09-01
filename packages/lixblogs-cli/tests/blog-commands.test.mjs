@@ -37,6 +37,15 @@ test('Markdown conversion retains inline emphasis, code, and HTTPS links', () =>
   assert.equal(blocksToMarkdown(blocks), markdown);
 });
 
+test('Markdown conversion preserves checked and unchecked task lists', () => {
+  const markdown = '- [ ] Draft the post\n\n- [x] Publish the post';
+  const blocks = markdownToBlocks(markdown);
+
+  assert.deepEqual(blocks.map((block) => block.type), ['checkListItem', 'checkListItem']);
+  assert.deepEqual(blocks.map((block) => block.props.checked), [false, true]);
+  assert.equal(blocksToMarkdown(blocks), markdown);
+});
+
 test('create dry-run validates input without calling the API', async () => {
   let called = false;
   const result = await blogCreate({

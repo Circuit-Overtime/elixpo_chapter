@@ -54,6 +54,16 @@ export function markdownToBlocks(markdown) {
       blocks.push({ type: 'heading', props: { level: String(heading[1].length) }, content: inline(heading[2]) });
       continue;
     }
+    const task = trimmed.match(/^[-*]\s+\[([ xX])\](?:\s+(.*))?$/);
+    if (task) {
+      flush();
+      blocks.push({
+        type: 'checkListItem',
+        props: { checked: task[1].toLowerCase() === 'x' },
+        content: inline(task[2] || ''),
+      });
+      continue;
+    }
     const bullet = trimmed.match(/^[-*]\s+(.+)/);
     if (bullet) { flush(); blocks.push({ type: 'bulletListItem', content: inline(bullet[1]) }); continue; }
     const numbered = trimmed.match(/^\d+\.\s+(.+)/);
@@ -93,6 +103,7 @@ export function blocksToMarkdown(blocks) {
   return (blocks || []).map((block) => {
     const value = inlineMarkdown(block);
     if (block.type === 'heading') return `${'#'.repeat(Number(block.props?.level) || 1)} ${value}`;
+    if (block.type === 'checkListItem') return `- [${block.props?.checked ? 'x' : ' '}] ${value}`;
     if (block.type === 'bulletListItem') return `- ${value}`;
     if (block.type === 'numberedListItem') return `1. ${value}`;
     if (block.type === 'quote') return `> ${value}`;
