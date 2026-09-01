@@ -273,7 +273,8 @@ async def create_pdf_from_content(content: str, title: str = None) -> str:
 
     pdf_bytes = await asyncio.to_thread(_markdown_to_pdf, content, title)
 
-    slug = _generate_title_slug(content)
+    # Derive the filename slug from the visible subject title.
+    slug = _generate_title_slug(title, max_words=12)
     content_id = f"{slug}-{uuid.uuid4().hex[:8]}"
     store_content(content_id, pdf_bytes, ".pdf")
 

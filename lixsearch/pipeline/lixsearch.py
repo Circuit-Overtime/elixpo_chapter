@@ -39,6 +39,8 @@ from pipeline.response_builder import (
     append_sources,
     build_fallback_response,
     save_to_caches,
+    normalize_pdf_document,
+    requested_coverage_gap,
 )
 from pipeline.deep_search import _run_deep_search_pipeline
 from functionCalls.getImagePrompt import describe_image, replyFromImage
@@ -548,7 +550,9 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             # Provider-routed tool selection is currently non-streaming: both configured
             # models reject stream=true with this tool catalog (HTTP 400). Final
             # synthesis has no tools and remains progressively streamed.
-            _use_streaming = bool(event_id) and not payload.get("tools")
+            _pdf_requested = any(kw in original_user_query.lower() for kw in ("pdf", "export", "save as", "document", "download"))
+            # Buffer PDF synthesis until document structure and coverage validate.
+            _use_streaming = bool(event_id) and not payload.get("tools") and not (force_synthesis and _pdf_requested)
             _streamed_content = ""
 
             if _use_streaming:
@@ -654,8 +658,34 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             if not tool_calls:
                 raw_content = assistant_message.get("content", "")
 
-                # Recovery: detect leaked tool call tokens
-                leaked_fn, leaked_args = extract_leaked_tool_call(raw_content)
+                if force_synthesis and _pdf_requested:
+                    raw_content = normalize_pdf_document(raw_content)
+                    assistant_message["content"] = raw_content
+                    gap = requested_coverage_gap(original_user_query, raw_content)
+                    if gap and current_iteration < max_iterations:
+                        required, observed = gap
+                        memoized_results["coverage_retry"] = True
+                        messages.append({
+                            "role": "user",
+                            "content": (
+                                f"The draft covered only {observed} of {required} requested days. "
+                                f"Rewrite the final document with exactly {required} distinct dated entries, one per day, "
+                                "using only fetched evidence. Return finished Markdown only: no preamble, code fence, "
+                                "function name, arguments, or export instructions."
+                            ),
+                        })
+                        continue
+                    if gap:
+                        required, observed = gap
+                        memoized_results["suppress_pdf_export"] = True
+                        raw_content = (
+                            f"I could not verify a complete {required}-day report from the fetched sources "
+                            f"({observed} distinct dated entries were available), so I did not create a misleading PDF."
+                        )
+                        assistant_message["content"] = raw_content
+
+                # Recovery is for tool-selection turns only. Synthesis owns final documents.
+                leaked_fn, leaked_args = (None, None) if force_synthesis else extract_leaked_tool_call(raw_content)
                 if leaked_fn:
                     import uuid as _uuid
                     tool_calls = [{"id": f"recovered-{_uuid.uuid4().hex[:8]}", "type": "function",
@@ -665,7 +695,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
 
                 # Recovery: detect PDF content dumped as plain text
                 # If the user asked for a PDF and the LLM output markdown instead of calling the tool
-                if not tool_calls and not memoized_results.get("generated_pdfs"):
+                if not force_synthesis and not tool_calls and not memoized_results.get("generated_pdfs"):
                     _pdf_keywords = ("pdf", "export", "save as", "download", "document")
                     _query_wants_pdf = any(kw in original_user_query.lower() for kw in _pdf_keywords)
                     _content_long_enough = len(raw_content) > 200
@@ -1060,7 +1090,7 @@ async def run_elixposearch_pipeline(user_query: str, user_image: str, event_id: 
             try:
                 await auto_generate_pdf(
                     final_message_content,
-                    original_user_query.lower(),
+                    original_user_query,
                     memoized_results,
                     event_id,
                 )

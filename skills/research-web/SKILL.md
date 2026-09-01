@@ -15,8 +15,9 @@ Search efficiently and return compact evidence with source URLs.
 4. Run independent `fetch_full_text` calls concurrently. A current-information answer requires fetched evidence from at least two credible sources when available.
 5. Prefer primary and authoritative sources, then reputable reporting. Capture publication dates for news.
 6. Record claims with supporting URLs; never invent missing evidence.
-7. Use `deep_research` only when the request requires a genuinely multi-part investigation.
-8. Use `get_local_time` only for location-specific time questions.
+7. Preserve requested coverage. For a bounded range such as N days, gather evidence for every item in the range; do not treat a start/end date or one representative item as complete coverage.
+8. Use `deep_research` only when the request requires a genuinely multi-part investigation.
+9. Use `get_local_time` only for location-specific time questions.
 
 ## Performance rules
 

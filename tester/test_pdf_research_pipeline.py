@@ -3,7 +3,12 @@ from unittest import mock
 
 from pipeline.instruction import _runtime_skill_guidance, synthesis_instruction
 from pipeline.optimized_tool_execution import optimized_tool_execution
-from pipeline.response_builder import auto_generate_pdf
+from pipeline.response_builder import (
+    auto_generate_pdf,
+    derive_pdf_title,
+    normalize_pdf_document,
+    requested_coverage_gap,
+)
 from pipeline.tools import tools
 
 
@@ -23,6 +28,8 @@ def test_pdf_synthesis_requests_final_content_not_an_export_tool_call():
     assert "complete, polished, evidence-backed document" in prompt
     assert "do not call export_to_pdf" in prompt
     assert "MUST call the export_to_pdf tool" not in prompt
+    assert "N distinct dated entries" in prompt
+    assert "Never emit a tool name" in prompt
 
 
 def test_web_search_exposes_freshness_window():
@@ -103,3 +110,22 @@ def test_export_tool_reuses_existing_pdf_without_rendering_again():
     assert result == [
         "PDF already exported.\nDownload: https://search.elixpo.com/generated/report.pdf"
     ]
+
+
+def test_leaked_python_pdf_wrapper_is_unwrapped_to_document_only():
+    leaked = "Got it!\n```markdown\nexport_to_pdf(\n  content=\"# Kolkata Forecast\\n\\n## September 2nd 2026\\nRain\"\n)\n```"
+    assert normalize_pdf_document(leaked) == "# Kolkata Forecast\n\n## September 2nd 2026\nRain"
+
+
+def test_seven_day_forecast_requires_seven_distinct_dates():
+    query = "give me a pdf of the weather in Kolkata for next 7 days"
+    incomplete = "September 2nd 2026 through September 8th 2026"
+    complete = "\n".join(f"## September {day}th 2026" for day in range(2, 9))
+    assert requested_coverage_gap(query, incomplete) == (7, 2)
+    assert requested_coverage_gap(query, complete) is None
+
+
+def test_pdf_title_comes_from_subject_not_conversational_preamble():
+    query = "give me a pdf of the latest weather forecast for Kolkata for next 7 days"
+    content = "Got it! I will whip up a PDF of that."
+    assert derive_pdf_title(query, content) == "Latest Weather Forecast For Kolkata For Next 7 Days"

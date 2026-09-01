@@ -21,3 +21,11 @@ def test_pdf_renders_consecutive_lines_inside_fenced_code():
     )
 
     assert bytes(rendered).startswith(b"%PDF")
+
+
+def test_pdf_filename_slug_is_derived_from_visible_title():
+    slug = generatePDF._generate_title_slug(
+        "Kolkata 7-Day Weather Forecast", max_words=12,
+    )
+
+    assert slug == "kolkata-7-day-weather-forecast"

@@ -1,4 +1,5 @@
 import re
+import ast
 import random
 import asyncio
 import requests
@@ -22,6 +23,56 @@ PLACEHOLDER_EXACT = (
     "Processing your request...",
     "I'll help you with that. Let me gather the information you need.",
 )
+
+
+_MONTH_DATE_RE = re.compile(
+    r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+"
+    r"(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+\d{4})?\b",
+    re.IGNORECASE,
+)
+
+
+def normalize_pdf_document(content: str) -> str:
+    """Recover document Markdown from a leaked textual export wrapper."""
+    value = (content or "").strip()
+    match = re.search(
+        r"export_to_pdf\s*\(\s*content\s*=\s*(?P<quote>[\"\x27])(?P<body>.*)(?P=quote)\s*\)\s*`*\s*$",
+        value, re.IGNORECASE | re.DOTALL,
+)
+    if match:
+        literal = f"{match.group('quote')}{match.group('body')}{match.group('quote')}"
+        try:
+            value = ast.literal_eval(literal)
+        except (SyntaxError, ValueError):
+            value = re.sub(r"\\s*\n", "", match.group("body"))
+            value = value.replace(r"\n", "\n")
+    value = re.sub(r"^```(?:markdown)?\s*", "", value.strip(), flags=re.IGNORECASE)
+    value = re.sub(r"\s*```$", "", value.strip())
+    return value.strip()
+
+
+def requested_coverage_gap(query: str, content: str) -> tuple[int, int] | None:
+    """Return required and observed counts for bounded weather forecasts."""
+    match = re.search(r"\b(?:next|for)\s+(\d{1,2})\s+days?\b", query or "", re.IGNORECASE)
+    if not match or "weather" not in (query or "").lower():
+        return None
+    required = min(int(match.group(1)), 31)
+    observed = len({m.group(0).lower() for m in _MONTH_DATE_RE.finditer(content or "")})
+    return (required, observed) if observed < required else None
+
+
+def derive_pdf_title(query: str, content: str) -> str:
+    heading = re.search(r"^#{1,3}\s+(.+)$", content or "", re.MULTILINE)
+    if heading:
+        candidate = heading.group(1).strip(" *_`#")
+        if candidate and not re.match(r"^(?:got it|here.?s|i(?:.ll| will)|export_to_pdf)\b", candidate, re.I):
+            return candidate[:120]
+    candidate = re.sub(
+        r"^\s*(?:please\s+)?(?:give|make|create|generate|export|download)\s+(?:me\s+)?(?:a\s+)?pdf\s+(?:of|about|for)\s+",
+        "", query or "", flags=re.IGNORECASE,
+).strip(" .?!")
+    candidate = re.sub(r"^the\s+", "", candidate, flags=re.IGNORECASE)
+    return (candidate or "OreoLook Report")[:120].title()
 
 
 def is_placeholder_or_fallback(content: str) -> bool:
@@ -72,15 +123,16 @@ async def auto_generate_pdf(final_content, query_lower, memoized_results, event_
     _already_has_pdf = bool(memoized_results.get("generated_pdfs"))
     if _already_has_pdf or memoized_results.get("pdf_export_attempted"):
         return None
-    if not any(kw in query_lower for kw in ("pdf", "export", "save as", "document")):
+    if memoized_results.get("suppress_pdf_export"):
+        return None
+    if not any(kw in query_lower.lower() for kw in ("pdf", "export", "save as", "document")):
         return None
     if not final_content or len(final_content) <= 100:
         return None
 
     logger.info(f"[FINAL] Auto-generating PDF ({len(final_content)} chars)")
     from functionCalls.generatePDF import create_pdf_from_content
-    _title_match = re.search(r'^#+\s+(.+)', final_content, re.MULTILINE)
-    _title = _title_match.group(1).strip() if _title_match else None
+    _title = derive_pdf_title(query_lower, final_content)
     memoized_results["pdf_export_attempted"] = True
     try:
         pdf_url = await create_pdf_from_content(final_content, _title)

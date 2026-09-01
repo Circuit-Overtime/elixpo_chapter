@@ -165,7 +165,10 @@ def synthesis_instruction(user_query, image_context=None, is_detailed=False, pdf
 Use only concrete facts present in the supplied evidence. Never emit bracketed placeholders,
 template labels, guessed values, or promises to fill details later. If the evidence does not
 contain a requested value, say that it could not be verified. Produce the response now.
-Markdown. Cite as [Title](URL). No internal references.{image_note}{pdf_note}"""
+When the request specifies a count or range, cover every requested item separately; for an N-day
+forecast, provide N distinct dated entries rather than one range summary. Return finished Markdown
+only. Never emit a tool name, function syntax, arguments, code fence around the document, or a
+promise about work still to be done. Markdown. Cite as [Title](URL). No internal references.{image_note}{pdf_note}"""
 
 
 def deep_search_gating_instruction(query):

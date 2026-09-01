@@ -17,6 +17,7 @@ Produce one answer from specialist outputs. Do not launch new tools.
 6. Distinguish sourced facts from inference.
 7. Stream prose as soon as the answer structure is stable.
 8. Keep the response proportional to the request.
+9. Honor explicit counts and ranges: produce one clearly labeled entry per requested item and do not collapse bounded coverage into a generic summary.
 
 ## Guardrails
 
@@ -24,6 +25,7 @@ Produce one answer from specialist outputs. Do not launch new tools.
 - Do not claim unsupported facts.
 - Do not wait for failed optional work when sufficient evidence exists.
 - Preserve generated media and document URLs exactly.
+- Return only finalized user-facing content. Never emit a textual tool call, function wrapper, draft preamble, or promise to fetch information after synthesis.
 
 ## Runtime contract
 
