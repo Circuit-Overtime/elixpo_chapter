@@ -478,6 +478,7 @@ function HeaderProfileDropdown({ user, logout }) {
 // ── Hamburger Menu ──
 function HamburgerMenu({
     onShareDraft,
+    onCopyBlogId,
     onChangeCover,
     onChangeTitle,
     onChangeTopics,
@@ -513,6 +514,11 @@ function HamburgerMenu({
             label: "Copy publishable link",
             action: onShareDraft,
             icon: "link-outline",
+        },
+        {
+            label: "Copy blog ID",
+            action: onCopyBlogId,
+            icon: "copy-outline",
         },
         {
             label: "Change featured image",
@@ -3171,6 +3177,9 @@ export default function WritePage({ slugid }) {
                         onShareDraft={() => {
                             const url = `${window.location.origin}/${username}/${slug || slugid}`;
                             navigator.clipboard.writeText(url).catch(() => {});
+                        }}
+                        onCopyBlogId={() => {
+                            navigator.clipboard.writeText(blogId).catch(() => {});
                         }}
                         onChangeCover={() => setShowCoverModal(true)}
                         onChangeTitle={() =>
