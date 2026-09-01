@@ -135,3 +135,4 @@
 - [x] Keep the last selected secondary tool visible on the More toolbar trigger.
 - [x] Add an unsupported-embed whitelist request action and structured GitHub issue form.
 - [x] Backlink the public template marketplace from canvas, view, and zen modes.
+- [x] Ship a structured MCP server, stdio CLI, atomic scene patches, previews, and marketplace imports in `@elixpo/lixsketch`.
