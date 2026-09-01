@@ -59,8 +59,8 @@ test('Markdown imports turn spaced Mermaid fences into Mermaid blocks', () => {
   assert.equal(blocks[0].props.diagram, 'flowchart TD\n  A --> B');
 });
 
-test('Markdown imports turn task markers into checklist blocks', () => {
-  const blocks = parseMarkdownToBlocks('- [ ] Draft\n- [x] Published\n* [X] Verified');
+test('Markdown imports turn task markers with optional bullets into checklist blocks', () => {
+  const blocks = parseMarkdownToBlocks('- [ ] Draft\n[x] Published\n[X] Verified');
 
   assert.deepEqual(blocks.map((block) => block.type), [
     'checkListItem',

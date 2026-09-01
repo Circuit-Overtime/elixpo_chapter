@@ -52,6 +52,7 @@ import {
 } from "../../utils/mediaUploadQueue";
 import { getLixShikiHighlighter } from "../../utils/shikiHighlighter";
 import { clearInheritedBlockTextColors } from "../../utils/blockColorNormalization";
+import { parseChecklistShortcut } from "../../utils/checklistShortcut";
 import AICommandMenu from "./AICommandMenu";
 import AISelectionToolbar from "./AISelectionToolbar";
 import { AIBlock } from "./blocks/AIBlock";
@@ -2152,11 +2153,43 @@ const BlogEditor = forwardRef(function BlogEditor(
                 e.key === "a" && (e.ctrlKey || e.metaKey);
             const handlesCtrlEnter =
                 e.key === "Enter" && (e.ctrlKey || e.metaKey);
-            if (!handlesCtrlA && !handlesCtrlEnter && e.key !== "Backspace")
+            const handlesChecklistShortcut =
+                e.key === " " && !e.ctrlKey && !e.metaKey && !e.altKey;
+            if (
+                !handlesCtrlA &&
+                !handlesCtrlEnter &&
+                !handlesChecklistShortcut &&
+                e.key !== "Backspace"
+            )
                 return;
 
             const cursor = editor.getTextCursorPosition();
             const block = cursor?.block;
+
+            // `[ ] ` and `[x] ` at the beginning of a paragraph become a
+            // checklist item. Keep this explicit because browser/IME behavior
+            // can prevent BlockNote's native input rule from firing reliably.
+            if (handlesChecklistShortcut && block?.type === "paragraph") {
+                const value = (block.content || [])
+                    .map((item) => item.text || "")
+                    .join("");
+                const shortcut = parseChecklistShortcut(value);
+                if (shortcut) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    editor.updateBlock(block.id, {
+                        type: "checkListItem",
+                        props: { checked: shortcut.checked },
+                        content: [],
+                    });
+                    requestAnimationFrame(() => {
+                        try {
+                            editor.setTextCursorPosition(block.id, "end");
+                        } catch {}
+                    });
+                    return;
+                }
+            }
 
             // Ctrl+A inside a code block → select all text in that code block
             if (
@@ -2295,7 +2328,7 @@ const BlogEditor = forwardRef(function BlogEditor(
         function looksLikeMarkdown(text) {
             // Quick heuristic: contains markdown patterns
             return (
-                /^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^\s*>\s|```|^\|.+\|/m.test(
+                /^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^\s*>\s|^\s*\[[ xX]\](?:\s|$)|```|^\|.+\|/m.test(
                     text,
                 ) || /\*\*.+\*\*|\[.+\]\(.+\)|!\[/.test(text)
             );
