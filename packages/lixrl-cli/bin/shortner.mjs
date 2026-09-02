@@ -18,6 +18,7 @@ import {
   promptEnter,
   promptSecret,
   successLine,
+  withSpinner,
 } from '../src/ui.js';
 import { runDomains, runKeys, runUrls } from '../src/commands.js';
 import { qrRequiresLogin, runQr, validateQrInvocation } from '../src/qr.js';
@@ -32,6 +33,14 @@ import {
 
 const require = createRequire(import.meta.url);
 const VERSION = require('../package.json').version;
+
+function withLoadingClient(client, message, loading) {
+  return {
+    request: (...args) => loading(message, () => client.request(...args)),
+    me: () => loading(message, () => client.me()),
+  };
+}
+
 const OPTIONS = {
   profile: { type: 'string' },
   'api-url': { type: 'string' },
@@ -135,6 +144,7 @@ async function main(argv = process.argv.slice(2)) {
   if (options.help || !command) return process.stdout.write(HELP);
   validateInvocation(command, subcommand, args, options);
   if (command === 'qr') validateQrInvocation(subcommand, options);
+  const loading = (message, task) => withSpinner(message, task, options);
 
   const config = resolveConfig({ options });
   const registry = new ProfileRegistry();
@@ -145,13 +155,13 @@ async function main(argv = process.argv.slice(2)) {
     const directKeyLogin = options.key || Boolean(process.env.LIXRL_API_KEY);
     let key;
     let user;
-    const existing = await findValidLocalLogin({
+    const existing = await loading('Checking local profile', () => findValidLocalLogin({
       credentials,
       profile,
       apiUrl: config.apiUrl,
       force: options.force,
       directKeyLogin,
-    });
+    }));
     if (existing) {
       user = existing.user;
       const loginResult = {
@@ -174,17 +184,21 @@ async function main(argv = process.argv.slice(2)) {
     if (directKeyLogin) {
       if (options.open) openBrowser(`${config.apiUrl}/profile/keys`);
       key = validateKey(process.env.LIXRL_API_KEY || await promptSecret('Paste Lixrl API key: '));
-      user = await new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me();
+      user = await loading('Verifying API key', () => (
+        new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me()
+      ));
     } else {
       const progress = !options.quiet && !options.json;
       const color = colorEnabled(process.stderr);
-      const deviceConfig = await fetchLixrlCliConfig({ apiUrl: config.apiUrl });
+      const deviceConfig = await loading('Connecting to Lixrl', () => (
+        fetchLixrlCliConfig({ apiUrl: config.apiUrl })
+      ));
       const auth = new AccountsDeviceAuth({
         accountsUrl: options['accounts-url'] || deviceConfig.accountsUrl,
         clientId: options['client-id'] || deviceConfig.clientId,
         audience: deviceConfig.audience,
       });
-      const challenge = await auth.requestDeviceCode();
+      const challenge = await loading('Starting device login', () => auth.requestDeviceCode());
       const approvalUrl = challenge.verificationUriComplete || challenge.verificationUri;
       if (progress) process.stderr.write(`${loginChallenge({
         url: approvalUrl,
@@ -201,16 +215,18 @@ async function main(argv = process.argv.slice(2)) {
       }
       let token;
       try {
-        token = await waitForDeviceApproval(auth, challenge);
+        token = await loading('Waiting for browser approval', () => waitForDeviceApproval(auth, challenge));
       } finally {
         stopListening();
       }
       let authorization;
       try {
-        const startAuthorization = () => startLixrlAuthorization({
-          apiUrl: config.apiUrl,
-          accessToken: token.accessToken,
-        });
+        const startAuthorization = () => loading('Preparing key approval', () => (
+          startLixrlAuthorization({
+            apiUrl: config.apiUrl,
+            accessToken: token.accessToken,
+          })
+        ));
         try {
           authorization = await startAuthorization();
         } catch (error) {
@@ -230,12 +246,16 @@ async function main(argv = process.argv.slice(2)) {
       }
       if (progress) process.stderr.write(`${approvalChallenge({ url: authorization.approvalUrl, color })}\n`);
       if (options.open) openBrowser(authorization.approvalUrl);
-      const result = await waitForLixrlApproval(config.apiUrl, authorization);
+      const result = await loading('Waiting for key approval', () => (
+        waitForLixrlApproval(config.apiUrl, authorization)
+      ));
       key = validateKey(result.key);
       user = result.user;
     }
 
-    if (!process.env.LIXRL_API_KEY) await credentials.set(profile, key);
+    if (!process.env.LIXRL_API_KEY) {
+      await loading('Saving credentials', () => credentials.set(profile, key));
+    }
     await registry.add(profile);
     const loginResult = {
       profile,
@@ -262,10 +282,10 @@ async function main(argv = process.argv.slice(2)) {
   if (command === 'skills') return runSkills(subcommand, args, options);
 
   if (command === 'qr' && !qrRequiresLogin(options)) {
-    return runQr(null, subcommand, options);
+    return runQr(null, subcommand, options, (task) => loading('Generating QR code', task));
   }
 
-  const key = await credentials.get(profile);
+  const key = await loading('Reading local credentials', () => credentials.get(profile));
   if (!key) throw Object.assign(new Error(`Profile "${profile}" is not logged in. Run lixrl login.`), { code: 'login_required', exitCode: EXIT_CODES.AUTH });
 
   if (command === 'logout') {
@@ -275,14 +295,29 @@ async function main(argv = process.argv.slice(2)) {
     return emit({ loggedOut: true, profile }, options, 'Logged out');
   }
   if (command === 'whoami') {
-    const user = await new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me();
+    const user = await loading('Checking account', () => (
+      new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me()
+    ));
     return emit({ profile, ...user }, options, 'Account verified');
   }
   const client = new LixrlClient({ apiUrl: config.apiUrl, apiKey: key });
-  if (command === 'qr') return runQr(client, subcommand, options);
-  if (['url', 'urls', 'links'].includes(command)) return runUrls(client, subcommand, args, options);
-  if (['key', 'keys'].includes(command)) return runKeys(client, subcommand, args, options);
-  if (['domain', 'domains', 'subdomains'].includes(command)) return runDomains(client, subcommand, args, options);
+  if (command === 'qr') {
+    return runQr(
+      withLoadingClient(client, options.track ? 'Creating tracked QR link' : 'Checking QR access', loading),
+      subcommand,
+      options,
+      (task) => loading('Generating QR code', task),
+    );
+  }
+  if (['url', 'urls', 'links'].includes(command)) {
+    return runUrls(withLoadingClient(client, 'Working with links', loading), subcommand, args, options);
+  }
+  if (['key', 'keys'].includes(command)) {
+    return runKeys(withLoadingClient(client, 'Working with API keys', loading), subcommand, args, options);
+  }
+  if (['domain', 'domains', 'subdomains'].includes(command)) {
+    return runDomains(withLoadingClient(client, 'Working with subdomains', loading), subcommand, args, options);
+  }
 
   throw Object.assign(new Error(`Unknown command: ${command}`), { code: 'unknown_command', exitCode: EXIT_CODES.USAGE });
 }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { colorEnabled, failureBlock, loginChallenge, statusLine } from '../src/ui.js';
+import { colorEnabled, failureBlock, loginChallenge, statusLine, withSpinner } from '../src/ui.js';
 
 test('device login displays the prefilled verification URL without requiring color', () => {
   const output = loginChallenge({
@@ -34,6 +34,48 @@ test('correctable input failures render as warnings', () => {
   const output = failureBlock({ code: 'invalid_usage', message: 'Missing --file.' }, true);
   assert.match(output, /!.*Missing --file/);
   assert.doesNotMatch(output, /✘/);
+});
+
+test('spinner is visible only while an interactive task is pending', async () => {
+  let output = '';
+  const stream = { isTTY: true, write: (value) => { output += value; } };
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  const task = withSpinner('Loading links', () => pending, {
+    stream,
+    env: { TERM: 'xterm' },
+    intervalMs: 10_000,
+  });
+  assert.match(output, /Loading links/);
+  release('done');
+  assert.equal(await task, 'done');
+  assert.match(output, /\u001b\[2K/);
+});
+
+test('spinner stays silent for JSON and non-TTY output', async () => {
+  let output = '';
+  const stream = { isTTY: true, write: (value) => { output += value; } };
+  assert.equal(await withSpinner('Loading', async () => 42, { stream, json: true }), 42);
+  assert.equal(output, '');
+
+  const piped = { isTTY: false, write: (value) => { output += value; } };
+  assert.equal(await withSpinner('Loading', async () => 43, { stream: piped }), 43);
+  assert.equal(output, '');
+});
+
+test('spinner clears its line when an asynchronous task fails', async () => {
+  let output = '';
+  const stream = { isTTY: true, write: (value) => { output += value; } };
+  await assert.rejects(
+    () => withSpinner('Loading', async () => { throw new Error('failed'); }, {
+      stream,
+      env: { NO_COLOR: '1', TERM: 'xterm' },
+      intervalMs: 10_000,
+    }),
+    /failed/,
+  );
+  assert.match(output, /Loading/);
+  assert.match(output, /\u001b\[2K/);
 });
 
 test('key-limit errors include a concrete recovery path', () => {
