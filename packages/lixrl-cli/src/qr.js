@@ -44,10 +44,23 @@ export function qrRequiresLogin(options = {}) {
   return !!options.track || !!options.logo || PRESETS.findIndex(([id]) => id === style) > 2;
 }
 
-export async function runQr(client, destination, options) {
+export function validateQrInvocation(destination, options = {}) {
   const presetIndex = PRESETS.findIndex(([id]) => id === (options.style || 'rounded'));
   if (presetIndex < 0) invalid(`Unknown QR style. Choose: ${PRESETS.map(([id]) => id).join(', ')}.`);
-  let data = normalizeUrl(destination);
+  const data = normalizeUrl(destination);
+  const format = (options.format || 'svg').toLowerCase().replace('jpg', 'jpeg');
+  if (!['svg', 'png', 'jpeg'].includes(format)) invalid('QR format must be svg, png, jpg, or jpeg.');
+  const size = Number(options.size || 1024);
+  if (!Number.isSafeInteger(size) || size < 128 || size > 4096) invalid('QR size must be an integer from 128 to 4096 pixels.');
+  const output = options.output || `lixrl-qr.${format === 'jpeg' ? 'jpg' : format}`;
+  if (existsSync(output) && !(options.force && options.yes)) invalid(`Refusing to overwrite ${output}. Pass --force --yes to replace it.`);
+  return { presetIndex, data, format, size, output };
+}
+
+export async function runQr(client, destination, options) {
+  const validated = validateQrInvocation(destination, options);
+  const { presetIndex, format, size, output } = validated;
+  let { data } = validated;
   if (qrRequiresLogin(options)) {
     if (!client) throw Object.assign(new Error('This QR option requires login. Run lixrl login.'), { code: 'login_required', exitCode: 4 });
     const account = await client.me();
@@ -61,13 +74,6 @@ export async function runQr(client, destination, options) {
       data = tracked.short_url;
     }
   }
-
-  const format = (options.format || 'svg').toLowerCase().replace('jpg', 'jpeg');
-  if (!['svg', 'png', 'jpeg'].includes(format)) invalid('QR format must be svg, png, jpg, or jpeg.');
-  const size = Number(options.size || 1024);
-  if (!Number.isSafeInteger(size) || size < 128 || size > 4096) invalid('QR size must be an integer from 128 to 4096 pixels.');
-  const output = options.output || `lixrl-qr.${format === 'jpeg' ? 'jpg' : format}`;
-  if (existsSync(output) && !(options.force && options.yes)) invalid(`Refusing to overwrite ${output}. Pass --force --yes to replace it.`);
 
   const [{ default: QRCodeStyling }, { JSDOM }, nodeCanvas] = await Promise.all([
     import('qr-code-styling'), import('jsdom'), import('@napi-rs/canvas'),
@@ -87,7 +93,7 @@ export async function runQr(client, destination, options) {
   const rendered = await qr.getRawData(format);
   if (!rendered) throw new Error('QR renderer returned no data.');
   await writeFile(output, Buffer.from(rendered));
-  emit({ output, format, style: PRESETS[presetIndex][0], size, data, tracked: !!options.track }, options);
+  emit({ output, format, style: PRESETS[presetIndex][0], size, data, tracked: !!options.track }, options, 'QR code saved');
 }
 
 export const QR_STYLES = PRESETS.map(([id]) => id);

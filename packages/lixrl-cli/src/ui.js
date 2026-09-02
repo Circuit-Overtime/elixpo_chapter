@@ -19,6 +19,18 @@ function paint(value, code, enabled) {
   return enabled ? `${code}${value}${ANSI.reset}` : value;
 }
 
+const STATUS = Object.freeze({
+  success: ['✓', ANSI.green],
+  info: ['→', ANSI.violet],
+  warning: ['!', ANSI.yellow],
+  error: ['✘', ANSI.red],
+});
+
+export function statusLine(status, message, color = false) {
+  const [symbol, shade] = STATUS[status] || STATUS.info;
+  return `  ${paint(symbol, shade, color)} ${status === 'error' ? paint(message, ANSI.bold, color) : message}`;
+}
+
 export function loginChallenge({ url, code, expiresInSeconds, profile, interactive, color = false }) {
   const instruction = interactive
     ? 'Press Enter to open here, or use the URL on another device.'
@@ -49,11 +61,24 @@ export function approvalChallenge({ url, color = false }) {
 }
 
 export function successLine(message, color = false) {
-  return `  ${paint('✓', ANSI.green, color)} ${message}`;
+  return statusLine('success', message, color);
+}
+
+export function infoLine(message, color = false) {
+  return statusLine('info', message, color);
+}
+
+export function warningLine(message, color = false) {
+  return statusLine('warning', message, color);
+}
+
+export function errorLine(message, color = false) {
+  return statusLine('error', message, color);
 }
 
 export function failureBlock(error, color = false) {
-  const lines = [`  ${paint('✘', ANSI.red, color)} ${paint(error.message, ANSI.bold, color)}`];
+  const warning = ['confirmation_required', 'invalid_usage', 'login_required'].includes(error.code);
+  const lines = [statusLine(warning ? 'warning' : 'error', error.message, color)];
   if (error.code === 'api_key_limit_reached' || error.code === 'key_limit_reached') {
     const limit = Number(error.details?.limit);
     const tier = typeof error.details?.tier === 'string' ? error.details.tier : null;
