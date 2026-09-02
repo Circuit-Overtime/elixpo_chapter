@@ -9,7 +9,7 @@ const bundled = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../s
 
 export async function runSkills(action, args, options) {
   const names = (await readdir(bundled, { withFileTypes: true })).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
-  if (action === 'list') return emit({ skills: names }, options);
+  if (action === 'list') return emit({ skills: names }, options, 'Bundled skills loaded');
   const name = args[0];
   if (!name || !names.includes(name)) {
     throw Object.assign(new Error(`Choose a bundled skill: ${names.join(', ')}.`), { code: 'invalid_skill', exitCode: EXIT_CODES.USAGE });
@@ -30,7 +30,7 @@ export async function runSkills(action, args, options) {
     }
     await mkdir(root, { recursive: true });
     await cp(path.join(bundled, name), target, { recursive: true, force: true });
-    return emit({ installed: name, target }, options);
+    return emit({ installed: name, target }, options, 'Skill installed');
   }
   throw Object.assign(new Error('Usage: lixrl skills <list|inspect|install> [name]'), { exitCode: EXIT_CODES.USAGE });
 }

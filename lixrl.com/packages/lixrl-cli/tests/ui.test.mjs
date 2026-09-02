@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { colorEnabled, failureBlock, loginChallenge } from '../src/ui.js';
+import { colorEnabled, failureBlock, loginChallenge, statusLine } from '../src/ui.js';
 
 test('device login displays the prefilled verification URL without requiring color', () => {
   const output = loginChallenge({
@@ -19,6 +19,21 @@ test('device login displays the prefilled verification URL without requiring col
 test('NO_COLOR disables terminal styling', () => {
   assert.equal(colorEnabled({ isTTY: true }, { NO_COLOR: '1', TERM: 'xterm' }), false);
   assert.equal(colorEnabled({ isTTY: true }, { TERM: 'xterm' }), true);
+});
+
+test('terminal statuses use distinct symbols and colors', () => {
+  assert.match(statusLine('success', 'Created', true), /✓.*Created/);
+  assert.match(statusLine('info', 'Loading', true), /→.*Loading/);
+  assert.match(statusLine('warning', 'Check input', true), /!.*Check input/);
+  assert.match(statusLine('error', 'Failed', true), /✘.*Failed/);
+  assert.notEqual(statusLine('success', 'Created', true), statusLine('error', 'Created', true));
+  assert.doesNotMatch(statusLine('success', 'Created', false), /\u001b\[/);
+});
+
+test('correctable input failures render as warnings', () => {
+  const output = failureBlock({ code: 'invalid_usage', message: 'Missing --file.' }, true);
+  assert.match(output, /!.*Missing --file/);
+  assert.doesNotMatch(output, /✘/);
 });
 
 test('key-limit errors include a concrete recovery path', () => {

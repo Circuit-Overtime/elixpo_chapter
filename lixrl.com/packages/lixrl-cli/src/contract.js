@@ -1,4 +1,4 @@
-import { colorEnabled, failureBlock } from './ui.js';
+import { colorEnabled, failureBlock, successLine } from './ui.js';
 
 export const EXIT_CODES = Object.freeze({ OK: 0, ERROR: 1, USAGE: 2, AUTH: 4, CONFIRMATION: 5 });
 
@@ -15,9 +15,13 @@ export function requireConfirmation(options, action) {
   }
 }
 
-export function emit(value, options = {}) {
+export function emit(value, options = {}, message = 'Done') {
   if (options.json) process.stdout.write(`${safeJson({ ok: true, data: value })}\n`);
-  else if (!options.quiet) process.stdout.write(`${format(value)}\n`);
+  else if (!options.quiet) {
+    process.stdout.write(`${successLine(message, colorEnabled(process.stdout))}\n`);
+    const details = format(value);
+    if (details) process.stdout.write(`${details}\n`);
+  }
 }
 
 export function fail(error, options = {}) {
