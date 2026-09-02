@@ -16,6 +16,7 @@ import {
   openBrowser,
   promptConfirm,
   promptEnter,
+  promptLoginMethod,
   promptSecret,
   successLine,
   withSpinner,
@@ -49,6 +50,7 @@ const OPTIONS = {
   'no-input': { type: 'boolean', default: false },
   open: { type: 'boolean', default: false },
   key: { type: 'boolean', default: false },
+  'new-key': { type: 'boolean', default: false },
   'accounts-url': { type: 'string' },
   'client-id': { type: 'string' },
   yes: { type: 'boolean', short: 'y', default: false },
@@ -89,7 +91,8 @@ const OPTIONS = {
 const HELP = `lixrl — production CLI for Lixrl
 
 Usage:
-  lixrl login [--profile <name>] [--open] [--force]
+  lixrl login [--profile <name>] [--open]
+  lixrl login --new-key [--profile <name>] [--open]
   lixrl login --key [--profile <name>] [--open]
   lixrl logout [--profile <name>] --yes
   lixrl whoami [--profile <name>] [--json]
@@ -110,15 +113,15 @@ Usage:
   lixrl skills list|inspect|install [name]
 
 Authentication:
-  lixrl login uses Elixpo Accounts device authorization, asks Lixrl to create a
-  scoped key, and stores it in the OS keychain. Use --key to paste an existing
-  key into the masked prompt. CI should provide LIXRL_API_KEY instead.
+  lixrl login reuses a valid local key or asks whether to create a new key with
+  Elixpo Accounts or paste an existing key. CI should provide LIXRL_API_KEY.
 
 Global flags:
   --profile <name>    select a stored account
   --api-url <url>     API origin (default: https://lixrl.com)
   --open              open the Accounts approval page during device login
   --key               paste an existing Lixrl API key instead of device login
+  --new-key           create a new key even when a valid local key exists
   --force             rotate a valid local login instead of reusing it
   --json              stable machine-readable output
   --no-input          never prompt
@@ -152,14 +155,14 @@ async function main(argv = process.argv.slice(2)) {
   const profile = options.profile ? validateProfile(options.profile) : await registry.selected(config.profile);
 
   if (command === 'login') {
-    const directKeyLogin = options.key || Boolean(process.env.LIXRL_API_KEY);
+    let directKeyLogin = options.key || (!options['new-key'] && Boolean(process.env.LIXRL_API_KEY));
     let key;
     let user;
     const existing = await loading('Checking local profile', () => findValidLocalLogin({
       credentials,
       profile,
       apiUrl: config.apiUrl,
-      force: options.force,
+      force: options.force || options['new-key'],
       directKeyLogin,
     }));
     if (existing) {
@@ -177,8 +180,12 @@ async function main(argv = process.argv.slice(2)) {
       return undefined;
     }
 
-    if (options['no-input'] && !process.env.LIXRL_API_KEY) {
+    if (options['no-input'] && !directKeyLogin) {
       throw Object.assign(new Error('Device login is interactive. Use lixrl login or provide LIXRL_API_KEY for --no-input.'), { code: 'login_required', exitCode: EXIT_CODES.AUTH });
+    }
+
+    if (!directKeyLogin && !options['new-key'] && process.stdin.isTTY && process.stderr.isTTY) {
+      directKeyLogin = await promptLoginMethod() === 'existing';
     }
 
     if (directKeyLogin) {

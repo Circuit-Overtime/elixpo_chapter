@@ -166,6 +166,35 @@ export async function promptEnter(label, { input = process.stdin, output = proce
   }
 }
 
+export function parseLoginChoice(value) {
+  const choice = String(value || '').trim().toLowerCase();
+  if (!choice || ['1', 'new', 'create'].includes(choice)) return 'new';
+  if (['2', 'existing', 'key', 'paste'].includes(choice)) return 'existing';
+  return null;
+}
+
+export async function promptLoginMethod({ input = process.stdin, output = process.stderr } = {}) {
+  if (!input.isTTY || !output.isTTY) return 'new';
+  const color = colorEnabled(output);
+  const prompt = createInterface({ input, output });
+  try {
+    output.write([
+      '',
+      `  ${paint('◆', ANSI.violet, color)} ${paint('Choose how to sign in', ANSI.bold, color)}`,
+      '  1. Create a new API key (recommended)',
+      '  2. Use an existing API key (paste the raw key)',
+      '',
+    ].join('\n'));
+    while (true) {
+      const choice = parseLoginChoice(await prompt.question('  Choose [1]: '));
+      if (choice) return choice;
+      output.write(`${warningLine('Enter 1 to create a key or 2 to paste an existing key.', color)}\n`);
+    }
+  } finally {
+    prompt.close();
+  }
+}
+
 export async function promptSecret(label = 'Lixrl API key: ') {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     const chunks = [];
