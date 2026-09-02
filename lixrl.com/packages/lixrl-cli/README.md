@@ -50,6 +50,8 @@ lixrl qr https://example.com --track --style aurora --output campaign.svg
 
 Deletion, API-key revocation, mapping removal, and file replacement require `--yes`. Use `--json --no-input` for automation.
 
+The interactive terminal uses distinct colors and symbols for successful operations, status information, correctable warnings, and failures. Set `NO_COLOR=1` for plain output. Command names, subcommands, required arguments, and required flags are validated before the CLI reads your keychain or asks you to sign in, so typos return an immediate usage message.
+
 ## Agent skills
 
 The npm package contains focused skills for link management and QR generation. They are not copied anywhere during installation.

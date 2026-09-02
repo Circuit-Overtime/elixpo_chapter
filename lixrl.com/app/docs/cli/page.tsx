@@ -191,6 +191,14 @@ lixrl urls create "https://example.com/article" \
   --title "Article" --tag automation --json --no-input`}</Command>
 
       <h2 id="links" className={H2}>Manage short links</h2>
+      <p className={P}>
+        Interactive output uses green for completed operations, purple for
+        status information, yellow for correctable input warnings, and red for
+        failures. Set <code className="font-mono">NO_COLOR=1</code> for plain
+        output. Commands and required flags are checked before authentication,
+        so a typo or missing <code className="font-mono">--file</code> is
+        reported without asking you to sign in.
+      </p>
       <Command>{`# Create
 lixrl urls create "https://example.com/launch" \
   --title "Launch" --campaign launch --tag release
