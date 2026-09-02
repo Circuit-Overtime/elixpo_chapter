@@ -26,6 +26,8 @@ const STATUS = Object.freeze({
   error: ['✘', ANSI.red],
 });
 
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
 export function statusLine(status, message, color = false) {
   const [symbol, shade] = STATUS[status] || STATUS.info;
   return `  ${paint(symbol, shade, color)} ${status === 'error' ? paint(message, ANSI.bold, color) : message}`;
@@ -74,6 +76,33 @@ export function warningLine(message, color = false) {
 
 export function errorLine(message, color = false) {
   return statusLine('error', message, color);
+}
+
+export async function withSpinner(message, task, {
+  quiet = false,
+  json = false,
+  stream = process.stderr,
+  env = process.env,
+  intervalMs = 80,
+} = {}) {
+  if (quiet || json || !stream.isTTY) return task();
+
+  const color = colorEnabled(stream, env);
+  let frame = 0;
+  const render = () => {
+    const symbol = paint(SPINNER_FRAMES[frame % SPINNER_FRAMES.length], ANSI.violet, color);
+    stream.write(`\r  ${symbol} ${message}…`);
+    frame += 1;
+  };
+  render();
+  const timer = setInterval(render, intervalMs);
+  timer.unref?.();
+  try {
+    return await task();
+  } finally {
+    clearInterval(timer);
+    stream.write('\r\u001b[2K');
+  }
 }
 
 export function failureBlock(error, color = false) {

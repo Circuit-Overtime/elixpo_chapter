@@ -52,6 +52,8 @@ Deletion, API-key revocation, mapping removal, and file replacement require `--y
 
 The interactive terminal uses distinct colors and symbols for successful operations, status information, correctable warnings, and failures. Set `NO_COLOR=1` for plain output. Command names, subcommands, required arguments, and required flags are validated before the CLI reads your keychain or asks you to sign in, so typos return an immediate usage message.
 
+Network requests, browser approvals, keychain writes, and QR rendering show a compact spinner only while that asynchronous operation is pending. Spinner frames are cleared before the final result and are never emitted by `--json`, `--quiet`, or non-interactive output.
+
 ## Agent skills
 
 The npm package contains focused skills for link management and QR generation. They are not copied anywhere during installation.

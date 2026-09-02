@@ -57,7 +57,7 @@ export function validateQrInvocation(destination, options = {}) {
   return { presetIndex, data, format, size, output };
 }
 
-export async function runQr(client, destination, options) {
+export async function runQr(client, destination, options, renderTask = (task) => task()) {
   const validated = validateQrInvocation(destination, options);
   const { presetIndex, format, size, output } = validated;
   let { data } = validated;
@@ -75,24 +75,26 @@ export async function runQr(client, destination, options) {
     }
   }
 
-  const [{ default: QRCodeStyling }, { JSDOM }, nodeCanvas] = await Promise.all([
-    import('qr-code-styling'), import('jsdom'), import('@napi-rs/canvas'),
-  ]);
-  const [, dotsType, squareType, dotType, paint, background] = PRESETS[presetIndex];
-  const corner = paint.gradient ? paint.gradient.colorStops[0].color : paint.color;
-  const qr = new QRCodeStyling({
-    width: size, height: size, type: format === 'svg' ? 'svg' : 'canvas', data, margin: 8,
-    jsdom: JSDOM, nodeCanvas, image: await logoData(options.logo),
-    qrOptions: { errorCorrectionLevel: 'H' },
-    dotsOptions: { type: dotsType, ...paint },
-    cornersSquareOptions: { type: squareType, color: corner },
-    cornersDotOptions: { type: dotType, color: corner },
-    backgroundOptions: { color: background },
-    imageOptions: { margin: 6, imageSize: 0.4, hideBackgroundDots: true, saveAsBlob: true },
+  await renderTask(async () => {
+    const [{ default: QRCodeStyling }, { JSDOM }, nodeCanvas] = await Promise.all([
+      import('qr-code-styling'), import('jsdom'), import('@napi-rs/canvas'),
+    ]);
+    const [, dotsType, squareType, dotType, paint, background] = PRESETS[presetIndex];
+    const corner = paint.gradient ? paint.gradient.colorStops[0].color : paint.color;
+    const qr = new QRCodeStyling({
+      width: size, height: size, type: format === 'svg' ? 'svg' : 'canvas', data, margin: 8,
+      jsdom: JSDOM, nodeCanvas, image: await logoData(options.logo),
+      qrOptions: { errorCorrectionLevel: 'H' },
+      dotsOptions: { type: dotsType, ...paint },
+      cornersSquareOptions: { type: squareType, color: corner },
+      cornersDotOptions: { type: dotType, color: corner },
+      backgroundOptions: { color: background },
+      imageOptions: { margin: 6, imageSize: 0.4, hideBackgroundDots: true, saveAsBlob: true },
+    });
+    const rendered = await qr.getRawData(format);
+    if (!rendered) throw new Error('QR renderer returned no data.');
+    await writeFile(output, Buffer.from(rendered));
   });
-  const rendered = await qr.getRawData(format);
-  if (!rendered) throw new Error('QR renderer returned no data.');
-  await writeFile(output, Buffer.from(rendered));
   emit({ output, format, style: PRESETS[presetIndex][0], size, data, tracked: !!options.track }, options, 'QR code saved');
 }
 

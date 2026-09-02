@@ -197,7 +197,9 @@ lixrl urls create "https://example.com/article" \
         failures. Set <code className="font-mono">NO_COLOR=1</code> for plain
         output. Commands and required flags are checked before authentication,
         so a typo or missing <code className="font-mono">--file</code> is
-        reported without asking you to sign in.
+        reported without asking you to sign in. A compact spinner appears only
+        while network, approval, keychain, or QR work is pending; JSON, quiet,
+        and piped output never receive spinner frames.
       </p>
       <Command>{`# Create
 lixrl urls create "https://example.com/launch" \
