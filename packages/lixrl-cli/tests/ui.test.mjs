@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { colorEnabled, failureBlock, loginChallenge, statusLine, withSpinner } from '../src/ui.js';
+import { colorEnabled, failureBlock, loginChallenge, parseLoginChoice, statusLine, withSpinner } from '../src/ui.js';
 
 test('device login displays the prefilled verification URL without requiring color', () => {
   const output = loginChallenge({
@@ -19,6 +19,15 @@ test('device login displays the prefilled verification URL without requiring col
 test('NO_COLOR disables terminal styling', () => {
   assert.equal(colorEnabled({ isTTY: true }, { NO_COLOR: '1', TERM: 'xterm' }), false);
   assert.equal(colorEnabled({ isTTY: true }, { TERM: 'xterm' }), true);
+});
+
+test('login choice accepts new-key defaults and existing-key aliases', () => {
+  assert.equal(parseLoginChoice(''), 'new');
+  assert.equal(parseLoginChoice('1'), 'new');
+  assert.equal(parseLoginChoice('create'), 'new');
+  assert.equal(parseLoginChoice('2'), 'existing');
+  assert.equal(parseLoginChoice('paste'), 'existing');
+  assert.equal(parseLoginChoice('invalid'), null);
 });
 
 test('terminal statuses use distinct symbols and colors', () => {

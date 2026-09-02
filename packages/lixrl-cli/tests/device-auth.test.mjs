@@ -92,6 +92,61 @@ test('device login discovers its public OAuth configuration from Lixrl', async (
   });
 });
 
+test('Accounts discovery retries a transient network failure', async () => {
+  let calls = 0;
+  const auth = new AccountsDeviceAuth({
+    retries: 1,
+    sleep: async () => {},
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls === 1) throw new TypeError('fetch failed');
+      return response(discovery);
+    },
+  });
+  assert.equal((await auth.discover()).issuer, 'https://accounts.elixpo.com');
+  assert.equal(calls, 2);
+});
+
+test('Accounts discovery reports network failures without a misleading outage message', async () => {
+  const auth = new AccountsDeviceAuth({
+    retries: 1,
+    sleep: async () => {},
+    fetchImpl: async () => { throw new TypeError('fetch failed'); },
+  });
+  await assert.rejects(
+    () => auth.discover(),
+    (error) => error.code === 'accounts_unreachable' && /network, DNS, or TLS/.test(error.message),
+  );
+});
+
+test('Accounts discovery identifies incompatible metadata', async () => {
+  const auth = new AccountsDeviceAuth({ fetchImpl: async () => response({ ...discovery, issuer: 'https://invalid.example' }) });
+  await assert.rejects(
+    () => auth.discover(),
+    (error) => error.code === 'invalid_accounts_metadata' && /incompatible/.test(error.message),
+  );
+});
+
+test('Lixrl login configuration retries a transient server failure', async () => {
+  let calls = 0;
+  const result = await fetchLixrlCliConfig({
+    apiUrl: 'https://lixrl.com',
+    retries: 1,
+    sleep: async () => {},
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls === 1) return response({ error: 'busy' }, 503);
+      return response({
+        client_id: 'registered-client-id',
+        accounts_origin: 'https://accounts.elixpo.com',
+        audience: 'lixrl.com',
+      });
+    },
+  });
+  assert.equal(result.clientId, 'registered-client-id');
+  assert.equal(calls, 2);
+});
+
 test('device polling keeps pending responses separate from returned tokens', async () => {
   const queue = [
     response(discovery),
