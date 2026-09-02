@@ -84,6 +84,11 @@ export function validateInvocation(command, subcommand, args = [], options = {})
   if (KEY_COMMANDS.has(command)) return validateKeys(subcommand, args, options);
   if (DOMAIN_COMMANDS.has(command)) return validateDomains(subcommand, args, options);
   if (command === 'qr') return requireValue(subcommand, 'Usage: lixrl qr <destination> [options]');
+  if (command === 'login') {
+    if (options.key && options['new-key']) usage('Choose either --key or --new-key, not both.');
+    if (subcommand || args.length) usage('Usage: lixrl login [--key | --new-key] [--profile <name>]');
+    return;
+  }
   if (command === 'use') {
     requireValue(subcommand, 'Usage: lixrl use <profile>');
     if (args.length) usage('Usage: lixrl use <profile>');

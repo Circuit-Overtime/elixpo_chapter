@@ -28,3 +28,10 @@ test('valid commands pass preflight validation', () => {
   assert.equal(validateInvocation('qr', 'https://example.com', [], {}), undefined);
   assert.equal(validateInvocation('whoami', undefined, [], {}), undefined);
 });
+
+test('login rejects conflicting key selection before credential lookup', () => {
+  assert.throws(
+    () => validateInvocation('login', undefined, [], { key: true, 'new-key': true }),
+    (error) => error.code === 'invalid_usage' && /either --key or --new-key/.test(error.message),
+  );
+});
