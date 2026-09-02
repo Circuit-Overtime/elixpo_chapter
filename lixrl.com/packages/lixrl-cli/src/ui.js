@@ -26,6 +26,8 @@ const STATUS = Object.freeze({
   error: ['✘', ANSI.red],
 });
 
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
 export function statusLine(status, message, color = false) {
   const [symbol, shade] = STATUS[status] || STATUS.info;
   return `  ${paint(symbol, shade, color)} ${status === 'error' ? paint(message, ANSI.bold, color) : message}`;
@@ -74,6 +76,33 @@ export function warningLine(message, color = false) {
 
 export function errorLine(message, color = false) {
   return statusLine('error', message, color);
+}
+
+export async function withSpinner(message, task, {
+  quiet = false,
+  json = false,
+  stream = process.stderr,
+  env = process.env,
+  intervalMs = 80,
+} = {}) {
+  if (quiet || json || !stream.isTTY) return task();
+
+  const color = colorEnabled(stream, env);
+  let frame = 0;
+  const render = () => {
+    const symbol = paint(SPINNER_FRAMES[frame % SPINNER_FRAMES.length], ANSI.violet, color);
+    stream.write(`\r  ${symbol} ${message}…`);
+    frame += 1;
+  };
+  render();
+  const timer = setInterval(render, intervalMs);
+  timer.unref?.();
+  try {
+    return await task();
+  } finally {
+    clearInterval(timer);
+    stream.write('\r\u001b[2K');
+  }
 }
 
 export function failureBlock(error, color = false) {
@@ -132,6 +161,35 @@ export async function promptEnter(label, { input = process.stdin, output = proce
   try {
     await prompt.question(`${label}\nPress Enter to retry.`);
     return true;
+  } finally {
+    prompt.close();
+  }
+}
+
+export function parseLoginChoice(value) {
+  const choice = String(value || '').trim().toLowerCase();
+  if (!choice || ['1', 'new', 'create'].includes(choice)) return 'new';
+  if (['2', 'existing', 'key', 'paste'].includes(choice)) return 'existing';
+  return null;
+}
+
+export async function promptLoginMethod({ input = process.stdin, output = process.stderr } = {}) {
+  if (!input.isTTY || !output.isTTY) return 'new';
+  const color = colorEnabled(output);
+  const prompt = createInterface({ input, output });
+  try {
+    output.write([
+      '',
+      `  ${paint('◆', ANSI.violet, color)} ${paint('Choose how to sign in', ANSI.bold, color)}`,
+      '  1. Create a new API key (recommended)',
+      '  2. Use an existing API key (paste the raw key)',
+      '',
+    ].join('\n'));
+    while (true) {
+      const choice = parseLoginChoice(await prompt.question('  Choose [1]: '));
+      if (choice) return choice;
+      output.write(`${warningLine('Enter 1 to create a key or 2 to paste an existing key.', color)}\n`);
+    }
   } finally {
     prompt.close();
   }

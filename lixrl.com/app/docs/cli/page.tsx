@@ -117,7 +117,8 @@ lixrl --help`}</Command>
 
       <h2 id="sign-in" className={H2}>Sign in and authenticate</h2>
       <p className={P}>
-        Choose browser-based device login for everyday use or paste a key you
+        Login first reuses a valid key already stored for the selected profile.
+        Otherwise, choose browser-based device login or paste a raw key you
         already created. Both paths store the final Lixrl key in your
         operating-system keychain; passwords and browser cookies never enter
         the CLI.
@@ -125,17 +126,20 @@ lixrl --help`}</Command>
 
       <h3 id="device-login" className={H3}>Recommended: Accounts device login</h3>
       <ol className="mb-5 list-decimal space-y-2 pl-6 text-[0.96rem] leading-7 text-[#555]">
-        <li>Run the command. The CLI displays a prefilled official Accounts URL and one-time code.</li>
+        <li>Run the command and choose whether to create a new key or paste an existing key.</li>
+        <li>For a new key, the CLI displays a prefilled official Accounts URL and one-time code.</li>
         <li>Press Enter to open the URL, or use <code className="font-mono">--open</code> to launch it immediately.</li>
         <li>The CLI opens a Lixrl approval page where you choose the key name, read or read/write access, and an optional expiry.</li>
         <li>Lixrl enforces your plan&apos;s key limit, delivers the key directly to the waiting CLI, and stores only its hash.</li>
       </ol>
-      <Command>{`lixrl login --open
+      <Command>{`lixrl login
+lixrl login --new-key --open
 lixrl whoami`}</Command>
       <p className={P}>
         Running <code className="font-mono">lixrl login</code> again reuses a
         valid key already stored for the selected profile. Use{' '}
-        <code className="font-mono">lixrl login --force</code> only to rotate it.
+        <code className="font-mono">lixrl login --new-key</code> only when you
+        intentionally want another key.
         The CLI cannot revoke account keys during device login; when the limit
         is full, revoke one in the browser, wait for the **Revoked** status, and
         then press Enter in the terminal.
@@ -157,15 +161,22 @@ lixrl whoami`}</Command>
       <p className={P}>
         If you or an administrator already created a restricted key under{' '}
         <Link href="/profile/keys" className="font-semibold text-[#c62828]">
-          Profile → API Keys
-        </Link>, paste it through the masked prompt:
+        Profile → API Keys
+        </Link>, choose option 2 during login or paste it through the masked prompt:
       </p>
       <Command>{`lixrl login --key
 lixrl whoami`}</Command>
       <Note>
         Never place an <code className="font-mono">elu_…</code> key in a URL,
-        source file, generated article, issue, or chat message.
+        source file, generated article, issue, or chat message. Lixrl stores
+        only the key hash, so a dashboard row cannot reveal the raw value later.
       </Note>
+      <p className={P}>
+        The CLI briefly retries transient login configuration and discovery
+        failures. Persistent errors identify whether Lixrl configuration,
+        Accounts timeout, network/DNS/TLS access, an HTTP response, or
+        incompatible authorization metadata caused the failure.
+      </p>
 
       <h3 id="profiles" className={H3}>Multiple accounts</h3>
       <Command>{`lixrl login --profile work --open
@@ -197,7 +208,9 @@ lixrl urls create "https://example.com/article" \
         failures. Set <code className="font-mono">NO_COLOR=1</code> for plain
         output. Commands and required flags are checked before authentication,
         so a typo or missing <code className="font-mono">--file</code> is
-        reported without asking you to sign in.
+        reported without asking you to sign in. A compact spinner appears only
+        while network, approval, keychain, or QR work is pending; JSON, quiet,
+        and piped output never receive spinner frames.
       </p>
       <Command>{`# Create
 lixrl urls create "https://example.com/launch" \
