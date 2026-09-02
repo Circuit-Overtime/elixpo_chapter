@@ -6,6 +6,7 @@ import { resolveConfig, ProfileRegistry, validateProfile } from '../src/config.j
 import { CredentialStore, validateKey } from '../src/credentials.js';
 import { LixrlClient } from '../src/client.js';
 import { findValidLocalLogin } from '../src/login.js';
+import { validateInvocation } from '../src/invocation.js';
 import { emit, fail, EXIT_CODES } from '../src/contract.js';
 import {
   approvalChallenge,
@@ -19,7 +20,7 @@ import {
   successLine,
 } from '../src/ui.js';
 import { runDomains, runKeys, runUrls } from '../src/commands.js';
-import { qrRequiresLogin, runQr } from '../src/qr.js';
+import { qrRequiresLogin, runQr, validateQrInvocation } from '../src/qr.js';
 import { runSkills } from '../src/skills.js';
 import {
   AccountsDeviceAuth,
@@ -119,11 +120,21 @@ Global flags:
 `;
 
 async function main(argv = process.argv.slice(2)) {
-  const parsed = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true, strict: false });
+  let parsed;
+  try {
+    parsed = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true, strict: true });
+  } catch (error) {
+    throw Object.assign(new Error(error?.message || 'Invalid command options.'), {
+      code: 'invalid_usage',
+      exitCode: EXIT_CODES.USAGE,
+    });
+  }
   const options = parsed.values;
   const [command, subcommand, ...args] = parsed.positionals;
   if (options.version) return process.stdout.write(`${VERSION}\n`);
   if (options.help || !command) return process.stdout.write(HELP);
+  validateInvocation(command, subcommand, args, options);
+  if (command === 'qr') validateQrInvocation(subcommand, options);
 
   const config = resolveConfig({ options });
   const registry = new ProfileRegistry();
@@ -241,12 +252,12 @@ async function main(argv = process.argv.slice(2)) {
 
   if (command === 'profiles') {
     const state = await registry.read();
-    return emit({ active: state.active, profiles: state.profiles }, options);
+    return emit({ active: state.active, profiles: state.profiles }, options, 'Profiles loaded');
   }
   if (command === 'use') {
     if (!subcommand) throw Object.assign(new Error('Usage: lixrl use <profile>'), { exitCode: EXIT_CODES.USAGE });
     await registry.use(subcommand);
-    return emit({ active: subcommand }, options);
+    return emit({ active: subcommand }, options, 'Active profile changed');
   }
   if (command === 'skills') return runSkills(subcommand, args, options);
 
@@ -261,11 +272,11 @@ async function main(argv = process.argv.slice(2)) {
     if (!options.yes) throw Object.assign(new Error('Logging out requires --yes.'), { code: 'confirmation_required', exitCode: EXIT_CODES.CONFIRMATION });
     if (!process.env.LIXRL_API_KEY) await credentials.delete(profile);
     await registry.remove(profile);
-    return emit({ loggedOut: true, profile }, options);
+    return emit({ loggedOut: true, profile }, options, 'Logged out');
   }
   if (command === 'whoami') {
     const user = await new LixrlClient({ apiUrl: config.apiUrl, apiKey: key }).me();
-    return emit({ profile, ...user }, options);
+    return emit({ profile, ...user }, options, 'Account verified');
   }
   const client = new LixrlClient({ apiUrl: config.apiUrl, apiKey: key });
   if (command === 'qr') return runQr(client, subcommand, options);
