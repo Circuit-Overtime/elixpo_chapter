@@ -336,6 +336,14 @@ class NotifPanel:
             else:
                 if hasattr(wifi, "radio_on"):
                     wifi.radio_on()
+                # Commit the visible ON state before association blocks in
+                # connect_from_config(). This makes the single button press
+                # acknowledge immediately even when no saved AP is reachable.
+                try:
+                    self.draw(self._os.display)
+                    self._os.display.present()
+                except Exception:
+                    pass
                 # Pump button input through the wait so the panel can
                 # still react if the user changes their mind. Older
                 # wifi.py without pump_cb support falls through to the
@@ -480,22 +488,24 @@ class NotifPanel:
         ]
         try:
             from oreoWare import wifi
-            # Two-state chip: connected → ON (with SSID in the sub),
-            # everything else → OFF. We deliberately don't surface
-            # a "searching" tier — the credentials are known up-front
-            # via secrets / wifi.json, so a connect either resolves
-            # in a couple of seconds or it doesn't.
             connected = False
+            radio_on = False
             try:
                 connected = bool(wifi.is_connected())
             except Exception:
                 pass
-            out[0]["on"] = connected
+            try:
+                radio_on = bool(wifi.is_radio_on())
+            except Exception:
+                radio_on = connected
+            out[0]["on"] = radio_on
             if connected:
                 cur = ""
                 try: cur = wifi.ssid() or ""
                 except Exception: pass
                 out[0]["sub"] = (cur[:10] if cur else "on")
+            elif radio_on:
+                out[0]["sub"] = "no link"
             else:
                 out[0]["sub"] = "off"
         except Exception:

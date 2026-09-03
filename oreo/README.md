@@ -30,7 +30,7 @@
 
 </div>
 
-<img src="docs/images/banner.png" alt="OreoOS — the Oreo Badge" width="100%">
+<img src="assets/og-banner.png" alt="Oreo, the panda banner" width="100%">
 
 ---
 

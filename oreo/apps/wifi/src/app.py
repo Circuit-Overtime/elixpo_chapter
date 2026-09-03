@@ -207,15 +207,10 @@ class App(oreoOS.App):
             return
         r = self._sel
         if r == self.ROW_STATUS:
-            # Toggle's "on" state is whatever the label shows —
-            # `is_connected()`. The earlier version checked
-            # `is_radio_on()`, which got out of sync with the label
-            # any time a boot-time connect failed: radio left up,
-            # label OFF, but the toggle treated the next tap as
-            # "turn off" instead of "retry." Now it just mirrors
-            # the label: tap when label is ON → disconnect; tap when
-            # label is OFF → try to connect.
-            on_now = bool(self._snap.get("connected"))
+            # Status is the radio-power toggle. Association is a separate
+            # state represented by the SSID/IP rows; a powered radio must not
+            # look OFF merely because the current network is unavailable.
+            on_now = bool(self._snap.get("radio_on"))
             if on_now:
                 try:
                     radio_off = getattr(self._wifi, "radio_off", None)
@@ -235,6 +230,16 @@ class App(oreoOS.App):
                     radio_on = getattr(self._wifi, "radio_on", None)
                     if radio_on:
                         radio_on()
+                except Exception:
+                    pass
+                # Paint ON immediately, before association starts. Connecting
+                # may take several seconds; without this forced frame the
+                # button appears to do nothing until the blocking call exits.
+                self._snap = self._read()
+                self._dirty = True
+                try:
+                    self.draw(self._os.display)
+                    self._os.display.present()
                 except Exception:
                     pass
                 try:
@@ -495,14 +500,11 @@ class App(oreoOS.App):
         widgets.draw_hint(d, "A=select  HOME=back")
 
         snap = self._snap
-        # Two-state status only: connected → ON, anything else → OFF.
-        # The credentials are baked in (secrets.py / wifi.json), so
-        # there's no genuine "searching" — the connect either lands
-        # in a couple of seconds or it doesn't, and exposing an
-        # intermediate state to the user is more noise than signal.
-        _stat_connected = bool(snap.get("connected"))
-        _stat_label = "ON"          if _stat_connected else "OFF"
-        _stat_color = theme.PRIMARY if _stat_connected else theme.MUTED
+        # Status reflects radio power. SSID/IP independently communicate
+        # whether association completed.
+        _stat_on = bool(snap.get("radio_on"))
+        _stat_label = "ON"          if _stat_on else "OFF"
+        _stat_color = theme.PRIMARY if _stat_on else theme.MUTED
         rows = [
             ("Status",       _stat_label, _stat_color),
             ("SSID",         snap.get("ssid") or "—",       theme.TEXT_BRIGHT),

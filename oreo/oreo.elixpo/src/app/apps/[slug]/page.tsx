@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { ALL_CATALOG, findApp, type AppEntry } from "@/data/apps";
 import DetailIcon from "./_components/DetailIcon";
+import JsonLd from "@/components/JsonLd";
 
 /* /apps/[slug]/ — per-app detail route.
  *
@@ -44,13 +45,30 @@ export async function generateMetadata({
   const { slug } = await params;
   const app = findApp(slug);
   if (!app) return { title: "Not found" };
+  const canonical = `/apps/${app.urlSlug}/`;
+  const fullDescription = (app.details ?? app.blurb)
+    .replace(/`/g, "")
+    .replace(/\s+/g, " ");
+  const description = fullDescription.length > 160
+    ? `${fullDescription.slice(0, 157).replace(/\s+\S*$/, "")}…`
+    : fullDescription;
   return {
-    title:       `${app.name} · Oreo`,
-    description: app.blurb,
+    title:       `${app.name} App | OreoOS`,
+    description,
+    alternates: { canonical },
     openGraph: {
-      title:       `${app.name} · Oreo`,
-      description: app.blurb,
+      type: "website",
+      url: canonical,
+      siteName: "OreoOS",
+      title:       `${app.name} App for OreoOS`,
+      description,
       images: app.pngIcon ? [{ url: app.pngIcon }] : undefined,
+    },
+    twitter: {
+      card: "summary",
+      title: `${app.name} App for OreoOS`,
+      description,
+      images: app.pngIcon ? [app.pngIcon] : undefined,
     },
   };
 }
@@ -94,6 +112,51 @@ export default async function AppDetail({
 
   return (
     <div className="relative">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        name: app.name,
+        description: app.details ?? app.blurb,
+        applicationCategory: app.category === "game" ? "GameApplication" : "UtilitiesApplication",
+        operatingSystem: "OreoOS",
+        softwareVersion: app.version,
+        image: app.pngIcon ? `https://oreo.elixpo.com${app.pngIcon}` : undefined,
+        url: `https://oreo.elixpo.com/apps/${app.urlSlug}/`,
+        author: {
+          "@type": "Person",
+          name: app.author,
+        },
+        isAccessibleForFree: true,
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD",
+        },
+      }} />
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: "https://oreo.elixpo.com/",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Apps",
+            item: "https://oreo.elixpo.com/apps/",
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: app.name,
+            item: `https://oreo.elixpo.com/apps/${app.urlSlug}/`,
+          },
+        ],
+      }} />
       {/* ── BLURRED LOGO BACKDROP ─────────────────────────────────────
           Two stacked layers:
             1. The PNG icon itself, scaled up and heavily blurred — the
