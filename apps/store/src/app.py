@@ -14,7 +14,7 @@ Two modes:
 HOME pops one mode level (details → list → quit-to-launcher)."""
 
 import oreoOS
-from oreoOS import api, theme, widgets
+from oreoOS import api, theme, widgets, icons
 from oreoOS import store
 
 
@@ -53,6 +53,13 @@ class App(oreoOS.App):
         self._detail_for = None     # name_dir the details belong to
         self._busy       = None
         self._dirty      = True
+        self._progress_received = 0
+        self._progress_total    = 0
+        self._progress_file     = ""
+        self._progress_index    = 0
+        self._progress_count    = 0
+        self._progress_pct      = -1
+        self._progress_paint_ms = 0
         # Surface disk cache immediately, then force a fresh refresh on
         # entry — an empty cache from a previous failed refresh must
         # not block the API call.
@@ -129,6 +136,12 @@ class App(oreoOS.App):
         installed = store.is_installed(name_dir)
         self._busy = name_dir
         self._msg  = ""
+        self._progress_received = 0
+        self._progress_total = int((self._detail or {}).get("bytes") or 0)
+        self._progress_file  = ""
+        self._progress_index = 0
+        self._progress_count = 0
+        self._progress_pct   = 0
         self._dirty = True
         try:
             self.draw(self._os.display); self._os.display.present()
@@ -138,7 +151,7 @@ class App(oreoOS.App):
             ok = store.uninstall(name_dir)
             self._msg = "Uninstalled" if ok else "Uninstall failed"
         else:
-            ok = store.install(name_dir)
+            ok = store.install(name_dir, progress_cb=self._on_install_progress)
             self._msg = "Installed" if ok else "Install failed"
         # The drawer caches its app list at module scope — invalidate
         # it so the newly-installed (or just-removed) app shows up on
@@ -151,6 +164,35 @@ class App(oreoOS.App):
                 pass
         self._busy = None
         self._dirty = True
+
+    def _on_install_progress(self, received, total, filename,
+                             file_index, file_count):
+        """Paint throttled whole-app download progress during installation."""
+        total = max(1, int(total or 0))
+        received = max(0, min(total, int(received or 0)))
+        pct = min(100, (received * 100) // total)
+        now = time.ticks_ms()
+        file_changed = file_index != self._progress_index
+        try:
+            paint_due = time.ticks_diff(now, self._progress_paint_ms) >= 80
+        except Exception:
+            paint_due = True
+
+        self._progress_received = received
+        self._progress_total = total
+        self._progress_file = filename or ""
+        self._progress_index = int(file_index or 0)
+        self._progress_count = int(file_count or 0)
+        if not file_changed and pct == self._progress_pct and not paint_due:
+            return
+        self._progress_pct = pct
+        self._progress_paint_ms = now
+        self._dirty = True
+        try:
+            self.draw(self._os.display)
+            self._os.display.present()
+        except Exception:
+            pass
 
     def _scroll_to_sel(self):
         """Keep the focused row inside the visible window."""
@@ -338,11 +380,11 @@ class App(oreoOS.App):
           1. Per-app store cache (`/store_icons/<dir>.py`) — populated
              during `store.refresh()` so we can paint the real icon
              BEFORE the app is installed.
-          2. The installed app's own bundled icon
+          2. The OS-shipped shared icon loader. This covers catalogue icons
+             bundled globally and keeps Store consistent with the launcher.
+          3. The installed app's own bundled icon
              (`apps.<dir>.assets.optimized.<stem>`) — for apps the user
              already installed.
-          3. The OS-shipped global icon bundle
-             (`assets.icons.optimized.<stem>`).
         Falls through to a letter glyph if nothing matches.
         """
         name_dir  = item.get("dir") or ""
@@ -352,14 +394,23 @@ class App(oreoOS.App):
             return ico
         if not icon_file:
             return None
+        try:
+            ico = icons.load(name_dir, icon_file)
+            if ico:
+                return ico
+        except Exception:
+            pass
         stem = icon_file.rsplit(".", 1)[0].replace("-", "_")
-        for modpath in ("apps.%s.assets.optimized.%s" % (name_dir, stem),
-                        "assets.icons.optimized." + stem):
+        # Only try an importable installed-app package name. Market directory
+        # names can contain spaces (for example "Oreo Pet"); feeding those to
+        # __import__ can raise before the global fallback is reached.
+        if name_dir and name_dir.replace("_", "").isalnum() and " " not in name_dir:
+            modpath = "apps.%s.assets.optimized.%s" % (name_dir, stem)
             try:
                 m = __import__(modpath, None, None, ["DATA", "W", "H"])
                 return (m.DATA, m.W, m.H)
-            except (ImportError, AttributeError):
-                continue
+            except Exception:
+                pass
         return None
 
     # ── details page ───────────────────────────────────────────────────
@@ -382,43 +433,49 @@ class App(oreoOS.App):
         # 5 lines, ellipsis on overflow. Most market manifests won't
         # have a description, in which case we skip the block.
         body_y = widgets.HEADER_H + 6 + 56
-        desc = det.get("description") or ""
-        if desc:
-            for i, line in enumerate(_wrap(desc, 36, 5)):
-                d.text(line, ROW_PAD_X, body_y + i * 12,
-                       theme.TEXT_DIM, scale=1)
+        desc = det.get("description") or "No description provided."
+        for i, line in enumerate(_wrap(desc, 36, 5)):
+            d.text(line, ROW_PAD_X, body_y + i * 12,
+                   theme.TEXT_DIM, scale=1)
 
-        # Stats line. If the app is already installed we walk
-        # /apps/<dir>/ on disk and show its actual on-flash footprint;
-        # otherwise we show "Tap install to download" as a tiny
-        # disclosure. We deliberately don't probe GitHub for an
-        # estimated remote size — that's an extra round-trip the
-        # details page doesn't need to block on.
+        # Stats line: exact remote download size before install, then live
+        # file position while the transfer is running.
         stats_y  = body_y + 5 * 12 + 4
-        if store.is_installed(self._detail_for):
+        busy = (self._busy == self._detail_for)
+        if busy and self._progress_count:
+            stats = "File %d/%d · %s" % (
+                self._progress_index,
+                self._progress_count,
+                self._progress_file.rsplit("/", 1)[-1],
+            )
+        elif store.is_installed(self._detail_for):
             sz = store.installed_size(self._detail_for)
-            if sz >= 10 * 1024:
-                stats = "Installed · %d KB on flash" % (sz // 1024)
-            else:
-                stats = "Installed · %d B on flash" % sz
+            stats = "Installed · %s on flash" % _format_size(sz)
         else:
-            stats = "Tap install to download"
-        d.text(stats, ROW_PAD_X, stats_y, theme.MUTED, scale=1)
+            remote_size = det.get("bytes")
+            stats = ("Download · %s" % _format_size(remote_size)
+                     if remote_size is not None else "Download size unavailable")
+        d.text(stats[:37], ROW_PAD_X, stats_y, theme.MUTED, scale=1)
 
         # Install / Uninstall button — bottom of the play area, full
         # width, dim while busy.
         installed = store.is_installed(self._detail_for)
-        busy      = (self._busy == self._detail_for)
         btn_h     = 28
         btn_y     = SH - widgets.HINT_H - btn_h - 14
         if busy:
-            label, fill, ink = "Working...", theme.MUTED2, theme.TEXT_BRIGHT
+            pct = max(0, min(100, self._progress_pct))
+            label, fill, ink = "Downloading %d%%" % pct, theme.MUTED2, theme.TEXT_BRIGHT
         elif installed:
             label, fill, ink = "Uninstall", theme.CARD, theme.PRIMARY
         else:
             label, fill, ink = "Install on badge", theme.PRIMARY, api.WHITE
         d.rect(ROW_PAD_X, btn_y, SW - 2 * ROW_PAD_X, btn_h, fill,
                fill=True)
+        if busy:
+            progress_w = ((SW - 2 * ROW_PAD_X) * pct) // 100
+            if progress_w:
+                d.rect(ROW_PAD_X, btn_y, progress_w, btn_h,
+                       theme.PRIMARY, fill=True)
         if installed and not busy:
             d.rect(ROW_PAD_X, btn_y,                 SW - 2 * ROW_PAD_X, 1, theme.PRIMARY, fill=True)
             d.rect(ROW_PAD_X, btn_y + btn_h - 1,     SW - 2 * ROW_PAD_X, 1, theme.PRIMARY, fill=True)
@@ -456,12 +513,9 @@ class App(oreoOS.App):
     def _icon_for_name(icon_filename):
         if not icon_filename:
             return None
-        stem = icon_filename.rsplit(".", 1)[0].replace("-", "_")
         try:
-            m = __import__("assets.icons.optimized." + stem,
-                           None, None, ["DATA", "W", "H"])
-            return (m.DATA, m.W, m.H)
-        except (ImportError, AttributeError):
+            return icons.load("store", icon_filename)
+        except Exception:
             return None
 
 
@@ -490,3 +544,13 @@ def _wrap(text, max_chars, max_lines):
         cut  = max_chars - 1
         out[-1] = (last[:cut].rstrip() + "…") if len(last) > cut else last + "…"
     return out
+
+
+def _format_size(size):
+    """Compact byte size that fits the 320 px Store details layout."""
+    size = max(0, int(size or 0))
+    if size >= 1024 * 1024:
+        return "%.1f MB" % (size / (1024.0 * 1024.0))
+    if size >= 1024:
+        return "%.1f KB" % (size / 1024.0)
+    return "%d B" % size

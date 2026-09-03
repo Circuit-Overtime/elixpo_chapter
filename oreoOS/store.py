@@ -23,7 +23,7 @@ def _bc(msg):
         pass
 
 
-def _http_get(url, accept_raw=False, timeout_s=4):
+def _http_get(url, accept_raw=False, timeout_s=4, on_chunk=None):
     """Tiny GET that returns the body as bytes (or None on failure).
 
     `accept_raw=True` flips the Accept header to application/vnd.github.raw
@@ -95,6 +95,8 @@ def _http_get(url, accept_raw=False, timeout_s=4):
 
         _bc("  read body")
         buf = bytearray()
+        body_at = None
+        body_reported = 0
         while True:
             # Wallclock check — if we've blown our budget, bail no
             # matter what settimeout says.
@@ -114,6 +116,21 @@ def _http_get(url, accept_raw=False, timeout_s=4):
             if not chunk:
                 break
             buf.extend(chunk)
+            # Report response-body bytes as they arrive. Header bytes are
+            # deliberately excluded so callers can compare this with the
+            # exact file sizes returned by GitHub's Contents API.
+            if on_chunk:
+                if body_at is None:
+                    marker = buf.find(b"\r\n\r\n")
+                    if marker >= 0:
+                        body_at = marker + 4
+                if body_at is not None:
+                    body_now = len(buf) - body_at
+                    delta = body_now - body_reported
+                    if delta > 0:
+                        body_reported = body_now
+                        try: on_chunk(delta)
+                        except Exception: pass
             if len(buf) > 256 * 1024:
                 break
     except Exception as e:
@@ -318,15 +335,36 @@ def _fetch_store_icon(name_dir, app_path, icon_filename):
     """
     if not icon_filename:
         return False
+    # Most first-party market apps reuse an icon already shipped for the
+    # launcher. Prefer that local copy: it is instant, works offline, and
+    # avoids one TLS request per catalogue card.
+    try:
+        from oreoOS import icons as _icons
+        if _icons.load(name_dir, icon_filename):
+            return True
+    except Exception:
+        pass
     stem = icon_filename.rsplit(".", 1)[0].replace("-", "_")
     dst  = _STORE_ICONS_DIR + "/" + name_dir + ".py"
     if _exists(dst):
-        return True
+        # Do not let an interrupted download poison the cache forever.
+        try:
+            with open(dst, "rb") as f:
+                cached = f.read()
+            if b"DATA = (" in cached and b"W =" in cached and b"H =" in cached:
+                return True
+            _os.remove(dst)
+        except Exception:
+            try: _os.remove(dst)
+            except OSError: pass
     url = ("https://raw.githubusercontent.com/%s/%s/%s/assets/optimized/%s.py"
            % (STORE_REPO, STORE_REF, _q(app_path), stem))
     _bc("icon GET " + name_dir)
     body = _http_get(url, accept_raw=True, timeout_s=T_API)
     if body is None:
+        return False
+    if b"DATA = (" not in body or b"W =" not in body or b"H =" not in body:
+        _bc("icon invalid " + name_dir)
         return False
     _ensure_dir(_STORE_ICONS_DIR)
     try:
@@ -555,21 +593,25 @@ def get_details(name_dir):
     # Disk-cache hit? Cached details mirror the manifest as of the last
     # refresh, so they're fine until refresh() wipes _details_cache.
     disk = _details_disk_load(name_dir)
-    if disk and disk.get("ok"):
+    if disk and disk.get("ok") and disk.get("files") is not None \
+       and disk.get("bytes") is not None:
         _details_cache[name_dir] = disk
         return disk
 
-    # No network call — refresh() already enriched the catalogue entry
-    # with everything we need for the details page. The file-tree walk
-    # is deferred to install() so opening details is instant after the
-    # first catalogue load.
+    # Fetch the file tree while the details page's loading frame is visible.
+    # This gives the user an exact download size before they approve the
+    # install. The result is cached and reused by install(), so there is no
+    # second repository walk after the button press.
+    files = _walk(entry.get("path") or "")
+    total_bytes = sum(int(f.get("size", 0) or 0) for f in files) \
+                  if files else None
     out = {
         "name":         entry.get("name")        or name_dir,
         "icon":         entry.get("icon")        or None,
         "author":       entry.get("author")      or None,
         "description":  entry.get("description") or "",
-        "files":        None,    # populated lazily by install()
-        "bytes":        None,
+        "files":        files,
+        "bytes":        total_bytes,
         "ok":           True,
     }
     _details_cache[name_dir] = out
@@ -655,7 +697,7 @@ def is_installed(name):
     return _exists(APPS_DIR + "/" + name + "/main.py")
 
 
-def install(name):
+def install(name, progress_cb=None):
     """Download every file under `apps_market/<name>/` on GitHub and
     write it to `apps/<name>/<relative>`. Returns True iff main.py
     landed cleanly.
@@ -666,10 +708,7 @@ def install(name):
     """
     if not _RAW_OK:
         return False
-    # Find the catalogue entry first so we know the GitHub path. We
-    # walk lazily here (NOT in get_details) so opening the details
-    # page is cheap (one API call) — install is the user's explicit
-    # "I want this" so the heavier walk is acceptable.
+    # Find the catalogue entry first so we know the GitHub path.
     cat = list_market()
     entry = None
     for e in cat:
@@ -678,14 +717,20 @@ def install(name):
             break
     if not entry:
         return False
-    files = _walk(entry["path"])
+    details = get_details(name)
+    files = details.get("files") if details else None
+    if not files:
+        files = _walk(entry["path"])
     if not files:
         return False
 
     root_prefix = entry["path"] + "/"
     target_root = APPS_DIR + "/" + name
+    total_bytes = sum(int(f.get("size", 0) or 0) for f in files)
+    completed_bytes = 0
+    total_files = len(files)
 
-    for f in files:
+    for file_index, f in enumerate(files):
         rel = f["path"]
         if not rel.startswith(root_prefix):
             continue
@@ -695,8 +740,22 @@ def install(name):
         if parent:
             _ensure_dir(parent)
         _bc("install GET " + rel)
+
+        # `_http_get` reports body deltas while the socket is active. Combine
+        # those with prior completed files to expose whole-app progress.
+        current_bytes = [0]
+        def _chunk(delta):
+            current_bytes[0] += delta
+            if progress_cb:
+                received = min(total_bytes, completed_bytes + current_bytes[0])
+                try:
+                    progress_cb(received, total_bytes, rel,
+                                file_index + 1, total_files)
+                except Exception:
+                    pass
+
         body = _http_get(f["download_url"], accept_raw=False,
-                         timeout_s=T_FILE)
+                         timeout_s=T_FILE, on_chunk=_chunk)
         if body is None:
             continue
         try:
@@ -704,6 +763,13 @@ def install(name):
                 out.write(body)
         except Exception:
             pass
+        completed_bytes += int(f.get("size", 0) or len(body))
+        if progress_cb:
+            try:
+                progress_cb(min(total_bytes, completed_bytes), total_bytes,
+                            rel, file_index + 1, total_files)
+            except Exception:
+                pass
         gc.collect()
 
     # Post-install integrity check: the launcher's drawer skips any
