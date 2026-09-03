@@ -353,94 +353,109 @@ def _progress_bar(cur, total, width=24):
 
 
 def mpremote_batch(actions, label=""):
-    """Run many `fs` actions in a SINGLE mpremote session via `+` separators.
+    """Stream changed files through mpremote's binary mounted-FS protocol.
 
-    Streams a verbose live progress report:
-      [007/124] [####------------------]  oreoWare/display.py    4.2 kB  (+ 0.7s)
-      [008/124] [####------------------]  oreoWare/wifi.py       ↺ unchanged
+    `mpremote fs cp` encodes each 256-byte block inside a Python command. That
+    is reliable for tiny scripts, but random binary data expands to several
+    times its original size and pays a raw-REPL round trip for every block.
+    A Gallery video can consequently take 10+ minutes.
 
-    The trailing "↺ unchanged" appears when mpremote's per-file cache shortcut
-    fires (the file content on the device matches our local copy).
+    Mounting the repository at `/remote` uses mpremote's binary filesystem
+    channel instead. One device-side loop reads each local file and writes it
+    to flash in 249-byte blocks (mpremote's safe USB-stdin ring-buffer size).
+    Each destination is staged as `.part`, so an interrupted transfer does not
+    truncate the currently working file.
     """
-    cmd = [PYTHON, "-m", "mpremote", "connect", PORT]
-    for a in actions:
-        if cmd[-1] != PORT:
-            cmd.append("+")
-        op = a[0]
-        if op == "mkdir":
-            cmd += ["fs", "mkdir", ":%s" % a[1]]
-        elif op == "cp":
-            cmd += ["fs", "cp", a[1], ":%s" % a[2]]
-        elif op == "rm":
-            cmd += ["fs", "rm", ":%s" % a[1]]
     if label:
         print(label)
 
-    total_cp = sum(1 for a in actions if a[0] == "cp")
-    # Pre-compute the local→remote mapping so we can look up size by source
-    cp_size = {}
+    unsupported = [a for a in actions if a[0] != "cp"]
+    if unsupported:
+        print("  ERROR: fast push only supports copy actions")
+        return 2
+
+    root = Path.cwd().resolve()
+    copies = []
     for a in actions:
-        if a[0] == "cp":
-            try:
-                cp_size[a[1]] = Path(a[1]).stat().st_size
-            except OSError:
-                cp_size[a[1]] = 0
+        local = Path(a[1]).resolve()
+        try:
+            mounted_path = "/remote/" + local.relative_to(root).as_posix()
+        except ValueError:
+            print("  ERROR: refusing to mount-copy a file outside the project: %s" % local)
+            return 2
+        try:
+            size = local.stat().st_size
+        except OSError as exc:
+            print("  ERROR: cannot stat %s: %s" % (local, exc))
+            return 2
+        remote = "/" + a[2].lstrip("/")
+        copies.append((mounted_path, remote, size, a[1]))
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            text=True, bufsize=1)
+    # Keep this program compatible with MicroPython: no context managers,
+    # pathlib, f-strings, or CPython-only APIs run on the badge.
+    device_files = [(src, dst, size) for src, dst, size, _ in copies]
+    copy_script = "import os\nfiles=%r\nbuf=bytearray(249)\n" % (device_files,)
+    copy_script += (
+        "for idx,item in enumerate(files):\n"
+        " src,dst,size=item\n"
+        " tmp=dst+'.part'\n"
+        " try: os.remove(tmp)\n"
+        " except OSError: pass\n"
+        " inp=open(src,'rb')\n"
+        " out=open(tmp,'wb')\n"
+        " try:\n"
+        "  while True:\n"
+        "   n=inp.readinto(buf)\n"
+        "   if not n: break\n"
+        "   out.write(memoryview(buf)[:n])\n"
+        " finally:\n"
+        "  inp.close()\n"
+        "  out.close()\n"
+        " try: os.remove(dst)\n"
+        " except OSError: pass\n"
+        " os.rename(tmp,dst)\n"
+        " print('@@PUSH|%d|%d|%s' % (idx+1,size,dst))\n"
+    )
 
-    done       = 0
-    new_bytes  = 0
-    skipped    = 0
-    pending    = None     # local path of file currently being copied
+    cmd = [PYTHON, "-m", "mpremote", "connect", PORT,
+           "mount", ".", "+", "exec", copy_script]
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+
+    total_cp = len(copies)
+    done = 0
+    new_bytes = 0
 
     for line in proc.stdout:
         line = line.rstrip()
         if not line:
             continue
-        if "File exists" in line:
+        if line.startswith("Local directory "):
             continue
+        if line.startswith("@@PUSH|"):
+            parts = line.split("|", 3)
+            if len(parts) == 4:
+                try:
+                    done = int(parts[1])
+                    size = int(parts[2])
+                except ValueError:
+                    print("    " + line)
+                    continue
+                new_bytes += size
+                bar = _progress_bar(done, total_cp)
+                print("  [%03d/%03d] %s  %-40s  %8s" %
+                      (done, total_cp, bar, parts[3][-40:], _human_size(size)))
+                continue
+        print("    " + line)
 
-        # "cp <local> :<remote>"  — mpremote announces a transfer
-        if line.startswith("cp "):
-            parts = line.split()
-            if len(parts) >= 3:
-                pending = parts[1]
-            continue
-
-        # "Up to date: <remote>"  — mpremote skipped because content matches
-        if line.startswith("Up to date:"):
-            if pending is not None:
-                done    += 1
-                skipped += 1
-                bar      = _progress_bar(done, total_cp)
-                print("  [%03d/%03d] %s  %-40s  ↺ unchanged" %
-                      (done, total_cp, bar, pending[-40:]))
-                pending  = None
-            continue
-
-        # Anything else → mpremote stderr (e.g. "mkdir: File exists" is filtered above)
-        if pending is not None and not line.startswith(":"):
-            # treat as the success line for a real transfer
-            pass
-
-        # Mirror unknown lines verbatim so errors aren't silently swallowed
-        if not line.startswith(":") and "fs cp " not in line and not line.startswith("ls "):
-            print("    " + line)
-
-    # All mpremote output drained → infer how many "new" transfers happened
-    # by counting cp-announcements without an Up-to-date follow-up.
-    # The simplest heuristic: total_cp - skipped were actual writes.
-    # We don't get per-line transfer confirmations, so we report aggregate.
     rc = proc.wait()
-    real_writes = total_cp - skipped
-    # Sum bytes of newly-written files (we don't know which exactly, but
-    # this is a good order-of-magnitude — averaged file size × writes)
-    if real_writes:
-        avg = sum(cp_size.values()) // max(1, total_cp)
-        new_bytes = avg * real_writes
-    print("  ── %d files: %d new/updated (~%s)  %d unchanged   exit=%d" %
-          (total_cp, real_writes, _human_size(new_bytes), skipped, rc))
+    print("  ── %d/%d files streamed (%s)   exit=%d" %
+          (done, total_cp, _human_size(new_bytes), rc))
     return rc
 
 
@@ -688,10 +703,16 @@ def main():
         if h is not None:
             new_cache[remote] = h
 
-    # Write + queue secrets.py (always re-push — .env can change without
-    # touching any tracked file)
+    # Generate secrets before comparing it with the cache. Hashing the rendered
+    # file still notices .env changes, without unconditionally writing the same
+    # tiny module on every deploy.
     secrets_tmp, ssid = write_secrets_local()
-    actions.append(("cp", str(secrets_tmp), "secrets.py"))
+    secrets_hash = _hash_file(secrets_tmp)
+    if cache.get("secrets.py") != secrets_hash:
+        actions.append(("cp", str(secrets_tmp), "secrets.py"))
+        new_cache["secrets.py"] = secrets_hash
+    else:
+        skipped_pre += 1
 
     # Gallery sync: remove device-side .py files whose raw counterpart has
     # been deleted locally. Frees flash from past uploads and keeps the
@@ -749,7 +770,7 @@ def main():
 
     cache_state = "miss" if not cache else "hit (%d entries)" % len(cache)
     print("  hash cache: %s   |   to push: %d   skipped: %d"
-          % (cache_state, len(files) + 1, skipped_pre))
+          % (cache_state, len(actions), skipped_pre))
     if skipped_pre and len(cache) == 0:
         print("  (cache was empty — first run after a hash-cache reset will push everything)")
 
@@ -758,17 +779,13 @@ def main():
     # hits) and refuse the deploy if the device would be left below the
     # floor afterwards. The device-side measurement uses statvfs so it
     # accounts for FS overhead the local file size misses.
-    if not SKIP_FREE_GUARD and files:
+    if not SKIP_FREE_GUARD and actions:
         projected_bytes = 0
-        for local, _ in files:
+        for _, local, _ in actions:
             try:
                 projected_bytes += Path(local).stat().st_size
             except OSError:
                 pass
-        try:
-            projected_bytes += secrets_tmp.stat().st_size
-        except OSError:
-            pass
         free_bytes = _device_free_bytes()
         if free_bytes is None:
             print("  free-space guard: could not read device statvfs — skipping check")
@@ -793,13 +810,19 @@ def main():
 
     push_t0 = _t.time()
     try:
-        rc = mpremote_batch(actions,
-                            label="Pushing %d files in a single session..."
-                                  % (len(files) + 1))
+        if actions:
+            rc = mpremote_batch(
+                actions,
+                label="Streaming %d changed files over the binary channel..."
+                      % len(actions),
+            )
+        else:
+            print("No changed files to push.")
+            rc = 0
     finally:
         secrets_tmp.unlink(missing_ok=True)
     push_elapsed = _t.time() - push_t0
-    print("  mpremote batch took %.1fs" % push_elapsed)
+    print("  binary stream took %.1fs" % push_elapsed)
 
     # Only trust queued hashes after the complete mpremote batch succeeds.
     # Saving them after an interrupted/failed --force run marks partial files
