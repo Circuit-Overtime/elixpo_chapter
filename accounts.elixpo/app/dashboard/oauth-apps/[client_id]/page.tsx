@@ -607,14 +607,25 @@ export default function OAuthAppSettingsPage() {
     }
 
     return (
-        <Box>
+        <Box
+            sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                    xs: "minmax(0, 1fr)",
+                    lg: "190px minmax(0, 1fr) minmax(0, 1fr)",
+                },
+                gap: 2.5,
+                alignItems: "start",
+            }}
+        >
             {/* Back + Header */}
             <Button
                 startIcon={<ArrowBackIcon />}
                 onClick={() => router.push("/dashboard/oauth-apps")}
                 sx={{
+                    gridColumn: "1 / -1",
+                    justifySelf: "start",
                     color: "var(--fg-faint)",
-                    mb: 2,
                     textTransform: "none",
                     "&:hover": { color: "var(--fg)" },
                 }}
@@ -624,6 +635,7 @@ export default function OAuthAppSettingsPage() {
 
             <Box
                 sx={{
+                    gridColumn: "1 / -1",
                     position: "sticky",
                     top: { xs: 56, sm: 64 },
                     zIndex: 10,
@@ -631,7 +643,6 @@ export default function OAuthAppSettingsPage() {
                     alignItems: "center",
                     flexWrap: "wrap",
                     gap: 2,
-                    mb: 3,
                     mx: { xs: -1, sm: 0 },
                     px: { xs: 1, sm: 1.5 },
                     py: 1.5,
@@ -706,6 +717,61 @@ export default function OAuthAppSettingsPage() {
                             })()}
                         </Typography>
                     )}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            mt: 0.25,
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                color: "var(--fg-faint)",
+                                fontFamily: "monospace",
+                                fontSize: "0.72rem",
+                                wordBreak: "break-all",
+                            }}
+                        >
+                            {app?.client_id || clientId}
+                        </Typography>
+                        <Tooltip
+                            title={
+                                copiedField === "client_id"
+                                    ? "Copied!"
+                                    : "Copy"
+                            }
+                        >
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    copyToClipboard(
+                                        app?.client_id || clientId,
+                                        "client_id",
+                                    )
+                                }
+                                sx={{ color: "#ff7759", p: 0.25 }}
+                            >
+                                <ContentCopyIcon
+                                    sx={{ fontSize: "0.85rem" }}
+                                />
+                            </IconButton>
+                        </Tooltip>
+                        <Typography
+                            component="a"
+                            href="/docs/lixaccounts"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                                color: "#ff7759",
+                                fontSize: "0.7rem",
+                                textDecoration: "none",
+                                "&:hover": { textDecoration: "underline" },
+                            }}
+                        >
+                            SDK docs
+                        </Typography>
+                    </Box>
                 </Box>
                 {app?.is_active === false && (
                     <Chip
@@ -742,7 +808,7 @@ export default function OAuthAppSettingsPage() {
                     severity={message.type}
                     onClose={() => setMessage(null)}
                     sx={{
-                        mb: 3,
+                        gridColumn: "1 / -1",
                         bgcolor:
                             message.type === "success"
                                 ? "rgba(255, 119, 89,0.1)"
@@ -762,79 +828,69 @@ export default function OAuthAppSettingsPage() {
                 </Alert>
             )}
 
+            <Box
+                component="nav"
+                aria-label="Application settings sections"
+                sx={{
+                    display: { xs: "none", lg: "flex" },
+                    position: "sticky",
+                    top: 150,
+                    gridColumn: "1",
+                    gridRow: "span 7",
+                    order: 1,
+                    flexDirection: "column",
+                    gap: 0.5,
+                    p: 1,
+                    borderRadius: "12px",
+                    border: "1px solid var(--border)",
+                    bgcolor: "var(--surface)",
+                }}
+            >
+                {[
+                    ["overview", "Application"],
+                    ["credentials", "Client secret"],
+                    ["webhooks", "Webhook endpoints"],
+                    ["routes", "Redirects & info"],
+                    ["branding", "Branding & identity"],
+                    ["activity", "Activity"],
+                    ["danger", "Danger zone"],
+                ].map(([id, label]) => (
+                    <Button
+                        key={id}
+                        component="a"
+                        href={`#${id}`}
+                        sx={{
+                            justifyContent: "flex-start",
+                            color: "var(--fg-muted)",
+                            textTransform: "none",
+                            fontSize: "0.82rem",
+                            "&:hover": {
+                                color: "#ff7759",
+                                bgcolor: "rgba(255, 119, 89,0.08)",
+                            },
+                        }}
+                    >
+                        {label}
+                    </Button>
+                ))}
+            </Box>
+
             {/* Bento Grid */}
             <Box
                 sx={{
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
-                    gap: 2.5,
-                    mb: 3,
+                    display: "contents",
                 }}
             >
-                {/* Client ID */}
-                <Box sx={cardSx}>
-                    <Typography
-                        sx={{
-                            color: "var(--fg-faint)",
-                            fontSize: "0.8rem",
-                            mb: 1,
-                            fontWeight: 500,
-                        }}
-                    >
-                        Client ID
-                    </Typography>
-                    <Box sx={monoBox}>
-                        <Typography
-                            sx={{
-                                color: "#ff7759",
-                                fontFamily: "monospace",
-                                fontSize: "0.8rem",
-                                flex: 1,
-                                wordBreak: "break-all",
-                            }}
-                        >
-                            {app?.client_id || clientId}
-                        </Typography>
-                        <Tooltip
-                            title={
-                                copiedField === "client_id" ? "Copied!" : "Copy"
-                            }
-                        >
-                            <IconButton
-                                size="small"
-                                onClick={() =>
-                                    copyToClipboard(
-                                        app?.client_id || clientId,
-                                        "client_id",
-                                    )
-                                }
-                                sx={{ color: "#ff7759" }}
-                            >
-                                <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                    <Typography
-                        component="a"
-                        href="/docs/lixaccounts"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                            display: "inline-block",
-                            color: "#ff7759",
-                            fontSize: "0.8rem",
-                            fontWeight: 600,
-                            mt: 1.25,
-                            textDecoration: "none",
-                            "&:hover": { textDecoration: "underline" },
-                        }}
-                    >
-                        Use this Client ID with the Developer SDK →
-                    </Typography>
-                </Box>
-
                 {/* Client Secret */}
-                <Box sx={cardSx}>
+                <Box
+                    id="credentials"
+                    sx={{
+                        ...cardSx,
+                        order: 2,
+                        gridColumn: { xs: "1", lg: "2 / -1" },
+                        scrollMarginTop: "150px",
+                    }}
+                >
                     <Typography
                         sx={{
                             color: "var(--fg-faint)",
@@ -922,16 +978,21 @@ export default function OAuthAppSettingsPage() {
                                 >
                                     ••••••••••••••••••••••••••••
                                 </Typography>
-                                <Tooltip title="Regenerate secret">
-                                    <IconButton
-                                        size="small"
-                                        onClick={handleRegenerateSecret}
-                                        disabled={regenerating}
-                                        sx={{ color: "#ff7759" }}
-                                    >
-                                        <RefreshIcon fontSize="small" />
-                                    </IconButton>
-                                </Tooltip>
+                                <Button
+                                    size="small"
+                                    startIcon={<RefreshIcon />}
+                                    onClick={handleRegenerateSecret}
+                                    disabled={regenerating}
+                                    sx={{
+                                        color: "#ff7759",
+                                        textTransform: "none",
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {regenerating
+                                        ? "Regenerating…"
+                                        : "Regenerate"}
+                                </Button>
                             </Box>
                             <Typography
                                 variant="caption"
@@ -947,8 +1008,16 @@ export default function OAuthAppSettingsPage() {
                     )}
                 </Box>
 
-                {/* General Settings (spans full width on lg) */}
-                <Box sx={{ ...cardSx, gridColumn: { lg: "1 / -1" } }}>
+                {/* General Settings */}
+                <Box
+                    id="overview"
+                    sx={{
+                        ...cardSx,
+                        order: 1,
+                        gridColumn: { xs: "1", lg: "2 / -1" },
+                        scrollMarginTop: "150px",
+                    }}
+                >
                     <Typography
                         sx={{ color: "var(--fg)", fontWeight: 600, mb: 2 }}
                     >
@@ -957,19 +1026,44 @@ export default function OAuthAppSettingsPage() {
                     <Box
                         sx={{
                             display: "grid",
-                            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                            gridTemplateColumns: {
+                                xs: "1fr",
+                                md:
+                                    app?.client_type === "public"
+                                        ? "1fr 1fr"
+                                        : "1fr",
+                            },
                             gap: 2,
                         }}
                     >
-                        <TextField
-                            fullWidth
-                            label="Application Name"
-                            value={form.name}
-                            onChange={(e) =>
-                                setForm({ ...form, name: e.target.value })
-                            }
-                            sx={textFieldSx}
-                        />
+                        <Box sx={{ gridColumn: "1 / -1" }}>
+                            <TextField
+                                fullWidth
+                                label="Application Name"
+                                value={form.name}
+                                onChange={(e) =>
+                                    setForm({ ...form, name: e.target.value })
+                                }
+                                sx={textFieldSx}
+                            />
+                        </Box>
+                        <Box sx={{ gridColumn: "1 / -1" }}>
+                            <TextField
+                                fullWidth
+                                label="Description"
+                                placeholder="What does your application do?"
+                                value={form.description}
+                                onChange={(e) =>
+                                    setForm({
+                                        ...form,
+                                        description: e.target.value,
+                                    })
+                                }
+                                multiline
+                                rows={2}
+                                sx={textFieldSx}
+                            />
+                        </Box>
                         <TextField
                             fullWidth
                             label="Homepage URL"
@@ -999,28 +1093,19 @@ export default function OAuthAppSettingsPage() {
                                 sx={textFieldSx}
                             />
                         )}
-                        <Box sx={{ gridColumn: { md: "1 / -1" } }}>
-                            <TextField
-                                fullWidth
-                                label="Description"
-                                placeholder="What does your application do?"
-                                value={form.description}
-                                onChange={(e) =>
-                                    setForm({
-                                        ...form,
-                                        description: e.target.value,
-                                    })
-                                }
-                                multiline
-                                rows={2}
-                                sx={textFieldSx}
-                            />
-                        </Box>
                     </Box>
                 </Box>
 
                 {/* Redirect URIs */}
-                <Box sx={{ ...cardSx, gridColumn: { lg: "1 / -1" } }}>
+                <Box
+                    id="routes"
+                    sx={{
+                        ...cardSx,
+                        order: 4,
+                        gridColumn: { xs: "1", lg: "2" },
+                        scrollMarginTop: "150px",
+                    }}
+                >
                     <Typography
                         sx={{ color: "var(--fg)", fontWeight: 600, mb: 0.5 }}
                     >
@@ -1109,7 +1194,13 @@ export default function OAuthAppSettingsPage() {
                 </Box>
 
                 {/* Scopes + Stats */}
-                <Box sx={{ ...cardSx, gridColumn: { lg: "1 / -1" } }}>
+                <Box
+                    sx={{
+                        ...cardSx,
+                        order: 4,
+                        gridColumn: { xs: "1", lg: "3" },
+                    }}
+                >
                     <Typography
                         sx={{ color: "var(--fg)", fontWeight: 600, mb: 2 }}
                     >
@@ -1235,7 +1326,15 @@ export default function OAuthAppSettingsPage() {
             </Box>
 
             {/* Custom Branding & Identity card */}
-            <Box sx={{ ...cardSx, gridColumn: { lg: "1 / -1" }, mb: 3 }}>
+            <Box
+                id="branding"
+                sx={{
+                    ...cardSx,
+                    order: 5,
+                    gridColumn: { xs: "1", lg: "2 / -1" },
+                    scrollMarginTop: "150px",
+                }}
+            >
                 <Typography
                     sx={{ color: "var(--fg)", fontWeight: 600, mb: 0.5 }}
                 >
@@ -2162,7 +2261,15 @@ export default function OAuthAppSettingsPage() {
 
             {/* Activity panel — sign-ins, sessions, request count, and a */}
             {stats && (
-                <Box sx={{ ...cardSx, mb: 3 }}>
+                <Box
+                    id="activity"
+                    sx={{
+                        ...cardSx,
+                        order: 6,
+                        gridColumn: { xs: "1", lg: "2 / -1" },
+                        scrollMarginTop: "150px",
+                    }}
+                >
                     {stats.branding_verification_required && (
                         <Alert severity="warning" sx={{ mb: 2 }}>
                             Sign-ins are paused because this app has more than
@@ -2349,7 +2456,15 @@ export default function OAuthAppSettingsPage() {
             )}
 
             {/* Webhooks panel — multi-endpoint event subscription */}
-            <Box sx={{ ...cardSx, mb: 3 }}>
+            <Box
+                id="webhooks"
+                sx={{
+                    ...cardSx,
+                    order: 3,
+                    gridColumn: { xs: "1", lg: "2 / -1" },
+                    scrollMarginTop: "150px",
+                }}
+            >
                 <Typography
                     sx={{ color: "var(--fg)", fontWeight: 600, mb: 0.5 }}
                 >
@@ -2602,7 +2717,15 @@ export default function OAuthAppSettingsPage() {
             </Box>
 
             {/* Danger Zone */}
-            <Box sx={{ ...cardSx, border: "1px solid rgba(239,68,68,0.3)" }}>
+            <Box
+                id="danger"
+                sx={{
+                    ...cardSx,
+                    order: 7,
+                    gridColumn: { xs: "1", lg: "2 / -1" },
+                    border: "1px solid rgba(239,68,68,0.3)",
+                }}
+            >
                 <Typography sx={{ color: "#b91c1c", fontWeight: 600, mb: 1 }}>
                     Danger Zone
                 </Typography>

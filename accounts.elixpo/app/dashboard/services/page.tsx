@@ -2,7 +2,15 @@
 
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { Box, Button, Chip, CircularProgress, Typography } from "@mui/material";
+import {
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Tab,
+    Tabs,
+    Typography,
+} from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { generatePixelAvatar } from "@/lib/pixel-avatar";
 
@@ -12,6 +20,7 @@ interface ConnectedService {
     description?: string;
     homepage_url?: string;
     logo_url?: string;
+    client_type?: "confidential" | "public";
     first_authorized: string;
     last_authorized: string;
 }
@@ -100,6 +109,13 @@ const ServicesPage = () => {
     const [loading, setLoading] = useState(true);
     const [revoking, setRevoking] = useState<string | null>(null);
     const [paramHandled, setParamHandled] = useState(false);
+    const [serviceType, setServiceType] = useState<"confidential" | "public">(
+        "confidential",
+    );
+    const filteredServices = services.filter(
+        (service) =>
+            (service.client_type || "confidential") === serviceType,
+    );
 
     // Deep-link revoke: blogs.elixpo (and other first-party apps) send the user
     // here with ?revoke=<app>&return_to=<url>. Auto-trigger the revoke for the
@@ -220,6 +236,29 @@ const ServicesPage = () => {
                 </Typography>
             </Box>
 
+            <Tabs
+                value={serviceType}
+                onChange={(_, value: "confidential" | "public") =>
+                    setServiceType(value)
+                }
+                sx={{
+                    mb: 3,
+                    minHeight: 40,
+                    borderBottom: "1px solid var(--border)",
+                    "& .MuiTab-root": {
+                        minHeight: 40,
+                        color: "var(--fg-faint)",
+                        textTransform: "none",
+                        fontWeight: 600,
+                    },
+                    "& .Mui-selected": { color: "#ff7759" },
+                    "& .MuiTabs-indicator": { backgroundColor: "#ff7759" },
+                }}
+            >
+                <Tab value="confidential" label="Web Application" />
+                <Tab value="public" label="Device Flow" />
+            </Tabs>
+
             {loading ? (
                 <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
                     <CircularProgress sx={{ color: "#ff7759" }} />
@@ -253,6 +292,24 @@ const ServicesPage = () => {
                         they'll appear here.
                     </Typography>
                 </Box>
+            ) : filteredServices.length === 0 ? (
+                <Box
+                    sx={{
+                        py: 6,
+                        textAlign: "center",
+                        borderRadius: "16px",
+                        bgcolor: "var(--surface)",
+                        border: "1px solid var(--border)",
+                    }}
+                >
+                    <Typography sx={{ color: "var(--fg-faint)" }}>
+                        No{" "}
+                        {serviceType === "public"
+                            ? "Device Flow"
+                            : "Web Application"}{" "}
+                        services connected
+                    </Typography>
+                </Box>
             ) : (
                 <Box
                     sx={{
@@ -261,7 +318,7 @@ const ServicesPage = () => {
                         gap: 2,
                     }}
                 >
-                    {services.map((svc) => {
+                    {filteredServices.map((svc) => {
                         const hostname = svc.homepage_url
                             ? (() => {
                                   try {

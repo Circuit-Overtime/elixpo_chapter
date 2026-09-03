@@ -46,7 +46,7 @@ async function getAuth(request: NextRequest) {
  * {
  *   "name": "My Service Name",
  *   "redirect_uris": ["https://myservice.com/auth/callback"],
- *   "logo_uri": "https://myservice.com/logo.png", (optional)
+ *   "logo_url": "https://myservice.com/logo.png", (optional)
  *   "description": "Brief description of your service", (optional)
  *   "client_type": "confidential" | "public", (optional; defaults to confidential)
  *   "scopes": ["openid", "profile", "email"]
@@ -167,6 +167,7 @@ export async function POST(request: NextRequest) {
         const {
             name,
             redirect_uris,
+            logo_url,
             logo_uri,
             description,
             homepage_url,
@@ -175,6 +176,7 @@ export async function POST(request: NextRequest) {
             audience,
             custom_scopes,
         } = body;
+        const requestedLogoUrl = logo_url ?? logo_uri;
         // Webhooks are no longer set at registration time. Use
         // POST /api/auth/oauth-clients/:client_id/webhooks to add one or
         // more endpoints after the app is created. An app can now have
@@ -222,6 +224,34 @@ export async function POST(request: NextRequest) {
                 { error: "Maximum of 5 redirect URIs allowed" },
                 { status: 400 },
             );
+        }
+
+        let validLogoUrl: string | undefined;
+        if (requestedLogoUrl != null && requestedLogoUrl !== "") {
+            if (typeof requestedLogoUrl !== "string") {
+                return NextResponse.json(
+                    { error: "logo_url must be a URL string" },
+                    { status: 400 },
+                );
+            }
+            try {
+                const parsed = new URL(requestedLogoUrl.trim());
+                if (
+                    parsed.protocol !== "https:" &&
+                    parsed.protocol !== "http:"
+                ) {
+                    return NextResponse.json(
+                        { error: "logo_url must use HTTP or HTTPS" },
+                        { status: 400 },
+                    );
+                }
+                validLogoUrl = parsed.toString();
+            } catch {
+                return NextResponse.json(
+                    { error: "logo_url must be a valid URL" },
+                    { status: 400 },
+                );
+            }
         }
 
         // Validate redirect URIs are valid URLs (HTTP and HTTPS allowed)
@@ -307,6 +337,7 @@ export async function POST(request: NextRequest) {
                 ownerId: auth.sub,
                 description,
                 homepageUrl: homepage_url,
+                logoUrl: validLogoUrl,
                 webhookUrl: null,
                 webhookSecretHash: null,
                 webhookEvents: null,

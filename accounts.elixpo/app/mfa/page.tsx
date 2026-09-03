@@ -446,24 +446,6 @@ function ChallengeInner() {
                             >
                                 {busy ? "Verifying…" : "Verify"}
                             </Button>
-                            <Button
-                                size="small"
-                                onClick={sendEmailOtp}
-                                disabled={busy || emailResendCd.active}
-                                sx={{
-                                    mt: 1,
-                                    color: "var(--fg-faint)",
-                                    textTransform: "none",
-                                    fontSize: "0.8rem",
-                                    "&.Mui-disabled": {
-                                        color: "var(--fg-faint)",
-                                    },
-                                }}
-                            >
-                                {emailResendCd.active
-                                    ? `Resend in ${emailResendCd.secondsLeft}s`
-                                    : "Resend code"}
-                            </Button>
                         </>
                     )
                 ) : (
@@ -535,24 +517,59 @@ function ChallengeInner() {
                     </>
                 )}
 
-                <FormControlLabel
-                    sx={{ mt: 2, color: "var(--fg-muted)" }}
-                    control={
-                        <Checkbox
-                            checked={trustDevice}
-                            onChange={(e) => setTrustDevice(e.target.checked)}
+                <Box
+                    sx={{
+                        mt: 1.5,
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        justifyContent:
+                            selected === "email_otp" && emailSent
+                                ? "space-between"
+                                : "flex-end",
+                        gap: 1,
+                    }}
+                >
+                    {selected === "email_otp" && emailSent && (
+                        <Button
+                            size="small"
+                            onClick={sendEmailOtp}
+                            disabled={busy || emailResendCd.active}
                             sx={{
                                 color: "var(--fg-faint)",
-                                "&.Mui-checked": { color: "#ff7759" },
+                                textTransform: "none",
+                                fontSize: "0.8rem",
+                                "&.Mui-disabled": {
+                                    color: "var(--fg-faint)",
+                                },
                             }}
-                        />
-                    }
-                    label={
-                        <Typography sx={{ fontSize: "0.85rem" }}>
-                            Trust this device for 30 days
-                        </Typography>
-                    }
-                />
+                        >
+                            {emailResendCd.active
+                                ? `Resend in ${emailResendCd.secondsLeft}s`
+                                : "Resend code"}
+                        </Button>
+                    )}
+                    <FormControlLabel
+                        sx={{ m: 0, color: "var(--fg-muted)" }}
+                        control={
+                            <Checkbox
+                                checked={trustDevice}
+                                onChange={(e) =>
+                                    setTrustDevice(e.target.checked)
+                                }
+                                sx={{
+                                    color: "var(--fg-faint)",
+                                    "&.Mui-checked": { color: "#ff7759" },
+                                }}
+                            />
+                        }
+                        label={
+                            <Typography sx={{ fontSize: "0.85rem" }}>
+                                Trust this device for 30 days
+                            </Typography>
+                        }
+                    />
+                </Box>
             </Box>
         </Box>
     );

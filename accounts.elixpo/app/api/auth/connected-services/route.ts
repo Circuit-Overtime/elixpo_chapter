@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
            oc.description,
            oc.homepage_url,
            oc.logo_url,
+           oc.client_type,
            MIN(rt.created_at) as first_authorized,
            MAX(rt.created_at) as last_authorized
          FROM refresh_tokens rt
