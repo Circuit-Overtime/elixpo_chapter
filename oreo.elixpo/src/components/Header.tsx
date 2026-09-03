@@ -39,10 +39,7 @@ export default function Header() {
                  backdrop-blur supports-[backdrop-filter]:bg-bg/60"
     >
       <div className="container-page flex h-16 items-center justify-between">
-        {/* Logo + wordmark — uses the real OreoOS mascot asset, the
-            same pixel-art panda baked into assets/sprites/optimized/
-            on the badge. Pixelated rendering keeps the chunky LCD
-            artwork crisp at 36 px. */}
+        {/* Logo + wordmark */}
         <Link href="/" className="group flex items-center gap-3">
           <div className="relative h-9 w-9 overflow-hidden rounded-md
                           border border-primary/40 bg-bg-raised
@@ -50,10 +47,9 @@ export default function Header() {
                           transition-transform group-hover:scale-105">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/mascot.png"
-              alt="Oreo mascot"
+              src="/favicon.ico"
+              alt="OreoOS"
               className="absolute inset-0 h-full w-full object-contain p-0.5"
-              style={{ imageRendering: "pixelated" }}
               loading="eager"
               decoding="async"
             />

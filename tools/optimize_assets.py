@@ -146,6 +146,20 @@ def _to_rgb565_bytes(img_rgb: Image.Image) -> bytes:
     return struct.pack(">%dH" % len(words), *words)
 
 
+def _letterbox(img: Image.Image, size: tuple) -> Image.Image:
+    """Fit the complete image inside size without cropping or distortion."""
+    target_w, target_h = size
+    src = img.convert("RGB")
+    src.thumbnail((target_w, target_h), Image.LANCZOS)
+    # Use the source corner as the matte colour so artwork with a near-white
+    # background blends into the added top/bottom bands cleanly.
+    matte = src.getpixel((0, 0))
+    out = Image.new("RGB", (target_w, target_h), matte)
+    out.paste(src, ((target_w - src.width) // 2,
+                    (target_h - src.height) // 2))
+    return out
+
+
 def _write_py_module(path: Path, data: bytes, w: int, h: int):
     words = struct.unpack_from(">%dH" % (len(data) // 2), data)
     chunk = 16
@@ -349,7 +363,14 @@ def optimize_sprites(targets=None):
                   % src.name)
             continue
         w, h    = size
-        img     = Image.open(src).convert("RGB").resize((w, h), Image.LANCZOS)
+        source  = Image.open(src)
+        # The website OG banner is 16:9 while the badge is 4:3. Preserve the
+        # complete banner and add a small matte instead of squeezing its text
+        # and panda horizontally.
+        if src.stem == "splash_bg":
+            img = _letterbox(source, (w, h))
+        else:
+            img = source.convert("RGB").resize((w, h), Image.LANCZOS)
         data    = _to_rgb565_bytes(img)
         out     = out_dir / ("%s.py" % src.stem)
         _write_py_module(out, data, w, h)
