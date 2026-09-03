@@ -22,6 +22,7 @@ point — not this folder.
 | [`BREADBOARD_BOM.md`](BREADBOARD_BOM.md) | First-time-builder BOM with through-hole-friendly parts | Workshop teachers, beginner solderers |
 | [`lcd.md`](lcd.md) | Display init, RAMWR strategy, refresh fps notes | Anyone touching `oreoWare/display.py` |
 | [`buttons.md`](buttons.md) | Matrix wiring, debounce, wake-on-press details | Anyone touching `oreoWare/buttons.py` |
+| [`VIDEO_ARCHITECTURE.md`](VIDEO_ARCHITECTURE.md) | Technical deep dive: RV565 v4, PSRAM preload, native Xtensa scaling, 24 FPS scheduling | Anyone extending Gallery or embedded media playback |
 | [`FIRMWARE.md`](FIRMWARE.md) (TODO) | How to flash MicroPython under the OS | Anyone bringing up a new board |
 | [`images/`](images/) | Photos, screenshots, the banner, mockups | The README + sibling docs reference these |
 

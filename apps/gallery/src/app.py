@@ -84,7 +84,7 @@ class _Video:
     def __init__(self, path):
         self._path = path
         self._inflate = None
-        self._blob = None
+        self._frames_data = None
         self._loaded = 0
         self._payload_size = 0
         self._frame_size = 0
@@ -119,7 +119,10 @@ class _Video:
             try:
                 if _os.stat(path)[6] != _VIDEO_HEADER_SIZE + self._payload_size:
                     raise ValueError("bad RV565 v4 size")
-                self._blob = bytearray(self._payload_size)
+                # Allocate frames incrementally while loading. A single 5-6 MB
+                # bytearray is fragile after normal UI use because the heap can
+                # have enough total space but no equally-large contiguous run.
+                self._frames_data = []
             except Exception:
                 self.close()
                 raise
@@ -150,7 +153,7 @@ class _Video:
         f = getattr(self, "_f", None)
         self._f = None
         self._inflate = None
-        self._blob = None
+        self._frames_data = None
         if f is not None:
             try:
                 f.close()
@@ -168,23 +171,29 @@ class _Video:
             return 100
         return self._loaded * 100 // self._payload_size
 
-    def load_step(self, amount=65536):
-        """Read one bounded V4 chunk into PSRAM; keeps loader/input alive."""
+    def load_step(self, frames_per_step=3):
+        """Read a few complete V4 frames; keeps loader/input responsive."""
         if self.version != 4 or self.ready:
             return True
-        end = min(self._loaded + amount, self._payload_size)
-        target = memoryview(self._blob)[self._loaded:end]
-        total = 0
         try:
-            while total < len(target):
-                n = self._f.readinto(target[total:])
-                if not n:
-                    self._load_error = True
+            for _ in range(frames_per_step):
+                if self.ready:
                     break
-                total += n
+                frame = bytearray(self._frame_size)
+                target = memoryview(frame)
+                total = 0
+                while total < self._frame_size:
+                    n = self._f.readinto(target[total:])
+                    if not n:
+                        self._load_error = True
+                        break
+                    total += n
+                if self._load_error:
+                    break
+                self._frames_data.append(frame)
+                self._loaded += self._frame_size
         except Exception:
             self._load_error = True
-        self._loaded += total
         if self.ready or self._load_error:
             try:
                 self._f.close()
@@ -224,7 +233,7 @@ class _Video:
         if self.version == 4:
             if not self.ready or self.index >= self.frames:
                 return False
-            self.frame_offset = self.index * self._frame_size
+            self.frame_offset = self.index
             self.index += 1
             return True
         if self._f is None:
@@ -442,6 +451,8 @@ class App(oreoOS.App):
         self._video_playing = True
         self._video_elapsed = 0.0
         self._video_needs_clear = True
+        self._video_error = ""
+        self._video_failed_name = ""
         self._dirty = True
 
     def on_exit(self):
@@ -465,12 +476,14 @@ class App(oreoOS.App):
             self._close_video()
             return None
         name = self._names[self._idx]
+        if self._video_failed_name == name:
+            return None
         if self._video is not None and self._video_name == name:
             return self._video
         self._close_video()
         try:
-            # A preloaded V4 clip needs a large contiguous PSRAM block. Drop
-            # photo caches before allocating it; they are cheap to reload.
+            # A preloaded V4 clip needs most of PSRAM. Drop photo caches before
+            # allocating its small frame blocks; photos are cheap to reload.
             self._cache = {}
             self._scaled_cache = {}
             _gc.collect()
@@ -479,7 +492,13 @@ class App(oreoOS.App):
             self._video_playing = True
             if self._video.version != 4 and not self._video.next_frame():
                 self._close_video()
-        except Exception:
+        except Exception as exc:
+            self._video_error = "%s: %s" % (type(exc).__name__, exc)
+            self._video_failed_name = name
+            try:
+                print("Gallery video open failed:", self._video_error)
+            except Exception:
+                pass
             self._close_video()
         return self._video
 
@@ -496,11 +515,15 @@ class App(oreoOS.App):
         total = len(self._names) + 1     # photos + ADD tile
         if btn == api.BTN_LEFT:
             self._close_video()
+            self._video_failed_name = ""
+            self._video_error = ""
             self._idx = (self._idx - 1) % total
             self._scroll = 0
             self._dirty = True
         elif btn == api.BTN_RIGHT:
             self._close_video()
+            self._video_failed_name = ""
+            self._video_error = ""
             self._idx = (self._idx + 1) % total
             self._scroll = 0
             self._dirty = True
@@ -518,6 +541,8 @@ class App(oreoOS.App):
                 return
             # Refresh listing (e.g., after dropping new media on the FS)
             self._close_video()
+            self._video_failed_name = ""
+            self._video_error = ""
             self._names = _list_photos()
             self._cache = {}
             self._scaled_cache = {}
@@ -567,6 +592,8 @@ class App(oreoOS.App):
         if video.version == 4 and not video.ready:
             video.load_step()
             if video._load_error:
+                self._video_error = "read or memory error"
+                self._video_failed_name = self._video_name
                 self._close_video()
                 return
             self._dirty = True
@@ -646,6 +673,10 @@ class App(oreoOS.App):
         if video is None:
             d.text("broken video", (SW - 12 * 16) // 2, SH // 2 - 8,
                    theme.MUTED, scale=2)
+            if self._video_error:
+                msg = self._video_error[:36]
+                d.text(msg, (SW - len(msg) * 8) // 2, SH // 2 + 14,
+                       theme.MUTED)
         else:
             if video.version == 4 and not video.ready:
                 d.clear(api.BLACK)
@@ -665,7 +696,7 @@ class App(oreoOS.App):
             if (video.version == 4 and _gallery_native is not None and
                     native_buf is not None):
                 _gallery_native.indexed_scale_at(
-                    video._blob, video.frame_offset, native_buf,
+                    video._frames_data[video.frame_offset], 0, native_buf,
                     video.w, video.h, SW, SH)
                 # We intentionally use the hardware buffer directly to keep
                 # the accelerator Gallery-local. Tell Display to flush it.
