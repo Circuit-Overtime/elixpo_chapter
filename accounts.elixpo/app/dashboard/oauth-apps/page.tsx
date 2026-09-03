@@ -20,12 +20,14 @@ import {
     InputAdornment,
     Paper,
     Snackbar,
+    Tab,
     Table,
     TableBody,
     TableCell,
     TableContainer,
     TableHead,
     TableRow,
+    Tabs,
     TextField,
     Typography,
 } from "@mui/material";
@@ -148,15 +150,30 @@ const OAuthAppsPage = () => {
     const [secretCopied, setSecretCopied] = useState(false);
     const [idCopied, setIdCopied] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [appFilter, setAppFilter] = useState<"all" | "web" | "device">(
+        "all",
+    );
     const filteredApps = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
-        if (!query) return apps;
-        return apps.filter((app) =>
-            [app.name, app.client_id, app.homepage_url, app.description].some(
+        return apps.filter((app) => {
+            const clientType = app.client_type || "confidential";
+            if (appFilter === "web" && clientType !== "confidential") {
+                return false;
+            }
+            if (appFilter === "device" && clientType !== "public") {
+                return false;
+            }
+            if (!query) return true;
+            return [
+                app.name,
+                app.client_id,
+                app.homepage_url,
+                app.description,
+            ].some(
                 (value) => value?.toLowerCase().includes(query),
-            ),
-        );
-    }, [apps, searchQuery]);
+            );
+        });
+    }, [appFilter, apps, searchQuery]);
 
     const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
     const [toast, setToast] = useState<{
@@ -173,6 +190,7 @@ const OAuthAppsPage = () => {
     const [formData, setFormData] = useState({
         name: "",
         homepage_url: "",
+        logo_url: "",
         description: "",
         redirect_uris: [""],
         client_type: "confidential" as "confidential" | "public",
@@ -238,6 +256,21 @@ const OAuthAppsPage = () => {
             setError("Homepage URL is required");
             return;
         }
+        if (formData.logo_url.trim()) {
+            try {
+                const logoUrl = new URL(formData.logo_url.trim());
+                if (
+                    logoUrl.protocol !== "https:" &&
+                    logoUrl.protocol !== "http:"
+                ) {
+                    setError("App icon URL must use HTTP or HTTPS");
+                    return;
+                }
+            } catch {
+                setError("App icon URL must be a valid URL");
+                return;
+            }
+        }
         const uris = formData.redirect_uris
             .map((u) => u.trim())
             .filter(Boolean);
@@ -259,6 +292,7 @@ const OAuthAppsPage = () => {
                 body: JSON.stringify({
                     name: formData.name,
                     homepage_url: formData.homepage_url,
+                    logo_url: formData.logo_url.trim() || undefined,
                     description: formData.description || undefined,
                     redirect_uris: uris,
                     scopes: formData.scopes,
@@ -285,6 +319,7 @@ const OAuthAppsPage = () => {
             setFormData({
                 name: "",
                 homepage_url: "",
+                logo_url: "",
                 description: "",
                 redirect_uris: [""],
                 client_type: "confidential",
@@ -346,6 +381,7 @@ const OAuthAppsPage = () => {
         setFormData({
             name: "",
             homepage_url: "",
+            logo_url: "",
             description: "",
             redirect_uris: [""],
             client_type: "confidential",
@@ -465,25 +501,56 @@ const OAuthAppsPage = () => {
                 )}
 
                 {apps.length > 0 && (
-                    <TextField
-                        fullWidth
-                        value={searchQuery}
-                        onChange={(event) => setSearchQuery(event.target.value)}
-                        placeholder="Search by app name, domain, or client ID"
-                        aria-label="Search OAuth applications"
-                        sx={{ ...textFieldSx, mb: 2 }}
-                        slotProps={{
-                            input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon
-                                            sx={{ color: "var(--fg-faint)" }}
-                                        />
-                                    </InputAdornment>
-                                ),
-                            },
-                        }}
-                    />
+                    <>
+                        <Tabs
+                            value={appFilter}
+                            onChange={(_, value: "all" | "web" | "device") =>
+                                setAppFilter(value)
+                            }
+                            sx={{
+                                mb: 2,
+                                minHeight: 40,
+                                borderBottom: "1px solid var(--border)",
+                                "& .MuiTab-root": {
+                                    minHeight: 40,
+                                    color: "var(--fg-faint)",
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                },
+                                "& .Mui-selected": { color: "#ff7759" },
+                                "& .MuiTabs-indicator": {
+                                    backgroundColor: "#ff7759",
+                                },
+                            }}
+                        >
+                            <Tab value="all" label="All" />
+                            <Tab value="web" label="Web Apps" />
+                            <Tab value="device" label="Device Flow" />
+                        </Tabs>
+                        <TextField
+                            fullWidth
+                            value={searchQuery}
+                            onChange={(event) =>
+                                setSearchQuery(event.target.value)
+                            }
+                            placeholder="Search by app name, domain, or client ID"
+                            aria-label="Search OAuth applications"
+                            sx={{ ...textFieldSx, mb: 2 }}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon
+                                                sx={{
+                                                    color: "var(--fg-faint)",
+                                                }}
+                                            />
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
+                        />
+                    </>
                 )}
 
                 {/* Applications Table */}
@@ -527,7 +594,11 @@ const OAuthAppsPage = () => {
                     ) : filteredApps.length === 0 ? (
                         <Box sx={{ p: 6, textAlign: "center" }}>
                             <Typography sx={{ color: "var(--fg-faint)" }}>
-                                No applications match “{searchQuery}”.
+                                {searchQuery.trim()
+                                    ? `No applications match “${searchQuery}”.`
+                                    : appFilter === "device"
+                                      ? "No Device Flow applications registered."
+                                      : "No Web applications registered."}
                             </Typography>
                         </Box>
                     ) : (
@@ -832,6 +903,23 @@ const OAuthAppsPage = () => {
                     />
                     <TextField
                         fullWidth
+                        type="url"
+                        label="App icon URL"
+                        value={formData.logo_url}
+                        onChange={(e) =>
+                            setFormData({
+                                ...formData,
+                                logo_url: e.target.value,
+                            })
+                        }
+                        margin="dense"
+                        placeholder="https://example.com/icon.png"
+                        helperText="Optional — falls back to your homepage favicon, then a generated icon"
+                        sx={textFieldSx}
+                        disabled={loading}
+                    />
+                    <TextField
+                        fullWidth
                         label="Application description"
                         value={formData.description}
                         onChange={(e) =>
@@ -879,8 +967,8 @@ const OAuthAppsPage = () => {
                             p: 1.25,
                         }}
                     >
-                        <option value="confidential">Web application</option>
-                        <option value="public">Public CLI / device flow</option>
+                        <option value="confidential">Web Application</option>
+                        <option value="public">Device Flow</option>
                     </Box>
 
                     {formData.client_type === "public" && (
@@ -896,7 +984,7 @@ const OAuthAppsPage = () => {
                             }
                             margin="dense"
                             placeholder="blogs.elixpo.com"
-                            helperText="Host only. Public clients use device flow and never receive a secret."
+                            helperText="Host only. Device Flow apps never receive a client secret."
                             sx={textFieldSx}
                             disabled={loading}
                         />
@@ -940,7 +1028,7 @@ const OAuthAppsPage = () => {
                         }}
                     >
                         {formData.client_type === "public"
-                            ? "Optional for device-only clients"
+                            ? "Optional for Device Flow apps"
                             : "The callback URLs where users return after authorization (up to 5)"}
                     </Typography>
                     {formData.redirect_uris.map((uri, index) => (
@@ -1173,7 +1261,7 @@ const OAuthAppsPage = () => {
                         }}
                     >
                         {newAppData?.client_type === "public"
-                            ? "Public clients use token endpoint authentication method none. No client secret was created."
+                            ? "Device Flow apps do not use a client secret."
                             : "Copy the client secret now. It will not be shown again."}
                     </Alert>
 
