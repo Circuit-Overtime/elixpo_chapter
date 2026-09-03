@@ -3,6 +3,8 @@ import "./globals.css";
 import Header         from "@/components/Header";
 import Footer         from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
+import JsonLd         from "@/components/JsonLd";
+import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 // SEO + social-card metadata. The og-banner.png referenced here is the
 // same artwork used as the README banner on the main repo — generated
@@ -13,9 +15,6 @@ import PageTransition from "@/components/PageTransition";
 const SITE_TITLE       = "OreoOS — an open-source OS in a pocket-sized badge";
 const SITE_DESCRIPTION =
     "OreoOS is an open-source operating system for the Elixpo Badge, bringing MicroPython, wireless connectivity, file sharing, apps, games, hardware integrations, and developer tools into a pocket-sized programmable device built for makers, hackers, students, and communities.";
-const SITE_URL  = "https://oreo.elixpo.com";
-const OG_IMAGE  = "/og-banner.png";
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -24,8 +23,14 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: "OreoOS",
+  category: "technology",
   authors: [{ name: "Elixpo", url: "https://github.com/elixpo" }],
+  creator: "Elixpo",
+  publisher: "Elixpo",
   generator: "Next.js",
+  referrer: "origin-when-cross-origin",
+  manifest: "/manifest.webmanifest",
+  alternates: { canonical: "/" },
   keywords: [
   "OreoOS",
   "Elixpo Badge",
@@ -63,14 +68,14 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description:  "Explore OreoOS, the open-source operating system powering the Elixpo Badge with MicroPython, wireless connectivity, apps, developer tools, and hardware integrations for makers and developers.",
     url: SITE_URL,
-    siteName: "Oreo",
+    siteName: SITE_NAME,
     type: "website",
     locale: "en_US",
     images: [{
       url:     OG_IMAGE,
-      width:   1200,
-      height:  630,
-      alt:     "Oreo Badge, with your favourite mascot and a stylish lanyard!"
+      width:   1280,
+      height:  720,
+      alt:     "OreoOS running on the open-source ESP32-S3 Oreo Badge"
     }],
   },
   twitter: {
@@ -115,6 +120,42 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col">
+        <JsonLd data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": `${SITE_URL}/#organization`,
+              name: "Elixpo",
+              url: SITE_URL,
+              logo: `${SITE_URL}/icon-512.png`,
+              sameAs: [
+                "https://github.com/elixpo",
+                "https://github.com/elixpo/oreo",
+              ],
+            },
+            {
+              "@type": "WebSite",
+              "@id": `${SITE_URL}/#website`,
+              url: SITE_URL,
+              name: SITE_NAME,
+              description: SITE_DESCRIPTION,
+              publisher: { "@id": `${SITE_URL}/#organization` },
+              inLanguage: "en",
+            },
+            {
+              "@type": "SoftwareSourceCode",
+              "@id": `${SITE_URL}/#software`,
+              name: "OreoOS",
+              description: SITE_DESCRIPTION,
+              codeRepository: "https://github.com/elixpo/oreo",
+              license: "https://github.com/elixpo/oreo/blob/main/LICENSE",
+              programmingLanguage: ["Python", "C", "TypeScript"],
+              runtimePlatform: "MicroPython on ESP32-S3",
+              author: { "@id": `${SITE_URL}/#organization` },
+            },
+          ],
+        }} />
         <Header />
         <main className="flex-1">
           <PageTransition>{children}</PageTransition>

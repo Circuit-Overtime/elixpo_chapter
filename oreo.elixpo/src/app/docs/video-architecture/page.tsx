@@ -1,20 +1,18 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowLeft, Binary, Box, Cpu, Gauge, Github, HardDrive,
   Layers3, MemoryStick, MonitorUp, Timer, Workflow,
 } from "lucide-react";
 import MermaidDiagram from "@/components/MermaidDiagram";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Gallery video architecture",
+export const metadata = pageMetadata({
+  title: "Gallery Video Architecture",
   description: "How OreoOS reaches 24 FPS Gallery playback with RV565 v4, PSRAM frame blocks, and a native Xtensa decoder.",
-  openGraph: {
-    title: "From 0.5 FPS to native video — OreoOS",
-    description: "An engineering deep dive into embedded video playback on an ESP32-S3 badge.",
-    type: "article",
-  },
-};
+  path: "/docs/video-architecture/",
+  keywords: ["ESP32 video playback", "MicroPython native module", "RGB565 video", "Xtensa decoder", "embedded video architecture"],
+  type: "article",
+});
 
 const pipeline = String.raw`
 flowchart LR
