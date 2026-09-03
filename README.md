@@ -2,7 +2,7 @@
 
 
 
-<img src="assets/sprites/raw/mascot.png" alt="Oreo, the panda mascot" width="60">
+<img src="assets/og-banner.png" alt="Oreo, the panda mascot" width="60">
 
 # Oreo Badge
 
