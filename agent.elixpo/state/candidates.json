@@ -2,177 +2,232 @@
   {
     "archived": false,
     "band": "small",
-    "full_name": "MattJColes/lgtmaybe",
+    "full_name": "Blackwellboy/model-serving-minefield",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 23,
-    "pushed_at": "2026-09-02T10:47:42Z",
+    "open_issues": 14,
+    "pushed_at": "2026-09-03T10:48:01Z",
     "reasons": [
-      "171\u2605 python active",
+      "127\u2605 python active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 171,
-    "topics": [],
-    "url": "https://github.com/MattJColes/lgtmaybe"
+    "stars": 127,
+    "topics": [
+      "benchmarking",
+      "chat-template",
+      "cuda",
+      "debugging",
+      "llama-cpp",
+      "llm-serving",
+      "lm-eval",
+      "local-llm",
+      "model-evaluation",
+      "quantization",
+      "reasoning-models",
+      "speculative-decoding",
+      "troubleshooting",
+      "vllm"
+    ],
+    "url": "https://github.com/Blackwellboy/model-serving-minefield"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "stella/stella",
-    "has_contributing": true,
+    "full_name": "richardr1126/openreader",
+    "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 60,
-    "pushed_at": "2026-09-02T10:47:32Z",
+    "open_issues": 5,
+    "pushed_at": "2026-09-03T10:47:45Z",
     "reasons": [
-      "234\u2605 typescript active",
+      "501\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 501,
+    "topics": [
+      "deepinfra-api",
+      "document",
+      "epub",
+      "epub-reader",
+      "gpt-4o-mini-tts",
+      "kitten-tts",
+      "kokoro-tts",
+      "markdown-reader",
+      "open-ai",
+      "open-ai-tts",
+      "openai-api",
+      "orpheus-tts",
+      "pdf",
+      "pdf-reader",
+      "replicate-ai",
+      "replicate-api",
+      "supertonic",
+      "text-to-speech",
+      "tts",
+      "txt-files"
+    ],
+    "url": "https://github.com/richardr1126/openreader"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "zouyuxuan122/DSH-Desktop-EAC",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 13,
+    "pushed_at": "2026-09-03T10:41:59Z",
+    "reasons": [
+      "1506\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 1506,
+    "topics": [
+      "ai-agent",
+      "deepseek",
+      "deepseek-harness",
+      "desktop",
+      "desktop-app",
+      "dsh",
+      "dsh-plugins",
+      "dshdesktop",
+      "electron",
+      "tauri",
+      "windows"
+    ],
+    "url": "https://github.com/zouyuxuan122/DSH-Desktop-EAC"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "altstackHQ/altstack-data",
+    "has_contributing": true,
+    "language": "Shell",
+    "open_issues": 12,
+    "pushed_at": "2026-09-03T10:44:00Z",
+    "reasons": [
+      "322\u2605 shell active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 234,
+    "stars": 322,
     "topics": [
-      "law",
-      "law-firms",
-      "legal",
-      "legal-workspace",
-      "legaltech",
+      "awesome",
+      "awesome-list",
+      "devops",
+      "docker",
       "open-source",
-      "stella"
+      "productivity",
+      "saas-alternatives",
+      "self-hosted"
     ],
-    "url": "https://github.com/stella/stella"
+    "url": "https://github.com/altstackHQ/altstack-data"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "davidmerfield/blot",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 15,
-    "pushed_at": "2026-09-02T10:43:40Z",
-    "reasons": [
-      "1979\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1979,
-    "topics": [],
-    "url": "https://github.com/davidmerfield/blot"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "Dicklesworthstone/agentic_coding_flywheel_setup",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 6,
-    "pushed_at": "2026-09-02T10:37:42Z",
-    "reasons": [
-      "1623\u2605 shell active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1623,
-    "topics": [
-      "agentic-ai",
-      "agentic-workflow",
-      "agentmail",
-      "beads",
-      "bv"
-    ],
-    "url": "https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "kubeflow/community-distribution",
+    "full_name": "stashapp/CommunityScrapers",
     "has_contributing": true,
     "language": "YAML",
-    "open_issues": 28,
-    "pushed_at": "2026-09-02T10:42:11Z",
+    "open_issues": 47,
+    "pushed_at": "2026-09-03T10:06:32Z",
     "reasons": [
-      "1035\u2605 yaml active",
+      "833\u2605 yaml active",
       "has open issues"
     ],
     "score": 51,
-    "stars": 1035,
+    "stars": 833,
     "topics": [
-      "deployment",
-      "enterpise",
-      "kubeflow",
-      "multi-tenancy",
-      "secure"
+      "hacktoberfest"
     ],
-    "url": "https://github.com/kubeflow/community-distribution"
+    "url": "https://github.com/stashapp/CommunityScrapers"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "RICHQAQ/PasteMD",
+    "full_name": "davepoon/buildwithclaude",
     "has_contributing": true,
     "language": "Python",
-    "open_issues": 28,
-    "pushed_at": "2026-09-02T10:39:15Z",
+    "open_issues": 12,
+    "pushed_at": "2026-09-03T10:37:19Z",
     "reasons": [
-      "5236\u2605 python active",
-      "has open issues"
-    ],
-    "score": 54,
-    "stars": 5236,
-    "topics": [
-      "ai",
-      "chatgpt",
-      "clipboard",
-      "converter",
-      "deepseek",
-      "excel",
-      "latex",
-      "markdown",
-      "pandoc",
-      "productivity",
-      "python",
-      "word",
-      "wps"
-    ],
-    "url": "https://github.com/RICHQAQ/PasteMD"
-  },
-  {
-    "archived": false,
-    "band": "mid",
-    "full_name": "onejs/one",
-    "has_contributing": true,
-    "language": "TypeScript",
-    "open_issues": 24,
-    "pushed_at": "2026-09-02T10:43:37Z",
-    "reasons": [
-      "4489\u2605 typescript active",
+      "3405\u2605 python active",
       "has open issues"
     ],
     "score": 53,
-    "stars": 4489,
+    "stars": 3405,
     "topics": [
-      "local-first",
-      "react",
-      "react-native",
-      "vite"
+      "claude",
+      "claude-code",
+      "claude-code-commands",
+      "claude-skills",
+      "cli-tool",
+      "commands",
+      "mcp",
+      "mcp-server",
+      "mcp-tools",
+      "openclaw",
+      "plugin-marketplace",
+      "subagents"
     ],
-    "url": "https://github.com/onejs/one"
+    "url": "https://github.com/davepoon/buildwithclaude"
   },
   {
     "archived": false,
     "band": "mid",
-    "full_name": "openpgpjs/openpgpjs",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 31,
-    "pushed_at": "2026-09-02T10:21:17Z",
+    "full_name": "prisma/prisma-examples",
+    "has_contributing": true,
+    "language": "TypeScript",
+    "open_issues": 40,
+    "pushed_at": "2026-09-03T10:39:15Z",
     "reasons": [
-      "5970\u2605 javascript active",
+      "6648\u2605 typescript active",
       "has open issues"
     ],
-    "score": 39,
-    "stars": 5970,
-    "topics": [],
-    "url": "https://github.com/openpgpjs/openpgpjs"
+    "score": 55,
+    "stars": 6648,
+    "topics": [
+      "boilerplate",
+      "examples",
+      "graphql",
+      "nodejs",
+      "prisma",
+      "prisma-client",
+      "typescript"
+    ],
+    "url": "https://github.com/prisma/prisma-examples"
+  },
+  {
+    "archived": false,
+    "band": "mid",
+    "full_name": "clientIO/joint",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 50,
+    "pushed_at": "2026-09-03T09:56:39Z",
+    "reasons": [
+      "5369\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 54,
+    "stars": 5369,
+    "topics": [
+      "charts",
+      "diagramming",
+      "html5",
+      "interactive-diagrams",
+      "javascript",
+      "javascript-library",
+      "low-code",
+      "no-code",
+      "svg",
+      "typescript",
+      "typescript-library",
+      "visual-applications",
+      "visualization"
+    ],
+    "url": "https://github.com/clientIO/joint"
   },
   {
     "archived": false,
@@ -181,7 +236,7 @@
     "has_contributing": true,
     "language": "Shell",
     "open_issues": 3,
-    "pushed_at": "2026-09-02T10:12:26Z",
+    "pushed_at": "2026-09-03T10:37:57Z",
     "reasons": [
       "4454\u2605 shell active",
       "has open issues"
@@ -201,207 +256,219 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "onedr0p/home-ops",
-    "has_contributing": false,
-    "language": "YAML",
-    "open_issues": 4,
-    "pushed_at": "2026-09-01T23:48:24Z",
-    "reasons": [
-      "2867\u2605 yaml active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 2867,
-    "topics": [
-      "flux",
-      "gitops",
-      "justfile",
-      "kubernetes",
-      "kubesearch",
-      "mise",
-      "renovate",
-      "selfhosted",
-      "talos"
-    ],
-    "url": "https://github.com/onedr0p/home-ops"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "optuna/optuna",
+    "full_name": "usnistgov/macos_security",
     "has_contributing": true,
-    "language": "Python",
-    "open_issues": 17,
-    "pushed_at": "2026-09-02T10:20:56Z",
+    "language": "YAML",
+    "open_issues": 20,
+    "pushed_at": "2026-09-02T19:33:42Z",
     "reasons": [
-      "14736\u2605 python active",
+      "2459\u2605 yaml active",
       "has open issues"
     ],
-    "score": 60,
-    "stars": 14736,
+    "score": 52,
+    "stars": 2459,
     "topics": [
-      "distributed",
-      "hyperparameter-optimization",
-      "machine-learning",
-      "parallel",
-      "python"
+      "apple",
+      "bash",
+      "compliance",
+      "macos",
+      "mdm",
+      "mscp",
+      "python3",
+      "zsh"
     ],
-    "url": "https://github.com/optuna/optuna"
+    "url": "https://github.com/usnistgov/macos_security"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "getagentseal/codeburn",
+    "full_name": "jxxghp/MoviePilot",
+    "has_contributing": false,
+    "language": "Python",
+    "open_issues": 31,
+    "pushed_at": "2026-09-03T10:26:54Z",
+    "reasons": [
+      "11680\u2605 python active",
+      "has open issues"
+    ],
+    "score": 43,
+    "stars": 11680,
+    "topics": [],
+    "url": "https://github.com/jxxghp/MoviePilot"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "web-infra-dev/midscene",
     "has_contributing": true,
     "language": "TypeScript",
-    "open_issues": 45,
-    "pushed_at": "2026-09-02T10:28:56Z",
+    "open_issues": 76,
+    "pushed_at": "2026-09-03T10:36:45Z",
     "reasons": [
-      "10685\u2605 typescript active",
+      "14771\u2605 typescript active",
+      "has open issues"
+    ],
+    "score": 52,
+    "stars": 14771,
+    "topics": [
+      "browser-use",
+      "computer-use",
+      "e2e-testing",
+      "gpt-operator",
+      "gui-agent",
+      "javascript",
+      "phone-use",
+      "testing"
+    ],
+    "url": "https://github.com/web-infra-dev/midscene"
+  },
+  {
+    "archived": false,
+    "band": "large",
+    "full_name": "jason5ng32/MyIP",
+    "has_contributing": true,
+    "language": "JavaScript",
+    "open_issues": 23,
+    "pushed_at": "2026-09-03T10:25:20Z",
+    "reasons": [
+      "11803\u2605 javascript active",
       "has open issues"
     ],
     "score": 58,
-    "stars": 10685,
+    "stars": 11803,
     "topics": [
-      "ai-coding",
-      "claude-code",
-      "cli",
-      "codex",
-      "cost-tracking",
-      "cursor-ide",
-      "developer-tools",
-      "menubar",
-      "observability",
-      "terminal-ui",
-      "token-usage",
-      "web-dashboard"
+      "awesome",
+      "censorship",
+      "dns",
+      "dnsleak",
+      "hacktoberfest",
+      "ip",
+      "ipinfo",
+      "leaks",
+      "myip",
+      "network",
+      "pingchecker",
+      "proxy",
+      "security",
+      "security-tools",
+      "speedtest",
+      "webrtc",
+      "whatismyip",
+      "whatismyipaddress",
+      "whois",
+      "whois-lookup"
     ],
-    "url": "https://github.com/getagentseal/codeburn"
+    "url": "https://github.com/jason5ng32/MyIP"
   },
   {
     "archived": false,
     "band": "large",
-    "full_name": "Fei-Away/Codex-Dream-Skin",
-    "has_contributing": true,
-    "language": "JavaScript",
-    "open_issues": 51,
-    "pushed_at": "2026-09-02T08:10:14Z",
-    "reasons": [
-      "14267\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 60,
-    "stars": 14267,
-    "topics": [],
-    "url": "https://github.com/Fei-Away/Codex-Dream-Skin"
-  },
-  {
-    "archived": false,
-    "band": "large",
-    "full_name": "DaoCloud/public-image-mirror",
+    "full_name": "nelvko/clash-for-linux-install",
     "has_contributing": false,
     "language": "Shell",
-    "open_issues": 13,
-    "pushed_at": "2026-09-02T08:50:31Z",
+    "open_issues": 31,
+    "pushed_at": "2026-09-03T09:30:37Z",
     "reasons": [
-      "14999\u2605 shell active",
+      "14676\u2605 shell active",
       "has open issues"
     ],
     "score": 45,
-    "stars": 14999,
+    "stars": 14676,
     "topics": [
-      "mirror",
-      "speedup"
+      "clash",
+      "clash-meta",
+      "linux",
+      "mihomo",
+      "subconverter"
     ],
-    "url": "https://github.com/DaoCloud/public-image-mirror"
+    "url": "https://github.com/nelvko/clash-for-linux-install"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "bustimes/bustimes.org",
+    "full_name": "daiki-beppu/youtube-automation",
     "has_contributing": false,
     "language": "Python",
-    "open_issues": 44,
-    "pushed_at": "2026-09-02T10:46:55Z",
+    "open_issues": 46,
+    "pushed_at": "2026-09-03T10:47:01Z",
     "reasons": [
-      "139\u2605 python active",
+      "162\u2605 python active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 139,
-    "topics": [
-      "bus",
-      "busopendata",
-      "django",
-      "gtfs",
-      "transxchange"
-    ],
-    "url": "https://github.com/bustimes/bustimes.org"
+    "stars": 162,
+    "topics": [],
+    "url": "https://github.com/daiki-beppu/youtube-automation"
   },
   {
     "archived": false,
     "band": "small",
-    "full_name": "better-auth-ui/better-auth-ui",
+    "full_name": "nodetool-ai/nodetool",
     "has_contributing": false,
     "language": "TypeScript",
-    "open_issues": 16,
-    "pushed_at": "2026-09-02T10:47:36Z",
+    "open_issues": 15,
+    "pushed_at": "2026-09-03T10:47:38Z",
     "reasons": [
-      "1705\u2605 typescript active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1705,
-    "topics": [
-      "authentication",
-      "better-auth",
-      "heroui",
-      "shadcn-registry",
-      "shadcn-ui",
-      "solid"
-    ],
-    "url": "https://github.com/better-auth-ui/better-auth-ui"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "ivmartel/dwv",
-    "has_contributing": false,
-    "language": "JavaScript",
-    "open_issues": 44,
-    "pushed_at": "2026-09-02T10:41:43Z",
-    "reasons": [
-      "1847\u2605 javascript active",
-      "has open issues"
-    ],
-    "score": 37,
-    "stars": 1847,
-    "topics": [
-      "dicom",
-      "dicom-viewer",
-      "javascript",
-      "medical-imaging",
-      "viewer",
-      "zero-footprint"
-    ],
-    "url": "https://github.com/ivmartel/dwv"
-  },
-  {
-    "archived": false,
-    "band": "small",
-    "full_name": "ddccontrol/ddccontrol-db",
-    "has_contributing": false,
-    "language": "Shell",
-    "open_issues": 3,
-    "pushed_at": "2026-09-02T10:47:02Z",
-    "reasons": [
-      "134\u2605 shell active",
+      "509\u2605 typescript active",
       "has open issues"
     ],
     "score": 36,
-    "stars": 134,
+    "stars": 509,
+    "topics": [
+      "anthropic",
+      "claude",
+      "fal",
+      "gemini",
+      "huggingface",
+      "image-generation",
+      "image-processing",
+      "kie",
+      "motion-graphics",
+      "ollama",
+      "openai",
+      "openrouter",
+      "replicate",
+      "video-editing",
+      "video-generation",
+      "video-processing",
+      "weave",
+      "xai"
+    ],
+    "url": "https://github.com/nodetool-ai/nodetool"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "davidmerfield/blot",
+    "has_contributing": false,
+    "language": "JavaScript",
+    "open_issues": 16,
+    "pushed_at": "2026-09-03T10:46:36Z",
+    "reasons": [
+      "1979\u2605 javascript active",
+      "has open issues"
+    ],
+    "score": 37,
+    "stars": 1979,
     "topics": [],
-    "url": "https://github.com/ddccontrol/ddccontrol-db"
+    "url": "https://github.com/davidmerfield/blot"
+  },
+  {
+    "archived": false,
+    "band": "small",
+    "full_name": "pypa/advisory-database",
+    "has_contributing": false,
+    "language": "Shell",
+    "open_issues": 29,
+    "pushed_at": "2026-09-03T10:37:24Z",
+    "reasons": [
+      "368\u2605 shell active",
+      "has open issues"
+    ],
+    "score": 36,
+    "stars": 368,
+    "topics": [],
+    "url": "https://github.com/pypa/advisory-database"
   },
   {
     "archived": false,
@@ -409,8 +476,8 @@
     "full_name": "joryirving/home-ops",
     "has_contributing": false,
     "language": "YAML",
-    "open_issues": 5,
-    "pushed_at": "2026-09-02T10:26:24Z",
+    "open_issues": 9,
+    "pushed_at": "2026-09-03T10:23:15Z",
     "reasons": [
       "223\u2605 yaml active",
       "has open issues"
@@ -432,30 +499,29 @@
   {
     "archived": false,
     "band": "mid",
-    "full_name": "huangruiteng/loopx",
-    "has_contributing": true,
+    "full_name": "dusklinux/dusky",
+    "has_contributing": false,
     "language": "Python",
-    "open_issues": 53,
-    "pushed_at": "2026-09-02T10:38:38Z",
+    "open_issues": 32,
+    "pushed_at": "2026-09-03T10:39:53Z",
     "reasons": [
-      "5418\u2605 python active",
+      "2377\u2605 python active",
       "has open issues"
     ],
-    "score": 54,
-    "stars": 5418,
+    "score": 37,
+    "stars": 2377,
     "topics": [
-      "agent-control-plane",
-      "agent-harness",
-      "agent-ops",
-      "ai-agents",
-      "codex",
-      "dsh-plugin",
-      "long-horizon",
-      "long-horizon-agents",
-      "loop-engineering",
-      "loopx",
-      "workflow-automation"
+      "archlinux",
+      "automated",
+      "configs",
+      "dotfiles",
+      "hyprland",
+      "rofi",
+      "scripts",
+      "swaync",
+      "wallpapers",
+      "waybar"
     ],
-    "url": "https://github.com/huangruiteng/loopx"
+    "url": "https://github.com/dusklinux/dusky"
   }
 ]
