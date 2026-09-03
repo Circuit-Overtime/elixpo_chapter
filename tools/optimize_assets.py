@@ -13,6 +13,7 @@ Run from project root:
     python tools/optimize_assets.py                 # all top-level icons
     python tools/optimize_assets.py snake_icon      # single icon
     python tools/optimize_assets.py --status        # SVG status icons
+    python tools/optimize_assets.py --splash-logo   # favicon → transparent 72×72 logo
     python tools/optimize_assets.py --app flappy    # all sprites in apps/flappy/assets/raw
 """
 
@@ -42,6 +43,10 @@ STATUS_BG      = (248, 0, 248)   # magenta → RGB565 0xF81F → blit chroma-key
 # Chroma-key magenta. Packs to RGB565 0xF81F (bytes [0xF8, 0x1F]). Any sprite
 # pixel matching this value is treated as transparent by display.blit().
 CHROMA_KEY = (248, 0, 248)
+
+SPLASH_LOGO_SOURCE = Path("oreo.elixpo/public/favicon.ico")
+SPLASH_LOGO_OUT    = Path("assets/sprites/optimized/favicon_logo.py")
+SPLASH_LOGO_SIZE   = 72
 
 # Per-app: fill for OPAQUE assets (transparent pixels get this colour, no key).
 PER_APP_FILL = {
@@ -377,7 +382,40 @@ def optimize_sprites(targets=None):
         print("  %-25s  →  %dx%d  %5dB" % (src.stem, w, h, out.stat().st_size))
 
 
+def optimize_splash_logo():
+    """Bake the website favicon into a transparent badge splash sprite."""
+    if not SPLASH_LOGO_SOURCE.exists():
+        raise FileNotFoundError("Splash logo not found: %s" % SPLASH_LOGO_SOURCE)
+
+    source = Image.open(SPLASH_LOGO_SOURCE).convert("RGBA")
+    source.thumbnail((SPLASH_LOGO_SIZE, SPLASH_LOGO_SIZE), Image.LANCZOS)
+    canvas = Image.new("RGBA", (SPLASH_LOGO_SIZE, SPLASH_LOGO_SIZE), (0, 0, 0, 0))
+    canvas.paste(source, (
+        (SPLASH_LOGO_SIZE - source.width) // 2,
+        (SPLASH_LOGO_SIZE - source.height) // 2,
+    ), source)
+
+    rgb = _fill_transparent(canvas, CHROMA_KEY, alpha_threshold=32)
+    SPLASH_LOGO_OUT.parent.mkdir(parents=True, exist_ok=True)
+    _write_py_module(
+        SPLASH_LOGO_OUT,
+        _to_rgb565_bytes(rgb),
+        SPLASH_LOGO_SIZE,
+        SPLASH_LOGO_SIZE,
+    )
+    print("  %s → %dx%d transparent RGB565 → %s" % (
+        SPLASH_LOGO_SOURCE,
+        SPLASH_LOGO_SIZE,
+        SPLASH_LOGO_SIZE,
+        SPLASH_LOGO_OUT,
+    ))
+
+
 def main():
+    if "--splash-logo" in sys.argv:
+        optimize_splash_logo()
+        return
+
     if "--status" in sys.argv:
         optimize_status_svgs()
         return

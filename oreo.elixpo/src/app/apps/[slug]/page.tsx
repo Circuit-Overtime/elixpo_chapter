@@ -46,22 +46,28 @@ export async function generateMetadata({
   const app = findApp(slug);
   if (!app) return { title: "Not found" };
   const canonical = `/apps/${app.urlSlug}/`;
+  const fullDescription = (app.details ?? app.blurb)
+    .replace(/`/g, "")
+    .replace(/\s+/g, " ");
+  const description = fullDescription.length > 160
+    ? `${fullDescription.slice(0, 157).replace(/\s+\S*$/, "")}…`
+    : fullDescription;
   return {
-    title:       `${app.name} for OreoOS`,
-    description: app.blurb,
+    title:       `${app.name} App | OreoOS`,
+    description,
     alternates: { canonical },
     openGraph: {
       type: "website",
       url: canonical,
       siteName: "OreoOS",
-      title:       `${app.name} for OreoOS`,
-      description: app.blurb,
+      title:       `${app.name} App for OreoOS`,
+      description,
       images: app.pngIcon ? [{ url: app.pngIcon }] : undefined,
     },
     twitter: {
       card: "summary",
-      title: `${app.name} for OreoOS`,
-      description: app.blurb,
+      title: `${app.name} App for OreoOS`,
+      description,
       images: app.pngIcon ? [app.pngIcon] : undefined,
     },
   };
@@ -126,6 +132,30 @@ export default async function AppDetail({
           price: "0",
           priceCurrency: "USD",
         },
+      }} />
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: "https://oreo.elixpo.com/",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Apps",
+            item: "https://oreo.elixpo.com/apps/",
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: app.name,
+            item: `https://oreo.elixpo.com/apps/${app.urlSlug}/`,
+          },
+        ],
       }} />
       {/* ── BLURRED LOGO BACKDROP ─────────────────────────────────────
           Two stacked layers:

@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { ALL_CATALOG } from "@/data/apps";
 import { SITE_URL } from "@/lib/seo";
 
+export const dynamic = "force-static";
+
 const staticRoutes = [
   { path: "", priority: 1, changeFrequency: "weekly" as const },
   { path: "get-started", priority: 0.9, changeFrequency: "monthly" as const },

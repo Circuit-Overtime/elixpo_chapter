@@ -3,7 +3,7 @@ import { ArrowRight, BookOpen, Boxes, Code2 } from "lucide-react";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
-  title: "OreoOS Technical Documentation",
+  title: "Technical Documentation",
   description: "Developer guides and engineering deep dives for OreoOS and the Oreo Badge.",
   path: "/docs/",
   keywords: ["OreoOS documentation", "ESP32-S3 development", "MicroPython documentation"],
