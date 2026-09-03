@@ -727,8 +727,18 @@ def cache_age_ms():
 # ── install / uninstall ─────────────────────────────────────────────────
 
 def is_installed(name):
-    """An app is 'installed' iff /apps/<name>/main.py exists."""
-    return _exists(APPS_DIR + "/" + name + "/main.py")
+    """True only when the launcher can discover a complete app."""
+    root = APPS_DIR + "/" + name
+    if not _exists(root + "/main.py") or not _exists(root + "/manifest.json"):
+        return False
+    if _json is None:
+        return True
+    try:
+        with open(root + "/manifest.json") as f:
+            manifest = _json.loads(f.read())
+        return isinstance(manifest, dict) and manifest.get("type", "app") == "app"
+    except Exception:
+        return False
 
 
 def install(name, progress_cb=None):
@@ -760,9 +770,15 @@ def install(name, progress_cb=None):
 
     root_prefix = entry["path"] + "/"
     target_root = APPS_DIR + "/" + name
+    # A previous interrupted attempt may have left main.py without a valid
+    # manifest. It cannot appear in the launcher, so replace that incomplete
+    # tree instead of layering another attempt over unknown files.
+    if _exists(target_root) and not is_installed(name):
+        _rm_tree(target_root)
     total_bytes = sum(int(f.get("size", 0) or 0) for f in files)
     completed_bytes = 0
     total_files = len(files)
+    failed = set()
 
     for file_index, f in enumerate(files):
         rel = f["path"]
@@ -791,12 +807,20 @@ def install(name, progress_cb=None):
         body = _http_get(f["download_url"], accept_raw=False,
                          timeout_s=T_FILE, on_chunk=_chunk)
         if body is None:
+            failed.add(rel)
+            continue
+        expected = int(f.get("size", 0) or 0)
+        if expected and len(body) != expected:
+            _bc("install size mismatch %s (%d != %d)" %
+                (rel, len(body), expected))
+            failed.add(rel)
             continue
         try:
             with open(dst, "wb") as out:
                 out.write(body)
         except Exception:
-            pass
+            failed.add(rel)
+            continue
         completed_bytes += int(f.get("size", 0) or len(body))
         if progress_cb:
             try:
@@ -811,8 +835,8 @@ def install(name, progress_cb=None):
     # failure here surfaces as "the app vanished from the drawer".
     # Verify and try to re-fetch once if the file is bad.
     mf_path = target_root + "/manifest.json"
+    ok_mf = (_json is None)
     if _json is not None:
-        ok_mf = False
         try:
             with open(mf_path) as f:
                 _json.loads(f.read())
@@ -828,10 +852,18 @@ def install(name, progress_cb=None):
                 try:
                     with open(mf_path, "wb") as out:
                         out.write(body)
+                    with open(mf_path) as f:
+                        _json.loads(f.read())
+                    ok_mf = True
+                    failed.discard("manifest.json")
                 except Exception:
                     pass
 
-    return is_installed(name)
+    if failed or not ok_mf or not is_installed(name):
+        _bc("install incomplete; removing partial app")
+        _rm_tree(target_root)
+        return False
+    return True
 
 
 def uninstall(name):
