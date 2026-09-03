@@ -117,7 +117,8 @@ class App(oreoOS.App):
             self._detail_action = 1 - self._detail_action
             self._dirty = True
             return
-        if btn == api.BTN_A and self._detail and self._detail.get("ok"):
+        if btn == api.BTN_A and isinstance(self._detail, dict) \
+           and self._detail.get("ok"):
             if installed and self._detail_action == 0:
                 self._open_installed()
             else:
@@ -138,6 +139,8 @@ class App(oreoOS.App):
         except Exception:
             pass
         self._detail = store.get_details(name_dir)
+        if not isinstance(self._detail, dict):
+            self._detail = {"ok": False}
         if not self._detail.get("ok"):
             self._msg = store.last_error() or "couldn't load details"
         else:
@@ -151,7 +154,8 @@ class App(oreoOS.App):
         self._busy_kind = "uninstall" if installed else "install"
         self._msg  = ""
         self._progress_received = 0
-        self._progress_total = int((self._detail or {}).get("bytes") or 0)
+        detail = self._detail if isinstance(self._detail, dict) else {}
+        self._progress_total = int(detail.get("bytes") or 0)
         self._progress_file  = ""
         self._progress_index = 0
         self._progress_count = 0
@@ -388,12 +392,13 @@ class App(oreoOS.App):
             data, iw, ih = icon
             d.blit(data, ROW_PAD_X, y + (CARD_H - ih) // 2, iw, ih)
         else:
-            letter = (item["name"] or "?")[0].upper()
+            letter = str(item.get("name") or "?")[0].upper()
             d.text(letter, ROW_PAD_X + 8, y + 8, theme.PRIMARY, scale=3)
 
         tx = ROW_PAD_X + ICON_BOX + 10
-        d.text(item["name"][:18], tx, y + 6, theme.TEXT_BRIGHT, scale=2)
-        author = item.get("author") or ""
+        d.text(str(item.get("name") or "?")[:18], tx, y + 6,
+               theme.TEXT_BRIGHT, scale=2)
+        author = str(item.get("author") or "")
         if author:
             d.text(("by " + author)[:24], tx, y + 26, theme.MUTED, scale=1)
 
@@ -430,8 +435,12 @@ class App(oreoOS.App):
              already installed.
         Falls through to a letter glyph if nothing matches.
         """
+        if not isinstance(item, dict):
+            return None
         name_dir  = item.get("dir") or ""
         icon_file = item.get("icon") or ""
+        if not isinstance(name_dir, str) or not isinstance(icon_file, str):
+            return None
         ico = store.load_store_icon(name_dir) if name_dir else None
         if ico:
             return ico
@@ -459,7 +468,7 @@ class App(oreoOS.App):
     # ── details page ───────────────────────────────────────────────────
     def _draw_details_page(self, d):
         """Centered app details with install or Open / Uninstall actions."""
-        if not self._detail or not self._detail.get("ok"):
+        if not isinstance(self._detail, dict) or not self._detail.get("ok"):
             # Loading / error case — header card placeholder. The
             # bottom status line (self._msg) carries the explanation.
             self._draw_details_header(d, self._detail_for or "?",
@@ -554,13 +563,13 @@ class App(oreoOS.App):
         text_w = SW - tx - ROW_PAD_X
         _draw_centered(d, str(name), y + 6, theme.TEXT_BRIGHT,
                        scale=2, x0=tx, width=text_w)
-        sub = ("by " + author) if author else ""
+        sub = ("by " + str(author)) if author else ""
         _draw_centered(d, sub, y + 28, theme.MUTED,
                        x0=tx, width=text_w)
 
     @staticmethod
     def _icon_for_name(icon_filename):
-        if not icon_filename:
+        if not isinstance(icon_filename, str) or not icon_filename:
             return None
         try:
             return icons.load("store", icon_filename)
@@ -571,7 +580,7 @@ class App(oreoOS.App):
 def _wrap(text, max_chars, max_lines):
     """Greedy word-wrap; ellipsis on overflow. Returns ≤ max_lines lines."""
     out  = []
-    rest = (text or "").split()
+    rest = str(text or "").split()
     cur  = ""
     while rest and len(out) < max_lines:
         w = rest[0]

@@ -330,15 +330,85 @@ def _walk(path):
     if not isinstance(items, list):
         return out
     for it in items:
+        if not isinstance(it, dict):
+            continue
         if it.get("type") == "dir":
-            out.extend(_walk(it["path"]))
+            child = it.get("path")
+            if isinstance(child, str) and child:
+                out.extend(_walk(child))
         elif it.get("type") == "file":
+            file_path = it.get("path")
+            download_url = it.get("download_url")
+            if not isinstance(file_path, str) or not file_path \
+               or not isinstance(download_url, str) or not download_url:
+                continue
             out.append({
-                "path":         it["path"],
-                "download_url": it.get("download_url") or "",
+                "path":         file_path,
+                "download_url": download_url,
                 "size":         it.get("size", 0),
             })
     return out
+
+
+def _valid_files(files):
+    """Validate untrusted GitHub/on-flash file-list JSON."""
+    if not isinstance(files, list) or not files:
+        return False
+    for item in files:
+        if not isinstance(item, dict):
+            return False
+        if not isinstance(item.get("path"), str) or not item.get("path"):
+            return False
+        if not isinstance(item.get("download_url"), str) \
+           or not item.get("download_url"):
+            return False
+        try:
+            if int(item.get("size", 0) or 0) < 0:
+                return False
+        except Exception:
+            return False
+    return True
+
+
+def _text(value, fallback=""):
+    return value if isinstance(value, str) else fallback
+
+
+def _normalise_catalogue_entry(app):
+    """Return a safe catalogue entry, or None when it has no app id."""
+    if not isinstance(app, dict):
+        return None
+    name_dir = _text(app.get("dir"))
+    if not name_dir:
+        return None
+    return {
+        "dir":         name_dir,
+        "market_dir":  _text(app.get("market_dir"), name_dir),
+        "name":        _text(app.get("name"), name_dir) or name_dir,
+        "icon":        _text(app.get("icon")) or None,
+        "author":      _text(app.get("author")) or None,
+        "description": _text(app.get("description")),
+        "path":        _text(app.get("path")),
+        "installed":   bool(app.get("installed", False)),
+    }
+
+
+def _normalise_details(payload, name_dir):
+    if not isinstance(payload, dict):
+        return None
+    try:
+        byte_count = int(payload.get("bytes", 0) or 0)
+    except Exception:
+        return None
+    return {
+        "name":        _text(payload.get("name"), name_dir) or name_dir,
+        "icon":        _text(payload.get("icon")) or None,
+        "author":      _text(payload.get("author")) or None,
+        "description": _text(payload.get("description")),
+        "files":       payload.get("files"),
+        "bytes":       max(0, byte_count),
+        "ok":          bool(payload.get("ok", False)),
+    }
 
 
 _STORE_ICONS_DIR = "/store_icons"
@@ -471,7 +541,17 @@ def _load_cache_from_disk():
     try:
         with open(CACHE_PATH) as f:
             blob = _json.loads(f.read())
-        _catalogue = blob.get("apps", []) or []
+        if not isinstance(blob, dict):
+            return False
+        apps = blob.get("apps", [])
+        if not isinstance(apps, list):
+            return False
+        # A partially-written or older cache must never reach the UI.
+        _catalogue = []
+        for app in apps:
+            clean = _normalise_catalogue_entry(app)
+            if clean:
+                _catalogue.append(clean)
         _cache_ms  = int(blob.get("fetched_ms", 0))
         return True
     except Exception:
@@ -532,25 +612,29 @@ def refresh(force=False):
         return _catalogue or []
     fresh = []
     for it in listing:
+        if not isinstance(it, dict):
+            continue
         if it.get("type") != "dir":
             continue
-        name_dir = it.get("name", "")
-        app_path = it.get("path", "")
+        name_dir = _text(it.get("name"))
+        app_path = _text(it.get("path"))
         if not name_dir or not app_path:
             continue
         manifest = _fetch_manifest(app_path) or {}
+        if not isinstance(manifest, dict):
+            manifest = {}
         # GitHub's market folder is a display/storage concern and may contain
         # spaces. `slug` is the importable on-device package directory used by
         # the launcher and by absolute asset imports inside the app.
         install_dir = _runtime_slug(manifest.get("slug"), name_dir)
         _migrate_installed_dir(name_dir, install_dir)
-        icon_file = manifest.get("icon") or ""
+        icon_file = _text(manifest.get("icon"))
         # Pull the icon module bytes so the card can paint without the
         # app being installed. Best-effort — if it fails we just fall
         # back to the letter glyph in _draw_card.
         if icon_file:
             _fetch_store_icon(install_dir, app_path, icon_file)
-        fresh.append({
+        clean = _normalise_catalogue_entry({
             "dir":          install_dir,
             "market_dir":   name_dir,
             "name":         manifest.get("name", name_dir) or name_dir,
@@ -559,6 +643,8 @@ def refresh(force=False):
             "description":  manifest.get("description", "") or "",
             "path":         app_path,
         })
+        if clean:
+            fresh.append(clean)
 
     _catalogue       = fresh
     _last_refresh_ok = True
@@ -618,7 +704,7 @@ def get_details(name_dir):
     cat = list_market()
     entry = None
     for e in cat:
-        if e["dir"] == name_dir:
+        if isinstance(e, dict) and e.get("dir") == name_dir:
             entry = e
             break
     if not entry:
@@ -626,8 +712,9 @@ def get_details(name_dir):
 
     # Disk-cache hit? Cached details mirror the manifest as of the last
     # refresh, so they're fine until refresh() wipes _details_cache.
-    disk = _details_disk_load(name_dir)
-    if disk and disk.get("ok") and disk.get("files") is not None \
+    disk = _normalise_details(_details_disk_load(name_dir), name_dir)
+    if isinstance(disk, dict) and disk.get("ok") \
+       and _valid_files(disk.get("files")) \
        and disk.get("bytes") is not None:
         _details_cache[name_dir] = disk
         return disk
@@ -638,7 +725,7 @@ def get_details(name_dir):
     # second repository walk after the button press.
     files = _walk(entry.get("path") or "")
     total_bytes = sum(int(f.get("size", 0) or 0) for f in files) \
-                  if files else None
+                  if _valid_files(files) else None
     out = {
         "name":         entry.get("name")        or name_dir,
         "icon":         entry.get("icon")        or None,
@@ -668,7 +755,8 @@ def _details_disk_load(name_dir):
         return None
     try:
         with open(_details_disk_path(name_dir)) as f:
-            return _json.loads(f.read())
+            payload = _json.loads(f.read())
+        return payload if isinstance(payload, dict) else None
     except Exception:
         return None
 
@@ -708,6 +796,14 @@ def list_market():
     if _catalogue is None:
         if not _load_cache_from_disk():
             _catalogue = []
+    if not isinstance(_catalogue, list):
+        _catalogue = []
+    clean_catalogue = []
+    for e in _catalogue:
+        clean = _normalise_catalogue_entry(e)
+        if clean:
+            clean_catalogue.append(clean)
+    _catalogue = clean_catalogue
     for e in _catalogue:
         e["installed"] = is_installed(e["dir"])
     return _catalogue
@@ -756,16 +852,16 @@ def install(name, progress_cb=None):
     cat = list_market()
     entry = None
     for e in cat:
-        if e["dir"] == name:
+        if isinstance(e, dict) and e.get("dir") == name:
             entry = e
             break
     if not entry:
         return False
     details = get_details(name)
-    files = details.get("files") if details else None
-    if not files:
-        files = _walk(entry["path"])
-    if not files:
+    files = details.get("files") if isinstance(details, dict) else None
+    if not _valid_files(files):
+        files = _walk(entry.get("path") or "")
+    if not _valid_files(files):
         return False
 
     root_prefix = entry["path"] + "/"
