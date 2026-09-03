@@ -264,6 +264,34 @@ def _rm_tree(path):
         pass
 
 
+def _runtime_slug(value, fallback):
+    """Return a safe importable app directory declared by a manifest."""
+    if not isinstance(value, str) or not value:
+        return fallback
+    if not (value[0].isalpha() or value[0] == "_"):
+        return fallback
+    for ch in value:
+        if not (ch.isalnum() or ch == "_"):
+            return fallback
+    return value
+
+
+def _migrate_installed_dir(market_dir, install_dir):
+    """Move installs created before manifests gained a runtime slug."""
+    if not market_dir or market_dir == install_dir:
+        return False
+    old = APPS_DIR + "/" + market_dir
+    new = APPS_DIR + "/" + install_dir
+    if not _exists(old) or _exists(new):
+        return False
+    try:
+        _os.rename(old, new)
+        _bc("migrated install %s -> %s" % (market_dir, install_dir))
+        return True
+    except OSError:
+        return False
+
+
 # ── GitHub API wrappers ─────────────────────────────────────────────────
 
 def _api(path):
@@ -511,14 +539,20 @@ def refresh(force=False):
         if not name_dir or not app_path:
             continue
         manifest = _fetch_manifest(app_path) or {}
+        # GitHub's market folder is a display/storage concern and may contain
+        # spaces. `slug` is the importable on-device package directory used by
+        # the launcher and by absolute asset imports inside the app.
+        install_dir = _runtime_slug(manifest.get("slug"), name_dir)
+        _migrate_installed_dir(name_dir, install_dir)
         icon_file = manifest.get("icon") or ""
         # Pull the icon module bytes so the card can paint without the
         # app being installed. Best-effort — if it fails we just fall
         # back to the letter glyph in _draw_card.
         if icon_file:
-            _fetch_store_icon(name_dir, app_path, icon_file)
+            _fetch_store_icon(install_dir, app_path, icon_file)
         fresh.append({
-            "dir":          name_dir,
+            "dir":          install_dir,
+            "market_dir":   name_dir,
             "name":         manifest.get("name", name_dir) or name_dir,
             "icon":         icon_file or None,
             "author":       manifest.get("author") or None,
