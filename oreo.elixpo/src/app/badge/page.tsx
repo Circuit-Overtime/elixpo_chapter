@@ -91,27 +91,18 @@ export default function BadgePage() {
           </motion.div>
         </div>
 
-        {/* ── SCHEMATICS CALLOUT ──────────────────────────────────────── */}
+        {/* ── BOARD SCHEMATIC ─────────────────────────────────────────── */}
         <Reveal>
-          <div className="mt-16 rounded-lg border border-border bg-bg-raised/40 p-6 sm:p-8">
-            <div className="flex items-start gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center
-                              rounded-md bg-card-sub text-gold">
-                <Layers className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="font-display text-xl">Full schematics</h2>
-                <p className="mt-1 text-sm text-text-dim">
-                  KiCad project (4-layer FR-4, ENIG finish), Gerbers, and a
-                  full BOM with substitutions live in <code className="text-text">docs/hardware/</code>.
-                  PCB v1 fab files coming soon.
-                </p>
-                <span className="mt-3 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-gold">
-                  Coming soon
-                </span>
-              </div>
-            </div>
-          </div>
+          <figure className="mt-16 overflow-hidden rounded-lg border border-border bg-bg-raised/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/bom_board.webp"
+              alt="Oreo Badge board schematic and bill of materials"
+              className="h-auto w-full object-contain"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
         </Reveal>
 
         {/* ── SPEC GRID ────────────────────────────────────────────── */}
