@@ -24,7 +24,7 @@ firmware/*.bin
 .idea/
 .secrets_tmp.py
 *.swp
-*.env
+.env.local
 .deploy_hashes.json
 dist/
 legal/

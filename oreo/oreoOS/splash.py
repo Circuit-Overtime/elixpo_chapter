@@ -2,7 +2,7 @@
 
 Sequence (~2.6 s):
   0.00–0.25  fancy background fades in (dimmed)
-  0.10–0.55  mascot drops down from above the screen, settles centre-top
+  0.10–0.55  favicon logo drops down from above the screen, settles centre-top
   0.55–0.85  "OREO OS" title types in, scale=3 bright white
   0.80–1.05  "Built By a GenZ" tagline fades in beneath the title
   1.05–2.10  loading bar fills
@@ -24,7 +24,7 @@ SW = api.SCREEN_W
 SH = api.SCREEN_H
 
 # ── layout (centred vertical stack) ──────────────────────────────────────────
-# Logo (72×72) → "OREO OS" title → "Built By a GenZ" tagline → loading bar.
+# Transparent favicon logo → title → tagline → loading bar.
 
 _MW, _MH       = 72, 72
 _LOGO_REST_Y   = 30                       # final mascot top y
@@ -43,6 +43,21 @@ BG_DIM         = 0.30          # fraction of original brightness
 # ── mascot loader (cached) ───────────────────────────────────────────────────
 
 _mascot = None
+_splash_logo = None
+
+
+def _get_splash_logo():
+    """Return the transparent favicon sprite, falling back to the mascot."""
+    global _splash_logo
+    if _splash_logo is not None:
+        return _splash_logo if _splash_logo is not False else None
+    try:
+        import assets.sprites.optimized.favicon_logo as logo
+        _splash_logo = (logo.DATA, logo.W, logo.H)
+        return _splash_logo
+    except (ImportError, AttributeError):
+        _splash_logo = _get_mascot()
+        return _splash_logo
 
 def _get_mascot():
     """Return (data, w, h) for the mascot sprite. Prefers the chroma-key
@@ -384,7 +399,7 @@ def show_splash(os_obj):
         # ── logo: slides down from y=-mh to y=_LOGO_REST_Y (ease-out cubic)
         p_logo = _phase(elapsed, 0.04, 0.21)
         if p_logo > 0:
-            mascot = _get_mascot()
+            mascot = _get_splash_logo()
             y      = int(-_MH + (_LOGO_REST_Y + _MH) * (1 - (1 - p_logo) ** 3))
             if mascot:
                 data, mw, mh = mascot

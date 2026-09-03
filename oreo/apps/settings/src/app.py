@@ -130,9 +130,16 @@ class App(oreoOS.App):
         if not self._wifi:
             return
         if on:
+            try:
+                self._wifi.radio_on()
+            except Exception:
+                pass
             self._wifi.connect_from_config()
         else:
-            self._wifi.disconnect()
+            try:
+                self._wifi.radio_off()
+            except Exception:
+                self._wifi.disconnect()
 
     def _set_brightness(self, v):
         self._brightness = max(0, min(100, v))
@@ -289,6 +296,11 @@ class App(oreoOS.App):
             if self._wifi.is_connected():
                 ip = self._wifi.ip() or ""
                 return ip or "on"
+            try:
+                if self._wifi.is_radio_on():
+                    return "on"
+            except Exception:
+                pass
             return "off"
         except Exception:
             return "—"

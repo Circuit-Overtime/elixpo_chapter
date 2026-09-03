@@ -22,6 +22,7 @@ const COLUMNS: FooterColumn[] = [
       { label: "Get Started", href: "/get-started/" },
       { label: "Badge",       href: "/badge/" },
       { label: "Apps",        href: "/apps/" },
+      { label: "Docs",        href: "/docs/" },
       { label: "Hacks",       href: "/hacks/" },
       { label: "Contribute",  href: "/contribute/" },
       { label: "Upload",      href: "/upload/" },
@@ -32,6 +33,7 @@ const COLUMNS: FooterColumn[] = [
     links: [
       { label: "OreoOS",       href: "https://github.com/elixpo/oreo",            external: true },
       { label: "Hardware",     href: "https://github.com/elixpo/oreo/tree/main/docs", external: true },
+      { label: "Video Architecture", href: "/docs/video-architecture/" },
       { label: "Contributing", href: "https://github.com/elixpo/oreo/blob/main/CONTRIBUTING.md", external: true },
       { label: "License",      href: "https://github.com/elixpo/oreo/blob/main/LICENSE", external: true },
     ],

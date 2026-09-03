@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Reveal, fadeUp, staggerContainer } from "@/components/MotionWrap";
-import BadgeMockup from "@/components/BadgeMockup";
 import {
   Cpu, MemoryStick, Battery, Radio, Usb, Layers,
   Layout, Ruler, Github,
@@ -41,8 +40,8 @@ export default function BadgePage() {
       </div>
 
       <div className="container-page pt-16 pb-28">
-        {/* ── HERO: copy left, mockup right ───────────────────────────── */}
-        <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+        {/* ── HERO ────────────────────────────────────────────────────── */}
+        <div className="max-w-3xl">
           <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
             <motion.span variants={fadeUp} className="chip mb-6">
               ESP32-S3-DevKitC · breadboard phase
@@ -58,7 +57,7 @@ export default function BadgePage() {
                 all open.
               </span>
             </motion.h1>
-            <motion.p variants={fadeUp} className="mt-5 max-w-xl text-text-dim">
+            <motion.p variants={fadeUp} className="mt-5 max-w-2xl text-text-dim">
               Tufty-classic portrait layout. Eight buttons, IR for line-of-sight
               quests, an MPU6050 for shake and tilt, four LEDs around the frame.
               Schematics and BOM live on the repo — fork them and roll your own.
@@ -81,37 +80,20 @@ export default function BadgePage() {
             </motion.div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 10 }}
-            animate={{ opacity: 1, scale: 1,    y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-            className="flex justify-center lg:justify-end"
-          >
-            <BadgeMockup />
-          </motion.div>
         </div>
 
-        {/* ── SCHEMATICS CALLOUT ──────────────────────────────────────── */}
+        {/* ── BOARD SCHEMATIC ─────────────────────────────────────────── */}
         <Reveal>
-          <div className="mt-16 rounded-lg border border-border bg-bg-raised/40 p-6 sm:p-8">
-            <div className="flex items-start gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center
-                              rounded-md bg-card-sub text-gold">
-                <Layers className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="font-display text-xl">Full schematics</h2>
-                <p className="mt-1 text-sm text-text-dim">
-                  KiCad project (4-layer FR-4, ENIG finish), Gerbers, and a
-                  full BOM with substitutions live in <code className="text-text">docs/hardware/</code>.
-                  PCB v1 fab files coming soon.
-                </p>
-                <span className="mt-3 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-gold">
-                  Coming soon
-                </span>
-              </div>
-            </div>
-          </div>
+          <figure className="mt-16 overflow-hidden rounded-lg border border-border bg-bg-raised/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/bom_board.webp"
+              alt="Oreo Badge board schematic and bill of materials"
+              className="h-auto w-full object-contain"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
         </Reveal>
 
         {/* ── SPEC GRID ────────────────────────────────────────────── */}
