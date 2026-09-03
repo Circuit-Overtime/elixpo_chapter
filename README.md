@@ -2,7 +2,7 @@
 
 
 
-<img src="assets/og-banner.png" alt="Oreo, the panda mascot" width="60">
+<img src="assets/sprites/raw/mascot.png" alt="Oreo, the panda mascot" width="60">
 
 # Oreo Badge
 
@@ -30,7 +30,7 @@
 
 </div>
 
-<img src="docs/images/banner.png" alt="OreoOS — the Oreo Badge" width="100%">
+<img src="assets/og-banner.png" alt="Oreo, the panda banner" width="100%">
 
 ---
 
