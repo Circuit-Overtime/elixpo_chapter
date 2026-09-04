@@ -1616,7 +1616,7 @@ const TOKEN_SCOPE_LABELS = {
 };
 
 function ApiTokensTab() {
-  const [data, setData] = useState({ tokens: [], organizations: [], scopes: [] });
+  const [data, setData] = useState({ tokens: [], organizations: [], scopes: [], maxActiveTokens: 10 });
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState('');
@@ -1712,7 +1712,9 @@ function ApiTokensTab() {
     }
   }
 
-  const activeTokens = data.tokens.filter((token) => !token.revokedAt);
+  const nowSeconds = Date.now() / 1000;
+  const activeTokens = data.tokens.filter((token) => !token.revokedAt && (!token.expiresAt || token.expiresAt > nowSeconds));
+  const tokenLimitReached = activeTokens.length >= data.maxActiveTokens;
   const inputClass = 'w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-base)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]';
 
   return (
@@ -1786,7 +1788,7 @@ function ApiTokensTab() {
         </fieldset>
         <div className="mt-5 flex items-center justify-between gap-3">
           <p className="text-[11px] text-[var(--text-faint)]">Choose the minimum permissions your automation needs.</p>
-          <button disabled={creating || !form.scopes.length} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{creating ? 'Creating…' : 'Create token'}</button>
+          <button disabled={creating || !form.scopes.length || tokenLimitReached} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{creating ? 'Creating…' : tokenLimitReached ? 'Token limit reached' : 'Create token'}</button>
         </div>
       </form>
 
@@ -1807,7 +1809,7 @@ function ApiTokensTab() {
             {!data.tokens.length && <p className="rounded-xl border border-dashed border-[var(--border-default)] py-8 text-center text-sm text-[var(--text-muted)]">No API tokens yet.</p>}
           </div>
         )}
-        {activeTokens.length > 0 && <p className="mt-2 text-right text-[10px] text-[var(--text-faint)]">{activeTokens.length} active token{activeTokens.length === 1 ? '' : 's'}</p>}
+        <p className="mt-2 text-right text-[10px] text-[var(--text-faint)]">{activeTokens.length} / {data.maxActiveTokens} active tokens</p>
       </section>
       {error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{error}</p>}
     </div>

@@ -11,6 +11,8 @@ Choose a descriptive name, an expiry, an account boundary, and only the scopes t
 
 The complete token is displayed once. LixBlogs stores a SHA-256 digest, not the token itself. Put the value in a secret manager rather than a repository, log, URL, or browser bundle.
 
+Each user can keep up to 10 active tokens across personal and organization boundaries. Expired and revoked tokens do not count toward this limit.
+
 ```bash
 export LIXBLOGS_TOKEN="lix_pat_..."
 curl --fail-with-body https://blogs.elixpo.com/api/v1/me \

@@ -6,6 +6,7 @@ import { getSession } from '../../../../lib/auth';
 import { getDB } from '../../../../lib/cloudflare';
 import {
   PERSONAL_ACCESS_TOKEN_SCOPES,
+  MAX_ACTIVE_PERSONAL_ACCESS_TOKENS,
   createPersonalAccessToken,
   serializePersonalAccessToken,
 } from '../../../../lib/api/v1/personalAccessTokens';
@@ -34,6 +35,7 @@ export async function GET() {
       tokens: (tokens?.results || []).map(serializePersonalAccessToken),
       organizations: organizations?.results || [],
       scopes: PERSONAL_ACCESS_TOKEN_SCOPES,
+      maxActiveTokens: MAX_ACTIVE_PERSONAL_ACCESS_TOKENS,
     });
   } catch (error) {
     console.error('[settings/tokens] list failed:', error?.message || error);
@@ -55,8 +57,12 @@ export async function POST(request) {
       organization_required: 'Select an organization for this token.',
       organization_forbidden: 'You no longer have access to that organization.',
       invalid_expiry: 'Token expiry must be between 1 and 365 days.',
+      token_limit: `You can have up to ${MAX_ACTIVE_PERSONAL_ACCESS_TOKENS} active API tokens. Revoke one before creating another.`,
     };
-    if (messages[error?.message]) return NextResponse.json({ error: messages[error.message] }, { status: error.message === 'organization_forbidden' ? 403 : 400 });
+    if (messages[error?.message]) {
+      const status = error.message === 'organization_forbidden' ? 403 : error.message === 'token_limit' ? 409 : 400;
+      return NextResponse.json({ error: messages[error.message] }, { status });
+    }
     console.error('[settings/tokens] create failed:', error?.message || error);
     return NextResponse.json({ error: 'The API token could not be created' }, { status: 500 });
   }
