@@ -45,6 +45,8 @@ export default function ProfilePage() {
   const [blogsLoading, setBlogsLoading] = useState(true);
   const [counts, setCounts] = useState({ followers: 0, following: 0 });
   const [followModal, setFollowModal] = useState(null); // 'followers' | 'following'
+  const [blogActionId, setBlogActionId] = useState('');
+  const [blogActionError, setBlogActionError] = useState('');
 
   useEffect(() => {
     if (!user?.username) return;
@@ -65,6 +67,57 @@ export default function ProfilePage() {
       .catch(() => {})
       .finally(() => setUsageLoading(false));
   }, [user]);
+
+  async function manageOwnedBlog(blog, action) {
+    const messages = {
+      unlist: 'Remove this blog from feeds while keeping its public link?',
+      archive: 'Archive this blog? It will no longer be publicly available.',
+      delete: 'Permanently delete this blog and its stored media? This cannot be undone.',
+    };
+    if (!window.confirm(messages[action])) return;
+    setBlogActionId(blog.id);
+    setBlogActionError('');
+    try {
+      const response = action === 'delete'
+        ? await fetch(`/api/blogs/${encodeURIComponent(blog.id)}`, { method: 'DELETE' })
+        : await fetch(`/api/blogs/${encodeURIComponent(blog.id)}/manage`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action }),
+        });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'The blog could not be updated');
+      if (action === 'delete' || action === 'archive') {
+        setBlogs((current) => current.filter((item) => item.id !== blog.id));
+      } else {
+        setBlogs((current) => current.map((item) => item.id === blog.id ? { ...item, status: result.status } : item));
+      }
+    } catch (requestError) {
+      setBlogActionError(requestError.message || 'The blog could not be updated');
+    } finally {
+      setBlogActionId('');
+    }
+  }
+
+  async function leaveCoauthoredBlog(blog) {
+    if (!window.confirm(`Remove yourself as a co-author from “${blog.title || 'Untitled'}”?`)) return;
+    setBlogActionId(blog.id);
+    setBlogActionError('');
+    try {
+      const response = await fetch('/api/blogs/invite', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slugid: blog.id }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'You could not leave this blog');
+      setCoAuthored((current) => current.filter((item) => item.id !== blog.id));
+    } catch (requestError) {
+      setBlogActionError(requestError.message || 'You could not leave this blog');
+    } finally {
+      setBlogActionId('');
+    }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -393,6 +446,8 @@ export default function ProfilePage() {
                 onChange={setActiveTab}
               />
 
+              {blogActionError && <p className="mb-3 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{blogActionError}</p>}
+
               {blogsLoading ? (
                 <div className="space-y-4 mt-2">
                   {[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-[var(--bg-elevated)] animate-pulse rounded" />)}
@@ -401,14 +456,15 @@ export default function ProfilePage() {
                 <div>
                   {list.map((b) => {
                     const href = activeTab === 0 ? `/${user.username}/${b.slug}`
-                      : activeTab === 2 ? `/${b.author_username}/${b.slug}`
-                      : `/edit/${b.slug || b.id}`;
+                      : activeTab === 2 && ['published', 'unlisted'].includes(b.status)
+                        ? `/${b.author_username}/${b.slug}`
+                        : `/edit/${b.slug || b.id}`;
                     return (
-                      <article key={b.id} className="flex gap-4 py-5 border-b border-[var(--border-default)] last:border-b-0">
+                      <article key={b.id} className="flex flex-col gap-3 border-b border-[var(--border-default)] py-5 last:border-b-0 sm:flex-row sm:items-center">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             {b.status === 'draft' && <span className="text-[11px] font-medium text-[#e8a840] bg-[#e8a84014] px-2 py-0.5 rounded-full">Draft</span>}
-                            {b.status === 'unlisted' && <span className="text-[11px] font-medium text-[#60a5fa] bg-[#60a5fa14] px-2 py-0.5 rounded-full">Beta</span>}
+                            {b.status === 'unlisted' && <span className="text-[11px] font-medium text-[#60a5fa] bg-[#60a5fa14] px-2 py-0.5 rounded-full">Unlisted</span>}
                             <span className="text-[12px] text-[var(--text-muted)]">
                               {b.status === 'draft' ? (b.updated_at ? `Edited ${fmt(b.updated_at)}` : '') : fmt(b.published_at || b.updated_at)}
                             </span>
@@ -419,6 +475,23 @@ export default function ProfilePage() {
                             </h3>
                           </Link>
                           {b.subtitle && <p className="text-[14px] text-[var(--text-muted)] line-clamp-2">{b.subtitle}</p>}
+                        </div>
+                        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                          {(activeTab !== 2 || ['editor', 'admin'].includes(b.co_author_role)) && (
+                            <Link href={`/edit/${b.slug || b.id}`} className="rounded-lg border border-[var(--border-default)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-body)] hover:bg-[var(--bg-elevated)]">Edit</Link>
+                          )}
+                          {activeTab === 0 && b.status === 'published' && (
+                            <button disabled={blogActionId === b.id} onClick={() => manageOwnedBlog(b, 'unlist')} className="rounded-lg border border-[var(--border-default)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] disabled:opacity-50">Unlist</button>
+                          )}
+                          {activeTab !== 2 && (
+                            <button disabled={blogActionId === b.id} onClick={() => manageOwnedBlog(b, 'archive')} className="rounded-lg border border-[var(--border-default)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] disabled:opacity-50">Archive</button>
+                          )}
+                          {activeTab !== 2 && (
+                            <button disabled={blogActionId === b.id} onClick={() => manageOwnedBlog(b, 'delete')} className="grid h-8 w-8 place-items-center rounded-lg border border-red-400/25 text-red-500 hover:bg-red-500/10 disabled:opacity-50" aria-label={`Delete ${b.title || 'blog'}`} title="Delete permanently"><ion-icon name="trash-outline" /></button>
+                          )}
+                          {activeTab === 2 && (
+                            <button disabled={blogActionId === b.id} onClick={() => leaveCoauthoredBlog(b)} className="rounded-lg border border-red-400/25 px-2.5 py-1.5 text-[11px] font-semibold text-red-500 hover:bg-red-500/10 disabled:opacity-50">Remove me</button>
+                          )}
                         </div>
                       </article>
                     );

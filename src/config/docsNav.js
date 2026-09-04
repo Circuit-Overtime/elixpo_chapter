@@ -8,6 +8,7 @@ export const docsNav = [
       { title: 'Media and storage', slug: 'media-storage', description: 'Upload, track, replace, and delete covers and editor images.' },
       { title: 'Creator analytics', slug: 'creator-analytics', description: 'Read creator metrics, compare date ranges, and export reports.' },
       { title: 'LixBlogs CLI', slug: 'cli', description: 'Authenticate, write, publish, and automate through the supported command line.' },
+      { title: 'API automation', slug: 'api', description: 'Create scoped access tokens and automate publishing through the versioned API.' },
     ],
   },
   {
