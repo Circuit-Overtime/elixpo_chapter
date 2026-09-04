@@ -115,7 +115,14 @@ export async function requireBearerAuth(request, requiredScopes = [], options = 
   const authorization = request.headers.get('authorization') || '';
   const match = authorization.match(/^Bearer\s+([^\s]+)$/i);
   if (!match) throw new ApiAuthError('missing_token', 'A Bearer access token is required.');
-  const auth = await verifyAccessToken(match[1], options);
+  let auth;
+  if (match[1].startsWith('lix_pat_')) {
+    if (!options.db) throw new ApiAuthError('server_configuration_error', 'Personal access token authentication is not configured.', 503);
+    const { verifyPersonalAccessToken } = await import('./personalAccessTokens.js');
+    auth = await verifyPersonalAccessToken(options.db, match[1]);
+  } else {
+    auth = await verifyAccessToken(match[1], options);
+  }
   const missingScopes = requiredScopes.filter((scope) => !auth.scopes.includes(scope));
   if (missingScopes.length) {
     throw new ApiAuthError('insufficient_scope', 'The access token does not grant this operation.', 403);
