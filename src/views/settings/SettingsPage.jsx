@@ -14,6 +14,7 @@ const TABS = [
   { label: 'Notifications', icon: 'notifications-outline' },
   { label: 'Organization', icon: 'people-outline' },
   { label: 'Integrations', icon: 'git-network-outline' },
+  { label: 'API', icon: 'key-outline' },
   { label: 'Media', icon: 'images-outline' },
   { label: 'Subscription', icon: 'diamond-outline' },
 ];
@@ -1591,6 +1592,228 @@ function IntegrationsTab() {
   );
 }
 
+const DEFAULT_TOKEN_SCOPES = [
+  'lixblogs:blog:read',
+  'lixblogs:blog:write',
+  'lixblogs:blog:publish',
+];
+
+const TOKEN_SCOPE_LABELS = {
+  'lixblogs:profile:read': 'Read profile',
+  'lixblogs:profile:write': 'Update profile',
+  'lixblogs:blog:read': 'Read blogs and revisions',
+  'lixblogs:blog:write': 'Create and update blogs',
+  'lixblogs:blog:publish': 'Publish and unpublish blogs',
+  'lixblogs:blog:delete': 'Trash and delete blogs',
+  'lixblogs:media:read': 'Read media',
+  'lixblogs:media:write': 'Upload, generate and delete media',
+  'lixblogs:organizations:read': 'Read organization details',
+  'lixblogs:organizations:write': 'Manage organization resources',
+  'lixblogs:collaboration:read': 'Read collaborators and invitations',
+  'lixblogs:collaboration:write': 'Manage collaboration',
+  'lixblogs:analytics:read': 'Read creator analytics',
+  'lixblogs:notifications:read': 'Read notifications',
+};
+
+function ApiTokensTab() {
+  const [data, setData] = useState({ tokens: [], organizations: [], scopes: [] });
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [busyId, setBusyId] = useState('');
+  const [error, setError] = useState('');
+  const [revealedToken, setRevealedToken] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    resourceType: 'personal',
+    organizationId: '',
+    expiryDays: 90,
+    scopes: DEFAULT_TOKEN_SCOPES,
+  });
+
+  const loadTokens = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/settings/tokens', { cache: 'no-store' });
+      const next = await response.json();
+      if (!response.ok) throw new Error(next.error || 'API tokens could not be loaded');
+      setData(next);
+    } catch (requestError) {
+      setError(requestError.message || 'API tokens could not be loaded');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadTokens(); }, [loadTokens]);
+
+  function toggleScope(scope) {
+    setForm((current) => ({
+      ...current,
+      scopes: current.scopes.includes(scope)
+        ? current.scopes.filter((item) => item !== scope)
+        : [...current.scopes, scope],
+    }));
+  }
+
+  async function createToken(event) {
+    event.preventDefault();
+    if (creating) return;
+    setCreating(true);
+    setError('');
+    setRevealedToken('');
+    try {
+      const response = await fetch('/api/settings/tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'The token could not be created');
+      setRevealedToken(result.token);
+      setData((current) => ({ ...current, tokens: [result.record, ...current.tokens] }));
+      setForm((current) => ({ ...current, name: '' }));
+    } catch (requestError) {
+      setError(requestError.message || 'The token could not be created');
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function revokeToken(token) {
+    if (!window.confirm(`Revoke “${token.name}”? Automations using it will stop immediately.`)) return;
+    setBusyId(token.id);
+    setError('');
+    try {
+      const response = await fetch(`/api/settings/tokens/${encodeURIComponent(token.id)}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'The token could not be revoked');
+      setData((current) => ({
+        ...current,
+        tokens: current.tokens.map((item) => item.id === token.id
+          ? { ...item, revokedAt: Math.floor(Date.now() / 1000) }
+          : item),
+      }));
+    } catch (requestError) {
+      setError(requestError.message || 'The token could not be revoked');
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  async function copyToken() {
+    try {
+      await navigator.clipboard.writeText(revealedToken);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setError('Copy failed. Select the token and copy it manually.');
+    }
+  }
+
+  const activeTokens = data.tokens.filter((token) => !token.revokedAt);
+  const inputClass = 'w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-base)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]';
+
+  return (
+    <div className="space-y-7">
+      <section>
+        <h2 className="text-lg font-bold text-[var(--text-primary)]">Personal access tokens</h2>
+        <p className="mt-1 max-w-2xl text-xs leading-5 text-[var(--text-muted)]">
+          Authenticate scripts and services against the same versioned API used by the LixBlogs CLI. Tokens are shown once and cannot bypass your current account or organization role.
+        </p>
+        <Link href="/docs/api" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline">
+          Read the API guide <ion-icon name="arrow-forward-outline" />
+        </Link>
+      </section>
+
+      {revealedToken && (
+        <section className="rounded-2xl border border-amber-400/35 bg-amber-400/[0.06] p-5">
+          <div className="flex items-start gap-3">
+            <ion-icon name="warning-outline" className="mt-0.5 text-amber-500" />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">Copy this token now</h3>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">It will not be displayed again. Store it in a secret manager, never in source control.</p>
+              <div className="mt-3 flex gap-2">
+                <code className="min-w-0 flex-1 select-all overflow-x-auto rounded-lg border border-[var(--border-default)] bg-[var(--bg-base)] px-3 py-2 text-xs text-[var(--text-primary)]">{revealedToken}</code>
+                <button type="button" onClick={copyToken} className="rounded-lg bg-[var(--accent)] px-3 text-xs font-semibold text-white">{copied ? 'Copied' : 'Copy'}</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <form onSubmit={createToken} className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5">
+        <h3 className="text-sm font-bold text-[var(--text-primary)]">Create a token</h3>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="text-xs font-medium text-[var(--text-body)]">
+            Token name
+            <input required maxLength={80} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Release workflow" className={`${inputClass} mt-1.5`} />
+          </label>
+          <label className="text-xs font-medium text-[var(--text-body)]">
+            Expires
+            <select value={form.expiryDays} onChange={(event) => setForm({ ...form, expiryDays: Number(event.target.value) })} className={`${inputClass} mt-1.5`}>
+              <option value={7}>7 days</option><option value={30}>30 days</option><option value={90}>90 days</option><option value={365}>1 year</option>
+            </select>
+          </label>
+          <label className="text-xs font-medium text-[var(--text-body)]">
+            Account boundary
+            <select value={form.resourceType} onChange={(event) => setForm({ ...form, resourceType: event.target.value, organizationId: '' })} className={`${inputClass} mt-1.5`}>
+              <option value="personal">Personal account</option>
+              <option value="organization">One organization</option>
+            </select>
+          </label>
+          {form.resourceType === 'organization' && (
+            <label className="text-xs font-medium text-[var(--text-body)]">
+              Organization
+              <select required value={form.organizationId} onChange={(event) => setForm({ ...form, organizationId: event.target.value })} className={`${inputClass} mt-1.5`}>
+                <option value="">Select an organization</option>
+                {data.organizations.map((org) => <option key={org.id} value={org.id}>{org.name}</option>)}
+              </select>
+            </label>
+          )}
+        </div>
+        <fieldset className="mt-5">
+          <legend className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Scopes</legend>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {data.scopes.map((scope) => (
+              <label key={scope} className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-[var(--border-default)] px-3 py-2.5 hover:bg-[var(--bg-elevated)]">
+                <input type="checkbox" checked={form.scopes.includes(scope)} onChange={() => toggleScope(scope)} className="mt-0.5 accent-[#9b7bf7]" />
+                <span><span className="block text-xs font-medium text-[var(--text-primary)]">{TOKEN_SCOPE_LABELS[scope] || scope}</span><code className="text-[10px] text-[var(--text-faint)]">{scope}</code></span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <p className="text-[11px] text-[var(--text-faint)]">Choose the minimum permissions your automation needs.</p>
+          <button disabled={creating || !form.scopes.length} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{creating ? 'Creating…' : 'Create token'}</button>
+        </div>
+      </form>
+
+      <section>
+        <h3 className="text-sm font-bold text-[var(--text-primary)]">Your tokens</h3>
+        {loading ? <div className="mt-3 h-24 animate-pulse rounded-xl bg-[var(--bg-elevated)]" /> : (
+          <div className="mt-3 space-y-2">
+            {data.tokens.map((token) => (
+              <article key={token.id} className={`flex flex-col gap-3 rounded-xl border border-[var(--border-default)] p-4 sm:flex-row sm:items-center ${token.revokedAt ? 'opacity-55' : ''}`}>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-[var(--text-primary)]">{token.name}</p><span className="rounded-full bg-[var(--bg-elevated)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">{token.resourceType === 'organization' ? token.organizationName || 'Organization' : 'Personal'}</span>{token.revokedAt && <span className="text-[10px] font-semibold text-red-500">Revoked</span>}</div>
+                  <p className="mt-1 font-mono text-[11px] text-[var(--text-faint)]">{token.prefix}••••••••</p>
+                  <p className="mt-1 text-[10px] text-[var(--text-muted)]">Created {new Date(token.createdAt * 1000).toLocaleDateString()} · {token.lastUsedAt ? `Last used ${new Date(token.lastUsedAt * 1000).toLocaleString()}` : 'Never used'} · Expires {new Date(token.expiresAt * 1000).toLocaleDateString()}</p>
+                </div>
+                {!token.revokedAt && <button type="button" disabled={busyId === token.id} onClick={() => revokeToken(token)} className="self-start rounded-lg border border-red-400/30 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-500/10 disabled:opacity-50">{busyId === token.id ? 'Revoking…' : 'Revoke'}</button>}
+              </article>
+            ))}
+            {!data.tokens.length && <p className="rounded-xl border border-dashed border-[var(--border-default)] py-8 text-center text-sm text-[var(--text-muted)]">No API tokens yet.</p>}
+          </div>
+        )}
+        {activeTokens.length > 0 && <p className="mt-2 text-right text-[10px] text-[var(--text-faint)]">{activeTokens.length} active token{activeTokens.length === 1 ? '' : 's'}</p>}
+      </section>
+      {error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
 // ── Main Settings Page ──
 export default function SettingsPage() {
   const { user, loading, refetchUser } = useAuth();
@@ -1598,6 +1821,12 @@ export default function SettingsPage() {
   const tabParam = searchParams.get('tab');
   const initialTab = tabParam ? TABS.findIndex(t => t.label.toLowerCase() === tabParam.toLowerCase()) : 0;
   const [activeTab, setActiveTab] = useState(initialTab >= 0 ? initialTab : 0);
+  const selectTab = (index) => {
+    setActiveTab(index);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', TABS[index].label.toLowerCase());
+    window.history.replaceState({}, '', url);
+  };
 
   if (loading) {
     return (
@@ -1630,18 +1859,29 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <div className="max-w-2xl mx-auto px-6 py-10">
-        <h1 className="text-[var(--text-muted)]xl font-bold text-[var(--text-primary)] mb-8">Settings</h1>
-
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
-
-        {activeTab === 0 && <AccountTab user={user} refetchUser={refetchUser} />}
-        {activeTab === 1 && <PublishingTab user={user} />}
-        {activeTab === 2 && <NotificationsTab />}
-        {activeTab === 3 && <OrganizationTab user={user} />}
-        {activeTab === 4 && <IntegrationsTab />}
-        {activeTab === 5 && <MediaTab />}
-        {activeTab === 6 && <SubscriptionTab user={user} />}
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
+        <h1 className="mb-6 text-2xl font-bold text-[var(--text-primary)]">Settings</h1>
+        <div className="sticky top-16 z-20 -mx-4 bg-[var(--bg-app)] px-4 pt-1 md:hidden"><TabBar tabs={TABS} active={activeTab} onChange={selectTab} /></div>
+        <div className="grid items-start gap-8 md:grid-cols-[210px_minmax(0,1fr)]">
+          <nav aria-label="Settings sections" className="sticky top-20 hidden rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-2 md:block">
+            {TABS.map((tab, index) => (
+              <button key={tab.label} type="button" aria-current={activeTab === index ? 'page' : undefined} onClick={() => selectTab(index)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition-colors ${activeTab === index ? 'bg-[var(--accent-subtle)] text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'}`}>
+                <ion-icon name={tab.icon} className={activeTab === index ? 'text-[var(--accent)]' : 'text-[var(--text-faint)]'} />
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+          <main className="min-w-0 max-w-3xl">
+            {activeTab === 0 && <AccountTab user={user} refetchUser={refetchUser} />}
+            {activeTab === 1 && <PublishingTab user={user} />}
+            {activeTab === 2 && <NotificationsTab />}
+            {activeTab === 3 && <OrganizationTab user={user} />}
+            {activeTab === 4 && <IntegrationsTab />}
+            {activeTab === 5 && <ApiTokensTab />}
+            {activeTab === 6 && <MediaTab />}
+            {activeTab === 7 && <SubscriptionTab user={user} />}
+          </main>
+        </div>
       </div>
     </AppShell>
   );
