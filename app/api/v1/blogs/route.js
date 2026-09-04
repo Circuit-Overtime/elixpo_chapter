@@ -21,6 +21,7 @@ import {
 import { compressBlogContent } from '../../../../lib/compress';
 import { excerptFromBlocks } from '../../../../lib/excerpt';
 import { ensureUniqueBlogSlug } from '../../../../lib/namespace';
+import { credentialAllowsPublishedAs } from '../../../../lib/api/v1/personalAccessTokens';
 
 const LIST_SCOPE = 'lixblogs:blog:read';
 const ALLOWED_STATUSES = new Set(['all', 'draft', 'published', 'unlisted', 'trashed']);
@@ -76,6 +77,14 @@ export async function GET(request) {
     filters.push('b.status = ?');
     bindings.push(status);
     filters.push('b.deleted_at IS NULL');
+  }
+  if (auth.credentialType === 'pat') {
+    if (auth.resourceType === 'organization') {
+      filters.push('b.published_as = ?');
+      bindings.push(`org:${auth.organizationId}`);
+    } else {
+      filters.push("(b.published_as IS NULL OR b.published_as = 'personal')");
+    }
   }
   if (page.cursor) {
     filters.push('(b.updated_at < ? OR (b.updated_at = ? AND b.id < ?))');
@@ -154,6 +163,9 @@ export async function POST(request) {
   const requestHash = await hashApiRequest(body);
   try {
     const target = await requirePublishTarget(db, auth.userId, input.publishedAs || 'personal', input.collectionId || null);
+    if (!credentialAllowsPublishedAs(auth, target.publishedAs)) {
+      return apiError(context, 'credential_scope_forbidden', 'This token cannot publish to that account or organization.', 403, { headers: rateHeaders });
+    }
     await requireMemberOnlyAllowed(db, auth.userId, input.memberOnly, false);
     const reservation = await beginIdempotentOperation(db, {
       userId: auth.userId, operation: 'blogs.create', key: idempotencyKey, requestHash,

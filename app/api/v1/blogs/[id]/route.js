@@ -22,6 +22,7 @@ import { getBlogCanonicalPath } from '../../../../../lib/blogUrl';
 import { ensureUniqueBlogSlug } from '../../../../../lib/namespace';
 import { canEditBlog } from '../../../../../lib/permissions';
 import { readTimeFromWords } from '../../../../../lib/readTime';
+import { credentialAllowsPublishedAs } from '../../../../../lib/api/v1/personalAccessTokens';
 
 const READ_SCOPE = 'lixblogs:blog:read';
 
@@ -142,6 +143,9 @@ export async function PATCH(request, { params }) {
     const target = owner
       ? await requirePublishTarget(db, auth.userId, input.publishedAs || current.published_as, input.collectionId ?? current.collection_id)
       : { publishedAs: current.published_as, collectionId: current.collection_id };
+    if (!credentialAllowsPublishedAs(auth, target.publishedAs)) {
+      return apiError(context, 'credential_scope_forbidden', 'This token cannot move the blog to that account or organization.', 403, { headers: rateHeaders });
+    }
     await requireMemberOnlyAllowed(db, current.author_id, input.memberOnly, Boolean(current.member_only));
     const slug = owner && input.slug !== undefined
       ? await ensureUniqueBlogSlug(db, slugify(input.slug), id, { authorId: current.author_id, publishAs: target.publishedAs })
