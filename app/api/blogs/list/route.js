@@ -52,8 +52,8 @@ export async function GET(request) {
       return NextResponse.json({ blogs: stripSecretAuthors(rows?.results) });
     }
 
-    // Co-authored = published blogs where THIS user is an accepted co-author
-    // (authored by someone else). Shown on the user's own profile/stories tabs.
+    // Co-authored = active blogs where THIS user is an accepted co-author
+    // (authored by someone else). Drafts must remain reachable by editors here.
     if (filter === 'coauthored') {
       const rows = await db.prepare(`
         SELECT b.id, b.id as slugid, b.slug, b.secret, b.title, b.subtitle, b.status,
@@ -62,7 +62,8 @@ export async function GET(request) {
           u.username as author_username, u.display_name as author_name, u.avatar_url as author_avatar,
           bc.role as co_author_role, bc.show_on_profile, ${COUNTS}
         FROM blog_co_authors bc
-        JOIN blogs b ON b.id = bc.blog_id AND b.status IN ('published', 'unlisted')
+        JOIN blogs b ON b.id = bc.blog_id
+          AND b.deleted_at IS NULL AND b.status IN ('draft', 'published', 'unlisted')
         JOIN users u ON u.id = b.author_id
         WHERE bc.user_id = ? AND bc.status = 'accepted' AND b.author_id != ?
         ORDER BY b.published_at DESC LIMIT 50
