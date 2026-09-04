@@ -10,9 +10,10 @@ export async function GET() {
     minCliVersion: '0.1.0',
     resourceOrigin: 'https://blogs.elixpo.com',
     authentication: {
-      type: 'oauth2-bearer',
+      types: ['oauth2-bearer', 'personal-access-token'],
       issuer: 'https://accounts.elixpo.com',
       audience: 'blogs.elixpo.com',
+      tokenSettings: 'https://blogs.elixpo.com/settings?tab=api',
     },
     resources: {
       profile: '/api/v1/me',

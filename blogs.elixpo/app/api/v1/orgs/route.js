@@ -69,7 +69,12 @@ export async function GET(request) {
             serializeOrg(row, row.role, false),
         );
 
-        const orgs = [...ownedResults, ...memberResults];
+        const orgs = [...ownedResults, ...memberResults].filter(
+            (org) =>
+                auth.credentialType !== "pat" ||
+                auth.resourceType !== "organization" ||
+                org.id === auth.organizationId,
+        );
 
         await recordApiAudit(db, {
             requestId: context.requestId,
